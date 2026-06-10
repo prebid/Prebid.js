@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -7,7 +7,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'pilotx';
+const BIDDER_CODE = 'pilotx'
 const ENDPOINT_URL = '//adn.pilotx.tv/hb'
 export const spec = {
   code: BIDDER_CODE,
@@ -40,7 +40,7 @@ export const spec = {
     if (!sizeConfirmed) {
       return false
     }
-    return !!(bid.params.placementId);
+    return !!(bid.params.placementId)
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -50,9 +50,9 @@ export const spec = {
    * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const payloadItems = {};
+    const payloadItems = {}
     validBidRequests.forEach(bidRequest => {
-      const sizes = [];
+      const sizes = []
       const placementId = this.setPlacementID(bidRequest.params.placementId)
       payloadItems[placementId] = {}
       if (bidRequest.sizes.length > 0) {
@@ -93,14 +93,14 @@ export const spec = {
       if (bidderRequest?.uspConsent) {
         payloadItems[placementId]['uspConsent'] = bidderRequest.uspConsent
       }
-    });
-    const payload = payloadItems;
-    const payloadString = JSON.stringify(payload);
+    })
+    const payload = payloadItems
+    const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString,
-    };
+    }
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -109,16 +109,16 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
-    const serverBody = serverResponse.body;
+    const bidResponses = []
+    const serverBody = serverResponse.body
 
     const bids = Array.isArray(serverBody?.bids)
       ? serverBody.bids
-      : [serverBody];
+      : [serverBody]
 
     bids.forEach(bid => {
       if (!bid || !bid.mediaType || !bid.requestId) {
-        return;
+        return
       }
 
       const baseResponse = {
@@ -135,18 +135,18 @@ export const spec = {
           mediaType: bid.mediaType,
           advertiserDomains: bid.advertiserDomains || []
         }
-      };
-
-      if (bid.mediaType === 'banner') {
-        baseResponse.ad = bid.ad;
-      } else if (bid.mediaType === 'video') {
-        baseResponse.vastUrl = bid.vastUrl;
       }
 
-      bidResponses.push(baseResponse);
-    });
+      if (bid.mediaType === 'banner') {
+        baseResponse.ad = bid.ad
+      } else if (bid.mediaType === 'video') {
+        baseResponse.vastUrl = bid.vastUrl
+      }
 
-    return bidResponses;
+      bidResponses.push(baseResponse)
+    })
+
+    return bidResponses
   },
 
   /**
@@ -160,4 +160,4 @@ export const spec = {
     return placementId
   },
 }
-registerBidder(spec);
+registerBidder(spec)

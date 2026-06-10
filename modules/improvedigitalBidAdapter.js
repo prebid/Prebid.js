@@ -1,11 +1,11 @@
-import { deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { convertCurrency } from '../libraries/currencyUtils/currency.js';
+import { deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { convertCurrency } from '../libraries/currencyUtils/currency.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -15,19 +15,19 @@ import { convertCurrency } from '../libraries/currencyUtils/currency.js';
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDDER_CODE = 'improvedigital';
-const CREATIVE_TTL = 300;
+const BIDDER_CODE = 'improvedigital'
+const CREATIVE_TTL = 300
 
-const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
-const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
-const PB_ENDPOINT = 'pb';
-const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
-const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
-const DEFAULT_CURRENCY = 'USD';
+const AD_SERVER_BASE_URL = 'https://ad.360yield.com'
+const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com'
+const PB_ENDPOINT = 'pb'
+const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction'
+const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html'
+const DEFAULT_CURRENCY = 'USD'
 
 const VIDEO_PARAMS = {
   DEFAULT_MIMES: ['video/mp4']
-};
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -43,7 +43,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && bid.params.placementId && bid.params.publisherId);
+    return !!(bid && bid.params && bid.params.placementId && bid.params.publisherId)
   },
 
   /**
@@ -55,8 +55,8 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     // Save a placement id to send it to the ad server when fetching the user syncs
-    this.syncStore.placementId = this.syncStore.placementId || bidRequests[0].params.placementId;
-    return ID_REQUEST.buildServerRequests(bidRequests, bidderRequest);
+    this.syncStore.placementId = this.syncStore.placementId || bidRequests[0].params.placementId
+    return ID_REQUEST.buildServerRequests(bidRequests, bidderRequest)
   },
 
   /**
@@ -67,7 +67,7 @@ export const spec = {
    * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse(serverResponse, { ortbRequest }) {
-    return CONVERTER.fromORTB({ request: ortbRequest, response: serverResponse.body }).bids;
+    return CONVERTER.fromORTB({ request: ortbRequest, response: serverResponse.body }).bids
   },
 
   /**
@@ -79,16 +79,16 @@ export const spec = {
    */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
-      return [];
+      return []
     }
 
-    const syncs = [];
+    const syncs = []
     if ((this.syncStore.extendMode || !syncOptions.pixelEnabled) && syncOptions.iframeEnabled) {
-      const { gdprApplies, consentString } = gdprConsent || {};
-      const bidders = new Set();
+      const { gdprApplies, consentString } = gdprConsent || {}
+      const bidders = new Set()
       if (this.syncStore.extendMode && serverResponses) {
         serverResponses.forEach(response => {
-          if (!response?.body?.ext?.responsetimemillis) return;
+          if (!response?.body?.ext?.responsetimemillis) return
           Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
         })
       }
@@ -101,23 +101,23 @@ export const spec = {
           (consentString ? `&gdpr_consent=${consentString}` : '') +
           (uspConsent ? `&us_privacy=${encodeURIComponent(uspConsent)}` : '') +
           (bidders.size ? `&bidders=${[...bidders].join(',')}` : '')
-      });
+      })
     } else if (syncOptions.pixelEnabled) {
       serverResponses.forEach(response => {
-        const syncArr = deepAccess(response, `body.ext.${BIDDER_CODE}.sync`, []);
+        const syncArr = deepAccess(response, `body.ext.${BIDDER_CODE}.sync`, [])
         syncArr.forEach(url => {
           if (!syncs.some(sync => sync.url === url)) {
-            syncs.push({ type: 'image', url });
+            syncs.push({ type: 'image', url })
           }
-        });
-      });
+        })
+      })
     }
 
-    return syncs;
+    return syncs
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
 
 const convertBidFloorCurrency = (imp) => {
   try {
@@ -126,13 +126,13 @@ const convertBidFloorCurrency = (imp) => {
       imp.bidfloorcur,
       DEFAULT_CURRENCY,
       false,
-    );
-    imp.bidfloor = bidFloor;
-    imp.bidfloorcur = DEFAULT_CURRENCY;
+    )
+    imp.bidfloor = bidFloor
+    imp.bidfloorcur = DEFAULT_CURRENCY
   } catch (err) {
-    logWarn(`Failed to convert bid floor to ${DEFAULT_CURRENCY}. Passing floor price in its original currency.`, err);
+    logWarn(`Failed to convert bid floor to ${DEFAULT_CURRENCY}. Passing floor price in its original currency.`, err)
   }
-};
+}
 
 export const CONVERTER = ortbConverter({
   context: {
@@ -144,32 +144,32 @@ export const CONVERTER = ortbConverter({
     }
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
+    const imp = buildImp(bidRequest, context)
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
-      imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || DEFAULT_CURRENCY;
+      imp.bidfloor = bidRequest.params.bidFloor
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || DEFAULT_CURRENCY
     }
 
     if (imp.bidfloor && imp.bidfloorcur && imp.bidfloorcur !== DEFAULT_CURRENCY) {
-      convertBidFloorCurrency(imp);
+      convertBidFloorCurrency(imp)
     }
-    const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
-    const placementId = bidRequest.params.placementId;
-    const publisherId = bidRequest.params.publisherId;
-    deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
-    deepSetValue(imp, `${bidderParamsPath}.publisherId`, publisherId);
+    const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder'
+    const placementId = bidRequest.params.placementId
+    const publisherId = bidRequest.params.publisherId
+    deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId)
+    deepSetValue(imp, `${bidderParamsPath}.publisherId`, publisherId)
     if (context.extendMode) {
-      deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
+      deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId)
     }
-    deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
+    deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined)
 
-    context.bidderRequest.bidLimit && deepSetValue(imp, 'ext.max_bids', context.bidderRequest.bidLimit);
+    context.bidderRequest.bidLimit && deepSetValue(imp, 'ext.max_bids', context.bidderRequest.bidLimit)
 
-    return imp;
+    return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    const request = buildRequest(imps, bidderRequest, context)
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
       source: {
@@ -183,31 +183,31 @@ export const CONVERTER = ortbConverter({
           }
         }
       },
-    });
-    return request;
+    })
+    return request
   },
   bidResponse(buildBidResponse, bid, context) {
     if (!bid.adm || !bid.price || bid.hasOwnProperty('errorCode')) {
-      return;
+      return
     }
-    const { bidRequest } = context;
+    const { bidRequest } = context
     context.mediaType = (() => {
-      const requestMediaTypes = Object.keys(bidRequest.mediaTypes);
-      if (requestMediaTypes.length === 1) return requestMediaTypes[0];
+      const requestMediaTypes = Object.keys(bidRequest.mediaTypes)
+      if (requestMediaTypes.length === 1) return requestMediaTypes[0]
       // Detect media type for multi-format response
       if (bid.adm.search(/^(<\?xml|<vast)/i) !== -1) {
-        return VIDEO;
+        return VIDEO
       } else if (bid.adm[0] === '{') {
-        return NATIVE;
+        return NATIVE
       } else {
-        return BANNER;
+        return BANNER
       }
-    })();
-    const bidResponse = buildBidResponse(bid, context);
-    const idExt = deepAccess(bid, `ext.${BIDDER_CODE}`, {});
+    })()
+    const bidResponse = buildBidResponse(bid, context)
+    const idExt = deepAccess(bid, `ext.${BIDDER_CODE}`, {})
     // Programmatic guaranteed flag
     if (idExt.pg === 1) {
-      bidResponse.adserverTargeting = { hb_deal_type_improve: 'pg' };
+      bidResponse.adserverTargeting = { hb_deal_type_improve: 'pg' }
     }
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
@@ -219,22 +219,22 @@ export const CONVERTER = ortbConverter({
         renderer: ID_OUTSTREAM.createRenderer(bidRequest)
       })
     }
-    return bidResponse;
+    return bidResponse
   },
   overrides: {
     imp: {
       banner(fillImpBanner, imp, bidRequest, context) {
         // override to disregard banner.sizes if usePrebidSizes is false
-        if (!bidRequest.mediaTypes[BANNER]) return;
+        if (!bidRequest.mediaTypes[BANNER]) return
         if (config.getConfig('improvedigital.usePrebidSizes') === false) {
-          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], { sizes: null });
+          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], { sizes: null })
           bidRequest = { ...bidRequest, mediaTypes: { [BANNER]: banner } }
         }
-        fillImpBanner(imp, bidRequest, context);
+        fillImpBanner(imp, bidRequest, context)
       },
       video(fillImpVideo, imp, bidRequest, context) {
         // override to use video params from both mediaTypes.video and bidRequest.params.video
-        if (!bidRequest.mediaTypes[VIDEO]) return;
+        if (!bidRequest.mediaTypes[VIDEO]) return
         const video = Object.assign(
           { mimes: VIDEO_PARAMS.DEFAULT_MIMES },
           bidRequest.mediaTypes[VIDEO],
@@ -244,8 +244,8 @@ export const CONVERTER = ortbConverter({
           imp,
           { ...bidRequest, mediaTypes: { [VIDEO]: video } },
           context
-        );
-        deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
+        )
+        deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined)
       }
     }
   }
@@ -253,28 +253,28 @@ export const CONVERTER = ortbConverter({
 
 const ID_REQUEST = {
   buildServerRequests(bidRequests, bidderRequest) {
-    const globalExtendMode = config.getConfig('improvedigital.extend') === true;
-    const requests = [];
-    const singleRequestMode = config.getConfig('improvedigital.singleRequest') === true;
+    const globalExtendMode = config.getConfig('improvedigital.extend') === true
+    const requests = []
+    const singleRequestMode = config.getConfig('improvedigital.singleRequest') === true
 
-    const extendBids = [];
-    const adServerBids = [];
+    const extendBids = []
+    const adServerBids = []
 
     function adServerUrl(extendMode, publisherId) {
       if (extendMode) {
-        return EXTEND_URL;
+        return EXTEND_URL
       }
-      const urlSegments = [];
+      const urlSegments = []
       urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL)
       if (publisherId) {
         urlSegments.push(publisherId)
       }
       urlSegments.push(PB_ENDPOINT)
-      return urlSegments.join('/');
+      return urlSegments.join('/')
     }
 
     function formatRequest(bidRequests, publisherId, extendMode) {
-      const ortbRequest = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { extendMode } });
+      const ortbRequest = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { extendMode } })
       return {
         method: 'POST',
         url: adServerUrl(extendMode, publisherId),
@@ -287,49 +287,49 @@ const ID_REQUEST = {
       }
     }
 
-    let publisherId = null;
+    let publisherId = null
     bidRequests.forEach((bidRequest) => {
-      const bidParamsPublisherId = bidRequest.params.publisherId;
-      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
+      const bidParamsPublisherId = bidRequest.params.publisherId
+      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params)
       if (singleRequestMode) {
         if (!publisherId) {
-          publisherId = bidParamsPublisherId;
+          publisherId = bidParamsPublisherId
         } else if (bidParamsPublisherId && publisherId !== bidParamsPublisherId) {
-          throw new Error(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`);
+          throw new Error(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`)
         }
-        extendModeEnabled ? extendBids.push(bidRequest) : adServerBids.push(bidRequest);
+        extendModeEnabled ? extendBids.push(bidRequest) : adServerBids.push(bidRequest)
       } else {
-        requests.push(formatRequest([bidRequest], bidParamsPublisherId, extendModeEnabled));
+        requests.push(formatRequest([bidRequest], bidParamsPublisherId, extendModeEnabled))
       }
-    });
+    })
 
     if (!singleRequestMode) {
-      return requests;
+      return requests
     }
     // In the single request mode, split imps between those going to the ad server and those going to extend server
     if (extendBids.length) {
-      requests.push(formatRequest(extendBids, publisherId, true));
+      requests.push(formatRequest(extendBids, publisherId, true))
     }
     if (adServerBids.length) {
-      requests.push(formatRequest(adServerBids, publisherId, false));
+      requests.push(formatRequest(adServerBids, publisherId, false))
     }
 
-    return requests;
+    return requests
   },
 
   isExtendModeEnabled(globalExtendMode, bidParams) {
-    const extendMode = typeof bidParams.extend === 'boolean' ? bidParams.extend : globalExtendMode;
+    const extendMode = typeof bidParams.extend === 'boolean' ? bidParams.extend : globalExtendMode
     if (extendMode && !spec.syncStore.extendMode) {
-      spec.syncStore.extendMode = true;
+      spec.syncStore.extendMode = true
     }
-    return extendMode;
+    return extendMode
   },
 
   isOutstreamVideo(bidRequest) {
-    return deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream';
+    return deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream'
   },
 
-};
+}
 
 const ID_OUTSTREAM = {
   RENDERER_URL: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
@@ -339,13 +339,13 @@ const ID_OUTSTREAM = {
       url: this.RENDERER_URL,
       config: deepAccess(bidRequest, 'renderer.options'),
       adUnitCode: bidRequest.adUnitCode
-    });
+    })
     try {
-      renderer.setRender(this.render);
+      renderer.setRender(this.render)
     } catch (err) {
-      logWarn('Prebid Error calling setRender on renderer', err);
+      logWarn('Prebid Error calling setRender on renderer', err)
     }
-    return renderer;
+    return renderer
   },
 
   render(bid) {
@@ -355,11 +355,11 @@ const ID_OUTSTREAM = {
         targetId: bid.adUnitCode,
         adResponse: bid.adResponse,
         rendererOptions: bid.renderer.getConfig()
-      }, ID_OUTSTREAM.handleRendererEvents.bind(null, bid));
-    });
+      }, ID_OUTSTREAM.handleRendererEvents.bind(null, bid))
+    })
   },
 
   handleRendererEvents(bid, id, eventName) {
-    bid.renderer.handleVideoEvent({ id, eventName });
+    bid.renderer.handleVideoEvent({ id, eventName })
   },
-};
+}

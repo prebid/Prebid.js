@@ -1,10 +1,10 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 import {
   spec, STORAGE, getInsurAdsLocalStorage, getGzipSetting,
-} from 'modules/insuradsBidAdapter.js';
-import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
-const sandbox = sinon.createSandbox();
+} from 'modules/insuradsBidAdapter.js'
+import sinon from 'sinon'
+import { getAmxId } from '../../../libraries/nexx360Utils/index.js'
+const sandbox = sinon.createSandbox()
 
 describe('InsurAds bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -31,15 +31,15 @@ describe('InsurAds bid adapter tests', () => {
         domain: 'publisher.com',
       }],
     },
-  };
+  }
 
   it('We test getGzipSettings', () => {
-    const output = getGzipSetting();
-    expect(output).to.be.a('boolean');
-  });
+    const output = getGzipSetting()
+    expect(output).to.be.a('boolean')
+  })
 
   describe('isBidRequestValid()', () => {
-    let bannerBid;
+    let bannerBid
     beforeEach(() => {
       bannerBid = {
         bidder: 'insurads',
@@ -51,140 +51,140 @@ describe('InsurAds bid adapter tests', () => {
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
       }
-    });
+    })
 
     it('We verify isBidRequestValid with unvalid adUnitName', () => {
-      bannerBid.params = { adUnitName: 1 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { adUnitName: 1 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with empty adUnitName', () => {
-      bannerBid.params = { adUnitName: '' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { adUnitName: '' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with unvalid adUnitPath', () => {
-      bannerBid.params = { adUnitPath: 1 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { adUnitPath: 1 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with unvalid divId', () => {
-      bannerBid.params = { divId: 1 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { divId: 1 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid unvalid allBids', () => {
-      bannerBid.params = { allBids: 1 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { allBids: 1 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with uncorrect tagid', () => {
-      bannerBid.params = { 'tagid': 'luvxjvgn' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { 'tagid': 'luvxjvgn' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with correct tagId', () => {
-      bannerBid.params = { 'tagId': 'luvxjvgn' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
-    });
+      bannerBid.params = { 'tagId': 'luvxjvgn' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true)
+    })
 
     it('We verify isBidRequestValid with correct placement', () => {
-      bannerBid.params = { 'placement': 'testad' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
-    });
-  });
+      bannerBid.params = { 'placement': 'testad' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true)
+    })
+  })
 
   describe('getInsurAdsLocalStorage disabled', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false);
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false)
+    })
     it('We test if we get the nexx360Id', () => {
-      const output = getInsurAdsLocalStorage();
-      expect(output).to.be.eql(null);
-    });
+      const output = getInsurAdsLocalStorage()
+      expect(output).to.be.eql(null)
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('getInsurAdsLocalStorage enabled but nothing', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null)
+    })
     it('We test if we get the nexx360Id', () => {
-      const output = getInsurAdsLocalStorage();
-      expect(typeof output.nexx360Id).to.be.eql('string');
-    });
+      const output = getInsurAdsLocalStorage()
+      expect(typeof output.nexx360Id).to.be.eql('string')
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('getInsurAdsLocalStorage enabled but wrong payload', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}')
+    })
     it('We test if we get the nexx360Id', () => {
-      const output = getInsurAdsLocalStorage();
-      expect(output).to.be.eql(null);
-    });
+      const output = getInsurAdsLocalStorage()
+      expect(output).to.be.eql(null)
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('getInsurAdsLocalStorage enabled', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}')
+    })
     it('We test if we get the nexx360Id', () => {
-      const output = getInsurAdsLocalStorage();
-      expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
-    });
+      const output = getInsurAdsLocalStorage()
+      expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4')
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('getAmxId() with localStorage enabled and data not set', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null)
+    })
     it('We test if we get the amxId', () => {
-      const output = getAmxId(STORAGE, 'nexx360');
-      expect(output).to.be.eql(null);
-    });
+      const output = getAmxId(STORAGE, 'nexx360')
+      expect(output).to.be.eql(null)
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('getAmxId() with localStorage enabled and data set', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => 'abcdef')
+    })
     it('We test if we get the amxId', () => {
-      const output = getAmxId(STORAGE, 'nexx360');
-      expect(output).to.be.eql('abcdef');
-    });
+      const output = getAmxId(STORAGE, 'nexx360')
+      expect(output).to.be.eql('abcdef')
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('buildRequests()', () => {
     before(() => {
-      const documentStub = sandbox.stub(document, 'getElementById');
+      const documentStub = sandbox.stub(document, 'getElementById')
       documentStub.withArgs('div-1').returns({
         offsetWidth: 200,
         offsetHeight: 250,
@@ -192,12 +192,12 @@ describe('InsurAds bid adapter tests', () => {
           maxWidth: '400px',
           maxHeight: '350px',
         },
-        getBoundingClientRect() { return { width: 200, height: 250 }; }
-      });
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
-    });
+        getBoundingClientRect() { return { width: 200, height: 250 } }
+      })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => 'abcdef')
+    })
     describe('We test with a multiple display bids', () => {
       const sampleBids = [
         {
@@ -239,7 +239,7 @@ describe('InsurAds bid adapter tests', () => {
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         }
-      ];
+      ]
       const bidderRequest = {
         bidderCode: 'insurads',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
@@ -272,17 +272,17 @@ describe('InsurAds bid adapter tests', () => {
           gdprApplies: true,
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
-      };
+      }
       it('We perform a test with 2 display adunits', () => {
-        const displayBids = structuredClone(sampleBids);
+        const displayBids = structuredClone(sampleBids)
         displayBids[0].mediaTypes = {
           banner: {
             sizes: [[300, 250], [300, 600]]
           }
-        };
-        const request = spec.buildRequests(displayBids, bidderRequest);
-        const requestContent = request.data;
-        expect(request).to.have.property('method').and.to.equal('POST');
+        }
+        const request = spec.buildRequests(displayBids, bidderRequest)
+        const requestContent = request.data
+        expect(request).to.have.property('method').and.to.equal('POST')
         const expectedRequest = {
           imp: [
             {
@@ -367,13 +367,13 @@ describe('InsurAds bid adapter tests', () => {
               ]
             }
           },
-        };
-        expect(requestContent).to.be.eql(expectedRequest);
-      });
+        }
+        expect(requestContent).to.be.eql(expectedRequest)
+      })
 
       if (FEATURES.VIDEO) {
         it('We perform a test with a multiformat adunit', () => {
-          const multiformatBids = structuredClone(sampleBids);
+          const multiformatBids = structuredClone(sampleBids)
           multiformatBids[0].mediaTypes = {
             banner: {
               sizes: [[300, 250], [300, 600]]
@@ -387,9 +387,9 @@ describe('InsurAds bid adapter tests', () => {
               skip: 1,
               playback_method: ['auto_play_sound_off']
             }
-          };
-          const request = spec.buildRequests(multiformatBids, bidderRequest);
-          const video = request.data.imp[0].video;
+          }
+          const request = spec.buildRequests(multiformatBids, bidderRequest)
+          const video = request.data.imp[0].video
           const expectedVideo = {
             mimes: ['video/mp4'],
             protocols: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -401,12 +401,12 @@ describe('InsurAds bid adapter tests', () => {
               playerSize: [640, 480],
               context: 'outstream',
             },
-          };
-          expect(video).to.eql(expectedVideo);
-        });
+          }
+          expect(video).to.eql(expectedVideo)
+        })
 
         it('We perform a test with a instream adunit', () => {
-          const videoBids = structuredClone(sampleBids);
+          const videoBids = structuredClone(sampleBids)
           videoBids[0].mediaTypes = {
             video: {
               context: 'instream',
@@ -416,19 +416,19 @@ describe('InsurAds bid adapter tests', () => {
               playbackmethod: [2],
               skip: 1
             }
-          };
-          const request = spec.buildRequests(videoBids, bidderRequest);
-          const requestContent = request.data;
-          expect(request).to.have.property('method').and.to.equal('POST');
-          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
-          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-        });
+          }
+          const request = spec.buildRequests(videoBids, bidderRequest)
+          const requestContent = request.data
+          expect(request).to.have.property('method').and.to.equal('POST')
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream')
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2)
+        })
       }
-    });
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('interpretResponse()', () => {
     it('merges rtdData into bidResponse.adserverTargeting', () => {
@@ -448,7 +448,7 @@ describe('InsurAds bid adapter tests', () => {
             }]
           }]
         }
-      };
+      }
 
       const request = {
         data: {
@@ -461,13 +461,13 @@ describe('InsurAds bid adapter tests', () => {
             }
           }]
         }
-      };
+      }
 
-      const bids = spec.interpretResponse(serverResponse, request);
-      expect(bids).to.have.length(1);
-      expect(bids[0]).to.have.property('adserverTargeting');
-      expect(bids[0].adserverTargeting).to.include({ ia_test: 'ia_value' });
-    });
+      const bids = spec.interpretResponse(serverResponse, request)
+      expect(bids).to.have.length(1)
+      expect(bids[0]).to.have.property('adserverTargeting')
+      expect(bids[0].adserverTargeting).to.include({ ia_test: 'ia_value' })
+    })
 
     it('does not throw if request is missing', () => {
       const serverResponse = {
@@ -486,11 +486,11 @@ describe('InsurAds bid adapter tests', () => {
             }]
           }]
         }
-      };
+      }
 
-      const bids = spec.interpretResponse(serverResponse);
-      expect(bids).to.have.length(1);
-    });
+      const bids = spec.interpretResponse(serverResponse)
+      expect(bids).to.have.length(1)
+    })
 
     it('parses multiple bids of different media types', () => {
       const serverResponse = {
@@ -525,46 +525,46 @@ describe('InsurAds bid adapter tests', () => {
             }]
           }]
         }
-      };
+      }
 
-      const bids = spec.interpretResponse(serverResponse);
-      expect(bids).to.be.an('array');
-      expect(bids).to.have.length(3);
-      const cpms = bids.map(bid => bid.cpm);
-      expect(cpms).to.include(0.5);
-      expect(cpms).to.include(1.5);
-      expect(cpms).to.include(0.8);
-    });
+      const bids = spec.interpretResponse(serverResponse)
+      expect(bids).to.be.an('array')
+      expect(bids).to.have.length(3)
+      const cpms = bids.map(bid => bid.cpm)
+      expect(cpms).to.include(0.5)
+      expect(cpms).to.include(1.5)
+      expect(cpms).to.include(0.8)
+    })
 
     it('returns an empty array for an empty or malformed response body', () => {
-      const emptyResponse = { body: {} };
-      const noBodyResponse = {};
+      const emptyResponse = { body: {} }
+      const noBodyResponse = {}
 
-      const bidsFromEmpty = spec.interpretResponse(emptyResponse);
-      const bidsFromNoBody = spec.interpretResponse(noBodyResponse);
+      const bidsFromEmpty = spec.interpretResponse(emptyResponse)
+      const bidsFromNoBody = spec.interpretResponse(noBodyResponse)
 
-      expect(bidsFromEmpty).to.be.an('array').that.has.length(0);
-      expect(bidsFromNoBody).to.be.an('array').that.has.length(0);
-    });
-  });
+      expect(bidsFromEmpty).to.be.an('array').that.has.length(0)
+      expect(bidsFromNoBody).to.be.an('array').that.has.length(0)
+    })
+  })
 
   describe('getUserSyncs()', () => {
     it('returns an empty array when all user sync types are disabled', () => {
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: false
-      };
-      const syncs = spec.getUserSyncs(syncOptions, []);
-      expect(syncs).to.be.an('array').that.has.length(0);
-    });
+      }
+      const syncs = spec.getUserSyncs(syncOptions, [])
+      expect(syncs).to.be.an('array').that.has.length(0)
+    })
 
     it('does not throw and returns an array when at least one sync type is enabled', () => {
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: false
-      };
-      const syncs = spec.getUserSyncs(syncOptions, []);
-      expect(syncs).to.be.an('array');
-    });
-  });
-});
+      }
+      const syncs = spec.getUserSyncs(syncOptions, [])
+      expect(syncs).to.be.an('array')
+    })
+  })
+})

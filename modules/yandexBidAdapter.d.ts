@@ -39,7 +39,7 @@ interface YandexLegacyParams extends YandexBaseParams {
   impId: number;
 }
 
-export type YandexBidRequestParams = YandexPlacementIdParams | YandexLegacyParams;
+export type YandexBidRequestParams = YandexPlacementIdParams | YandexLegacyParams
 
 declare module '../src/adUnits' {
   interface BidderParams {

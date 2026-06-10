@@ -1,16 +1,16 @@
 import {
   ucfunnelAnalyticsAdapter, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS
-} from 'modules/ucfunnelAnalyticsAdapter.js';
+} from 'modules/ucfunnelAnalyticsAdapter.js'
 
-import { expect } from 'chai';
+import { expect } from 'chai'
 
-const events = require('src/events');
-const constants = require('src/constants.js');
+const events = require('src/events')
+const constants = require('src/constants.js')
 
-const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766';
-const adid = 'test-ad-83444226E44368D1E32E49EEBE6D29';
-const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
+const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766'
+const adid = 'test-ad-83444226E44368D1E32E49EEBE6D29'
+const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e'
 
 describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
   describe('event tracking and message cache manager', function () {
@@ -19,17 +19,17 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
         pbuid: pbuid,
         adid: adid,
         sampling: 0,
-      };
+      }
 
       ucfunnelAnalyticsAdapter.enableAnalytics({
         provider: 'ucfunnelAnalytics',
         options: configOptions
-      });
-    });
+      })
+    })
 
     afterEach(function () {
-      ucfunnelAnalyticsAdapter.disableAnalytics();
-    });
+      ucfunnelAnalyticsAdapter.disableAnalytics()
+    })
 
     describe('#parseBidderCode()', function() {
       it('should get lower case bidder code from bidderCode field value', function() {
@@ -45,10 +45,10 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             currency: 'USD',
             ad: '<html>fake ad1</html>'
           },
-        ];
-        const result = parseBidderCode(receivedBids[0]);
-        expect(result).to.equal('ucfunnel');
-      });
+        ]
+        const result = parseBidderCode(receivedBids[0])
+        expect(result).to.equal('ucfunnel')
+      })
       it('should get lower case bidder code from bidder field value as bidderCode field is missing', function() {
         const receivedBids = [
           {
@@ -62,11 +62,11 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             currency: 'USD',
             ad: '<html>fake ad1</html>'
           },
-        ];
-        const result = parseBidderCode(receivedBids[0]);
-        expect(result).to.equal('ucfunnel');
-      });
-    });
+        ]
+        const result = parseBidderCode(receivedBids[0])
+        expect(result).to.equal('ucfunnel')
+      })
+    })
 
     describe('#parseAdUnitCode()', function() {
       it('should get lower case adUnit code from adUnitCode field value', function() {
@@ -82,30 +82,30 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             currency: 'USD',
             ad: '<html>fake ad1</html>'
           },
-        ];
-        const result = parseAdUnitCode(receivedBids[0]);
-        expect(result).to.equal('adunit');
-      });
-    });
+        ]
+        const result = parseAdUnitCode(receivedBids[0])
+        expect(result).to.equal('adunit')
+      })
+    })
 
     describe('#getCachedAuction()', function() {
-      const existing = { timeoutBids: [{}] };
-      ucfunnelAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
+      const existing = { timeoutBids: [{}] }
+      ucfunnelAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing
 
       it('should get the existing cached object if it exists', function() {
-        const result = ucfunnelAnalyticsAdapter.getCachedAuction('test_auction_id');
+        const result = ucfunnelAnalyticsAdapter.getCachedAuction('test_auction_id')
 
-        expect(result).to.equal(existing);
-      });
+        expect(result).to.equal(existing)
+      })
 
       it('should create a new object and store it in the cache on cache miss', function() {
-        const result = ucfunnelAnalyticsAdapter.getCachedAuction('no_such_id');
+        const result = ucfunnelAnalyticsAdapter.getCachedAuction('no_such_id')
 
         expect(result).to.deep.include({
           timeoutBids: [],
-        });
-      });
-    });
+        })
+      })
+    })
 
     describe('when formatting JSON payload sent to backend', function() {
       const receivedBids = [
@@ -142,7 +142,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           currency: 'USD',
           ad: '<html>fake ad3</html>'
         },
-      ];
+      ]
       const highestCpmBids = [
         {
           auctionId: auctionId,
@@ -155,7 +155,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           currency: 'USD',
           ad: '<html>fake ad1</html>'
         }
-      ];
+      ]
       const noBids = [
         {
           auctionId: auctionId,
@@ -164,7 +164,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           bidderCode: 'ucfunnel',
           bidId: 'a1b2c3d4',
         }
-      ];
+      ]
       const timeoutBids = [
         {
           auctionId: auctionId,
@@ -173,7 +173,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           bidderCode: 'ucfunnel',
           bidId: '00123d4c',
         }
-      ];
+      ]
       function assertHavingRequiredMessageFields(message) {
         expect(message).to.include({
           version: ANALYTICS_VERSION,
@@ -183,20 +183,20 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           // referrer: window.location.href,
           sampling: 0,
           prebid: '$prebid.version$',
-        });
+        })
       }
 
       describe('#createCommonMessage', function() {
         it('should correctly serialize some common fields', function() {
-          const message = ucfunnelAnalyticsAdapter.createCommonMessage(auctionId);
+          const message = ucfunnelAnalyticsAdapter.createCommonMessage(auctionId)
 
-          assertHavingRequiredMessageFields(message);
-        });
-      });
+          assertHavingRequiredMessageFields(message)
+        })
+      })
 
       describe('#serializeBidResponse', function() {
         it('should handle BID properly and serialize bid price related fields', function() {
-          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
+          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID)
 
           expect(result).to.include({
             prebidWon: false,
@@ -205,21 +205,21 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             time: 72,
             cpm: 0.1,
             currency: 'USD',
-          });
-        });
+          })
+        })
 
         it('should handle NO_BID properly and set status to noBid', function() {
-          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID);
+          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID)
 
           expect(result).to.include({
             prebidWon: false,
             isTimeout: false,
             status: BIDDER_STATUS.NO_BID,
-          });
-        });
+          })
+        })
 
         it('should handle BID_WON properly and serialize bid price related fields', function() {
-          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON);
+          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON)
 
           expect(result).to.include({
             prebidWon: true,
@@ -228,26 +228,26 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             time: 72,
             cpm: 0.1,
             currency: 'USD',
-          });
-        });
+          })
+        })
 
         it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function() {
-          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT);
+          const result = ucfunnelAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT)
 
           expect(result).to.include({
             prebidWon: false,
             isTimeout: true,
             status: BIDDER_STATUS.TIMEOUT,
-          });
-        });
-      });
+          })
+        })
+      })
 
       describe('#addBidResponseToMessage()', function() {
         it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
           const message = {
             adUnits: {}
-          };
-          ucfunnelAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID);
+          }
+          ucfunnelAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID)
 
           expect(message.adUnits).to.deep.include({
             'adunit_2': {
@@ -257,9 +257,9 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
                 status: BIDDER_STATUS.NO_BID,
               }
             }
-          });
-        });
-      });
+          })
+        })
+      })
 
       describe('#createBidMessage()', function() {
         it('should format auction message sent to the backend', function() {
@@ -271,11 +271,11 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             adUnitCodes: ['adunit_1', 'adunit_2'],
             bidsReceived: receivedBids,
             noBids: noBids
-          };
+          }
 
-          const result = ucfunnelAnalyticsAdapter.createBidMessage(args, highestCpmBids, timeoutBids);
+          const result = ucfunnelAnalyticsAdapter.createBidMessage(args, highestCpmBids, timeoutBids)
 
-          assertHavingRequiredMessageFields(result);
+          assertHavingRequiredMessageFields(result)
           expect(result).to.deep.include({
             auctionElapsed: 100,
             adUnits: {
@@ -306,16 +306,16 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
                 }
               }
             }
-          });
-        });
-      });
+          })
+        })
+      })
 
       describe('#createImpressionMessage()', function() {
         it('should format message sent to the backend with the bid result', function() {
-          const bid = receivedBids[0];
-          const result = ucfunnelAnalyticsAdapter.createImpressionMessage(bid);
+          const bid = receivedBids[0]
+          const result = ucfunnelAnalyticsAdapter.createImpressionMessage(bid)
 
-          assertHavingRequiredMessageFields(result);
+          assertHavingRequiredMessageFields(result)
           expect(result.adUnits).to.deep.include({
             'adunit_1': {
               'ucfunnel': {
@@ -327,13 +327,13 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
                 currency: 'USD',
               }
             }
-          });
-        });
-      });
+          })
+        })
+      })
 
       describe('#handleBidTimeout()', function() {
         it('should cached the timeout bid as BID_TIMEOUT event was triggered', function() {
-          ucfunnelAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] };
+          ucfunnelAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] }
           const args = [{
             auctionId: 'test_timeout_auction_id',
             timestamp: 1234567890,
@@ -341,10 +341,10 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             auctionEnd: 1234567990,
             bidsReceived: receivedBids,
             noBids: noBids
-          }];
+          }]
 
-          ucfunnelAnalyticsAdapter.handleBidTimeout(args);
-          const result = ucfunnelAnalyticsAdapter.getCachedAuction('test_timeout_auction_id');
+          ucfunnelAnalyticsAdapter.handleBidTimeout(args)
+          const result = ucfunnelAnalyticsAdapter.getCachedAuction('test_timeout_auction_id')
           expect(result).to.deep.include({
             timeoutBids: [{
               auctionId: 'test_timeout_auction_id',
@@ -354,12 +354,12 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
               bidsReceived: receivedBids,
               noBids: noBids
             }]
-          });
-        });
-      });
+          })
+        })
+      })
       describe('#handleBidWon()', function() {
         it('should call createImpressionMessage once as BID_WON event was triggered', function() {
-          sinon.spy(ucfunnelAnalyticsAdapter, 'createImpressionMessage');
+          sinon.spy(ucfunnelAnalyticsAdapter, 'createImpressionMessage')
           const receivedBids = [
             {
               auctionId: auctionId,
@@ -374,100 +374,100 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
             },
           ]
 
-          ucfunnelAnalyticsAdapter.handleBidWon(receivedBids[0]);
-          sinon.assert.callCount(ucfunnelAnalyticsAdapter.createImpressionMessage, 1);
-          ucfunnelAnalyticsAdapter.createImpressionMessage.restore();
-        });
-      });
-    });
-  });
+          ucfunnelAnalyticsAdapter.handleBidWon(receivedBids[0])
+          sinon.assert.callCount(ucfunnelAnalyticsAdapter.createImpressionMessage, 1)
+          ucfunnelAnalyticsAdapter.createImpressionMessage.restore()
+        })
+      })
+    })
+  })
 
   describe('ucfunnel Analytics Adapter track handler ', function () {
     const configOptions = {
       pbuid: pbuid,
       adid: adid,
       sampling: 1,
-    };
+    }
 
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([]);
+      sinon.stub(events, 'getEvents').returns([])
       ucfunnelAnalyticsAdapter.enableAnalytics({
         provider: 'ucfunnelAnalytics',
         options: configOptions
-      });
-    });
+      })
+    })
 
     afterEach(function () {
-      ucfunnelAnalyticsAdapter.disableAnalytics();
-      events.getEvents.restore();
-    });
+      ucfunnelAnalyticsAdapter.disableAnalytics()
+      events.getEvents.restore()
+    })
 
     it('should call handleBidWon as BID_WON trigger event', function() {
-      sinon.spy(ucfunnelAnalyticsAdapter, 'handleBidWon');
-      events.emit(constants.EVENTS.BID_WON, {});
-      sinon.assert.callCount(ucfunnelAnalyticsAdapter.handleBidWon, 1);
-      ucfunnelAnalyticsAdapter.handleBidWon.restore();
-    });
+      sinon.spy(ucfunnelAnalyticsAdapter, 'handleBidWon')
+      events.emit(constants.EVENTS.BID_WON, {})
+      sinon.assert.callCount(ucfunnelAnalyticsAdapter.handleBidWon, 1)
+      ucfunnelAnalyticsAdapter.handleBidWon.restore()
+    })
 
     it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
-      sinon.spy(ucfunnelAnalyticsAdapter, 'handleBidTimeout');
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
-      sinon.assert.callCount(ucfunnelAnalyticsAdapter.handleBidTimeout, 1);
-      ucfunnelAnalyticsAdapter.handleBidTimeout.restore();
-    });
+      sinon.spy(ucfunnelAnalyticsAdapter, 'handleBidTimeout')
+      events.emit(constants.EVENTS.BID_TIMEOUT, {})
+      sinon.assert.callCount(ucfunnelAnalyticsAdapter.handleBidTimeout, 1)
+      ucfunnelAnalyticsAdapter.handleBidTimeout.restore()
+    })
 
     it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
-      sinon.spy(ucfunnelAnalyticsAdapter, 'handleAuctionEnd');
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      sinon.assert.callCount(ucfunnelAnalyticsAdapter.handleAuctionEnd, 1);
-      ucfunnelAnalyticsAdapter.handleAuctionEnd.restore();
-    });
-  });
+      sinon.spy(ucfunnelAnalyticsAdapter, 'handleAuctionEnd')
+      events.emit(constants.EVENTS.AUCTION_END, {})
+      sinon.assert.callCount(ucfunnelAnalyticsAdapter.handleAuctionEnd, 1)
+      ucfunnelAnalyticsAdapter.handleAuctionEnd.restore()
+    })
+  })
 
   describe('enableAnalytics and config parser', function () {
     const configOptions = {
       pbuid: pbuid,
       adid: adid,
       sampling: 0,
-    };
+    }
 
     beforeEach(function () {
       ucfunnelAnalyticsAdapter.enableAnalytics({
         provider: 'ucfunnelAnalytics',
         options: configOptions
-      });
-    });
+      })
+    })
 
     afterEach(function () {
-      ucfunnelAnalyticsAdapter.disableAnalytics();
-    });
+      ucfunnelAnalyticsAdapter.disableAnalytics()
+    })
 
     it('should parse config correctly with optional values', function () {
-      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions);
-      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid);
-      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().adid).to.equal(configOptions.adid);
-      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
-    });
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions)
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid)
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().adid).to.equal(configOptions.adid)
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false)
+    })
 
     it('should not enable Analytics when adid is missing', function () {
       const configOptions = {
         options: {
           pbuid: pbuid
         }
-      };
-      const validConfig = ucfunnelAnalyticsAdapter.initConfig(configOptions);
-      expect(validConfig).to.equal(false);
-    });
+      }
+      const validConfig = ucfunnelAnalyticsAdapter.initConfig(configOptions)
+      expect(validConfig).to.equal(false)
+    })
 
     it('should not enable Analytics when pbuid is missing', function () {
       const configOptions = {
         options: {
           adid: adid
         }
-      };
-      const validConfig = ucfunnelAnalyticsAdapter.initConfig(configOptions);
-      expect(validConfig).to.equal(false);
-    });
+      }
+      const validConfig = ucfunnelAnalyticsAdapter.initConfig(configOptions)
+      expect(validConfig).to.equal(false)
+    })
     it('should fall back to default value when sampling factor is not number', function () {
       const configOptions = {
         options: {
@@ -475,13 +475,13 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           adid: adid,
           sampling: 'string',
         }
-      };
+      }
       ucfunnelAnalyticsAdapter.enableAnalytics({
         provider: 'ucfunnelAnalytics',
         options: configOptions
-      });
+      })
 
-      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
-    });
-  });
-});
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false)
+    })
+  })
+})

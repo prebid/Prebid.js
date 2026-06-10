@@ -15,12 +15,12 @@ describe('serializeSupplyChain', () => {
             domain: 'publisher.com'
           }
         ]
-      };
-      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-      const expectedResult = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com';
-      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult);
-    });
-  });
+      }
+      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+      const expectedResult = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com'
+      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult)
+    })
+  })
 
   describe('Single Hop - Chain Complete, optional fields missing', () => {
     it('should serialize a single hop chain with missing optional fields', () => {
@@ -34,12 +34,12 @@ describe('serializeSupplyChain', () => {
             hp: 1
           }
         ]
-      };
-      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-      const expectedResult = '1.0,1!exchange1.com,1234,1,,,';
-      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult);
-    });
-  });
+      }
+      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+      const expectedResult = '1.0,1!exchange1.com,1234,1,,,'
+      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult)
+    })
+  })
 
   describe('Multiple Hops - With all properties supplied', () => {
     it('should serialize multiple hops with all properties supplied', () => {
@@ -64,12 +64,12 @@ describe('serializeSupplyChain', () => {
             domain: 'intermediary.com'
           }
         ]
-      };
-      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-      const expectedResult = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com';
-      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult);
-    });
-  });
+      }
+      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+      const expectedResult = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult)
+    })
+  })
 
   describe('Multiple Hops - Chain Complete, optional fields missing', () => {
     it('should serialize multiple hops with missing optional fields', () => {
@@ -88,12 +88,12 @@ describe('serializeSupplyChain', () => {
             hp: 1
           }
         ]
-      };
-      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-      const expectedResult = '1.0,1!exchange1.com,1234,1,,,!exchange2.com,abcd,1,,,';
-      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult);
-    });
-  });
+      }
+      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+      const expectedResult = '1.0,1!exchange1.com,1234,1,,,!exchange2.com,abcd,1,,,'
+      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult)
+    })
+  })
 
   describe('Multiple Hops Expected - Chain Incomplete', () => {
     it('should serialize multiple hops with chain incomplete', () => {
@@ -107,12 +107,12 @@ describe('serializeSupplyChain', () => {
             hp: 1
           }
         ]
-      };
-      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-      const expectedResult = '1.0,0!exchange2.com,abcd,1,,,';
-      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult);
-    });
-  });
+      }
+      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+      const expectedResult = '1.0,0!exchange2.com,abcd,1,,,'
+      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult)
+    })
+  })
 
   describe('Single Hop - Chain Complete, encoded values', () => {
     it('should serialize a single hop chain with encoded values', () => {
@@ -129,10 +129,10 @@ describe('serializeSupplyChain', () => {
             domain: 'publisher.com'
           }
         ]
-      };
-      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-      const expectedResult = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com';
-      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult);
-    });
-  });
-});
+      }
+      const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+      const expectedResult = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com'
+      expect(serializeSupplyChain(schain, nodesProperties)).to.equal(expectedResult)
+    })
+  })
+})

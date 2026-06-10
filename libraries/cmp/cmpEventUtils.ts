@@ -3,7 +3,7 @@
  * Used by TCF and GPP consent management modules
  */
 
-import { logError, logInfo } from "../../src/utils.js";
+import { logError, logInfo } from "../../src/utils.js"
 
 export interface CmpEventManager {
   cmpApi: any;
@@ -20,28 +20,28 @@ export interface CmpEventManager {
  * Base CMP event manager implementation
  */
 export abstract class BaseCmpEventManager implements CmpEventManager {
-  cmpApi: any = null;
-  listenerId: number | undefined = undefined;
+  cmpApi: any = null
+  listenerId: number | undefined = undefined
 
   setCmpApi(cmpApi: any): void {
-    this.cmpApi = cmpApi;
+    this.cmpApi = cmpApi
   }
 
   getCmpApi(): any {
-    return this.cmpApi;
+    return this.cmpApi
   }
 
   setCmpListenerId(listenerId: number | undefined): void {
-    this.listenerId = listenerId;
+    this.listenerId = listenerId
   }
 
   getCmpListenerId(): number | undefined {
-    return this.listenerId;
+    return this.listenerId
   }
 
   resetCmpApis(): void {
-    this.cmpApi = null;
-    this.listenerId = undefined;
+    this.cmpApi = null
+    this.listenerId = undefined
   }
 
   /**
@@ -49,8 +49,8 @@ export abstract class BaseCmpEventManager implements CmpEventManager {
    * Can be used by subclasses that need to remove event listeners
    */
   protected getRemoveListenerParams(): Record<string, any> | null {
-    const cmpApi = this.getCmpApi();
-    const listenerId = this.getCmpListenerId();
+    const cmpApi = this.getCmpApi()
+    const listenerId = this.getCmpListenerId()
 
     // Comprehensive validation for all possible failure scenarios
     if (cmpApi && typeof cmpApi === 'function' && listenerId !== undefined && listenerId !== null) {
@@ -58,35 +58,35 @@ export abstract class BaseCmpEventManager implements CmpEventManager {
         command: "removeEventListener",
         callback: () => this.resetCmpApis(),
         parameter: listenerId
-      };
+      }
     }
-    return null;
+    return null
   }
 
   /**
    * Abstract method - each subclass implements its own removal logic
    */
-  abstract removeCmpEventListener(): void;
+  abstract removeCmpEventListener(): void
 }
 
 /**
  * TCF-specific CMP event manager
  */
 export class TcfCmpEventManager extends BaseCmpEventManager {
-  private getConsentData: () => any;
+  private getConsentData: () => any
 
   constructor(getConsentData?: () => any) {
-    super();
-    this.getConsentData = getConsentData || (() => null);
+    super()
+    this.getConsentData = getConsentData || (() => null)
   }
 
   removeCmpEventListener(): void {
-    const params = this.getRemoveListenerParams();
+    const params = this.getRemoveListenerParams()
     if (params) {
-      const consentData = this.getConsentData();
-      params.apiVersion = consentData?.apiVersion || 2;
-      logInfo('Removing TCF CMP event listener');
-      this.getCmpApi()(params);
+      const consentData = this.getConsentData()
+      params.apiVersion = consentData?.apiVersion || 2
+      logInfo('Removing TCF CMP event listener')
+      this.getCmpApi()(params)
     }
   }
 }
@@ -97,10 +97,10 @@ export class TcfCmpEventManager extends BaseCmpEventManager {
  */
 export class GppCmpEventManager extends BaseCmpEventManager {
   removeCmpEventListener(): void {
-    const params = this.getRemoveListenerParams();
+    const params = this.getRemoveListenerParams()
     if (params) {
-      logInfo('Removing GPP CMP event listener');
-      this.getCmpApi()(params);
+      logInfo('Removing GPP CMP event listener')
+      this.getCmpApi()(params)
     }
   }
 }
@@ -111,11 +111,11 @@ export class GppCmpEventManager extends BaseCmpEventManager {
 export function createCmpEventManager(type: 'tcf' | 'gpp', getConsentData?: () => any): CmpEventManager {
   switch (type) {
     case 'tcf':
-      return new TcfCmpEventManager(getConsentData);
+      return new TcfCmpEventManager(getConsentData)
     case 'gpp':
-      return new GppCmpEventManager();
+      return new GppCmpEventManager()
     default:
-      logError(`Unknown CMP type: ${type}`);
-      return null;
+      logError(`Unknown CMP type: ${type}`)
+      return null
   }
 }

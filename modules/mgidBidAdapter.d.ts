@@ -40,7 +40,7 @@ interface MgidLegacyParams {
   wlang?: string[];
 }
 
-export type MgidBidderParams = MgidParams & MgidLegacyParams;
+export type MgidBidderParams = MgidParams & MgidLegacyParams
 
 declare module '../src/adUnits' {
   interface BidderParams {

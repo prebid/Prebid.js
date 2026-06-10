@@ -5,26 +5,26 @@
  * @module modules/hadronRtdProvider
  * @requires module:modules/realTimeData
  */
-import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { submodule } from '../src/hook.js';
-import { isFn, isStr, isArray, deepEqual, isPlainObject, logInfo } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { config } from '../src/config.js'
+import { getGlobal } from '../src/prebidGlobal.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { submodule } from '../src/hook.js'
+import { isFn, isStr, isArray, deepEqual, isPlainObject, logInfo } from '../src/utils.js'
+import { loadExternalScript } from '../src/adloader.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const LOG_PREFIX = '[HadronRtdProvider] ';
-const MODULE_NAME = 'realTimeData';
-const SUBMODULE_NAME = 'hadron';
-const AU_GVLID = 561;
-const HADRON_JS_URL = 'https://cdn.hadronid.net/hadron.js';
-const LS_TAM_KEY = 'auHadronId';
-const RTD_LOCAL_NAME = 'auHadronRtd';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
+const LOG_PREFIX = '[HadronRtdProvider] '
+const MODULE_NAME = 'realTimeData'
+const SUBMODULE_NAME = 'hadron'
+const AU_GVLID = 561
+const HADRON_JS_URL = 'https://cdn.hadronid.net/hadron.js'
+const LS_TAM_KEY = 'auHadronId'
+const RTD_LOCAL_NAME = 'auHadronRtd'
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME })
 
 /**
  * @param {string} url
@@ -33,7 +33,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleNa
  */
 const urlAddParams = (url, params) => {
   return url + (url.indexOf('?') > -1 ? '&' : '?') + params
-};
+}
 
 /**
  * Deep object merging with array deduplication.
@@ -41,38 +41,38 @@ const urlAddParams = (url, params) => {
  * @param {Object} sources
  */
 function mergeDeep(target, ...sources) {
-  if (!sources.length) return target;
-  const source = sources.shift();
+  if (!sources.length) return target
+  const source = sources.shift()
 
   if (isPlainObject(target) && isPlainObject(source)) {
     for (const key in source) {
       if (isPlainObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
+        if (!target[key]) Object.assign(target, { [key]: {} })
+        mergeDeep(target[key], source[key])
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, { [key]: source[key] });
+          Object.assign(target, { [key]: source[key] })
         } else if (isArray(target[key])) {
           source[key].forEach(obj => {
-            let e = 1;
+            let e = 1
             for (let i = 0; i < target[key].length; i++) {
               if (deepEqual(target[key][i], obj)) {
-                e = 0;
-                break;
+                e = 0
+                break
               }
             }
             if (e) {
-              target[key].push(obj);
+              target[key].push(obj)
             }
-          });
+          })
         }
       } else {
-        Object.assign(target, { [key]: source[key] });
+        Object.assign(target, { [key]: source[key] })
       }
     }
   }
 
-  return mergeDeep(target, ...sources);
+  return mergeDeep(target, ...sources)
 }
 
 /**
@@ -82,14 +82,14 @@ function mergeDeep(target, ...sources) {
  */
 function mergeLazy(target, source) {
   if (!isPlainObject(target)) {
-    target = {};
+    target = {}
   }
 
   if (!isPlainObject(source)) {
-    source = {};
+    source = {}
   }
 
-  return mergeDeep(target, source);
+  return mergeDeep(target, source)
 }
 
 /**
@@ -100,11 +100,11 @@ function mergeLazy(target, source) {
  */
 function paramOrDefault(param, defaultVal, arg) {
   if (isFn(param)) {
-    return param(arg);
+    return param(arg)
   } else if (isStr(param)) {
-    return param;
+    return param
   }
-  return defaultVal;
+  return defaultVal
 }
 
 /**
@@ -115,14 +115,14 @@ function paramOrDefault(param, defaultVal, arg) {
  */
 export function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
-    rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
+    rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config)
   } else {
     if (isPlainObject(rtd.ortb2)) {
-      mergeLazy(bidConfig.ortb2Fragments?.global, rtd.ortb2);
+      mergeLazy(bidConfig.ortb2Fragments?.global, rtd.ortb2)
     }
 
     if (isPlainObject(rtd.ortb2b)) {
-      mergeLazy(bidConfig.ortb2Fragments?.bidder, Object.fromEntries(Object.entries(rtd.ortb2b).map(([_, cfg]) => [_, cfg.ortb2])));
+      mergeLazy(bidConfig.ortb2Fragments?.bidder, Object.fromEntries(Object.entries(rtd.ortb2b).map(([_, cfg]) => [_, cfg.ortb2])))
     }
   }
 }
@@ -136,41 +136,41 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
  */
 export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
   if (!storage.getDataFromLocalStorage(LS_TAM_KEY)) {
-    const partnerId = rtdConfig.params.partnerId | 0;
-    const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
+    const partnerId = rtdConfig.params.partnerId | 0
+    const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl
     const scriptUrl = urlAddParams(
       paramOrDefault(hadronIdUrl, HADRON_JS_URL, {}),
       `partner_id=${partnerId}&_it=prebid`
-    );
+    )
     loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
-      logInfo(LOG_PREFIX, 'hadronId JS snippet loaded', scriptUrl);
+      logInfo(LOG_PREFIX, 'hadronId JS snippet loaded', scriptUrl)
     })
   }
   if (rtdConfig && isPlainObject(rtdConfig.params) && rtdConfig.params.segmentCache) {
-    const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
+    const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME)
 
     if (jsonData) {
-      const data = JSON.parse(jsonData);
+      const data = JSON.parse(jsonData)
 
       if (data.rtd) {
-        addRealTimeData(bidConfig, data.rtd, rtdConfig);
-        onDone();
-        return;
+        addRealTimeData(bidConfig, data.rtd, rtdConfig)
+        onDone()
+        return
       }
     }
   }
 
-  const userIds = {};
+  const userIds = {}
 
-  const allUserIds = getGlobal().getUserIds();
+  const allUserIds = getGlobal().getUserIds()
   if (allUserIds.hasOwnProperty('hadronId')) {
-    userIds['hadronId'] = allUserIds.hadronId;
-    logInfo(LOG_PREFIX, 'hadronId user module found', allUserIds.hadronId);
+    userIds['hadronId'] = allUserIds.hadronId
+    logInfo(LOG_PREFIX, 'hadronId user module found', allUserIds.hadronId)
   } else {
-    const hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
+    const hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY)
     if (isStr(hadronId) && hadronId.length > 0) {
-      userIds['hadronId'] = hadronId;
-      logInfo(LOG_PREFIX, 'hadronId TAM found', hadronId);
+      userIds['hadronId'] = hadronId
+      logInfo(LOG_PREFIX, 'hadronId TAM found', hadronId)
     }
   }
 }
@@ -182,7 +182,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
  * @return {boolean}
  */
 function init(provider, userConsent) {
-  return true;
+  return true
 }
 
 /** @type {RtdSubmodule} */
@@ -191,6 +191,6 @@ export const hadronSubmodule = {
   getBidRequestData: getRealTimeData,
   init: init,
   gvlid: AU_GVLID,
-};
+}
 
-submodule(MODULE_NAME, hadronSubmodule);
+submodule(MODULE_NAME, hadronSubmodule)

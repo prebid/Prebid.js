@@ -1,5 +1,5 @@
-export type Ext = { [key: string]: unknown };
+export type Ext = { [key: string]: unknown }
 export type Extensible = {
   ext?: Ext;
 }
-export type BooleanInt = 0 | 1;
+export type BooleanInt = 0 | 1

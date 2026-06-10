@@ -1,12 +1,12 @@
 // jshint esversion: 6, es3: false, node: true
-'use strict';
+'use strict'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, logInfo } from '../src/utils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { deepAccess, logInfo } from '../src/utils.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-const BIDDER_CODE = 'scattered';
+const BIDDER_CODE = 'scattered'
 export const converter = ortbConverter({
   context: {
     mediaType: BANNER,
@@ -43,13 +43,13 @@ export const spec = {
       options: {
         contentType: 'application/json'
       },
-    };
+    }
   },
 
   // 3.
   interpretResponse: function (response, request) {
-    if (!response.body) return;
-    return converter.fromORTB({ response: response.body, request: request.data }).bids;
+    if (!response.body) return
+    return converter.fromORTB({ response: response.body, request: request.data }).bids
   },
 
   // 4
@@ -60,11 +60,11 @@ export const spec = {
 
 function getKeyOnAny(collection, key) {
   for (let i = 0; i < collection.length; i++) {
-    const result = deepAccess(collection[i], key);
+    const result = deepAccess(collection[i], key)
     if (result) {
-      return result;
+      return result
     }
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

@@ -5,13 +5,13 @@
  * @requires module:modules/userId
  */
 
-import { timestamp, parseUrl, triggerPixel, logError } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
+import { timestamp, parseUrl, triggerPixel, logError } from '../src/utils.js'
+import { ajax } from '../src/ajax.js'
+import { getRefererInfo } from '../src/refererDetection.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -21,96 +21,96 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('./criteoIdSystem.d.ts').CriteoIdSystemModuleName} CriteoIdSystemModuleName
  */
 
-const gvlid = 91;
+const gvlid = 91
 /**
  * @typedef CriteoIdSystemModuleName
  */
-const bidderCode = 'criteo';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode });
+const bidderCode = 'criteo'
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode })
 
-const bididStorageKey = 'cto_bidid';
-const bundleStorageKey = 'cto_bundle';
-const dnaBundleStorageKey = 'cto_dna_bundle';
-const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
+const bididStorageKey = 'cto_bidid'
+const bundleStorageKey = 'cto_bundle'
+const dnaBundleStorageKey = 'cto_dna_bundle'
+const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000
 
-const STORAGE_TYPE_LOCALSTORAGE = 'html5';
-const STORAGE_TYPE_COOKIES = 'cookie';
+const STORAGE_TYPE_LOCALSTORAGE = 'html5'
+const STORAGE_TYPE_COOKIES = 'cookie'
 
-const pastDateString = new Date(0).toString();
-const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
+const pastDateString = new Date(0).toString()
+const expirationString = new Date(timestamp() + cookiesMaxAge).toString()
 
 function normalizeBidId(value) {
-  let bidId = value;
-  let previousBidId;
+  let bidId = value
+  let previousBidId
 
   do {
-    previousBidId = bidId;
+    previousBidId = bidId
 
     if (bidId && typeof bidId === 'object' && typeof bidId.criteoId === 'string') {
-      bidId = bidId.criteoId;
+      bidId = bidId.criteoId
     } else if (typeof bidId === 'string' && bidId.trim().charAt(0) === '{') {
       try {
-        const parsedBidId = JSON.parse(bidId);
+        const parsedBidId = JSON.parse(bidId)
         if (parsedBidId && typeof parsedBidId.criteoId === 'string') {
-          bidId = parsedBidId.criteoId;
+          bidId = parsedBidId.criteoId
         } else {
-          return bidId;
+          return bidId
         }
       } catch (error) {
-        break;
+        break
       }
     } else {
-      break;
+      break
     }
-  } while (bidId !== previousBidId);
+  } while (bidId !== previousBidId)
 
-  return typeof bidId === 'string' && bidId ? bidId : undefined;
+  return typeof bidId === 'string' && bidId ? bidId : undefined
 }
 
 function extractProtocolHost(url, returnOnlyHost = false) {
   const parsedUrl = parseUrl(url, { noDecodeWholeURL: true })
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
-    : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
+    : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`
 }
 
 function getFromStorage(submoduleConfig, key) {
   if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
-    return storage.getDataFromLocalStorage(key);
+    return storage.getDataFromLocalStorage(key)
   } else if (submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) {
-    return storage.getCookie(key);
+    return storage.getCookie(key)
   }
 
-  return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
+  return storage.getCookie(key) || storage.getDataFromLocalStorage(key)
 }
 
 function saveOnStorage(submoduleConfig, key, value, hostname) {
   if (key && value) {
     if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
-      storage.setDataInLocalStorage(key, value);
+      storage.setDataInLocalStorage(key, value)
     } else if (submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) {
-      setCookieOnAllDomains(key, value, expirationString, hostname, true);
+      setCookieOnAllDomains(key, value, expirationString, hostname, true)
     } else {
-      storage.setDataInLocalStorage(key, value);
-      setCookieOnAllDomains(key, value, expirationString, hostname, true);
+      storage.setDataInLocalStorage(key, value)
+      setCookieOnAllDomains(key, value, expirationString, hostname, true)
     }
   }
 }
 
 function setCookieOnAllDomains(key, value, expiration, hostname, stopOnSuccess) {
-  const subDomains = hostname.split('.');
+  const subDomains = hostname.split('.')
   for (let i = 0; i < subDomains.length; ++i) {
     // Try to write the cookie on this subdomain (we want it to be stored only on the TLD+1)
-    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
+    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.')
 
     try {
-      storage.setCookie(key, value, expiration, null, '.' + domain);
+      storage.setCookie(key, value, expiration, null, '.' + domain)
 
       if (stopOnSuccess) {
         // Try to read the cookie to check if we wrote it
-        const ck = storage.getCookie(key);
+        const ck = storage.getCookie(key)
         if (ck && ck === value) {
-          break;
+          break
         }
       }
     } catch (error) {
@@ -120,8 +120,8 @@ function setCookieOnAllDomains(key, value, expiration, hostname, stopOnSuccess) 
 }
 
 function deleteFromAllStorages(key, hostname) {
-  setCookieOnAllDomains(key, '', pastDateString, hostname, true);
-  storage.removeDataFromLocalStorage(key);
+  setCookieOnAllDomains(key, '', pastDateString, hostname, true)
+  storage.removeDataFromLocalStorage(key)
 }
 
 function getCriteoDataFromStorage(submoduleConfig) {
@@ -140,26 +140,26 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWri
     `${dnaBundle ? '&info=' + encodeURIComponent(dnaBundle) : ''}` +
     `${areCookiesWriteable ? '&cw=1' : ''}` +
     `${isPublishertagPresent ? '&pbt=1' : ''}` +
-    `${isLocalStorageWritable ? '&lsw=1' : ''}`;
+    `${isLocalStorageWritable ? '&lsw=1' : ''}`
 
-  const usPrivacyString = uspDataHandler.getConsentData();
+  const usPrivacyString = uspDataHandler.getConsentData()
   if (usPrivacyString) {
-    url = url + `&us_privacy=${encodeURIComponent(usPrivacyString)}`;
+    url = url + `&us_privacy=${encodeURIComponent(usPrivacyString)}`
   }
 
   const gdprConsent = gdprDataHandler.getConsentData()
   if (gdprConsent) {
-    url = url + `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`;
-    url = url + `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`;
+    url = url + `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`
+    url = url + `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`
   }
 
-  const gppConsent = gppDataHandler.getConsentData();
+  const gppConsent = gppDataHandler.getConsentData()
   if (gppConsent) {
-    url = url + `${gppConsent.gppString ? '&gpp=' + encodeURIComponent(gppConsent.gppString) : ''}`;
-    url = url + `${gppConsent.applicableSections ? '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections) : ''}`;
+    url = url + `${gppConsent.gppString ? '&gpp=' + encodeURIComponent(gppConsent.gppString) : ''}`
+    url = url + `${gppConsent.applicableSections ? '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections) : ''}`
   }
 
-  return url;
+  return url
 }
 
 function callSyncPixel(submoduleConfig, domain, pixel) {
@@ -169,31 +169,31 @@ function callSyncPixel(submoduleConfig, domain, pixel) {
       {
         success: response => {
           if (response) {
-            const jsonResponse = JSON.parse(response);
+            const jsonResponse = JSON.parse(response)
             if (jsonResponse && jsonResponse[pixel.bundlePropertyName]) {
-              saveOnStorage(submoduleConfig, pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
+              saveOnStorage(submoduleConfig, pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain)
             }
           }
         },
         error: error => {
-          logError(`criteoIdSystem: unable to sync user id`, error);
+          logError(`criteoIdSystem: unable to sync user id`, error)
         }
       },
       undefined,
       { method: 'GET', withCredentials: true }
-    );
+    )
   } else {
-    triggerPixel(pixel.pixelUrl);
+    triggerPixel(pixel.pixelUrl)
   }
 }
 
 function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
-  const cw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) && storage.cookiesAreEnabled();
-  const lsw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) && storage.localStorageIsEnabled();
-  const topUrl = extractProtocolHost(getRefererInfo().page);
+  const cw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) && storage.cookiesAreEnabled()
+  const lsw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) && storage.localStorageIsEnabled()
+  const topUrl = extractProtocolHost(getRefererInfo().page)
   // TODO: should domain really be extracted from the current frame?
-  const domain = extractProtocolHost(document.location.href, true);
-  const isPublishertagPresent = typeof criteo_pubtag !== 'undefined'; // eslint-disable-line camelcase
+  const domain = extractProtocolHost(document.location.href, true)
+  const isPublishertagPresent = typeof criteo_pubtag !== 'undefined' // eslint-disable-line camelcase
 
   const url = buildCriteoUsersyncUrl(
     topUrl,
@@ -203,38 +203,38 @@ function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
     cw,
     lsw,
     isPublishertagPresent
-  );
+  )
 
   const callbacks = {
     success: response => {
-      const jsonResponse = JSON.parse(response);
+      const jsonResponse = JSON.parse(response)
 
       if (jsonResponse.pixels) {
-        jsonResponse.pixels.forEach(pixel => callSyncPixel(submoduleConfig, domain, pixel));
+        jsonResponse.pixels.forEach(pixel => callSyncPixel(submoduleConfig, domain, pixel))
       }
 
       if (jsonResponse.acwsUrl) {
-        const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl;
-        urlsToCall.forEach(url => triggerPixel(url));
+        const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl
+        urlsToCall.forEach(url => triggerPixel(url))
       } else if (jsonResponse.bundle) {
-        saveOnStorage(submoduleConfig, bundleStorageKey, jsonResponse.bundle, domain);
+        saveOnStorage(submoduleConfig, bundleStorageKey, jsonResponse.bundle, domain)
       }
 
       if (jsonResponse.bidId) {
-        saveOnStorage(submoduleConfig, bididStorageKey, jsonResponse.bidId, domain);
-        callback(jsonResponse.bidId);
+        saveOnStorage(submoduleConfig, bididStorageKey, jsonResponse.bidId, domain)
+        callback(jsonResponse.bidId)
       } else {
-        deleteFromAllStorages(bididStorageKey, domain);
-        callback();
+        deleteFromAllStorages(bididStorageKey, domain)
+        callback()
       }
     },
     error: error => {
-      logError(`criteoIdSystem: unable to sync user id`, error);
-      callback();
+      logError(`criteoIdSystem: unable to sync user id`, error)
+      callback()
     }
-  };
+  }
 
-  ajax(url, callbacks, undefined, { method: 'GET', contentType: 'application/json', withCredentials: true });
+  ajax(url, callbacks, undefined, { method: 'GET', contentType: 'application/json', withCredentials: true })
 }
 
 /** @type {IdProviderSpec<CriteoIdSystemModuleName>} */
@@ -251,8 +251,8 @@ export const criteoIdSubmodule = {
    * @returns {{criteoId: string} | undefined}
    */
   decode(bidId) {
-    const normalizedBidId = normalizeBidId(bidId);
-    return normalizedBidId ? { criteoId: normalizedBidId } : undefined;
+    const normalizedBidId = normalizeBidId(bidId)
+    return normalizedBidId ? { criteoId: normalizedBidId } : undefined
   },
   /**
    * get the Criteo Id from local storages and initiate a new user sync
@@ -261,9 +261,9 @@ export const criteoIdSubmodule = {
    * @returns {{id: string | undefined, callback: function}}
    */
   getId(submoduleConfig) {
-    const localData = getCriteoDataFromStorage(submoduleConfig);
+    const localData = getCriteoDataFromStorage(submoduleConfig)
 
-    const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);
+    const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback)
 
     return {
       id: localData.bidId,
@@ -276,6 +276,6 @@ export const criteoIdSubmodule = {
       atype: 1
     },
   }
-};
+}
 
-submodule('userId', criteoIdSubmodule);
+submodule('userId', criteoIdSubmodule)

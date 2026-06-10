@@ -1,6 +1,6 @@
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
 import {
   deepAccess,
   isArray,
@@ -9,8 +9,8 @@ import {
   mergeDeep,
   safeJSONParse,
   timestamp
-} from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+} from '../src/utils.js'
+import { ajax } from '../src/ajax.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -18,13 +18,13 @@ import { ajax } from '../src/ajax.js';
  * @typedef {import('../modules/rtdModule/index.js').UserConsentData} UserConsentData
  */
 
-export const SUBMODULE_NAME = 'experian_rtid';
-export const EXPERIAN_RTID_DATA_KEY = 'experian_rtid_data';
-export const EXPERIAN_RTID_EXPIRATION_KEY = 'experian_rtid_expiration';
-export const EXPERIAN_RTID_STALE_KEY = 'experian_rtid_stale';
-export const EXPERIAN_RTID_NO_TRACK_KEY = 'experian_rtid_no_track';
+export const SUBMODULE_NAME = 'experian_rtid'
+export const EXPERIAN_RTID_DATA_KEY = 'experian_rtid_data'
+export const EXPERIAN_RTID_EXPIRATION_KEY = 'experian_rtid_expiration'
+export const EXPERIAN_RTID_STALE_KEY = 'experian_rtid_stale'
+export const EXPERIAN_RTID_NO_TRACK_KEY = 'experian_rtid_no_track'
 const EXPERIAN_RTID_URL = 'https://rtid.tapad.com'
-const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
+const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME })
 
 export const experianRtdObj = {
   /**
@@ -35,34 +35,34 @@ export const experianRtdObj = {
    * @param {UserConsentData} userConsent
    */
   getBidRequestData(reqBidsConfigObj, done, config, userConsent) {
-    const dataEnvelope = storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null);
-    const stale = storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null);
-    const expired = storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null);
-    const noTrack = storage.getDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null);
+    const dataEnvelope = storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null)
+    const stale = storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null)
+    const expired = storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null)
+    const noTrack = storage.getDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null)
     const now = timestamp()
     if (now > new Date(expired).getTime() || (noTrack == null && dataEnvelope == null)) {
       // request data envelope and don't manipulate bids
       experianRtdObj.requestDataEnvelope(config, userConsent)
-      done();
-      return false;
+      done()
+      return false
     }
     if (now > new Date(stale).getTime()) {
       // request data envelope and manipulate bids
-      experianRtdObj.requestDataEnvelope(config, userConsent);
+      experianRtdObj.requestDataEnvelope(config, userConsent)
     }
     if (noTrack != null) {
-      done();
-      return false;
+      done()
+      return false
     }
-    experianRtdObj.alterBids(reqBidsConfigObj, config);
+    experianRtdObj.alterBids(reqBidsConfigObj, config)
     done()
-    return true;
+    return true
   },
 
   alterBids(reqBidsConfigObj, config) {
-    const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null));
+    const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null))
     if (dataEnvelope == null) {
-      return;
+      return
     }
     deepAccess(config, 'params.bidders').forEach((bidderCode) => {
       const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode)
@@ -73,16 +73,16 @@ export const experianRtdObj = {
   },
   requestDataEnvelope(config, userConsent) {
     function storeDataEnvelopeResponse(response) {
-      const responseJson = safeJSONParse(response);
+      const responseJson = safeJSONParse(response)
       if (responseJson != null) {
-        storage.setDataInLocalStorage(EXPERIAN_RTID_STALE_KEY, responseJson.staleAt, null);
-        storage.setDataInLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, responseJson.expiresAt, null);
+        storage.setDataInLocalStorage(EXPERIAN_RTID_STALE_KEY, responseJson.staleAt, null)
+        storage.setDataInLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, responseJson.expiresAt, null)
         if (responseJson.status === 'no_track') {
-          storage.setDataInLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, 'no_track', null);
-          storage.removeDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null);
+          storage.setDataInLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, 'no_track', null)
+          storage.removeDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null)
         } else {
-          storage.setDataInLocalStorage(EXPERIAN_RTID_DATA_KEY, JSON.stringify(responseJson.data), null);
-          storage.removeDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null);
+          storage.setDataInLocalStorage(EXPERIAN_RTID_DATA_KEY, JSON.stringify(responseJson.data), null)
+          storage.removeDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null)
         }
       }
     }
@@ -91,20 +91,20 @@ export const experianRtdObj = {
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
   extractConsentQueryString(config, userConsent) {
-    const queryObj = {};
+    const queryObj = {}
 
     if (userConsent != null) {
       if (userConsent.gdpr != null) {
-        const { gdprApplies, consentString } = userConsent.gdpr;
+        const { gdprApplies, consentString } = userConsent.gdpr
         mergeDeep(queryObj, { gdpr: gdprApplies, gdpr_consent: consentString })
       }
       if (userConsent.uspConsent != null) {
         mergeDeep(queryObj, { us_privacy: userConsent.uspConsent })
       }
     }
-    const consentQueryString = Object.entries(queryObj).map(([key, val]) => `${key}=${val}`).join('&');
+    const consentQueryString = Object.entries(queryObj).map(([key, val]) => `${key}=${val}`).join('&')
 
-    let idsString = '';
+    let idsString = ''
     if (deepAccess(config, 'params.ids') != null && isPlainObject(deepAccess(config, 'params.ids'))) {
       idsString = Object.entries(deepAccess(config, 'params.ids')).map(([idType, val]) => {
         if (isArray(val)) {
@@ -115,8 +115,8 @@ export const experianRtdObj = {
       }).join('&')
     }
 
-    const combinedString = [consentQueryString, idsString].filter((string) => string !== '').join('&');
-    return combinedString !== '' ? `?${combinedString}` : undefined;
+    const combinedString = [consentQueryString, idsString].filter((string) => string !== '').join('&')
+    return combinedString !== '' ? `?${combinedString}` : undefined
   },
   /**
    * @function
@@ -127,7 +127,7 @@ export const experianRtdObj = {
    * @return {boolean} false to remove sub module
    */
   init(config, userConsent) {
-    return isStr(deepAccess(config, 'params.accountId'));
+    return isStr(deepAccess(config, 'params.accountId'))
   }
 }
 
@@ -138,4 +138,4 @@ export const experianRtdSubmodule = {
   init: experianRtdObj.init
 }
 
-submodule('realTimeData', experianRtdSubmodule);
+submodule('realTimeData', experianRtdSubmodule)

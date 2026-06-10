@@ -1,4 +1,4 @@
-export type HadronIdSystemModuleName = 'hadronId';
+export type HadronIdSystemModuleName = 'hadronId'
 
 export type HadronIdSystemParams = {
   /**

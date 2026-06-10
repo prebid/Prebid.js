@@ -1,17 +1,17 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import {
   deepAccess,
   isArray,
   isNumber,
   generateUUID,
   isEmpty,
-} from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+} from '../src/utils.js'
+import { getStorageManager } from '../src/storageManager.js'
 
-const BIDDER_CODE = 'pstudio';
+const BIDDER_CODE = 'pstudio'
 const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid'
-const TIME_TO_LIVE = 300;
+const TIME_TO_LIVE = 300
 // in case that the publisher limits number of user syncs, these syncs will be discarded from the end of the list
 // so more important syncing calls should be at the start of the list
 const USER_SYNCS = [
@@ -26,11 +26,11 @@ const USER_SYNCS = [
     url: 'https://dsp.myads.telkomsel.com/api/v1/pixel?uid=%USERID%',
     macro: '%USERID%',
   },
-];
-const COOKIE_NAME = '__tadexid';
-const COOKIE_TTL_DAYS = 365;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+]
+const COOKIE_NAME = '__tadexid'
+const COOKIE_TTL_DAYS = 365
+const DAY_IN_MS = 24 * 60 * 60 * 1000
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const VIDEO_PARAMS = [
   'mimes',
   'minduration',
@@ -47,17 +47,17 @@ const VIDEO_PARAMS = [
   'playbackmethod',
   'api',
   'linearity',
-];
+]
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function (bid) {
-    const params = bid.params || {};
-    return !!params.pubid && !!params.adtagid && isVideoRequestValid(bid);
+    const params = bid.params || {}
+    return !!params.pubid && !!params.adtagid && isVideoRequestValid(bid)
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -69,17 +69,17 @@ export const spec = {
         contentType: 'application/json',
         withCredentials: true,
       },
-    }));
+    }))
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
+    const bidResponses = []
 
-    if (!serverResponse.body.bids) return [];
-    const { id } = JSON.parse(bidRequest.data);
+    if (!serverResponse.body.bids) return []
+    const { id } = JSON.parse(bidRequest.data)
 
     serverResponse.body.bids.forEach((bid) => {
-      const { cpm, width, height, currency, ad, meta } = bid;
+      const { cpm, width, height, currency, ad, meta } = bid
       const bidResponse = {
         requestId: id,
         cpm,
@@ -92,30 +92,30 @@ export const spec = {
         meta: {
           advertiserDomains: meta.advertiser_domains,
         },
-      };
-
-      if (bid.vast_url || bid.vast_xml) {
-        bidResponse.vastUrl = bid.vast_url;
-        bidResponse.vastXml = bid.vast_xml;
-        bidResponse.mediaType = VIDEO;
-      } else {
-        bidResponse.ad = ad;
       }
 
-      bidResponses.push(bidResponse);
-    });
+      if (bid.vast_url || bid.vast_xml) {
+        bidResponse.vastUrl = bid.vast_url
+        bidResponse.vastXml = bid.vast_xml
+        bidResponse.mediaType = VIDEO
+      } else {
+        bidResponse.ad = ad
+      }
 
-    return bidResponses;
+      bidResponses.push(bidResponse)
+    })
+
+    return bidResponses
   },
 
   getUserSyncs(_optionsType, _serverResponse, _gdprConsent, _uspConsent) {
-    const syncs = [];
+    const syncs = []
 
-    let userId = readUserIdFromCookie(COOKIE_NAME);
+    let userId = readUserIdFromCookie(COOKIE_NAME)
 
     if (!userId) {
-      userId = generateId();
-      writeIdToCookie(COOKIE_NAME, userId);
+      userId = generateId()
+      writeIdToCookie(COOKIE_NAME, userId)
     }
 
     USER_SYNCS.forEach((userSync) => {
@@ -123,43 +123,43 @@ export const spec = {
         syncs.push({
           type: 'image',
           url: userSync.url.replace(userSync.macro, userId),
-        });
+        })
       }
-    });
+    })
 
-    return syncs;
+    return syncs
   },
-};
+}
 
 function buildRequestData(bid, bidderRequest) {
-  const payloadObject = buildBaseObject(bid, bidderRequest);
+  const payloadObject = buildBaseObject(bid, bidderRequest)
 
   if (bid.mediaTypes.banner) {
-    return buildBannerObject(bid, payloadObject);
+    return buildBannerObject(bid, payloadObject)
   } else if (bid.mediaTypes.video) {
-    return buildVideoObject(bid, payloadObject);
+    return buildVideoObject(bid, payloadObject)
   }
 }
 
 function buildBaseObject(bid, bidderRequest) {
-  const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
-  const { pubid, adtagid, bcat, badv, bapp } = bid.params;
-  const { userId } = bid;
-  const uid2Token = userId?.uid2?.id;
+  const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2)
+  const { pubid, adtagid, bcat, badv, bapp } = bid.params
+  const { userId } = bid
+  const uid2Token = userId?.uid2?.id
 
   if (uid2Token) {
     if (firstPartyData.user) {
-      firstPartyData.user.uid2_token = uid2Token;
+      firstPartyData.user.uid2_token = uid2Token
     } else {
-      firstPartyData.user = { uid2_token: uid2Token };
+      firstPartyData.user = { uid2_token: uid2Token }
     }
   }
-  const userCookieId = readUserIdFromCookie(COOKIE_NAME);
+  const userCookieId = readUserIdFromCookie(COOKIE_NAME)
   if (userCookieId) {
     if (firstPartyData.user) {
-      firstPartyData.user.id = userCookieId;
+      firstPartyData.user.id = userCookieId
     } else {
-      firstPartyData.user = { id: userCookieId };
+      firstPartyData.user = { id: userCookieId }
     }
   }
 
@@ -171,81 +171,81 @@ function buildBaseObject(bid, bidderRequest) {
     ...(badv && { badv }),
     ...(bapp && { bapp }),
     ...firstPartyData,
-  };
+  }
 }
 
 function buildBannerObject(bid, payloadObject) {
-  const { sizes, pos, name } = bid.mediaTypes.banner;
+  const { sizes, pos, name } = bid.mediaTypes.banner
 
   payloadObject.banner_properties = {
     name,
     sizes,
     pos,
-  };
+  }
 
-  return payloadObject;
+  return payloadObject
 }
 
 function buildVideoObject(bid, payloadObject) {
-  const { context, playerSize, w, h } = bid.mediaTypes.video;
+  const { context, playerSize, w, h } = bid.mediaTypes.video
 
   payloadObject.video_properties = {
     context,
     w: w || playerSize[0][0],
     h: h || playerSize[0][1],
-  };
+  }
 
   for (const param of VIDEO_PARAMS) {
-    const paramValue = deepAccess(bid, `mediaTypes.video.${param}`);
+    const paramValue = deepAccess(bid, `mediaTypes.video.${param}`)
 
     if (paramValue) {
-      payloadObject.video_properties[param] = paramValue;
+      payloadObject.video_properties[param] = paramValue
     }
   }
 
-  return payloadObject;
+  return payloadObject
 }
 
 function readUserIdFromCookie(key) {
   try {
-    const storedValue = storage.getCookie(key);
+    const storedValue = storage.getCookie(key)
 
     if (storedValue !== null) {
-      return storedValue;
+      return storedValue
     }
   } catch (error) {
   }
 }
 
 function generateId() {
-  return generateUUID();
+  return generateUUID()
 }
 
 function daysToMs(days) {
-  return days * DAY_IN_MS;
+  return days * DAY_IN_MS
 }
 
 function writeIdToCookie(key, value) {
   if (storage.cookiesAreEnabled()) {
     const expires = new Date(
       Date.now() + daysToMs(parseInt(COOKIE_TTL_DAYS))
-    ).toUTCString();
-    storage.setCookie(key, value, expires, '/');
+    ).toUTCString()
+    storage.setCookie(key, value, expires, '/')
   }
 }
 
 function prepareFirstPartyData({ user, device, site, app, regs }) {
-  let userData;
-  let deviceData;
-  let siteData;
-  let appData;
-  let regsData;
+  let userData
+  let deviceData
+  let siteData
+  let appData
+  let regsData
 
   if (user) {
     userData = {
       yob: user.yob,
       gender: user.gender,
-    };
+    }
   }
 
   if (device) {
@@ -283,7 +283,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
           ifatype: device.ext.ifatype,
         },
       }),
-    };
+    }
   }
 
   if (site) {
@@ -317,7 +317,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
         },
       }),
       mobile: site.mobile,
-    };
+    }
   }
 
   if (app) {
@@ -354,11 +354,11 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
           season: app.content.season,
         },
       }),
-    };
+    }
   }
 
   if (regs) {
-    regsData = { coppa: regs.coppa };
+    regsData = { coppa: regs.coppa }
   }
 
   return cleanObject({
@@ -367,21 +367,21 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
     site: siteData,
     app: appData,
     regs: regsData,
-  });
+  })
 }
 
 function cleanObject(data) {
   for (const key in data) {
     if (typeof data[key] === 'object') {
-      cleanObject(data[key]);
+      cleanObject(data[key])
 
-      if (isEmpty(data[key])) delete data[key];
+      if (isEmpty(data[key])) delete data[key]
     }
 
-    if (data[key] === undefined) delete data[key];
+    if (data[key] === undefined) delete data[key]
   }
 
-  return data;
+  return data
 }
 
 function isVideoRequestValid(bidRequest) {
@@ -390,18 +390,18 @@ function isVideoRequestValid(bidRequest) {
       bidRequest,
       'mediaTypes.video',
       {}
-    );
+    )
 
     const areSizesValid =
-      (isNumber(w) && isNumber(h)) || validateSizes(playerSize);
-    const areMimesValid = isArray(mimes) && mimes.length > 0;
+      (isNumber(w) && isNumber(h)) || validateSizes(playerSize)
+    const areMimesValid = isArray(mimes) && mimes.length > 0
     const areProtocolsValid =
-      isArray(protocols) && protocols.length > 0 && protocols.every(isNumber);
+      isArray(protocols) && protocols.length > 0 && protocols.every(isNumber)
 
-    return areSizesValid && areMimesValid && areProtocolsValid;
+    return areSizesValid && areMimesValid && areProtocolsValid
   }
 
-  return true;
+  return true
 }
 
 function validateSizes(sizes) {
@@ -411,7 +411,7 @@ function validateSizes(sizes) {
     sizes.every(
       (size) => isArray(size) && size.length === 2 && size.every(isNumber)
     )
-  );
+  )
 }
 
 /* function getBidFloor(bid) {
@@ -430,4 +430,4 @@ function validateSizes(sizes) {
   return null;
 } */
 
-registerBidder(spec);
+registerBidder(spec)

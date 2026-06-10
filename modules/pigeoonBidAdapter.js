@@ -1,12 +1,12 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { getStorageManager } from '../src/storageManager.js'
 
-const BIDDER_CODE = 'pigeoon';
-const ENDPOINT_URL = 'https://pbjs.pigeoon.com/bid';
-const COOKIE_NAME = 'pigeoon_uid';
+const BIDDER_CODE = 'pigeoon'
+const ENDPOINT_URL = 'https://pbjs.pigeoon.com/bid'
+const COOKIE_NAME = 'pigeoon_uid'
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 /**
  * @typedef {object} BidParams
@@ -26,7 +26,7 @@ export const spec = {
    * @returns {boolean}
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.networkId && bid.params.placementId);
+    return !!(bid.params && bid.params.networkId && bid.params.placementId)
   },
 
   /**
@@ -35,24 +35,24 @@ export const spec = {
    * @returns {object}
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const userId = storage.getCookie(COOKIE_NAME) || '';
-    const gdprConsent = bidderRequest.gdprConsent;
+    const userId = storage.getCookie(COOKIE_NAME) || ''
+    const gdprConsent = bidderRequest.gdprConsent
 
     const imps = validBidRequests.map(bid => {
       const imp = {
         id: bid.bidId,
         tagid: bid.params.placementId
-      };
-
-      if (bid.mediaTypes[BANNER]) {
-        const sizes = bid.mediaTypes[BANNER].sizes || [];
-        imp.banner = {
-          format: sizes.map(s => ({ w: s[0], h: s[1] }))
-        };
       }
 
-      return imp;
-    });
+      if (bid.mediaTypes[BANNER]) {
+        const sizes = bid.mediaTypes[BANNER].sizes || []
+        imp.banner = {
+          format: sizes.map(s => ({ w: s[0], h: s[1] }))
+        }
+      }
+
+      return imp
+    })
 
     const request = {
       id: bidderRequest.auctionId,
@@ -74,7 +74,7 @@ export const spec = {
       ext: {
         consent: gdprConsent?.consentString || ''
       }
-    };
+    }
 
     return {
       method: 'POST',
@@ -83,7 +83,7 @@ export const spec = {
       options: {
         contentType: 'text/plain'
       }
-    };
+    }
   },
 
   /**
@@ -91,10 +91,10 @@ export const spec = {
    * @returns {object[]}
    */
   interpretResponse: function(serverResponse) {
-    const response = serverResponse.body;
-    if (!response || !response.seatbid || !response.seatbid.length) return [];
+    const response = serverResponse.body
+    if (!response || !response.seatbid || !response.seatbid.length) return []
 
-    const bids = [];
+    const bids = []
     response.seatbid.forEach(seatbid => {
       seatbid.bid.forEach(bid => {
         bids.push({
@@ -110,11 +110,11 @@ export const spec = {
           meta: {
             advertiserDomains: []
           }
-        });
-      });
-    });
+        })
+      })
+    })
 
-    return bids;
+    return bids
   },
 
   /**
@@ -126,16 +126,16 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const gdprParams = gdprConsent?.gdprApplies === true
       ? `&gdpr=1&gdpr_consent=${gdprConsent.consentString}`
-      : '';
+      : ''
 
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
         url: `https://pbjs.pigeoon.com/sync${gdprParams}`
-      }];
+      }]
     }
-    return [];
+    return []
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

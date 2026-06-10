@@ -8,7 +8,7 @@ export const NATIVE_ASSETS_IDS = {
   4: 'body',
   5: 'sponsoredBy',
   6: 'cta'
-};
+}
 
 /**
  * Native assets definition for mapping purposes.
@@ -20,4 +20,4 @@ export const NATIVE_ASSETS = {
   body: { id: 4, type: 2, name: 'data' },
   sponsoredBy: { id: 5, type: 1, name: 'data' },
   cta: { id: 6, type: 12, name: 'data' }
-};
+}

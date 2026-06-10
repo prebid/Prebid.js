@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
-import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js'
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,12 +12,12 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'optidigital';
-const GVL_ID = 915;
-const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
-const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
-let CUR = 'USD';
-let isSynced = false;
+const BIDDER_CODE = 'optidigital'
+const GVL_ID = 915
+const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder'
+const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital'
+let CUR = 'USD'
+let isSynced = false
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,12 +30,12 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    let isValid = false;
+    let isValid = false
     if (typeof bid.params !== 'undefined' && bid.params.placementId && bid.params.publisherId) {
-      isValid = true;
+      isValid = true
     }
 
-    return isValid;
+    return isValid
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -46,13 +46,13 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
-      return [];
+      return []
     }
 
     const ortb2 = bidderRequest.ortb2 || {
       bcat: [],
       badv: []
-    };
+    }
 
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
@@ -68,28 +68,28 @@ export const spec = {
     }
 
     if (validBidRequests[0].auctionId) {
-      payload.auctionId = validBidRequests[0].auctionId;
+      payload.auctionId = validBidRequests[0].auctionId
     }
 
     if (validBidRequests[0].params.pageTemplate && validBidRequests[0].params.pageTemplate !== '') {
-      payload.pageTemplate = validBidRequests[0].params.pageTemplate;
+      payload.pageTemplate = validBidRequests[0].params.pageTemplate
     }
 
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain
     if (schain) {
-      payload.schain = schain;
+      payload.schain = schain
     }
 
-    const gdpr = deepAccess(bidderRequest, 'gdprConsent');
+    const gdpr = deepAccess(bidderRequest, 'gdprConsent')
     if (bidderRequest && gdpr) {
-      const isConsentString = typeof gdpr.consentString === 'string';
-      const isGdprApplies = typeof gdpr.gdprApplies === 'boolean';
+      const isConsentString = typeof gdpr.consentString === 'string'
+      const isGdprApplies = typeof gdpr.gdprApplies === 'boolean'
       payload.gdpr = {
         consent: isConsentString ? gdpr.consentString : '',
         required: isGdprApplies ? gdpr.gdprApplies : false
-      };
+      }
       if (gdpr?.addtlConsent) {
-        payload.gdpr.addtlConsent = gdpr.addtlConsent;
+        payload.gdpr.addtlConsent = gdpr.addtlConsent
       }
     }
     if (bidderRequest && !gdpr) {
@@ -112,11 +112,11 @@ export const spec = {
     }
 
     if (window.location.href.indexOf('optidigitalTestMode=true') !== -1) {
-      payload.testMode = true;
+      payload.testMode = true
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent;
+      payload.us_privacy = bidderRequest.uspConsent
     }
 
     if (_getEids(validBidRequests[0])) {
@@ -125,18 +125,18 @@ export const spec = {
       }
     }
 
-    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');
+    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',')
     if (ortb2SiteKeywords) {
-      payload.site = payload.site || {};
-      payload.site.keywords = ortb2SiteKeywords;
+      payload.site = payload.site || {}
+      payload.site.keywords = ortb2SiteKeywords
     }
 
-    const payloadObject = JSON.stringify(payload);
+    const payloadObject = JSON.stringify(payload)
     return {
       method: 'POST',
       url: `${ENDPOINT_URL}/${payload.publisherId}`,
       data: payloadObject
-    };
+    }
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -145,8 +145,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = [];
-    serverResponse = serverResponse.body;
+    const bidResponses = []
+    serverResponse = serverResponse.body
 
     if (serverResponse.bids) {
       serverResponse.bids.forEach((bid) => {
@@ -164,11 +164,11 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain && bid.adomain.length > 0 ? bid.adomain : []
           }
-        };
-        bidResponses.push(bidResponse);
-      });
+        }
+        bidResponses.push(bidResponse)
+      })
     }
-    return bidResponses;
+    return bidResponses
   },
 
   /**
@@ -179,108 +179,108 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-    let syncurl = '';
+    let syncurl = ''
     if (!isSynced) {
       // Attaching GDPR Consent Params in UserSync url
       if (gdprConsent) {
-        syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-        syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+        syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0)
+        syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
       }
       if (uspConsent) {
-        syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+        syncurl += '&us_privacy=' + encodeURIComponent(uspConsent)
       }
       if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-        syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString);
-        syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+        syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString)
+        syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','))
       }
 
       if (syncOptions.iframeEnabled) {
-        isSynced = true;
+        isSynced = true
         return [{
           type: 'iframe',
           url: USER_SYNC_URL_IFRAME + syncurl
-        }];
+        }]
       }
     }
   },
-};
+}
 
 function buildImp(bidRequest, ortb2) {
-  let imp = {};
+  let imp = {}
   imp = {
     sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
     bidId: deepAccess(bidRequest, 'bidId'),
     adUnitCode: deepAccess(bidRequest, 'adUnitCode'),
     transactionId: deepAccess(bidRequest, 'ortb2Imp.ext.tid'),
     placementId: deepAccess(bidRequest, 'params.placementId')
-  };
+  }
 
   if (bidRequest.params.divId && bidRequest.params.divId !== '') {
     if (getAdContainer(bidRequest.params.divId)) {
-      imp.adContainerWidth = getAdContainer(bidRequest.params.divId).offsetWidth;
-      imp.adContainerHeight = getAdContainer(bidRequest.params.divId).offsetHeight;
+      imp.adContainerWidth = getAdContainer(bidRequest.params.divId).offsetWidth
+      imp.adContainerHeight = getAdContainer(bidRequest.params.divId).offsetHeight
     }
   }
 
-  let floorSizes = [];
+  let floorSizes = []
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-    floorSizes = getAdUnitSizes(bidRequest);
+    floorSizes = getAdUnitSizes(bidRequest)
   }
 
   if (bidRequest.params.currency && bidRequest.params.currency !== '') {
-    CUR = bidRequest.params.currency;
+    CUR = bidRequest.params.currency
   }
 
-  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, CUR)
   if (bidFloor) {
-    imp.bidFloor = bidFloor;
+    imp.bidFloor = bidFloor
   }
 
-  const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
+  const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr')
   if (battr && Array.isArray(battr) && battr.length) {
-    imp.battr = battr;
+    imp.battr = battr
   }
 
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid')
   if (gpid) {
-    imp.gpid = gpid;
+    imp.gpid = gpid
   }
 
-  return imp;
+  return imp
 }
 
 function getAdContainer(container) {
   if (document.getElementById(container)) {
-    return document.getElementById(container);
+    return document.getElementById(container)
   }
 }
 
 function _getFloor (bid, sizes, currency) {
-  let floor = null;
-  const size = sizes.length === 1 ? sizes[0] : '*';
+  let floor = null
+  const size = sizes.length === 1 ? sizes[0] : '*'
   if (typeof bid.getFloor === 'function') {
     try {
       const floorInfo = bid.getFloor({
         currency: currency,
         mediaType: 'banner',
         size: size
-      });
+      })
       if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
-        floor = parseFloat(floorInfo.floor);
+        floor = parseFloat(floorInfo.floor)
       }
     } catch (err) {}
   }
-  return floor !== null ? floor : bid.params.floor;
+  return floor !== null ? floor : bid.params.floor
 }
 
 function _getEids(bidRequest) {
   if (deepAccess(bidRequest, 'userIdAsEids')) {
-    return bidRequest.userIdAsEids;
+    return bidRequest.userIdAsEids
   }
 }
 
 export function resetSync() {
-  isSynced = false;
+  isSynced = false
 }
 
-registerBidder(spec);
+registerBidder(spec)

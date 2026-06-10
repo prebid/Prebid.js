@@ -1,4 +1,4 @@
-export type EuidIdSystemModuleName = 'euid';
+export type EuidIdSystemModuleName = 'euid'
 
 export interface EuidToken {
   advertising_token: string;

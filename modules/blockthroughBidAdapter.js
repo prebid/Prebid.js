@@ -1,12 +1,12 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepSetValue, isPlainObject, logWarn } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { deepSetValue, isPlainObject, logWarn } from '../src/utils.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-const BIDDER_CODE = 'blockthrough';
-const GVLID = 815;
-const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
-const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
+const BIDDER_CODE = 'blockthrough'
+const GVLID = 815
+const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction'
+const SYNC_URL = 'https://cdn.btloader.com/user_sync.html'
 
 const CONVERTER = ortbConverter({
   context: {
@@ -16,7 +16,7 @@ const CONVERTER = ortbConverter({
   imp,
   request,
   bidResponse,
-});
+})
 
 /**
  * Builds an impression object for the ORTB 2.5 request.
@@ -27,17 +27,17 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The ORTB 2.5 imp object.
  */
 function imp(buildImp, bidRequest, context) {
-  const imp = buildImp(bidRequest, context);
-  const { params, ortb2Imp } = bidRequest;
+  const imp = buildImp(bidRequest, context)
+  const { params, ortb2Imp } = bidRequest
 
   if (params) {
-    deepSetValue(imp, 'ext', params);
+    deepSetValue(imp, 'ext', params)
   }
   if (ortb2Imp?.ext?.gpid) {
-    deepSetValue(imp, 'ext.gpid', ortb2Imp.ext.gpid);
+    deepSetValue(imp, 'ext.gpid', ortb2Imp.ext.gpid)
   }
 
-  return imp;
+  return imp
 }
 
 /**
@@ -50,17 +50,17 @@ function imp(buildImp, bidRequest, context) {
  * @returns {Object} The ORTB 2.5 request object.
  */
 function request(buildRequest, imps, bidderRequest, context) {
-  const request = buildRequest(imps, bidderRequest, context);
+  const request = buildRequest(imps, bidderRequest, context)
   deepSetValue(request, 'ext.prebid.channel', {
     name: 'pbjs',
     version: '$prebid.version$',
-  });
+  })
 
   if (window.location.href.includes('btServerTest=true')) {
-    request.test = 1;
+    request.test = 1
   }
 
-  return request;
+  return request
 }
 
 /**
@@ -72,11 +72,11 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @returns {Object} - The processed bid response.
  */
 function bidResponse(buildBidResponse, bid, context) {
-  const bidResponse = buildBidResponse(bid, context);
-  const { seat } = context.seatbid || {};
-  bidResponse.btBidderCode = seat;
+  const bidResponse = buildBidResponse(bid, context)
+  const { seat } = context.seatbid || {}
+  bidResponse.btBidderCode = seat
 
-  return bidResponse;
+  return bidResponse
 }
 
 /**
@@ -87,11 +87,11 @@ function bidResponse(buildBidResponse, bid, context) {
  */
 function isBidRequestValid(bid) {
   if (!isPlainObject(bid.params) || !Object.keys(bid.params).length) {
-    logWarn('BT Bid Adapter: bid params must be provided.');
-    return false;
+    logWarn('BT Bid Adapter: bid params must be provided.')
+    return false
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -105,7 +105,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const data = CONVERTER.toORTB({
     bidRequests: validBidRequests,
     bidderRequest,
-  });
+  })
 
   return [
     {
@@ -114,7 +114,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       data,
       bids: validBidRequests,
     },
-  ];
+  ]
 }
 
 /**
@@ -126,13 +126,13 @@ function buildRequests(validBidRequests, bidderRequest) {
  */
 function interpretResponse(serverResponse, request) {
   if (!serverResponse || !request) {
-    return [];
+    return []
   }
 
   return CONVERTER.fromORTB({
     response: serverResponse.body,
     request: request.data,
-  }).bids;
+  }).bids
 }
 
 /**
@@ -153,42 +153,42 @@ function getUserSyncs(
   gppConsent
 ) {
   if (!syncOptions.iframeEnabled || !serverResponses?.length) {
-    return [];
+    return []
   }
 
-  const bidderCodes = new Set();
+  const bidderCodes = new Set()
   serverResponses.forEach((serverResponse) => {
     if (serverResponse?.body?.ext?.responsetimemillis) {
       Object.keys(serverResponse.body.ext.responsetimemillis).forEach(
         bidderCodes.add,
         bidderCodes
-      );
+      )
     }
-  });
+  })
 
   if (!bidderCodes.size) {
-    return [];
+    return []
   }
 
-  const syncs = [];
-  const syncUrl = new URL(SYNC_URL);
-  syncUrl.searchParams.set('bidders', [...bidderCodes].join(','));
+  const syncs = []
+  const syncUrl = new URL(SYNC_URL)
+  syncUrl.searchParams.set('bidders', [...bidderCodes].join(','))
 
   if (gdprConsent) {
-    syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies));
-    syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
+    syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies))
+    syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString)
   }
   if (gppConsent) {
-    syncUrl.searchParams.set('gpp', gppConsent.gppString);
-    syncUrl.searchParams.set('gpp_sid', gppConsent.applicableSections);
+    syncUrl.searchParams.set('gpp', gppConsent.gppString)
+    syncUrl.searchParams.set('gpp_sid', gppConsent.applicableSections)
   }
   if (uspConsent) {
-    syncUrl.searchParams.set('us_privacy', uspConsent);
+    syncUrl.searchParams.set('us_privacy', uspConsent)
   }
 
-  syncs.push({ type: 'iframe', url: syncUrl.href });
+  syncs.push({ type: 'iframe', url: syncUrl.href })
 
-  return syncs;
+  return syncs
 }
 
 export const spec = {
@@ -200,6 +200,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

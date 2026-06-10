@@ -1,10 +1,10 @@
-import { LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
-import { activityParams } from './activities/activityParams.js';
-import { isActivityAllowed } from './activities/rules.js';
+import { LOAD_EXTERNAL_SCRIPT } from './activities/activities.js'
+import { activityParams } from './activities/activityParams.js'
+import { isActivityAllowed } from './activities/rules.js'
 
-import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
+import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js'
 
-const _requestCache = new WeakMap();
+const _requestCache = new WeakMap()
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
@@ -18,127 +18,127 @@ const _requestCache = new WeakMap();
  */
 export function loadExternalScript(url, moduleType, moduleCode, callback, doc, attributes) {
   if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
-    return;
+    return
   }
 
   if (!moduleCode || !url) {
-    logError('cannot load external script without url and moduleCode');
-    return;
+    logError('cannot load external script without url and moduleCode')
+    return
   }
 
-  const hasCallback = typeof callback === 'function' || typeof callback?.success === 'function' || typeof callback?.error === 'function';
+  const hasCallback = typeof callback === 'function' || typeof callback?.success === 'function' || typeof callback?.error === 'function'
 
   function runCallback(cb, err) {
     if (err == null) {
       if (typeof cb === 'function') {
         cb()
       } else {
-        cb.success?.();
+        cb.success?.()
       }
     } else {
-      cb.error?.(err);
+      cb.error?.(err)
     }
   }
 
   if (!doc) {
-    doc = document; // provide a "valid" key for the WeakMap
+    doc = document // provide a "valid" key for the WeakMap
   }
   // only load each asset once
-  const storedCachedObject = getCacheObject(doc, url);
+  const storedCachedObject = getCacheObject(doc, url)
   if (storedCachedObject) {
     if (hasCallback) {
       if (storedCachedObject.loaded) {
         // invokeCallbacks immediately
-        runCallback(callback, storedCachedObject.error);
+        runCallback(callback, storedCachedObject.error)
       } else {
         // queue the callback
-        storedCachedObject.callbacks.push(callback);
+        storedCachedObject.callbacks.push(callback)
       }
     }
-    return storedCachedObject.tag;
+    return storedCachedObject.tag
   }
-  const cachedDocObj = _requestCache.get(doc) || {};
+  const cachedDocObj = _requestCache.get(doc) || {}
   const cacheObject = {
     error: null,
     loaded: false,
     tag: null,
     callbacks: []
-  };
-  cachedDocObj[url] = cacheObject;
-  _requestCache.set(doc, cachedDocObj);
+  }
+  cachedDocObj[url] = cacheObject
+  _requestCache.set(doc, cachedDocObj)
 
   if (hasCallback) {
-    cacheObject.callbacks.push(callback);
+    cacheObject.callbacks.push(callback)
   }
 
-  logWarn(`module ${moduleCode} is loading external JavaScript`);
+  logWarn(`module ${moduleCode} is loading external JavaScript`)
   return requestResource(url, function () {
-    cacheObject.loaded = true;
+    cacheObject.loaded = true
     try {
       for (let i = 0; i < cacheObject.callbacks.length; i++) {
-        runCallback(cacheObject.callbacks[i], cacheObject.error);
+        runCallback(cacheObject.callbacks[i], cacheObject.error)
       }
-      cacheObject.callbacks.length = 0;
+      cacheObject.callbacks.length = 0
     } catch (e) {
-      logError('Error executing callback', 'adloader.js:loadExternalScript', e);
+      logError('Error executing callback', 'adloader.js:loadExternalScript', e)
     }
-  }, doc, attributes);
+  }, doc, attributes)
 
   function requestResource(tagSrc, callback, doc, attributes) {
     if (!doc) {
-      doc = document;
+      doc = document
     }
-    var jptScript = doc.createElement('script');
-    jptScript.type = 'text/javascript';
-    jptScript.async = true;
+    var jptScript = doc.createElement('script')
+    jptScript.type = 'text/javascript'
+    jptScript.async = true
 
-    const cacheObject = getCacheObject(doc, url);
+    const cacheObject = getCacheObject(doc, url)
     if (cacheObject) {
-      cacheObject.tag = jptScript;
+      cacheObject.tag = jptScript
     }
 
     function errorListener(e) {
-      cacheObject.error = e;
-      exit();
+      cacheObject.error = e
+      exit()
     }
     jptScript.addEventListener('error', errorListener)
 
     function exit() {
-      jptScript.removeEventListener('error', errorListener);
-      jptScript.onload = null;
-      jptScript.onreadystatechange = null;
-      callback();
+      jptScript.removeEventListener('error', errorListener)
+      jptScript.onload = null
+      jptScript.onreadystatechange = null
+      callback()
     }
 
     if (jptScript.readyState) {
       jptScript.onreadystatechange = function () {
         if (jptScript.readyState === 'loaded' || jptScript.readyState === 'complete') {
-          jptScript.onreadystatechange = null;
-          exit();
+          jptScript.onreadystatechange = null
+          exit()
         }
-      };
+      }
     } else {
       jptScript.onload = function () {
-        exit();
-      };
+        exit()
+      }
     }
 
-    jptScript.src = tagSrc;
+    jptScript.src = tagSrc
 
     if (attributes) {
-      setScriptAttributes(jptScript, attributes);
+      setScriptAttributes(jptScript, attributes)
     }
 
     // add the new script tag to the page
-    insertElement(jptScript, doc);
+    insertElement(jptScript, doc)
 
-    return jptScript;
+    return jptScript
   }
   function getCacheObject(doc, url) {
-    const cachedDocObj = _requestCache.get(doc);
+    const cachedDocObj = _requestCache.get(doc)
     if (cachedDocObj && cachedDocObj[url]) {
-      return cachedDocObj[url];
+      return cachedDocObj[url]
     }
-    return null; // return new cache object?
+    return null // return new cache object?
   }
 };

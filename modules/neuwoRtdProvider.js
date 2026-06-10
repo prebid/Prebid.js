@@ -18,38 +18,38 @@
  * @see {@link https://www.neuwo.ai/} for more information on the Neuwo API.
  */
 
-import { ajax } from "../src/ajax.js";
-import { submodule } from "../src/hook.js";
-import { getRefererInfo } from "../src/refererDetection.js";
+import { ajax } from "../src/ajax.js"
+import { submodule } from "../src/hook.js"
+import { getRefererInfo } from "../src/refererDetection.js"
 import {
   deepSetValue,
   logError,
   logInfo,
   logWarn,
   mergeDeep,
-} from "../src/utils.js";
+} from "../src/utils.js"
 
-const MODULE_NAME = "NeuwoRTDModule";
-const MODULE_VERSION = "2.2.6";
-export const DATA_PROVIDER = "www.neuwo.ai";
+const MODULE_NAME = "NeuwoRTDModule"
+const MODULE_VERSION = "2.2.6"
+export const DATA_PROVIDER = "www.neuwo.ai"
 
 // Default IAB Content Taxonomy version
-const DEFAULT_IAB_CONTENT_TAXONOMY_VERSION = "2.2";
+const DEFAULT_IAB_CONTENT_TAXONOMY_VERSION = "2.2"
 
 // Maximum number of cached API responses to keep. Oldest entries are evicted when exceeded.
-const MAX_CACHE_ENTRIES = 10;
+const MAX_CACHE_ENTRIES = 10
 // Cached API responses keyed by full API URL to avoid redundant requests.
-let cachedResponses = {};
+let cachedResponses = {}
 // In-flight request promises keyed by full API URL to prevent duplicate API calls during the same request cycle.
-let pendingRequests = {};
+let pendingRequests = {}
 
 /**
  * Clears the cached API responses and pending requests. Primarily used for testing.
  * @private
  */
 export function clearCache() {
-  cachedResponses = {};
-  pendingRequests = {};
+  cachedResponses = {}
+  pendingRequests = {}
 }
 
 // Maps the IAB Content Taxonomy version string to the corresponding segtax ID.
@@ -62,7 +62,7 @@ const IAB_CONTENT_TAXONOMY_MAP = {
   "2.2": 6,
   "3.0": 7,
   "3.1": 9,
-};
+}
 
 /**
  * Validates the configuration and initialises the module.
@@ -72,17 +72,17 @@ const IAB_CONTENT_TAXONOMY_MAP = {
  * @returns {boolean} `true` if the module is configured correctly, otherwise `false`.
  */
 function init(config, userConsent) {
-  logInfo(MODULE_NAME, "init():", "Version " + MODULE_VERSION, config, userConsent);
-  const params = config?.params || {};
+  logInfo(MODULE_NAME, "init():", "Version " + MODULE_VERSION, config, userConsent)
+  const params = config?.params || {}
   if (!params.neuwoApiUrl) {
-    logError(MODULE_NAME, "init():", "Missing Neuwo Edge API Endpoint URL");
-    return false;
+    logError(MODULE_NAME, "init():", "Missing Neuwo Edge API Endpoint URL")
+    return false
   }
   if (!params.neuwoApiToken) {
-    logError(MODULE_NAME, "init():", "Missing Neuwo API Token");
-    return false;
+    logError(MODULE_NAME, "init():", "Missing Neuwo API Token")
+    return false
   }
-  return true;
+  return true
 }
 
 /**
@@ -120,7 +120,7 @@ export function getBidRequestData(
     "getBidRequestData():",
     "starting getBidRequestData",
     config
-  );
+  )
 
   const {
     websiteToAnalyseUrl,
@@ -134,32 +134,32 @@ export function getBidRequestData(
     stripQueryParams,
     stripFragments,
     iabTaxonomyFilters,
-  } = config.params;
+  } = config.params
 
-  const rawUrl = websiteToAnalyseUrl || getRefererInfo().page;
+  const rawUrl = websiteToAnalyseUrl || getRefererInfo().page
   if (!rawUrl) {
-    logError(MODULE_NAME, "getBidRequestData():", "No URL available to analyse");
-    callback();
-    return;
+    logError(MODULE_NAME, "getBidRequestData():", "No URL available to analyse")
+    callback()
+    return
   }
   const processedUrl = cleanUrl(rawUrl, {
     stripAllQueryParams,
     stripQueryParamsForDomains,
     stripQueryParams,
     stripFragments,
-  });
-  const pageUrl = encodeURIComponent(processedUrl);
+  })
+  const pageUrl = encodeURIComponent(processedUrl)
   const contentSegtax =
     IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
-    IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION];
+    IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION]
 
   // Detect whether the endpoint supports multi-taxonomy responses and server-side filtering.
   // Use URL pathname to avoid false positives when "/v1/iab" appears in query params.
-  let isIabEndpoint = false;
+  let isIabEndpoint = false
   try {
-    isIabEndpoint = new URL(neuwoApiUrl).pathname.includes("/v1/iab");
+    isIabEndpoint = new URL(neuwoApiUrl).pathname.includes("/v1/iab")
   } catch (e) {
-    isIabEndpoint = neuwoApiUrl.split("?")[0].includes("/v1/iab");
+    isIabEndpoint = neuwoApiUrl.split("?")[0].includes("/v1/iab")
   }
 
   // Warn if OpenRTB 2.5 feature enabled with legacy endpoint
@@ -168,25 +168,25 @@ export function getBidRequestData(
       MODULE_NAME,
       "getBidRequestData():",
       "OpenRTB 2.5 category fields require the /v1/iab endpoint"
-    );
+    )
   }
 
-  const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&";
+  const joiner = neuwoApiUrl.indexOf("?") < 0 ? "?" : "&"
   const urlParams = [
     "token=" + neuwoApiToken,
     "url=" + pageUrl,
     "_neuwo_prod=PrebidModule",
-  ];
+  ]
 
   // Request both IAB Content Taxonomy (based on config) and IAB Audience Taxonomy (segtax 4)
   if (isIabEndpoint) {
-    urlParams.push("iabVersions=" + contentSegtax);
-    urlParams.push("iabVersions=4"); // IAB Audience 1.1
+    urlParams.push("iabVersions=" + contentSegtax)
+    urlParams.push("iabVersions=4") // IAB Audience 1.1
 
     // Request IAB 1.0 for OpenRTB 2.5 fields if feature enabled.
     // Skip when contentSegtax is already 1 -- already requested above.
     if (enableOrtb25Fields && contentSegtax !== 1) {
-      urlParams.push("iabVersions=1"); // IAB Content 1.0
+      urlParams.push("iabVersions=1") // IAB Content 1.0
     }
 
     // Add flattened filter parameters to URL for GET request
@@ -194,23 +194,23 @@ export function getBidRequestData(
       iabTaxonomyFilters,
       contentSegtax,
       enableOrtb25Fields
-    );
+    )
     if (filterParams.length > 0) {
-      urlParams.push(...filterParams);
+      urlParams.push(...filterParams)
     }
   }
 
-  const neuwoApiUrlFull = neuwoApiUrl + joiner + urlParams.join("&");
+  const neuwoApiUrlFull = neuwoApiUrl + joiner + urlParams.join("&")
 
   // For /v1/iab endpoints the full URL already encodes all config (iabVersions, filters).
   // For legacy endpoints the URL only carries token + page URL, so append config-dependent
   // values to the cache key to prevent different configs sharing a response that was
   // transformed/filtered for a different taxonomy version or filter set.
-  let cacheKey = neuwoApiUrlFull;
+  let cacheKey = neuwoApiUrlFull
   if (!isIabEndpoint) {
-    cacheKey += "&_segtax=" + contentSegtax;
+    cacheKey += "&_segtax=" + contentSegtax
     if (iabTaxonomyFilters && Object.keys(iabTaxonomyFilters).length > 0) {
-      cacheKey += "&_filters=" + JSON.stringify(iabTaxonomyFilters);
+      cacheKey += "&_filters=" + JSON.stringify(iabTaxonomyFilters)
     }
   }
 
@@ -225,14 +225,14 @@ export function getBidRequestData(
       "Cache System:",
       "Using cached response for:",
       cacheKey
-    );
+    )
     injectIabCategories(
       cachedResponses[cacheKey],
       reqBidsConfigObj,
       iabContentTaxonomyVersion,
       enableOrtb25Fields
-    );
-    callback();
+    )
+    callback()
   } else if (enableCache && pendingRequests[cacheKey]) {
     // Another caller started a request with the same params - wait for it
     logInfo(
@@ -241,7 +241,7 @@ export function getBidRequestData(
       "Cache System:",
       "Waiting for pending request for:",
       cacheKey
-    );
+    )
     pendingRequests[cacheKey]
       .then((responseParsed) => {
         if (responseParsed) {
@@ -250,10 +250,10 @@ export function getBidRequestData(
             reqBidsConfigObj,
             iabContentTaxonomyVersion,
             enableOrtb25Fields
-          );
+          )
         }
       })
-      .finally(() => callback());
+      .finally(() => callback())
   } else {
     // First request or cache disabled - make the API call
     logInfo(
@@ -262,7 +262,7 @@ export function getBidRequestData(
       "Cache System:",
       "Calling Neuwo API Endpoint:",
       neuwoApiUrlFull
-    );
+    )
 
     const requestPromise = new Promise((resolve) => {
       ajax(
@@ -275,11 +275,11 @@ export function getBidRequestData(
               "success():",
               "Neuwo API raw response:",
               response
-            );
+            )
 
-            let responseParsed;
+            let responseParsed
             try {
-              responseParsed = JSON.parse(response);
+              responseParsed = JSON.parse(response)
             } catch (ex) {
               logError(
                 MODULE_NAME,
@@ -287,9 +287,9 @@ export function getBidRequestData(
                 "success():",
                 "Error parsing Neuwo API response JSON:",
                 ex
-              );
-              resolve(null);
-              return;
+              )
+              resolve(null)
+              return
             }
 
             try {
@@ -298,13 +298,13 @@ export function getBidRequestData(
                 const filteredMarketingCategories = filterIabTaxonomies(
                   responseParsed.marketing_categories,
                   iabTaxonomyFilters
-                );
+                )
 
                 // Transform filtered V1 response to unified internal format
                 responseParsed = transformV1ResponseToV2(
                   { marketing_categories: filteredMarketingCategories },
                   contentSegtax
-                );
+                )
               }
 
               // Cache response, evicting oldest entry if at capacity.
@@ -315,11 +315,11 @@ export function getBidRequestData(
                 typeof responseParsed === "object"
               ) {
                 // Object.keys() preserves string insertion order in modern JS engines.
-                const keys = Object.keys(cachedResponses);
+                const keys = Object.keys(cachedResponses)
                 if (keys.length >= MAX_CACHE_ENTRIES) {
-                  delete cachedResponses[keys[0]];
+                  delete cachedResponses[keys[0]]
                 }
-                cachedResponses[cacheKey] = responseParsed;
+                cachedResponses[cacheKey] = responseParsed
               }
 
               injectIabCategories(
@@ -327,8 +327,8 @@ export function getBidRequestData(
                 reqBidsConfigObj,
                 iabContentTaxonomyVersion,
                 enableOrtb25Fields
-              );
-              resolve(responseParsed);
+              )
+              resolve(responseParsed)
             } catch (ex) {
               logError(
                 MODULE_NAME,
@@ -336,8 +336,8 @@ export function getBidRequestData(
                 "success():",
                 "Error processing Neuwo API response:",
                 ex
-              );
-              resolve(null);
+              )
+              resolve(null)
             }
           },
           error: (err) => {
@@ -347,24 +347,24 @@ export function getBidRequestData(
               "error():",
               "AJAX error:",
               err
-            );
-            resolve(null);
+            )
+            resolve(null)
           },
         }
-      );
-    });
+      )
+    })
 
     if (enableCache) {
       // Store promise so concurrent callers with same params can wait on it
-      pendingRequests[cacheKey] = requestPromise;
+      pendingRequests[cacheKey] = requestPromise
       // Clear after settling so failed requests can be retried
       requestPromise.finally(() => {
-        delete pendingRequests[cacheKey];
-      });
+        delete pendingRequests[cacheKey]
+      })
     }
 
     // Signal this caller's auction to proceed once request completes
-    requestPromise.finally(() => callback());
+    requestPromise.finally(() => callback())
   }
 }
 
@@ -389,34 +389,34 @@ export function cleanUrl(url, options = {}) {
     stripQueryParamsForDomains,
     stripQueryParams,
     stripFragments,
-  } = options;
+  } = options
 
   if (!url) {
     logInfo(
       MODULE_NAME,
       "cleanUrl():",
       "Empty or null URL provided, returning as-is"
-    );
-    return url;
+    )
+    return url
   }
 
-  logInfo(MODULE_NAME, "cleanUrl():", "Input URL:", url, "Options:", options);
+  logInfo(MODULE_NAME, "cleanUrl():", "Input URL:", url, "Options:", options)
 
   try {
-    const urlObj = new URL(url);
+    const urlObj = new URL(url)
 
     // Strip fragments if requested
     if (stripFragments === true) {
-      urlObj.hash = "";
-      logInfo(MODULE_NAME, "cleanUrl():", "Stripped fragment from URL");
+      urlObj.hash = ""
+      logInfo(MODULE_NAME, "cleanUrl():", "Stripped fragment from URL")
     }
 
     // Option 1: Strip all query params unconditionally
     if (stripAllQueryParams === true) {
-      urlObj.search = "";
-      const cleanedUrl = urlObj.toString();
-      logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl);
-      return cleanedUrl;
+      urlObj.search = ""
+      const cleanedUrl = urlObj.toString()
+      logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl)
+      return cleanedUrl
     }
 
     // Option 2: Strip all query params for specific domains
@@ -424,17 +424,17 @@ export function cleanUrl(url, options = {}) {
       Array.isArray(stripQueryParamsForDomains) &&
       stripQueryParamsForDomains.length > 0
     ) {
-      const hostname = urlObj.hostname;
+      const hostname = urlObj.hostname
       const shouldStripForDomain = stripQueryParamsForDomains.some((domain) => {
         // Support exact match or subdomain match
-        return hostname === domain || hostname.endsWith("." + domain);
-      });
+        return hostname === domain || hostname.endsWith("." + domain)
+      })
 
       if (shouldStripForDomain) {
-        urlObj.search = "";
-        const cleanedUrl = urlObj.toString();
-        logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl);
-        return cleanedUrl;
+        urlObj.search = ""
+        const cleanedUrl = urlObj.toString()
+        logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl)
+        return cleanedUrl
       }
     }
 
@@ -443,27 +443,27 @@ export function cleanUrl(url, options = {}) {
     // - "?=value" is treated as query parameter with key "" and value "value"
     // - "??" is treated as query parameter with key "?" and value ""
     if (Array.isArray(stripQueryParams) && stripQueryParams.length > 0) {
-      const queryParams = urlObj.searchParams;
+      const queryParams = urlObj.searchParams
       logInfo(
         MODULE_NAME,
         "cleanUrl():",
         `Query parameters to strip: ${stripQueryParams}`
-      );
+      )
       stripQueryParams.forEach((param) => {
-        queryParams.delete(param);
-      });
-      urlObj.search = queryParams.toString();
-      const cleanedUrl = urlObj.toString();
-      logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl);
-      return cleanedUrl;
+        queryParams.delete(param)
+      })
+      urlObj.search = queryParams.toString()
+      const cleanedUrl = urlObj.toString()
+      logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", cleanedUrl)
+      return cleanedUrl
     }
 
-    const finalUrl = urlObj.toString();
-    logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", finalUrl);
-    return finalUrl;
+    const finalUrl = urlObj.toString()
+    logInfo(MODULE_NAME, "cleanUrl():", "Output URL:", finalUrl)
+    return finalUrl
   } catch (e) {
-    logError(MODULE_NAME, "cleanUrl():", "Error cleaning URL:", e);
-    return url;
+    logError(MODULE_NAME, "cleanUrl():", "Error cleaning URL:", e)
+    return url
   }
 }
 
@@ -475,9 +475,9 @@ export function cleanUrl(url, options = {}) {
  * @param {*} data The data to inject at the specified path.
  */
 export function injectOrtbData(reqBidsConfigObj, path, data) {
-  const container = {};
-  deepSetValue(container, path, data);
-  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, container);
+  const container = {}
+  deepSetValue(container, path, data)
+  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, container)
 }
 
 /**
@@ -488,26 +488,26 @@ export function injectOrtbData(reqBidsConfigObj, path, data) {
  * @returns {Array<string>} Flat array of segment IDs (e.g., ["IAB12", "IAB12-3", "IAB12-5"]).
  */
 export function extractCategoryIds(tierData) {
-  const ids = [];
+  const ids = []
 
   // Handle null, undefined, non-object, or array tierData
   if (!tierData || typeof tierData !== "object" || Array.isArray(tierData)) {
-    return ids;
+    return ids
   }
 
   // Process ALL tier keys present in tierData
   Object.keys(tierData).forEach((tierKey) => {
-    const segments = tierData[tierKey];
+    const segments = tierData[tierKey]
     if (Array.isArray(segments)) {
       segments.forEach((item) => {
         if (item?.id) {
-          ids.push(item.id);
+          ids.push(item.id)
         }
-      });
+      })
     }
-  });
+  })
 
-  return ids;
+  return ids
 }
 
 /**
@@ -519,12 +519,12 @@ export function extractCategoryIds(tierData) {
  * @returns {Object} The OpenRTB data object with name, segment array, and ext.segtax.
  */
 export function buildIabData(tierData, segtax) {
-  const ids = extractCategoryIds(tierData);
+  const ids = extractCategoryIds(tierData)
   return {
     name: DATA_PROVIDER,
     segment: ids.map((id) => ({ id })),
     ext: { segtax },
-  };
+  }
 }
 
 /**
@@ -538,42 +538,42 @@ export function buildIabData(tierData, segtax) {
  */
 export function filterIabTaxonomyTier(iabTaxonomies, filter = {}) {
   if (!Array.isArray(iabTaxonomies)) {
-    return [];
+    return []
   }
   if (iabTaxonomies.length === 0) {
-    return iabTaxonomies;
+    return iabTaxonomies
   }
 
-  const { threshold, limit } = filter;
-  const hasThreshold = typeof threshold === "number" && threshold > 0;
-  const hasLimit = typeof limit === "number" && limit >= 0;
+  const { threshold, limit } = filter
+  const hasThreshold = typeof threshold === "number" && threshold > 0
+  const hasLimit = typeof limit === "number" && limit >= 0
 
   // No effective filter configured -- return original order unchanged
   if (!hasThreshold && !hasLimit) {
-    return iabTaxonomies;
+    return iabTaxonomies
   }
 
-  let filtered = [...iabTaxonomies]; // Create copy to avoid mutating original
+  let filtered = [...iabTaxonomies] // Create copy to avoid mutating original
 
   // Filter by minimum relevance score
   if (hasThreshold) {
     filtered = filtered.filter((item) => {
-      const relevance = parseFloat(item?.relevance);
-      return !isNaN(relevance) && relevance >= threshold;
-    });
+      const relevance = parseFloat(item?.relevance)
+      return !isNaN(relevance) && relevance >= threshold
+    })
   }
 
   // Sort by relevance (highest first) so limit keeps the most relevant items
   if (hasLimit) {
     filtered = filtered.sort((a, b) => {
-      const relA = parseFloat(a?.relevance) || 0;
-      const relB = parseFloat(b?.relevance) || 0;
-      return relB - relA; // Descending order
-    });
-    filtered = filtered.slice(0, limit);
+      const relA = parseFloat(a?.relevance) || 0
+      const relB = parseFloat(b?.relevance) || 0
+      return relB - relA // Descending order
+    })
+    filtered = filtered.slice(0, limit)
   }
 
-  return filtered;
+  return filtered
 }
 
 /**
@@ -586,7 +586,7 @@ const TIER_KEY_MAP = {
   AudienceTier3: "iab_audience_tier_3",
   AudienceTier4: "iab_audience_tier_4",
   AudienceTier5: "iab_audience_tier_5",
-};
+}
 
 /**
  * v1 API specific
@@ -599,7 +599,7 @@ const TIER_KEY_MAP = {
  */
 export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
   if (!marketingCategories || typeof marketingCategories !== "object") {
-    return marketingCategories;
+    return marketingCategories
   }
 
   // If no filters provided, return original data
@@ -608,32 +608,32 @@ export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
       MODULE_NAME,
       "filterIabTaxonomies():",
       "No filters provided, returning original data"
-    );
-    return marketingCategories;
+    )
+    return marketingCategories
   }
 
-  const filtered = {};
+  const filtered = {}
 
   // Iterate through all tiers in the API response
   Object.keys(marketingCategories).forEach((apiTierKey) => {
-    const tierData = marketingCategories[apiTierKey];
+    const tierData = marketingCategories[apiTierKey]
 
     // Find the corresponding config key for this API tier
     const configTierKey = Object.keys(TIER_KEY_MAP).find(
       (key) => TIER_KEY_MAP[key] === apiTierKey
-    );
+    )
 
     // Get filter for this tier (if configured)
-    const filter = configTierKey ? tierFilters[configTierKey] : {};
+    const filter = configTierKey ? tierFilters[configTierKey] : {}
 
     // Apply filter if this tier has data
     if (Array.isArray(tierData)) {
-      filtered[apiTierKey] = filterIabTaxonomyTier(tierData, filter);
+      filtered[apiTierKey] = filterIabTaxonomyTier(tierData, filter)
     } else {
       // Preserve non-array data as-is
-      filtered[apiTierKey] = tierData;
+      filtered[apiTierKey] = tierData
     }
-  });
+  })
 
   logInfo(
     MODULE_NAME,
@@ -643,9 +643,9 @@ export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
     marketingCategories,
     "Filtered:",
     filtered
-  );
+  )
 
-  return filtered;
+  return filtered
 }
 
 /**
@@ -661,47 +661,47 @@ export function filterIabTaxonomies(marketingCategories, tierFilters = {}) {
  * @returns {Object} Unified format response keyed by segtax and tier numbers.
  */
 export function transformV1ResponseToV2(v1Response, contentSegtax) {
-  const marketingCategories = v1Response?.marketing_categories || {};
-  const contentSegtaxStr = String(contentSegtax);
-  const result = {};
+  const marketingCategories = v1Response?.marketing_categories || {}
+  const contentSegtaxStr = String(contentSegtax)
+  const result = {}
 
   // Content tiers: keyed by segtax from config
-  result[contentSegtaxStr] = {};
+  result[contentSegtaxStr] = {}
   if (marketingCategories.iab_tier_1) {
     result[contentSegtaxStr]["1"] = transformSegmentsV1ToV2(
       marketingCategories.iab_tier_1
-    );
+    )
   }
   if (marketingCategories.iab_tier_2) {
     result[contentSegtaxStr]["2"] = transformSegmentsV1ToV2(
       marketingCategories.iab_tier_2
-    );
+    )
   }
   if (marketingCategories.iab_tier_3) {
     result[contentSegtaxStr]["3"] = transformSegmentsV1ToV2(
       marketingCategories.iab_tier_3
-    );
+    )
   }
 
   // Audience tiers: segtax 4
-  result["4"] = {};
+  result["4"] = {}
   if (marketingCategories.iab_audience_tier_3) {
     result["4"]["3"] = transformSegmentsV1ToV2(
       marketingCategories.iab_audience_tier_3
-    );
+    )
   }
   if (marketingCategories.iab_audience_tier_4) {
     result["4"]["4"] = transformSegmentsV1ToV2(
       marketingCategories.iab_audience_tier_4
-    );
+    )
   }
   if (marketingCategories.iab_audience_tier_5) {
     result["4"]["5"] = transformSegmentsV1ToV2(
       marketingCategories.iab_audience_tier_5
-    );
+    )
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -716,12 +716,12 @@ export function transformV1ResponseToV2(v1Response, contentSegtax) {
  * @returns {Array} Array of unified format segment objects with id, name, relevance.
  */
 export function transformSegmentsV1ToV2(segments) {
-  if (!Array.isArray(segments)) return [];
+  if (!Array.isArray(segments)) return []
   return segments.map((seg) => ({
     id: seg.ID,
     name: seg.label,
     relevance: seg.relevance,
-  }));
+  }))
 }
 
 /**
@@ -742,10 +742,10 @@ export function buildFilterQueryParams(
   contentSegtax,
   enableOrtb25Fields = true
 ) {
-  const params = [];
+  const params = []
 
   if (!iabTaxonomyFilters || typeof iabTaxonomyFilters !== "object") {
-    return params;
+    return params
   }
 
   const TIER_TO_SEGTAX = {
@@ -755,24 +755,24 @@ export function buildFilterQueryParams(
     AudienceTier3: { segtax: 4, tier: "3" },
     AudienceTier4: { segtax: 4, tier: "4" },
     AudienceTier5: { segtax: 4, tier: "5" },
-  };
+  }
 
   // Build query params from tier mappings
   Object.entries(iabTaxonomyFilters).forEach(([tierName, filter]) => {
-    const mapping = TIER_TO_SEGTAX[tierName];
+    const mapping = TIER_TO_SEGTAX[tierName]
     if (mapping && filter && typeof filter === "object") {
-      const segtax = mapping.segtax;
-      const tier = mapping.tier;
+      const segtax = mapping.segtax
+      const tier = mapping.tier
 
       // Add each filter property (limit, threshold) as a query parameter
       Object.keys(filter).forEach((prop) => {
-        const value = filter[prop];
+        const value = filter[prop]
         if (value !== undefined && value !== null) {
-          params.push(`filter_${segtax}_${tier}_${prop}=${value}`);
+          params.push(`filter_${segtax}_${tier}_${prop}=${value}`)
         }
-      });
+      })
     }
-  });
+  })
 
   // Apply same filters to IAB 1.0 (segtax 1) for OpenRTB 2.5 fields.
   // Skip when contentSegtax is already 1 -- the first loop already emitted filter_1_* params.
@@ -780,24 +780,24 @@ export function buildFilterQueryParams(
   if (enableOrtb25Fields && contentSegtax !== 1) {
     if (iabTaxonomyFilters.ContentTier1) {
       Object.keys(iabTaxonomyFilters.ContentTier1).forEach((prop) => {
-        const value = iabTaxonomyFilters.ContentTier1[prop];
+        const value = iabTaxonomyFilters.ContentTier1[prop]
         if (value !== undefined && value !== null) {
-          params.push(`filter_1_1_${prop}=${value}`);
+          params.push(`filter_1_1_${prop}=${value}`)
         }
-      });
+      })
     }
 
     if (iabTaxonomyFilters.ContentTier2) {
       Object.keys(iabTaxonomyFilters.ContentTier2).forEach((prop) => {
-        const value = iabTaxonomyFilters.ContentTier2[prop];
+        const value = iabTaxonomyFilters.ContentTier2[prop]
         if (value !== undefined && value !== null) {
-          params.push(`filter_1_2_${prop}=${value}`);
+          params.push(`filter_1_2_${prop}=${value}`)
         }
-      });
+      })
     }
   }
 
-  return params;
+  return params
 }
 
 /**
@@ -823,91 +823,91 @@ export function injectIabCategories(
   enableOrtb25Fields = true
 ) {
   if (!responseParsed || typeof responseParsed !== "object") {
-    logError(MODULE_NAME, "injectIabCategories():", "Invalid response format");
-    return;
+    logError(MODULE_NAME, "injectIabCategories():", "Invalid response format")
+    return
   }
 
   const contentSegtax =
     IAB_CONTENT_TAXONOMY_MAP[iabContentTaxonomyVersion] ||
-    IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION];
-  const contentSegtaxStr = String(contentSegtax);
+    IAB_CONTENT_TAXONOMY_MAP[DEFAULT_IAB_CONTENT_TAXONOMY_VERSION]
+  const contentSegtaxStr = String(contentSegtax)
 
   // Extract IAB Content Taxonomy data for the configured version
-  const contentTiers = responseParsed[contentSegtaxStr] || {};
-  const contentData = buildIabData(contentTiers, contentSegtax);
+  const contentTiers = responseParsed[contentSegtaxStr] || {}
+  const contentData = buildIabData(contentTiers, contentSegtax)
 
   // Extract IAB Audience Taxonomy data
-  const audienceTiers = responseParsed["4"] || {};
-  const audienceData = buildIabData(audienceTiers, 4);
+  const audienceTiers = responseParsed["4"] || {}
+  const audienceData = buildIabData(audienceTiers, 4)
 
   logInfo(
     MODULE_NAME,
     "injectIabCategories():",
     "contentData structure:",
     contentData
-  );
+  )
   logInfo(
     MODULE_NAME,
     "injectIabCategories():",
     "audienceData structure:",
     audienceData
-  );
+  )
 
   // Inject content and audience data independently to avoid sending empty structures
   if (contentData.segment.length > 0) {
-    injectOrtbData(reqBidsConfigObj, "site.content.data", [contentData]);
+    injectOrtbData(reqBidsConfigObj, "site.content.data", [contentData])
     logInfo(
       MODULE_NAME,
       "injectIabCategories():",
       "Injected content data into site.content.data"
-    );
+    )
   } else {
     logInfo(
       MODULE_NAME,
       "injectIabCategories():",
       "No content segments to inject, skipping site.content.data"
-    );
+    )
   }
 
   if (audienceData.segment.length > 0) {
-    injectOrtbData(reqBidsConfigObj, "user.data", [audienceData]);
+    injectOrtbData(reqBidsConfigObj, "user.data", [audienceData])
     logInfo(
       MODULE_NAME,
       "injectIabCategories():",
       "Injected audience data into user.data"
-    );
+    )
   } else {
     logInfo(
       MODULE_NAME,
       "injectIabCategories():",
       "No audience segments to inject, skipping user.data"
-    );
+    )
   }
 
   // Inject OpenRTB 2.5 category fields if feature enabled
   if (enableOrtb25Fields) {
-    const iab10Tiers = responseParsed["1"] || {}; // Segtax 1 = IAB Content 1.0
-    const categoryIds = extractCategoryIds(iab10Tiers); // ["IAB12", "IAB12-3", ...]
+    const iab10Tiers = responseParsed["1"] || {} // Segtax 1 = IAB Content 1.0
+    const categoryIds = extractCategoryIds(iab10Tiers) // ["IAB12", "IAB12-3", ...]
 
     if (categoryIds.length > 0) {
       // Inject same array into all four OpenRTB 2.5 category fields
-      injectOrtbData(reqBidsConfigObj, "site.cat", categoryIds);
-      injectOrtbData(reqBidsConfigObj, "site.sectioncat", categoryIds);
-      injectOrtbData(reqBidsConfigObj, "site.pagecat", categoryIds);
-      injectOrtbData(reqBidsConfigObj, "site.content.cat", categoryIds);
+      injectOrtbData(reqBidsConfigObj, "site.cat", categoryIds)
+      injectOrtbData(reqBidsConfigObj, "site.sectioncat", categoryIds)
+      injectOrtbData(reqBidsConfigObj, "site.pagecat", categoryIds)
+      injectOrtbData(reqBidsConfigObj, "site.content.cat", categoryIds)
 
       logInfo(
         MODULE_NAME,
         "injectIabCategories():",
         "Injected OpenRTB 2.5 category fields:",
         categoryIds
-      );
+      )
     } else {
       logInfo(
         MODULE_NAME,
         "injectIabCategories():",
         "No IAB 1.0 segments available for OpenRTB 2.5 fields"
-      );
+      )
     }
   }
 }
@@ -916,6 +916,6 @@ export const neuwoRtdModule = {
   name: MODULE_NAME,
   init,
   getBidRequestData,
-};
+}
 
-submodule("realTimeData", neuwoRtdModule);
+submodule("realTimeData", neuwoRtdModule)

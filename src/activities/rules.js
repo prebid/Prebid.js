@@ -1,44 +1,44 @@
-import { prefixLog } from '../utils.js';
-import { ACTIVITY_PARAM_COMPONENT } from './params.js';
+import { prefixLog } from '../utils.js'
+import { ACTIVITY_PARAM_COMPONENT } from './params.js'
 
 /**
  * @param logger
  * @return {((function(string, string, function(Object): {allow: boolean, reason?: string}, number=): function(): void)|(function(string, {}): boolean)|*)[]}
  */
 export function ruleRegistry(logger = prefixLog('Activity control:')) {
-  const registry = {};
+  const registry = {}
 
   function getRules(activity) {
-    registry[activity] = registry[activity] || [];
-    return registry[activity];
+    registry[activity] = registry[activity] || []
+    return registry[activity]
   }
 
   function runRule(activity, name, rule, params) {
-    let res;
+    let res
     try {
-      res = rule(params);
+      res = rule(params)
     } catch (e) {
-      logger.logError(`Exception in rule ${name} for '${activity}'`, e);
-      res = { allow: false, reason: e };
+      logger.logError(`Exception in rule ${name} for '${activity}'`, e)
+      res = { allow: false, reason: e }
     }
-    return res && Object.assign({ activity, name, component: params[ACTIVITY_PARAM_COMPONENT] }, res);
+    return res && Object.assign({ activity, name, component: params[ACTIVITY_PARAM_COMPONENT] }, res)
   }
 
-  const dupes = {};
-  const DEDUPE_INTERVAL = 1000;
+  const dupes = {}
+  const DEDUPE_INTERVAL = 1000
 
   // eslint-disable-next-line no-restricted-syntax
   function logResult({ activity, name, allow, reason, component }) {
-    const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`;
-    const deduping = dupes.hasOwnProperty(msg);
+    const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`
+    const deduping = dupes.hasOwnProperty(msg)
     if (deduping) {
-      clearTimeout(dupes[msg]);
+      clearTimeout(dupes[msg])
     }
-    dupes[msg] = setTimeout(() => delete dupes[msg], DEDUPE_INTERVAL);
+    dupes[msg] = setTimeout(() => delete dupes[msg], DEDUPE_INTERVAL)
     if (!deduping) {
-      const parts = [msg];
+      const parts = [msg]
       reason && parts.push(reason);
-      (allow ? logger.logInfo : logger.logWarn).apply(logger, parts);
+      (allow ? logger.logInfo : logger.logWarn).apply(logger, parts)
     }
   }
 
@@ -61,13 +61,13 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      * @returns {function(): void} - A function that unregisters the rule when called.
      */
     function registerActivityControl(activity, ruleName, rule, priority = 10) {
-      const rules = getRules(activity);
-      const pos = rules.findIndex(([itemPriority]) => priority < itemPriority);
-      const entry = [priority, ruleName, rule];
-      rules.splice(pos < 0 ? rules.length : pos, 0, entry);
+      const rules = getRules(activity)
+      const pos = rules.findIndex(([itemPriority]) => priority < itemPriority)
+      const entry = [priority, ruleName, rule]
+      rules.splice(pos < 0 ? rules.length : pos, 0, entry)
       return function () {
-        const idx = rules.indexOf(entry);
-        if (idx >= 0) rules.splice(idx, 1);
+        const idx = rules.indexOf(entry)
+        if (idx >= 0) rules.splice(idx, 1)
       }
     },
     /**
@@ -78,24 +78,24 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      * @return {boolean} true for allow, false for deny.
      */
     function isActivityAllowed(activity, params) {
-      let lastPriority, foundAllow;
+      let lastPriority, foundAllow
       for (const [priority, name, rule] of getRules(activity)) {
-        if (lastPriority !== priority && foundAllow) break;
-        lastPriority = priority;
-        const ruleResult = runRule(activity, name, rule, params);
+        if (lastPriority !== priority && foundAllow) break
+        lastPriority = priority
+        const ruleResult = runRule(activity, name, rule, params)
         if (ruleResult) {
           if (!ruleResult.allow) {
-            logResult(ruleResult);
-            return false;
+            logResult(ruleResult)
+            return false
           } else {
-            foundAllow = ruleResult;
+            foundAllow = ruleResult
           }
         }
       }
-      foundAllow && logResult(foundAllow);
-      return true;
+      foundAllow && logResult(foundAllow)
+      return true
     }
-  ];
+  ]
 }
 
-export const [registerActivityControl, isActivityAllowed] = ruleRegistry();
+export const [registerActivityControl, isActivityAllowed] = ruleRegistry()

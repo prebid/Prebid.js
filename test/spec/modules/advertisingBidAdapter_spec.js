@@ -1,12 +1,12 @@
-import { assert, expect } from 'chai';
-import { BANNER } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
-import { spec } from 'modules/advertisingBidAdapter.js';
-import * as utils from 'src/utils.js';
+import { assert, expect } from 'chai'
+import { BANNER } from 'src/mediaTypes.js'
+import { config } from 'src/config.js'
+import { spec } from 'modules/advertisingBidAdapter.js'
+import * as utils from 'src/utils.js'
 
 describe('advertisingBidAdapter ', function () {
   describe('isBidRequestValid', function () {
-    let bid;
+    let bid
     beforeEach(function () {
       bid = {
         sizes: [300, 250],
@@ -14,47 +14,47 @@ describe('advertisingBidAdapter ', function () {
           seatId: 'prebid',
           tagId: '1234'
         }
-      };
-    });
+      }
+    })
 
     it('should return true when params placementId and seatId are truthy', function () {
-      bid.params.placementId = bid.params.tagId;
-      delete bid.params.tagId;
-      assert(spec.isBidRequestValid(bid));
-    });
+      bid.params.placementId = bid.params.tagId
+      delete bid.params.tagId
+      assert(spec.isBidRequestValid(bid))
+    })
 
     it('should return true when params tagId and seatId are truthy', function () {
-      delete bid.params.placementId;
-      assert(spec.isBidRequestValid(bid));
-    });
+      delete bid.params.placementId
+      assert(spec.isBidRequestValid(bid))
+    })
 
     it('should return false when sizes are missing', function () {
-      delete bid.sizes;
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
+      delete bid.sizes
+      assert.isFalse(spec.isBidRequestValid(bid))
+    })
 
     it('should return false when the only size is unwanted', function () {
-      bid.sizes = [[1, 1]];
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
+      bid.sizes = [[1, 1]]
+      assert.isFalse(spec.isBidRequestValid(bid))
+    })
 
     it('should return false when seatId param is missing', function () {
-      delete bid.params.seatId;
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
+      delete bid.params.seatId
+      assert.isFalse(spec.isBidRequestValid(bid))
+    })
 
     it('should return false when both placementId param and tagId param are missing', function () {
-      delete bid.params.placementId;
-      delete bid.params.tagId;
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
+      delete bid.params.placementId
+      delete bid.params.tagId
+      assert.isFalse(spec.isBidRequestValid(bid))
+    })
 
     it('should return false when params is missing or null', function () {
-      assert.isFalse(spec.isBidRequestValid({ params: null }));
-      assert.isFalse(spec.isBidRequestValid({}));
-      assert.isFalse(spec.isBidRequestValid(null));
-    });
-  });
+      assert.isFalse(spec.isBidRequestValid({ params: null }))
+      assert.isFalse(spec.isBidRequestValid({}))
+      assert.isFalse(spec.isBidRequestValid(null))
+    })
+  })
 
   describe('impression type', function () {
     const nonVideoReq = {
@@ -65,7 +65,7 @@ describe('advertisingBidAdapter ', function () {
         tagId: '1234',
         bidfloor: '0.50'
       }
-    };
+    }
 
     const bannerReq = {
       bidId: '9876abcd',
@@ -86,7 +86,7 @@ describe('advertisingBidAdapter ', function () {
           pos: 0
         }
       },
-    };
+    }
 
     const videoReq = {
       bidId: '9876abcd',
@@ -107,13 +107,13 @@ describe('advertisingBidAdapter ', function () {
           ]
         }
       },
-    };
+    }
     it('should return correct impression type video/banner', function () {
-      assert.isFalse(spec.isVideoBid(nonVideoReq));
-      assert.isFalse(spec.isVideoBid(bannerReq));
-      assert.isTrue(spec.isVideoBid(videoReq));
-    });
-  });
+      assert.isFalse(spec.isVideoBid(nonVideoReq))
+      assert.isFalse(spec.isVideoBid(bannerReq))
+      assert.isTrue(spec.isVideoBid(videoReq))
+    })
+  })
   describe('buildRequests', function () {
     const validBidRequestVideo = {
       bidder: 'advertising',
@@ -138,7 +138,7 @@ describe('advertisingBidAdapter ', function () {
       auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
       src: 'client',
       bidRequestsCount: 1
-    };
+    }
 
     const bidderRequestVideo = {
       bidderCode: 'advertising',
@@ -153,9 +153,9 @@ describe('advertisingBidAdapter ', function () {
         stack: ['https://localhost:9999/test/pages/video.html?pbjs_debug=true']
       },
       start: 1553624929700
-    };
+    }
 
-    bidderRequestVideo.bids = validBidRequestVideo;
+    bidderRequestVideo.bids = validBidRequestVideo
     const expectedDataVideo1 = {
       id: 'v2624fabbb078e8-640x480',
       tagid: '1234',
@@ -165,7 +165,7 @@ describe('advertisingBidAdapter ', function () {
         pos: 0,
         minduration: 30
       }
-    };
+    }
 
     const validBidRequest = {
       bidId: '9876abcd',
@@ -175,14 +175,14 @@ describe('advertisingBidAdapter ', function () {
         tagId: '1234',
         bidfloor: '0.50'
       }
-    };
+    }
 
     const bidderRequest = {
       bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       }
-    };
+    }
 
     const bidderRequestWithTimeout = {
       auctionId: 'xyz123',
@@ -190,7 +190,7 @@ describe('advertisingBidAdapter ', function () {
         referer: 'https://test.com/foo/bar'
       },
       timeout: 3000
-    };
+    }
 
     const bidderRequestWithUSPInExt = {
       bidderRequestId: 'xyz123',
@@ -204,7 +204,7 @@ describe('advertisingBidAdapter ', function () {
           }
         }
       }
-    };
+    }
 
     const bidderRequestWithUSPInRegs = {
       bidderRequestId: 'xyz123',
@@ -216,7 +216,7 @@ describe('advertisingBidAdapter ', function () {
           us_privacy: '1YYY'
         }
       }
-    };
+    }
 
     const bidderRequestWithUSPAndOthersInExt = {
       bidderRequestId: 'xyz123',
@@ -231,7 +231,7 @@ describe('advertisingBidAdapter ', function () {
           }
         }
       }
-    };
+    }
 
     const validBidRequestWithUserIds = {
       bidId: '9876abcd',
@@ -267,7 +267,7 @@ describe('advertisingBidAdapter ', function () {
           }]
         }
       ]
-    };
+    }
 
     const expectedEids = [
       {
@@ -294,7 +294,7 @@ describe('advertisingBidAdapter ', function () {
           atype: 1
         }]
       }
-    ];
+    ]
 
     const expectedDataImp1 = {
       banner: {
@@ -313,38 +313,38 @@ describe('advertisingBidAdapter ', function () {
       id: 'b9876abcd',
       tagid: '1234',
       bidfloor: 0.5
-    };
+    }
 
     it('should return valid request when valid bids are used', function () {
       // banner test
-      const req = spec.buildRequests([validBidRequest], bidderRequest);
-      expect(req).be.an('object');
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(req.data).to.exist.and.to.be.an('object');
-      expect(req.data.id).to.equal('xyz123');
-      expect(req.data.imp).to.eql([expectedDataImp1]);
+      const req = spec.buildRequests([validBidRequest], bidderRequest)
+      expect(req).be.an('object')
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(req.data).to.exist.and.to.be.an('object')
+      expect(req.data.id).to.equal('xyz123')
+      expect(req.data.imp).to.eql([expectedDataImp1])
 
       // video test
-      const reqVideo = spec.buildRequests([validBidRequestVideo], bidderRequestVideo);
-      expect(reqVideo).be.an('object');
-      expect(reqVideo).to.have.property('method', 'POST');
-      expect(reqVideo).to.have.property('url');
-      expect(reqVideo.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(reqVideo.data).to.exist.and.to.be.an('object');
-      expect(reqVideo.data.imp).to.eql([expectedDataVideo1]);
-    });
+      const reqVideo = spec.buildRequests([validBidRequestVideo], bidderRequestVideo)
+      expect(reqVideo).be.an('object')
+      expect(reqVideo).to.have.property('method', 'POST')
+      expect(reqVideo).to.have.property('url')
+      expect(reqVideo.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(reqVideo.data).to.exist.and.to.be.an('object')
+      expect(reqVideo.data.imp).to.eql([expectedDataVideo1])
+    })
 
     it('should return no tmax', function () {
-      const req = spec.buildRequests([validBidRequest], bidderRequest);
-      expect(req.data).to.not.have.property('tmax');
-    });
+      const req = spec.buildRequests([validBidRequest], bidderRequest)
+      expect(req.data).to.not.have.property('tmax')
+    })
 
     it('should return tmax equal to callback timeout', function () {
-      const req = spec.buildRequests([validBidRequest], bidderRequestWithTimeout);
-      expect(req.data.tmax).to.eql(bidderRequestWithTimeout.timeout);
-    });
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithTimeout)
+      expect(req.data.tmax).to.eql(bidderRequestWithTimeout.timeout)
+    })
 
     it('should return multiple bids when multiple valid requests with the same seatId are used', function () {
       const secondBidRequest = {
@@ -355,13 +355,13 @@ describe('advertisingBidAdapter ', function () {
           tagId: '5678',
           bidfloor: '0.50'
         }
-      };
-      const req = spec.buildRequests([validBidRequest, secondBidRequest], bidderRequest);
-      expect(req).to.exist.and.be.an('object');
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(req.data.id).to.equal('xyz123');
+      }
+      const req = spec.buildRequests([validBidRequest, secondBidRequest], bidderRequest)
+      expect(req).to.exist.and.be.an('object')
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([expectedDataImp1, {
         banner: {
           format: [
@@ -375,8 +375,8 @@ describe('advertisingBidAdapter ', function () {
         id: 'bfoobar',
         tagid: '5678',
         bidfloor: 0.5
-      }]);
-    });
+      }])
+    })
 
     it('should return only first bid when different seatIds are used', function () {
       const mismatchedSeatBidRequest = {
@@ -387,12 +387,12 @@ describe('advertisingBidAdapter ', function () {
           tagId: '5678',
           bidfloor: '0.50'
         }
-      };
-      const req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://somethingelse.technoratimedia.com/openrtb/bids/somethingelse?');
-      expect(req.data.id).to.equal('xyz123');
+      }
+      const req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://somethingelse.technoratimedia.com/openrtb/bids/somethingelse?')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           banner: {
@@ -408,8 +408,8 @@ describe('advertisingBidAdapter ', function () {
           tagid: '5678',
           bidfloor: 0.5
         }
-      ]);
-    });
+      ])
+    })
 
     it('should not use bidfloor when the value is not a number', function () {
       const badFloorBidRequest = {
@@ -420,12 +420,12 @@ describe('advertisingBidAdapter ', function () {
           tagId: '1234',
           bidfloor: 'abcd'
         }
-      };
-      const req = spec.buildRequests([badFloorBidRequest], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data.id).to.equal('xyz123');
+      }
+      const req = spec.buildRequests([badFloorBidRequest], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           banner: {
@@ -440,8 +440,8 @@ describe('advertisingBidAdapter ', function () {
           id: 'b9876abcd',
           tagid: '1234',
         }
-      ]);
-    });
+      ])
+    })
 
     it('should not use bidfloor when there is no value', function () {
       const badFloorBidRequest = {
@@ -451,12 +451,12 @@ describe('advertisingBidAdapter ', function () {
           seatId: 'prebid',
           tagId: '1234'
         }
-      };
-      const req = spec.buildRequests([badFloorBidRequest], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data.id).to.equal('xyz123');
+      }
+      const req = spec.buildRequests([badFloorBidRequest], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           banner: {
@@ -471,8 +471,8 @@ describe('advertisingBidAdapter ', function () {
           id: 'b9876abcd',
           tagid: '1234',
         }
-      ]);
-    });
+      ])
+    })
 
     it('should use the pos given by the bid request', function () {
       const newPosBidRequest = {
@@ -483,12 +483,12 @@ describe('advertisingBidAdapter ', function () {
           tagId: '1234',
           pos: 1
         }
-      };
-      const req = spec.buildRequests([newPosBidRequest], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data.id).to.equal('xyz123');
+      }
+      const req = spec.buildRequests([newPosBidRequest], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           banner: {
@@ -503,8 +503,8 @@ describe('advertisingBidAdapter ', function () {
           id: 'b9876abcd',
           tagid: '1234'
         }
-      ]);
-    });
+      ])
+    })
 
     it('should use the default pos if none in bid request', function () {
       const newPosBidRequest = {
@@ -514,12 +514,12 @@ describe('advertisingBidAdapter ', function () {
           seatId: 'prebid',
           tagId: '1234',
         }
-      };
-      const req = spec.buildRequests([newPosBidRequest], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data.id).to.equal('xyz123');
+      }
+      const req = spec.buildRequests([newPosBidRequest], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           banner: {
@@ -534,12 +534,12 @@ describe('advertisingBidAdapter ', function () {
           id: 'b9876abcd',
           tagid: '1234'
         }
-      ]);
-    });
+      ])
+    })
     it('should not return a request when no valid bid request used', function () {
-      expect(spec.buildRequests([], bidderRequest)).to.be.undefined;
-      expect(spec.buildRequests([validBidRequest], null)).to.be.undefined;
-    });
+      expect(spec.buildRequests([], bidderRequest)).to.be.undefined
+      expect(spec.buildRequests([validBidRequest], null)).to.be.undefined
+    })
 
     it('should return empty impression when there is no valid sizes in bidrequest', function () {
       const validBidReqWithoutSize = {
@@ -550,7 +550,7 @@ describe('advertisingBidAdapter ', function () {
           tagId: '1234',
           bidfloor: '0.50'
         }
-      };
+      }
 
       const validBidReqInvalidSize = {
         bidId: '9876abcd',
@@ -560,20 +560,20 @@ describe('advertisingBidAdapter ', function () {
           tagId: '1234',
           bidfloor: '0.50'
         }
-      };
+      }
 
       const bidderRequest = {
         auctionId: 'xyz123',
         refererInfo: {
           referer: 'https://test.com/foo/bar'
         }
-      };
+      }
 
-      let req = spec.buildRequests([validBidReqWithoutSize], bidderRequest);
-      assert.isUndefined(req);
-      req = spec.buildRequests([validBidReqInvalidSize], bidderRequest);
-      assert.isUndefined(req);
-    });
+      let req = spec.buildRequests([validBidReqWithoutSize], bidderRequest)
+      assert.isUndefined(req)
+      req = spec.buildRequests([validBidReqInvalidSize], bidderRequest)
+      assert.isUndefined(req)
+    })
     it('should use all the video params in the impression request', function () {
       const validBidRequestVideo = {
         bidder: 'advertising',
@@ -605,13 +605,13 @@ describe('advertisingBidAdapter ', function () {
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
         src: 'client',
         bidRequestsCount: 1
-      };
+      }
 
-      const req = spec.buildRequests([validBidRequestVideo], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data.id).to.equal('xyz123');
+      const req = spec.buildRequests([validBidRequestVideo], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           video: {
@@ -630,8 +630,8 @@ describe('advertisingBidAdapter ', function () {
           id: 'v2624fabbb078e8-640x480',
           tagid: '1234',
         }
-      ]);
-    });
+      ])
+    })
     it('should move any video params in the mediaTypes object to params.video object', function () {
       const validBidRequestVideo = {
         bidder: 'advertising',
@@ -663,13 +663,13 @@ describe('advertisingBidAdapter ', function () {
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
         src: 'client',
         bidRequestsCount: 1
-      };
+      }
 
-      const req = spec.buildRequests([validBidRequestVideo], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data.id).to.equal('xyz123');
+      const req = spec.buildRequests([validBidRequestVideo], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data.id).to.equal('xyz123')
       expect(req.data.imp).to.eql([
         {
           video: {
@@ -688,8 +688,8 @@ describe('advertisingBidAdapter ', function () {
           id: 'v2624fabbb078e8-640x480',
           tagid: '1234',
         }
-      ]);
-    });
+      ])
+    })
     it('should create params.video object if not present on bid request and move any video params in the mediaTypes object to it', function () {
       const validBidRequestVideo = {
         bidder: 'advertising',
@@ -715,9 +715,9 @@ describe('advertisingBidAdapter ', function () {
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
         src: 'client',
         bidRequestsCount: 1
-      };
+      }
 
-      const req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      const req = spec.buildRequests([validBidRequestVideo], bidderRequest)
       expect(req.data.imp).to.eql([
         {
           video: {
@@ -732,61 +732,61 @@ describe('advertisingBidAdapter ', function () {
           id: 'v2624fabbb078e8-640x480',
           tagid: '1234',
         }
-      ]);
-    });
+      ])
+    })
     it('should have us_privacy string in regs instead of regs.ext bidder request', function () {
-      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInExt);
-      expect(req).be.an('object');
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(req.data).to.exist.and.to.be.an('object');
-      expect(req.data.id).to.equal('xyz123');
-      expect(req.data.regs.us_privacy).to.equal('1YYY');
-      expect(req.data.regs.ext).to.not.exist;
-      expect(req.data.imp).to.eql([expectedDataImp1]);
-    });
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInExt)
+      expect(req).be.an('object')
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(req.data).to.exist.and.to.be.an('object')
+      expect(req.data.id).to.equal('xyz123')
+      expect(req.data.regs.us_privacy).to.equal('1YYY')
+      expect(req.data.regs.ext).to.not.exist
+      expect(req.data.imp).to.eql([expectedDataImp1])
+    })
     it('should accept us_privacy string in regs', function () {
       // banner test
-      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInRegs);
-      expect(req).be.an('object');
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(req.data).to.exist.and.to.be.an('object');
-      expect(req.data.id).to.equal('xyz123');
-      expect(req.data.regs.us_privacy).to.equal('1YYY');
-      expect(req.data.regs.ext).to.not.exist;
-      expect(req.data.imp).to.eql([expectedDataImp1]);
-    });
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInRegs)
+      expect(req).be.an('object')
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(req.data).to.exist.and.to.be.an('object')
+      expect(req.data.id).to.equal('xyz123')
+      expect(req.data.regs.us_privacy).to.equal('1YYY')
+      expect(req.data.regs.ext).to.not.exist
+      expect(req.data.imp).to.eql([expectedDataImp1])
+    })
     it('should not remove regs.ext when moving us_privacy if there are other things in regs.ext', function () {
       // banner test
-      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPAndOthersInExt);
-      expect(req).be.an('object');
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(req.data).to.exist.and.to.be.an('object');
-      expect(req.data.id).to.equal('xyz123');
-      expect(req.data.regs.us_privacy).to.equal('1YYY');
-      expect(req.data.regs.ext.extra).to.equal('extra item');
-      expect(req.data.imp).to.eql([expectedDataImp1]);
-    });
+      const req = spec.buildRequests([validBidRequest], bidderRequestWithUSPAndOthersInExt)
+      expect(req).be.an('object')
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(req.data).to.exist.and.to.be.an('object')
+      expect(req.data.id).to.equal('xyz123')
+      expect(req.data.regs.us_privacy).to.equal('1YYY')
+      expect(req.data.regs.ext.extra).to.equal('extra item')
+      expect(req.data.imp).to.eql([expectedDataImp1])
+    })
     it('should contain user object when user ids are present in the bidder request', function () {
-      const req = spec.buildRequests([validBidRequestWithUserIds], bidderRequest);
-      expect(req).be.an('object');
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
-      expect(req.data).to.exist.and.to.be.an('object');
-      expect(req.data.id).to.equal('xyz123');
-      expect(req.data.user).be.an('object');
-      expect(req.data.user).to.have.property('ext');
-      expect(req.data.user.ext).to.have.property('eids');
-      expect(req.data.user.ext.eids).to.eql(expectedEids);
-      expect(req.data.imp).to.eql([expectedDataImp1]);
-    });
-  });
+      const req = spec.buildRequests([validBidRequestWithUserIds], bidderRequest)
+      expect(req).be.an('object')
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?')
+      expect(req.data).to.exist.and.to.be.an('object')
+      expect(req.data.id).to.equal('xyz123')
+      expect(req.data.user).be.an('object')
+      expect(req.data.user).to.have.property('ext')
+      expect(req.data.user.ext).to.have.property('eids')
+      expect(req.data.user.ext.eids).to.eql(expectedEids)
+      expect(req.data.imp).to.eql([expectedDataImp1])
+    })
+  })
 
   describe('Bid Requests with placementId should be backward compatible ', function () {
     const validVideoBidReq = {
@@ -816,7 +816,7 @@ describe('advertisingBidAdapter ', function () {
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
-    };
+    }
 
     const validBannerBidRequest = {
       bidId: '9876abcd',
@@ -825,7 +825,7 @@ describe('advertisingBidAdapter ', function () {
         seatId: 'prebid',
         placementId: '1234',
       }
-    };
+    }
 
     const bidderRequest = {
       refererInfo: {
@@ -833,22 +833,22 @@ describe('advertisingBidAdapter ', function () {
       },
       bidderCode: 'advertising',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
-    };
+    }
 
     it('should return valid bid request for banner impression', function () {
-      const req = spec.buildRequests([validBannerBidRequest], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-    });
+      const req = spec.buildRequests([validBannerBidRequest], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+    })
 
     it('should return valid bid request for video impression', function () {
-      const req = spec.buildRequests([validVideoBidReq], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-    });
-  });
+      const req = spec.buildRequests([validVideoBidReq], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+    })
+  })
 
   describe('Bid Requests with schain object ', function () {
     const validBidReq = {
@@ -895,7 +895,7 @@ describe('advertisingBidAdapter ', function () {
           }
         }
       }
-    };
+    }
     const bidderRequest = {
       refererInfo: {
         referer: 'http://localhost:9999/'
@@ -946,18 +946,18 @@ describe('advertisingBidAdapter ', function () {
       auctionStart: 1580310345205,
       timeout: 1000,
       start: 1580310345211
-    };
+    }
 
     it('should return valid bid request with schain object', function () {
-      const req = spec.buildRequests([validBidReq], bidderRequest);
-      expect(req).to.have.property('method', 'POST');
-      expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
-      expect(req.data).to.have.property('source');
-      expect(req.data.source).to.have.property('ext');
-      expect(req.data.source.ext).to.have.property('schain');
-    });
-  });
+      const req = spec.buildRequests([validBidReq], bidderRequest)
+      expect(req).to.have.property('method', 'POST')
+      expect(req).to.have.property('url')
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$')
+      expect(req.data).to.have.property('source')
+      expect(req.data.source).to.have.property('ext')
+      expect(req.data.source.ext).to.have.property('schain')
+    })
+  })
 
   describe('interpretResponse', function () {
     let bidResponse = {
@@ -969,7 +969,7 @@ describe('advertisingBidAdapter ', function () {
       nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=${AUCTION_PRICE}',
       w: 300,
       h: 250
-    };
+    }
     const bidResponse2 = {
       id: '10865933907263800~9999~0',
       impid: 'b9876abcd',
@@ -979,7 +979,7 @@ describe('advertisingBidAdapter ', function () {
       nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=OTk5OX4wJkFVQ1RJT05fU0VBVF9JR&AUCTION_PRICE=${AUCTION_PRICE}',
       w: 300,
       h: 600
-    };
+    }
 
     let bidRequest = {
       data: {
@@ -1005,8 +1005,8 @@ describe('advertisingBidAdapter ', function () {
         withCredentials: true
       },
       url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
-    };
-    let serverResponse;
+    }
+    let serverResponse
     beforeEach(function () {
       serverResponse = {
         body: {
@@ -1016,8 +1016,8 @@ describe('advertisingBidAdapter ', function () {
             bid: [],
           }]
         }
-      };
-    });
+      }
+    })
 
     it('should return 1 video bid when 1 bid is in the video response', function () {
       bidRequest = {
@@ -1039,7 +1039,7 @@ describe('advertisingBidAdapter ', function () {
           withCredentials: true
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
-      };
+      }
       const serverRespVideo = {
         body: {
           id: 'abcd1234',
@@ -1064,11 +1064,11 @@ describe('advertisingBidAdapter ', function () {
             }
           ]
         }
-      };
+      }
 
       // serverResponse.body.seatbid[0].bid.push(bidResponse);
-      const resp = spec.interpretResponse(serverRespVideo, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      const resp = spec.interpretResponse(serverRespVideo, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
         cpm: 0.45,
@@ -1083,13 +1083,13 @@ describe('advertisingBidAdapter ', function () {
         meta: { advertiserDomains: ['psacentral.org'] },
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
         vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
-      });
-    });
+      })
+    })
 
     it('should return 1 bid when 1 bid is in the response', function () {
-      serverResponse.body.seatbid[0].bid.push(bidResponse);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      serverResponse.body.seatbid[0].bid.push(bidResponse)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
         cpm: 0.13,
@@ -1101,17 +1101,17 @@ describe('advertisingBidAdapter ', function () {
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=0.13\"></script>',
         ttl: 420
-      });
-    });
+      })
+    })
 
     it('should return 2 bids when 2 bids are in the response', function () {
-      serverResponse.body.seatbid[0].bid.push(bidResponse);
+      serverResponse.body.seatbid[0].bid.push(bidResponse)
       serverResponse.body.seatbid.push({
         seat: '9999',
         bid: [bidResponse2],
-      });
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(2);
+      })
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(2)
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
         cpm: 0.13,
@@ -1123,7 +1123,7 @@ describe('advertisingBidAdapter ', function () {
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=0.13\"></script>',
         ttl: 420
-      });
+      })
 
       expect(resp[1]).to.eql({
         requestId: '9876abcd',
@@ -1136,21 +1136,21 @@ describe('advertisingBidAdapter ', function () {
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=OTk5OX4wJkFVQ1RJT05fU0VBVF9JR&AUCTION_PRICE=1.99\"></script>',
         ttl: 420
-      });
-    });
+      })
+    })
 
     it('should not return a bid when no bid is in the response', function () {
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').that.is.empty;
-    });
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').that.is.empty
+    })
 
     it('should not return a bid when there is no response body', function () {
-      expect(spec.interpretResponse({ body: null })).to.not.exist;
-      expect(spec.interpretResponse({ body: 'some error text' })).to.not.exist;
-    });
+      expect(spec.interpretResponse({ body: null })).to.not.exist
+      expect(spec.interpretResponse({ body: 'some error text' })).to.not.exist
+    })
 
     it('should not include videoCacheKey property on the returned response when cache url is present in the config', function () {
-      const sandbox = sinon.createSandbox();
+      const sandbox = sinon.createSandbox()
       const serverRespVideo = {
         body: {
           id: 'abcd1234',
@@ -1175,19 +1175,19 @@ describe('advertisingBidAdapter ', function () {
             }
           ]
         }
-      };
+      }
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
           'cache.url': 'faKeCacheUrl'
-        };
-        return config[key];
-      });
+        }
+        return config[key]
+      })
 
-      const resp = spec.interpretResponse(serverRespVideo, bidRequest);
-      sandbox.restore();
-      expect(resp[0].videoCacheKey).to.not.exist;
-    });
+      const resp = spec.interpretResponse(serverRespVideo, bidRequest)
+      sandbox.restore()
+      expect(resp[0].videoCacheKey).to.not.exist
+    })
 
     it('should use video bid request height and width if not present in response', function () {
       bidRequest = {
@@ -1209,7 +1209,7 @@ describe('advertisingBidAdapter ', function () {
           withCredentials: true
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
-      };
+      }
 
       const serverRespVideo = {
         body: {
@@ -1233,9 +1233,9 @@ describe('advertisingBidAdapter ', function () {
             }
           ]
         }
-      };
-      const resp = spec.interpretResponse(serverRespVideo, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      }
+      const resp = spec.interpretResponse(serverRespVideo, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
         cpm: 0.45,
@@ -1250,8 +1250,8 @@ describe('advertisingBidAdapter ', function () {
         meta: { advertiserDomains: ['psacentral.org'] },
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
         vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
-      });
-    });
+      })
+    })
 
     it('should use banner bid request height and width if not present in response', function () {
       bidRequest = {
@@ -1275,7 +1275,7 @@ describe('advertisingBidAdapter ', function () {
           withCredentials: true
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
-      };
+      }
 
       bidResponse = {
         id: '10865933907263896~9998~0',
@@ -1284,11 +1284,11 @@ describe('advertisingBidAdapter ', function () {
         crid: '1022-250',
         adm: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=${AUCTION_PRICE}\"></script>',
         nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=${AUCTION_PRICE}',
-      };
+      }
 
-      serverResponse.body.seatbid[0].bid.push(bidResponse);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
+      serverResponse.body.seatbid[0].bid.push(bidResponse)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
       expect(resp[0]).to.eql({
         requestId: 'abc123',
         cpm: 0.13,
@@ -1300,103 +1300,103 @@ describe('advertisingBidAdapter ', function () {
         mediaType: BANNER,
         ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=0.13\"></script>',
         ttl: 420
-      });
-    });
+      })
+    })
 
     it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp and bid.ext["imds.tv"].ttl are both undefined', function() {
-      const br = { ...bidResponse };
-      serverResponse.body.seatbid[0].bid.push(br);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
-      expect(resp[0]).to.have.property('ttl');
-      expect(resp[0].ttl).to.equal(420);
-    });
+      const br = { ...bidResponse }
+      serverResponse.body.seatbid[0].bid.push(br)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
+      expect(resp[0]).to.have.property('ttl')
+      expect(resp[0].ttl).to.equal(420)
+    })
 
     it('should return ttl equal to bid.ext["imds.tv"].ttl if it is defined but bid.exp is undefined', function() {
-      const br = { ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
-      serverResponse.body.seatbid[0].bid.push(br);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
-      expect(resp[0]).to.have.property('ttl');
-      expect(resp[0].ttl).to.equal(4321);
-    });
+      const br = { ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse }
+      serverResponse.body.seatbid[0].bid.push(br)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
+      expect(resp[0]).to.have.property('ttl')
+      expect(resp[0].ttl).to.equal(4321)
+    })
 
     it('should return ttl equal to bid.exp if bid.exp is less than or equal to DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function() {
-      const br = { exp: 123, ...bidResponse };
-      serverResponse.body.seatbid[0].bid.push(br);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
-      expect(resp[0]).to.have.property('ttl');
-      expect(resp[0].ttl).to.equal(123);
-    });
+      const br = { exp: 123, ...bidResponse }
+      serverResponse.body.seatbid[0].bid.push(br)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
+      expect(resp[0]).to.have.property('ttl')
+      expect(resp[0].ttl).to.equal(123)
+    })
 
     it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp is greater than DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function() {
-      const br = { exp: 4321, ...bidResponse };
-      serverResponse.body.seatbid[0].bid.push(br);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
-      expect(resp[0]).to.have.property('ttl');
-      expect(resp[0].ttl).to.equal(420);
-    });
+      const br = { exp: 4321, ...bidResponse }
+      serverResponse.body.seatbid[0].bid.push(br)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
+      expect(resp[0]).to.have.property('ttl')
+      expect(resp[0].ttl).to.equal(420)
+    })
 
     it('should return ttl equal to bid.exp if bid.exp is less than or equal to bid.ext["imds.tv"].ttl', function() {
-      const br = { exp: 1234, ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
-      serverResponse.body.seatbid[0].bid.push(br);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
-      expect(resp[0]).to.have.property('ttl');
-      expect(resp[0].ttl).to.equal(1234);
-    });
+      const br = { exp: 1234, ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse }
+      serverResponse.body.seatbid[0].bid.push(br)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
+      expect(resp[0]).to.have.property('ttl')
+      expect(resp[0].ttl).to.equal(1234)
+    })
 
     it('should return ttl equal to bid.ext["imds.tv"].ttl if bid.exp is greater than bid.ext["imds.tv"].ttl', function() {
-      const br = { exp: 4321, ext: { 'imds.tv': { ttl: 1234 } }, ...bidResponse };
-      serverResponse.body.seatbid[0].bid.push(br);
-      const resp = spec.interpretResponse(serverResponse, bidRequest);
-      expect(resp).to.be.an('array').to.have.lengthOf(1);
-      expect(resp[0]).to.have.property('ttl');
-      expect(resp[0].ttl).to.equal(1234);
-    });
-  });
+      const br = { exp: 4321, ext: { 'imds.tv': { ttl: 1234 } }, ...bidResponse }
+      serverResponse.body.seatbid[0].bid.push(br)
+      const resp = spec.interpretResponse(serverResponse, bidRequest)
+      expect(resp).to.be.an('array').to.have.lengthOf(1)
+      expect(resp[0]).to.have.property('ttl')
+      expect(resp[0].ttl).to.equal(1234)
+    })
+  })
   describe('getUserSyncs', function () {
     it('should return an iframe usersync when iframes is enabled', function () {
       const usersyncs = spec.getUserSyncs({
         iframeEnabled: true
-      }, null);
-      expect(usersyncs).to.be.an('array').with.lengthOf(1);
-      expect(usersyncs[0]).to.have.property('type', 'iframe');
-      expect(usersyncs[0]).to.have.property('url');
-      expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
-    });
+      }, null)
+      expect(usersyncs).to.be.an('array').with.lengthOf(1)
+      expect(usersyncs[0]).to.have.property('type', 'iframe')
+      expect(usersyncs[0]).to.have.property('url')
+      expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html')
+    })
 
     it('should return an image usersync when pixels are enabled', function () {
       const usersyncs = spec.getUserSyncs({
         pixelEnabled: true
-      }, null);
-      expect(usersyncs).to.be.an('array').with.lengthOf(1);
-      expect(usersyncs[0]).to.have.property('type', 'image');
-      expect(usersyncs[0]).to.have.property('url');
-      expect(usersyncs[0].url).to.contain('https://sync.technoratimedia.com/services');
-    });
+      }, null)
+      expect(usersyncs).to.be.an('array').with.lengthOf(1)
+      expect(usersyncs[0]).to.have.property('type', 'image')
+      expect(usersyncs[0]).to.have.property('url')
+      expect(usersyncs[0].url).to.contain('https://sync.technoratimedia.com/services')
+    })
 
     it('should return an iframe usersync when both iframe and pixel are enabled', function () {
       const usersyncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
-      }, null);
-      expect(usersyncs).to.be.an('array').with.lengthOf(1);
-      expect(usersyncs[0]).to.have.property('type', 'iframe');
-      expect(usersyncs[0]).to.have.property('url');
-      expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
-    });
+      }, null)
+      expect(usersyncs).to.be.an('array').with.lengthOf(1)
+      expect(usersyncs[0]).to.have.property('type', 'iframe')
+      expect(usersyncs[0]).to.have.property('url')
+      expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html')
+    })
 
     it('should not return a usersync when neither iframes nor pixel are enabled', function () {
       const usersyncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: false
-      }, null);
-      expect(usersyncs).to.be.an('array').that.is.empty;
-    });
-  });
+      }, null)
+      expect(usersyncs).to.be.an('array').that.is.empty
+    })
+  })
 
   describe('Bid Requests with price module should use if available', function () {
     const validVideoBidRequest = {
@@ -1427,7 +1427,7 @@ describe('advertisingBidAdapter ', function () {
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
-    };
+    }
 
     const validBannerBidRequest = {
       bidId: '9876abcd',
@@ -1437,7 +1437,7 @@ describe('advertisingBidAdapter ', function () {
         seatId: 'prebid',
         placementId: '1234',
       }
-    };
+    }
 
     const bidderRequest = {
       refererInfo: {
@@ -1445,28 +1445,28 @@ describe('advertisingBidAdapter ', function () {
       },
       bidderCode: 'advertising',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
-    };
+    }
 
     it('should return valid bidfloor using price module for banner/video impression', function () {
-      let bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
-      let videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+      let bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest)
+      let videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest)
 
-      expect(bannerRequest.data.imp[0].bidfloor).to.equal(0.5);
-      expect(videoRequest.data.imp[0].bidfloor).to.equal(0.5);
+      expect(bannerRequest.data.imp[0].bidfloor).to.equal(0.5)
+      expect(videoRequest.data.imp[0].bidfloor).to.equal(0.5)
 
-      const priceModuleFloor = 3;
-      const floorResponse = { currency: 'USD', floor: priceModuleFloor };
+      const priceModuleFloor = 3
+      const floorResponse = { currency: 'USD', floor: priceModuleFloor }
 
-      validBannerBidRequest.getFloor = () => { return floorResponse; };
-      validVideoBidRequest.getFloor = () => { return floorResponse; };
+      validBannerBidRequest.getFloor = () => { return floorResponse }
+      validVideoBidRequest.getFloor = () => { return floorResponse }
 
-      bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
-      videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
+      bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest)
+      videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest)
 
-      expect(bannerRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
-      expect(videoRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor);
-    });
-  });
+      expect(bannerRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor)
+      expect(videoRequest.data.imp[0].bidfloor).to.equal(priceModuleFloor)
+    })
+  })
 
   describe('Bid Requests with gpid or anything in bid.ext should use if available', function () {
     const validVideoBidRequest = {
@@ -1504,7 +1504,7 @@ describe('advertisingBidAdapter ', function () {
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
-    };
+    }
 
     const validBannerBidRequest = {
       bidId: '9876abcd',
@@ -1521,7 +1521,7 @@ describe('advertisingBidAdapter ', function () {
           }
         }
       }
-    };
+    }
 
     const bidderRequest = {
       refererInfo: {
@@ -1529,16 +1529,16 @@ describe('advertisingBidAdapter ', function () {
       },
       bidderCode: 'advertising',
       auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
-    };
+    }
 
     it('should return valid gpid and pbadslot', function () {
-      const videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest);
-      const bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      const videoRequest = spec.buildRequests([validVideoBidRequest], bidderRequest)
+      const bannerRequest = spec.buildRequests([validBannerBidRequest], bidderRequest)
 
-      expect(videoRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-video');
-      expect(videoRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-video');
-      expect(bannerRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-banner');
-      expect(bannerRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-banner');
-    });
-  });
-});
+      expect(videoRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-video')
+      expect(videoRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-video')
+      expect(bannerRequest.data.imp[0].ext.gpid).to.equal('/1111/homepage-banner')
+      expect(bannerRequest.data.imp[0].ext.data.pbadslot).to.equal('/1111/homepage-banner')
+    })
+  })
+})

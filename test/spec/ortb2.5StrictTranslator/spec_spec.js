@@ -1,4 +1,4 @@
-import { BidRequest } from '../../../libraries/ortb2.5StrictTranslator/spec.js';
+import { BidRequest } from '../../../libraries/ortb2.5StrictTranslator/spec.js'
 
 // sample requests taken from ORTB 2.5 spec: https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 const SAMPLE_REQUESTS = [
@@ -306,7 +306,7 @@ const SAMPLE_REQUESTS = [
       'id': '55816b39711f9b5acf3b90e313ed29e51665623f'
     }
   },
-];
+]
 
 if (FEATURES.NATIVE) {
   SAMPLE_REQUESTS.push({
@@ -344,15 +344,15 @@ if (FEATURES.NATIVE) {
     'user': {
       'id': '55816b39711f9b5acf3b90e313ed29e51665623f'
     }
-  });
+  })
 }
 
 describe('BidRequest spec', () => {
   SAMPLE_REQUESTS.forEach((req, i) => {
     it(`accepts sample #${i}`, () => {
-      const onError = sinon.stub();
-      BidRequest(null, null, null, req, onError);
-      sinon.assert.notCalled(onError);
-    });
-  });
-});
+      const onError = sinon.stub()
+      BidRequest(null, null, null, req, onError)
+      sinon.assert.notCalled(onError)
+    })
+  })
+})

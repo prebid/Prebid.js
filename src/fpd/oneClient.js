@@ -1,4 +1,4 @@
-import { logWarn } from '../utils.js';
+import { logWarn } from '../utils.js'
 
 // mutually exclusive ORTB sections in order of priority - 'dooh' beats 'app' & 'site' and 'app' beats 'site';
 // if one is set, the others will be removed
@@ -10,14 +10,14 @@ export function clientSectionChecker(logPrefix) {
       if (hasSection(ortb2, section)) {
         if (found != null) {
           logWarn(`${logPrefix} specifies both '${found}' and '${section}'; dropping the latter.`)
-          delete ortb2[section];
+          delete ortb2[section]
         } else {
-          found = section;
+          found = section
         }
       }
-      return found;
-    }, null);
-    return ortb2;
+      return found
+    }, null)
+    return ortb2
   }
 }
 

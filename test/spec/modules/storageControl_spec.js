@@ -1,4 +1,4 @@
-import { metadataRepository } from '../../../libraries/metadata/metadata.js';
+import { metadataRepository } from '../../../libraries/metadata/metadata.js'
 import {
   checkDisclosure, dynamicDisclosureCollector, ENFORCE_ALIAS,
   ENFORCE_OFF,
@@ -6,24 +6,24 @@ import {
   getDisclosures,
   storageControlRule,
   deactivate
-} from '../../../modules/storageControl.js';
+} from '../../../modules/storageControl.js'
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
-} from '../../../src/activities/params.js';
-import { MODULE_TYPE_BIDDER } from '../../../src/activities/modules.js';
-import { STORAGE_TYPE_COOKIES } from '../../../src/storageManager.js';
+} from '../../../src/activities/params.js'
+import { MODULE_TYPE_BIDDER } from '../../../src/activities/modules.js'
+import { STORAGE_TYPE_COOKIES } from '../../../src/storageManager.js'
 
 // since the module is on by default, importing it here turn it on for other tests
 // that happen to run together with this suite - turn it off
-deactivate();
+deactivate()
 
 describe('storageControl', () => {
   describe('getDisclosures', () => {
-    let metadata;
+    let metadata
     beforeEach(() => {
-      metadata = metadataRepository();
+      metadata = metadataRepository()
     })
 
     function mkParams(type = STORAGE_TYPE_COOKIES, key = undefined, bidder = 'mockBidder') {
@@ -36,8 +36,8 @@ describe('storageControl', () => {
     }
 
     it('should return null when no metadata is available', () => {
-      expect(getDisclosures(mkParams(), metadata)).to.be.null;
-    });
+      expect(getDisclosures(mkParams(), metadata)).to.be.null
+    })
 
     describe('when metadata is available', () => {
       beforeEach(() => {
@@ -82,8 +82,8 @@ describe('storageControl', () => {
               disclosureURL: null,
             },
           ]
-        });
-      });
+        })
+      })
 
       it('should return an empty array when bidder has no disclosure', () => {
         expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'mockCookie', 'noDisclosureBidder'), metadata)).to.eql({
@@ -91,11 +91,11 @@ describe('storageControl', () => {
             noDisclosureBidder: null
           },
           matches: []
-        });
-      });
+        })
+      })
 
       it('should return an empty array if the type is neither web nor cookie', () => {
-        expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'wrongType', 'mockBidder'), metadata).matches).to.eql([]);
+        expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'wrongType', 'mockBidder'), metadata).matches).to.eql([])
       })
 
       Object.entries({
@@ -115,7 +115,7 @@ describe('storageControl', () => {
               }
             ]
           )
-        });
+        })
       });
 
       [
@@ -148,23 +148,23 @@ describe('storageControl', () => {
             mockBidder: 'mock.url',
           },
           matches: []
-        });
+        })
       })
-    });
-  });
+    })
+  })
   describe('checkDisclosure', () => {
-    let disclosures;
+    let disclosures
     beforeEach(() => {
-      disclosures = sinon.stub();
+      disclosures = sinon.stub()
     })
     it('should not check when no key is present (e.g. cookiesAreEnabled)', () => {
       expect(checkDisclosure({
         [ACTIVITY_PARAM_COMPONENT_TYPE]: 'bidder',
         [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockBidder',
         [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_COOKIES
-      }, disclosures).disclosed).to.be.null;
-      sinon.assert.notCalled(disclosures);
-    });
+      }, disclosures).disclosed).to.be.null
+      sinon.assert.notCalled(disclosures)
+    })
 
     it('should return true when key is disclosed', () => {
       const params = {
@@ -179,73 +179,73 @@ describe('storageControl', () => {
           identifier: 'mockCookie'
         }]
       })
-      expect(checkDisclosure(params, disclosures).disclosed).to.be.true;
-      sinon.assert.calledWith(disclosures, params);
+      expect(checkDisclosure(params, disclosures).disclosed).to.be.true
+      sinon.assert.calledWith(disclosures, params)
     })
-  });
+  })
   describe('storageControlRule', () => {
-    let enforcement, checkResult, rule;
+    let enforcement, checkResult, rule
     beforeEach(() => {
-      rule = storageControlRule(() => enforcement, () => checkResult);
-    });
+      rule = storageControlRule(() => enforcement, () => checkResult)
+    })
 
     it('should allow when disclosed is null', () => {
-      enforcement = ENFORCE_STRICT;
-      checkResult = { disclosed: null };
-      expect(rule()).to.not.exist;
-    });
+      enforcement = ENFORCE_STRICT
+      checkResult = { disclosed: null }
+      expect(rule()).to.not.exist
+    })
 
     it('should allow when there is no disclosure, but enforcement is off', () => {
-      enforcement = ENFORCE_OFF;
-      checkResult = { disclosed: false, parent: false };
-      expect(rule()).to.not.exist;
-    });
+      enforcement = ENFORCE_OFF
+      checkResult = { disclosed: false, parent: false }
+      expect(rule()).to.not.exist
+    })
 
     it('should allow when disclosed is true', () => {
-      enforcement = ENFORCE_STRICT;
-      checkResult = { disclosed: true };
-      expect(rule()).to.not.exist;
-    });
+      enforcement = ENFORCE_STRICT
+      checkResult = { disclosed: true }
+      expect(rule()).to.not.exist
+    })
 
     it('should deny when enforcement is strict and disclosure is done by the aliased module', () => {
-      enforcement = ENFORCE_STRICT;
-      checkResult = { disclosed: false, parent: true, reason: 'denied' };
-      expect(rule()).to.eql({ allow: false, reason: 'denied' });
-    });
+      enforcement = ENFORCE_STRICT
+      checkResult = { disclosed: false, parent: true, reason: 'denied' }
+      expect(rule()).to.eql({ allow: false, reason: 'denied' })
+    })
 
     it('should deny by default when enforcement is not set', () => {
-      enforcement = undefined;
-      checkResult = { disclosed: false, parent: false, reason: 'denied' };
-      expect(rule()).to.eql({ allow: false, reason: 'denied' });
-    });
+      enforcement = undefined
+      checkResult = { disclosed: false, parent: false, reason: 'denied' }
+      expect(rule()).to.eql({ allow: false, reason: 'denied' })
+    })
 
     it('should allow when enforcement is allowAliases and disclosure is done by the aliased module', () => {
-      enforcement = ENFORCE_ALIAS;
-      checkResult = { disclosed: false, parent: true, reason: 'allowed' };
-      expect(rule()).to.not.exist;
-    });
-  });
+      enforcement = ENFORCE_ALIAS
+      checkResult = { disclosed: false, parent: true, reason: 'allowed' }
+      expect(rule()).to.not.exist
+    })
+  })
 
   describe('dynamic disclosures', () => {
-    let next, hook, getDisclosures;
+    let next, hook, getDisclosures
     beforeEach(() => {
       next = sinon.stub();
-      ({ hook, getDisclosures } = dynamicDisclosureCollector());
-    });
+      ({ hook, getDisclosures } = dynamicDisclosureCollector())
+    })
     it('should collect and return disclosures', () => {
-      const disclosure = { identifier: 'mock', type: 'web', purposes: [1] };
-      hook(next, 'module', disclosure);
-      sinon.assert.calledWith(next, 'module', disclosure);
+      const disclosure = { identifier: 'mock', type: 'web', purposes: [1] }
+      hook(next, 'module', disclosure)
+      sinon.assert.calledWith(next, 'module', disclosure)
       expect(getDisclosures()).to.eql([
         {
           disclosedBy: ['module'],
           ...disclosure
         }
-      ]);
-    });
+      ])
+    })
     it('should update disclosures for the same identifier', () => {
-      hook(next, 'module1', { identifier: 'mock', type: 'cookie', maxAgeSeconds: 10, cookieRefresh: true, purposes: [1] });
-      hook(next, 'module2', { identifier: 'mock', type: 'cookie', maxAgeSeconds: 1, cookieRefresh: true, purposes: [2] });
+      hook(next, 'module1', { identifier: 'mock', type: 'cookie', maxAgeSeconds: 10, cookieRefresh: true, purposes: [1] })
+      hook(next, 'module2', { identifier: 'mock', type: 'cookie', maxAgeSeconds: 1, cookieRefresh: true, purposes: [2] })
       expect(getDisclosures()).to.eql([{
         disclosedBy: ['module1', 'module2'],
         identifier: 'mock',
@@ -254,21 +254,21 @@ describe('storageControl', () => {
         cookieRefresh: true,
         purposes: [1, 2]
       }])
-    });
+    })
     it('should not repeat the same module', () => {
       const disclosure = {
         identifier: 'mock', type: 'web', purposes: [1]
       }
-      hook(next, 'module', disclosure);
-      hook(next, 'module', disclosure);
+      hook(next, 'module', disclosure)
+      hook(next, 'module', disclosure)
       expect(getDisclosures()).to.eql([{
         disclosedBy: ['module'],
         ...disclosure
       }])
     })
     it('should treat web and cookie disclosures as separate', () => {
-      hook(next, 'module1', { identifier: 'mock', type: 'cookie', purposes: [1] });
-      hook(next, 'module2', { identifier: 'mock', type: 'web', purposes: [2] });
+      hook(next, 'module1', { identifier: 'mock', type: 'cookie', purposes: [1] })
+      hook(next, 'module2', { identifier: 'mock', type: 'web', purposes: [2] })
       expect(getDisclosures()).to.have.deep.members([
         {
           disclosedBy: ['module1'],
@@ -284,5 +284,5 @@ describe('storageControl', () => {
         }
       ])
     })
-  });
+  })
 })

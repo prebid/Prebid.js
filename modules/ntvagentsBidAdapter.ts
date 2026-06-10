@@ -1,16 +1,16 @@
-import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
   getUserSyncs,
   type TeqBlazeBidParams
-} from '../libraries/teqblazeUtils/bidderUtils.ts';
+} from '../libraries/teqblazeUtils/bidderUtils.ts'
 
-const BIDDER_CODE = 'ntvagents';
-const AD_URL = 'https://endpoint1.nativeagents.ai/pbjs';
-const SYNC_URL = 'https://sync.nativeagents.ai';
+const BIDDER_CODE = 'ntvagents'
+const AD_URL = 'https://endpoint1.nativeagents.ai/pbjs'
+const SYNC_URL = 'https://sync.nativeagents.ai'
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -26,6 +26,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   buildRequests: buildRequests(AD_URL),
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

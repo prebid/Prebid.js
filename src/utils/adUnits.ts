@@ -1,6 +1,6 @@
-import type { AdUnitDefinition } from "../adUnits.ts";
-import type { BidRequest } from "../adapterManager.ts";
-import type { Bid } from "../bidfactory.ts";
+import type { AdUnitDefinition } from "../adUnits.ts"
+import type { BidRequest } from "../adapterManager.ts"
+import type { Bid } from "../bidfactory.ts"
 
 export function getAdUnitElement(bidRequest: BidRequest<any>): HTMLElement
 export function getAdUnitElement(bidResponse: Bid): HTMLElement
@@ -11,11 +11,11 @@ export function getAdUnitElement(target: {
   element?: HTMLElement
 }): HTMLElement | null {
   if (target.element != null) {
-    return target.element;
+    return target.element
   }
-  const id = target.adUnitCode ?? target.code;
+  const id = target.adUnitCode ?? target.code
   if (id) {
-    return document.getElementById(id);
+    return document.getElementById(id)
   }
-  return null;
+  return null
 }

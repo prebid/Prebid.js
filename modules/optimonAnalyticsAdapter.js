@@ -8,18 +8,18 @@
  *
  */
 
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
+import adapterManager from '../src/adapterManager.js'
 
 const optimonAnalyticsAdapter = adapter({
   global: 'OptimonAnalyticsAdapter',
   handler: 'on',
   analyticsType: 'bundle'
-});
+})
 
 adapterManager.registerAnalyticsAdapter({
   adapter: optimonAnalyticsAdapter,
   code: 'optimon',
-});
+})
 
-export default optimonAnalyticsAdapter;
+export default optimonAnalyticsAdapter

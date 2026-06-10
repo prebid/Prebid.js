@@ -1,5 +1,5 @@
 export function interpretResponse (serverResponse) {
-  const response = serverResponse.body;
+  const response = serverResponse.body
 
   if (!response || Object.keys(response).length === 0) {
     return []
@@ -19,6 +19,6 @@ export function interpretResponse (serverResponse) {
     meta: {
       advertiserDomains: response.meta && response.meta.advertiser_domains ? response.meta.advertiser_domains : [],
     },
-  };
-  return [bid];
+  }
+  return [bid]
 }

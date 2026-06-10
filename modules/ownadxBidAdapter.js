@@ -1,5 +1,5 @@
-import { parseSizesInput, isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput, isEmpty } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 
 /**
@@ -8,9 +8,9 @@ import { BANNER } from '../src/mediaTypes.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'ownadx';
-const CUR = 'USD';
-const CREATIVE_TTL = 300;
+const BIDDER_CODE = 'ownadx'
+const CUR = 'USD'
+const CREATIVE_TTL = 300
 
 export const spec = {
   code: BIDDER_CODE,
@@ -23,7 +23,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.tokenId && bid.params.sspId && bid.params.seatId);
+    return !!(bid.params.tokenId && bid.params.sspId && bid.params.seatId)
   },
 
   /**
@@ -35,30 +35,30 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
-      let mtype = 0;
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes)
+      let mtype = 0
       if (bidRequest.mediaTypes[BANNER]) {
-        mtype = 1;
+        mtype = 1
       } else {
-        mtype = 2;
+        mtype = 2
       }
 
-      const tkn = bidRequest.params.tokenId;
-      const seatid = bidRequest.params.seatId;
-      const sspid = bidRequest.params.sspId;
+      const tkn = bidRequest.params.tokenId
+      const seatid = bidRequest.params.seatId
+      const sspid = bidRequest.params.sspId
 
       const payload = {
         sizes: sizes,
         slotBidId: bidRequest.bidId,
         PageUrl: bidderRequest.refererInfo.page,
         mediaChannel: mtype
-      };
+      }
       return {
         method: 'POST',
         url: `https://pbs-js.prebid-ownadx.com/publisher/prebid/${seatid}/${sspid}?token=${tkn}`,
         data: payload
-      };
-    });
+      }
+    })
   },
 
   /**
@@ -68,10 +68,10 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse) {
-    const response = serverResponse.body;
-    const bids = [];
+    const response = serverResponse.body
+    const bids = []
     if (isEmpty(response)) {
-      return bids;
+      return bids
     }
     const responseBid = {
       width: response.width,
@@ -89,11 +89,11 @@ export const spec = {
         advertiserDomains: response.advertiserDomains || []
       },
       ad: response.adm
-    };
-    bids.push(responseBid);
-    return bids;
+    }
+    bids.push(responseBid)
+    return bids
   }
 
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

@@ -18,8 +18,8 @@ function getSlotConfigs(mediaTypes, params) {
 
 describe('AstraOne Adapter', function() {
   describe('isBidRequestValid method', function() {
-    const PLACE_ID = '5f477bf94d506ebe2c4240f3';
-    const IMAGE_URL = 'https://creative.astraone.io/files/default_image-1-600x400.jpg';
+    const PLACE_ID = '5f477bf94d506ebe2c4240f3'
+    const IMAGE_URL = 'https://creative.astraone.io/files/default_image-1-600x400.jpg'
 
     describe('returns true', function() {
       describe('when banner slot config has all mandatory params', () => {
@@ -34,7 +34,7 @@ describe('AstraOne Adapter', function() {
               }
             )
           }
-          const placements = ['inImage'];
+          const placements = ['inImage']
           placements.forEach(placement => {
             it('should be ' + placement, function() {
               const isBidRequestValid = spec.isBidRequestValid(

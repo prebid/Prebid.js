@@ -5,30 +5,30 @@
  */
 function resolveNavigator() {
   if (typeof window !== 'undefined' && window.navigator) {
-    return window.navigator;
+    return window.navigator
   }
 
   if (typeof navigator !== 'undefined') {
-    return navigator;
+    return navigator
   }
 
-  return null;
+  return null
 }
 
 function resolveNetworkInformation() {
-  const nav = resolveNavigator();
+  const nav = resolveNavigator()
   if (!nav) {
-    return null;
+    return null
   }
 
-  return nav.connection || nav.mozConnection || nav.webkitConnection || null;
+  return nav.connection || nav.mozConnection || nav.webkitConnection || null
 }
 
 export function getConnectionInfo() {
-  const connection = resolveNetworkInformation();
+  const connection = resolveNetworkInformation()
 
   if (!connection) {
-    return null;
+    return null
   }
 
   return {
@@ -39,35 +39,35 @@ export function getConnectionInfo() {
     rtt: typeof connection.rtt === 'number' ? connection.rtt : null,
     saveData: typeof connection.saveData === 'boolean' ? connection.saveData : null,
     bandwidth: typeof connection.bandwidth === 'number' ? connection.bandwidth : null
-  };
+  }
 }
 
 export function getConnectionType() {
-  const connection = getConnectionInfo();
+  const connection = getConnectionInfo()
   if (!connection) {
-    return 0;
+    return 0
   }
 
   switch (connection.type) {
     case 'ethernet':
-      return 1;
+      return 1
     case 'wifi':
-      return 2;
+      return 2
     case 'wimax':
-      return 6;
+      return 6
     default:
       switch (connection.effectiveType) {
         case 'slow-2g':
         case '2g':
-          return 4;
+          return 4
         case '3g':
-          return 5;
+          return 5
         case '4g':
-          return 6;
+          return 6
         case '5g':
-          return 7;
+          return 7
         default:
-          return connection.type === 'cellular' ? 3 : 0;
+          return connection.type === 'cellular' ? 3 : 0
       }
   }
 }

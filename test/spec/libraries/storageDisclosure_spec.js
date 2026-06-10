@@ -1,18 +1,18 @@
-import { getStorageDisclosureSummary } from '../../../libraries/storageDisclosure/summary.js';
+import { getStorageDisclosureSummary } from '../../../libraries/storageDisclosure/summary.js'
 
 describe('storageDisclosure', () => {
-  let moduleMeta;
+  let moduleMeta
   beforeEach(() => {
-    moduleMeta = {};
-  });
+    moduleMeta = {}
+  })
 
   function getSummary() {
-    return getStorageDisclosureSummary(Object.keys(moduleMeta), (name) => moduleMeta[name]);
+    return getStorageDisclosureSummary(Object.keys(moduleMeta), (name) => moduleMeta[name])
   }
 
   it('should not choke when metadata is not available for a module', () => {
-    expect(getStorageDisclosureSummary(['missing'], () => null)).to.eql([]);
-  });
+    expect(getStorageDisclosureSummary(['missing'], () => null)).to.eql([])
+  })
   Object.entries({
     'null': null,
     'emtpy': []
@@ -27,7 +27,7 @@ describe('storageDisclosure', () => {
           }
         }
       }
-      expect(getSummary()).to.eql([]);
+      expect(getSummary()).to.eql([])
     })
   })
 
@@ -64,7 +64,7 @@ describe('storageDisclosure', () => {
         identifier: 'bar'
       }
     ])
-  });
+  })
 
   it('should group by disclosure URL', () => {
     const disclosures = {
@@ -81,7 +81,7 @@ describe('storageDisclosure', () => {
       module2: {
         disclosures
       }
-    };
+    }
     expect(getSummary()).to.eql([
       {
         disclosedIn: 'url',
@@ -89,5 +89,5 @@ describe('storageDisclosure', () => {
         identifier: 'foo'
       }
     ])
-  });
-});
+  })
+})

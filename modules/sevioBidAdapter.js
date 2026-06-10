@@ -1,160 +1,160 @@
-import * as utils from "../src/utils.js";
-import { detectWalletsPresence } from "../libraries/cryptoUtils/wallets.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { BANNER, NATIVE } from "../src/mediaTypes.js";
-import { config } from "../src/config.js";
-import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js";
-import * as converter from '../libraries/ortbConverter/converter.js';
+import * as utils from "../src/utils.js"
+import { detectWalletsPresence } from "../libraries/cryptoUtils/wallets.js"
+import { registerBidder } from "../src/adapters/bidderFactory.js"
+import { BANNER, NATIVE } from "../src/mediaTypes.js"
+import { config } from "../src/config.js"
+import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js"
+import * as converter from '../libraries/ortbConverter/converter.js'
 
-const PREBID_VERSION = '$prebid.version$';
-const ADAPTER_VERSION = '1.0.1';
+const PREBID_VERSION = '$prebid.version$'
+const ADAPTER_VERSION = '1.0.1'
 const ORTB = converter.ortbConverter({
   context: { ttl: 300 }
-});
-const BIDDER_CODE = "sevio";
-const GVLID = `1393`;
-const ENDPOINT_URL = "https://req.adx.ws/prebid";
-const ACTION_METHOD = "POST";
+})
+const BIDDER_CODE = "sevio"
+const GVLID = `1393`
+const ENDPOINT_URL = "https://req.adx.ws/prebid"
+const ACTION_METHOD = "POST"
 
 const detectAdType = (bid) =>
   (
     ["native", "banner"].find((t) => bid.mediaTypes?.[t]) || "unknown"
-  ).toUpperCase();
+  ).toUpperCase()
 
 const getReferrerInfo = (bidderRequest) => {
-  return bidderRequest?.refererInfo?.page ?? '';
+  return bidderRequest?.refererInfo?.page ?? ''
 }
 
 const normalizeKeywords = (input) => {
-  if (!input) return [];
+  if (!input) return []
 
   if (Array.isArray(input)) {
-    return input.map(k => k.trim()).filter(Boolean);
+    return input.map(k => k.trim()).filter(Boolean)
   }
 
   if (typeof input === 'string') {
     return input
       .split(',')
       .map(k => k.trim())
-      .filter(Boolean);
+      .filter(Boolean)
   }
 
   // Any other type → ignore
-  return [];
-};
+  return []
+}
 
 function resolveDataType(asset) {
   if (typeof asset?.data?.type === 'number') {
-    return asset.data.type;
+    return asset.data.type
   }
 
   if (typeof asset?.id === 'number') {
-    return asset.id;
+    return asset.id
   }
 
-  return null;
+  return null
 }
 
 // Helper: resolve the "image type" for an asset
 // Returns 1 (icon), 3 (image) or null if unknown
 function resolveImageType(asset) {
-  if (!asset) return null;
+  if (!asset) return null
 
   // 1) explicit image type in the img block (preferred)
-  if (typeof asset.img?.type === 'number') return asset.img.type;
+  if (typeof asset.img?.type === 'number') return asset.img.type
 
   // 2) fallback to data.type (some bidders put the type here)
-  if (typeof asset.data?.type === 'number') return asset.data.type;
+  if (typeof asset.data?.type === 'number') return asset.data.type
 
   // 3) last resort: map legacy asset.id values to image types
   //    (13 -> icon, 14 -> image) — keep this mapping isolated here
   if (typeof asset.id === 'number') {
-    if (asset.id === 13) return 1; // icon
-    if (asset.id === 14) return 3; // image
+    if (asset.id === 13) return 1 // icon
+    if (asset.id === 14) return 3 // image
   }
 
-  return null;
+  return null
 }
 
 const parseNativeAd = function (bid) {
   try {
-    const nativeAd = JSON.parse(bid.ad);
-    const native = {};
+    const nativeAd = JSON.parse(bid.ad)
+    const native = {}
 
     nativeAd.assets?.forEach(asset => {
       if (asset.title?.text) {
-        native.title = asset.title.text;
+        native.title = asset.title.text
       }
       if (asset.data) {
-        const value = asset.data.value;
-        const type = resolveDataType(asset);
+        const value = asset.data.value
+        const type = resolveDataType(asset)
         switch (type) {
-          case 1: if (value) native.sponsored = value; break;
-          case 2: if (value) native.desc = value; break;
-          case 3: if (value) native.rating = value; break;
-          case 4: if (value) native.likes = value; break;
-          case 5: if (value) native.downloads = value; break;
-          case 6: if (value) native.price = value; break;
-          case 7: if (value) native.saleprice = value; break;
-          case 8: if (value) native.phone = value; break;
-          case 9: if (value) native.address = value; break;
-          case 10: if (value) native.desc2 = value; break;
-          case 11: if (value) native.displayurl = value; break;
-          case 12: if (value) native.ctatext = value; break;
-          default: break;
+          case 1: if (value) native.sponsored = value; break
+          case 2: if (value) native.desc = value; break
+          case 3: if (value) native.rating = value; break
+          case 4: if (value) native.likes = value; break
+          case 5: if (value) native.downloads = value; break
+          case 6: if (value) native.price = value; break
+          case 7: if (value) native.saleprice = value; break
+          case 8: if (value) native.phone = value; break
+          case 9: if (value) native.address = value; break
+          case 10: if (value) native.desc2 = value; break
+          case 11: if (value) native.displayurl = value; break
+          case 12: if (value) native.ctatext = value; break
+          default: break
         }
       }
       if (asset.img) {
-        const { url, w = 0, h = 0 } = asset.img;
-        const imgType = resolveImageType(asset);
+        const { url, w = 0, h = 0 } = asset.img
+        const imgType = resolveImageType(asset)
 
         if (imgType === 1 && url) {
-          native.icon = url;
-          native.icon_width = w;
-          native.icon_height = h;
+          native.icon = url
+          native.icon_width = w
+          native.icon_height = h
         } else if (imgType === 3 && url) {
-          native.image = url;
-          native.image_width = w;
-          native.image_height = h;
+          native.image = url
+          native.image_width = w
+          native.image_height = h
         }
       }
-    });
+    })
 
     if (nativeAd.link?.url) {
-      native.clickUrl = nativeAd.link.url;
+      native.clickUrl = nativeAd.link.url
     }
 
-    const eventTrackers = nativeAd.eventtrackers || [];
+    const eventTrackers = nativeAd.eventtrackers || []
 
     const impressionTrackers = eventTrackers
       .filter(tracker => tracker.event === 1)
       .map(tracker => tracker.url)
-      .filter(Boolean);
+      .filter(Boolean)
 
     const viewableTrackers = eventTrackers
       .filter(tracker => tracker.event === 2)
       .map(tracker => tracker.url)
-      .filter(Boolean);
+      .filter(Boolean)
 
     if (impressionTrackers.length) {
-      native.impressionTrackers = impressionTrackers;
+      native.impressionTrackers = impressionTrackers
     }
 
     if (viewableTrackers.length) {
-      native.viewableTrackers = viewableTrackers; // custom field
+      native.viewableTrackers = viewableTrackers // custom field
     }
 
     if (Array.isArray(nativeAd.link?.clicktrackers) && nativeAd.link.clicktrackers.length > 0) {
-      native.clickTrackers = nativeAd.link.clicktrackers;
+      native.clickTrackers = nativeAd.link.clicktrackers
     }
 
-    if (nativeAd.privacy?.url) native.privacyLink = nativeAd.privacy.url;
-    if (nativeAd.privacy?.icon) native.privacyIcon = nativeAd.privacy.icon;
+    if (nativeAd.privacy?.url) native.privacyLink = nativeAd.privacy.url
+    if (nativeAd.privacy?.icon) native.privacyIcon = nativeAd.privacy.icon
 
-    return native;
+    return native
   } catch (e) {
-    utils.logWarn('Invalid native JSON', e);
-    return null;
+    utils.logWarn('Invalid native JSON', e)
+    return null
   }
 }
 export const spec = {
@@ -162,88 +162,88 @@ export const spec = {
   gvlid: GVLID,
   isBidRequestValid: function (bid) {
     if (!bid) {
-      utils.logWarn(BIDDER_CODE, "Invalid bid", bid);
+      utils.logWarn(BIDDER_CODE, "Invalid bid", bid)
 
-      return false;
+      return false
     }
 
     if (!bid.params) {
-      utils.logWarn(BIDDER_CODE, "bid.params is required");
+      utils.logWarn(BIDDER_CODE, "bid.params is required")
 
-      return false;
+      return false
     }
 
     if (!bid.params.zone) {
-      utils.logWarn(BIDDER_CODE, "bid.params.zone is required");
+      utils.logWarn(BIDDER_CODE, "bid.params.zone is required")
 
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    const userSyncEnabled = config.getConfig("userSync.syncEnabled");
-    const currencyConfig = config.getConfig('currency');
+    const userSyncEnabled = config.getConfig("userSync.syncEnabled")
+    const currencyConfig = config.getConfig('currency')
     const currency =
       currencyConfig?.adServerCurrency ||
       currencyConfig?.defaultCurrency ||
-      null;
+      null
     // (!) that avoids top-level side effects (the thing that can stop registerBidder from running)
     const computeTTFB = (w = (typeof window !== 'undefined' ? window : undefined)) => {
       try {
-        const wt = (() => { try { return w?.top ?? w; } catch { return w; } })();
-        const p = wt?.performance || wt?.webkitPerformance || wt?.msPerformance || wt?.mozPerformance;
-        if (!p) return '';
+        const wt = (() => { try { return w?.top ?? w } catch { return w } })()
+        const p = wt?.performance || wt?.webkitPerformance || wt?.msPerformance || wt?.mozPerformance
+        if (!p) return ''
 
         if (typeof p.getEntriesByType === 'function') {
-          const nav = p.getEntriesByType('navigation')?.[0];
+          const nav = p.getEntriesByType('navigation')?.[0]
           if (nav?.responseStart > 0 && nav?.requestStart > 0) {
-            return String(Math.round(nav.responseStart - nav.requestStart));
+            return String(Math.round(nav.responseStart - nav.requestStart))
           }
         }
 
-        const t = p.timing;
+        const t = p.timing
         if (t?.responseStart > 0 && t?.requestStart > 0) {
-          return String(t.responseStart - t.requestStart);
+          return String(t.responseStart - t.requestStart)
         }
 
-        return '';
+        return ''
       } catch {
-        return '';
+        return ''
       }
-    };
+    }
 
     // simple caching
     const getTTFBOnce = (() => {
-      let cached = false;
-      let done = false;
+      let cached = false
+      let done = false
       return () => {
-        if (done) return cached;
-        done = true;
-        cached = computeTTFB();
-        return cached;
-      };
-    })();
-    const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests });
+        if (done) return cached
+        done = true
+        cached = computeTTFB()
+        return cached
+      }
+    })()
+    const ortbRequest = ORTB.toORTB({ bidderRequest, bidRequests })
 
     if (bidRequests.length === 0) {
-      return [];
+      return []
     }
-    const gdpr = bidderRequest?.gdprConsent;
-    const usp = bidderRequest?.uspConsent;
-    const gpp = bidderRequest?.gppConsent;
-    const hasWallet = detectWalletsPresence();
+    const gdpr = bidderRequest?.gdprConsent
+    const usp = bidderRequest?.uspConsent
+    const gpp = bidderRequest?.gppConsent
+    const hasWallet = detectWalletsPresence()
 
     return bidRequests.map((bidRequest) => {
-      const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
-      const adSizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.mediaTypes?.native?.sizes || [];
+      const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native'
+      const adSizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.mediaTypes?.native?.sizes || []
       const formattedSizes = Array.isArray(adSizes)
         ? adSizes
           .filter(size => Array.isArray(size) && size.length === 2)
           .map(([width, height]) => ({ width, height }))
-        : [];
-      const originalAssets = bidRequest.mediaTypes?.native?.ortb?.assets || [];
+        : []
+      const originalAssets = bidRequest.mediaTypes?.native?.ortb?.assets || []
 
       // convert icon to img type 1
       const processedAssets = originalAssets.map(asset => {
@@ -256,10 +256,10 @@ export const spec = {
               w: asset.icon.w,
               h: asset.icon.h,
             }
-          };
+          }
         }
-        return asset;
-      });
+        return asset
+      })
 
       const payload = {
         userLanguage: navigator.language,
@@ -317,21 +317,21 @@ export const spec = {
           adapter_version: ADAPTER_VERSION,
           prebid_version: PREBID_VERSION
         }
-      };
+      }
 
       const wrapperOn =
-        typeof window !== "undefined" && window.sevio_wrapper === true;
+        typeof window !== "undefined" && window.sevio_wrapper === true
 
       const url = wrapperOn
         ? `${ENDPOINT_URL}?wrapper=true`
-        : ENDPOINT_URL;
+        : ENDPOINT_URL
       return {
         method: ACTION_METHOD,
         url,
         data: payload,
         bidRequest: bidRequests[0],
-      };
-    });
+      }
+    })
   },
 
   interpretResponse(serverResponse) {
@@ -342,29 +342,29 @@ export const spec = {
       typeof serverResponse.body !== "object" ||
       !Array.isArray(serverResponse.body.bids)
     ) {
-      return [];
+      return []
     }
 
-    const bids = serverResponse.body.bids;
+    const bids = serverResponse.body.bids
 
     bids.forEach((bid) => {
       if (bid && typeof bid === "object") {
-        bid.bidder = BIDDER_CODE;
+        bid.bidder = BIDDER_CODE
         if ((bid.mediaType || '').toLowerCase() === 'native') {
-          const native = parseNativeAd(bid);
+          const native = parseNativeAd(bid)
           if (native) {
-            bid.native = native;
+            bid.native = native
           }
         }
       }
-    });
+    })
 
-    return bids;
+    return bids
   },
   onBidWon: function (bid) {},
   onBidderError: function (bidderError) {},
   getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = [];
+    const syncs = []
 
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       serverResponses.forEach((response) => {
@@ -374,22 +374,22 @@ export const spec = {
               syncs.push({
                 type: "image",
                 url: sync.url,
-              });
+              })
             } else if (sync.type === "iframe" && syncOptions.iframeEnabled) {
               syncs.push({
                 type: "iframe",
                 url: sync.url,
-              });
+              })
             }
-          });
+          })
         }
-      });
+      })
     }
 
-    return syncs;
+    return syncs
   },
   onTimeout: function (timeoutData) {},
   supportedMediaTypes: [BANNER, NATIVE],
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

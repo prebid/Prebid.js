@@ -28,11 +28,11 @@
  * @return {Promise<string>}
  */
 
-import { submodule } from '../src/hook.js';
-import { logError } from '../src/utils.js';
+import { submodule } from '../src/hook.js'
+import { logError } from '../src/utils.js'
 
-export const MODULE_NAME = 'rewardedInterestId';
-export const SOURCE = 'rewardedinterest.com';
+export const MODULE_NAME = 'rewardedInterestId'
+export const SOURCE = 'rewardedinterest.com'
 
 /**
  * Get rewarded interest API
@@ -41,7 +41,7 @@ export const SOURCE = 'rewardedinterest.com';
  */
 export function getRewardedInterestApi() {
   if (window.__riApi && window.__riApi.getIdentityToken) {
-    return window.__riApi;
+    return window.__riApi
   }
 }
 
@@ -57,15 +57,15 @@ export function watchRewardedInterestApi(callback) {
     },
     __riApi: {
       get: () => {
-        return window.__rewardedInterestApi;
+        return window.__rewardedInterestApi
       },
       set: value => {
-        window.__rewardedInterestApi = value;
-        callback(value);
+        window.__rewardedInterestApi = value
+        callback(value)
       },
       configurable: true,
     }
-  });
+  })
 }
 
 /**
@@ -75,17 +75,17 @@ export function watchRewardedInterestApi(callback) {
  */
 export function getRewardedInterestId(rewardedInterestApi, callback) {
   rewardedInterestApi.getIdentityToken().then(callback).catch(error => {
-    callback();
-    logError(`${MODULE_NAME} module: ID fetch encountered an error`, error);
-  });
+    callback()
+    logError(`${MODULE_NAME} module: ID fetch encountered an error`, error)
+  })
 }
 
 /**
  * @param {function} callback User ID callbackCompleted
  */
 export function apiNotAvailable(callback) {
-  callback();
-  logError(`${MODULE_NAME} module: Rewarded Interest API not found`);
+  callback()
+  logError(`${MODULE_NAME} module: Rewarded Interest API not found`)
 }
 
 /** @type {Submodule} */
@@ -103,7 +103,7 @@ export const rewardedInterestIdSubmodule = {
    * @returns {{rewardedInterestId: string}|undefined}
    */
   decode(value) {
-    return value ? { [MODULE_NAME]: value } : undefined;
+    return value ? { [MODULE_NAME]: value } : undefined
   },
 
   /**
@@ -114,22 +114,22 @@ export const rewardedInterestIdSubmodule = {
   getId() {
     return {
       callback: cb => {
-        const api = getRewardedInterestApi();
+        const api = getRewardedInterestApi()
         if (api) {
-          getRewardedInterestId(api, cb);
+          getRewardedInterestId(api, cb)
         } else if (document.readyState === 'complete') {
-          apiNotAvailable(cb);
+          apiNotAvailable(cb)
         } else {
-          watchRewardedInterestApi(api => getRewardedInterestId(api, cb));
+          watchRewardedInterestApi(api => getRewardedInterestId(api, cb))
           // Ensure that cb is called when API is not available
           window.addEventListener('load', () => {
             if (!getRewardedInterestApi()) {
-              apiNotAvailable(cb);
+              apiNotAvailable(cb)
             }
           })
         }
       },
-    };
+    }
   },
   eids: {
     [MODULE_NAME]: {
@@ -137,6 +137,6 @@ export const rewardedInterestIdSubmodule = {
       atype: 3,
     },
   },
-};
+}
 
-submodule('userId', rewardedInterestIdSubmodule);
+submodule('userId', rewardedInterestIdSubmodule)

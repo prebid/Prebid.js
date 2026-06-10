@@ -1,18 +1,18 @@
 // tests/luponmediaBidAdapter_spec.js
-import { converter, resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
-import sinon from 'sinon';
-import { expect } from 'chai';
+import { converter, resetUserSync, spec } from 'modules/luponmediaBidAdapter.js'
+import sinon from 'sinon'
+import { expect } from 'chai'
 
 describe('luponmediaBidAdapter', function () {
-  let sandbox;
+  let sandbox
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
-  });
+    sandbox = sinon.createSandbox()
+  })
 
   afterEach(function () {
-    sandbox.restore();
-  });
+    sandbox.restore()
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -21,22 +21,22 @@ describe('luponmediaBidAdapter', function () {
       adUnitCode: 'test-div',
       sizes: [[300, 250]],
       bidId: 'g1987234bjkads'
-    };
+    }
 
     it('should return true when required param is found and it is valid', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
 
     it('should return true with required and without optional param', function () {
-      bid.params = { keyId: 'uid_test_300_600' };
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      bid.params = { keyId: 'uid_test_300_600' }
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
 
     it('should return false when keyId is not in the required format', function () {
-      bid.params = { keyId: 12345 };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-  });
+      bid.params = { keyId: 12345 }
+      expect(spec.isBidRequestValid(bid)).to.be.false
+    })
+  })
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -49,7 +49,7 @@ describe('luponmediaBidAdapter', function () {
         bidId: 'bid-id',
         ortb2: { device: { ua: 'test-agent' } }
       }
-    ];
+    ]
 
     const bidderRequest = {
       bidderCode: 'luponmedia',
@@ -57,24 +57,24 @@ describe('luponmediaBidAdapter', function () {
         gdprApplies: true
       },
       uspConsent: true
-    };
+    }
 
     it('sends bid request to default endpoint', function () {
-      const req = spec.buildRequests(bidRequests, bidderRequest);
+      const req = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(req.url).to.include('https://rtb.adxpremium.services/openrtb2/auction');
-      expect(req.method).to.equal('POST');
-      expect(req.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
-      expect(req.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
-    });
+      expect(req.url).to.include('https://rtb.adxpremium.services/openrtb2/auction')
+      expect(req.method).to.equal('POST')
+      expect(req.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div')
+      expect(req.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600')
+    })
 
     it('sends bid request to endpoint specified in keyId', function () {
-      bidRequests[0].params.keyId = 'uid@eu_test_300_600';
+      bidRequests[0].params.keyId = 'uid@eu_test_300_600'
 
-      const req = spec.buildRequests(bidRequests, bidderRequest);
-      expect(req.url).to.include('https://eu.adxpremium.services/openrtb2/auction');
-    });
-  });
+      const req = spec.buildRequests(bidRequests, bidderRequest)
+      expect(req.url).to.include('https://eu.adxpremium.services/openrtb2/auction')
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should get correct banner bid response', function () {
@@ -107,7 +107,7 @@ describe('luponmediaBidAdapter', function () {
           }
         ],
         cur: 'USD'
-      };
+      }
 
       const bidRequests = [
         {
@@ -116,14 +116,14 @@ describe('luponmediaBidAdapter', function () {
           params: { keyId: 'uid_test_300_600' },
           mediaTypes: { banner: { sizes: [[300, 250]] } }
         }
-      ];
+      ]
 
-      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } }
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest })
 
-      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
+      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest })
 
-      expect(result).to.be.an('array').with.lengthOf(1);
+      expect(result).to.be.an('array').with.lengthOf(1)
       expect(result[0]).to.include({
         requestId: 'bid123',
         cpm: 0.43,
@@ -133,8 +133,8 @@ describe('luponmediaBidAdapter', function () {
         currency: 'USD',
         ttl: 300,
         ad: '<div>Ad Markup</div>'
-      });
-    });
+      })
+    })
 
     it('should enrich bidResponse with crid, dealId, and referrer if missing', function () {
       const response = {
@@ -157,7 +157,7 @@ describe('luponmediaBidAdapter', function () {
           }
         ],
         cur: 'USD'
-      };
+      }
 
       const bidRequests = [
         {
@@ -171,20 +171,20 @@ describe('luponmediaBidAdapter', function () {
             }
           }
         }
-      ];
+      ]
 
       const bidderRequest = {
         refererInfo: { referer: 'https://mysite.com' }
-      };
+      }
 
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest })
 
-      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
+      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest })
 
-      expect(result[0].creativeId).to.equal('creative456');
-      expect(result[0].dealId).to.equal('deal789');
-      expect(result[0].referrer).to.equal('https://mysite.com');
-    });
+      expect(result[0].creativeId).to.equal('creative456')
+      expect(result[0].dealId).to.equal('deal789')
+      expect(result[0].referrer).to.equal('https://mysite.com')
+    })
 
     it('should return empty array for unhandled response', function () {
       const bidRequests = [{
@@ -192,13 +192,13 @@ describe('luponmediaBidAdapter', function () {
         adUnitCode: 'test-div',
         params: { keyId: 'uid_test_300_600' },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
-      }];
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
+      }]
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} })
 
-      const result = spec.interpretResponse({ status: 400, body: {} }, { data: ortbRequest });
-      expect(result).to.deep.equal([]);
-    });
-  });
+      const result = spec.interpretResponse({ status: 400, body: {} }, { data: ortbRequest })
+      expect(result).to.deep.equal([])
+    })
+  })
 
   describe('getUserSyncs', function () {
     const bidResponse = {
@@ -218,44 +218,44 @@ describe('luponmediaBidAdapter', function () {
           }
         }
       }
-    };
+    }
 
     it('should return empty syncs when not pixel or iframe enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse]);
-      expect(syncs.length).to.equal(0);
-    });
+      resetUserSync()
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse])
+      expect(syncs.length).to.equal(0)
+    })
 
     it('returns pixel syncs when pixel enabled and iframe not enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse]);
-      expect(syncs).to.deep.include({ type: 'image', url: 'https://sync.img' });
-    });
+      resetUserSync()
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse])
+      expect(syncs).to.deep.include({ type: 'image', url: 'https://sync.img' })
+    })
 
     it('returns iframe syncs when iframe enabled and pixel not enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse]);
-      expect(syncs).to.deep.include({ type: 'iframe', url: 'https://sync.iframe' });
-    });
+      resetUserSync()
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse])
+      expect(syncs).to.deep.include({ type: 'iframe', url: 'https://sync.iframe' })
+    })
 
     it('returns both syncs when both iframe and pixel enabled', function () {
-      resetUserSync();
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse]);
+      resetUserSync()
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse])
       expect(syncs).to.deep.include.members([
         { type: 'image', url: 'https://sync.img' },
         { type: 'iframe', url: 'https://sync.iframe' }
-      ]);
-    });
+      ])
+    })
 
     it('returns no syncs when usersyncs object missing', function () {
-      const emptyResponse = { body: { ext: {} } };
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [emptyResponse]);
-      expect(syncs).to.deep.equal([]);
-    });
+      const emptyResponse = { body: { ext: {} } }
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [emptyResponse])
+      expect(syncs).to.deep.equal([])
+    })
 
     it('returns empty syncs on empty response array', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
-      expect(syncs).to.deep.equal([]);
-    });
-  });
-});
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [])
+      expect(syncs).to.deep.equal([])
+    })
+  })
+})

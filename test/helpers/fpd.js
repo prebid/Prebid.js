@@ -1,7 +1,7 @@
-import { dep, enrichFPD } from 'src/fpd/enrichment.js';
-import { PbPromise } from '../../src/utils/promise.js';
-import { deepClone } from '../../src/utils.js';
-import { gdprDataHandler, uspDataHandler } from '../../src/adapterManager.js';
+import { dep, enrichFPD } from 'src/fpd/enrichment.js'
+import { PbPromise } from '../../src/utils/promise.js'
+import { deepClone } from '../../src/utils.js'
+import { gdprDataHandler, uspDataHandler } from '../../src/adapterManager.js'
 
 export function mockFpdEnrichments(sandbox, overrides = {}) {
   overrides = Object.assign({}, {
@@ -19,41 +19,41 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
   Object.entries(overrides)
     .filter(([k]) => dep[k])
     .forEach(([k, v]) => {
-      sandbox.stub(dep, k).callsFake(v);
-    });
+      sandbox.stub(dep, k).callsFake(v)
+    })
   Object.entries({
     gdprConsent: gdprDataHandler,
     uspConsent: uspDataHandler,
   }).forEach(([ovKey, handler]) => {
-    const v = overrides[ovKey];
+    const v = overrides[ovKey]
     if (v) {
-      sandbox.stub(handler, 'getConsentData').callsFake(v);
+      sandbox.stub(handler, 'getConsentData').callsFake(v)
     }
   })
 }
 
 export function addFPDEnrichments(ortb2 = {}, overrides) {
-  const sandbox = sinon.createSandbox();
+  const sandbox = sinon.createSandbox()
   mockFpdEnrichments(sandbox, overrides)
-  return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
+  return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore())
 }
 
 export function addFPDToBidderRequest(bidderRequest, overrides) {
   overrides = Object.assign({}, {
     getRefererInfo() {
-      return bidderRequest.refererInfo || {};
+      return bidderRequest.refererInfo || {}
     },
     gdprConsent() {
-      return bidderRequest.gdprConsent;
+      return bidderRequest.gdprConsent
     },
     uspConsent() {
-      return bidderRequest.uspConsent;
+      return bidderRequest.uspConsent
     }
-  }, overrides);
+  }, overrides)
   return addFPDEnrichments(bidderRequest.ortb2 || {}, overrides).then(ortb2 => {
     return {
       ...bidderRequest,
       ortb2
     }
-  });
+  })
 }

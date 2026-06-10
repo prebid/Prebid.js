@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/audiencerunBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai'
+import { spec } from 'modules/audiencerunBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
-const ENDPOINT = 'https://d.audiencerun.com/prebid';
+const ENDPOINT = 'https://d.audiencerun.com/prebid'
 
 const BID_SERVER_RESPONSE = {
   body: {
@@ -23,16 +23,16 @@ const BID_SERVER_RESPONSE = {
       },
     ],
   },
-};
+}
 
 describe('AudienceRun bid adapter tests', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -53,31 +53,31 @@ describe('AudienceRun bid adapter tests', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       creativeId: 'er2ee',
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return true when zoneId is valid', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
       invalidBid.params = {
         zoneId: '12345abcde',
-      };
+      }
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
 
-      invalidBid.params = {};
+      invalidBid.params = {}
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -102,8 +102,8 @@ describe('AudienceRun bid adapter tests', function () {
         auctionId: '18fd8b8b0bd757',
         bidRequestsCount: 1,
       },
-    ];
-    const bidRequest = bidRequests[0];
+    ]
+    const bidRequest = bidRequests[0]
 
     it('sends a valid bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, {
@@ -119,57 +119,57 @@ describe('AudienceRun bid adapter tests', function () {
           numIframes: 0,
           reachedTop: true,
         },
-      });
+      })
 
-      expect(request.url).to.equal(ENDPOINT);
-      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(ENDPOINT)
+      expect(request.method).to.equal('POST')
 
-      const payload = JSON.parse(request.data);
-      expect(payload.gdpr).to.exist;
+      const payload = JSON.parse(request.data)
+      expect(payload.gdpr).to.exist
 
       expect(payload.bids)
         .to.exist.and.to.be.an('array')
-        .and.to.have.lengthOf(1);
-      expect(payload.referer).to.exist;
+        .and.to.have.lengthOf(1)
+      expect(payload.referer).to.exist
 
-      const bid = payload.bids[0];
-      expect(bid).to.exist;
-      expect(bid).to.have.property('bidId');
-      expect(bid).to.have.property('zoneId');
-      expect(bid).to.have.property('sizes');
-      expect(bid.sizes[0].w).to.be.a('number');
-      expect(bid.sizes[0].h).to.be.a('number');
-    });
+      const bid = payload.bids[0]
+      expect(bid).to.exist
+      expect(bid).to.have.property('bidId')
+      expect(bid).to.have.property('zoneId')
+      expect(bid).to.have.property('sizes')
+      expect(bid.sizes[0].w).to.be.a('number')
+      expect(bid.sizes[0].h).to.be.a('number')
+    })
 
     it('should send GDPR to endpoint and honor gdprApplies value', function () {
-      const consentString = 'bogusConsent';
+      const consentString = 'bogusConsent'
       const bidderRequest = {
         gdprConsent: {
           consentString: consentString,
           gdprApplies: true,
         },
-      };
+      }
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.gdpr).to.exist;
-      expect(payload.gdpr.consent).to.equal(consentString);
-      expect(payload.gdpr.applies).to.equal(true);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.gdpr).to.exist
+      expect(payload.gdpr.consent).to.equal(consentString)
+      expect(payload.gdpr.applies).to.equal(true)
 
       const bidderRequest2 = {
         gdprConsent: {
           consentString: consentString,
           gdprApplies: false,
         },
-      };
+      }
 
-      const request2 = spec.buildRequests(bidRequests, bidderRequest2);
-      const payload2 = JSON.parse(request2.data);
+      const request2 = spec.buildRequests(bidRequests, bidderRequest2)
+      const payload2 = JSON.parse(request2.data)
 
-      expect(payload2.gdpr).to.exist;
-      expect(payload2.gdpr.consent).to.equal(consentString);
-      expect(payload2.gdpr.applies).to.equal(false);
-    });
+      expect(payload2.gdpr).to.exist
+      expect(payload2.gdpr.consent).to.equal(consentString)
+      expect(payload2.gdpr.applies).to.equal(false)
+    })
 
     it('should use the auctionUrl passed from bid params', function () {
       const bid = Object.assign({}, bidRequest, {
@@ -177,47 +177,47 @@ describe('AudienceRun bid adapter tests', function () {
           zoneId: '12345abcde',
           auctionUrl: 'https://auction.url.audiencerun.com',
         },
-      });
-      const request = spec.buildRequests([bid]);
+      })
+      const request = spec.buildRequests([bid])
 
-      expect(request.url).to.exist;
-      expect(request.url).to.equal('https://auction.url.audiencerun.com');
-    });
+      expect(request.url).to.exist
+      expect(request.url).to.equal('https://auction.url.audiencerun.com')
+    })
 
     it('should use a bidfloor with a 0 value', function () {
-      const bid = Object.assign({}, bidRequest);
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
-      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0);
-    });
+      const bid = Object.assign({}, bidRequest)
+      const request = spec.buildRequests([bid])
+      const payload = JSON.parse(request.data)
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0)
+    })
 
     it('should use bidfloor param value', function () {
       const bid = Object.assign({}, bidRequest, {
         params: {
           bidfloor: 0.2,
         },
-      });
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
-      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0.2);
-    });
+      })
+      const request = spec.buildRequests([bid])
+      const payload = JSON.parse(request.data)
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(0.2)
+    })
 
     it('should use floors module value', function () {
       const bid = Object.assign({}, bidRequest, {
         params: {
           bidfloor: 0.5,
         },
-      });
+      })
       bid.getFloor = () => {
-        return { floor: 1, currency: 'USD' };
-      };
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
-      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(1);
-    });
+        return { floor: 1, currency: 'USD' }
+      }
+      const request = spec.buildRequests([bid])
+      const payload = JSON.parse(request.data)
+      expect(payload.bids[0].bidfloor).to.exist.and.to.equal(1)
+    })
 
     it('should add userid eids information to the request', function () {
-      const bid = Object.assign({}, bidRequest);
+      const bid = Object.assign({}, bidRequest)
       bid.userIdAsEids = [
         {
           source: 'pubcid.org',
@@ -228,14 +228,14 @@ describe('AudienceRun bid adapter tests', function () {
             },
           ],
         },
-      ];
+      ]
 
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bid])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal(bid.userIdAsEids);
-    });
+      expect(payload.userId).to.exist
+      expect(payload.userId).to.deep.equal(bid.userIdAsEids)
+    })
 
     it('should add schain object if available', function() {
       const bid = Object.assign({}, bidRequest)
@@ -256,12 +256,12 @@ describe('AudienceRun bid adapter tests', function () {
             }
           }
         }
-      };
+      }
 
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bid])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.schain).to.exist;
+      expect(payload.schain).to.exist
       expect(payload.schain).to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -273,9 +273,9 @@ describe('AudienceRun bid adapter tests', function () {
             hp: 1,
           },
         ],
-      });
+      })
     })
-  });
+  })
 
   describe('interpretResponse', function () {
     const expectedResponse = [
@@ -294,44 +294,44 @@ describe('AudienceRun bid adapter tests', function () {
           advertiserDomains: ['example.com'],
         },
       },
-    ];
+    ]
 
     it('should get the correct bid response by display ad', function () {
-      const result = spec.interpretResponse(BID_SERVER_RESPONSE);
+      const result = spec.interpretResponse(BID_SERVER_RESPONSE)
       expect(Object.keys(result[0])).to.have.members(
         Object.keys(expectedResponse[0])
-      );
-    });
+      )
+    })
 
     it('should handle empty bid response', function () {
       const response = {
         body: {},
-      };
-      const result = spec.interpretResponse(response);
-      expect(result.length).to.equal(0);
-    });
-  });
+      }
+      const result = spec.interpretResponse(response)
+      expect(result.length).to.equal(0)
+    })
+  })
 
   describe('getUserSyncs', function () {
-    const serverResponses = [BID_SERVER_RESPONSE];
-    const syncOptions = { iframeEnabled: true };
+    const serverResponses = [BID_SERVER_RESPONSE]
+    const syncOptions = { iframeEnabled: true }
 
     it('should return empty if no server responses', function () {
-      const syncs = spec.getUserSyncs(syncOptions, []);
-      expect(syncs).to.deep.equal([]);
-    });
+      const syncs = spec.getUserSyncs(syncOptions, [])
+      expect(syncs).to.deep.equal([])
+    })
 
     it('should return user syncs', function () {
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses)
       expect(syncs).to.deep.equal([
         { type: 'iframe', url: 'https://ac.audiencerun.com/f/sync.html' },
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   describe('onTimeout', function () {
     it('should exists and be a function', () => {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    });
-  });
-});
+      expect(spec.onTimeout).to.exist.and.to.be.a('function')
+    })
+  })
+})

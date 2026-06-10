@@ -1,42 +1,42 @@
-import { expect } from 'chai';
-import { spec, storage } from 'modules/winrBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
-import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec, storage } from 'modules/winrBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import * as bidderFactory from 'src/adapters/bidderFactory.js'
+import { auctionManager } from 'src/auctionManager.js'
+import { deepClone } from 'src/utils.js'
+import { config } from 'src/config.js'
 
-const GATE_COOKIE_NAME = 'wnr_gate';
-const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
+const GATE_COOKIE_NAME = 'wnr_gate'
+const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid'
 
 function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
+  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
 }
 
 describe('WinrAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
-    let getCookieStub;
-    let cookiesAreEnabledStub;
+    let getCookieStub
+    let cookiesAreEnabledStub
 
     beforeEach(function() {
-      getCookieStub = sinon.stub(storage, 'getCookie');
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-    });
+      getCookieStub = sinon.stub(storage, 'getCookie')
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled')
+    })
 
     afterEach(function() {
-      getCookieStub.restore();
-      cookiesAreEnabledStub.restore();
-    });
+      getCookieStub.restore()
+      cookiesAreEnabledStub.restore()
+    })
 
-    const placementId = '21543013';
+    const placementId = '21543013'
     const bid = {
       'bidder': 'winr',
       'params': {
@@ -52,68 +52,68 @@ describe('WinrAdapter', function () {
       'mediaTypes': {
         'banner': {}
       },
-    };
+    }
 
     describe('- with cookies disabled', function () {
       beforeEach(function() {
-        cookiesAreEnabledStub.returns(false);
-      });
+        cookiesAreEnabledStub.returns(false)
+      })
 
       it('should return false', function () {
-        expect(storage.cookiesAreEnabled()).to.equal(false);
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-    });
+        expect(storage.cookiesAreEnabled()).to.equal(false)
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+    })
 
     describe('- with gate cookie set', function () {
       beforeEach(function() {
-        getCookieStub.withArgs(GATE_COOKIE_NAME).returns('true');
-      });
+        getCookieStub.withArgs(GATE_COOKIE_NAME).returns('true')
+      })
 
       it('should return false', function () {
-        expect(storage.getCookie(GATE_COOKIE_NAME)).to.not.equal(null);
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-    });
+        expect(storage.getCookie(GATE_COOKIE_NAME)).to.not.equal(null)
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+    })
 
     describe('- with cookies enabled and gate cookie not set', function () {
       beforeEach(function() {
-        cookiesAreEnabledStub.returns(true);
-        getCookieStub.withArgs(GATE_COOKIE_NAME).returns(null);
-      });
+        cookiesAreEnabledStub.returns(true)
+        getCookieStub.withArgs(GATE_COOKIE_NAME).returns(null)
+      })
 
       it('should return true when required params found', function () {
-        expect(storage.cookiesAreEnabled()).to.equal(true);
-        expect(storage.getCookie(GATE_COOKIE_NAME)).to.equal(null);
-        expect(getMediaTypeFromBid(bid)).to.equal('banner');
-        expect(bid).to.have.deep.nested.property('params.placementId');
-        expect(bid.params.placementId).to.equal(placementId);
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-    });
+        expect(storage.cookiesAreEnabled()).to.equal(true)
+        expect(storage.getCookie(GATE_COOKIE_NAME)).to.equal(null)
+        expect(getMediaTypeFromBid(bid)).to.equal('banner')
+        expect(bid).to.have.deep.nested.property('params.placementId')
+        expect(bid.params.placementId).to.equal(placementId)
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+    })
 
     it('should return false when mediaType is not banner', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.mediaTypes;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.mediaTypes
       invalidBid.mediaTypes = {
         'video': {}
-      };
-      expect(getMediaTypeFromBid(invalidBid)).to.not.equal('banner');
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
+      }
+      expect(getMediaTypeFromBid(invalidBid)).to.not.equal('banner')
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
       invalidBid.params = {
         'placementId': 0
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
-    let getAdUnitsStub;
+    let getAdUnitsStub
     const bidRequests = [
       {
         'bidder': 'winr',
@@ -127,17 +127,17 @@ describe('WinrAdapter', function () {
         'auctionId': '0bc27fb0-ea39-4a5a-b1ba-5d83a5f28a69',
         'transactionId': '270e4b6e-0acc-41c4-b253-b935f966fa7d'
       }
-    ];
+    ]
 
     beforeEach(function() {
       getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
-        return [];
-      });
-    });
+        return []
+      })
+    })
 
     afterEach(function() {
-      getAdUnitsStub.restore();
-    });
+      getAdUnitsStub.restore()
+    })
 
     it('should parse out private sizes', function () {
       const bidRequest = Object.assign({},
@@ -148,14 +148,14 @@ describe('WinrAdapter', function () {
             privateSizes: [1, 1]
           }
         }
-      );
+      )
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].private_sizes).to.exist;
-      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 1, height: 1 }]);
-    });
+      expect(payload.tags[0].private_sizes).to.exist
+      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 1, height: 1 }])
+    })
 
     it('should add publisher_id in request', function() {
       const bidRequest = Object.assign({},
@@ -165,39 +165,39 @@ describe('WinrAdapter', function () {
             placementId: '21543013',
             publisherId: '1231234'
           }
-        });
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+        })
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].publisher_id).to.exist;
-      expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
-      expect(payload.publisher_id).to.exist;
-      expect(payload.publisher_id).to.deep.equal(1231234);
+      expect(payload.tags[0].publisher_id).to.exist
+      expect(payload.tags[0].publisher_id).to.deep.equal(1231234)
+      expect(payload.publisher_id).to.exist
+      expect(payload.publisher_id).to.deep.equal(1231234)
     })
 
     it('should add source and version to the tag', function () {
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.sdk).to.exist;
+      const request = spec.buildRequests(bidRequests)
+      const payload = JSON.parse(request.data)
+      expect(payload.sdk).to.exist
       expect(payload.sdk).to.deep.equal({
         source: 'pbjs',
         version: '$prebid.version$'
-      });
-    });
+      })
+    })
 
     it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
-      const bidRequest = Object.assign({}, bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const bidRequest = Object.assign({}, bidRequests[0])
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].ad_types).to.not.exist;
-    });
+      expect(payload.tags[0].ad_types).to.not.exist
+    })
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal(ENDPOINT);
-      expect(request.method).to.equal('POST');
-    });
+      const request = spec.buildRequests(bidRequests)
+      expect(request.url).to.equal(ENDPOINT)
+      expect(request.method).to.equal('POST')
+    })
 
     it('should attach valid user params to the tag', function () {
       const bidRequest = Object.assign({},
@@ -213,48 +213,48 @@ describe('WinrAdapter', function () {
             }
           }
         }
-      );
+      )
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.user).to.exist;
+      expect(payload.user).to.exist
       expect(payload.user).to.deep.equal({
         external_uid: '123',
         // dnt: false
         segments: [{ id: 123 }, { id: 987, value: 876 }]
-      });
-    });
+      })
+    })
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
-      const getFloorResponse = { currency: 'USD', floor: 3 };
-      let request; let payload = null;
-      const bidRequest = deepClone(bidRequests[0]);
+      const getFloorResponse = { currency: 'USD', floor: 3 }
+      let request; let payload = null
+      const bidRequest = deepClone(bidRequests[0])
 
       // 1 -> reserve not defined, getFloor not defined > empty
-      request = spec.buildRequests([bidRequest]);
-      payload = JSON.parse(request.data);
+      request = spec.buildRequests([bidRequest])
+      payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].reserve).to.not.exist;
+      expect(payload.tags[0].reserve).to.not.exist
 
       // 2 -> reserve is defined, getFloor not defined > reserve is used
       bidRequest.params = {
         'placementId': '21543013',
         'reserve': 0.5
-      };
-      request = spec.buildRequests([bidRequest]);
-      payload = JSON.parse(request.data);
+      }
+      request = spec.buildRequests([bidRequest])
+      payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].reserve).to.exist.and.to.equal(0.5);
+      expect(payload.tags[0].reserve).to.exist.and.to.equal(0.5)
 
       // 3 -> reserve is defined, getFloor is defined > getFloor is used
-      bidRequest.getFloor = () => getFloorResponse;
+      bidRequest.getFloor = () => getFloorResponse
 
-      request = spec.buildRequests([bidRequest]);
-      payload = JSON.parse(request.data);
+      request = spec.buildRequests([bidRequest])
+      payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].reserve).to.exist.and.to.equal(3);
-    });
+      expect(payload.tags[0].reserve).to.exist.and.to.equal(3)
+    })
 
     it('should contain hb_source value for other media', function() {
       const bidRequest = Object.assign({},
@@ -266,11 +266,11 @@ describe('WinrAdapter', function () {
             placementId: 13144370
           }
         }
-      );
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-      expect(payload.tags[0].hb_source).to.deep.equal(1);
-    });
+      )
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
+      expect(payload.tags[0].hb_source).to.deep.equal(1)
+    })
 
     it('should convert keyword params to proper form and attaches to request', function () {
       const bidRequest = Object.assign({},
@@ -290,10 +290,10 @@ describe('WinrAdapter', function () {
             }
           }
         }
-      );
+      )
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
       expect(payload.tags[0].keywords).to.deep.equal([{
         'key': 'single',
@@ -314,8 +314,8 @@ describe('WinrAdapter', function () {
         'key': 'emptyStr'
       }, {
         'key': 'emptyArr'
-      }]);
-    });
+      }])
+    })
 
     it('should add payment rules to the request', function () {
       const bidRequest = Object.assign({},
@@ -326,27 +326,27 @@ describe('WinrAdapter', function () {
             usePaymentRule: true
           }
         }
-      );
+      )
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.tags[0].use_pmt_rule).to.equal(true);
-    });
+      expect(payload.tags[0].use_pmt_rule).to.equal(true)
+    })
 
     it('should add gpid to the request', function () {
-      const testGpid = '/12345/my-gpt-tag-0';
-      const bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
+      const testGpid = '/12345/my-gpt-tag-0'
+      const bidRequest = deepClone(bidRequests[0])
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } }
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
       expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
-    });
+    })
 
     it('should add gdpr consent information to the request', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
       const bidderRequest = {
         'bidderCode': 'winr',
         'auctionId': '0bc27fb0-ea39-4a5a-b1ba-5d83a5f28a69',
@@ -356,35 +356,35 @@ describe('WinrAdapter', function () {
           consentString: consentString,
           gdprApplies: true
         }
-      };
-      bidderRequest.bids = bidRequests;
+      }
+      bidderRequest.bids = bidRequests
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.deep.equal({ withCredentials: true });
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.options).to.deep.equal({ withCredentials: true })
+      const payload = JSON.parse(request.data)
 
-      expect(payload.gdpr_consent).to.exist;
-      expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
-      expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
-    });
+      expect(payload.gdpr_consent).to.exist
+      expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString)
+      expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true
+    })
 
     it('should add us privacy string to payload', function() {
-      const consentString = '1YA-';
+      const consentString = '1YA-'
       const bidderRequest = {
         'bidderCode': 'winr',
         'auctionId': '0bc27fb0-ea39-4a5a-b1ba-5d83a5f28a69',
         'bidderRequestId': '1dfdc89563b81a',
         'timeout': 3000,
         'uspConsent': consentString
-      };
-      bidderRequest.bids = bidRequests;
+      }
+      bidderRequest.bids = bidRequests
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
 
-      expect(payload.us_privacy).to.exist;
-      expect(payload.us_privacy).to.exist.and.to.equal(consentString);
-    });
+      expect(payload.us_privacy).to.exist
+      expect(payload.us_privacy).to.exist.and.to.equal(consentString)
+    })
 
     it('supports sending hybrid mobile app parameters', function () {
       const appRequest = Object.assign({},
@@ -408,27 +408,27 @@ describe('WinrAdapter', function () {
             }
           }
         }
-      );
-      const request = spec.buildRequests([appRequest]);
-      const payload = JSON.parse(request.data);
-      expect(payload.app).to.exist;
+      )
+      const request = spec.buildRequests([appRequest])
+      const payload = JSON.parse(request.data)
+      expect(payload.app).to.exist
       expect(payload.app).to.deep.equal({
         appid: 'B1O2W3M4AN.com.prebid.webview'
-      });
-      expect(payload.device.device_id).to.exist;
+      })
+      expect(payload.device.device_id).to.exist
       expect(payload.device.device_id).to.deep.equal({
         aaid: '38400000-8cf0-11bd-b23e-10b96e40000d',
         idfa: '4D12078D-3246-4DA4-AD5E-7610481E7AE',
         md5udid: '5756ae9022b2ea1e47d84fead75220c8',
         sha1udid: '4DFAA92388699AC6539885AEF1719293879985BF',
         windowsadid: '750c6be243f1c4b5c9912b95a5742fc5'
-      });
-      expect(payload.device.geo).to.exist;
+      })
+      expect(payload.device.geo).to.exist
       expect(payload.device.geo).to.deep.equal({
         lat: 40.0964439,
         lng: -75.3009142
-      });
-    });
+      })
+    })
 
     it('should add referer info to payload', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
@@ -444,29 +444,29 @@ describe('WinrAdapter', function () {
           ]
         }
       }
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const payload = JSON.parse(request.data)
 
-      expect(payload.referrer_detection).to.exist;
+      expect(payload.referrer_detection).to.exist
       expect(payload.referrer_detection).to.deep.equal({
         rd_ref: 'https%3A%2F%2Fexample.com%2Fpage.html',
         rd_top: true,
         rd_ifs: 2,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      });
-    });
+      })
+    })
 
     it('should populate member if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         params: {
           member: '11626'
         }
-      });
+      })
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-      expect(payload.member_id).to.deep.equal(11626);
-    });
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
+      expect(payload.member_id).to.deep.equal(11626)
+    })
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
@@ -487,10 +487,10 @@ describe('WinrAdapter', function () {
             }
           }
         }
-      });
+      })
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
       expect(payload.schain).to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -501,43 +501,43 @@ describe('WinrAdapter', function () {
             'hp': 1
           }
         ]
-      });
-    });
+      })
+    })
 
     it('should populate coppa if set in config', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0])
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
-        .returns(true);
+        .returns(true)
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
 
-      expect(payload.user.coppa).to.equal(true);
+      expect(payload.user.coppa).to.equal(true)
 
-      config.getConfig.restore();
-    });
+      config.getConfig.restore()
+    })
 
     it('should set the X-Is-Test customHeader if test flag is enabled', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
+      const bidRequest = Object.assign({}, bidRequests[0])
       sinon.stub(config, 'getConfig')
         .withArgs('apn_test')
-        .returns(true);
+        .returns(true)
 
-      const request = spec.buildRequests([bidRequest]);
-      expect(request.options.customHeaders).to.deep.equal({ 'X-Is-Test': 1 });
+      const request = spec.buildRequests([bidRequest])
+      expect(request.options.customHeaders).to.deep.equal({ 'X-Is-Test': 1 })
 
-      config.getConfig.restore();
-    });
+      config.getConfig.restore()
+    })
 
     it('should always set withCredentials: true on the request.options', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
-      expect(request.options.withCredentials).to.equal(true);
-    });
+      const bidRequest = Object.assign({}, bidRequests[0])
+      const request = spec.buildRequests([bidRequest])
+      expect(request.options.withCredentials).to.equal(true)
+    })
 
     it('should set simple domain variant if purpose 1 consent is not given', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
       const bidderRequest = {
         'bidderCode': 'winr',
         'auctionId': '1d1a030790a475',
@@ -555,12 +555,12 @@ describe('WinrAdapter', function () {
             }
           }
         }
-      };
-      bidderRequest.bids = bidRequests;
+      }
+      bidderRequest.bids = bidRequests
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.equal('https://ib.adnxs-simple.com/ut/v3/prebid');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.url).to.equal('https://ib.adnxs-simple.com/ut/v3/prebid')
+    })
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
@@ -571,38 +571,38 @@ describe('WinrAdapter', function () {
           netId: 'sample-netId-userid',
           idl_env: 'sample-idl-userid'
         }
-      });
+      })
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest])
+      const payload = JSON.parse(request.data)
       expect(payload.eids).to.deep.include({
         source: 'adserver.org',
         id: 'sample-userid',
         rti_partner: 'TDID'
-      });
+      })
 
       expect(payload.eids).to.deep.include({
         source: 'criteo.com',
         id: 'sample-criteo-userid',
-      });
+      })
 
       expect(payload.eids).to.deep.include({
         source: 'netid.de',
         id: 'sample-netId-userid',
-      });
+      })
 
       expect(payload.eids).to.deep.include({
         source: 'liveramp.com',
         id: 'sample-idl-userid'
-      });
+      })
 
       expect(payload.eids).to.deep.include({
         source: 'uidapi.com',
         id: 'sample-uid2-value',
         rti_partner: 'UID2'
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
     const response = {
@@ -652,7 +652,7 @@ describe('WinrAdapter', function () {
           ]
         }
       ]
-    };
+    }
 
     it('should get correct bid response', function () {
       const expectedResponse = [
@@ -698,7 +698,7 @@ describe('WinrAdapter', function () {
           'mediaType': 'banner',
           'ad': '<!-- Wrapped Ad -->'
         }
-      ];
+      ]
       const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
@@ -710,9 +710,9 @@ describe('WinrAdapter', function () {
           }
         }]
       }
-      const result = spec.interpretResponse({ body: response }, { bidderRequest });
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-    });
+      const result = spec.interpretResponse({ body: response }, { bidderRequest })
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
+    })
 
     it('handles nobid responses', function () {
       const response = {
@@ -723,16 +723,16 @@ describe('WinrAdapter', function () {
           'auction_id': '297492697822162468',
           'nobid': true
         }]
-      };
-      let bidderRequest;
+      }
+      let bidderRequest
 
-      const result = spec.interpretResponse({ body: response }, { bidderRequest });
-      expect(result.length).to.equal(0);
-    });
+      const result = spec.interpretResponse({ body: response }, { bidderRequest })
+      expect(result.length).to.equal(0)
+    })
 
     it('should add advertiser id', function() {
-      const responseAdvertiserId = deepClone(response);
-      responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
+      const responseAdvertiserId = deepClone(response)
+      responseAdvertiserId.tags[0].ads[0].advertiser_id = '123'
 
       const bidderRequest = {
         bids: [{
@@ -740,13 +740,13 @@ describe('WinrAdapter', function () {
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
-      expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
-    });
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest })
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserId'])
+    })
 
     it('should add advertiserDomains', function() {
-      const responseAdvertiserId = deepClone(response);
-      responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
+      const responseAdvertiserId = deepClone(response)
+      responseAdvertiserId.tags[0].ads[0].adomain = ['123']
 
       const bidderRequest = {
         bids: [{
@@ -754,13 +754,13 @@ describe('WinrAdapter', function () {
           adUnitCode: 'code'
         }]
       }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
-      expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
-      expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest })
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains'])
+      expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([])
+    })
 
     it('should add params', function() {
-      const responseParams = deepClone(response);
+      const responseParams = deepClone(response)
       const bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
@@ -772,8 +772,8 @@ describe('WinrAdapter', function () {
           }
         }]
       }
-      const result = spec.interpretResponse({ body: responseParams }, { bidderRequest });
-      expect(Object.keys(result[0].meta)).to.include.members(['placementId', 'domParent', 'child']);
-    });
-  });
-});
+      const result = spec.interpretResponse({ body: responseParams }, { bidderRequest })
+      expect(Object.keys(result[0].meta)).to.include.members(['placementId', 'domParent', 'child'])
+    })
+  })
+})

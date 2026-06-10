@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/redtramBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
-import * as utils from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/redtramBidAdapter.js'
+import { BANNER } from '../../../src/mediaTypes.js'
+import * as utils from '../../../src/utils.js'
 
 describe('RedtramBidAdapter', function () {
   const bid = {
@@ -15,86 +15,86 @@ describe('RedtramBidAdapter', function () {
     params: {
       placementId: 23611,
     }
-  };
+  }
 
   const bidderRequest = {
     refererInfo: {
       referer: 'test.com'
     }
-  };
+  }
 
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and key parameters present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.placementId;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-  });
+      delete bid.params.placementId
+      expect(spec.isBidRequestValid(bid)).to.be.false
+    })
+  })
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    let serverRequest = spec.buildRequests([bid], bidderRequest)
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist;
-      expect(serverRequest.method).to.exist;
-      expect(serverRequest.url).to.exist;
-      expect(serverRequest.data).to.exist;
-    });
+      expect(serverRequest).to.exist
+      expect(serverRequest.method).to.exist
+      expect(serverRequest.url).to.exist
+      expect(serverRequest.data).to.exist
+    })
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST');
-    });
+      expect(serverRequest.method).to.equal('POST')
+    })
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://prebid.redtram.com/pbjs');
-    });
+      expect(serverRequest.url).to.equal('https://prebid.redtram.com/pbjs')
+    })
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'host', 'page', 'placements');
-      expect(data.deviceWidth).to.be.a('number');
-      expect(data.deviceHeight).to.be.a('number');
-      expect(data.language).to.be.a('string');
-      expect(data.host).to.be.a('string');
-      expect(data.page).to.be.a('string');
-      expect(data.gdpr).to.not.exist;
-      expect(data.ccpa).to.not.exist;
-      const placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'sizes', 'schain', 'bidfloor');
-      expect(placement.placementId).to.equal(23611);
-      expect(placement.bidId).to.equal('23dc19818e5293');
-      expect(placement.adFormat).to.equal(BANNER);
-      expect(placement.schain).to.be.an('object');
-      expect(placement.sizes).to.be.an('array');
-      expect(placement.bidfloor).to.exist.and.to.equal(0);
-    });
+      const data = serverRequest.data
+      expect(data).to.be.an('object')
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'host', 'page', 'placements')
+      expect(data.deviceWidth).to.be.a('number')
+      expect(data.deviceHeight).to.be.a('number')
+      expect(data.language).to.be.a('string')
+      expect(data.host).to.be.a('string')
+      expect(data.page).to.be.a('string')
+      expect(data.gdpr).to.not.exist
+      expect(data.ccpa).to.not.exist
+      const placement = data['placements'][0]
+      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'sizes', 'schain', 'bidfloor')
+      expect(placement.placementId).to.equal(23611)
+      expect(placement.bidId).to.equal('23dc19818e5293')
+      expect(placement.adFormat).to.equal(BANNER)
+      expect(placement.schain).to.be.an('object')
+      expect(placement.sizes).to.be.an('array')
+      expect(placement.bidfloor).to.exist.and.to.equal(0)
+    })
 
     it('Returns data with gdprConsent and without uspConsent', function () {
-      bidderRequest.gdprConsent = 'test';
-      serverRequest = spec.buildRequests([bid], bidderRequest);
-      const data = serverRequest.data;
-      expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('string');
-      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
-      expect(data.ccpa).to.not.exist;
-      delete bidderRequest.gdprConsent;
-    });
+      bidderRequest.gdprConsent = 'test'
+      serverRequest = spec.buildRequests([bid], bidderRequest)
+      const data = serverRequest.data
+      expect(data.gdpr).to.exist
+      expect(data.gdpr).to.be.a('string')
+      expect(data.gdpr).to.equal(bidderRequest.gdprConsent)
+      expect(data.ccpa).to.not.exist
+      delete bidderRequest.gdprConsent
+    })
 
     it('Returns data with uspConsent and without gdprConsent', function () {
-      bidderRequest.uspConsent = 'test';
-      serverRequest = spec.buildRequests([bid], bidderRequest);
-      const data = serverRequest.data;
-      expect(data.ccpa).to.exist;
-      expect(data.ccpa).to.be.a('string');
-      expect(data.ccpa).to.equal(bidderRequest.uspConsent);
-      expect(data.gdpr).to.not.exist;
-    });
+      bidderRequest.uspConsent = 'test'
+      serverRequest = spec.buildRequests([bid], bidderRequest)
+      const data = serverRequest.data
+      expect(data.ccpa).to.exist
+      expect(data.ccpa).to.be.a('string')
+      expect(data.ccpa).to.equal(bidderRequest.uspConsent)
+      expect(data.gdpr).to.not.exist
+    })
 
     it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([]);
-      const data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
-    });
-  });
+      serverRequest = spec.buildRequests([])
+      const data = serverRequest.data
+      expect(data.placements).to.be.an('array').that.is.empty
+    })
+  })
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {
@@ -112,23 +112,23 @@ describe('RedtramBidAdapter', function () {
           dealId: '1',
           meta: {}
         }]
-      };
-      const bannerResponses = spec.interpretResponse(banner);
-      expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      }
+      const bannerResponses = spec.interpretResponse(banner)
+      expect(bannerResponses).to.be.an('array').that.is.not.empty
+      const dataItem = bannerResponses[0]
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
-      expect(dataItem.requestId).to.equal('23dc19818e5293');
-      expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.width).to.equal(300);
-      expect(dataItem.height).to.equal(250);
-      expect(dataItem.ad).to.equal('Test');
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
-    });
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta')
+      expect(dataItem.requestId).to.equal('23dc19818e5293')
+      expect(dataItem.cpm).to.equal(0.4)
+      expect(dataItem.width).to.equal(300)
+      expect(dataItem.height).to.equal(250)
+      expect(dataItem.ad).to.equal('Test')
+      expect(dataItem.ttl).to.equal(120)
+      expect(dataItem.creativeId).to.equal('2')
+      expect(dataItem.netRevenue).to.be.true
+      expect(dataItem.currency).to.equal('USD')
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains')
+    })
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
         body: [{
@@ -142,11 +142,11 @@ describe('RedtramBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      };
+      }
 
-      const serverResponses = spec.interpretResponse(invBanner);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
+      const serverResponses = spec.interpretResponse(invBanner)
+      expect(serverResponses).to.be.an('array').that.is.empty
+    })
     it('Should return an empty array if invalid response is passed', function () {
       const invalid = {
         body: [{
@@ -156,36 +156,36 @@ describe('RedtramBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      };
-      const serverResponses = spec.interpretResponse(invalid);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-  });
+      }
+      const serverResponses = spec.interpretResponse(invalid)
+      expect(serverResponses).to.be.an('array').that.is.empty
+    })
+  })
 
   describe('getUserSyncs', function () {
     it('should do nothing on getUserSyncs', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true
-      }, {});
-      expect(syncData).to.be.an('array').which.is.not.empty;
+      }, {})
+      expect(syncData).to.be.an('array').which.is.not.empty
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://prebid.redtram.com/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
-    });
-  });
+    })
+  })
 
   describe('on bidWon', function () {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
-    });
+      sinon.stub(utils, 'triggerPixel')
+    })
     afterEach(function() {
-      utils.triggerPixel.restore();
-    });
+      utils.triggerPixel.restore()
+    })
     it('should replace nurl for banner', function () {
-      const nurl = 'nurl/?ap=${' + 'AUCTION_PRICE}';
+      const nurl = 'nurl/?ap=${' + 'AUCTION_PRICE}'
       const bid = {
         'bidderCode': 'redtram',
         'width': 300,
@@ -247,9 +247,9 @@ describe('RedtramBidAdapter', function () {
             'placementId': 23611
           }
         ]
-      };
-      spec.onBidWon(bid);
-      expect(bid.nurl).to.deep.equal('nurl/?ap=0.68');
-    });
-  });
-});
+      }
+      spec.onBidWon(bid)
+      expect(bid.nurl).to.deep.equal('nurl/?ap=0.68')
+    })
+  })
+})

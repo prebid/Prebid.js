@@ -1,26 +1,26 @@
-import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-let converterInstance;
+import { BANNER } from '../src/mediaTypes.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+let converterInstance
 
 export const spec = {
   code: 'oprx',
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(bid?.params?.key && bid?.params?.placement_id);
+    return !!(bid?.params?.key && bid?.params?.placement_id)
   },
 
   buildRequests(bidRequests, bidderRequest) {
-    if (!bidRequests?.length) return [];
+    if (!bidRequests?.length) return []
 
-    const endpoint = `https://pb.optimizerx.com/pb`;
-    const converter = converterInstance || defaultConverter;
+    const endpoint = `https://pb.optimizerx.com/pb`
+    const converter = converterInstance || defaultConverter
 
     const requestData = converter.toORTB({
       bidderRequest,
       bidRequests,
-    });
+    })
 
     return [{
       method: 'POST',
@@ -30,16 +30,16 @@ export const spec = {
         contentType: 'application/json;charset=utf-8',
         withCredentials: false
       }
-    }];
+    }]
   },
 
   interpretResponse(serverResponse, request) {
-    const converter = converterInstance || defaultConverter;
-    const response = serverResponse?.body || {};
-    const requestData = request?.data;
-    return converter.fromORTB({ response, request: requestData }).bids || [];
+    const converter = converterInstance || defaultConverter
+    const response = serverResponse?.body || {}
+    const requestData = request?.data
+    return converter.fromORTB({ response, request: requestData }).bids || []
   }
-};
+}
 
 // defaultConverter = real one used in prod
 const defaultConverter = ortbConverter({
@@ -50,18 +50,18 @@ const defaultConverter = ortbConverter({
     mediaType: BANNER,
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    imp.ext = { bidder: bidRequest.params };
+    const imp = buildImp(bidRequest, context)
+    imp.ext = { bidder: bidRequest.params }
     if (bidRequest.params.bid_floor) {
-      imp.bidfloor = bidRequest.params.bid_floor;
+      imp.bidfloor = bidRequest.params.bid_floor
     }
-    return imp;
+    return imp
   },
-});
+})
 
 // Allow test override
 export function __setTestConverter(mockConverter) {
-  converterInstance = mockConverter;
+  converterInstance = mockConverter
 }
 
-registerBidder(spec);
+registerBidder(spec)

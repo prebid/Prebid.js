@@ -2,10 +2,10 @@
  * This module adds the Mobian RTD provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  */
-import { submodule } from '../src/hook.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
-import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
+import { submodule } from '../src/hook.js'
+import { ajaxBuilder } from '../src/ajax.js'
+import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js'
+import { setKeyValue } from '../libraries/gptUtils/gptUtils.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -35,21 +35,21 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
  * @property {string[]} tones
  */
 
-export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
-const MOBIAN_TCF_ID = 1348;
-export const AP_VALUES = 'apValues';
-export const CATEGORIES = 'categories';
-export const EMOTIONS = 'emotions';
-export const GENRES = 'genres';
-export const RISK = 'risk';
-export const SENTIMENT = 'sentiment';
-export const TQ = 'tq';
-export const TG = 'tg';
-export const THEMES = 'themes';
-export const TONES = 'tones';
+export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async'
+const MOBIAN_TCF_ID = 1348
+export const AP_VALUES = 'apValues'
+export const CATEGORIES = 'categories'
+export const EMOTIONS = 'emotions'
+export const GENRES = 'genres'
+export const RISK = 'risk'
+export const SENTIMENT = 'sentiment'
+export const TQ = 'tq'
+export const TG = 'tg'
+export const THEMES = 'themes'
+export const TONES = 'tones'
 export const dep = {
   ajaxBuilder
-};
+}
 
 export const CONTEXT_KEYS = [
   AP_VALUES,
@@ -62,101 +62,101 @@ export const CONTEXT_KEYS = [
   TG,
   THEMES,
   TONES
-];
+]
 
-const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
+const AP_KEYS = ['a0', 'a1', 'p0', 'p1']
 
-export const MAX_CACHE_SIZE = 10;
+export const MAX_CACHE_SIZE = 10
 
 // eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
-  _logMessage('Mobian', ...args);
-};
+  _logMessage('Mobian', ...args)
+}
 
 function getNormalizedPageUrl() {
   try {
-    const { origin, pathname } = window.location;
-    return origin + pathname;
+    const { origin, pathname } = window.location
+    return origin + pathname
   } catch (e) {
     // Fallback to href if origin/pathname are not available, but keep normalization consistent
-    const href = window.location && window.location.href;
+    const href = window.location && window.location.href
     if (typeof href === 'string') {
       // Strip query string and hash to match origin + pathname behavior
-      return href.split(/[?#]/)[0];
+      return href.split(/[?#]/)[0]
     }
-    return '';
+    return ''
   }
 }
 
 export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
-  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
-  const cache = new Map();
+  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE
+  const cache = new Map()
   return function () {
-    const pageUrl = getNormalizedPageUrl();
+    const pageUrl = getNormalizedPageUrl()
     if (cache.has(pageUrl)) {
-      return cache.get(pageUrl);
+      return cache.get(pageUrl)
     }
     if (cache.size >= sanitizedMaxSize) {
-      cache.delete(cache.keys().next().value);
+      cache.delete(cache.keys().next().value)
     }
     const pending = fetchContextData()
       .then((response) => makeDataFromResponse(response))
       .catch((error) => {
-        logMessage('error', error);
-        cache.delete(pageUrl);
-        return {};
-      });
-    cache.set(pageUrl, pending);
-    return pending;
+        logMessage('error', error)
+        cache.delete(pageUrl)
+        return {}
+      })
+    cache.set(pageUrl, pending)
+    return pending
   }
 }
 
-export const getContextData = makeMemoizedFetch();
+export const getContextData = makeMemoizedFetch()
 
-const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
+const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value })
 
 export function makeContextDataToKeyValuesReducer(config) {
-  const { prefix } = config;
+  const { prefix } = config
   return function contextDataToKeyValuesReducer(keyValues, [key, value]) {
     if (key === AP_VALUES) {
       AP_KEYS.forEach((apKey) => {
-        if (!value?.[apKey]?.length) return;
-        keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))]);
-      });
+        if (!value?.[apKey]?.length) return
+        keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))])
+      })
     } else if ((key === TQ || key === TG) && value != null) {
-      keyValues.push([`${prefix}_${key}`, value]);
+      keyValues.push([`${prefix}_${key}`, value])
     } else if (value?.length) {
-      keyValues.push([`${prefix}_${key}`, value]);
+      keyValues.push([`${prefix}_${key}`, value])
     }
-    return keyValues;
+    return keyValues
   }
 }
 
 export async function fetchContextData() {
-  const pageUrl = encodeURIComponent(window.location.href);
-  const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
-  const request = dep.ajaxBuilder();
+  const pageUrl = encodeURIComponent(window.location.href)
+  const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`
+  const request = dep.ajaxBuilder()
 
   return new Promise((resolve, reject) => {
-    request(requestUrl, { success: resolve, error: reject });
-  });
+    request(requestUrl, { success: resolve, error: reject })
+  })
 }
 
 export function getConfig(config) {
   const [advertiserTargeting, publisherTargeting] = ['advertiserTargeting', 'publisherTargeting'].map((key) => {
-    const value = config?.params?.[key];
+    const value = config?.params?.[key]
     if (!value) {
-      return [];
+      return []
     } else if (value === true) {
-      return CONTEXT_KEYS;
+      return CONTEXT_KEYS
     } else if (Array.isArray(value) && value.length) {
-      return value.filter((key) => CONTEXT_KEYS.includes(key));
+      return value.filter((key) => CONTEXT_KEYS.includes(key))
     }
-    return [];
-  });
+    return []
+  })
 
-  const prefix = config?.params?.prefix || 'mobian';
-  return { advertiserTargeting, prefix, publisherTargeting };
+  const prefix = config?.params?.prefix || 'mobian'
+  return { advertiserTargeting, prefix, publisherTargeting }
 }
 
 /**
@@ -164,12 +164,12 @@ export function getConfig(config) {
  * @param {MobianContextData} contextData
  */
 export function setTargeting(config, contextData) {
-  logMessage('context', contextData);
+  logMessage('context', contextData)
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
     .reduce(makeContextDataToKeyValuesReducer(config), [])
 
-  keyValues.forEach(([key, value]) => setKeyValue(key, value));
+  keyValues.forEach(([key, value]) => setKeyValue(key, value))
 }
 
 /**
@@ -177,10 +177,10 @@ export function setTargeting(config, contextData) {
  * @returns {MobianContextData}
  */
 export function makeDataFromResponse(contextData) {
-  const data = typeof contextData === 'string' ? safeJSONParse(contextData) : contextData;
-  const results = data.results;
+  const data = typeof contextData === 'string' ? safeJSONParse(contextData) : contextData
+  const results = data.results
   if (!results) {
-    return {};
+    return {}
   }
   return {
     [AP_VALUES]: results.ap || {},
@@ -193,7 +193,7 @@ export function makeDataFromResponse(contextData) {
     [TG]: results.mobian_tg,
     [THEMES]: results.mobianThemes,
     [TONES]: results.mobianTones,
-  };
+  }
 }
 
 /**
@@ -202,20 +202,20 @@ export function makeDataFromResponse(contextData) {
  * @param {MobianConfig} config
  */
 export function extendBidRequestConfig(bidReqConfig, contextData, config) {
-  logMessage('extendBidRequestConfig', bidReqConfig, contextData);
-  const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
+  logMessage('extendBidRequestConfig', bidReqConfig, contextData)
+  const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.advertiserTargeting.includes(key))
     .reduce(makeContextDataToKeyValuesReducer(config), [])
-    .reduce(entriesToObjectReducer, {});
+    .reduce(entriesToObjectReducer, {})
 
-  ortb2Site.ext = ortb2Site.ext || {};
+  ortb2Site.ext = ortb2Site.ext || {}
   ortb2Site.ext.data = {
     ...(ortb2Site.ext.data || {}),
     ...keyValues
-  };
+  }
 
-  return bidReqConfig;
+  return bidReqConfig
 }
 
 /**
@@ -223,31 +223,31 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
  * @returns {boolean}
  */
 function init(rawConfig) {
-  logMessage('init', rawConfig);
-  const config = getConfig(rawConfig);
+  logMessage('init', rawConfig)
+  const config = getConfig(rawConfig)
   if (config.publisherTargeting.length) {
-    getContextData().then((contextData) => setTargeting(config, contextData));
+    getContextData().then((contextData) => setTargeting(config, contextData))
   }
-  return true;
+  return true
 }
 
 function getBidRequestData(bidReqConfig, callback, rawConfig) {
-  logMessage('getBidRequestData', bidReqConfig);
+  logMessage('getBidRequestData', bidReqConfig)
 
-  const config = getConfig(rawConfig);
-  const { advertiserTargeting } = config;
+  const config = getConfig(rawConfig)
+  const { advertiserTargeting } = config
 
   if (!advertiserTargeting.length) {
-    callback();
-    return;
+    callback()
+    return
   }
 
   getContextData()
     .then((contextData) => {
-      extendBidRequestConfig(bidReqConfig, contextData, config);
+      extendBidRequestConfig(bidReqConfig, contextData, config)
     })
     .catch(() => {})
-    .finally(() => callback());
+    .finally(() => callback())
 }
 
 /** @type {RtdSubmodule} */
@@ -256,6 +256,6 @@ export const mobianBrandSafetySubmodule = {
   init: init,
   getBidRequestData: getBidRequestData,
   gvlid: MOBIAN_TCF_ID
-};
+}
 
-submodule('realTimeData', mobianBrandSafetySubmodule);
+submodule('realTimeData', mobianBrandSafetySubmodule)

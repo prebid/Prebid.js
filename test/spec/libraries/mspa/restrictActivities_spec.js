@@ -1,10 +1,10 @@
-import { config } from '../../../../src/config.js';
-import { uninstall } from '../../../../modules/tcfControl.js';
-import { isActivityAllowed } from '../../../../src/activities/rules.js';
-import { activityParams } from '../../../../src/activities/activityParams.js';
+import { config } from '../../../../src/config.js'
+import { uninstall } from '../../../../modules/tcfControl.js'
+import { isActivityAllowed } from '../../../../src/activities/rules.js'
+import { activityParams } from '../../../../src/activities/activityParams.js'
 import 'modules/consentManagementGpp.js'
-import 'modules/gppControl_usnat.js';
-import 'modules/gppControl_usstates.js';
+import 'modules/gppControl_usnat.js'
+import 'modules/gppControl_usstates.js'
 
 describe('restrictActivitites', () => {
   Object.entries({
@@ -13,9 +13,9 @@ describe('restrictActivitites', () => {
   }).forEach(([t, section]) => {
     describe(`on ${t} strings`, () => {
       afterEach(() => {
-        config.resetConfig();
-        uninstall(); // tcfControl, if included by other tests, activates when it sees any 'consentManagement' config
-      });
+        config.resetConfig()
+        uninstall() // tcfControl, if included by other tests, activates when it sees any 'consentManagement' config
+      })
       it('should block additional activities', () => {
         config.setConfig({
           consentManagement: {
@@ -29,9 +29,9 @@ describe('restrictActivitites', () => {
               },
             }
           }
-        });
-        expect(isActivityAllowed('mockActivity', activityParams('bidder', 'mock'))).to.be.false;
-      });
-    });
-  });
-});
+        })
+        expect(isActivityAllowed('mockActivity', activityParams('bidder', 'mock'))).to.be.false
+      })
+    })
+  })
+})

@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import {
   buildUrl,
   logInfo,
@@ -8,7 +8,7 @@ import {
   triggerPixel,
   deepSetValue,
   deepAccess
-} from '../src/utils.js';
+} from '../src/utils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,16 +18,16 @@ import {
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
-const ADQUERY_GVLID = 902;
-const ADQUERY_BIDDER_CODE = 'adquery';
-const ADQUERY_BIDDER_DOMAIN_PROTOCOL = 'https';
-const ADQUERY_BIDDER_DOMAIN = 'bidder.adquery.io';
-const ADQUERY_STATIC_DOMAIN_PROTOCOL = 'https';
-const ADQUERY_STATIC_DOMAIN = 'api.adquery.io';
-const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN;
-const ADQUERY_DEFAULT_CURRENCY = 'PLN';
-const ADQUERY_NET_REVENUE = true;
-const ADQUERY_TTL = 360;
+const ADQUERY_GVLID = 902
+const ADQUERY_BIDDER_CODE = 'adquery'
+const ADQUERY_BIDDER_DOMAIN_PROTOCOL = 'https'
+const ADQUERY_BIDDER_DOMAIN = 'bidder.adquery.io'
+const ADQUERY_STATIC_DOMAIN_PROTOCOL = 'https'
+const ADQUERY_STATIC_DOMAIN = 'api.adquery.io'
+const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN
+const ADQUERY_DEFAULT_CURRENCY = 'PLN'
+const ADQUERY_NET_REVENUE = true
+const ADQUERY_TTL = 360
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -40,9 +40,9 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    const video = bid.mediaTypes && bid.mediaTypes.video;
+    const video = bid.mediaTypes && bid.mediaTypes.video
     if (video && ['instream', 'outstream'].includes(video.context)) {
-      return !!(video.playerSize);
+      return !!(video.playerSize)
     }
 
     return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
@@ -54,26 +54,26 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    const requests = [];
+    const requests = []
 
     const adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/bid',
-    });
+    })
 
     for (let i = 0, len = bidRequests.length; i < len; i++) {
-      const bid = bidRequests[i];
-      const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context);
+      const bid = bidRequests[i]
+      const isVideo = bid.mediaTypes && bid.mediaTypes.video && ['instream', 'outstream'].includes(bid.mediaTypes.video.context)
 
-      let requestUrl = adqueryRequestUrl;
+      let requestUrl = adqueryRequestUrl
 
       if (isVideo) {
         requestUrl = buildUrl({
           protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
           hostname: ADQUERY_BIDDER_DOMAIN,
           pathname: '/openrtb2/auction2',
-        });
+        })
       }
 
       const request = {
@@ -85,11 +85,11 @@ export const spec = {
           crossOrigin: true
         },
         bidId: bid.bidId
-      };
+      }
 
-      requests.push(request);
+      requests.push(request)
     }
-    return requests;
+    return requests
   },
 
   /**
@@ -98,13 +98,13 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    const bidResponses = [];
+    const bidResponses = []
 
-    const seatbids = deepAccess(response, 'body.seatbid');
+    const seatbids = deepAccess(response, 'body.seatbid')
     if (seatbids) {
       seatbids.forEach(seat => {
         seat.bid.forEach(bid => {
-          logMessage('bidObj', bid);
+          logMessage('bidObj', bid)
 
           bidResponses.push({
             requestId: bid.impid,
@@ -125,13 +125,13 @@ export const spec = {
               networkName: seat.seat,
               mediaType: VIDEO,
             },
-          });
-        });
-      });
+          })
+        })
+      })
     }
 
-    const res = deepAccess(response, 'body.data');
-    if (!res) return bidResponses;
+    const res = deepAccess(response, 'body.data')
+    if (!res) return bidResponses
 
     bidResponses.push({
       requestId: res.requestId,
@@ -149,10 +149,10 @@ export const spec = {
         advertiserDomains: deepAccess(res, 'adDomains') || [],
         mediaType: deepAccess(res, 'mediaType.name') || BANNER,
       },
-    });
+    })
 
-    logInfo('bidResponses', bidResponses);
-    return bidResponses;
+    logInfo('bidResponses', bidResponses)
+    return bidResponses
   },
 
   /**
@@ -160,30 +160,30 @@ export const spec = {
    */
   onTimeout: (timeoutData) => {
     if (timeoutData == null) {
-      return;
+      return
     }
-    logInfo('onTimeout ', timeoutData);
+    logInfo('onTimeout ', timeoutData)
     const params = {
       bidder: timeoutData.bidder,
       bId: timeoutData.bidId,
       adUnitCode: timeoutData.adUnitCode,
       timeout: timeoutData.timeout,
       auctionId: timeoutData.auctionId,
-    };
+    }
     const adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/eventTimeout',
       search: params
-    });
-    triggerPixel(adqueryRequestUrl);
+    })
+    triggerPixel(adqueryRequestUrl)
   },
 
   /**
    * @param {Bid} bid
    */
   onBidWon: (bid) => {
-    logInfo('onBidWon', bid);
+    logInfo('onBidWon', bid)
 
     if (bid.nurl) {
       triggerPixel(bid.nurl)
@@ -192,29 +192,29 @@ export const spec = {
 
     const copyOfBid = { ...bid }
 
-    const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
-    copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
+    const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null
+    copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null
     delete copyOfBid.ad
-    const shortBidString = JSON.stringify(copyOfBid);
-    const encodedBuf = window.btoa(shortBidString);
+    const shortBidString = JSON.stringify(copyOfBid)
+    const encodedBuf = window.btoa(shortBidString)
 
     const params = {
       q: encodedBuf,
-    };
+    }
     const adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/eventBidWon',
       search: params
-    });
-    triggerPixel(adqueryRequestUrl);
+    })
+    triggerPixel(adqueryRequestUrl)
   },
 
   /**
    * @param {Bid} bid
    */
   onSetTargeting: (bid) => {
-    logInfo('onSetTargeting', bid);
+    logInfo('onSetTargeting', bid)
 
     const params = {
       bidder: bid.bidder,
@@ -225,15 +225,15 @@ export const spec = {
       cpm: bid.cpm,
       requestId: bid.requestId,
       adUnitCode: bid.adUnitCode
-    };
+    }
 
     const adqueryRequestUrl = buildUrl({
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_BIDDER_DOMAIN,
       pathname: '/prebid/eventSetTargeting',
       search: params
-    });
-    triggerPixel(adqueryRequestUrl);
+    })
+    triggerPixel(adqueryRequestUrl)
   },
   /**
    * Retrieves user synchronization URLs based on provided options and consents.
@@ -245,61 +245,61 @@ export const spec = {
    * @returns {object[]} - Array of synchronization URLs.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
+    logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent)
     const syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
       'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
-    };
+    }
 
     const syncUrlObject = {
       protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
       hostname: ADQUERY_USER_SYNC_DOMAIN,
       pathname: '/prebid/userSync',
       search: syncData
-    };
+    }
 
     if (syncOptions.iframeEnabled) {
-      syncUrlObject.protocol = ADQUERY_STATIC_DOMAIN_PROTOCOL;
-      syncUrlObject.hostname = ADQUERY_STATIC_DOMAIN;
-      syncUrlObject.pathname = '/user-sync-iframe.html';
+      syncUrlObject.protocol = ADQUERY_STATIC_DOMAIN_PROTOCOL
+      syncUrlObject.hostname = ADQUERY_STATIC_DOMAIN
+      syncUrlObject.pathname = '/user-sync-iframe.html'
 
       return [{
         type: 'iframe',
         url: buildUrl(syncUrlObject)
-      }];
+      }]
     }
 
     return [{
       type: 'image',
       url: buildUrl(syncUrlObject)
-    }];
+    }]
   }
-};
+}
 
 function buildRequest(bid, bidderRequest, isVideo = false) {
-  let userId = null;
+  let userId = null
 
-  const eids = bid.userIdAsEids;
+  const eids = bid.userIdAsEids
   if (Array.isArray(eids)) {
-    const adqueryEid = eids.find(eid => eid.source === 'adquery.io');
-    userId = adqueryEid?.uids?.[0]?.id;
+    const adqueryEid = eids.find(eid => eid.source === 'adquery.io')
+    userId = adqueryEid?.uids?.[0]?.id
 
     if (!userId) {
-      userId = eids[0]?.uids?.[0]?.id;
+      userId = eids[0]?.uids?.[0]?.id
     }
   }
 
   if (!userId) {
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26);
-    userId = `qd_${randomPart}`;
-    logMessage('generated onetime User ID: ', userId);
+    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)))
+    const randomPart = randomValues.map(val => val.toString(36)).join('').substring(0, 26)
+    userId = `qd_${randomPart}`
+    logMessage('generated onetime User ID: ', userId)
   }
 
-  let pageUrl = '';
+  let pageUrl = ''
   if (bidderRequest && bidderRequest.refererInfo) {
-    pageUrl = bidderRequest.refererInfo.page || '';
+    pageUrl = bidderRequest.refererInfo.page || ''
   }
 
   if (isVideo) {
@@ -312,30 +312,30 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
       }]
     }
 
-    deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
+    deepSetValue(videoRequest, 'site.ext.bidder', bid.params)
     videoRequest.id = bid.bidId
 
     if (bidderRequest?.gdprConsent?.consentString) {
-      deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-      deepSetValue(videoRequest, 'user.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+      deepSetValue(videoRequest, 'user.consent', bidderRequest.gdprConsent.consentString)
     }
     if (bidderRequest?.uspConsent) {
-      deepSetValue(videoRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(videoRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
 
-    let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
+    let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN"
     videoRequest.cur = [currency]
 
-    let floorInfo;
+    let floorInfo
     if (typeof bid.getFloor === 'function') {
       floorInfo = bid.getFloor({
         currency: currency,
         mediaType: "video",
         size: "*"
-      });
+      })
     }
-    const bidfloor = floorInfo?.floor;
-    const bidfloorcur = floorInfo?.currency;
+    const bidfloor = floorInfo?.floor
+    const bidfloorcur = floorInfo?.currency
 
     if (bidfloor && bidfloorcur) {
       videoRequest.imp[0].video.bidfloor = bidfloor
@@ -362,7 +362,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     gdpr: bidderRequest?.gdprConsent?.gdprApplies ? 1 : 0,
     gdpr_consent: bidderRequest?.gdprConsent?.consentString || '',
     us_privacy: bidderRequest?.uspConsent || '',
-  };
+  }
 }
 
-registerBidder(spec);
+registerBidder(spec)

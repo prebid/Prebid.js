@@ -1,16 +1,16 @@
-import { expect } from "chai";
-import { spec } from "../../../modules/ferioBidAdapter.js";
-import { createFerioBidderSpec } from "../../../libraries/ferioUtils/bidderUtils.js";
-import { config } from "../../../src/config.js";
-import { BANNER, NATIVE, VIDEO } from "../../../src/mediaTypes.js";
-import { isValid } from "../../../src/adapters/bidderFactory.js";
-import { stubAuctionIndex } from "../../helpers/indexStub.js";
+import { expect } from "chai"
+import { spec } from "../../../modules/ferioBidAdapter.js"
+import { createFerioBidderSpec } from "../../../libraries/ferioUtils/bidderUtils.js"
+import { config } from "../../../src/config.js"
+import { BANNER, NATIVE, VIDEO } from "../../../src/mediaTypes.js"
+import { isValid } from "../../../src/adapters/bidderFactory.js"
+import { stubAuctionIndex } from "../../helpers/indexStub.js"
 
-const BIDDER_CODE = "ferio";
-const ALIAS_CODE = "clientABidder";
-const ALIAS_PARAM_BIDDER_CODE = "ferioflow";
-const FERIO_BID_URL = "https://ferio.bid/pbjs/bid";
-const ALIAS_BID_URL = "https://bidder.ferio.cloud/prebid/bid";
+const BIDDER_CODE = "ferio"
+const ALIAS_CODE = "clientABidder"
+const ALIAS_PARAM_BIDDER_CODE = "ferioflow"
+const FERIO_BID_URL = "https://ferio.bid/pbjs/bid"
+const ALIAS_BID_URL = "https://bidder.ferio.cloud/prebid/bid"
 
 function bidRequest(overrides = {}) {
   return {
@@ -30,7 +30,7 @@ function bidRequest(overrides = {}) {
       tenantId: "tenant-123",
     },
     ...overrides,
-  };
+  }
 }
 
 function bidderRequest(overrides = {}) {
@@ -57,18 +57,18 @@ function bidderRequest(overrides = {}) {
       },
     },
     ...overrides,
-  };
+  }
 }
 
 function getImp(request, impId) {
-  return request.data.imp.find((imp) => imp.id === impId);
+  return request.data.imp.find((imp) => imp.id === impId)
 }
 
 function buildRequest(bidRequests, requestOverrides = {}, adapterSpec = spec) {
   return adapterSpec.buildRequests(
     bidRequests,
     bidderRequest({ bids: bidRequests, ...requestOverrides })
-  )[0];
+  )[0]
 }
 
 function serverResponse(bids, overrides = {}) {
@@ -84,17 +84,17 @@ function serverResponse(bids, overrides = {}) {
       cur: "USD",
       ...overrides,
     },
-  };
+  }
 }
 
 describe("ferioBidAdapter", function () {
   beforeEach(function () {
-    config.resetConfig();
-  });
+    config.resetConfig()
+  })
 
   it("registers the ferio bidder code", function () {
-    expect(spec.code).to.equal(BIDDER_CODE);
-  });
+    expect(spec.code).to.equal(BIDDER_CODE)
+  })
 
   describe("createFerioBidderSpec", function () {
     it("creates alias specs with configurable endpoint and bidder params key", function () {
@@ -102,31 +102,31 @@ describe("ferioBidAdapter", function () {
         code: ALIAS_CODE,
         endpoint: "https://bidder.ferio.cloud/prebid",
         paramBidderCode: ALIAS_PARAM_BIDDER_CODE,
-      });
+      })
       const aliasBid = bidRequest({
         bidder: ALIAS_CODE,
         params: {
           publisherId: "pub-123",
           adUnitId: "ad-unit-456",
         },
-      });
+      })
 
-      expect(aliasSpec.code).to.equal(ALIAS_CODE);
-      expect(aliasSpec.isBidRequestValid(aliasBid)).to.equal(true);
+      expect(aliasSpec.code).to.equal(ALIAS_CODE)
+      expect(aliasSpec.isBidRequestValid(aliasBid)).to.equal(true)
 
       const request = buildRequest(
         [aliasBid],
         { bidderCode: ALIAS_CODE, bids: [aliasBid] },
         aliasSpec
-      );
-      const imp = getImp(request, "bid-1");
+      )
+      const imp = getImp(request, "bid-1")
 
-      expect(request.url).to.equal(ALIAS_BID_URL);
+      expect(request.url).to.equal(ALIAS_BID_URL)
       expect(imp.ext.prebid.bidder[ALIAS_PARAM_BIDDER_CODE]).to.deep.equal({
         publisherId: "pub-123",
         adUnitId: "ad-unit-456",
-      });
-      expect(imp.ext.prebid.bidder).to.not.have.property(ALIAS_CODE);
+      })
+      expect(imp.ext.prebid.bidder).to.not.have.property(ALIAS_CODE)
 
       const bids = aliasSpec.interpretResponse(
         serverResponse([], {
@@ -149,16 +149,16 @@ describe("ferioBidAdapter", function () {
           ],
         }),
         request
-      );
+      )
 
-      expect(bids).to.have.lengthOf(1);
+      expect(bids).to.have.lengthOf(1)
       expect(bids[0]).to.deep.include({
         requestId: "bid-1",
         bidderCode: ALIAS_CODE,
         adapterCode: ALIAS_CODE,
         mediaType: BANNER,
-      });
-    });
+      })
+    })
 
     it("lets alias specs opt into extra required params", function () {
       const aliasSpec = createFerioBidderSpec({
@@ -166,7 +166,7 @@ describe("ferioBidAdapter", function () {
         endpoint: "https://bidder.ferio.cloud/prebid/bid",
         paramBidderCode: ALIAS_PARAM_BIDDER_CODE,
         requiredParams: ["tenantId"],
-      });
+      })
 
       expect(
         aliasSpec.isBidRequestValid(
@@ -178,20 +178,20 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
+      ).to.equal(false)
       expect(
         aliasSpec.isBidRequestValid(
           bidRequest({
             bidder: ALIAS_CODE,
           })
         )
-      ).to.equal(true);
-    });
-  });
+      ).to.equal(true)
+    })
+  })
 
   describe("isBidRequestValid", function () {
     it("returns true for valid banner, video, and native requests", function () {
-      expect(spec.isBidRequestValid(bidRequest())).to.equal(true);
+      expect(spec.isBidRequestValid(bidRequest())).to.equal(true)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -203,7 +203,7 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(true);
+      ).to.equal(true)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -216,8 +216,8 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(true);
-    });
+      ).to.equal(true)
+    })
 
     it("requires publisherId, adUnitId, and tenantId", function () {
       [
@@ -249,9 +249,9 @@ describe("ferioBidAdapter", function () {
           tenantId: "",
         },
       ].forEach((params) => {
-        expect(spec.isBidRequestValid(bidRequest({ params }))).to.equal(false);
-      });
-    });
+        expect(spec.isBidRequestValid(bidRequest({ params }))).to.equal(false)
+      })
+    })
 
     it("does not accept alternate param names for adUnitId or tenantId", function () {
       expect(
@@ -264,7 +264,7 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
+      ).to.equal(false)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -275,7 +275,7 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
+      ).to.equal(false)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -286,8 +286,8 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
-    });
+      ).to.equal(false)
+    })
 
     it("requires valid media declarations", function () {
       expect(
@@ -296,7 +296,7 @@ describe("ferioBidAdapter", function () {
             mediaTypes: {},
           })
         )
-      ).to.equal(false);
+      ).to.equal(false)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -305,7 +305,7 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
+      ).to.equal(false)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -316,7 +316,7 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
+      ).to.equal(false)
       expect(
         spec.isBidRequestValid(
           bidRequest({
@@ -325,9 +325,9 @@ describe("ferioBidAdapter", function () {
             },
           })
         )
-      ).to.equal(false);
-    });
-  });
+      ).to.equal(false)
+    })
+  })
 
   describe("buildRequests", function () {
     it("uses the Ferio OpenRTB endpoint and request options", function () {
@@ -335,27 +335,27 @@ describe("ferioBidAdapter", function () {
         [BIDDER_CODE]: {
           endpoint: "https://ignored.ferio.cloud",
         },
-      });
+      })
 
-      const requests = spec.buildRequests([bidRequest()], bidderRequest());
+      const requests = spec.buildRequests([bidRequest()], bidderRequest())
 
-      expect(requests).to.be.an("array").with.lengthOf(1);
-      expect(requests[0].url).to.equal(FERIO_BID_URL);
-      expect(requests[0].method).to.equal("POST");
+      expect(requests).to.be.an("array").with.lengthOf(1)
+      expect(requests[0].url).to.equal(FERIO_BID_URL)
+      expect(requests[0].method).to.equal("POST")
       expect(requests[0].options).to.deep.equal({
         contentType: "text/plain",
         withCredentials: true,
-      });
-      expect(requests[0].data).to.be.an("object");
-      expect(requests[0].data.imp).to.be.an("array").with.lengthOf(1);
-      expect(requests[0].data.tmax).to.equal(800);
+      })
+      expect(requests[0].data).to.be.an("object")
+      expect(requests[0].data.imp).to.be.an("array").with.lengthOf(1)
+      expect(requests[0].data.tmax).to.equal(800)
       expect(requests[0].data.site.page).to.equal(
         "https://example.com/article"
-      );
-    });
+      )
+    })
 
     it("emits one OpenRTB request for all bids even when params.host is present", function () {
-      const balancerBid = bidRequest({ bidId: "bid-balancer" });
+      const balancerBid = bidRequest({ bidId: "bid-balancer" })
       const tenantABid = bidRequest({
         bidId: "bid-tenant-a",
         params: {
@@ -364,7 +364,7 @@ describe("ferioBidAdapter", function () {
           tenantId: "tenant-456",
           host: "https://tenant-a.ferio.cloud",
         },
-      });
+      })
       const tenantASecondBid = bidRequest({
         bidId: "bid-tenant-a-2",
         params: {
@@ -373,37 +373,37 @@ describe("ferioBidAdapter", function () {
           tenantId: "tenant-789",
           host: "https://tenant-a.ferio.cloud",
         },
-      });
+      })
 
       const requests = spec.buildRequests(
         [balancerBid, tenantABid, tenantASecondBid],
         bidderRequest()
-      );
+      )
 
-      expect(requests).to.be.an("array").with.lengthOf(1);
-      expect(requests[0].url).to.equal(FERIO_BID_URL);
+      expect(requests).to.be.an("array").with.lengthOf(1)
+      expect(requests[0].url).to.equal(FERIO_BID_URL)
       expect(requests[0].data.imp.map((imp) => imp.id)).to.deep.equal([
         "bid-balancer",
         "bid-tenant-a",
         "bid-tenant-a-2",
-      ]);
-    });
+      ])
+    })
 
     it("places bidder params under imp.ext.prebid.bidder.ferio", function () {
       const request = buildRequest([
         bidRequest({
           bidder: ALIAS_CODE,
         }),
-      ]);
-      const imp = getImp(request, "bid-1");
+      ])
+      const imp = getImp(request, "bid-1")
 
       expect(imp.ext.prebid.bidder.ferio).to.deep.equal({
         publisherId: "pub-123",
         adUnitId: "ad-unit-456",
         tenantId: "tenant-123",
-      });
-      expect(imp.ext.prebid.bidder).to.not.have.property(ALIAS_CODE);
-    });
+      })
+      expect(imp.ext.prebid.bidder).to.not.have.property(ALIAS_CODE)
+    })
 
     it("builds banner, video, and native impressions", function () {
       const userEids = [
@@ -411,10 +411,10 @@ describe("ferioBidAdapter", function () {
           source: "pubcid.org",
           uids: [{ id: "pubcid", atype: 1 }],
         },
-      ];
+      ]
       const bannerBid = bidRequest({
         bidId: "banner-bid",
-      });
+      })
       const videoBid = bidRequest({
         bidId: "video-bid",
         mediaTypes: {
@@ -430,7 +430,7 @@ describe("ferioBidAdapter", function () {
             tid: "imp-tid",
           },
         },
-      });
+      })
       const nativeBid = bidRequest({
         bidId: "native-bid",
         mediaTypes: {
@@ -440,7 +440,7 @@ describe("ferioBidAdapter", function () {
           ver: "1.2",
           assets: [{ id: 1, title: { len: 90 } }],
         },
-      });
+      })
 
       const request = buildRequest(
         [bannerBid, videoBid, nativeBid],
@@ -453,33 +453,33 @@ describe("ferioBidAdapter", function () {
             },
           },
         }
-      );
+      )
 
-      const bannerImp = getImp(request, "banner-bid");
-      expect(bannerImp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+      const bannerImp = getImp(request, "banner-bid")
+      expect(bannerImp.banner.format).to.deep.equal([{ w: 300, h: 250 }])
 
-      const videoImp = getImp(request, "video-bid");
-      expect(videoImp.ext.tid).to.equal("imp-tid");
+      const videoImp = getImp(request, "video-bid")
+      expect(videoImp.ext.tid).to.equal("imp-tid")
       if (FEATURES.VIDEO) {
         expect(videoImp.video).to.deep.include({
           w: 640,
           h: 480,
-        });
-        expect(videoImp.video.protocols).to.deep.equal([2, 3, 5, 6]);
-        expect(videoImp.video.mimes).to.deep.equal(["video/mp4"]);
+        })
+        expect(videoImp.video.protocols).to.deep.equal([2, 3, 5, 6])
+        expect(videoImp.video.mimes).to.deep.equal(["video/mp4"])
       }
 
-      const nativeImp = getImp(request, "native-bid");
+      const nativeImp = getImp(request, "native-bid")
       if (FEATURES.NATIVE) {
         expect(JSON.parse(nativeImp.native.request)).to.deep.equal({
           ver: "1.2",
           assets: [{ id: 1, title: { len: 90 } }],
-        });
-        expect(nativeImp.native.ver).to.equal("1.2");
+        })
+        expect(nativeImp.native.ver).to.equal("1.2")
       }
 
-      expect(request.data.user.ext.eids).to.deep.equal(userEids);
-    });
+      expect(request.data.user.ext.eids).to.deep.equal(userEids)
+    })
 
     it("passes privacy fields from ortb2 to the OpenRTB request", function () {
       const request = buildRequest(
@@ -501,21 +501,21 @@ describe("ferioBidAdapter", function () {
             },
           },
         }
-      );
+      )
 
-      expect(request.data.regs.ext.gdpr).to.equal(1);
-      expect(request.data.user.ext.consent).to.equal("consent-string");
-      expect(request.data.regs.ext.us_privacy).to.equal("1YNN");
-      expect(request.data.regs.gpp).to.equal("gpp-string");
-      expect(request.data.regs.gpp_sid).to.deep.equal([8]);
-    });
+      expect(request.data.regs.ext.gdpr).to.equal(1)
+      expect(request.data.user.ext.consent).to.equal("consent-string")
+      expect(request.data.regs.ext.us_privacy).to.equal("1YNN")
+      expect(request.data.regs.gpp).to.equal("gpp-string")
+      expect(request.data.regs.gpp_sid).to.deep.equal([8])
+    })
 
     it("passes schain from ortb2 to the OpenRTB request", function () {
       const schain = {
         ver: "1.0",
         complete: 1,
         nodes: [{ asi: "exchange.example", sid: "seller-123", hp: 1 }],
-      };
+      }
       const request = buildRequest(
         [bidRequest()],
         {
@@ -527,20 +527,20 @@ describe("ferioBidAdapter", function () {
             },
           },
         }
-      );
+      )
 
-      expect(request.data.source.ext.schain).to.deep.equal(schain);
-    });
+      expect(request.data.source.ext.schain).to.deep.equal(schain)
+    })
 
     it("returns an empty request list when there are no valid bid requests", function () {
-      expect(spec.buildRequests([], bidderRequest())).to.deep.equal([]);
-    });
-  });
+      expect(spec.buildRequests([], bidderRequest())).to.deep.equal([])
+    })
+  })
 
   describe("interpretResponse", function () {
     it("normalizes router response seats to the requested adapter bidder code", function () {
-      const requestBid = bidRequest();
-      const request = buildRequest([requestBid]);
+      const requestBid = bidRequest()
+      const request = buildRequest([requestBid])
       const bids = spec.interpretResponse(
         serverResponse([], {
           seatbid: [
@@ -562,10 +562,10 @@ describe("ferioBidAdapter", function () {
           ],
         }),
         request
-      );
-      const bid = bids[0];
+      )
+      const bid = bids[0]
 
-      expect(bids).to.have.lengthOf(1);
+      expect(bids).to.have.lengthOf(1)
       expect(bid).to.deep.include({
         requestId: "bid-1",
         bidderCode: BIDDER_CODE,
@@ -578,7 +578,7 @@ describe("ferioBidAdapter", function () {
         width: 300,
         height: 250,
         ad: "<div>ad</div>",
-      });
+      })
       expect(
         isValid(
           requestBid.adUnitCode,
@@ -587,15 +587,15 @@ describe("ferioBidAdapter", function () {
             index: stubAuctionIndex({ bidRequests: [requestBid] }),
           }
         )
-      ).to.equal(true);
-    });
+      ).to.equal(true)
+    })
 
     it("parses standard OpenRTB banner, video, and native responses", function () {
       const nativeAd = {
         ver: "1.2",
         assets: [{ id: 1, title: { text: "Native title" } }],
         link: { url: "https://example.com/click" },
-      };
+      }
       const request = buildRequest([
         bidRequest({
           bidId: "banner-bid",
@@ -620,7 +620,7 @@ describe("ferioBidAdapter", function () {
             assets: [{ id: 1, title: { len: 90 } }],
           },
         }),
-      ]);
+      ])
 
       const bids = spec.interpretResponse(
         serverResponse([
@@ -654,11 +654,11 @@ describe("ferioBidAdapter", function () {
           },
         ]),
         request
-      );
+      )
 
-      expect(bids).to.be.an("array").with.lengthOf(3);
+      expect(bids).to.be.an("array").with.lengthOf(3)
 
-      const bannerBid = bids.find((bid) => bid.requestId === "banner-bid");
+      const bannerBid = bids.find((bid) => bid.requestId === "banner-bid")
       expect(bannerBid).to.deep.include({
         requestId: "banner-bid",
         seatBidId: "seat-banner",
@@ -673,10 +673,10 @@ describe("ferioBidAdapter", function () {
         ad: "<div>ad</div>",
         bidderCode: BIDDER_CODE,
         adapterCode: BIDDER_CODE,
-      });
-      expect(bannerBid.meta.advertiserDomains).to.deep.equal(["example.com"]);
+      })
+      expect(bannerBid.meta.advertiserDomains).to.deep.equal(["example.com"])
 
-      const videoBid = bids.find((bid) => bid.requestId === "video-bid");
+      const videoBid = bids.find((bid) => bid.requestId === "video-bid")
       expect(videoBid).to.deep.include({
         requestId: "video-bid",
         cpm: 2.1,
@@ -685,17 +685,17 @@ describe("ferioBidAdapter", function () {
         ttl: 300,
         netRevenue: true,
         mediaType: VIDEO,
-      });
+      })
       if (FEATURES.VIDEO) {
         expect(videoBid).to.deep.include({
           vastXml: "<VAST></VAST>",
           vastUrl: "https://example.com/vast",
           playerWidth: 640,
           playerHeight: 480,
-        });
+        })
       }
 
-      const nativeBid = bids.find((bid) => bid.requestId === "native-bid");
+      const nativeBid = bids.find((bid) => bid.requestId === "native-bid")
       expect(nativeBid).to.deep.include({
         requestId: "native-bid",
         cpm: 3.1,
@@ -704,15 +704,15 @@ describe("ferioBidAdapter", function () {
         ttl: 300,
         netRevenue: true,
         mediaType: NATIVE,
-      });
+      })
       if (FEATURES.NATIVE) {
-        expect(nativeBid.native.ortb).to.deep.equal(nativeAd);
+        expect(nativeBid.native.ortb).to.deep.equal(nativeAd)
       }
-    });
+    })
 
     it("unwraps IAB native ADM wrapper responses", function () {
       if (!FEATURES.NATIVE) {
-        this.skip();
+        this.skip()
       }
 
       const nativeAd = {
@@ -730,7 +730,7 @@ describe("ferioBidAdapter", function () {
         ],
         link: { url: "https://example.com/click" },
         imptrackers: ["https://example.com/imp"],
-      };
+      }
       const request = buildRequest([
         bidRequest({
           bidId: "native-bid",
@@ -745,7 +745,7 @@ describe("ferioBidAdapter", function () {
             ],
           },
         }),
-      ]);
+      ])
 
       const bids = spec.interpretResponse(
         serverResponse([
@@ -764,17 +764,17 @@ describe("ferioBidAdapter", function () {
           },
         ]),
         request
-      );
+      )
 
-      expect(bids).to.be.an("array").with.lengthOf(1);
+      expect(bids).to.be.an("array").with.lengthOf(1)
       expect(bids[0]).to.deep.include({
         requestId: "native-bid",
         cpm: 1.1622,
         creativeId: "creative-native",
         mediaType: NATIVE,
-      });
-      expect(bids[0].native.ortb).to.deep.equal(nativeAd);
-    });
+      })
+      expect(bids[0].native.ortb).to.deep.equal(nativeAd)
+    })
 
     it("uses bid.ext.prebid.type when mtype is absent", function () {
       const request = buildRequest([
@@ -787,7 +787,7 @@ describe("ferioBidAdapter", function () {
             },
           },
         }),
-      ]);
+      ])
 
       const bids = spec.interpretResponse(
         serverResponse([
@@ -805,14 +805,14 @@ describe("ferioBidAdapter", function () {
           },
         ]),
         request
-      );
+      )
 
-      expect(bids).to.have.lengthOf(1);
-      expect(bids[0].mediaType).to.equal(VIDEO);
+      expect(bids).to.have.lengthOf(1)
+      expect(bids[0].mediaType).to.equal(VIDEO)
       if (FEATURES.VIDEO) {
-        expect(bids[0].vastXml).to.equal("<VAST></VAST>");
+        expect(bids[0].vastXml).to.equal("<VAST></VAST>")
       }
-    });
+    })
 
     it("falls back to the original request media type for single-format bids", function () {
       const request = buildRequest([
@@ -825,7 +825,7 @@ describe("ferioBidAdapter", function () {
             },
           },
         }),
-      ]);
+      ])
 
       const bids = spec.interpretResponse(
         serverResponse([
@@ -838,21 +838,21 @@ describe("ferioBidAdapter", function () {
           },
         ]),
         request
-      );
+      )
 
-      expect(bids).to.have.lengthOf(1);
-      expect(bids[0].mediaType).to.equal(VIDEO);
+      expect(bids).to.have.lengthOf(1)
+      expect(bids[0].mediaType).to.equal(VIDEO)
       if (FEATURES.VIDEO) {
-        expect(bids[0].vastXml).to.equal("<VAST></VAST>");
+        expect(bids[0].vastXml).to.equal("<VAST></VAST>")
       }
-    });
+    })
 
     it("does not leak fallback media type across bids with the same impid", function () {
       const request = buildRequest([
         bidRequest({
           bidId: "banner-bid",
         }),
-      ]);
+      ])
 
       const bids = spec.interpretResponse(
         serverResponse([
@@ -877,15 +877,15 @@ describe("ferioBidAdapter", function () {
           },
         ]),
         request
-      );
+      )
 
-      expect(bids).to.have.lengthOf(2);
-      expect(bids[0].mediaType).to.equal(BANNER);
-      expect(bids[1].mediaType).to.equal(VIDEO);
+      expect(bids).to.have.lengthOf(2)
+      expect(bids[0].mediaType).to.equal(BANNER)
+      expect(bids[1].mediaType).to.equal(VIDEO)
       if (FEATURES.VIDEO) {
-        expect(bids[1].vastXml).to.equal("<VAST></VAST>");
+        expect(bids[1].vastXml).to.equal("<VAST></VAST>")
       }
-    });
+    })
 
     it("skips multi-format responses without an ORTB media type", function () {
       const request = buildRequest([
@@ -901,7 +901,7 @@ describe("ferioBidAdapter", function () {
             },
           },
         }),
-      ]);
+      ])
 
       const bids = spec.interpretResponse(
         serverResponse([
@@ -914,17 +914,17 @@ describe("ferioBidAdapter", function () {
           },
         ]),
         request
-      );
+      )
 
-      expect(bids).to.deep.equal([]);
-    });
+      expect(bids).to.deep.equal([])
+    })
 
     it("returns an empty array for missing or malformed response bodies", function () {
-      const request = buildRequest([bidRequest()]);
+      const request = buildRequest([bidRequest()])
 
-      expect(spec.interpretResponse({}, request)).to.deep.equal([]);
-      expect(spec.interpretResponse({ body: null }, request)).to.deep.equal([]);
-      expect(spec.interpretResponse({ body: {} }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse({}, request)).to.deep.equal([])
+      expect(spec.interpretResponse({ body: null }, request)).to.deep.equal([])
+      expect(spec.interpretResponse({ body: {} }, request)).to.deep.equal([])
       expect(
         spec.interpretResponse(
           {
@@ -934,16 +934,16 @@ describe("ferioBidAdapter", function () {
           },
           request
         )
-      ).to.deep.equal([]);
+      ).to.deep.equal([])
       expect(
         spec.interpretResponse({
           body: {
             seatbid: [],
           },
         })
-      ).to.deep.equal([]);
-    });
-  });
+      ).to.deep.equal([])
+    })
+  })
 
   describe("getUserSyncs", function () {
     it("returns an empty array when syncs are disabled", function () {
@@ -965,8 +965,8 @@ describe("ferioBidAdapter", function () {
             },
           ]
         )
-      ).to.deep.equal([]);
-    });
+      ).to.deep.equal([])
+    })
 
     it("returns image syncs derived from the auction endpoint when pixel sync is enabled", function () {
       const syncs = spec.getUserSyncs(
@@ -985,15 +985,15 @@ describe("ferioBidAdapter", function () {
             },
           },
         ]
-      );
+      )
 
       expect(syncs).to.deep.equal([
         {
           type: "image",
           url: "https://ferio.bid/pbjs/sync?us_privacy=&gdpr=0&gdpr_consent=",
         },
-      ]);
-    });
+      ])
+    })
 
     it("returns iframe syncs derived from the auction endpoint when iframe sync is enabled", function () {
       const syncs = spec.getUserSyncs(
@@ -1002,15 +1002,15 @@ describe("ferioBidAdapter", function () {
           pixelEnabled: false,
         },
         []
-      );
+      )
 
       expect(syncs).to.deep.equal([
         {
           type: "iframe",
           url: "https://ferio.bid/pbjs/cli/iframe.html?us_privacy=&gdpr=0&gdpr_consent=",
         },
-      ]);
-    });
+      ])
+    })
 
     it("returns both sync types with encoded privacy parameters when both are enabled", function () {
       const syncs = spec.getUserSyncs(
@@ -1028,7 +1028,7 @@ describe("ferioBidAdapter", function () {
           gppString: "gpp consent",
           applicableSections: [8, 9],
         }
-      );
+      )
 
       expect(syncs).to.deep.equal([
         {
@@ -1039,15 +1039,15 @@ describe("ferioBidAdapter", function () {
           type: "iframe",
           url: "https://ferio.bid/pbjs/cli/iframe.html?us_privacy=1YA-&gdpr=1&gdpr_consent=gdpr%20consent&gpp=gpp%20consent&gpp_sid=8%2C9",
         },
-      ]);
-    });
+      ])
+    })
 
     it("derives alias sync URLs from the alias auction endpoint", function () {
       const aliasSpec = createFerioBidderSpec({
         code: ALIAS_CODE,
         endpoint: "https://bidder.ferio.cloud/prebid",
         paramBidderCode: ALIAS_PARAM_BIDDER_CODE,
-      });
+      })
 
       expect(
         aliasSpec.getUserSyncs({
@@ -1063,15 +1063,15 @@ describe("ferioBidAdapter", function () {
           type: "iframe",
           url: "https://bidder.ferio.cloud/prebid/cli/iframe.html?us_privacy=&gdpr=0&gdpr_consent=",
         },
-      ]);
-    });
+      ])
+    })
 
     it("filters user syncs to HTTPS URLs", function () {
       const insecureSpec = createFerioBidderSpec({
         code: ALIAS_CODE,
         endpoint: "http://bidder.ferio.cloud/prebid",
         paramBidderCode: ALIAS_PARAM_BIDDER_CODE,
-      });
+      })
 
       const syncs = insecureSpec.getUserSyncs(
         {
@@ -1088,9 +1088,9 @@ describe("ferioBidAdapter", function () {
           gppString: "gpp consent",
           applicableSections: [8, 9],
         }
-      );
+      )
 
-      expect(syncs).to.deep.equal([]);
-    });
-  });
-});
+      expect(syncs).to.deep.equal([])
+    })
+  })
+})

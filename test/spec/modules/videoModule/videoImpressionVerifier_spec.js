@@ -1,54 +1,54 @@
-import { baseImpressionVerifier, PB_PREFIX } from 'modules/videoModule/videoImpressionVerifier.js';
+import { baseImpressionVerifier, PB_PREFIX } from 'modules/videoModule/videoImpressionVerifier.js'
 
-let trackerMock;
+let trackerMock
 
 function resetTrackerMock() {
-  const model = {};
+  const model = {}
   trackerMock = {
-    store: sinon.spy((key, value) => { model[key] = value; }),
+    store: sinon.spy((key, value) => { model[key] = value }),
     remove: sinon.spy(key => {
-      const value = model[key];
+      const value = model[key]
       if (value) {
-        delete model[key];
-        return value;
+        delete model[key]
+        return value
       }
     })
-  };
+  }
 }
 
 describe('Base Impression Verifier', function() {
   beforeEach(function () {
-    resetTrackerMock();
-  });
+    resetTrackerMock()
+  })
   describe('trackBid', function () {
     it('should generate uuid', function () {
-      const baseVerifier = baseImpressionVerifier(trackerMock);
-      const uuid = baseVerifier.trackBid({});
-      expect(uuid.substring(0, 3)).to.equal(PB_PREFIX);
-      expect(uuid.length).to.be.lessThan(16);
-    });
-  });
+      const baseVerifier = baseImpressionVerifier(trackerMock)
+      const uuid = baseVerifier.trackBid({})
+      expect(uuid.substring(0, 3)).to.equal(PB_PREFIX)
+      expect(uuid.length).to.be.lessThan(16)
+    })
+  })
 
   describe('getBidIdentifiers', function () {
     it('should match ad id to uuid', function () {
-      const baseVerifier = baseImpressionVerifier(trackerMock);
-      const bid = { adId: 'a1', adUnitCode: 'u1' };
-      const uuid = baseVerifier.trackBid(bid);
-      const result = baseVerifier.getBidIdentifiers(uuid);
-      expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: undefined, auctionId: undefined });
-      expect(trackerMock.remove.calledWith(uuid)).to.be.true;
-    });
+      const baseVerifier = baseImpressionVerifier(trackerMock)
+      const bid = { adId: 'a1', adUnitCode: 'u1' }
+      const uuid = baseVerifier.trackBid(bid)
+      const result = baseVerifier.getBidIdentifiers(uuid)
+      expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: undefined, auctionId: undefined })
+      expect(trackerMock.remove.calledWith(uuid)).to.be.true
+    })
 
     it('should match uuid from wrapper ids', function () {
-      const baseVerifier = baseImpressionVerifier(trackerMock);
-      const bid = { adId: 'a2', adUnitCode: 'u2' };
-      const uuid = baseVerifier.trackBid(bid);
-      const result = baseVerifier.getBidIdentifiers(null, null, [uuid]);
-      expect(trackerMock.remove.calledWith(uuid)).to.be.true;
-      expect(result).to.deep.equal({ adId: 'a2', adUnitCode: 'u2', requestId: undefined, auctionId: undefined });
-    });
-  });
-});
+      const baseVerifier = baseImpressionVerifier(trackerMock)
+      const bid = { adId: 'a2', adUnitCode: 'u2' }
+      const uuid = baseVerifier.trackBid(bid)
+      const result = baseVerifier.getBidIdentifiers(null, null, [uuid])
+      expect(trackerMock.remove.calledWith(uuid)).to.be.true
+      expect(result).to.deep.equal({ adId: 'a2', adUnitCode: 'u2', requestId: undefined, auctionId: undefined })
+    })
+  })
+})
 
 /*
 const adUnitCode = 'test_ad_unit_code';

@@ -1,8 +1,8 @@
-export const TRACKER_METHOD_IMG = 1;
-export const TRACKER_METHOD_JS = 2;
-export const EVENT_TYPE_IMPRESSION = 1;
-export const EVENT_TYPE_WIN = 500;
-export const EVENT_TYPE_VIEWABLE = 2;
+export const TRACKER_METHOD_IMG = 1
+export const TRACKER_METHOD_JS = 2
+export const EVENT_TYPE_IMPRESSION = 1
+export const EVENT_TYPE_WIN = 500
+export const EVENT_TYPE_VIEWABLE = 2
 
 /**
  * Returns a map from event type (EVENT_TYPE_*)
@@ -15,9 +15,9 @@ export const EVENT_TYPE_VIEWABLE = 2;
  */
 export function parseEventTrackers(eventTrackers) {
   return (eventTrackers ?? []).reduce((tally, { event, method, url }) => {
-    const trackersForType = tally[event] = tally[event] ?? {};
-    const trackersForMethod = trackersForType[method] = trackersForType[method] ?? [];
-    trackersForMethod.push(url);
-    return tally;
+    const trackersForType = tally[event] = tally[event] ?? {}
+    const trackersForMethod = trackersForType[method] = trackersForType[method] ?? []
+    trackersForMethod.push(url)
+    return tally
   }, {})
 }

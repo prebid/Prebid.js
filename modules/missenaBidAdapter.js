@@ -10,14 +10,14 @@ import {
   logInfo,
   safeJSONParse,
   triggerPixel,
-} from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
-import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js';
-import { getViewportSize } from '../libraries/viewport/viewport.js';
+} from '../src/utils.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js'
+import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js'
+import { getViewportSize } from '../libraries/viewport/viewport.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -28,27 +28,27 @@ import { getViewportSize } from '../libraries/viewport/viewport.js';
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
-const BIDDER_CODE = 'missena';
-const ENDPOINT_URL = 'https://bid.missena.io/';
-const EVENTS_DOMAIN = 'events.missena.io';
-const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
+const BIDDER_CODE = 'missena'
+const ENDPOINT_URL = 'https://bid.missena.io/'
+const EVENTS_DOMAIN = 'events.missena.io'
+const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz'
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-window.msna_ik = window.msna_ik || generateUUID();
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+window.msna_ik = window.msna_ik || generateUUID()
 
 /* Get Floor price information */
 function getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
-    return {};
+    return {}
   }
 
   const bidFloors = bidRequest.getFloor({
     currency: 'USD',
     mediaType: BANNER,
-  });
+  })
 
   if (!isNaN(bidFloors?.floor)) {
-    return bidFloors;
+    return bidFloors
   }
 }
 
@@ -59,38 +59,38 @@ function toPayload(bidRequest, bidderRequest) {
     ik: window.msna_ik,
     request_id: bidRequest.bidId,
     timeout: bidderRequest.timeout,
-  };
+  }
 
-  const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-  payload.params = bidRequest.params;
+  const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL
+  payload.params = bidRequest.params
 
-  payload.userEids = bidRequest.userIdAsEids || [];
-  payload.version = 'prebid.js@$prebid.version$';
+  payload.userEids = bidRequest.userIdAsEids || []
+  payload.version = 'prebid.js@$prebid.version$'
 
-  const bidFloor = getFloor(bidRequest);
-  payload.floor = bidFloor?.floor;
-  payload.floor_currency = bidFloor?.currency;
-  payload.currency = getCurrencyFromBidderRequest(bidderRequest);
-  payload.schain = bidRequest?.ortb2?.source?.ext?.schain;
-  payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
-  payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
-  payload.viewport = getViewportSize();
-  payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
+  const bidFloor = getFloor(bidRequest)
+  payload.floor = bidFloor?.floor
+  payload.floor_currency = bidFloor?.currency
+  payload.currency = getCurrencyFromBidderRequest(bidderRequest)
+  payload.schain = bidRequest?.ortb2?.source?.ext?.schain
+  payload.autoplay = isAutoplayEnabled() === true ? 1 : 0
+  payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width }
+  payload.viewport = getViewportSize()
+  payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes)
 
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid')
   payload.ortb2 = {
     ...(bidderRequest.ortb2 || {}),
     ext: {
       ...(bidderRequest.ortb2?.ext || {}),
       ...(isStr(gpid) && !isEmpty(gpid) ? { gpid } : {}),
     },
-  };
+  }
 
   return {
     method: 'POST',
     url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
     data: JSON.stringify(payload),
-  };
+  }
 }
 
 export const spec = {
@@ -106,7 +106,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid === 'object' && !!bid.params.apiKey;
+    return typeof bid === 'object' && !!bid.params.apiKey
   },
 
   /**
@@ -117,23 +117,23 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
-    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
-    const referer = bidderRequest?.refererInfo?.topmostLocation;
+    const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`
+    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey))
+    const referer = bidderRequest?.refererInfo?.topmostLocation
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
       (!capping?.referer || capping?.referer === referer)
     ) {
-      logInfo('Missena - Capped');
-      return [];
+      logInfo('Missena - Capped')
+      return []
     }
 
-    this.msnaApiKey = validBidRequests[0]?.params.apiKey;
+    this.msnaApiKey = validBidRequests[0]?.params.apiKey
 
     return validBidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
-    );
+    )
   },
 
   /**
@@ -143,14 +143,14 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
-    const response = serverResponse.body;
+    const bidResponses = []
+    const response = serverResponse.body
 
     if (response && !response.timeout && !!response.ad) {
-      bidResponses.push(response);
+      bidResponses.push(response)
     }
 
-    return bidResponses;
+    return bidResponses
   },
   getUserSyncs: function (
     syncOptions,
@@ -160,35 +160,35 @@ export const spec = {
     gppConsent,
   ) {
     if (!syncOptions.iframeEnabled || !this.msnaApiKey) {
-      return [];
+      return []
     }
 
-    const url = new URL('https://sync.missena.io/iframe');
-    url.searchParams.append('t', this.msnaApiKey);
+    const url = new URL('https://sync.missena.io/iframe')
+    url.searchParams.append('t', this.msnaApiKey)
 
     if (typeof gdprConsent.gdprApplies === 'boolean') {
-      url.searchParams.append('gdpr', Number(gdprConsent.gdprApplies));
-      url.searchParams.append('gdpr_consent', gdprConsent.consentString);
+      url.searchParams.append('gdpr', Number(gdprConsent.gdprApplies))
+      url.searchParams.append('gdpr_consent', gdprConsent.consentString)
     }
     if (uspConsent) {
-      url.searchParams.append('us_privacy', uspConsent);
+      url.searchParams.append('us_privacy', uspConsent)
     }
     if (gppConsent?.gppString) {
-      url.searchParams.append('gpp', gppConsent.gppString);
+      url.searchParams.append('gpp', gppConsent.gppString)
       url.searchParams.append(
         'gpp_sid',
         (gppConsent.applicableSections || []).join(','),
-      );
+      )
     }
 
-    return [{ type: 'iframe', url: url.href }];
+    return [{ type: 'iframe', url: url.href }]
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {TimedOutBid} timeoutData - Containing timeout specific data
    */
   onTimeout: function onTimeout(timeoutData) {
-    logInfo('Missena - Timeout from adapter', timeoutData);
+    logInfo('Missena - Timeout from adapter', timeoutData)
   },
 
   /**
@@ -196,7 +196,7 @@ export const spec = {
    * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function (bid) {
-    const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
+    const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN
     triggerPixel(
       buildUrl({
         protocol: 'https',
@@ -209,9 +209,9 @@ export const spec = {
           currency: bid.originalCurrency,
         },
       }),
-    );
-    logInfo('Missena - Bid won', bid);
+    )
+    logInfo('Missena - Bid won', bid)
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

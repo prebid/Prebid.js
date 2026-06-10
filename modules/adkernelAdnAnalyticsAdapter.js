@@ -1,18 +1,18 @@
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { EVENTS } from '../src/constants.js';
-import adapterManager from '../src/adapterManager.js';
-import { logError, parseUrl, _each } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { config } from '../src/config.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
+import { EVENTS } from '../src/constants.js'
+import adapterManager from '../src/adapterManager.js'
+import { logError, parseUrl, _each } from '../src/utils.js'
+import { ajax } from '../src/ajax.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { config } from '../src/config.js'
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
 
-const MODULE_CODE = 'adkernelAdn';
-const GVLID = 14;
-const ANALYTICS_VERSION = '1.0.2';
-const DEFAULT_QUEUE_TIMEOUT = 4000;
-const DEFAULT_HOST = 'tag.adkernel.com';
-const storageObj = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
+const MODULE_CODE = 'adkernelAdn'
+const GVLID = 14
+const ANALYTICS_VERSION = '1.0.2'
+const DEFAULT_QUEUE_TIMEOUT = 4000
+const DEFAULT_HOST = 'tag.adkernel.com'
+const storageObj = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE })
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -21,10 +21,10 @@ const ADK_HB_EVENTS = {
   BID_WON: 'bidWon',
   AUCTION_END: 'auctionEnd',
   TIMEOUT: 'adapterTimedOut'
-};
+}
 
 function buildRequestTemplate(pubId) {
-  const { loc, ref } = getNavigationInfo();
+  const { loc, ref } = getNavigationInfo()
 
   return {
     ver: ANALYTICS_VERSION,
@@ -47,183 +47,183 @@ const analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }),
   {
     track({ eventType, args }) {
       if (!analyticsAdapter.context) {
-        return;
+        return
       }
-      let handler = null;
+      let handler = null
       switch (eventType) {
         case EVENTS.AUCTION_INIT:
           if (analyticsAdapter.context.queue) {
-            analyticsAdapter.context.queue.init();
+            analyticsAdapter.context.queue.init()
           }
-          initPrivacy(analyticsAdapter.context.requestTemplate, args.bidderRequests);
-          handler = trackAuctionInit;
-          break;
+          initPrivacy(analyticsAdapter.context.requestTemplate, args.bidderRequests)
+          handler = trackAuctionInit
+          break
         case EVENTS.BID_REQUESTED:
-          handler = trackBidRequest;
-          break;
+          handler = trackBidRequest
+          break
         case EVENTS.BID_RESPONSE:
-          handler = trackBidResponse;
-          break;
+          handler = trackBidResponse
+          break
         case EVENTS.BID_WON:
-          handler = trackBidWon;
-          break;
+          handler = trackBidWon
+          break
         case EVENTS.BID_TIMEOUT:
-          handler = trackBidTimeout;
-          break;
+          handler = trackBidTimeout
+          break
         case EVENTS.AUCTION_END:
-          handler = trackAuctionEnd;
-          break;
+          handler = trackAuctionEnd
+          break
       }
       if (handler) {
-        const events = handler(args);
+        const events = handler(args)
         if (analyticsAdapter.context.queue) {
-          analyticsAdapter.context.queue.push(events);
+          analyticsAdapter.context.queue.push(events)
         }
         if (eventType === EVENTS.AUCTION_END) {
-          sendAll();
+          sendAll()
         }
       }
     }
-  });
+  })
 
-analyticsAdapter.context = {};
+analyticsAdapter.context = {}
 
-analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
+analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics
 
 analyticsAdapter.enableAnalytics = (config) => {
   if (!config.options.pubId) {
-    logError('PubId is not defined. Analytics won\'t work');
-    return;
+    logError('PubId is not defined. Analytics won\'t work')
+    return
   }
   analyticsAdapter.context = {
     host: config.options.host || DEFAULT_HOST,
     pubId: config.options.pubId,
     requestTemplate: buildRequestTemplate(config.options.pubId),
     queue: new ExpiringQueue(sendAll, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
-  };
-  analyticsAdapter.originEnableAnalytics(config);
-};
+  }
+  analyticsAdapter.originEnableAnalytics(config)
+}
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: MODULE_CODE,
   gvlid: GVLID
-});
+})
 
-export default analyticsAdapter;
+export default analyticsAdapter
 
 function sendAll() {
-  const events = analyticsAdapter.context.queue.popAll();
+  const events = analyticsAdapter.context.queue.popAll()
   if (events.length !== 0) {
-    const req = Object.assign({}, analyticsAdapter.context.requestTemplate, { hb_ev: events });
-    analyticsAdapter.ajaxCall(JSON.stringify(req));
+    const req = Object.assign({}, analyticsAdapter.context.requestTemplate, { hb_ev: events })
+    analyticsAdapter.ajaxCall(JSON.stringify(req))
   }
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   ajax(`https://${analyticsAdapter.context.host}/hb-analytics`, () => {
-  }, data);
-};
+  }, data)
+}
 
 function trackAuctionInit() {
-  analyticsAdapter.context.auctionTimeStart = Date.now();
-  const event = createHbEvent(undefined, ADK_HB_EVENTS.AUCTION_INIT);
-  return [event];
+  analyticsAdapter.context.auctionTimeStart = Date.now()
+  const event = createHbEvent(undefined, ADK_HB_EVENTS.AUCTION_INIT)
+  return [event]
 }
 
 function trackBidRequest(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.adUnitCode));
+    createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.adUnitCode))
 }
 
 function trackBidResponse(args) {
   const event = createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_RESPONSE,
-    args.adUnitCode, args.cpm, args.timeToRespond / 1000);
-  return [event];
+    args.adUnitCode, args.cpm, args.timeToRespond / 1000)
+  return [event]
 }
 
 function trackBidWon(args) {
-  const event = createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_WON, args.adUnitCode, args.cpm);
-  return [event];
+  const event = createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_WON, args.adUnitCode, args.cpm)
+  return [event]
 }
 
 function trackAuctionEnd(args) {
   const event = createHbEvent(undefined, ADK_HB_EVENTS.AUCTION_END, undefined,
-    undefined, (Date.now() - analyticsAdapter.context.auctionTimeStart) / 1000);
-  return [event];
+    undefined, (Date.now() - analyticsAdapter.context.auctionTimeStart) / 1000)
+  return [event]
 }
 
 function trackBidTimeout(args) {
-  return args.map(bidderName => createHbEvent(bidderName, ADK_HB_EVENTS.TIMEOUT));
+  return args.map(bidderName => createHbEvent(bidderName, ADK_HB_EVENTS.TIMEOUT))
 }
 
 function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
-  const ev = { event: event };
+  const ev = { event: event }
   if (adapter) {
     ev.adapter = adapter
   }
   if (tagid) {
-    ev.tagid = tagid;
+    ev.tagid = tagid
   }
   if (value) {
-    ev.val = value;
+    ev.val = value
   }
   if (time) {
-    ev.time = time;
+    ev.time = time
   }
-  return ev;
+  return ev
 }
 
 const UTM_TAGS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-  'utm_c1', 'utm_c2', 'utm_c3', 'utm_c4', 'utm_c5'];
-const ADKERNEL_PREBID_KEY = 'adk_dpt_analytics';
-const DIRECT = '(direct)';
-const REFERRAL = '(referral)';
-const ORGANIC = '(organic)';
+  'utm_c1', 'utm_c2', 'utm_c3', 'utm_c4', 'utm_c5']
+const ADKERNEL_PREBID_KEY = 'adk_dpt_analytics'
+const DIRECT = '(direct)'
+const REFERRAL = '(referral)'
+const ORGANIC = '(organic)'
 
 export const storage = {
   getItem: (name) => {
-    return storageObj.getDataFromLocalStorage(name);
+    return storageObj.getDataFromLocalStorage(name)
   },
   setItem: (name, value) => {
-    storageObj.setDataInLocalStorage(name, value);
+    storageObj.setDataInLocalStorage(name, value)
   }
-};
+}
 
 export function getUmtSource(pageUrl, referrer) {
-  const prevUtm = getPreviousTrafficSource();
-  const currUtm = getCurrentTrafficSource(pageUrl, referrer);
-  const [updated, actual] = chooseActualUtm(prevUtm, currUtm);
+  const prevUtm = getPreviousTrafficSource()
+  const currUtm = getCurrentTrafficSource(pageUrl, referrer)
+  const [updated, actual] = chooseActualUtm(prevUtm, currUtm)
   if (updated) {
-    storeUtm(actual);
+    storeUtm(actual)
   }
-  return actual;
+  return actual
 
   function getPreviousTrafficSource() {
-    const val = storage.getItem(ADKERNEL_PREBID_KEY);
+    const val = storage.getItem(ADKERNEL_PREBID_KEY)
     if (!val) {
-      return getDirect();
+      return getDirect()
     }
-    return JSON.parse(val);
+    return JSON.parse(val)
   }
 
   function getCurrentTrafficSource(pageUrl, referrer) {
-    var source = getUTM(pageUrl);
+    var source = getUTM(pageUrl)
     if (source) {
-      return source;
+      return source
     }
     if (referrer) {
-      const se = getSearchEngine(referrer);
+      const se = getSearchEngine(referrer)
       if (se) {
-        return asUtm(se, ORGANIC, ORGANIC);
+        return asUtm(se, ORGANIC, ORGANIC)
       }
-      const parsedUrl = parseUrl(pageUrl);
-      const [refHost, refPath] = getReferrer(referrer);
+      const parsedUrl = parseUrl(pageUrl)
+      const [refHost, refPath] = getReferrer(referrer)
       if (refHost && refHost !== parsedUrl.hostname) {
-        return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
+        return asUtm(refHost, REFERRAL, REFERRAL, '', refPath)
       }
     }
-    return getDirect();
+    return getDirect()
   }
 
   function getSearchEngine(pageUrl) {
@@ -234,40 +234,40 @@ export function getUmtSource(pageUrl, referrer) {
       'duckduckgo': /^https?:\/\/(?:www\.)?duckduckgo\.com\//i,
       'ask': /^https?:\/\/(?:www\.)?ask\.com\//i,
       'yahoo': /^https?:\/\/(?:[-a-z]+\.)?(?:search\.)?yahoo\.com\//i
-    };
+    }
 
     for (const engine in engines) {
       if (engines.hasOwnProperty(engine) && engines[engine].test(pageUrl)) {
-        return engine;
+        return engine
       }
     }
   }
 
   function getReferrer(referrer) {
-    const ref = parseUrl(referrer);
-    return [ref.hostname, ref.pathname];
+    const ref = parseUrl(referrer)
+    return [ref.hostname, ref.pathname]
   }
 
   function getUTM(pageUrl) {
-    const urlParameters = parseUrl(pageUrl).search;
+    const urlParameters = parseUrl(pageUrl).search
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
-      return;
+      return
     }
-    const utmArgs = [];
+    const utmArgs = []
     _each(UTM_TAGS, (utmTagName) => {
-      const utmValue = urlParameters[utmTagName] || '';
-      utmArgs.push(utmValue);
-    });
-    return asUtm.apply(this, utmArgs);
+      const utmValue = urlParameters[utmTagName] || ''
+      utmArgs.push(utmValue)
+    })
+    return asUtm.apply(this, utmArgs)
   }
 
   function getDirect() {
-    return asUtm(DIRECT, DIRECT, DIRECT);
+    return asUtm(DIRECT, DIRECT, DIRECT)
   }
 
   function storeUtm(utm) {
-    const val = JSON.stringify(utm);
-    storage.setItem(ADKERNEL_PREBID_KEY, val);
+    const val = JSON.stringify(utm)
+    storage.setItem(ADKERNEL_PREBID_KEY, val)
   }
 
   function asUtm(source, medium, campaign, term = '', content = '', c1 = '', c2 = '', c3 = '', c4 = '', c5 = '') {
@@ -275,63 +275,63 @@ export function getUmtSource(pageUrl, referrer) {
       source: source,
       medium: medium,
       campaign: campaign
-    };
+    }
     if (term) {
-      result.term = term;
+      result.term = term
     }
     if (content) {
-      result.content = content;
+      result.content = content
     }
     if (c1) {
-      result.c1 = c1;
+      result.c1 = c1
     }
     if (c2) {
-      result.c2 = c2;
+      result.c2 = c2
     }
     if (c3) {
-      result.c3 = c3;
+      result.c3 = c3
     }
     if (c4) {
-      result.c4 = c4;
+      result.c4 = c4
     }
     if (c5) {
-      result.c5 = c5;
+      result.c5 = c5
     }
-    return result;
+    return result
   }
 
   function chooseActualUtm(prev, curr) {
     if (ord(prev) < ord(curr)) {
-      return [true, curr];
+      return [true, curr]
     } else if (ord(prev) > ord(curr)) {
-      return [false, prev];
+      return [false, prev]
     } else {
       if (prev.campaign === REFERRAL && prev.content !== curr.content) {
-        return [true, curr];
+        return [true, curr]
       } else if (prev.campaign === ORGANIC && prev.source !== curr.source) {
-        return [true, curr];
+        return [true, curr]
       } else if (isCampaignTraffic(prev) && (prev.campaign !== curr.campaign || prev.source !== curr.source)) {
-        return [true, curr];
+        return [true, curr]
       }
     }
-    return [false, prev];
+    return [false, prev]
   }
 
   function ord(utm) {
     switch (utm.campaign) {
       case DIRECT:
-        return 0;
+        return 0
       case ORGANIC:
-        return 1;
+        return 1
       case REFERRAL:
-        return 2;
+        return 2
       default:
-        return 3;
+        return 3
     }
   }
 
   function isCampaignTraffic(utm) {
-    return [DIRECT, REFERRAL, ORGANIC].indexOf(utm.campaign) === -1;
+    return [DIRECT, REFERRAL, ORGANIC].indexOf(utm.campaign) === -1
   }
 }
 
@@ -342,53 +342,53 @@ export function getUmtSource(pageUrl, referrer) {
  * @class
  */
 export function ExpiringQueue(callback, ttl) {
-  let queue = [];
-  let timeoutId;
+  let queue = []
+  let timeoutId
 
   this.push = (event) => {
     if (event instanceof Array) {
-      queue.push.apply(queue, event);
+      queue.push.apply(queue, event)
     } else {
-      queue.push(event);
+      queue.push(event)
     }
-    reset();
-  };
+    reset()
+  }
 
   this.popAll = () => {
-    const result = queue;
-    queue = [];
-    reset();
-    return result;
-  };
+    const result = queue
+    queue = []
+    reset()
+    return result
+  }
 
   /**
    * For test/debug purposes only
    * @return {Array}
    */
   this.peekAll = () => {
-    return queue;
-  };
+    return queue
+  }
 
-  this.init = reset;
+  this.init = reset
 
   function reset() {
     if (timeoutId) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
     }
     timeoutId = setTimeout(() => {
       if (queue.length) {
-        callback();
+        callback()
       }
-    }, ttl);
+    }, ttl)
   }
 }
 
 // TODO: this should reuse logic from refererDetection
 function getNavigationInfo() {
   try {
-    return getLocationAndReferrer(self.top);
+    return getLocationAndReferrer(self.top)
   } catch (e) {
-    return getLocationAndReferrer(self);
+    return getLocationAndReferrer(self)
   }
 }
 
@@ -396,21 +396,21 @@ function getLocationAndReferrer(win) {
   return {
     ref: win.document.referrer,
     loc: win.location
-  };
+  }
 }
 
 function initPrivacy(template, requests) {
-  const consent = requests[0].gdprConsent;
+  const consent = requests[0].gdprConsent
   if (consent && consent.gdprApplies) {
-    template.user.gdpr = ~~consent.gdprApplies;
+    template.user.gdpr = ~~consent.gdprApplies
   }
   if (consent && consent.consentString) {
-    template.user.gdpr_consent = consent.consentString;
+    template.user.gdpr_consent = consent.consentString
   }
   if (requests[0].uspConsent) {
-    template.user.us_privacy = requests[0].uspConsent;
+    template.user.us_privacy = requests[0].uspConsent
   }
   if (config.getConfig('coppa')) {
-    template.user.coppa = 1;
+    template.user.coppa = 1
   }
 }

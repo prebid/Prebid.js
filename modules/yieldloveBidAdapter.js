@@ -1,11 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import * as utils from '../src/utils.js'
+import { BANNER } from '../src/mediaTypes.js'
 
-const ENDPOINT_URL = 'https://s2s.yieldlove-ad-serving.net/openrtb2/auction';
+const ENDPOINT_URL = 'https://s2s.yieldlove-ad-serving.net/openrtb2/auction'
 
-const DEFAULT_BID_TTL = 300; /* 5 minutes */
-const DEFAULT_CURRENCY = 'EUR';
+const DEFAULT_BID_TTL = 300 /* 5 minutes */
+const DEFAULT_CURRENCY = 'EUR'
 
 const participatedBidders = []
 
@@ -89,7 +89,7 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true
       },
-    };
+    }
   },
 
   interpretResponse: function (serverResponse) {
@@ -118,10 +118,10 @@ export const spec = {
     })
 
     if (bidResponses.length === 0) {
-      utils.logInfo('interpretResponse :: no bid');
+      utils.logInfo('interpretResponse :: no bid')
     }
 
-    return bidResponses;
+    return bidResponses
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
@@ -144,6 +144,6 @@ export const spec = {
     return syncs
   },
 
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

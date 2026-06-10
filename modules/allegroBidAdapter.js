@@ -1,15 +1,15 @@
 // jshint esversion: 6, es3: false, node: true
-'use strict';
+'use strict'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { config } from '../src/config.js';
-import { triggerPixel, logInfo, logError } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { config } from '../src/config.js'
+import { triggerPixel, logInfo, logError } from '../src/utils.js'
 
-const BIDDER_CODE = 'allegro';
-const BIDDER_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid';
-const GVLID = 1493;
+const BIDDER_CODE = 'allegro'
+const BIDDER_URL = 'https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid'
+const GVLID = 1493
 
 /**
  * Traverses an OpenRTB bid request object and moves any ext objects into
@@ -28,7 +28,7 @@ function convertExtensionFields(request) {
       if (imp.ext) {
         moveExt(imp, '[com.google.doubleclick.imp]')
       }
-    });
+    })
   }
 
   if (request.app?.ext) {
@@ -52,7 +52,7 @@ function convertExtensionFields(request) {
       if (data.ext) {
         moveExt(data, '[com.google.doubleclick.data]')
       }
-    });
+    })
   }
 
   if (request.device?.ext) {
@@ -65,7 +65,7 @@ function convertExtensionFields(request) {
 
   if (request.regs?.ext) {
     if (request.regs?.ext?.gdpr !== undefined) {
-      request.regs.ext.gdpr = request.regs.ext.gdpr === 1;
+      request.regs.ext.gdpr = request.regs.ext.gdpr === 1
     }
 
     moveExt(request.regs, '[com.google.doubleclick.regs]')
@@ -89,11 +89,11 @@ function convertExtensionFields(request) {
  */
 function moveExt(obj, newKey) {
   if (!obj || !obj.ext) {
-    return;
+    return
   }
-  const extCopy = { ...obj.ext };
-  delete obj.ext;
-  obj[newKey] = extCopy;
+  const extCopy = { ...obj.ext }
+  delete obj.ext
+  obj[newKey] = extCopy
 }
 
 /**
@@ -117,14 +117,14 @@ const converter = ortbConverter({
    * @returns {Object} ORTB impression object.
    */
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context)
     if (imp?.banner?.topframe !== undefined) {
-      imp.banner.topframe = imp.banner.topframe === 1;
+      imp.banner.topframe = imp.banner.topframe === 1
     }
     if (imp?.secure !== undefined) {
-      imp.secure = imp.secure === 1;
+      imp.secure = imp.secure === 1
     }
-    return imp;
+    return imp
   },
 
   /**
@@ -138,31 +138,31 @@ const converter = ortbConverter({
    * @returns {Object} Mutated ORTB request object ready to serialize.
    */
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    const request = buildRequest(imps, bidderRequest, context)
 
     if (request?.device?.dnt !== undefined) {
-      request.device.dnt = request.device.dnt === 1;
+      request.device.dnt = request.device.dnt === 1
     }
 
     if (request?.device?.sua?.mobile !== undefined) {
-      request.device.sua.mobile = request.device.sua.mobile === 1;
+      request.device.sua.mobile = request.device.sua.mobile === 1
     }
 
     if (request?.test !== undefined) {
-      request.test = request.test === 1;
+      request.test = request.test === 1
     }
 
     // by default, we convert extension fields unless the config explicitly disables it
-    const convertExtConfig = config.getConfig('allegro.convertExtensionFields');
+    const convertExtConfig = config.getConfig('allegro.convertExtensionFields')
     if (convertExtConfig === undefined || convertExtConfig === true) {
-      convertExtensionFields(request);
+      convertExtensionFields(request)
     }
 
     if (request?.source?.schain && !isSchainValid(request.source.schain)) {
-      delete request.source.schain;
+      delete request.source.schain
     }
 
-    return request;
+    return request
   }
 })
 
@@ -174,15 +174,15 @@ const converter = ortbConverter({
 function isSchainValid(schain) {
   try {
     if (!schain || !schain.nodes || !Array.isArray(schain.nodes)) {
-      return false;
+      return false
     }
-    const requiredFields = ['asi', 'sid', 'hp'];
+    const requiredFields = ['asi', 'sid', 'hp']
     return schain.nodes.every(node =>
       requiredFields.every(field => node.hasOwnProperty(field))
-    );
+    )
   } catch (error) {
-    logError('Allegro: Error validating schain:', error);
-    return false;
+    logError('Allegro: Error validating schain:', error)
+    return false
   }
 }
 
@@ -201,7 +201,7 @@ export const spec = {
    * @returns {boolean} True if bid is considered valid.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid);
+    return !!(bid)
   },
 
   /**
@@ -212,7 +212,7 @@ export const spec = {
    * @returns Request details for Prebid to send.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const url = config.getConfig('allegro.bidderUrl') || BIDDER_URL;
+    const url = config.getConfig('allegro.bidderUrl') || BIDDER_URL
 
     return {
       method: 'POST',
@@ -231,8 +231,8 @@ export const spec = {
    * @param request Original request object passed to server (contains `data`).
    */
   interpretResponse: function (response, request) {
-    if (!response.body) return;
-    return converter.fromORTB({ response: response.body, request: request.data }).bids;
+    if (!response.body) return
+    return converter.fromORTB({ response: response.body, request: request.data }).bids
   },
 
   /**
@@ -241,17 +241,17 @@ export const spec = {
    * @param bid The winning bid object.
    */
   onBidWon: function (bid) {
-    const triggerImpressionPixel = config.getConfig('allegro.triggerImpressionPixel');
+    const triggerImpressionPixel = config.getConfig('allegro.triggerImpressionPixel')
 
     if (triggerImpressionPixel && bid.burl) {
-      triggerPixel(bid.burl);
+      triggerPixel(bid.burl)
     }
 
     if (config.getConfig('debug')) {
-      logInfo('bid won', bid);
+      logInfo('bid won', bid)
     }
   }
 
 }
 
-registerBidder(spec);
+registerBidder(spec)

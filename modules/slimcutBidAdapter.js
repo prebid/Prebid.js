@@ -1,10 +1,10 @@
-import { getBidIdParameter, getValue, parseSizesInput } from '../src/utils.js';
+import { getBidIdParameter, getValue, parseSizesInput } from '../src/utils.js'
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.js';
+} from '../src/adapters/bidderFactory.js'
 import {
   ajax
-} from '../src/ajax.js';
+} from '../src/ajax.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,8 +12,8 @@ import {
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'slimcut';
-const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
+const BIDDER_CODE = 'slimcut'
+const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr'
 export const spec = {
   code: BIDDER_CODE,
   aliases: [{ code: 'scm' }],
@@ -25,11 +25,11 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    let isValid = false;
+    let isValid = false
     if (typeof bid.params !== 'undefined' && !isNaN(parseInt(getValue(bid.params, 'placementId'))) && parseInt(getValue(bid.params, 'placementId')) > 0) {
-      isValid = true;
+      isValid = true
     }
-    return isValid;
+    return isValid
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -39,27 +39,27 @@ export const spec = {
    * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const bids = validBidRequests.map(buildRequestObject);
+    const bids = validBidRequests.map(buildRequestObject)
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       data: bids,
       deviceWidth: screen.width
-    };
-    const gdpr = bidderRequest.gdprConsent;
+    }
+    const gdpr = bidderRequest.gdprConsent
     if (bidderRequest && gdpr) {
       const isCmp = (typeof gdpr.gdprApplies === 'boolean')
       const isConsentString = (typeof gdpr.consentString === 'string')
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: isCmp ? gdpr.gdprApplies : -1
-      };
+      }
     }
-    const payloadString = JSON.stringify(payload);
+    const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString,
-    };
+    }
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -68,8 +68,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, request) {
-    const bidResponses = [];
-    serverResponse = serverResponse.body;
+    const bidResponses = []
+    serverResponse = serverResponse.body
     if (serverResponse.responses) {
       serverResponse.responses.forEach(function(bid) {
         const bidResponse = {
@@ -86,44 +86,44 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || []
           }
-        };
-        bidResponses.push(bidResponse);
-      });
+        }
+        bidResponses.push(bidResponse)
+      })
     }
-    return bidResponses;
+    return bidResponses
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
         url: 'https://sb.freeskreen.com/async_usersync.html'
-      }];
+      }]
     }
-    return [];
+    return []
   },
   onBidWon: function(bid) {
-    ajax(bid.winUrl + bid.cpm, null);
+    ajax(bid.winUrl + bid.cpm, null)
   }
 }
 function buildRequestObject(bid) {
-  const reqObj = {};
-  const placementId = getValue(bid.params, 'placementId');
-  reqObj.sizes = parseSizesInput(bid.sizes);
-  reqObj.bidId = getBidIdParameter('bidId', bid);
-  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
-  reqObj.placementId = parseInt(placementId);
-  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
+  const reqObj = {}
+  const placementId = getValue(bid.params, 'placementId')
+  reqObj.sizes = parseSizesInput(bid.sizes)
+  reqObj.bidId = getBidIdParameter('bidId', bid)
+  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid)
+  reqObj.placementId = parseInt(placementId)
+  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid)
   // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-  reqObj.auctionId = getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
-  return reqObj;
+  reqObj.auctionId = getBidIdParameter('auctionId', bid)
+  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || ''
+  return reqObj
 }
 function getReferrerInfo(bidderRequest) {
-  let ref = window.location.href;
+  let ref = window.location.href
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-    ref = bidderRequest.refererInfo.page;
+    ref = bidderRequest.refererInfo.page
   }
-  return ref;
+  return ref
 }
 
-registerBidder(spec);
+registerBidder(spec)

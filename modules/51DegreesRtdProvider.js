@@ -1,20 +1,20 @@
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { loadExternalScript } from '../src/adloader.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
 import {
   deepAccess,
   deepSetValue,
   formatQS,
   mergeDeep,
   prefixLog,
-} from '../src/utils.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import { highEntropySUAAccessor } from '../src/fpd/sua.js';
+} from '../src/utils.js'
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js'
+import { highEntropySUAAccessor } from '../src/fpd/sua.js'
 
-const MODULE_NAME = '51Degrees';
-export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
-const { logMessage, logWarn, logError } = prefixLog(LOG_PREFIX);
+const MODULE_NAME = '51Degrees'
+export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`
+const { logMessage, logWarn, logError } = prefixLog(LOG_PREFIX)
 
 // ORTB device types
 const ORTB_DEVICE_TYPE = {
@@ -27,7 +27,7 @@ const ORTB_DEVICE_TYPE = {
   CONNECTED_DEVICE: 6,
   SET_TOP_BOX: 7,
   OOH_DEVICE: 8
-};
+}
 
 // Map of 51Degrees device types to ORTB device types. See
 // https://51degrees.com/developers/property-dictionary?item=Device%7CDevice
@@ -49,7 +49,7 @@ const ORTB_DEVICE_TYPE_MAP = new Map([
   ['Tablet', ORTB_DEVICE_TYPE.TABLET],
   ['Tv', ORTB_DEVICE_TYPE.CONNECTED_TV],
   ['Vehicle Display', ORTB_DEVICE_TYPE.PERSONAL_COMPUTER]
-]);
+])
 
 /**
  * Extracts the parameters for 51Degrees RTD module from the config object passed at instantiation
@@ -58,26 +58,26 @@ const ORTB_DEVICE_TYPE_MAP = new Map([
  */
 export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // Resource key
-  let resourceKey = deepAccess(moduleConfig, 'params.resourceKey');
+  let resourceKey = deepAccess(moduleConfig, 'params.resourceKey')
   // On-premise JS URL
-  let onPremiseJSUrl = deepAccess(moduleConfig, 'params.onPremiseJSUrl');
+  let onPremiseJSUrl = deepAccess(moduleConfig, 'params.onPremiseJSUrl')
 
   // Trim the values
   if (typeof resourceKey === 'string') {
-    resourceKey = resourceKey.trim();
+    resourceKey = resourceKey.trim()
   }
   if (typeof onPremiseJSUrl === 'string') {
-    onPremiseJSUrl = onPremiseJSUrl.trim();
+    onPremiseJSUrl = onPremiseJSUrl.trim()
   }
 
   // If this module is configured via a 3rd party wrapper, both form inputs
   // might be mandatory. To handle this, 0 can be used as a value to skip
   // the parameter.
   if (typeof resourceKey === 'string' && resourceKey.trim() === '0') {
-    resourceKey = undefined;
+    resourceKey = undefined
   }
   if (typeof onPremiseJSUrl === 'string' && onPremiseJSUrl.trim() === '0') {
-    onPremiseJSUrl = undefined;
+    onPremiseJSUrl = undefined
   }
 
   // Verify that onPremiseJSUrl is a valid URL: either a full URL, relative
@@ -87,23 +87,23 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     onPremiseJSUrl.startsWith('http://') ||
     onPremiseJSUrl.startsWith('/'))
   ) {
-    throw new Error(LOG_PREFIX + ' Invalid URL format for onPremiseJSUrl in moduleConfig');
+    throw new Error(LOG_PREFIX + ' Invalid URL format for onPremiseJSUrl in moduleConfig')
   }
 
   // Verify that one of the parameters is provided,
   // but not both at the same time
   if (!resourceKey && !onPremiseJSUrl) {
-    throw new Error(LOG_PREFIX + ' Missing parameter resourceKey or onPremiseJSUrl in moduleConfig');
+    throw new Error(LOG_PREFIX + ' Missing parameter resourceKey or onPremiseJSUrl in moduleConfig')
   } else if (resourceKey && onPremiseJSUrl) {
-    throw new Error(LOG_PREFIX + ' Only one of resourceKey or onPremiseJSUrl should be provided in moduleConfig');
+    throw new Error(LOG_PREFIX + ' Only one of resourceKey or onPremiseJSUrl should be provided in moduleConfig')
   }
 
   // Verify that the resource key is not the one provided as an example
   if (resourceKey === '<YOUR_RESOURCE_KEY>') {
-    throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/HNZ75HT1');
+    throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/HNZ75HT1')
   }
 
-  return { resourceKey, onPremiseJSUrl };
+  return { resourceKey, onPremiseJSUrl }
 }
 
 /**
@@ -118,35 +118,35 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
  * @returns {string} 51Degrees JS URL
  */
 export const get51DegreesJSURL = (pathData, win) => {
-  const _window = win || window;
-  const baseURL = pathData.onPremiseJSUrl || `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
+  const _window = win || window
+  const baseURL = pathData.onPremiseJSUrl || `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`
 
-  const queryPrefix = baseURL.includes('?') ? '&' : '?';
-  const qs = {};
+  const queryPrefix = baseURL.includes('?') ? '&' : '?'
+  const qs = {}
 
   deepSetNotEmptyValue(
     qs,
     '51D_GetHighEntropyValues',
     pathData.hev && Object.keys(pathData.hev).length ? btoa(JSON.stringify(pathData.hev)) : null,
-  );
-  deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height);
-  deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width);
-  deepSetNotEmptyValue(qs, '51D_PixelRatio', getDevicePixelRatio(_window));
+  )
+  deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height)
+  deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width)
+  deepSetNotEmptyValue(qs, '51D_PixelRatio', getDevicePixelRatio(_window))
   // id.usage contains a dot, so set it directly.
   if (pathData.idUsage) {
-    qs['id.usage'] = pathData.idUsage;
+    qs['id.usage'] = pathData.idUsage
   }
   if (pathData.tcString) {
-    qs.tcstring = pathData.tcString;
+    qs.tcstring = pathData.tcString
   }
   if (pathData.gpp) {
-    qs.gppstring = pathData.gpp;
+    qs.gppstring = pathData.gpp
   }
 
-  const _qs = formatQS(qs);
-  const _qsString = _qs ? `${queryPrefix}${_qs}` : '';
+  const _qs = formatQS(qs)
+  const _qsString = _qs ? `${queryPrefix}${_qs}` : ''
 
-  return `${baseURL}${_qsString}`;
+  return `${baseURL}${_qsString}`
 }
 
 /**
@@ -155,10 +155,10 @@ export const get51DegreesJSURL = (pathData, win) => {
  * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
  * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
  */
-const getHighEntropySUA = highEntropySUAAccessor();
+const getHighEntropySUA = highEntropySUAAccessor()
 
 function joinVersion(version) {
-  return Array.isArray(version) ? version.join('.') : version;
+  return Array.isArray(version) ? version.join('.') : version
 }
 
 /**
@@ -168,9 +168,9 @@ function joinVersion(version) {
  * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
  */
 export const getHighEntropyValues = async (hints) => {
-  const sua = await getHighEntropySUA(hints);
+  const sua = await getHighEntropySUA(hints)
   if (!sua) {
-    return undefined;
+    return undefined
   }
 
   return {
@@ -181,8 +181,8 @@ export const getHighEntropyValues = async (hints) => {
       brand,
       version: joinVersion(version),
     })),
-  };
-};
+  }
+}
 
 /**
  * Check if meta[http-equiv="Delegate-CH"] tag is present in the document head and points to 51Degrees cloud
@@ -200,15 +200,15 @@ export const getHighEntropyValues = async (hints) => {
  * @returns {boolean} False if 51Degrees meta is not present
  */
 export const is51DegreesMetaPresent = () => {
-  const meta51 = document.head.querySelectorAll('meta[http-equiv="Delegate-CH"]');
+  const meta51 = document.head.querySelectorAll('meta[http-equiv="Delegate-CH"]')
   if (!meta51.length) {
-    return false;
+    return false
   }
   return Array.from(meta51).some(
     meta => !meta.content
       ? false
       : meta.content.includes('cloud.51degrees')
-  );
+  )
 }
 
 /**
@@ -220,11 +220,11 @@ export const is51DegreesMetaPresent = () => {
  */
 export const deepSetNotEmptyValue = (obj, key, value) => {
   if (!key) {
-    throw new Error(LOG_PREFIX + ' Key is required');
+    throw new Error(LOG_PREFIX + ' Key is required')
   }
 
   if (value) {
-    deepSetValue(obj, key, value);
+    deepSetValue(obj, key, value)
   }
 }
 
@@ -241,18 +241,18 @@ export const deepSetNotEmptyValue = (obj, key, value) => {
  * @returns {Object} Enriched ORTB2 object
  */
 export const convert51DegreesDataToOrtb2 = (data51, options = {}) => {
-  const ortb2Data = {};
+  const ortb2Data = {}
 
   if (!data51) {
-    return ortb2Data;
+    return ortb2Data
   }
 
-  mergeDeep(ortb2Data, convert51DegreesDeviceToOrtb2(data51.device));
-  mergeDeep(ortb2Data, convert51DegreesIpToOrtb2(data51.ip));
-  mergeDeep(ortb2Data, convert51DegreesFoDiDToOrtb2(data51.fodid, options.tdlUrl));
+  mergeDeep(ortb2Data, convert51DegreesDeviceToOrtb2(data51.device))
+  mergeDeep(ortb2Data, convert51DegreesIpToOrtb2(data51.ip))
+  mergeDeep(ortb2Data, convert51DegreesFoDiDToOrtb2(data51.fodid, options.tdlUrl))
 
-  return ortb2Data;
-};
+  return ortb2Data
+}
 
 /**
  * Converts 51Degrees device data to ORTB2 format
@@ -278,10 +278,10 @@ export const convert51DegreesDataToOrtb2 = (data51, options = {}) => {
  * @returns {Object} Enriched ORTB2 object
  */
 export const convert51DegreesDeviceToOrtb2 = (device) => {
-  const ortb2Device = {};
+  const ortb2Device = {}
 
   if (!device) {
-    return ortb2Device;
+    return ortb2Device
   }
 
   const deviceModel =
@@ -290,32 +290,32 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
       device.hardwarename && device.hardwarename.length
         ? device.hardwarename.join(',')
         : null
-    );
+    )
 
   const devicePhysicalPPI = device.screenpixelsphysicalheight && device.screeninchesheight
     ? Math.round(device.screenpixelsphysicalheight / device.screeninchesheight)
-    : null;
+    : null
 
   const devicePPI = device.screenpixelsheight && device.screeninchesheight
     ? Math.round(device.screenpixelsheight / device.screeninchesheight)
-    : null;
+    : null
 
-  deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
-  deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor);
-  deepSetNotEmptyValue(ortb2Device, 'model', deviceModel);
-  deepSetNotEmptyValue(ortb2Device, 'hwv', device.hardwarenameversion);
-  deepSetNotEmptyValue(ortb2Device, 'os', device.platformname);
-  deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion);
-  deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight);
-  deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth);
-  deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio);
-  deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
-  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid);
+  deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype))
+  deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor)
+  deepSetNotEmptyValue(ortb2Device, 'model', deviceModel)
+  deepSetNotEmptyValue(ortb2Device, 'hwv', device.hardwarenameversion)
+  deepSetNotEmptyValue(ortb2Device, 'os', device.platformname)
+  deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion)
+  deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight)
+  deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth)
+  deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio)
+  deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI)
+  deepSetNotEmptyValue(ortb2Device, 'ext.fod.deviceId', device.deviceid)
   if (['True', 'False'].includes(device.thirdpartycookiesenabled)) {
-    deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0);
+    deepSetValue(ortb2Device, 'ext.fod.tpc', device.thirdpartycookiesenabled === 'True' ? 1 : 0)
   }
 
-  return { device: ortb2Device };
+  return { device: ortb2Device }
 }
 
 /**
@@ -336,57 +336,57 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
  * @returns {Object} Enriched ORTB2 object fragment ({device:{...}})
  */
 export const convert51DegreesIpToOrtb2 = (ip) => {
-  const ortb2 = {};
+  const ortb2 = {}
 
   if (!ip) {
-    return ortb2;
+    return ortb2
   }
 
   // device.ip / device.ipv6 are not gated on confidence.
-  deepSetNotEmptyValue(ortb2, 'device.ip', ip.ip);
-  deepSetNotEmptyValue(ortb2, 'device.ipv6', ip.ipv6);
+  deepSetNotEmptyValue(ortb2, 'device.ip', ip.ip)
+  deepSetNotEmptyValue(ortb2, 'device.ipv6', ip.ipv6)
 
   const confidence = typeof ip.locationconfidence === 'string'
     ? ip.locationconfidence.toLowerCase()
-    : undefined;
-  let ipservice;
+    : undefined
+  let ipservice
   if (confidence === 'high') {
-    ipservice = 511;
+    ipservice = 511
   } else if (confidence === 'medium') {
-    ipservice = 512;
+    ipservice = 512
   } else {
-    return ortb2;
+    return ortb2
   }
 
   // Use null/undefined checks rather than truthy checks so 0 coordinates
   // (Gulf of Guinea) and 0 accuracy survive.
   const setIfDefined = (key, value) => {
     if (value !== null && value !== undefined) {
-      deepSetValue(ortb2, key, value);
+      deepSetValue(ortb2, key, value)
     }
-  };
+  }
 
-  setIfDefined('device.geo.lat', ip.latitude);
-  setIfDefined('device.geo.lon', ip.longitude);
-  deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.countrycode3);
-  deepSetNotEmptyValue(ortb2, 'device.geo.region', ip.iso31662lvl4);
-  deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.zipcode);
-  setIfDefined('device.geo.utcoffset', ip.timezoneoffset);
+  setIfDefined('device.geo.lat', ip.latitude)
+  setIfDefined('device.geo.lon', ip.longitude)
+  deepSetNotEmptyValue(ortb2, 'device.geo.country', ip.countrycode3)
+  deepSetNotEmptyValue(ortb2, 'device.geo.region', ip.iso31662lvl4)
+  deepSetNotEmptyValue(ortb2, 'device.geo.zip', ip.zipcode)
+  setIfDefined('device.geo.utcoffset', ip.timezoneoffset)
   setIfDefined(
     'device.geo.accuracy',
     ip.accuracyradiusmin === null || ip.accuracyradiusmin === undefined
       ? undefined
       : ip.accuracyradiusmin * 1000,
-  );
+  )
 
   // Only stamp type+ipservice if at least one geo.* field actually landed.
   // Otherwise we'd emit a device.geo with just metadata which is meaningless.
   if (ortb2.device && ortb2.device.geo) {
-    deepSetValue(ortb2, 'device.geo.type', 2);
-    deepSetValue(ortb2, 'device.geo.ipservice', ipservice);
+    deepSetValue(ortb2, 'device.geo.type', 2)
+    deepSetValue(ortb2, 'device.geo.ipservice', ipservice)
   }
 
-  return ortb2;
+  return ortb2
 }
 
 /**
@@ -404,18 +404,18 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
  */
 export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
   if (!fodid) {
-    return {};
+    return {}
   }
 
-  const uids = [];
+  const uids = []
   if (fodid.idproblic) {
-    uids.push({ id: fodid.idproblic, atype: 1 });
+    uids.push({ id: fodid.idproblic, atype: 1 })
   }
   if (fodid.idprobglobal) {
-    uids.push({ id: fodid.idprobglobal, atype: 1 });
+    uids.push({ id: fodid.idprobglobal, atype: 1 })
   }
   if (uids.length === 0) {
-    return {};
+    return {}
   }
 
   const entry = {
@@ -423,28 +423,28 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
     source: '51d.es',
     mm: 5,
     uids,
-  };
+  }
   if (tdlUrl) {
-    entry.ext = { tdl: [tdlUrl] };
+    entry.ext = { tdl: [tdlUrl] }
   } else {
-    logWarn('tdlUrl is not configured; emitting eids entry without ext.tdl');
+    logWarn('tdlUrl is not configured; emitting eids entry without ext.tdl')
   }
 
-  return { user: { eids: [entry] } };
+  return { user: { eids: [entry] } }
 }
 
 // PMP localStorage contract, duplicated from pmp/src/storage.ts of the
 // 51Degrees/cloud repo. If PMP bumps SCHEMA_VERSION the shape check fails
 // closed and we fall through to undefined.
-const PMP_STORAGE_KEY = '__51d_pmp_pref';
-const PMP_SCHEMA_VERSION = 1;
+const PMP_STORAGE_KEY = '__51d_pmp_pref'
+const PMP_SCHEMA_VERSION = 1
 
 // Storage manager scoped to this RTD module. Required by Prebid's storage
 // activity rules and the no-restricted-globals lint.
 const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
-});
+})
 
 /**
  * Resolves the id.usage value from PMP localStorage.
@@ -456,19 +456,19 @@ const storageManager = getStorageManager({
  */
 export const resolveIdUsage = (moduleConfig) => {
   try {
-    const stored = storageManager.getDataFromLocalStorage(PMP_STORAGE_KEY);
+    const stored = storageManager.getDataFromLocalStorage(PMP_STORAGE_KEY)
     if (!stored) {
-      return undefined;
+      return undefined
     }
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(stored)
     if (parsed && parsed.v === PMP_SCHEMA_VERSION &&
         (parsed.p === 'standard' || parsed.p === 'personalized')) {
-      return parsed.p;
+      return parsed.p
     }
   } catch (_) {
     // Storage unavailable or JSON malformed; fall through.
   }
-  return undefined;
+  return undefined
 }
 
 /**
@@ -478,8 +478,8 @@ export const resolveIdUsage = (moduleConfig) => {
  * @returns {string|undefined}
  */
 export const resolveTcString = (userConsent) => {
-  const tc = deepAccess(userConsent, 'gdpr.consentString');
-  return (typeof tc === 'string' && tc.length > 0) ? tc : undefined;
+  const tc = deepAccess(userConsent, 'gdpr.consentString')
+  return (typeof tc === 'string' && tc.length > 0) ? tc : undefined
 }
 
 /**
@@ -489,8 +489,8 @@ export const resolveTcString = (userConsent) => {
  * @returns {string|undefined}
  */
 export const resolveGpp = (userConsent) => {
-  const gpp = deepAccess(userConsent, 'gpp.gppString');
-  return (typeof gpp === 'string' && gpp.length > 0) ? gpp : undefined;
+  const gpp = deepAccess(userConsent, 'gpp.gppString')
+  return (typeof gpp === 'string' && gpp.length > 0) ? gpp : undefined
 }
 
 /**
@@ -502,56 +502,56 @@ export const resolveGpp = (userConsent) => {
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
-    const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);
-    logMessage('Resource key: ', resourceKey);
-    logMessage('On-premise JS URL: ', onPremiseJSUrl);
+    const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj)
+    logMessage('Resource key: ', resourceKey)
+    logMessage('On-premise JS URL: ', onPremiseJSUrl)
 
-    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
-    const idUsage = resolveIdUsage(moduleConfig);
-    logMessage('Resolved id.usage: ', idUsage);
-    const tcString = resolveTcString(userConsent);
-    const gpp = resolveGpp(userConsent);
-    logMessage('TCF consent string present: ', !!tcString);
-    logMessage('GPP string present: ', !!gpp);
+    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl')
+    const idUsage = resolveIdUsage(moduleConfig)
+    logMessage('Resolved id.usage: ', idUsage)
+    const tcString = resolveTcString(userConsent)
+    const gpp = resolveGpp(userConsent)
+    logMessage('TCF consent string present: ', !!tcString)
+    logMessage('GPP string present: ', !!gpp)
 
     // Check if 51Degrees meta is present (cloud only)
     if (resourceKey) {
-      logMessage('Checking if 51Degrees meta is present in the document head');
+      logMessage('Checking if 51Degrees meta is present in the document head')
       if (!is51DegreesMetaPresent()) {
-        logWarn('Delegate-CH meta tag is not present in the document head');
+        logWarn('Delegate-CH meta tag is not present in the document head')
       }
     }
 
     getHighEntropyValues(['model', 'platform', 'platformVersion', 'fullVersionList']).then((hev) => {
       // Get 51Degrees JS URL, which is either cloud or on-premise
-      const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev, idUsage, tcString, gpp });
-      logMessage('URL of the script to be injected: ', scriptURL);
+      const scriptURL = get51DegreesJSURL({ resourceKey, onPremiseJSUrl, hev, idUsage, tcString, gpp })
+      logMessage('URL of the script to be injected: ', scriptURL)
 
       // Inject 51Degrees script, get device data and merge it into the ORTB2 object
       loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, () => {
-        logMessage('Successfully injected 51Degrees script');
-        const fod = /** @type {Object} */ (window.fod);
+        logMessage('Successfully injected 51Degrees script')
+        const fod = /** @type {Object} */ (window.fod)
         // Convert and merge device data in the callback
         fod.complete((data) => {
-          logMessage('51Degrees raw data: ', data);
-          const global = reqBidsConfigObj.ortb2Fragments.global;
-          const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
+          logMessage('51Degrees raw data: ', data)
+          const global = reqBidsConfigObj.ortb2Fragments.global
+          const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl })
           // Don't clobber a publisher-observed device.ip / device.ipv6 with
           // our IP-derived value. Publisher signal wins.
           if (enrichment.device) {
-            if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
-            if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+            if (deepAccess(global, 'device.ip')) delete enrichment.device.ip
+            if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6
           }
-          mergeDeep(global, enrichment);
-          logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
-          callback();
-        });
-      }, document, { crossOrigin: 'anonymous' });
-    });
+          mergeDeep(global, enrichment)
+          logMessage('reqBidsConfigObj: ', reqBidsConfigObj)
+          callback()
+        })
+      }, document, { crossOrigin: 'anonymous' })
+    })
   } catch (error) {
     // In case of an error, log it and continue
-    logError(error);
-    callback();
+    logError(error)
+    callback()
   }
 }
 
@@ -562,7 +562,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
  * @returns true
  */
 const init = (config, userConsent) => {
-  return true;
+  return true
 }
 
 // 51Degrees RTD submodule object to be registered
@@ -572,4 +572,4 @@ export const fiftyOneDegreesSubmodule = {
   getBidRequestData,
 }
 
-submodule('realTimeData', fiftyOneDegreesSubmodule);
+submodule('realTimeData', fiftyOneDegreesSubmodule)

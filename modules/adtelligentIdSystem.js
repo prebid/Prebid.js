@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { qualifiedAjaxBuilder } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js'
+import { submodule } from '../src/hook.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -16,16 +16,16 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const gvlid = 410;
-const moduleName = 'adtelligent';
-const syncUrl = 'https://idrs.adtelligent.com/get';
+const gvlid = 410
+const moduleName = 'adtelligent'
+const syncUrl = 'https://idrs.adtelligent.com/get'
 
 function buildUrl(opts) {
-  const queryPairs = [];
+  const queryPairs = []
   for (const key in opts) {
-    queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
+    queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`)
   }
-  return `${syncUrl}?${queryPairs.join('&')}`;
+  return `${syncUrl}?${queryPairs.join('&')}`
 }
 
 function requestRemoteIdAsync(url, cb) {
@@ -33,12 +33,12 @@ function requestRemoteIdAsync(url, cb) {
     url,
     {
       success: response => {
-        const jsonResponse = JSON.parse(response);
-        const { u: dmpId } = jsonResponse;
-        cb(dmpId);
+        const jsonResponse = JSON.parse(response)
+        const { u: dmpId } = jsonResponse
+        cb(dmpId)
       },
       error: () => {
-        cb();
+        cb()
       }
     },
     null,
@@ -47,7 +47,7 @@ function requestRemoteIdAsync(url, cb) {
       contentType: 'application/json',
       withCredentials: true
     }
-  );
+  )
 }
 
 /** @type {Submodule} */
@@ -64,7 +64,7 @@ export const adtelligentIdModule = {
    * @returns {{adtelligentId: string}}
    */
   decode(uid) {
-    return { adtelligentId: uid };
+    return { adtelligentId: uid }
   },
   /**
    * get the Adtelligent Id from local storages and initiate a new user sync
@@ -74,12 +74,12 @@ export const adtelligentIdModule = {
    * @returns {IdResponse}
    */
   getId(config, { gdpr: consentData } = {}) {
-    const gdpr = consentData && consentData.gdprApplies ? 1 : 0;
-    const gdprConsent = gdpr ? consentData.consentString : '';
+    const gdpr = consentData && consentData.gdprApplies ? 1 : 0
+    const gdprConsent = gdpr ? consentData.consentString : ''
     const url = buildUrl({
       gdpr,
       gdprConsent
-    });
+    })
 
     if (window.adtDmp && window.adtDmp.ready) {
       return { id: window.adtDmp.getUID() }
@@ -88,8 +88,8 @@ export const adtelligentIdModule = {
     return {
       callback: (cb) => {
         requestRemoteIdAsync(url, (id) => {
-          cb(id);
-        });
+          cb(id)
+        })
       }
 
     }
@@ -100,6 +100,6 @@ export const adtelligentIdModule = {
       atype: 3
     },
   }
-};
+}
 
-submodule('userId', adtelligentIdModule);
+submodule('userId', adtelligentIdModule)

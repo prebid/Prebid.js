@@ -1,8 +1,8 @@
-import { PbPromise } from './promise.js';
-import { binarySearch, logError, timestamp } from '../utils.js';
-import { setFocusTimeout } from './focusTimeout.js';
+import { PbPromise } from './promise.js'
+import { binarySearch, logError, timestamp } from '../utils.js'
+import { setFocusTimeout } from './focusTimeout.js'
 
-export type TTLCollection<T> = ReturnType<typeof ttlCollection<T>>;
+export type TTLCollection<T> = ReturnType<typeof ttlCollection<T>>
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.
@@ -41,54 +41,54 @@ export function ttlCollection<T>(
     slack?: number;
   } = {}
 ) {
-  const items = new Map<T, any>();
-  const callbacks = [];
-  const pendingPurge = [];
+  const items = new Map<T, any>()
+  const callbacks = []
+  const pendingPurge = []
   const markForPurge = monotonic
     ? (entry) => pendingPurge.push(entry)
     : (entry) => pendingPurge.splice(binarySearch(pendingPurge, entry, (el) => el.expiry), 0, entry)
-  let nextPurge, task;
+  let nextPurge, task
 
   function reschedulePurge() {
-    task && clearTimeout(task());
+    task && clearTimeout(task())
     if (pendingPurge.length > 0) {
-      const now = timestamp();
-      nextPurge = Math.max(now, pendingPurge[0].expiry + slack);
+      const now = timestamp()
+      nextPurge = Math.max(now, pendingPurge[0].expiry + slack)
       task = setFocusTimeout(() => {
-        const now = timestamp();
-        let cnt = 0;
+        const now = timestamp()
+        let cnt = 0
         for (const entry of pendingPurge) {
-          if (entry.expiry > now) break;
+          if (entry.expiry > now) break
           callbacks.forEach(cb => {
             try {
               cb(entry.item)
             } catch (e) {
-              logError(e);
+              logError(e)
             }
-          });
+          })
           items.delete(entry.item)
-          cnt++;
+          cnt++
         }
-        pendingPurge.splice(0, cnt);
-        task = null;
-        reschedulePurge();
-      }, nextPurge - now);
+        pendingPurge.splice(0, cnt)
+        task = null
+        reschedulePurge()
+      }, nextPurge - now)
     } else {
-      task = null;
+      task = null
     }
   }
 
   function mkEntry(item) {
-    const values: any = {};
-    const thisCohort = currentCohort;
-    let expiry;
+    const values: any = {}
+    const thisCohort = currentCohort
+    let expiry
 
     function update() {
       if (thisCohort === currentCohort && values.start != null && values.delta != null) {
-        expiry = values.start + values.delta;
-        markForPurge(entry);
+        expiry = values.start + values.delta
+        markForPurge(entry)
         if (task == null || nextPurge > expiry + slack) {
-          reschedulePurge();
+          reschedulePurge()
         }
       }
     }
@@ -97,15 +97,15 @@ export function ttlCollection<T>(
       start: startTime,
       delta: ttl
     }).map(([field, getter]) => {
-      let currentCall;
+      let currentCall
       return function() {
-        const thisCall = currentCall = {};
+        const thisCall = currentCall = {}
         PbPromise.resolve(getter(item)).then((val) => {
           if (thisCall === currentCall) {
-            values[field] = val;
-            update();
+            values[field] = val
+            update()
           }
-        });
+        })
       }
     })
 
@@ -113,16 +113,16 @@ export function ttlCollection<T>(
       item,
       refresh,
       get expiry() {
-        return expiry;
+        return expiry
       },
-    };
+    }
 
-    init();
-    refresh();
-    return entry;
+    init()
+    refresh()
+    return entry
   }
 
-  let currentCohort = {};
+  let currentCohort = {}
 
   return {
     [Symbol.iterator]: () => items.keys(),
@@ -131,46 +131,46 @@ export function ttlCollection<T>(
      * @param item
      */
     add(item: T) {
-      !items.has(item) && items.set(item, mkEntry(item));
+      !items.has(item) && items.set(item, mkEntry(item))
     },
     has(item: T) {
-      return items.has(item);
+      return items.has(item)
     },
     delete(item: T) {
-      const toBeDeleted = items.get(item);
+      const toBeDeleted = items.get(item)
       if (toBeDeleted) {
         for (let i = 0; i < pendingPurge.length && pendingPurge[i].expiry <= toBeDeleted.expiry; i++) {
           if (pendingPurge[i] === toBeDeleted) {
-            pendingPurge.splice(i, 1);
-            break;
+            pendingPurge.splice(i, 1)
+            break
           }
         }
       }
-      return items.delete(item);
+      return items.delete(item)
     },
     /**
      * Clear this collection.
      */
     clear() {
-      pendingPurge.length = 0;
-      reschedulePurge();
-      items.clear();
-      currentCohort = {};
+      pendingPurge.length = 0
+      reschedulePurge()
+      items.clear()
+      currentCohort = {}
     },
     /**
      * @returns {[]} all the items in this collection, in insertion order.
      */
     toArray() {
-      return Array.from(items.keys());
+      return Array.from(items.keys())
     },
     /**
      * Refresh the TTL for each item in this collection.
      */
     refresh() {
-      pendingPurge.length = 0;
-      reschedulePurge();
+      pendingPurge.length = 0
+      reschedulePurge()
       for (const entry of items.values()) {
-        entry.refresh();
+        entry.refresh()
       }
     },
     /**
@@ -180,13 +180,13 @@ export function ttlCollection<T>(
      * @return an unregistration function.
      */
     onExpiry(cb: (item: T) => void) {
-      callbacks.push(cb);
+      callbacks.push(cb)
       return () => {
-        const idx = callbacks.indexOf(cb);
+        const idx = callbacks.indexOf(cb)
         if (idx >= 0) {
-          callbacks.splice(idx, 1);
+          callbacks.splice(idx, 1)
         }
       }
     }
-  };
+  }
 }

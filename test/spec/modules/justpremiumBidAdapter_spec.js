@@ -2,15 +2,15 @@ import { expect } from 'chai'
 import { spec } from 'modules/justpremiumBidAdapter.js'
 
 describe('justpremium adapter', function () {
-  let sandbox;
+  let sandbox
 
   beforeEach(function() {
-    sandbox = sinon.createSandbox();
-  });
+    sandbox = sinon.createSandbox()
+  })
 
   afterEach(function() {
-    sandbox.restore();
-  });
+    sandbox.restore()
+  })
 
   const schainConfig = {
     'ver': '1.0',

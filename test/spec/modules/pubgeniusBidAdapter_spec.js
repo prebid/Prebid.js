@@ -1,11 +1,11 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 
-import { spec } from 'modules/pubgeniusBidAdapter.js';
-import { config } from 'src/config.js';
-import { VIDEO } from 'src/mediaTypes.js';
-import { deepClone, parseQueryStringParameters } from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
-import * as utils from 'src/utils.js';
+import { spec } from 'modules/pubgeniusBidAdapter.js'
+import { config } from 'src/config.js'
+import { VIDEO } from 'src/mediaTypes.js'
+import { deepClone, parseQueryStringParameters } from 'src/utils.js'
+import { server } from 'test/mocks/xhr.js'
+import * as utils from 'src/utils.js'
 
 const {
   code,
@@ -15,23 +15,23 @@ const {
   interpretResponse,
   getUserSyncs,
   onTimeout,
-} = spec;
+} = spec
 
 describe('pubGENIUS adapter', () => {
   describe('code', () => {
     it('should be pubgenius', () => {
-      expect(code).to.equal('pubgenius');
-    });
-  });
+      expect(code).to.equal('pubgenius')
+    })
+  })
 
   describe('supportedMediaTypes', () => {
     it('should contain banner and video', () => {
-      expect(supportedMediaTypes).to.deep.equal(['banner', 'video']);
-    });
-  });
+      expect(supportedMediaTypes).to.deep.equal(['banner', 'video'])
+    })
+  })
 
   describe('isBidRequestValid', () => {
-    let bid = null;
+    let bid = null
 
     beforeEach(() => {
       bid = {
@@ -43,48 +43,48 @@ describe('pubGENIUS adapter', () => {
         params: {
           adUnitId: 1112,
         },
-      };
-    });
+      }
+    })
 
     it('should return true with numeric adUnitId ', () => {
-      expect(isBidRequestValid(bid)).to.be.true;
-    });
+      expect(isBidRequestValid(bid)).to.be.true
+    })
 
     it('should return true with string adUnitId ', () => {
-      bid.params.adUnitId = '1112';
+      bid.params.adUnitId = '1112'
 
-      expect(isBidRequestValid(bid)).to.be.true;
-    });
+      expect(isBidRequestValid(bid)).to.be.true
+    })
 
     it('should return false without adUnitId', () => {
-      delete bid.params.adUnitId;
+      delete bid.params.adUnitId
 
-      expect(isBidRequestValid(bid)).to.be.false;
-    });
+      expect(isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return false with adUnitId of invalid type', () => {
-      bid.params.adUnitId = [1112];
+      bid.params.adUnitId = [1112]
 
-      expect(isBidRequestValid(bid)).to.be.false;
-    });
+      expect(isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return false with empty sizes', () => {
-      bid.mediaTypes.banner.sizes = [];
+      bid.mediaTypes.banner.sizes = []
 
-      expect(isBidRequestValid(bid)).to.be.false;
-    });
+      expect(isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return false with invalid size', () => {
-      bid.mediaTypes.banner.sizes = [[300, 600, 250]];
+      bid.mediaTypes.banner.sizes = [[300, 600, 250]]
 
-      expect(isBidRequestValid(bid)).to.be.false;
-    });
+      expect(isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return false without banner or video', () => {
-      bid.mediaTypes = {};
+      bid.mediaTypes = {}
 
-      expect(isBidRequestValid(bid)).to.be.false;
-    });
+      expect(isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return true with valid video media type', () => {
       bid.mediaTypes = {
@@ -94,10 +94,10 @@ describe('pubGENIUS adapter', () => {
           mimes: ['video/mp4'],
           protocols: [1],
         },
-      };
+      }
 
-      expect(isBidRequestValid(bid)).to.be.true;
-    });
+      expect(isBidRequestValid(bid)).to.be.true
+    })
 
     it('should return true with valid video params', () => {
       bid.params.video = {
@@ -106,10 +106,10 @@ describe('pubGENIUS adapter', () => {
         h: 200,
         mimes: ['video/mp4'],
         protocols: [1],
-      };
+      }
 
-      expect(isBidRequestValid(bid)).to.be.true;
-    });
+      expect(isBidRequestValid(bid)).to.be.true
+    })
 
     it('should return false without video protocols', () => {
       bid.mediaTypes = {
@@ -117,31 +117,31 @@ describe('pubGENIUS adapter', () => {
           context: 'instream',
           playerSize: [[100, 100]],
         },
-      };
+      }
       bid.params.video = {
         mimes: ['video/mp4'],
-      };
+      }
 
-      expect(isBidRequestValid(bid)).to.be.false;
-    });
-  });
+      expect(isBidRequestValid(bid)).to.be.false
+    })
+  })
 
   describe('buildRequests', () => {
-    const origBidderTimeout = config.getConfig('bidderTimeout');
-    const origPageUrl = config.getConfig('pageUrl');
-    const origCoppa = config.getConfig('coppa');
+    const origBidderTimeout = config.getConfig('bidderTimeout')
+    const origPageUrl = config.getConfig('pageUrl')
+    const origCoppa = config.getConfig('coppa')
 
     after(() => {
       config.setConfig({
         bidderTimeout: origBidderTimeout,
         pageUrl: origPageUrl,
         coppa: origCoppa,
-      });
-    });
+      })
+    })
 
-    let bidRequest = null;
-    let bidderRequest = null;
-    let expectedRequest = null;
+    let bidRequest = null
+    let bidderRequest = null
+    let expectedRequest = null
 
     beforeEach(() => {
       bidRequest = {
@@ -162,7 +162,7 @@ describe('pubGENIUS adapter', () => {
           adUnitId: 1112,
         },
         transactionId: 'fake-transaction-id',
-      };
+      }
 
       bidderRequest = {
         auctionId: 'fake-auction-id',
@@ -170,7 +170,7 @@ describe('pubGENIUS adapter', () => {
         bidderRequestId: 'fakebidderrequestid',
         refererInfo: {},
         timeout: 1200,
-      };
+      }
 
       expectedRequest = {
         method: 'POST',
@@ -194,25 +194,25 @@ describe('pubGENIUS adapter', () => {
             },
           },
         },
-      };
+      }
 
       config.setConfig({
         bidderTimeout: 1000,
         pageUrl: undefined,
         coppa: undefined,
-      });
-    });
+      })
+    })
 
     it('should build basic requests correctly', () => {
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should build requests with multiple ad units', () => {
-      const bidRequest1 = deepClone(bidRequest);
-      bidRequest1.adUnitCode = 'test-div-1';
-      bidRequest1.bidId = 'fakebidid1';
-      bidRequest1.mediaTypes.banner.sizes = [[728, 90]];
-      bidRequest1.params.adUnitId = '1111';
+      const bidRequest1 = deepClone(bidRequest)
+      bidRequest1.adUnitCode = 'test-div-1'
+      bidRequest1.bidId = 'fakebidid1'
+      bidRequest1.mediaTypes.banner.sizes = [[728, 90]]
+      bidRequest1.params.adUnitId = '1111'
 
       expectedRequest.data.imp.push({
         id: 'fakebidid1',
@@ -221,67 +221,67 @@ describe('pubGENIUS adapter', () => {
           topframe: 0,
         },
         tagid: '1111',
-      });
+      })
 
-      expect(buildRequests([bidRequest, bidRequest1], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest, bidRequest1], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take bid floor from getFloor interface', () => {
-      bidRequest.getFloor = () => ({ floor: 0.5, currency: 'USD' });
-      expectedRequest.data.imp[0].bidfloor = 0.5;
+      bidRequest.getFloor = () => ({ floor: 0.5, currency: 'USD' })
+      expectedRequest.data.imp[0].bidfloor = 0.5
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take position in bidder params', () => {
-      bidRequest.params.position = 3;
-      expectedRequest.data.imp[0].banner.pos = 3;
+      bidRequest.params.position = 3
+      expectedRequest.data.imp[0].banner.pos = 3
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should use page from refererInfo', () => {
-      bidderRequest.refererInfo.page = 'http://pageurl.org';
-      expectedRequest.data.site = { page: 'http://pageurl.org' };
+      bidderRequest.refererInfo.page = 'http://pageurl.org'
+      expectedRequest.data.site = { page: 'http://pageurl.org' }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take gdprConsent when GDPR does not apply', () => {
       bidderRequest.gdprConsent = {
         gdprApplies: false,
         consentString: 'fakeconsent',
-      };
+      }
       expectedRequest.data.regs = {
         ext: { gdpr: 0 },
-      };
+      }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take gdprConsent when GDPR applies', () => {
       bidderRequest.gdprConsent = {
         gdprApplies: true,
         consentString: 'fakeconsent',
-      };
+      }
       expectedRequest.data.regs = {
         ext: { gdpr: 1 },
-      };
+      }
       expectedRequest.data.user = {
         ext: { consent: 'fakeconsent' },
-      };
+      }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take uspConsent', () => {
-      bidderRequest.uspConsent = '1---';
+      bidderRequest.uspConsent = '1---'
       expectedRequest.data.regs = {
         ext: { us_privacy: '1---' },
-      };
+      }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take schain', () => {
       const schain = {
@@ -294,24 +294,24 @@ describe('pubGENIUS adapter', () => {
             hp: 1
           }
         ]
-      };
-      bidRequest.ortb2 = bidRequest.ortb2 || {};
-      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
-      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
-      bidRequest.ortb2.source.ext.schain = deepClone(schain);
+      }
+      bidRequest.ortb2 = bidRequest.ortb2 || {}
+      bidRequest.ortb2.source = bidRequest.ortb2.source || {}
+      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {}
+      bidRequest.ortb2.source.ext.schain = deepClone(schain)
       expectedRequest.data.source = {
         ext: { schain: deepClone(schain) },
-      };
+      }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take coppa', () => {
-      config.setConfig({ coppa: true });
-      expectedRequest.data.regs = { coppa: 1 };
+      config.setConfig({ coppa: true })
+      expectedRequest.data.regs = { coppa: 1 }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should take user IDs', () => {
       const eid = {
@@ -323,16 +323,16 @@ describe('pubGENIUS adapter', () => {
             ext: { rtiPartner: 'TDID' },
           },
         ],
-      };
-      bidRequest.userIdAsEids = [deepClone(eid)];
+      }
+      bidRequest.userIdAsEids = [deepClone(eid)]
       expectedRequest.data.user = {
         ext: {
           eids: [deepClone(eid)],
         },
-      };
+      }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should not take unsupported user IDs', () => {
       bidRequest.userIdAsEids = [
@@ -345,16 +345,16 @@ describe('pubGENIUS adapter', () => {
             },
           ],
         },
-      ];
+      ]
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should not take empty user IDs', () => {
-      bidRequest.userIdAsEids = [];
+      bidRequest.userIdAsEids = []
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
 
     it('should build video imp', () => {
       bidRequest.mediaTypes = {
@@ -368,16 +368,16 @@ describe('pubGENIUS adapter', () => {
           maxduration: 10,
           linearity: 1,
         },
-      };
+      }
       bidRequest.params.video = {
         minduration: 5,
         maxduration: 100,
         skip: 1,
         skipafter: 1,
         startdelay: -1,
-      };
+      }
 
-      delete expectedRequest.data.imp[0].banner;
+      delete expectedRequest.data.imp[0].banner
       expectedRequest.data.imp[0].video = {
         mimes: ['video/mp4'],
         minduration: 5,
@@ -391,15 +391,15 @@ describe('pubGENIUS adapter', () => {
         playbackmethod: [3, 4],
         api: [1, 2],
         linearity: 1,
-      };
+      }
 
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
-  });
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest)
+    })
+  })
 
   describe('interpretResponse', () => {
-    let serverResponse = null;
-    let expectedBidResponse = null;
+    let serverResponse = null
+    let expectedBidResponse = null
 
     beforeEach(() => {
       serverResponse = {
@@ -421,7 +421,7 @@ describe('pubGENIUS adapter', () => {
             },
           ],
         },
-      };
+      }
       expectedBidResponse = {
         requestId: 'fakebidid',
         cpm: 0.3,
@@ -432,25 +432,25 @@ describe('pubGENIUS adapter', () => {
         ttl: 60,
         creativeId: 'fakecreativeid',
         netRevenue: true,
-      };
-    });
+      }
+    })
 
     it('should interpret response correctly', () => {
-      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse]);
-    });
+      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse])
+    })
 
     it('should interpret response with adomain', () => {
-      serverResponse.body.seatbid[0].bid[0].adomain = ['fakeaddomain'];
+      serverResponse.body.seatbid[0].bid[0].adomain = ['fakeaddomain']
       expectedBidResponse.meta = {
         advertiserDomains: ['fakeaddomain'],
-      };
+      }
 
-      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse]);
-    });
+      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse])
+    })
 
     it('should interpret no bids', () => {
-      expect(interpretResponse({ body: {} })).to.deep.equal([]);
-    });
+      expect(interpretResponse({ body: {} })).to.deep.equal([])
+    })
 
     it('should interpret video response', () => {
       serverResponse.body.seatbid[0].bid[0] = {
@@ -462,73 +462,73 @@ describe('pubGENIUS adapter', () => {
             cacheKey: 'x',
           },
         },
-      };
+      }
 
-      delete expectedBidResponse.ad;
+      delete expectedBidResponse.ad
       expectedBidResponse = {
         ...expectedBidResponse,
         vastUrl: 'http://vasturl/cache?id=x',
         vastXml: 'fake_creative',
         mediaType: VIDEO,
-      };
+      }
 
-      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse]);
-    });
-  });
+      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse])
+    })
+  })
 
   describe('getUserSyncs', () => {
-    let syncOptions = null;
-    let expectedSync = null;
+    let syncOptions = null
+    let expectedSync = null
 
     beforeEach(() => {
       syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true,
-      };
+      }
       expectedSync = {
         type: 'iframe',
         url: 'https://auction.adpearl.io/usersync/pixels.html?',
-      };
-    });
+      }
+    })
 
     it('should return iframe pixels', () => {
-      expect(getUserSyncs(syncOptions)).to.deep.equal([expectedSync]);
-    });
+      expect(getUserSyncs(syncOptions)).to.deep.equal([expectedSync])
+    })
 
     it('should return empty when iframe is not enabled', () => {
-      syncOptions.iframeEnabled = false;
+      syncOptions.iframeEnabled = false
 
-      expect(getUserSyncs(syncOptions)).to.deep.equal([]);
-    });
+      expect(getUserSyncs(syncOptions)).to.deep.equal([])
+    })
 
     it('should return sync when GDPR applies', () => {
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'fake-gdpr-consent',
-      };
+      }
       expectedSync.url = expectedSync.url + parseQueryStringParameters({
         gdpr: 1,
         consent: 'fake-gdpr-consent',
-      });
+      })
 
-      expect(getUserSyncs(syncOptions, [], gdprConsent)).to.deep.equal([expectedSync]);
-    });
+      expect(getUserSyncs(syncOptions, [], gdprConsent)).to.deep.equal([expectedSync])
+    })
 
     it('should return sync when GDPR does not apply', () => {
       const gdprConsent = {
         gdprApplies: false,
-      };
-      expectedSync.url = expectedSync.url + parseQueryStringParameters({ gdpr: 0 });
+      }
+      expectedSync.url = expectedSync.url + parseQueryStringParameters({ gdpr: 0 })
 
-      expect(getUserSyncs(syncOptions, [], gdprConsent)).to.deep.equal([expectedSync]);
-    });
+      expect(getUserSyncs(syncOptions, [], gdprConsent)).to.deep.equal([expectedSync])
+    })
 
     it('should return sync with US privacy', () => {
-      expectedSync.url = expectedSync.url + parseQueryStringParameters({ us_privacy: '1---' });
+      expectedSync.url = expectedSync.url + parseQueryStringParameters({ us_privacy: '1---' })
 
-      expect(getUserSyncs(syncOptions, [], undefined, '1---')).to.deep.equal([expectedSync]);
-    });
-  });
+      expect(getUserSyncs(syncOptions, [], undefined, '1---')).to.deep.equal([expectedSync])
+    })
+  })
 
   describe('onTimeout', () => {
     it('should send timeout data', () => {
@@ -541,12 +541,12 @@ describe('pubGENIUS adapter', () => {
         adUnitCode: 'fake-ad-unit-code',
         timeout: 3000,
         auctionId: 'fake-auction-id',
-      };
-      onTimeout(timeoutData);
+      }
+      onTimeout(timeoutData)
 
-      expect(server.requests[0].method).to.equal('POST');
-      expect(server.requests[0].url).to.equal('https://auction.adpearl.io/prebid/events?type=timeout');
-      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData);
-    });
-  });
-});
+      expect(server.requests[0].method).to.equal('POST')
+      expect(server.requests[0].url).to.equal('https://auction.adpearl.io/prebid/events?type=timeout')
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData)
+    })
+  })
+})

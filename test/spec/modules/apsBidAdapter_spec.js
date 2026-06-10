@@ -1,7 +1,7 @@
-import sinon from 'sinon';
-import { expect } from 'chai';
-import { spec, ADAPTER_VERSION } from 'modules/apsBidAdapter';
-import { config } from 'src/config.js';
+import sinon from 'sinon'
+import { expect } from 'chai'
+import { spec, ADAPTER_VERSION } from 'modules/apsBidAdapter'
+import { config } from 'src/config.js'
 
 /**
  * Update config without rewriting the entire aps scope.
@@ -11,50 +11,50 @@ import { config } from 'src/config.js';
  * values will disappear.
  */
 const updateAPSConfig = (data) => {
-  const existingAPSConfig = config.readConfig('aps');
+  const existingAPSConfig = config.readConfig('aps')
   config.setConfig({
     aps: {
       ...existingAPSConfig,
       ...data,
     },
-  });
-};
+  })
+}
 
 describe('apsBidAdapter', () => {
-  const accountID = 'test-account';
+  const accountID = 'test-account'
 
   beforeEach(() => {
-    updateAPSConfig({ accountID });
-  });
+    updateAPSConfig({ accountID })
+  })
 
   afterEach(() => {
-    config.resetConfig();
-    delete window._aps;
-  });
+    config.resetConfig()
+    delete window._aps
+  })
 
   describe('isBidRequestValid', () => {
     it('should record prebidAdapter/isBidRequestValid/didTrigger event', () => {
-      spec.isBidRequestValid({});
+      spec.isBidRequestValid({})
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/isBidRequestValid/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.isBidRequestValid({});
+      updateAPSConfig({ accountID: undefined })
+      spec.isBidRequestValid({})
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.isBidRequestValid({});
+      updateAPSConfig({ telemetry: false })
+      spec.isBidRequestValid({})
 
-      expect(window._aps).not.to.exist;
+      expect(window._aps).not.to.exist
     });
 
     [
@@ -66,27 +66,27 @@ describe('apsBidAdapter', () => {
       { accountID: false },
     ].forEach((scenario) => {
       it(`when accountID is ${JSON.stringify(scenario.accountID)}, should return false`, () => {
-        updateAPSConfig({ accountID: scenario.accountID });
-        const actual = spec.isBidRequestValid({});
-        expect(actual).to.equal(false);
-      });
-    });
+        updateAPSConfig({ accountID: scenario.accountID })
+        const actual = spec.isBidRequestValid({})
+        expect(actual).to.equal(false)
+      })
+    })
 
     it('when accountID is a number, should return true', () => {
-      updateAPSConfig({ accountID: 1234 });
-      const actual = spec.isBidRequestValid({});
-      expect(actual).to.equal(true);
-    });
+      updateAPSConfig({ accountID: 1234 })
+      const actual = spec.isBidRequestValid({})
+      expect(actual).to.equal(true)
+    })
 
     it('when accountID is a string, should return true', () => {
-      updateAPSConfig({ accountID: '1234' });
-      const actual = spec.isBidRequestValid({});
-      expect(actual).to.equal(true);
-    });
-  });
+      updateAPSConfig({ accountID: '1234' })
+      const actual = spec.isBidRequestValid({})
+      expect(actual).to.equal(true)
+    })
+  })
 
   describe('buildRequests', () => {
-    let bidRequests, bidderRequest;
+    let bidRequests, bidderRequest
 
     beforeEach(() => {
       bidRequests = [
@@ -112,57 +112,57 @@ describe('apsBidAdapter', () => {
           },
           bids: [{ bidder: 'aps' }],
         },
-      ];
+      ]
       bidderRequest = {
         bidderCode: 'aps',
         auctionId: 'auction1',
         bidderRequestId: 'request1',
-      };
-    });
+      }
+    })
 
     it('should record prebidAdapter/buildRequests/didTrigger event', () => {
-      spec.buildRequests(bidRequests, bidderRequest);
+      spec.buildRequests(bidRequests, bidderRequest)
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/buildRequests/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.buildRequests(bidRequests, bidderRequest);
+      updateAPSConfig({ accountID: undefined })
+      spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.buildRequests(bidRequests, bidderRequest);
+      updateAPSConfig({ telemetry: false })
+      spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('should return server request with default endpoint', () => {
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.method).to.equal('POST');
+      expect(result.method).to.equal('POST')
       expect(result.url).to.equal(
         'https://web.ads.aps.amazon-adsystem.com/e/pb/bid'
-      );
-      expect(result.data).to.exist;
-    });
+      )
+      expect(result.data).to.exist
+    })
 
     it('should return server request with properly formatted impressions', () => {
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.imp.length).to.equal(2);
+      expect(result.data.imp.length).to.equal(2)
       expect(result.data.imp[0]).to.deep.equal({
         banner: { format: [{ h: 250, w: 300 }], h: 250, topframe: 0, w: 300 },
         id: 'bid1',
         secure: 1,
-      });
+      })
       expect(result.data.imp[1]).to.deep.equal({
         id: 'bid2',
         secure: 1,
@@ -177,65 +177,65 @@ describe('apsBidAdapter', () => {
             w: 400,
           },
         }),
-      });
-    });
+      })
+    })
 
     it('when debugURL is provided, should use custom debugURL', () => {
-      updateAPSConfig({ debugURL: 'https://example.com' });
+      updateAPSConfig({ debugURL: 'https://example.com' })
 
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.url).to.equal('https://example.com');
-    });
+      expect(result.url).to.equal('https://example.com')
+    })
 
     it('should convert bid requests to ORTB format with account', () => {
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data).to.be.an('object');
-      expect(result.data.ext).to.exist;
-      expect(result.data.ext.account).to.equal(accountID);
-    });
+      expect(result.data).to.be.an('object')
+      expect(result.data.ext).to.exist
+      expect(result.data.ext.account).to.equal(accountID)
+    })
 
     it('should include ADAPTER_VERSION in request data', () => {
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.ext.sdk.version).to.equal(ADAPTER_VERSION);
-      expect(result.data.ext.sdk.source).to.equal('prebid');
-    });
+      expect(result.data.ext.sdk.version).to.equal(ADAPTER_VERSION)
+      expect(result.data.ext.sdk.source).to.equal('prebid')
+    })
 
     it('when accountID is not provided, should convert bid requests to ORTB format with no account', () => {
-      updateAPSConfig({ accountID: undefined });
+      updateAPSConfig({ accountID: undefined })
 
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data).to.be.an('object');
-      expect(result.data.ext).to.exist;
-      expect(result.data.ext.account).to.equal(undefined);
-    });
+      expect(result.data).to.be.an('object')
+      expect(result.data.ext).to.exist
+      expect(result.data.ext.account).to.equal(undefined)
+    })
 
     it('should include agerange in request ext when configured', () => {
       bidderRequest.ortb2 = {
         regs: {
           ext: { agerange: 2 },
         },
-      };
+      }
 
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.regs.ext.agerange).to.equal(2);
-    });
+      expect(result.data.regs.ext.agerange).to.equal(2)
+    })
 
     it('should include agerange in request ext when configured, even when 0', () => {
       bidderRequest.ortb2 = {
         regs: {
           ext: { agerange: 0 },
         },
-      };
+      }
 
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.regs.ext.agerange).to.equal(0);
-    });
+      expect(result.data.regs.ext.agerange).to.equal(0)
+    })
 
     it('should remove sensitive geo data from device', () => {
       bidderRequest.ortb2 = {
@@ -246,14 +246,14 @@ describe('apsBidAdapter', () => {
             country: 'US',
           },
         },
-      };
+      }
 
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.device.geo.lat).to.be.undefined;
-      expect(result.data.device.geo.lon).to.be.undefined;
-      expect(result.data.device.geo.country).to.equal('US');
-    });
+      expect(result.data.device.geo.lat).to.be.undefined
+      expect(result.data.device.geo.lon).to.be.undefined
+      expect(result.data.device.geo.country).to.equal('US')
+    })
 
     it('should remove sensitive user data', () => {
       bidderRequest.ortb2 = {
@@ -267,24 +267,24 @@ describe('apsBidAdapter', () => {
           data: [{ id: 'segment1' }],
           id: 'user123',
         },
-      };
+      }
 
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.user.gender).to.be.undefined;
-      expect(result.data.user.yob).to.be.undefined;
-      expect(result.data.user.keywords).to.be.undefined;
-      expect(result.data.user.kwarry).to.be.undefined;
-      expect(result.data.user.customdata).to.be.undefined;
-      expect(result.data.user.geo).to.be.undefined;
-      expect(result.data.user.data).to.be.undefined;
-      expect(result.data.user.id).to.equal('user123');
-    });
+      expect(result.data.user.gender).to.be.undefined
+      expect(result.data.user.yob).to.be.undefined
+      expect(result.data.user.keywords).to.be.undefined
+      expect(result.data.user.kwarry).to.be.undefined
+      expect(result.data.user.customdata).to.be.undefined
+      expect(result.data.user.geo).to.be.undefined
+      expect(result.data.user.data).to.be.undefined
+      expect(result.data.user.id).to.equal('user123')
+    })
 
     it('should set default currency to USD', () => {
-      const result = spec.buildRequests(bidRequests, bidderRequest);
+      const result = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(result.data.cur).to.deep.equal(['USD']);
+      expect(result.data.cur).to.deep.equal(['USD'])
     });
 
     [
@@ -298,12 +298,12 @@ describe('apsBidAdapter', () => {
       it(`when imp is ${JSON.stringify(scenario.imp)}, should send data`, () => {
         bidderRequest.ortb2 = {
           imp: scenario.imp,
-        };
+        }
 
-        const result = spec.buildRequests(bidRequests, bidderRequest);
+        const result = spec.buildRequests(bidRequests, bidderRequest)
 
-        expect(result.data.imp).to.equal(scenario.imp);
-      });
+        expect(result.data.imp).to.equal(scenario.imp)
+      })
     });
 
     [
@@ -315,13 +315,13 @@ describe('apsBidAdapter', () => {
       { imp: [{}, undefined] },
     ].forEach((scenario, scenarioIndex) => {
       it(`when imp array contains null/undefined at index, should send data - scenario ${scenarioIndex}`, () => {
-        bidRequests = [];
-        bidderRequest.ortb2 = { imp: scenario.imp };
+        bidRequests = []
+        bidderRequest.ortb2 = { imp: scenario.imp }
 
-        const result = spec.buildRequests(bidRequests, bidderRequest);
+        const result = spec.buildRequests(bidRequests, bidderRequest)
 
-        expect(result.data.imp).to.deep.equal(scenario.imp);
-      });
+        expect(result.data.imp).to.deep.equal(scenario.imp)
+      })
     });
 
     [
@@ -335,7 +335,7 @@ describe('apsBidAdapter', () => {
       { w: 300, h: [] },
     ].forEach((scenario) => {
       it(`when imp array contains banner object with invalid format (h: "${scenario.h}", w: "${scenario.w}"), should send data`, () => {
-        const { w, h } = scenario;
+        const { w, h } = scenario
         const invalidBannerObj = {
           banner: {
             format: [
@@ -343,74 +343,74 @@ describe('apsBidAdapter', () => {
               { w: 300, h: 250 },
             ],
           },
-        };
+        }
         const imp = [
           { banner: { format: [{ w: 300, h: 250 }] } },
           { video: { w: 300, h: undefined } },
           invalidBannerObj,
           { video: { w: undefined, h: 300 } },
-        ];
-        bidRequests = [];
-        bidderRequest.ortb2 = { imp };
+        ]
+        bidRequests = []
+        bidderRequest.ortb2 = { imp }
 
-        const result = spec.buildRequests(bidRequests, bidderRequest);
+        const result = spec.buildRequests(bidRequests, bidderRequest)
 
-        expect(result.data.imp).to.deep.equal(imp);
-      });
-    });
+        expect(result.data.imp).to.deep.equal(imp)
+      })
+    })
 
     describe('when debug mode is enabled', () => {
       beforeEach(() => {
-        updateAPSConfig({ debug: true });
-      });
+        updateAPSConfig({ debug: true })
+      })
 
       it('should append debug parameters', () => {
-        const result = spec.buildRequests(bidRequests, bidderRequest);
+        const result = spec.buildRequests(bidRequests, bidderRequest)
 
         expect(result.url).to.equal(
           'https://web.ads.aps.amazon-adsystem.com/e/pb/bid?amzn_debug_mode=1'
-        );
-      });
+        )
+      })
 
       it('when using custom endpoint, should append debug parameters', () => {
-        updateAPSConfig({ debugURL: 'https://example.com' });
+        updateAPSConfig({ debugURL: 'https://example.com' })
 
-        const result = spec.buildRequests(bidRequests, bidderRequest);
+        const result = spec.buildRequests(bidRequests, bidderRequest)
 
-        expect(result.url).to.equal('https://example.com?amzn_debug_mode=1');
-      });
+        expect(result.url).to.equal('https://example.com?amzn_debug_mode=1')
+      })
 
       it('when endpoint has existing query params, should append debug parameters with &', () => {
         updateAPSConfig({
           debugURL: 'https://example.com?existing=param',
-        });
+        })
 
-        const result = spec.buildRequests(bidRequests, bidderRequest);
+        const result = spec.buildRequests(bidRequests, bidderRequest)
 
         expect(result.url).to.equal(
           'https://example.com?existing=param&amzn_debug_mode=1'
-        );
-      });
+        )
+      })
 
       describe('when renderMethod is fif', () => {
         beforeEach(() => {
-          updateAPSConfig({ renderMethod: 'fif' });
-        });
+          updateAPSConfig({ renderMethod: 'fif' })
+        })
 
         it('when renderMethod is fif, should append fif debug parameters', () => {
-          const result = spec.buildRequests(bidRequests, bidderRequest);
+          const result = spec.buildRequests(bidRequests, bidderRequest)
 
           expect(result.url).to.equal(
             'https://web.ads.aps.amazon-adsystem.com/e/pb/bid?amzn_debug_mode=fif&amzn_debug_mode=1'
-          );
-        });
-      });
-    });
-  });
+          )
+        })
+      })
+    })
+  })
 
   describe('interpretResponse', () => {
-    const impid = '32adcfab8e54178';
-    let response, request, bidRequests, bidderRequest;
+    const impid = '32adcfab8e54178'
+    let response, request, bidRequests, bidderRequest
 
     beforeEach(() => {
       bidRequests = [
@@ -425,7 +425,7 @@ describe('apsBidAdapter', () => {
           bidId: impid,
           bidderRequestId: '2a1ec2d1ccea318',
         },
-      ];
+      ]
       bidderRequest = {
         bidderCode: 'aps',
         auctionId: null,
@@ -444,9 +444,9 @@ describe('apsBidAdapter', () => {
           },
         ],
         start: 1758899825329,
-      };
+      }
 
-      request = spec.buildRequests(bidRequests, bidderRequest);
+      request = spec.buildRequests(bidRequests, bidderRequest)
 
       response = {
         body: {
@@ -475,134 +475,134 @@ describe('apsBidAdapter', () => {
           ],
         },
         headers: {},
-      };
-    });
+      }
+    })
 
     it('should record prebidAdapter/interpretResponse/didTrigger event', () => {
-      spec.interpretResponse(response, request);
+      spec.interpretResponse(response, request)
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(2);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(2)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/buildRequests/didTrigger'
-      );
+      )
       expect(accountQueue[1].type).to.equal(
         'prebidAdapter/interpretResponse/didTrigger'
-      );
-    });
+      )
+    })
 
     it('should return interpreted bids from ORTB response', () => {
-      const result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request)
 
-      expect(result).to.be.an('array');
-      expect(result.length).to.equal(1);
-    });
+      expect(result).to.be.an('array')
+      expect(result.length).to.equal(1)
+    })
 
     it('should fill networkId and seat metadata from APS response fields', () => {
-      const result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request)
 
-      expect(result[0].meta.networkId).to.equal('911');
-      expect(result[0].meta.seat).to.equal('10432');
-    });
+      expect(result[0].meta.networkId).to.equal('911')
+      expect(result[0].meta.seat).to.equal('10432')
+    })
 
     it('should include accountID in creative script', () => {
-      updateAPSConfig({ accountID: accountID });
+      updateAPSConfig({ accountID: accountID })
 
-      const result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request)
 
-      expect(result).to.have.length(1);
-      expect(result[0].ad).to.include("const accountID = 'test-account'");
-    });
+      expect(result).to.have.length(1)
+      expect(result[0].ad).to.include("const accountID = 'test-account'")
+    })
 
     it('when creativeURL is provided, should use custom creative URL', () => {
       updateAPSConfig({
         creativeURL: 'https://custom-creative.com/script.js',
-      });
+      })
 
-      const result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request)
 
-      expect(result).to.have.length(1);
+      expect(result).to.have.length(1)
       expect(result[0].ad).to.include(
         'src="https://custom-creative.com/script.js"'
-      );
-    });
+      )
+    })
 
     it('should use default creative URL when not provided', () => {
-      const result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request)
 
-      expect(result).to.have.length(1);
+      expect(result).to.have.length(1)
       expect(result[0].ad).to.include(
         'src="https://client.aps.amazon-adsystem.com/prebid-creative.js"'
-      );
-    });
+      )
+    })
 
     describe('when bid mediaType is VIDEO', () => {
       beforeEach(() => {
-        response.body.seatbid[0].bid[0].mtype = 2;
-      });
+        response.body.seatbid[0].bid[0].mtype = 2
+      })
 
       it('should not inject creative script for video bids', () => {
-        const result = spec.interpretResponse(response, request);
+        const result = spec.interpretResponse(response, request)
 
-        expect(result).to.have.length(1);
-        expect(result[0].ad).to.be.undefined;
-      });
-    });
+        expect(result).to.have.length(1)
+        expect(result[0].ad).to.be.undefined
+      })
+    })
 
     describe('when bid mediaType is not VIDEO', () => {
       it('should inject creative script for non-video bids', () => {
-        const result = spec.interpretResponse(response, request);
+        const result = spec.interpretResponse(response, request)
 
-        expect(result).to.have.length(1);
-        expect(result[0].ad).to.include('<script src=');
-        expect(result[0].ad).to.include('prebid/creative/render');
-      });
+        expect(result).to.have.length(1)
+        expect(result[0].ad).to.include('<script src=')
+        expect(result[0].ad).to.include('prebid/creative/render')
+      })
 
       it('should include base64 encoded response in creative script', () => {
-        const result = spec.interpretResponse(response, request);
-        const expectedEncodedResponse = btoa(JSON.stringify(response.body));
+        const result = spec.interpretResponse(response, request)
+        const expectedEncodedResponse = btoa(JSON.stringify(response.body))
 
-        expect(result).to.have.length(1);
+        expect(result).to.have.length(1)
         expect(result[0].ad).to.include(
           `aaxResponse: '${expectedEncodedResponse}'`
-        );
-      });
-    });
-  });
+        )
+      })
+    })
+  })
 
   describe('getUserSyncs', () => {
-    let syncOptions, serverResponses, gdprConsent, uspConsent;
+    let syncOptions, serverResponses, gdprConsent, uspConsent
 
     beforeEach(() => {
-      syncOptions = undefined;
-      serverResponses = [];
-      gdprConsent = undefined;
-      uspConsent = '1YNN';
-    });
+      syncOptions = undefined
+      serverResponses = []
+      gdprConsent = undefined
+      uspConsent = '1YNN'
+    })
 
     it('should record prebidAdapter/getUserSyncs/didTrigger event', () => {
-      spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/getUserSyncs/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      updateAPSConfig({ accountID: undefined })
+      spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      updateAPSConfig({ telemetry: false })
+      spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('Given 0 server responses, should return empty list', () => {
       const result = spec.getUserSyncs(
@@ -610,69 +610,69 @@ describe('apsBidAdapter', () => {
         serverResponses,
         gdprConsent,
         uspConsent
-      );
-      expect(result).deep.equal([]);
-    });
+      )
+      expect(result).deep.equal([])
+    })
 
     describe('Given 1 server response', () => {
       beforeEach(() => {
-        serverResponses = [{ body: { ext: { userSyncs: [] } } }];
-      });
+        serverResponses = [{ body: { ext: { userSyncs: [] } } }]
+      })
 
       it('when server response is missing body, should return empty list', () => {
-        serverResponses[0].body = undefined;
+        serverResponses[0].body = undefined
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
-        expect(result).deep.equal([]);
-      });
+        )
+        expect(result).deep.equal([])
+      })
 
       it('when server response is missing body.ext, should return empty list', () => {
-        serverResponses[0].body.ext = undefined;
+        serverResponses[0].body.ext = undefined
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
-        expect(result).deep.equal([]);
-      });
+        )
+        expect(result).deep.equal([])
+      })
 
       it('when server response is missing body.ext.userSyncs, should return empty list', () => {
-        serverResponses[0].body.ext.userSyncs = undefined;
+        serverResponses[0].body.ext.userSyncs = undefined
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
-        expect(result).deep.equal([]);
-      });
+        )
+        expect(result).deep.equal([])
+      })
 
       it('when server response contains empty body.ext.userSyncs, should return empty list', () => {
-        serverResponses[0].body.ext.userSyncs = [];
+        serverResponses[0].body.ext.userSyncs = []
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
-        expect(result).deep.equal([]);
-      });
+        )
+        expect(result).deep.equal([])
+      })
 
       it('when server response contains invalid user syncs, should return empty list', () => {
-        serverResponses[0].body.ext.userSyncs = [];
+        serverResponses[0].body.ext.userSyncs = []
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
-        expect(result).deep.equal([]);
-      });
+        )
+        expect(result).deep.equal([])
+      })
 
       describe('when server response contains body.ext.userSyncs', () => {
         beforeEach(() => {
@@ -682,67 +682,67 @@ describe('apsBidAdapter', () => {
             { type: 'iframe', url: 'https://example.com/iframe2' },
             { type: 'invalid', url: 'https://example.com/invalid' },
             { url: 'https://example.com/invalid2' },
-          ];
-        });
+          ]
+        })
 
         it('when iframe sync is enabled, should return iframe user syncs', () => {
-          syncOptions = { iframeEnabled: true, pixelEnabled: false };
+          syncOptions = { iframeEnabled: true, pixelEnabled: false }
           const result = spec.getUserSyncs(
             syncOptions,
             serverResponses,
             gdprConsent,
             uspConsent
-          );
+          )
 
           expect(result).deep.equal([
             { type: 'iframe', url: 'https://example.com/iframe1' },
             { type: 'iframe', url: 'https://example.com/iframe2' },
-          ]);
-        });
+          ])
+        })
 
         it('when pixel sync is enabled, should return image user syncs', () => {
-          syncOptions = { iframeEnabled: false, pixelEnabled: true };
+          syncOptions = { iframeEnabled: false, pixelEnabled: true }
           const result = spec.getUserSyncs(
             syncOptions,
             serverResponses,
             gdprConsent,
             uspConsent
-          );
+          )
 
           expect(result).deep.equal([
             { type: 'image', url: 'https://example.com/image1' },
-          ]);
-        });
+          ])
+        })
 
         it('when both iframe and pixel sync are enabled, should return iframe and image user syncs', () => {
-          syncOptions = { iframeEnabled: true, pixelEnabled: true };
+          syncOptions = { iframeEnabled: true, pixelEnabled: true }
           const result = spec.getUserSyncs(
             syncOptions,
             serverResponses,
             gdprConsent,
             uspConsent
-          );
+          )
 
           expect(result).deep.equal([
             { type: 'iframe', url: 'https://example.com/iframe1' },
             { type: 'image', url: 'https://example.com/image1' },
             { type: 'iframe', url: 'https://example.com/iframe2' },
-          ]);
-        });
+          ])
+        })
 
         it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
-          syncOptions = { iframeEnabled: false, pixelEnabled: false };
+          syncOptions = { iframeEnabled: false, pixelEnabled: false }
           const result = spec.getUserSyncs(
             syncOptions,
             serverResponses,
             gdprConsent,
             uspConsent
-          );
+          )
 
-          expect(result).deep.equal([]);
-        });
-      });
-    });
+          expect(result).deep.equal([])
+        })
+      })
+    })
 
     describe('Given multiple server responses', () => {
       beforeEach(() => {
@@ -758,7 +758,7 @@ describe('apsBidAdapter', () => {
               ],
             },
           },
-        });
+        })
 
         serverResponses.push({
           body: {
@@ -772,49 +772,49 @@ describe('apsBidAdapter', () => {
               ],
             },
           },
-        });
-      });
+        })
+      })
 
       it('when iframe sync is enabled, should return iframe user syncs', () => {
-        syncOptions = { iframeEnabled: true, pixelEnabled: false };
+        syncOptions = { iframeEnabled: true, pixelEnabled: false }
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
+        )
 
         expect(result).deep.equal([
           { type: 'iframe', url: 'https://example.com/res1/iframe1' },
           { type: 'iframe', url: 'https://example.com/res1/iframe2' },
           { type: 'iframe', url: 'https://example.com/res2/iframe1' },
           { type: 'iframe', url: 'https://example.com/res2/iframe2' },
-        ]);
-      });
+        ])
+      })
 
       it('when pixel sync is enabled, should return image user syncs', () => {
-        syncOptions = { iframeEnabled: false, pixelEnabled: true };
+        syncOptions = { iframeEnabled: false, pixelEnabled: true }
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
+        )
 
         expect(result).deep.equal([
           { type: 'image', url: 'https://example.com/res1/image1' },
           { type: 'image', url: 'https://example.com/res2/image1' },
-        ]);
-      });
+        ])
+      })
 
       it('when both iframe and pixel sync are enabled, should return iframe and image user syncs', () => {
-        syncOptions = { iframeEnabled: true, pixelEnabled: true };
+        syncOptions = { iframeEnabled: true, pixelEnabled: true }
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
+        )
 
         expect(result).deep.equal([
           { type: 'iframe', url: 'https://example.com/res1/iframe1' },
@@ -823,25 +823,25 @@ describe('apsBidAdapter', () => {
           { type: 'iframe', url: 'https://example.com/res2/iframe1' },
           { type: 'image', url: 'https://example.com/res2/image1' },
           { type: 'iframe', url: 'https://example.com/res2/iframe2' },
-        ]);
-      });
+        ])
+      })
 
       it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
-        syncOptions = { iframeEnabled: false, pixelEnabled: false };
+        syncOptions = { iframeEnabled: false, pixelEnabled: false }
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
+        )
 
-        expect(result).deep.equal([]);
-      });
-    });
+        expect(result).deep.equal([])
+      })
+    })
 
     describe('GDPR consent', () => {
       beforeEach(() => {
-        syncOptions = { iframeEnabled: true, pixelEnabled: true };
+        syncOptions = { iframeEnabled: true, pixelEnabled: true }
         serverResponses = [
           {
             body: {
@@ -852,45 +852,45 @@ describe('apsBidAdapter', () => {
               },
             },
           },
-        ];
-      });
+        ]
+      })
 
       it('when GDPR applies and purpose 1 consent is not given, should return undefined', () => {
         gdprConsent = {
           gdprApplies: true,
           vendorData: { purpose: { consents: { 1: false } } },
-        };
+        }
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
+        )
 
-        expect(result).to.be.undefined;
-      });
+        expect(result).to.be.undefined
+      })
 
       it('when GDPR applies and purpose 1 consent is given, should return user syncs', () => {
         gdprConsent = {
           gdprApplies: true,
           vendorData: { purpose: { consents: { 1: true } } },
-        };
+        }
         const result = spec.getUserSyncs(
           syncOptions,
           serverResponses,
           gdprConsent,
           uspConsent
-        );
+        )
 
         expect(result).deep.equal([
           { type: 'iframe', url: 'https://example.com/iframe1' },
-        ]);
-      });
-    });
-  });
+        ])
+      })
+    })
+  })
 
   describe('onTimeout', () => {
-    let timeoutData;
+    let timeoutData
 
     beforeEach(() => {
       timeoutData = [
@@ -900,195 +900,195 @@ describe('apsBidAdapter', () => {
           adUnitCode: 'adunit1',
           timeout: 3000,
         },
-      ];
-    });
+      ]
+    })
 
     it('should record prebidAdapter/onTimeout/didTrigger event', () => {
-      spec.onTimeout(timeoutData);
+      spec.onTimeout(timeoutData)
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onTimeout/didTrigger'
-      );
-      expect(accountQueue[0].detail.error).to.equal(timeoutData);
-    });
+      )
+      expect(accountQueue[0].detail.error).to.equal(timeoutData)
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onTimeout(timeoutData);
+      updateAPSConfig({ accountID: undefined })
+      spec.onTimeout(timeoutData)
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onTimeout(timeoutData);
+      updateAPSConfig({ telemetry: false })
+      spec.onTimeout(timeoutData)
 
-      expect(window._aps).not.to.exist;
-    });
-  });
+      expect(window._aps).not.to.exist
+    })
+  })
 
   describe('onSetTargeting', () => {
     it('should record prebidAdapter/onSetTargeting/didTrigger event', () => {
-      spec.onSetTargeting({});
+      spec.onSetTargeting({})
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onSetTargeting/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onSetTargeting({});
+      updateAPSConfig({ accountID: undefined })
+      spec.onSetTargeting({})
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onSetTargeting({});
+      updateAPSConfig({ telemetry: false })
+      spec.onSetTargeting({})
 
-      expect(window._aps).not.to.exist;
-    });
-  });
+      expect(window._aps).not.to.exist
+    })
+  })
 
   describe('onAdRenderSucceeded', () => {
     it('should record prebidAdapter/onAdRenderSucceeded/didTrigger event', () => {
-      spec.onAdRenderSucceeded({});
+      spec.onAdRenderSucceeded({})
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onAdRenderSucceeded/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onAdRenderSucceeded({});
+      updateAPSConfig({ accountID: undefined })
+      spec.onAdRenderSucceeded({})
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onAdRenderSucceeded({});
+      updateAPSConfig({ telemetry: false })
+      spec.onAdRenderSucceeded({})
 
-      expect(window._aps).not.to.exist;
-    });
-  });
+      expect(window._aps).not.to.exist
+    })
+  })
 
   describe('onBidderError', () => {
-    let error;
+    let error
 
     beforeEach(() => {
-      error = new Error('Bidder request failed');
-    });
+      error = new Error('Bidder request failed')
+    })
 
     it('should record prebidAdapter/onBidderError/didTrigger event', () => {
-      spec.onBidderError(error);
+      spec.onBidderError(error)
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onBidderError/didTrigger'
-      );
-      expect(accountQueue[0].detail.error).to.equal(error);
-    });
+      )
+      expect(accountQueue[0].detail.error).to.equal(error)
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onBidderError(error);
+      updateAPSConfig({ accountID: undefined })
+      spec.onBidderError(error)
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onBidderError(error);
+      updateAPSConfig({ telemetry: false })
+      spec.onBidderError(error)
 
-      expect(window._aps).not.to.exist;
-    });
-  });
+      expect(window._aps).not.to.exist
+    })
+  })
 
   describe('onBidWon', () => {
     it('should record prebidAdapter/onBidWon/didTrigger event', () => {
-      spec.onBidWon({});
+      spec.onBidWon({})
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onBidWon/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onBidWon({});
+      updateAPSConfig({ accountID: undefined })
+      spec.onBidWon({})
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onBidWon({});
+      updateAPSConfig({ telemetry: false })
+      spec.onBidWon({})
 
-      expect(window._aps).not.to.exist;
-    });
-  });
+      expect(window._aps).not.to.exist
+    })
+  })
 
   describe('onBidAttribute', () => {
     it('should record prebidAdapter/onBidAttribute/didTrigger event', () => {
-      spec.onBidAttribute({});
+      spec.onBidAttribute({})
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onBidAttribute/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onBidAttribute({});
+      updateAPSConfig({ accountID: undefined })
+      spec.onBidAttribute({})
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onBidAttribute({});
+      updateAPSConfig({ telemetry: false })
+      spec.onBidAttribute({})
 
-      expect(window._aps).not.to.exist;
-    });
-  });
+      expect(window._aps).not.to.exist
+    })
+  })
 
   describe('onBidBillable', () => {
     it('should record prebidAdapter/onBidBillable/didTrigger event', () => {
-      spec.onBidBillable({});
+      spec.onBidBillable({})
 
-      const accountQueue = window._aps.get(accountID).queue;
-      expect(accountQueue).to.have.length(1);
+      const accountQueue = window._aps.get(accountID).queue
+      expect(accountQueue).to.have.length(1)
       expect(accountQueue[0].type).to.equal(
         'prebidAdapter/onBidBillable/didTrigger'
-      );
-    });
+      )
+    })
 
     it('when no accountID provided, should not record event', () => {
-      updateAPSConfig({ accountID: undefined });
-      spec.onBidBillable({});
+      updateAPSConfig({ accountID: undefined })
+      spec.onBidBillable({})
 
-      expect(window._aps).not.to.exist;
-    });
+      expect(window._aps).not.to.exist
+    })
 
     it('when telemetry is turned off, should not record event', () => {
-      updateAPSConfig({ telemetry: false });
-      spec.onBidBillable({});
+      updateAPSConfig({ telemetry: false })
+      spec.onBidBillable({})
 
-      expect(window._aps).not.to.exist;
-    });
-  });
-});
+      expect(window._aps).not.to.exist
+    })
+  })
+})

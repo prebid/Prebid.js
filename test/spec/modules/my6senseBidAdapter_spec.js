@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/my6senseBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/my6senseBidAdapter.js'
 
 describe('My6sense Bid adapter test', function () {
-  let bidRequests, serverResponses;
+  let bidRequests, serverResponses
   beforeEach(function () {
     bidRequests = [
       {
@@ -36,7 +36,7 @@ describe('My6sense Bid adapter test', function () {
           paidClicks: ''
         }
       },
-    ];
+    ]
     serverResponses = [
       {
         headers: {},
@@ -83,52 +83,52 @@ describe('My6sense Bid adapter test', function () {
         }
       }
     ]
-  });
+  })
 
   describe('test if requestIsValid function', function () {
     it('with valid data 1', function () {
-      expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true)
+    })
     it('with invalid data 2', function () {
-      expect(spec.isBidRequestValid(bidRequests[1])).to.equal(false);
-    });
+      expect(spec.isBidRequestValid(bidRequests[1])).to.equal(false)
+    })
     it('with invalid data 3', function () {
-      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(false);
-    });
-  });
+      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(false)
+    })
+  })
 
   describe('test if buildRequests function', function () {
     it('normal', function () {
-      var requests = spec.buildRequests([bidRequests[0]]);
-      expect(requests).to.be.lengthOf(1);
-    });
-  });
+      var requests = spec.buildRequests([bidRequests[0]])
+      expect(requests).to.be.lengthOf(1)
+    })
+  })
   describe('test bid responses', function () {
     it('success 1', function () {
-      var bids = spec.interpretResponse(serverResponses[0], { 'bidRequest': bidRequests[0] });
-      expect(bids).to.be.lengthOf(1);
-      expect(bids[0].cpm).to.equal(1.5);
-      expect(bids[0].width).to.equal(300);
-      expect(bids[0].height).to.equal(250);
-      expect(bids[0].adm).to.have.length.above(1);
-    });
+      var bids = spec.interpretResponse(serverResponses[0], { 'bidRequest': bidRequests[0] })
+      expect(bids).to.be.lengthOf(1)
+      expect(bids[0].cpm).to.equal(1.5)
+      expect(bids[0].width).to.equal(300)
+      expect(bids[0].height).to.equal(250)
+      expect(bids[0].adm).to.have.length.above(1)
+    })
     it('success 2', function () {
-      var bids = spec.interpretResponse(serverResponses[3]);
-      expect(bids).to.be.lengthOf(1);
-      expect(bids[0].cpm).to.equal(5);
-      expect(bids[0].width).to.equal(300);
-      expect(bids[0].height).to.equal(250);
-      expect(bids[0].netRevenue).to.equal(false);
-      expect(bids[0].ttl).to.equal(360);
-      expect(bids[0].currency).to.equal('USD');
-    });
+      var bids = spec.interpretResponse(serverResponses[3])
+      expect(bids).to.be.lengthOf(1)
+      expect(bids[0].cpm).to.equal(5)
+      expect(bids[0].width).to.equal(300)
+      expect(bids[0].height).to.equal(250)
+      expect(bids[0].netRevenue).to.equal(false)
+      expect(bids[0].ttl).to.equal(360)
+      expect(bids[0].currency).to.equal('USD')
+    })
     it('fail 1 (cpm=0)', function () {
-      var bids = spec.interpretResponse(serverResponses[1]);
-      expect(bids).to.be.lengthOf(1);
-    });
+      var bids = spec.interpretResponse(serverResponses[1])
+      expect(bids).to.be.lengthOf(1)
+    })
     it('fail 2 (no response)', function () {
-      var bids = spec.interpretResponse([]);
-      expect(bids).to.be.lengthOf(0);
-    });
-  });
-});
+      var bids = spec.interpretResponse([])
+      expect(bids).to.be.lengthOf(0)
+    })
+  })
+})

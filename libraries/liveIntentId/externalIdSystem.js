@@ -1,6 +1,6 @@
-import { logError } from '../../src/utils.js';
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
-import { submodule } from '../../src/hook.js';
+import { logError } from '../../src/utils.js'
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js'
+import { submodule } from '../../src/hook.js'
 import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeResult, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
 /**
@@ -29,7 +29,7 @@ function initializeClient(configParams) {
 
   const clientDetails = { name: 'prebid', version: '$prebid.version$' }
 
-  const collectConfig = configParams.liCollectConfig ?? {};
+  const collectConfig = configParams.liCollectConfig ?? {}
 
   let integration
   if (collectConfig.appId != null) {
@@ -40,7 +40,7 @@ function initializeClient(configParams) {
     integration = { type: 'custom', publisherId: configParams.publisherId, distributorId: configParams.distributorId }
   }
 
-  const partnerCookies = new Set(configParams.identifiersToResolve ?? []);
+  const partnerCookies = new Set(configParams.identifiersToResolve ?? [])
 
   const collectSettings = { timeout: collectConfig.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT }
 
@@ -60,7 +60,7 @@ function initializeClient(configParams) {
 
   function loadConsent() {
     const consent = {}
-    const usPrivacyString = uspDataHandler.getConsentData();
+    const usPrivacyString = uspDataHandler.getConsentData()
     if (usPrivacyString != null) {
       consent.usPrivacy = { consentString: usPrivacyString }
     }
@@ -68,7 +68,7 @@ function initializeClient(configParams) {
     if (gdprConsent != null) {
       consent.gdpr = gdprConsent
     }
-    const gppConsent = gppDataHandler.getConsentData();
+    const gppConsent = gppDataHandler.getConsentData()
     if (gppConsent != null) {
       consent.gpp = { consentString: gppConsent.gppString, applicableSections: gppConsent.applicableSections }
     }
@@ -106,8 +106,8 @@ function initializeClient(configParams) {
 
 function resolve(configParams, clientRef, callback) {
   function onFailure(error) {
-    logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
-    callback();
+    logError(`${MODULE_NAME}: ID fetch encountered an error: `, error)
+    callback()
   }
 
   const onSuccess = [{ type: 'callback', callback }]
@@ -135,8 +135,8 @@ export const liveIntentExternalIdSubmodule = {
    * @function
    */
   decode(value, config) {
-    const configParams = config?.params ?? {};
-    setUpTreatment(configParams);
+    const configParams = config?.params ?? {}
+    setUpTreatment(configParams)
 
     // Ensure client is initialized and we fired at least one collect request.
     initializeClient(configParams)
@@ -149,15 +149,15 @@ export const liveIntentExternalIdSubmodule = {
    * @function
    */
   getId(config) {
-    const configParams = config?.params ?? {};
-    setUpTreatment(configParams);
+    const configParams = config?.params ?? {}
+    setUpTreatment(configParams)
 
     const clientRef = initializeClient(configParams)
 
-    return { callback: function(cb) { resolve(configParams, clientRef, cb); } };
+    return { callback: function(cb) { resolve(configParams, clientRef, cb) } }
   },
   primaryIds: PRIMARY_IDS,
   eids
-};
+}
 
-submodule('userId', liveIntentExternalIdSubmodule);
+submodule('userId', liveIntentExternalIdSubmodule)

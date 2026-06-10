@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -28,7 +28,7 @@ export const netIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value) {
-    return (value && typeof value['netId'] === 'string') ? { 'netId': value['netId'] } : undefined;
+    return (value && typeof value['netId'] === 'string') ? { 'netId': value['netId'] } : undefined
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -38,7 +38,7 @@ export const netIdSubmodule = {
    */
   getId(config) {
     /* currently not possible */
-    return {};
+    return {}
   },
   eids: {
     'netId': {
@@ -46,6 +46,6 @@ export const netIdSubmodule = {
       atype: 1
     },
   }
-};
+}
 
-submodule('userId', netIdSubmodule);
+submodule('userId', netIdSubmodule)

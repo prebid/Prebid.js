@@ -1,11 +1,11 @@
-import { expect } from 'chai';
-import { NATIVE } from '../../../../src/mediaTypes.js';
-import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils.js';
+import { expect } from 'chai'
+import { NATIVE } from '../../../../src/mediaTypes.js'
+import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils.js'
 
 const DEFAULT_PRICE = 1
 const DEFAULT_BANNER_WIDTH = 300
 const DEFAULT_BANNER_HEIGHT = 250
-const BIDDER_CODE = 'test';
+const BIDDER_CODE = 'test'
 
 describe('bidNativeUtils', function () {
   describe('interpretNativeBid', function () {
@@ -72,9 +72,9 @@ describe('bidNativeUtils', function () {
         }
       }
 
-      let result = interpretNativeBid(bid);
+      let result = interpretNativeBid(bid)
 
-      expect(Object.keys(result)).to.have.members(Object.keys(expectedResponse));
+      expect(Object.keys(result)).to.have.members(Object.keys(expectedResponse))
     })
-  });
-});
+  })
+})

@@ -1,10 +1,10 @@
-import { deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { deepSetValue } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { BANNER } from '../src/mediaTypes.js'
 
-const BIDDER_CODE = 'clickio';
-const IAB_GVL_ID = 1500;
+const BIDDER_CODE = 'clickio'
+const IAB_GVL_ID = 1500
 
 export const converter = ortbConverter({
   context: {
@@ -12,11 +12,11 @@ export const converter = ortbConverter({
     ttl: 30
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'ext.params', bidRequest.params);
-    return imp;
+    const imp = buildImp(bidRequest, context)
+    deepSetValue(imp, 'ext.params', bidRequest.params)
+    return imp
   }
-});
+})
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,31 +31,31 @@ export const spec = {
     }]
   },
   isBidRequestValid(bid) {
-    return true;
+    return true
   },
   interpretResponse(response, request) {
-    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
-    return bids;
+    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids
+    return bids
   },
   getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
-    const { gppString = '', applicableSections = [] } = gppConsent;
-    const queryParams = [];
+    const { gppString = '', applicableSections = [] } = gppConsent
+    const queryParams = []
 
     if (gdprConsent) {
       if (gdprConsent.gdprApplies !== undefined) {
-        queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+        queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`)
       }
       if (gdprConsent.consentString) {
-        queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
+        queryParams.push(`gdpr_consent=${gdprConsent.consentString}`)
       }
     }
     if (uspConsent) {
-      queryParams.push(`us_privacy=${uspConsent}`);
+      queryParams.push(`us_privacy=${uspConsent}`)
     }
-    queryParams.push(`gpp=${gppString}`);
+    queryParams.push(`gpp=${gppString}`)
     if (Array.isArray(applicableSections)) {
       for (const applicableSection of applicableSections) {
-        queryParams.push(`gpp_sid=${applicableSection}`);
+        queryParams.push(`gpp_sid=${applicableSection}`)
       }
     }
     if (syncOptions.iframeEnabled) {
@@ -64,11 +64,11 @@ export const spec = {
           type: 'iframe',
           url: `https://o.clickiocdn.com/cookie_sync_html?${queryParams.join('&')}`
         }
-      ];
+      ]
     } else {
-      return [];
+      return []
     }
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

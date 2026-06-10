@@ -1,4 +1,4 @@
-import { VidazooBaseBidderParams } from "../libraries/vidazooUtils/vidazooTypes.ts";
+import { VidazooBaseBidderParams } from "../libraries/vidazooUtils/vidazooTypes.ts"
 
 export type ShinezRtbBidRequestParams = VidazooBaseBidderParams
 

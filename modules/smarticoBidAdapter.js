@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
 const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',
@@ -7,13 +7,13 @@ const SMARTICO_CONFIG = {
   method: 'POST'
 }
 
-const BIDDER_CODE = 'smartico';
+const BIDDER_CODE = 'smartico'
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.params && bid.params.token && bid.params.placementId);
+    return !!(bid && bid.params && bid.params.token && bid.params.placementId)
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     var i
@@ -68,7 +68,7 @@ export const spec = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       data: { bidParams: bidParams, auctionId: bidderRequest.auctionId }
     }
-    return ServerRequestObjects;
+    return ServerRequestObjects
   },
   interpretResponse: function (serverResponse, bidRequest) {
     var i
@@ -112,10 +112,10 @@ export const spec = {
             advertiserName: ad.title
           }
         }
-        bidResponses.push(bidObject);
+        bidResponses.push(bidObject)
       }
     }
-    return bidResponses;
+    return bidResponses
   }
 }
 registerBidder(spec)

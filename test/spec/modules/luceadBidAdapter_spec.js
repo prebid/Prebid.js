@@ -1,25 +1,25 @@
-import { expect } from 'chai';
-import { dep, spec } from 'modules/luceadBidAdapter.js';
-import sinon from 'sinon';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai'
+import { dep, spec } from 'modules/luceadBidAdapter.js'
+import sinon from 'sinon'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 describe('Lucead Adapter', () => {
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       // noinspection JSCheckFunctionSignatures
-      const adapter = newBidder(spec);
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      const adapter = newBidder(spec)
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('utils functions', function () {
     it('returns false', function () {
-      expect(spec.isDevEnv()).to.be.false;
-    });
-  });
+      expect(spec.isDevEnv()).to.be.false
+    })
+  })
 
   describe('isBidRequestValid', function () {
-    let bid;
+    let bid
     beforeEach(function () {
       bid = {
         bidder: 'lucead',
@@ -27,38 +27,38 @@ describe('Lucead Adapter', () => {
           placementId: '1',
           region: 'eu',
         },
-      };
-    });
+      }
+    })
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-  });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+  })
 
   describe('onBidWon', function () {
-    let sandbox;
+    let sandbox
     const bids = [
       { foo: 'bar', creativeId: 'ssp:improve' },
       { foo: 'bar', creativeId: '123:456' },
-    ];
+    ]
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
-    });
+      sandbox = sinon.createSandbox()
+    })
 
     it('should trigger impression pixel', function () {
-      sandbox.spy(dep, 'fetch');
+      sandbox.spy(dep, 'fetch')
 
       for (const bid of bids) {
-        spec.onBidWon(bid);
-        expect(dep?.fetch?.args[0][0]).to.match(/report\/impression$/);
+        spec.onBidWon(bid)
+        expect(dep?.fetch?.args[0][0]).to.match(/report\/impression$/)
       }
-    });
+    })
 
     afterEach(function () {
-      sandbox.restore();
-    });
-  });
+      sandbox.restore()
+    })
+  })
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -72,28 +72,28 @@ describe('Lucead Adapter', () => {
           placementId: '123',
         }
       }
-    ];
+    ]
 
     const bidderRequest = {
       bidderRequestId: '13aaa3df18bfe4',
       bids: {}
-    };
+    }
 
     it('should have a post method', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.method).to.equal('POST');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.method).to.equal('POST')
+    })
 
     it('should contains a request id equals to the bid id', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(JSON.parse(request.data).bid_requests[0].bid_id).to.equal(bidRequests[0].bidId);
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(JSON.parse(request.data).bid_requests[0].bid_id).to.equal(bidRequests[0].bidId)
+    })
 
     it('should have an url that contains sra keyword', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.contain('/prebid/sra');
-    });
-  });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.url).to.contain('/prebid/sra')
+    })
+  })
 
   describe('interpretResponse', function () {
     const serverResponseBody = {
@@ -116,9 +116,9 @@ describe('Lucead Adapter', () => {
           'is_pa': true
         }
       ]
-    };
+    }
 
-    const serverResponse = { body: serverResponseBody };
+    const serverResponse = { body: serverResponseBody }
 
     const bidRequest = {
       data: JSON.stringify({
@@ -131,10 +131,10 @@ describe('Lucead Adapter', () => {
           'placement_id': '1'
         }],
       }),
-    };
+    }
 
     it('should get correct bid response', function () {
-      const result = spec.interpretResponse(serverResponse, bidRequest);
+      const result = spec.interpretResponse(serverResponse, bidRequest)
 
       // noinspection JSCheckFunctionSignatures
       expect(Object.keys(result.bids[0])).to.have.members([
@@ -148,16 +148,16 @@ describe('Lucead Adapter', () => {
         'netRevenue',
         'ad',
         'meta',
-      ]);
-    });
+      ])
+    })
 
     it('should return bid empty response', function () {
-      const serverResponse = { body: { bids: [{ cpm: 0 }] } };
-      const bidRequest = { data: '{}' };
-      const result = spec.interpretResponse(serverResponse, bidRequest);
-      expect(result.bids[0].ad).to.be.equal('');
-      expect(result.bids[0].cpm).to.be.equal(0);
-    });
+      const serverResponse = { body: { bids: [{ cpm: 0 }] } }
+      const bidRequest = { data: '{}' }
+      const result = spec.interpretResponse(serverResponse, bidRequest)
+      expect(result.bids[0].ad).to.be.equal('')
+      expect(result.bids[0].cpm).to.be.equal(0)
+    })
 
     it('should add advertiserDomains', function () {
       const bidRequest = {
@@ -167,10 +167,10 @@ describe('Lucead Adapter', () => {
             placementId: '1',
           }
         })
-      };
+      }
 
-      const result = spec.interpretResponse(serverResponse, bidRequest);
-      expect(Object.keys(result.bids[0].meta)).to.include.members(['advertiserDomains']);
-    });
-  });
-});
+      const result = spec.interpretResponse(serverResponse, bidRequest)
+      expect(Object.keys(result.bids[0].meta)).to.include.members(['advertiserDomains'])
+    })
+  })
+})

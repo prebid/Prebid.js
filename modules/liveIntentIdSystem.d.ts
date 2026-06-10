@@ -1,4 +1,4 @@
-export type LiveIntentIdSystemModuleName = 'liveIntentId';
+export type LiveIntentIdSystemModuleName = 'liveIntentId'
 
 export interface LiveIntentCollectConfig {
   /**
@@ -47,7 +47,7 @@ export type LiveIntentRequestedAttributesOverrides = Partial<{
   segments: boolean;
   nexxen: boolean;
   fpid: boolean
-}>;
+}>
 
 export type LiveIntentFpid = {
   /**

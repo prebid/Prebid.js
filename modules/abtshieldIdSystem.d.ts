@@ -21,4 +21,4 @@ export interface AbtshieldIdConfig {
   };
 }
 
-export {};
+export {}

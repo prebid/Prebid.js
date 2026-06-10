@@ -5,10 +5,10 @@
  * @requires module:modules/userId
  */
 
-import { logError } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { logError } from '../src/utils.js'
+import { ajax } from '../src/ajax.js'
 import { submodule } from '../src/hook.js'
-import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
+import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -17,7 +17,7 @@ import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
  * @typedef {import('./unifiedIdSystem.d.ts').UnifiedId} UnifiedId
  */
 
-const MODULE_NAME = 'unifiedId';
+const MODULE_NAME = 'unifiedId'
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {
@@ -37,7 +37,7 @@ export const unifiedIdSubmodule = {
    * @returns {{tdid: UnifiedId}|undefined}
    */
   decode(value) {
-    return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;
+    return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -46,35 +46,35 @@ export const unifiedIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    const configParams = (config && config.params) || {};
+    const configParams = (config && config.params) || {}
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
-      logError('User ID - unifiedId submodule requires either partner or url to be defined');
-      return;
+      logError('User ID - unifiedId submodule requires either partner or url to be defined')
+      return
     }
     // use protocol relative urls for http or https
-    const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
+    const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`
 
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          let responseObj;
+          let responseObj
           if (response) {
             try {
-              responseObj = JSON.parse(response);
+              responseObj = JSON.parse(response)
             } catch (error) {
-              logError(error);
+              logError(error)
             }
           }
-          callback(responseObj);
+          callback(responseObj)
         },
         error: error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-          callback();
+          logError(`${MODULE_NAME}: ID fetch encountered an error`, error)
+          callback()
         }
-      };
-      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-    };
-    return { callback: resp };
+      }
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true })
+    }
+    return { callback: resp }
   },
   eids: {
     tdid: {
@@ -84,6 +84,6 @@ export const unifiedIdSubmodule = {
       matcher: 'adserver.org'
     }
   }
-};
+}
 
-submodule('userId', unifiedIdSubmodule);
+submodule('userId', unifiedIdSubmodule)

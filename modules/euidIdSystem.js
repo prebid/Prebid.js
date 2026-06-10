@@ -5,12 +5,12 @@
  * @requires module:modules/userId
  */
 
-import { logInfo, logWarn, deepAccess } from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { logInfo, logWarn, deepAccess } from '../src/utils.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -25,37 +25,37 @@ import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../librar
 /**
  * @type {EuidIdSystemModuleName}
  */
-const MODULE_NAME = 'euid';
-const MODULE_REVISION = Uid2CodeVersion;
-const PREBID_VERSION = '$prebid.version$';
-const EUID_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-EUIDModule-${MODULE_REVISION}`;
-const GVLID_TTD = 21; // The Trade Desk
-const LOG_PRE_FIX = 'EUID: ';
-const ADVERTISING_COOKIE = '__euid_advertising_token';
+const MODULE_NAME = 'euid'
+const MODULE_REVISION = Uid2CodeVersion
+const PREBID_VERSION = '$prebid.version$'
+const EUID_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-EUIDModule-${MODULE_REVISION}`
+const GVLID_TTD = 21 // The Trade Desk
+const LOG_PRE_FIX = 'EUID: '
+const ADVERTISING_COOKIE = '__euid_advertising_token'
 
 // eslint-disable-next-line no-unused-vars
-const EUID_TEST_URL = 'https://integ.euid.eu';
-const EUID_PROD_URL = 'https://prod.euid.eu';
-const EUID_BASE_URL = EUID_PROD_URL;
+const EUID_TEST_URL = 'https://integ.euid.eu'
+const EUID_PROD_URL = 'https://prod.euid.eu'
+const EUID_BASE_URL = EUID_PROD_URL
 
 function createLogger(logger, prefix) {
   return function (...strings) {
-    logger(prefix + ' ', ...strings);
+    logger(prefix + ' ', ...strings)
   }
 }
-const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
-const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
+const _logInfo = createLogger(logInfo, LOG_PRE_FIX)
+const _logWarn = createLogger(logWarn, LOG_PRE_FIX)
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 function hasWriteToDeviceConsent(consentData) {
-  const gdprApplies = consentData?.gdprApplies === true;
+  const gdprApplies = consentData?.gdprApplies === true
   const localStorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
   const prebidVendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID_TTD.toString()}`)
   if (gdprApplies && (!localStorageConsent || !prebidVendorConsent)) {
-    return false;
+    return false
   }
-  return true;
+  return true
 }
 
 /** @type {IdProviderSpec<EuidIdSystemModuleName>} */
@@ -78,9 +78,9 @@ export const euidIdSubmodule = {
    * @returns {{euid:{ id: string } }} or undefined if value doesn't exists
    */
   decode(value) {
-    const result = decodeImpl(value);
-    _logInfo('EUID decode returned', result);
-    return result;
+    const result = decodeImpl(value)
+    _logInfo('EUID decode returned', result)
+    return result
   },
 
   /**
@@ -92,13 +92,13 @@ export const euidIdSubmodule = {
    */
   getId(config, consentData) {
     if (consentData?.gdpr?.gdprApplies !== true) {
-      logWarn('EUID is intended for use within the EU. The module will not run when GDPR does not apply.');
-      return;
+      logWarn('EUID is intended for use within the EU. The module will not run when GDPR does not apply.')
+      return
     }
     if (!hasWriteToDeviceConsent(consentData?.gdpr)) {
       // The module cannot operate without this permission.
       _logWarn(`Unable to use EUID module due to insufficient consent. The EUID module requires storage permission.`)
-      return;
+      return
     }
 
     const mappedConfig = {
@@ -108,7 +108,7 @@ export const euidIdSubmodule = {
       storage: config?.params?.storage ?? 'localStorage',
       clientId: EUID_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
-    };
+    }
 
     if (FEATURES.UID2_CSTG) {
       mappedConfig.cstg = {
@@ -117,37 +117,37 @@ export const euidIdSubmodule = {
         ...extractIdentityFromParams(config?.params ?? {})
       }
     }
-    _logInfo(`EUID configuration loaded and mapped.`, mappedConfig);
-    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
-    _logInfo(`EUID getId returned`, result);
-    return result;
+    _logInfo(`EUID configuration loaded and mapped.`, mappedConfig)
+    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn)
+    _logInfo(`EUID getId returned`, result)
+    return result
   },
   eids: {
     'euid': {
       source: 'euid.eu',
       atype: 3,
       getValue: function(data) {
-        return data.id;
+        return data.id
       }
     },
   },
-};
+}
 
 function decodeImpl(value) {
   if (typeof value === 'string') {
-    _logInfo('Found server-only token. Refresh is unavailable for this token.');
-    const result = { euid: { id: value } };
-    return result;
+    _logInfo('Found server-only token. Refresh is unavailable for this token.')
+    const result = { euid: { id: value } }
+    return result
   }
   if (value.latestToken === 'optout') {
-    _logInfo('Found optout token.  Refresh is unavailable for this token.');
-    return { euid: { optout: true } };
+    _logInfo('Found optout token.  Refresh is unavailable for this token.')
+    return { euid: { optout: true } }
   }
   if (Date.now() < value.latestToken.identity_expires) {
-    return { euid: { id: value.latestToken.advertising_token } };
+    return { euid: { id: value.latestToken.advertising_token } }
   }
-  return null;
+  return null
 }
 
 // Register submodule for userId
-submodule('userId', euidIdSubmodule);
+submodule('userId', euidIdSubmodule)

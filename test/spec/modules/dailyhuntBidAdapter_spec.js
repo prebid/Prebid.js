@@ -1,14 +1,14 @@
-import { expect } from 'chai';
-import { spec } from 'modules/dailyhuntBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/dailyhuntBidAdapter.js'
 
-const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
+const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=dailyhunt'
+const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=dailyhunt'
 
 const _encodeURIComponent = function (a) {
   if (!a) { return }
-  let b = window.encodeURIComponent(a);
-  b = b.replace(/'/g, '%27');
-  return b;
+  let b = window.encodeURIComponent(a)
+  b = b.replace(/'/g, '%27')
+  return b
 }
 
 describe('DailyhuntAdapter', function () {
@@ -20,19 +20,19 @@ describe('DailyhuntAdapter', function () {
         publisher_id: 1,
         partner_name: 'dailyhunt'
       }
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
+      invalidBid.params = {}
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
   describe('buildRequests', function() {
     const bidRequests = [
       {
@@ -61,7 +61,7 @@ describe('DailyhuntAdapter', function () {
         auctionId: '1d1a030790a475',
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
-    ];
+    ]
     const nativeBidRequests = [
       {
         bidder: 'dailyhunt',
@@ -94,7 +94,7 @@ describe('DailyhuntAdapter', function () {
         auctionId: '1d1a030790a475',
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
-    ];
+    ]
     const videoBidRequests = [
       {
         bidder: 'dailyhunt',
@@ -120,7 +120,7 @@ describe('DailyhuntAdapter', function () {
         auctionId: '1d1a030790a475',
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
-    ];
+    ]
     const bidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -133,7 +133,7 @@ describe('DailyhuntAdapter', function () {
       'refererInfo': {
         'referer': 'http://m.dailyhunt.in/'
       }
-    };
+    }
     const nativeBidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -146,7 +146,7 @@ describe('DailyhuntAdapter', function () {
       'refererInfo': {
         'referer': 'http://m.dailyhunt.in/'
       }
-    };
+    }
     const videoBidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -159,26 +159,26 @@ describe('DailyhuntAdapter', function () {
       'refererInfo': {
         'referer': 'http://m.dailyhunt.in/'
       }
-    };
+    }
 
     it('sends display bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.url).to.equal(PROD_PREBID_ENDPOINT_URL);
-      expect(request.method).to.equal('POST');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.url).to.equal(PROD_PREBID_ENDPOINT_URL)
+      expect(request.method).to.equal('POST')
+    })
 
     it('sends native bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(nativeBidRequests, nativeBidderRequest)[0];
-      expect(request.url).to.equal(PROD_PREBID_ENDPOINT_URL);
-      expect(request.method).to.equal('POST');
-    });
+      const request = spec.buildRequests(nativeBidRequests, nativeBidderRequest)[0]
+      expect(request.url).to.equal(PROD_PREBID_ENDPOINT_URL)
+      expect(request.method).to.equal('POST')
+    })
 
     it('sends video bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest)[0];
-      expect(request.url).to.equal(PROD_PREBID_ENDPOINT_URL);
-      expect(request.method).to.equal('POST');
-    });
-  });
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest)[0]
+      expect(request.url).to.equal(PROD_PREBID_ENDPOINT_URL)
+      expect(request.method).to.equal('POST')
+    })
+  })
   describe('interpretResponse', function () {
     const bidResponses = {
       id: 'da32def7-6779-403c-ada7-0b201dbc9744',
@@ -268,7 +268,7 @@ describe('DailyhuntAdapter', function () {
           dailyhunt: 119
         }
       }
-    };
+    }
 
     it('should get correct bid response', function () {
       const expectedResponse = [
@@ -341,7 +341,7 @@ describe('DailyhuntAdapter', function () {
           adomain: 'dailyhunt',
           vastXml: 'adm',
         },
-      ];
+      ]
       const bidderRequest = {
         bids: [
           {
@@ -376,11 +376,11 @@ describe('DailyhuntAdapter', function () {
           },
         ]
       }
-      const result = spec.interpretResponse({ body: bidResponses }, bidderRequest);
+      const result = spec.interpretResponse({ body: bidResponses }, bidderRequest)
       result.forEach((r, i) => {
-        expect(Object.keys(r)).to.have.members(Object.keys(expectedResponse[i]));
-      });
-    });
+        expect(Object.keys(r)).to.have.members(Object.keys(expectedResponse[i]))
+      })
+    })
   })
   describe('onBidWon', function () {
     it('should hit win url when bid won', function () {
@@ -396,8 +396,8 @@ describe('DailyhuntAdapter', function () {
         ad: 'adm',
         mediaType: 'banner',
         winUrl: 'winUrl'
-      };
-      expect(spec.onBidWon(bid)).to.equal(undefined);
-    });
+      }
+      expect(spec.onBidWon(bid)).to.equal(undefined)
+    })
   })
 })

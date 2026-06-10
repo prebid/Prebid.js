@@ -1,8 +1,8 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { _each, isEmpty, parseSizesInput } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { _each, isEmpty, parseSizesInput } from '../src/utils.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { ajax } from '../src/ajax.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,9 +11,9 @@ import { ajax } from '../src/ajax.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'gnet';
-const ENDPOINT = 'https://service.gnetrtb.com/api';
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const BIDDER_CODE = 'gnet'
+const ENDPOINT = 'https://service.gnetrtb.com/api'
+const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,7 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.websiteId && bid.params.adunitId);
+    return !!(bid.params.websiteId && bid.params.adunitId)
   },
 
   /**
@@ -37,24 +37,24 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bidRequests = [];
+    const bidRequests = []
     // TODO: is 'page' the right value?
-    const referer = bidderRequest.refererInfo.page;
+    const referer = bidderRequest.refererInfo.page
 
     _each(validBidRequests, (request) => {
-      const data = {};
+      const data = {}
 
-      data.referer = referer;
-      data.adUnitCode = request.adUnitCode;
-      data.bidId = request.bidId;
-      data.transactionId = request.ortb2Imp?.ext?.tid;
-      data.gftuid = _getCookie();
+      data.referer = referer
+      data.adUnitCode = request.adUnitCode
+      data.bidId = request.bidId
+      data.transactionId = request.ortb2Imp?.ext?.tid
+      data.gftuid = _getCookie()
 
-      data.sizes = parseSizesInput(request.sizes);
+      data.sizes = parseSizesInput(request.sizes)
 
-      data.params = request.params;
+      data.params = request.params
 
-      const payloadString = JSON.stringify(data);
+      const payloadString = JSON.stringify(data)
 
       bidRequests.push({
         method: 'POST',
@@ -63,10 +63,10 @@ export const spec = {
           withCredentials: false,
         },
         data: payloadString
-      });
-    });
+      })
+    })
 
-    return bidRequests;
+    return bidRequests
   },
 
   /**
@@ -77,17 +77,17 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, requests) {
     if (typeof serverResponse !== 'object') {
-      return [];
+      return []
     }
 
-    const res = serverResponse && serverResponse.body;
+    const res = serverResponse && serverResponse.body
 
     if (isEmpty(res)) {
-      return [];
+      return []
     }
 
     if (res.bids) {
-      const bids = [];
+      const bids = []
       _each(res.bids, (bidData) => {
         const bid = {
           requestId: bidData.bidId,
@@ -102,27 +102,27 @@ export const spec = {
           },
           creativeId: bidData.creativeId,
           netRevenue: true,
-        };
-        bids.push(bid);
-      });
+        }
+        bids.push(bid)
+      })
 
-      return bids;
+      return bids
     }
 
-    return [];
+    return []
   },
 
   onBidWon: function (bid) {
     ajax(ENDPOINT + '/bid-won', null, JSON.stringify(bid), {
       method: 'POST',
-    });
+    })
 
-    return true;
+    return true
   },
-};
-
-function _getCookie() {
-  return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : null;
 }
 
-registerBidder(spec);
+function _getCookie() {
+  return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : null
+}
+
+registerBidder(spec)

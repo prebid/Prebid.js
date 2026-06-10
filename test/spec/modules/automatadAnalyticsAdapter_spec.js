@@ -1,10 +1,10 @@
-import * as events from 'src/events';
-import * as utils from 'src/utils.js';
+import * as events from 'src/events'
+import * as utils from 'src/utils.js'
 
-import spec, { self as exports } from 'modules/automatadAnalyticsAdapter.js';
+import spec, { self as exports } from 'modules/automatadAnalyticsAdapter.js'
 
-import { EVENTS } from 'src/constants.js';
-import { expect } from 'chai';
+import { EVENTS } from 'src/constants.js'
+import { expect } from 'chai'
 
 const obj = {
   auctionInitHandler: (args) => {},
@@ -40,30 +40,30 @@ const CONFIG_WITH_DEBUG = {
 }
 
 describe('Automatad Analytics Adapter', () => {
-  var sandbox, clock;
+  var sandbox, clock
 
   describe('Adapter Setup Configuration', () => {
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.createSandbox()
       sandbox.stub(utils, 'logMessage')
-      sandbox.stub(events, 'getEvents').returns([]);
-      sandbox.stub(utils, 'logError');
-    });
+      sandbox.stub(events, 'getEvents').returns([])
+      sandbox.stub(utils, 'logError')
+    })
     afterEach(() => {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
 
     it('Should log error and return false if nothing is passed as the param in the enable analytics call', () => {
       spec.enableAnalytics()
 
       expect(utils.logError.called).to.equal(true)
-    });
+    })
 
     it('Should log error and return false if object type is not passed as the param in the enable analytics call', () => {
       spec.enableAnalytics('hello world')
 
       expect(utils.logError.called).to.equal(true)
-    });
+    })
 
     it('Should log error and return false if options is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
@@ -71,7 +71,7 @@ describe('Automatad Analytics Adapter', () => {
       })
 
       expect(utils.logError.called).to.equal(true)
-    });
+    })
     it('Should log error and return false if pub id is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
         provider: 'atmtdAnalyticsAdapter',
@@ -81,7 +81,7 @@ describe('Automatad Analytics Adapter', () => {
       })
 
       expect(utils.logError.called).to.equal(true)
-    });
+    })
     it('Should log error and return false if pub id is not defined in the enable analytics call', () => {
       spec.enableAnalytics({
         provider: 'atmtdAnalyticsAdapter',
@@ -91,7 +91,7 @@ describe('Automatad Analytics Adapter', () => {
       })
 
       expect(utils.logError.called).to.equal(true)
-    });
+    })
     it('Should successfully configure the adapter and set global log debug messages flag to false', () => {
       spec.enableAnalytics({
         provider: 'atmtdAnalyticsAdapter',
@@ -100,14 +100,14 @@ describe('Automatad Analytics Adapter', () => {
           siteID: '421',
           logDebug: false
         }
-      });
+      })
       expect(utils.logError.called).to.equal(false)
       expect(utils.logMessage.called).to.equal(true)
-      spec.disableAnalytics();
-    });
+      spec.disableAnalytics()
+    })
     it('Should successfully configure the adapter and set global log debug messages flag to true', () => {
-      sandbox.stub(exports, 'initializeQueue').callsFake(() => {});
-      sandbox.stub(exports, 'addGPTHandlers').callsFake(() => {});
+      sandbox.stub(exports, 'initializeQueue').callsFake(() => {})
+      sandbox.stub(exports, 'addGPTHandlers').callsFake(() => {})
       const config = {
         provider: 'atmtdAnalyticsAdapter',
         options: {
@@ -122,13 +122,13 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.initializeQueue.called).to.equal(true)
       expect(exports.addGPTHandlers.called).to.equal(true)
       expect(utils.logMessage.called).to.equal(true)
-      spec.disableAnalytics();
-    });
-  });
+      spec.disableAnalytics()
+    })
+  })
 
   describe('Behaviour of the adapter when the sdk has loaded', () => {
     before(() => {
-      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      spec.enableAnalytics(CONFIG_WITH_DEBUG)
 
       global.window.atmtdAnalytics = obj
       exports.qBeingUsed = false
@@ -136,19 +136,19 @@ describe('Automatad Analytics Adapter', () => {
       Object.keys(obj).forEach((fn) => sandbox.spy(global.window.atmtdAnalytics, fn))
     })
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(events, 'getEvents').returns([]);
-      sandbox.stub(utils, 'logMessage');
-      sandbox.stub(utils, 'logError');
-    });
+      sandbox = sinon.createSandbox()
+      sandbox.stub(events, 'getEvents').returns([])
+      sandbox.stub(utils, 'logMessage')
+      sandbox.stub(utils, 'logError')
+    })
     afterEach(() => {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
     after(() => {
       const handlers = global.window.atmtdAnalytics
       Object.keys(handlers).forEach((handler) => global.window.atmtdAnalytics[handler].resetHistory())
-      global.window.atmtdAnalytics = undefined;
-      spec.disableAnalytics();
+      global.window.atmtdAnalytics = undefined
+      spec.disableAnalytics()
       exports.qBeingUsed = false
       exports.qTraversalComplete = undefined
     })
@@ -156,70 +156,70 @@ describe('Automatad Analytics Adapter', () => {
     it('Should call the auctionInitHandler when the auction init event is fired', () => {
       events.emit(AUCTION_INIT, { type: AUCTION_INIT })
       expect(global.window.atmtdAnalytics.auctionInitHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the bidRequested when the bidRequested event is fired', () => {
       events.emit(BID_REQUESTED, { type: BID_REQUESTED })
       expect(global.window.atmtdAnalytics.bidRequestedHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the bidRejected when the bidRejected event is fired', () => {
       events.emit(BID_REJECTED, { type: BID_REJECTED })
       expect(global.window.atmtdAnalytics.bidRejectedHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the bidResponseHandler when the bidResponse event is fired', () => {
       events.emit(BID_RESPONSE, { type: BID_RESPONSE })
       expect(global.window.atmtdAnalytics.bidResponseHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the bidderDoneHandler when the bidderDone event is fired', () => {
       events.emit(BIDDER_DONE, { type: BIDDER_DONE })
       expect(global.window.atmtdAnalytics.bidderDoneHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the bidWonHandler when the bidWon event is fired', () => {
       events.emit(BID_WON, { type: BID_WON })
       expect(global.window.atmtdAnalytics.bidWonHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the noBidHandler when the noBid event is fired', () => {
       events.emit(NO_BID, { type: NO_BID })
       expect(global.window.atmtdAnalytics.noBidHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the bidTimeoutHandler when the bidTimeout event is fired', () => {
       events.emit(BID_TIMEOUT, { type: BID_TIMEOUT })
       expect(global.window.atmtdAnalytics.bidderTimeoutHandler.called).to.equal(true)
-    });
+    })
 
     it('Should call the auctionDebugHandler when the auctionDebug event is fired', () => {
       events.emit(AUCTION_DEBUG, { type: AUCTION_DEBUG })
       expect(global.window.atmtdAnalytics.auctionDebugHandler.called).to.equal(true)
-    });
-  });
+    })
+  })
 
   describe('Behaviour of the adapter when the SDK has not loaded', () => {
     before(() => {
-      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      spec.enableAnalytics(CONFIG_WITH_DEBUG)
     })
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(events, 'getEvents').returns([]);
-      sandbox.stub(utils, 'logMessage');
-      sandbox.stub(utils, 'logError');
+      sandbox = sinon.createSandbox()
+      sandbox.stub(events, 'getEvents').returns([])
+      sandbox.stub(utils, 'logMessage')
+      sandbox.stub(utils, 'logError')
 
       global.window.atmtdAnalytics = undefined
       exports.__atmtdAnalyticsQueue.length = 0
       sandbox.stub(exports.__atmtdAnalyticsQueue, 'push').callsFake((args) => {
-        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args]);
+        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args])
       })
-    });
+    })
     afterEach(() => {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
     after(() => {
-      spec.disableAnalytics();
+      spec.disableAnalytics()
     })
 
     it('Should push to the que when the auctionInit event is fired', () => {
@@ -229,7 +229,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(AUCTION_INIT)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(AUCTION_INIT)
-    });
+    })
 
     it('Should push to the que when the bidResponse event is fired', () => {
       events.emit(BID_RESPONSE, { type: BID_RESPONSE })
@@ -238,7 +238,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_RESPONSE)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_RESPONSE)
-    });
+    })
 
     it('Should push to the que when the bidRequested event is fired', () => {
       events.emit(BID_REQUESTED, { type: BID_REQUESTED })
@@ -247,7 +247,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_REQUESTED)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_REQUESTED)
-    });
+    })
 
     it('Should push to the que when the bidRejected event is fired', () => {
       events.emit(BID_REJECTED, { type: BID_REJECTED })
@@ -256,7 +256,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_REJECTED)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_REJECTED)
-    });
+    })
 
     it('Should push to the que when the bidderDone event is fired', () => {
       events.emit(BIDDER_DONE, { type: BIDDER_DONE })
@@ -265,7 +265,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BIDDER_DONE)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BIDDER_DONE)
-    });
+    })
 
     it('Should push to the que when the bidWon event is fired', () => {
       events.emit(BID_WON, { type: BID_WON })
@@ -274,7 +274,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_WON)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_WON)
-    });
+    })
 
     it('Should push to the que when the noBid event is fired', () => {
       events.emit(NO_BID, { type: NO_BID })
@@ -283,7 +283,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(NO_BID)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(NO_BID)
-    });
+    })
 
     it('Should push to the que when the auctionDebug is fired', () => {
       events.emit(AUCTION_DEBUG, { type: AUCTION_DEBUG })
@@ -292,7 +292,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(AUCTION_DEBUG)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(AUCTION_DEBUG)
-    });
+    })
 
     it('Should push to the que when the bidderTimeout event is fired', () => {
       events.emit(BID_TIMEOUT, { type: BID_TIMEOUT })
@@ -301,15 +301,15 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_TIMEOUT)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_TIMEOUT)
-    });
-  });
+    })
+  })
 
   describe('Behaviour of the adapter when the SDK has loaded midway', () => {
     before(() => {
-      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      spec.enableAnalytics(CONFIG_WITH_DEBUG)
     })
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.createSandbox()
 
       global.window.atmtdAnalytics = undefined
 
@@ -319,15 +319,15 @@ describe('Automatad Analytics Adapter', () => {
       exports.retryCount = 0
       exports.__atmtdAnalyticsQueue.length = 0
 
-      clock = sandbox.useFakeTimers();
+      clock = sandbox.useFakeTimers()
 
       sandbox.spy(exports.__atmtdAnalyticsQueue, 'push')
-    });
+    })
     afterEach(() => {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
     after(() => {
-      spec.disableAnalytics();
+      spec.disableAnalytics()
     })
 
     it('Should push to the que when the auctionInit event is fired and push to the que even after SDK has loaded after auctionInit event', () => {
@@ -348,7 +348,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[1][1].type).to.equal(BID_RESPONSE)
       expect(exports.qBeingUsed).to.equal(true)
       expect(exports.qTraversalComplete).to.equal(undefined)
-    });
+    })
 
     it('Should push to the que when the auctionInit event is fired and push to the analytics adapter handler after the que is processed', () => {
       expect(exports.qBeingUsed).to.equal(undefined)
@@ -380,8 +380,8 @@ describe('Automatad Analytics Adapter', () => {
       expect(global.window.atmtdAnalytics.auctionInitHandler.calledOnce).to.equal(true)
       expect(global.window.atmtdAnalytics.noBidHandler.calledOnce).to.equal(true)
       expect(global.window.atmtdAnalytics.bidResponseHandler.calledOnce).to.equal(true)
-    });
-  });
+    })
+  })
 
   describe('Process Events from Que when SDK still has not loaded', () => {
     before(() => {
@@ -391,29 +391,29 @@ describe('Automatad Analytics Adapter', () => {
           publisherID: '230',
           siteID: '421'
         }
-      });
+      })
       global.window.atmtdAnalytics = undefined
 
       sandbox.stub(exports.__atmtdAnalyticsQueue, 'push').callsFake((args) => {
-        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args]);
+        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args])
       })
-      exports.queuePointer = 0;
-      exports.retryCount = 0;
+      exports.queuePointer = 0
+      exports.retryCount = 0
     })
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox = sinon.createSandbox()
+      sandbox.stub(events, 'getEvents').returns([])
       sandbox.spy(exports, 'prettyLog')
       sandbox.spy(exports, 'processEvents')
 
-      clock = sandbox.useFakeTimers();
+      clock = sandbox.useFakeTimers()
       exports.__atmtdAnalyticsQueue.length = 0
-    });
+    })
     afterEach(() => {
-      sandbox.restore();
-      exports.queuePointer = 0;
-      exports.retryCount = 0;
-      spec.disableAnalytics();
+      sandbox.restore()
+      exports.queuePointer = 0
+      exports.retryCount = 0
+      spec.disableAnalytics()
     })
 
     it('Should retry processing auctionInit in certain intervals', () => {
@@ -511,7 +511,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.queuePointer).to.equal(0)
       expect(exports.processEvents.callCount).to.equal(5)
     })
-  });
+  })
 
   describe('Process Events from Que when SDK has loaded', () => {
     before(() => {
@@ -521,8 +521,8 @@ describe('Automatad Analytics Adapter', () => {
           publisherID: '230',
           siteID: '421'
         }
-      });
-      sandbox = sinon.createSandbox();
+      })
+      sandbox = sinon.createSandbox()
       const obj = {
         auctionInitHandler: (args) => {},
         bidResponseHandler: (args) => {},
@@ -537,13 +537,13 @@ describe('Automatad Analytics Adapter', () => {
         bidRejectedHandler: (args) => {}
       }
 
-      global.window.atmtdAnalytics = obj;
+      global.window.atmtdAnalytics = obj
 
       Object.keys(obj).forEach((fn) => sandbox.spy(global.window.atmtdAnalytics, fn))
-      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.stub(events, 'getEvents').returns([])
       sandbox.spy(exports, 'prettyLog')
-      exports.retryCount = 0;
-      exports.queuePointer = 0;
+      exports.retryCount = 0
+      exports.queuePointer = 0
       exports.__atmtdAnalyticsQueue = [
         [AUCTION_INIT, { type: AUCTION_INIT }],
         [BID_RESPONSE, { type: BID_RESPONSE }],
@@ -557,12 +557,12 @@ describe('Automatad Analytics Adapter', () => {
         ['slotRenderEnded', { type: 'slotRenderEnded' }],
         ['impressionViewable', { type: 'impressionViewable' }]
       ]
-    });
+    })
     afterEach(() => {
-      sandbox.restore();
+      sandbox.restore()
     })
     after(() => {
-      spec.disableAnalytics();
+      spec.disableAnalytics()
     })
 
     it('Should make calls to appropriate SDK event handlers', () => {
@@ -584,7 +584,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(global.window.atmtdAnalytics.slotRenderEndedGPTHandler.calledOnce).to.equal(true)
       expect(global.window.atmtdAnalytics.impressionViewableHandler.calledOnce).to.equal(true)
     })
-  });
+  })
 
   describe('Prettylog fn tests', () => {
     beforeEach(() => {
@@ -616,5 +616,5 @@ describe('Automatad Analytics Adapter', () => {
       expect(utils.logInfo.callCount).to.equal(2)
       expect(utils.logError.called).to.equal(true)
     })
-  });
-});
+  })
+})

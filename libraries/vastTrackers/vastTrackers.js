@@ -1,11 +1,11 @@
-import { updateVast } from '../../src/videoCache.js';
-import { VIDEO } from '../../src/mediaTypes.js';
-import { isEmptyStr, logError, logWarn } from '../../src/utils.js';
-import { isArray, isPlainObject, isStr } from '../../src/utils/objects.js';
-import { isActivityAllowed } from '../../src/activities/rules.js';
-import { ACTIVITY_REPORT_ANALYTICS } from '../../src/activities/activities.js';
-import { activityParams } from '../../src/activities/activityParams.js';
-import { auctionManager } from '../../src/auctionManager.js';
+import { updateVast } from '../../src/videoCache.js'
+import { VIDEO } from '../../src/mediaTypes.js'
+import { isEmptyStr, logError, logWarn } from '../../src/utils.js'
+import { isArray, isPlainObject, isStr } from '../../src/utils/objects.js'
+import { isActivityAllowed } from '../../src/activities/rules.js'
+import { ACTIVITY_REPORT_ANALYTICS } from '../../src/activities/activities.js'
+import { activityParams } from '../../src/activities/activityParams.js'
+import { auctionManager } from '../../src/auctionManager.js'
 
 /**
  * VAST Trackers Structure:
@@ -19,81 +19,81 @@ import { auctionManager } from '../../src/auctionManager.js';
  * }
  */
 
-const vastTrackers = [];
-let enabled = false;
+const vastTrackers = []
+let enabled = false
 
 export function reset() {
-  vastTrackers.length = 0;
+  vastTrackers.length = 0
 }
 
 export function enable() {
   if (!enabled) {
-    updateVast.before(addTrackersToResponse);
-    enabled = true;
+    updateVast.before(addTrackersToResponse)
+    enabled = true
   }
 }
 
 export function disable() {
   if (enabled) {
-    updateVast.getHooks({ hook: addTrackersToResponse }).remove();
-    enabled = false;
+    updateVast.getHooks({ hook: addTrackersToResponse }).remove()
+    enabled = false
   }
 }
 
 export function updateVastHook({ index = auctionManager.index } = {}) {
   return function addTrackersToResponse(next, bidResponse) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
-      const vastTrackers = getVastTrackers(bidResponse, { index });
+      const vastTrackers = getVastTrackers(bidResponse, { index })
       if (vastTrackers) {
-        bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml);
-        bidResponse.vastTrackers = vastTrackers;
+        bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml)
+        bidResponse.vastTrackers = vastTrackers
       }
     }
-    next(bidResponse);
+    next(bidResponse)
   }
 }
 
-const addTrackersToResponse = updateVastHook();
-enable();
+const addTrackersToResponse = updateVastHook()
+enable()
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
   if (typeof trackerFn === 'function') {
-    vastTrackers.push({ 'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn });
+    vastTrackers.push({ 'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn })
   }
 }
 
 export function insertVastTrackers(trackers, vastXml) {
-  const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
-  const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
+  const doc = new DOMParser().parseFromString(vastXml, 'text/xml')
+  const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine')
   try {
     if (wrappers.length) {
       wrappers.forEach(wrapper => {
         if (isArray(trackers.impression) && trackers.impression.length) {
           trackers.impression.forEach(trackingUrl => {
-            const impression = doc.createElement('Impression');
-            impression.appendChild(doc.createCDATASection(trackingUrl));
-            wrapper.appendChild(impression);
-          });
+            const impression = doc.createElement('Impression')
+            impression.appendChild(doc.createCDATASection(trackingUrl))
+            wrapper.appendChild(impression)
+          })
         }
 
         if (isArray(trackers.error) && trackers.error.length) {
           trackers.error.forEach(trackingUrl => {
-            const errorElement = doc.createElement('Error');
-            errorElement.appendChild(doc.createCDATASection(trackingUrl));
-            wrapper.appendChild(errorElement);
-          });
+            const errorElement = doc.createElement('Error')
+            errorElement.appendChild(doc.createCDATASection(trackingUrl))
+            wrapper.appendChild(errorElement)
+          })
         }
 
         if (isArray(trackers.trackingEvents) && trackers.trackingEvents.length) {
-          insertLinearTrackingEvents(doc, wrapper, trackers.trackingEvents);
+          insertLinearTrackingEvents(doc, wrapper, trackers.trackingEvents)
         }
-      });
-      vastXml = new XMLSerializer().serializeToString(doc);
+      })
+      vastXml = new XMLSerializer().serializeToString(doc)
     }
   } catch (error) {
-    logError('an error happened trying to insert trackers in vastXml');
+    logError('an error happened trying to insert trackers in vastXml')
   }
-  return vastXml;
+  return vastXml
 }
 
 /**
@@ -104,32 +104,32 @@ export function insertVastTrackers(trackers, vastXml) {
  * @param {Array<{event: string, url: string}>} trackers - Array of tracking event objects
  */
 function insertLinearTrackingEvents(doc, wrapper, trackers) {
-  const linearElements = wrapper.querySelectorAll('Creatives Creative Linear');
+  const linearElements = wrapper.querySelectorAll('Creatives Creative Linear')
 
   if (linearElements.length > 0) {
     linearElements.forEach(linear => {
-      let trackingEvents = linear.querySelector('TrackingEvents');
+      let trackingEvents = linear.querySelector('TrackingEvents')
       if (!trackingEvents) {
-        trackingEvents = doc.createElement('TrackingEvents');
-        linear.appendChild(trackingEvents);
+        trackingEvents = doc.createElement('TrackingEvents')
+        linear.appendChild(trackingEvents)
       }
-      appendTrackingElements(doc, trackingEvents, trackers);
-    });
+      appendTrackingElements(doc, trackingEvents, trackers)
+    })
   } else {
-    let creatives = wrapper.querySelector('Creatives');
+    let creatives = wrapper.querySelector('Creatives')
     if (!creatives) {
-      creatives = doc.createElement('Creatives');
-      wrapper.appendChild(creatives);
+      creatives = doc.createElement('Creatives')
+      wrapper.appendChild(creatives)
     }
 
-    const creative = doc.createElement('Creative');
-    const linear = doc.createElement('Linear');
-    const trackingEvents = doc.createElement('TrackingEvents');
+    const creative = doc.createElement('Creative')
+    const linear = doc.createElement('Linear')
+    const trackingEvents = doc.createElement('TrackingEvents')
 
-    appendTrackingElements(doc, trackingEvents, trackers);
-    linear.appendChild(trackingEvents);
-    creative.appendChild(linear);
-    creatives.appendChild(creative);
+    appendTrackingElements(doc, trackingEvents, trackers)
+    linear.appendChild(trackingEvents)
+    creative.appendChild(linear)
+    creatives.appendChild(creative)
   }
 }
 
@@ -141,11 +141,11 @@ function insertLinearTrackingEvents(doc, wrapper, trackers) {
  */
 function appendTrackingElements(doc, trackingEvents, trackers) {
   trackers.forEach(({ event, url }) => {
-    const trackingElement = doc.createElement('Tracking');
-    trackingElement.setAttribute('event', event);
-    trackingElement.appendChild(doc.createCDATASection(url));
-    trackingEvents.appendChild(trackingElement);
-  });
+    const trackingElement = doc.createElement('Tracking')
+    trackingElement.setAttribute('event', event)
+    trackingElement.appendChild(doc.createCDATASection(url))
+    trackingEvents.appendChild(trackingElement)
+  })
 }
 
 export function getVastTrackers(bid, { index = auctionManager.index }) {
@@ -153,7 +153,7 @@ export function getVastTrackers(bid, { index = auctionManager.index }) {
     impression: [],
     error: [],
     trackingEvents: []
-  };
+  }
 
   vastTrackers.filter(
     ({
@@ -162,20 +162,20 @@ export function getVastTrackers(bid, { index = auctionManager.index }) {
       trackerFn
     }) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
   ).forEach(({ trackerFn }) => {
-    const auction = index.getAuction(bid).getProperties();
-    const bidRequest = index.getBidRequest(bid);
-    const trackersToAdd = trackerFn(bid, { auction, bidRequest });
-    mergeTrackersInto(mergedTrackers, trackersToAdd);
-  });
+    const auction = index.getAuction(bid).getProperties()
+    const bidRequest = index.getBidRequest(bid)
+    const trackersToAdd = trackerFn(bid, { auction, bidRequest })
+    mergeTrackersInto(mergedTrackers, trackersToAdd)
+  })
 
   // Include trackers from bidResponse (vastTrackers and vastImpUrl)
-  mergeTrackersInto(mergedTrackers, getTrackersFromBidResponse(bid));
+  mergeTrackersInto(mergedTrackers, getTrackersFromBidResponse(bid))
 
   const hasTrackers = mergedTrackers.impression.length ||
                       mergedTrackers.error.length ||
-                      mergedTrackers.trackingEvents.length;
+                      mergedTrackers.trackingEvents.length
 
-  return hasTrackers ? mergedTrackers : null;
+  return hasTrackers ? mergedTrackers : null
 }
 
 /**
@@ -184,30 +184,30 @@ export function getVastTrackers(bid, { index = auctionManager.index }) {
  * @param {Object} source - The source trackers object to merge from
  */
 function mergeTrackersInto(target, source) {
-  if (!source || !isPlainObject(source)) return;
+  if (!source || !isPlainObject(source)) return
 
   if (isArray(source.impression)) {
     source.impression.forEach(url => {
       if (isStr(url) && !isEmptyStr(url)) {
-        target.impression.push(url);
+        target.impression.push(url)
       }
-    });
+    })
   }
 
   if (isArray(source.error)) {
     source.error.forEach(url => {
       if (isStr(url) && !isEmptyStr(url)) {
-        target.error.push(url);
+        target.error.push(url)
       }
-    });
+    })
   }
 
   if (isArray(source.trackingEvents)) {
     source.trackingEvents.forEach(tracker => {
       if (isValidTrackingEvent(tracker)) {
-        target.trackingEvents.push(tracker);
+        target.trackingEvents.push(tracker)
       }
-    });
+    })
   }
 }
 
@@ -222,33 +222,33 @@ export function getTrackersFromBidResponse(bid) {
     impression: [],
     error: [],
     trackingEvents: []
-  };
+  }
 
   // Extract from bid.vastTrackers if present
   if (bid.vastTrackers && isPlainObject(bid.vastTrackers)) {
     if (isArray(bid.vastTrackers.impression)) {
-      trackers.impression = bid.vastTrackers.impression;
+      trackers.impression = bid.vastTrackers.impression
     }
     if (isArray(bid.vastTrackers.error)) {
-      trackers.error = bid.vastTrackers.error;
+      trackers.error = bid.vastTrackers.error
     }
     if (isArray(bid.vastTrackers.trackingEvents)) {
-      trackers.trackingEvents = bid.vastTrackers.trackingEvents;
+      trackers.trackingEvents = bid.vastTrackers.trackingEvents
     }
   }
 
   // Extract from bid.vastImpUrl (legacy fallback)
   if (bid.vastImpUrl) {
-    logWarn('vastImpUrl is deprecated; use vastTrackers.impression instead');
-    const impUrls = isArray(bid.vastImpUrl) ? bid.vastImpUrl : [bid.vastImpUrl];
-    trackers.impression = trackers.impression.concat(impUrls);
+    logWarn('vastImpUrl is deprecated; use vastTrackers.impression instead')
+    const impUrls = isArray(bid.vastImpUrl) ? bid.vastImpUrl : [bid.vastImpUrl]
+    trackers.impression = trackers.impression.concat(impUrls)
   }
 
   const hasTrackers = trackers.impression.length ||
                       trackers.error.length ||
-                      trackers.trackingEvents.length;
+                      trackers.trackingEvents.length
 
-  return hasTrackers ? trackers : null;
+  return hasTrackers ? trackers : null
 }
 
 /**
@@ -259,5 +259,5 @@ export function getTrackersFromBidResponse(bid) {
 function isValidTrackingEvent(tracker) {
   return isPlainObject(tracker) &&
          isStr(tracker.event) && !isEmptyStr(tracker.event) &&
-         isStr(tracker.url) && !isEmptyStr(tracker.url);
+         isStr(tracker.url) && !isEmptyStr(tracker.url)
 }

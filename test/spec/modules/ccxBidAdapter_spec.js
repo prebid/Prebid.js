@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import { spec } from 'modules/ccxBidAdapter.js';
-import * as utils from 'src/utils.js';
+import { expect } from 'chai'
+import { addFPDToBidderRequest } from '../../helpers/fpd.js'
+import { spec } from 'modules/ccxBidAdapter.js'
+import * as utils from 'src/utils.js'
 
 describe('ccxAdapter', function () {
   const bids = [
@@ -39,59 +39,59 @@ describe('ccxAdapter', function () {
       sizes: [[640, 480]],
       transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
     }
-  ];
+  ]
 
   describe('isBidRequestValid', function () {
     it('Valid bid requests', function () {
-      expect(spec.isBidRequestValid(bids[0])).to.be.true;
-      expect(spec.isBidRequestValid(bids[1])).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bids[0])).to.be.true
+      expect(spec.isBidRequestValid(bids[1])).to.be.true
+    })
     it('Invalid bid requests - no placementId', function () {
-      const bidsClone = utils.deepClone(bids);
-      bidsClone[0].params = undefined;
-      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
-    });
+      const bidsClone = utils.deepClone(bids)
+      bidsClone[0].params = undefined
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false
+    })
     it('Invalid bid requests - invalid banner sizes', function () {
-      const bidsClone = utils.deepClone(bids);
-      bidsClone[0].mediaTypes.banner.sizes = [300, 250];
-      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
-      bidsClone[0].mediaTypes.banner.sizes = [[300, 250], [750]];
-      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
-      bidsClone[0].mediaTypes.banner.sizes = [];
-      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
-    });
+      const bidsClone = utils.deepClone(bids)
+      bidsClone[0].mediaTypes.banner.sizes = [300, 250]
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false
+      bidsClone[0].mediaTypes.banner.sizes = [[300, 250], [750]]
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false
+      bidsClone[0].mediaTypes.banner.sizes = []
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.false
+    })
     it('Invalid bid requests - invalid video sizes', function () {
-      const bidsClone = utils.deepClone(bids);
-      bidsClone[1].mediaTypes.video.playerSize = [];
-      expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
-      bidsClone[1].mediaTypes.video.sizes = [640, 480];
-      expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
-    });
+      const bidsClone = utils.deepClone(bids)
+      bidsClone[1].mediaTypes.video.playerSize = []
+      expect(spec.isBidRequestValid(bidsClone[1])).to.be.false
+      bidsClone[1].mediaTypes.video.sizes = [640, 480]
+      expect(spec.isBidRequestValid(bidsClone[1])).to.be.false
+    })
     it('Valid bid request - old style sizes', function () {
-      const bidsClone = utils.deepClone(bids);
-      delete (bidsClone[0].mediaTypes);
-      delete (bidsClone[1].mediaTypes);
-      expect(spec.isBidRequestValid(bidsClone[0])).to.be.true;
-      expect(spec.isBidRequestValid(bidsClone[1])).to.be.true;
-      bidsClone[0].sizes = [300, 250];
-      expect(spec.isBidRequestValid(bidsClone[0])).to.be.true;
-    });
-  });
+      const bidsClone = utils.deepClone(bids)
+      delete (bidsClone[0].mediaTypes)
+      delete (bidsClone[1].mediaTypes)
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.true
+      expect(spec.isBidRequestValid(bidsClone[1])).to.be.true
+      bidsClone[0].sizes = [300, 250]
+      expect(spec.isBidRequestValid(bidsClone[0])).to.be.true
+    })
+  })
 
   describe('buildRequests', function () {
     it('No valid bids', function () {
-      expect(spec.buildRequests([])).to.be.undefined;
-    });
+      expect(spec.buildRequests([])).to.be.undefined
+    })
 
     it('Valid bid request - default', function () {
-      const response = spec.buildRequests(bids, { bids, bidderRequestId: 'id' });
-      expect(response).to.be.not.empty;
-      expect(response.data).to.be.not.empty;
+      const response = spec.buildRequests(bids, { bids, bidderRequestId: 'id' })
+      expect(response).to.be.not.empty
+      expect(response.data).to.be.not.empty
 
-      const data = JSON.parse(response.data);
+      const data = JSON.parse(response.data)
 
-      expect(data).to.be.an('object');
-      expect(data).to.have.keys('site', 'imp', 'id', 'ext', 'device');
+      expect(data).to.be.an('object')
+      expect(data).to.have.keys('site', 'imp', 'id', 'ext', 'device')
 
       const imps = [
         {
@@ -124,12 +124,12 @@ describe('ccxAdapter', function () {
             pid: 608
           }
         }
-      ];
-      expect(data.imp).to.deep.have.same.members(imps);
-    });
+      ]
+      expect(data.imp).to.deep.have.same.members(imps)
+    })
 
     it('Valid bid request - custom', function () {
-      const bidsClone = utils.deepClone(bids);
+      const bidsClone = utils.deepClone(bids)
       const imps = [
         {
           banner: {
@@ -162,27 +162,27 @@ describe('ccxAdapter', function () {
             pid: 608
           }
         }
-      ];
+      ]
 
-      bidsClone[1].params.video = {};
-      bidsClone[1].params.video.protocols = [5, 6];
-      bidsClone[1].params.video.mimes = ['video/mp4'];
-      bidsClone[1].params.video.playbackmethod = [3];
-      bidsClone[1].params.video.skip = 1;
-      bidsClone[1].params.video.skipafter = 5;
+      bidsClone[1].params.video = {}
+      bidsClone[1].params.video.protocols = [5, 6]
+      bidsClone[1].params.video.mimes = ['video/mp4']
+      bidsClone[1].params.video.playbackmethod = [3]
+      bidsClone[1].params.video.skip = 1
+      bidsClone[1].params.video.skipafter = 5
 
-      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
-      const data = JSON.parse(response.data);
+      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone })
+      const data = JSON.parse(response.data)
 
-      expect(data.imp).to.deep.have.same.members(imps);
-    });
+      expect(data.imp).to.deep.have.same.members(imps)
+    })
 
     it('Valid bid request - sizes old style', function () {
-      const bidsClone = utils.deepClone(bids);
-      delete (bidsClone[0].mediaTypes);
-      delete (bidsClone[1].mediaTypes);
-      bidsClone[0].mediaType = 'banner';
-      bidsClone[1].mediaType = 'video';
+      const bidsClone = utils.deepClone(bids)
+      delete (bidsClone[0].mediaTypes)
+      delete (bidsClone[1].mediaTypes)
+      bidsClone[0].mediaType = 'banner'
+      bidsClone[1].mediaType = 'video'
 
       const imps = [
         {
@@ -215,18 +215,18 @@ describe('ccxAdapter', function () {
             pid: 608
           }
         }
-      ];
+      ]
 
-      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
-      const data = JSON.parse(response.data);
+      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone })
+      const data = JSON.parse(response.data)
 
-      expect(data.imp).to.deep.have.same.members(imps);
-    });
+      expect(data.imp).to.deep.have.same.members(imps)
+    })
 
     it('Valid bid request - sizes old style - no media type', function () {
-      const bidsClone = utils.deepClone(bids);
-      delete (bidsClone[0].mediaTypes);
-      delete (bidsClone[1]);
+      const bidsClone = utils.deepClone(bids)
+      delete (bidsClone[0].mediaTypes)
+      delete (bidsClone[1])
 
       const imps = [
         {
@@ -244,39 +244,39 @@ describe('ccxAdapter', function () {
           id: '2e56e1af51a5d7',
           secure: 1
         }
-      ];
+      ]
 
-      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
-      const data = JSON.parse(response.data);
+      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone })
+      const data = JSON.parse(response.data)
 
-      expect(data.imp).to.deep.have.same.members(imps);
-    });
-  });
+      expect(data.imp).to.deep.have.same.members(imps)
+    })
+  })
 
   describe('GDPR conformity', function () {
     it('should transmit correct data', function () {
-      const bidsClone = utils.deepClone(bids);
+      const bidsClone = utils.deepClone(bids)
       const gdprConsent = {
         consentString: 'awefasdfwefasdfasd',
         gdprApplies: true
-      };
-      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone, 'gdprConsent': gdprConsent });
-      const data = JSON.parse(response.data);
+      }
+      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone, 'gdprConsent': gdprConsent })
+      const data = JSON.parse(response.data)
 
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.equal('awefasdfwefasdfasd');
-    });
-  });
+      expect(data.regs.ext.gdpr).to.equal(1)
+      expect(data.user.ext.consent).to.equal('awefasdfwefasdfasd')
+    })
+  })
 
   describe('GDPR absence conformity', function () {
     it('should transmit correct data', function () {
-      const response = spec.buildRequests(bids, { bids });
-      const data = JSON.parse(response.data);
+      const response = spec.buildRequests(bids, { bids })
+      const data = JSON.parse(response.data)
 
-      expect(data.regs).to.be.undefined;
-      expect(data.user).to.be.undefined;
-    });
-  });
+      expect(data.regs).to.be.undefined
+      expect(data.user).to.be.undefined
+    })
+  })
 
   const response = {
     id: '0b9de793-8eda-481e-a548-c187d58b28d9',
@@ -328,7 +328,7 @@ describe('ccxAdapter', function () {
         }
       ]
     }
-  };
+  }
 
   describe('interpretResponse', function () {
     it('Valid bid response - multi', function () {
@@ -361,12 +361,12 @@ describe('ccxAdapter', function () {
             advertiserDomains: ['clickonometrics.com']
           }
         }
-      ];
-      expect(spec.interpretResponse({ body: response })).to.deep.have.same.members(bidResponses);
-    });
+      ]
+      expect(spec.interpretResponse({ body: response })).to.deep.have.same.members(bidResponses)
+    })
 
     it('Valid bid response - single', function () {
-      delete response.seatbid[0].bid[1];
+      delete response.seatbid[0].bid[1]
       const bidResponses = [
         {
           requestId: '2e56e1af51a5d7',
@@ -382,21 +382,21 @@ describe('ccxAdapter', function () {
             advertiserDomains: ['clickonometrics.com']
           }
         }
-      ];
-      expect(spec.interpretResponse({ body: response })).to.deep.have.same.members(bidResponses);
-    });
+      ]
+      expect(spec.interpretResponse({ body: response })).to.deep.have.same.members(bidResponses)
+    })
 
     it('Empty bid response', function () {
-      expect(spec.interpretResponse({})).to.be.empty;
-    });
-  });
+      expect(spec.interpretResponse({})).to.be.empty
+    })
+  })
 
   describe('getUserSyncs', function () {
     it('Valid syncs - all', function () {
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
-      };
+      }
 
       const expectedSyncs = [
         {
@@ -407,39 +407,39 @@ describe('ccxAdapter', function () {
           type: 'iframe',
           url: 'http://foo.sync?param=2'
         }
-      ];
-      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs);
-    });
+      ]
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs)
+    })
 
     it('Valid syncs - only image', function () {
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
-      };
+      }
       const expectedSyncs = [
         {
           type: 'image', url: 'http://foo.sync?param=1'
         }
-      ];
-      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs);
-    });
+      ]
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs)
+    })
 
     it('Valid syncs - only iframe', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: false };
+      const syncOptions = { iframeEnabled: true, pixelEnabled: false }
       const expectedSyncs = [
         {
           type: 'iframe', url: 'http://foo.sync?param=2'
         }
-      ];
-      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs);
-    });
+      ]
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.deep.have.same.members(expectedSyncs)
+    })
 
     it('Valid syncs - empty', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
-      response.ext.usersync = {};
-      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.be.empty;
-    });
-  });
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true }
+      response.ext.usersync = {}
+      expect(spec.getUserSyncs(syncOptions, [{ body: response }])).to.be.empty
+    })
+  })
 
   describe('mediaTypesVideoParams', function () {
     it('Valid video mediaTypes', function () {
@@ -466,7 +466,7 @@ describe('ccxAdapter', function () {
           sizes: [[640, 480]],
           transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
         }
-      ];
+      ]
 
       const imps = [
         {
@@ -485,14 +485,14 @@ describe('ccxAdapter', function () {
             pid: 608
           }
         }
-      ];
+      ]
 
-      const bidsClone = utils.deepClone(bids);
+      const bidsClone = utils.deepClone(bids)
 
-      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone });
-      const data = JSON.parse(response.data);
+      const response = spec.buildRequests(bidsClone, { 'bids': bidsClone })
+      const data = JSON.parse(response.data)
 
-      expect(data.imp).to.deep.have.same.members(imps);
-    });
-  });
-});
+      expect(data.imp).to.deep.have.same.members(imps)
+    })
+  })
+})

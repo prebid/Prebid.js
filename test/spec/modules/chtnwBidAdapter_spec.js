@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/chtnwBidAdapter.js';
-import * as utils from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/chtnwBidAdapter.js'
+import * as utils from '../../../src/utils.js'
 
 describe('ChtnwAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -13,19 +13,19 @@ describe('ChtnwAdapter', function () {
       sizes: [
         [300, 250]
       ],
-    };
+    }
 
     it('should return true when required params found', function () {
-      const bidRequest = utils.deepClone(bid);
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      const bidRequest = utils.deepClone(bid)
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return false when required params are missing', function () {
-      const bidRequest = utils.deepClone(bid);
-      delete bidRequest.params;
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
-  });
+      const bidRequest = utils.deepClone(bid)
+      delete bidRequest.params
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const bidRequests = [{
@@ -37,26 +37,26 @@ describe('ChtnwAdapter', function () {
       sizes: [
         [300, 250]
       ],
-    }];
+    }]
 
-    let request;
+    let request
     before(() => {
-      request = spec.buildRequests(bidRequests);
+      request = spec.buildRequests(bidRequests)
     })
 
     it('Returns POST method', function () {
-      expect(request.method).to.equal('POST');
-    });
+      expect(request.method).to.equal('POST')
+    })
 
     it('Returns general data valid', function () {
-      const data = request.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('bids');
-      expect(data).to.have.property('uuid');
-      expect(data).to.have.property('device');
-      expect(data).to.have.property('site');
-    });
-  });
+      const data = request.data
+      expect(data).to.be.an('object')
+      expect(data).to.have.property('bids')
+      expect(data).to.have.property('uuid')
+      expect(data).to.have.property('device')
+      expect(data).to.have.property('site')
+    })
+  })
 
   describe('interpretResponse', function () {
     const responseBody = [{
@@ -75,34 +75,34 @@ describe('ChtnwAdapter', function () {
           'www.example.com'
         ]
       }
-    }];
+    }]
 
     it('handles empty bid response', function () {
       const response = {
         body: responseBody
-      };
-      const result = spec.interpretResponse(response);
-      expect(result.length).to.not.equal(0);
-      expect(result[0].meta.advertiserDomains).to.be.an('array');
-    });
+      }
+      const result = spec.interpretResponse(response)
+      expect(result.length).to.not.equal(0)
+      expect(result[0].meta.advertiserDomains).to.be.an('array')
+    })
 
     it('handles empty bid response', function () {
       const response = {
         body: []
-      };
-      const result = spec.interpretResponse(response);
-      expect(result.length).to.equal(0);
-    });
-  });
+      }
+      const result = spec.interpretResponse(response)
+      expect(result.length).to.equal(0)
+    })
+  })
 
   describe('getUserSyncs', function () {
     it('should register type is image', function () {
       const syncOptions = {
         'pixelEnabled': 'true'
       }
-      const userSync = spec.getUserSyncs(syncOptions);
-      expect(userSync[0].type).to.equal('image');
-      expect(userSync[0].url).to.have.string('ssp');
-    });
-  });
-});
+      const userSync = spec.getUserSyncs(syncOptions)
+      expect(userSync[0].type).to.equal('image')
+      expect(userSync[0].url).to.have.string('ssp')
+    })
+  })
+})

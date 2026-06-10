@@ -1,4 +1,4 @@
-export type PairIdSystemModuleName = 'pairId';
+export type PairIdSystemModuleName = 'pairId'
 
 export interface PairIdLiverampParams {
   /**

@@ -1,7 +1,7 @@
 // jscs:disable
-import { TARGETING_KEYS } from 'src/constants.js';
-import { createBid } from '../../src/bidfactory.js';
-const utils = require('src/utils.js');
+import { TARGETING_KEYS } from 'src/constants.js'
+import { createBid } from '../../src/bidfactory.js'
+const utils = require('src/utils.js')
 
 function convertTargetingsFromOldToNew(targetings) {
   var mapOfOldToNew = {
@@ -12,22 +12,22 @@ function convertTargetingsFromOldToNew(targetings) {
     'hb_deal': TARGETING_KEYS.DEAL,
     'hb_source': TARGETING_KEYS.SOURCE,
     'hb_format': TARGETING_KEYS.FORMAT
-  };
-  var newTargetings = {};
+  }
+  var newTargetings = {}
   utils._each(targetings, function(value, currentKey) {
-    var replaced = false;
+    var replaced = false
     utils._each(mapOfOldToNew, function(newKey, oldKey) {
       if (currentKey.indexOf(oldKey) === 0 && oldKey !== newKey) {
-        var updatedKey = currentKey.replace(oldKey, newKey);
-        newTargetings[updatedKey] = targetings[currentKey];
-        replaced = true;
+        var updatedKey = currentKey.replace(oldKey, newKey)
+        newTargetings[updatedKey] = targetings[currentKey]
+        replaced = true
       }
-    });
+    })
     if (!replaced) {
-      newTargetings[currentKey] = targetings[currentKey];
+      newTargetings[currentKey] = targetings[currentKey]
     }
   })
-  return newTargetings;
+  return newTargetings
 }
 
 export function getBidRequests() {
@@ -352,7 +352,7 @@ export function getBidRequests() {
       ],
       'start': 1462918897482
     }
-  ];
+  ]
 }
 
 export function getBidResponses() {
@@ -613,7 +613,7 @@ export function getBidResponses() {
       'currency': 'USD',
       'ttl': 300
     }
-  ];
+  ]
 }
 
 export function getAdUnits() {
@@ -781,7 +781,7 @@ export function getAdUnits() {
         }
       ]
     }
-  ];
+  ]
 };
 
 export function getTwinAdUnits() {
@@ -979,7 +979,7 @@ export function getBidResponsesFromAPI() {
         }
       ]
     }
-  };
+  }
 }
 
 // Ad server targeting when `setConfig({ enableSendAllBids: true })` is set.
@@ -1031,7 +1031,7 @@ export function getAdServerTargeting() {
       'hb_adid_appnexus': '24bd938435ec3fc',
       'hb_bidder_appnexus': 'appnexus'
     })
-  };
+  }
 }
 
 // Key/values used to set ad server targeting.
@@ -1057,7 +1057,7 @@ export function getTargetingKeys() {
       'foobar',
       ['300x250', '300x600', '0x0']
     ]
-  ];
+  ]
 }
 
 // Key/values used to set ad server targeting when bid landscape
@@ -1192,7 +1192,7 @@ export function getTargetingKeysBidLandscape() {
       TARGETING_KEYS.SIZE + '_rubicon',
       '300x600'
     ]
-  ];
+  ]
 }
 
 export function getBidRequestedPayload() {
@@ -1232,7 +1232,7 @@ export function getBidRequestedPayload() {
       }
     ],
     'start': 1465426155412
-  };
+  }
 }
 
 export function getCurrencyRates() {
@@ -1242,7 +1242,7 @@ export function getCurrencyRates() {
       'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
       'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
     }
-  };
+  }
 }
 
 export function createBidReceived({ bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType }) {
@@ -1276,12 +1276,12 @@ export function createBidReceived({ bidder, cpm, auctionId, responseTimestamp, a
     'netRevenue': true,
     'currency': 'USD',
     'ttl': (!ttl) ? 300 : ttl
-  };
+  }
 
   if (typeof status !== 'undefined') {
-    bid.status = status;
+    bid.status = status
   }
-  return Object.assign(createBid(), bid);
+  return Object.assign(createBid(), bid)
 }
 
 export function getServerTestingsAds() {
@@ -1324,7 +1324,7 @@ export function getServerTestingsAds() {
       sizes: [[300, 250]],
       bids: [{ bidder: 'openx' }]
     }
-  ];
+  ]
 };
 
 export const getServerTestingConfig = (config, override = {}) =>
@@ -1343,4 +1343,4 @@ export const getServerTestingConfig = (config, override = {}) =>
         includeSourceKvp: true
       }
     }
-  }, override);
+  }, override)

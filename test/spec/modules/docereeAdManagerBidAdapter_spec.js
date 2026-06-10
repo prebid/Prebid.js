@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js';
-import { config } from '../../../src/config.js';
-import * as utils from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js'
+import { config } from '../../../src/config.js'
+import * as utils from '../../../src/utils.js'
 
 describe('docereeadmanager', function () {
   config.setConfig({
@@ -29,7 +29,7 @@ describe('docereeadmanager', function () {
         },
       },
     },
-  });
+  })
   let bid = {
     bidId: 'testing',
     bidder: 'docereeadmanager',
@@ -40,40 +40,40 @@ describe('docereeadmanager', function () {
       gdprconsent:
         'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g',
     },
-  };
+  }
 
   describe('isBidRequestValid', function () {
     it('Should return true if placementId is present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
     it('Should return false if placementId is not present', function () {
-      delete bid.params.placementId;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-  });
+      delete bid.params.placementId
+      expect(spec.isBidRequestValid(bid)).to.be.false
+    })
+  })
 
   describe('isGdprConsentPresent', function () {
     it('Should return true if gdpr consent is present', function () {
-      expect(spec.isGdprConsentPresent(bid)).to.be.true;
-    });
-  });
+      expect(spec.isGdprConsentPresent(bid)).to.be.true
+    })
+  })
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid]);
-    serverRequest = serverRequest[0];
+    let serverRequest = spec.buildRequests([bid])
+    serverRequest = serverRequest[0]
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist;
-      expect(serverRequest.method).to.exist;
-      expect(serverRequest.url).to.exist;
-      expect(serverRequest.data).to.exist;
-    });
+      expect(serverRequest).to.exist
+      expect(serverRequest.method).to.exist
+      expect(serverRequest.url).to.exist
+      expect(serverRequest.data).to.exist
+    })
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST');
-    });
+      expect(serverRequest.method).to.equal('POST')
+    })
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://dai.doceree.com/drs/quest');
-    });
-  });
+      expect(serverRequest.url).to.equal('https://dai.doceree.com/drs/quest')
+    })
+  })
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {
@@ -94,10 +94,10 @@ describe('docereeadmanager', function () {
             advertiserDomains: ['https://dai.doceree.com/drs/quest'],
           },
         },
-      };
-      const bannerResponses = spec.interpretResponse(banner);
-      expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      }
+      const bannerResponses = spec.interpretResponse(banner)
+      expect(bannerResponses).to.be.an('array').that.is.not.empty
+      const dataItem = bannerResponses[0]
       expect(dataItem).to.have.all.keys(
         'requestId',
         'cpm',
@@ -110,27 +110,27 @@ describe('docereeadmanager', function () {
         'mediaType',
         'creativeId',
         'meta'
-      );
-      expect(dataItem.requestId).to.equal('123');
-      expect(dataItem.cpm).to.equal(3.576);
-      expect(dataItem.width).to.equal(250);
-      expect(dataItem.height).to.equal(300);
-      expect(dataItem.ad).to.equal('<html><h3>I am an ad</h3></html>');
-      expect(dataItem.ttl).to.equal(30);
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-      expect(dataItem.creativeId).to.equal('div-1');
+      )
+      expect(dataItem.requestId).to.equal('123')
+      expect(dataItem.cpm).to.equal(3.576)
+      expect(dataItem.width).to.equal(250)
+      expect(dataItem.height).to.equal(300)
+      expect(dataItem.ad).to.equal('<html><h3>I am an ad</h3></html>')
+      expect(dataItem.ttl).to.equal(30)
+      expect(dataItem.netRevenue).to.be.true
+      expect(dataItem.currency).to.equal('USD')
+      expect(dataItem.creativeId).to.equal('div-1')
       expect(dataItem.meta.advertiserDomains).to.be.an('array').that.is.not
-        .empty;
-    });
-  });
+        .empty
+    })
+  })
 
   describe('getPageUrl', function () {
     it('should return an url string', function () {
-      const result = getPageUrl();
-      expect(result).to.equal(utils.getWindowSelf().location.href);
-    });
-  });
+      const result = getPageUrl()
+      expect(result).to.equal(utils.getWindowSelf().location.href)
+    })
+  })
 
   describe('payload', function () {
     it('should return payload with the correct data', function () {
@@ -162,9 +162,9 @@ describe('docereeadmanager', function () {
           gdprApplies: false
         }
       }
-      const payload = getPayload(bid, data, buildRequests);
+      const payload = getPayload(bid, data, buildRequests)
 
-      const payloadData = payload.data;
+      const payloadData = payload.data
       expect(payloadData).to.have.all.keys(
         'userid',
         'email',
@@ -189,31 +189,31 @@ describe('docereeadmanager', function () {
         'mobile',
         'pageurl',
         'consent'
-      );
-      expect(payloadData.userid).to.equal('Xx.xxx.xxxxxx');
-      expect(payloadData.email).to.equal('xxxx@mail.com');
-      expect(payloadData.firstname).to.equal('Xxxxx');
-      expect(payloadData.lastname).to.equal('Xxxxxx');
-      expect(payloadData.specialization).to.equal('Xxxxxxxxx');
-      expect(payloadData.hcpid).to.equal('xxxxxxx');
-      expect(payloadData.gender).to.equal('Xxxx');
-      expect(payloadData.city).to.equal('Xxxxx');
-      expect(payloadData.state).to.equal('Xxxxxx');
-      expect(payloadData.zipcode).to.equal('XXXXXX');
-      expect(payloadData.pb).to.equal(1);
-      expect(payloadData.upref).to.equal(1);
-      expect(payloadData.dob).to.equal('xx-xx-xxxx');
-      expect(payloadData.organization).to.equal('Xxxxxx');
-      expect(payloadData.country).to.equal('Xxxxxx');
-      expect(payloadData.hashedmobile).to.equal('xxxxxxx');
-      expect(payloadData.hashedemail).to.equal('xxxxxxx');
-      expect(payloadData.hashedhcpid).to.equal('xxxxxxx');
-      expect(payloadData.requestId).to.equal('testing');
-      expect(payloadData.mobile).to.equal('XXXXXXXXXX');
-      expect(payloadData.adunit).to.equal('DOC-19-1');
-      expect(payloadData.pageurl).to.equal('http://localhost:9876/context.html');
-      expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
-      expect(payloadData.consent.gdpr).to.equal(0);
+      )
+      expect(payloadData.userid).to.equal('Xx.xxx.xxxxxx')
+      expect(payloadData.email).to.equal('xxxx@mail.com')
+      expect(payloadData.firstname).to.equal('Xxxxx')
+      expect(payloadData.lastname).to.equal('Xxxxxx')
+      expect(payloadData.specialization).to.equal('Xxxxxxxxx')
+      expect(payloadData.hcpid).to.equal('xxxxxxx')
+      expect(payloadData.gender).to.equal('Xxxx')
+      expect(payloadData.city).to.equal('Xxxxx')
+      expect(payloadData.state).to.equal('Xxxxxx')
+      expect(payloadData.zipcode).to.equal('XXXXXX')
+      expect(payloadData.pb).to.equal(1)
+      expect(payloadData.upref).to.equal(1)
+      expect(payloadData.dob).to.equal('xx-xx-xxxx')
+      expect(payloadData.organization).to.equal('Xxxxxx')
+      expect(payloadData.country).to.equal('Xxxxxx')
+      expect(payloadData.hashedmobile).to.equal('xxxxxxx')
+      expect(payloadData.hashedemail).to.equal('xxxxxxx')
+      expect(payloadData.hashedhcpid).to.equal('xxxxxxx')
+      expect(payloadData.requestId).to.equal('testing')
+      expect(payloadData.mobile).to.equal('XXXXXXXXXX')
+      expect(payloadData.adunit).to.equal('DOC-19-1')
+      expect(payloadData.pageurl).to.equal('http://localhost:9876/context.html')
+      expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw')
+      expect(payloadData.consent.gdpr).to.equal(0)
     })
   })
-});
+})

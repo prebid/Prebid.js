@@ -6,7 +6,7 @@ import {
   MESSAGE_REQUEST,
   MESSAGE_RESPONSE,
   PB_LOCATOR
-} from './constants.js';
+} from './constants.js'
 
 const mkFrame = (() => {
   const DEFAULTS = {
@@ -17,36 +17,36 @@ const mkFrame = (() => {
     topMargin: 0,
     leftMargin: 0,
     allowTransparency: 'true',
-  };
+  }
   return (doc, attrs) => {
-    const frame = doc.createElement('iframe');
+    const frame = doc.createElement('iframe')
     Object.entries(Object.assign({}, attrs, DEFAULTS))
-      .forEach(([k, v]) => frame.setAttribute(k, v));
-    return frame;
-  };
-})();
+      .forEach(([k, v]) => frame.setAttribute(k, v))
+    return frame
+  }
+})()
 
 function isPrebidWindow(win) {
-  return !!win.frames[PB_LOCATOR];
+  return !!win.frames[PB_LOCATOR]
 }
 
 export function renderer(win) {
-  let target = win.parent;
+  let target = win.parent
   try {
     while (target !== win.top && !isPrebidWindow(target)) {
-      target = target.parent;
+      target = target.parent
     }
-    if (!isPrebidWindow(target)) target = win.parent;
+    if (!isPrebidWindow(target)) target = win.parent
   } catch (e) {
   }
 
   return function ({ adId, pubUrl, clickUrl }) {
-    const pubDomain = new URL(pubUrl, window.location).origin;
+    const pubDomain = new URL(pubUrl, window.location).origin
 
     function sendMessage(type, payload, responseListener) {
-      const channel = new MessageChannel();
-      channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({ message: type, adId }, payload)), pubDomain, [channel.port2]);
+      const channel = new MessageChannel()
+      channel.port1.onmessage = guard(responseListener)
+      target.postMessage(JSON.stringify(Object.assign({ message: type, adId }, payload)), pubDomain, [channel.port2])
     }
 
     function onError(e) {
@@ -56,54 +56,54 @@ export function renderer(win) {
           reason: e?.reason || ERROR_EXCEPTION,
           message: e?.message
         }
-      });
+      })
       // eslint-disable-next-line no-console
-      e?.stack && console.error(e);
+      e?.stack && console.error(e)
     }
 
     function guard(fn) {
       return function () {
         try {
-          return fn.apply(this, arguments);
+          return fn.apply(this, arguments)
         } catch (e) {
-          onError(e);
+          onError(e)
         }
-      };
+      }
     }
 
     function onMessage(ev) {
-      let data;
+      let data
       try {
-        data = JSON.parse(ev.data);
+        data = JSON.parse(ev.data)
       } catch (e) {
-        return;
+        return
       }
       if (data.message === MESSAGE_RESPONSE && data.adId === adId) {
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
           style: 'display: none'
-        });
+        })
         renderer.onload = guard(function () {
-          const W = renderer.contentWindow;
+          const W = renderer.contentWindow
           // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
           // does not appear to work if P comes from another frame
           W.Promise.resolve(W.render(data, { sendMessage, mkFrame }, win)).then(
             () => sendMessage(MESSAGE_EVENT, { event: EVENT_AD_RENDER_SUCCEEDED }),
             onError
-          );
-        });
+          )
+        })
         // Attach 'srcdoc' after 'onload', otherwise the latter seems to randomly run prematurely in tests
         // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
-        renderer.srcdoc = `<script>${data.renderer}</script>`;
-        win.document.body.appendChild(renderer);
+        renderer.srcdoc = `<script>${data.renderer}</script>`
+        win.document.body.appendChild(renderer)
       }
     }
 
     sendMessage(MESSAGE_REQUEST, {
       options: { clickUrl }
-    }, onMessage);
-  };
+    }, onMessage)
+  }
 }
 
-window.pbRender = renderer(window);
+window.pbRender = renderer(window)

@@ -1,20 +1,20 @@
-import { expect } from 'chai';
-import { spec } from 'modules/blockthroughBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { expect } from 'chai'
+import { spec } from 'modules/blockthroughBidAdapter.js'
+import { BANNER } from '../../../src/mediaTypes.js'
 // load modules that register ORTB processors
-import 'src/prebid.js';
-import 'modules/currency.js';
-import 'modules/userId/index.js';
-import 'modules/multibid/index.js';
-import 'modules/priceFloors.js';
-import 'modules/consentManagementTcf.js';
-import 'modules/consentManagementUsp.js';
-import 'modules/consentManagementGpp.js';
-import 'modules/tcfControl.js';
-import 'modules/gppControl_usnat.js';
+import 'src/prebid.js'
+import 'modules/currency.js'
+import 'modules/userId/index.js'
+import 'modules/multibid/index.js'
+import 'modules/priceFloors.js'
+import 'modules/consentManagementTcf.js'
+import 'modules/consentManagementUsp.js'
+import 'modules/consentManagementGpp.js'
+import 'modules/tcfControl.js'
+import 'modules/gppControl_usnat.js'
 
 describe('BT Bid Adapter', () => {
-  const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
+  const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction'
   const validBidRequests = [
     {
       bidId: '2e9f38ea93bb9e',
@@ -28,12 +28,12 @@ describe('BT Bid Adapter', () => {
       },
       bidderRequestId: 'test-bidder-request-id',
     },
-  ];
+  ]
   const bidderRequest = {
     bidderCode: 'blockthrough',
     bidderRequestId: 'test-bidder-request-id',
     bids: validBidRequests,
-  };
+  }
 
   describe('isBidRequestValid', function () {
     it('should validate bid request with valid params', () => {
@@ -46,12 +46,12 @@ describe('BT Bid Adapter', () => {
         sizes: [[300, 250]],
         bidId: '123',
         adUnitCode: 'leaderboard',
-      };
+      }
 
-      const isValid = spec.isBidRequestValid(validBid);
+      const isValid = spec.isBidRequestValid(validBid)
 
-      expect(isValid).to.be.true;
-    });
+      expect(isValid).to.be.true
+    })
 
     it('should not validate bid request with invalid params', () => {
       const invalidBid = {
@@ -59,13 +59,13 @@ describe('BT Bid Adapter', () => {
         sizes: [[300, 250]],
         bidId: '123',
         adUnitCode: 'leaderboard',
-      };
+      }
 
-      const isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid)
 
-      expect(isValid).to.be.false;
-    });
-  });
+      expect(isValid).to.be.false
+    })
+  })
 
   describe('buildRequests', () => {
     it('should build post request when ortb2 fields are present', () => {
@@ -73,28 +73,28 @@ describe('BT Bid Adapter', () => {
         bidderA: {
           pubId: '11111',
         },
-      };
+      }
 
-      const requests = spec.buildRequests(validBidRequests, bidderRequest);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest)
 
-      expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(ENDPOINT_URL);
-      expect(requests[0].data).to.exist;
+      expect(requests[0].method).to.equal('POST')
+      expect(requests[0].url).to.equal(ENDPOINT_URL)
+      expect(requests[0].data).to.exist
       expect(requests[0].data.ext.prebid.channel).to.deep.equal({
         name: 'pbjs',
         version: '$prebid.version$',
-      });
-      expect(requests[0].data.imp[0].ext).to.deep.equal(impExtParams);
-    });
-  });
+      })
+      expect(requests[0].data.imp[0].ext).to.deep.equal(impExtParams)
+    })
+  })
 
   describe('interpretResponse', () => {
     it('should return empty array if serverResponse is not defined', () => {
-      const bidRequest = spec.buildRequests(validBidRequests, bidderRequest);
-      const bids = spec.interpretResponse(undefined, bidRequest);
+      const bidRequest = spec.buildRequests(validBidRequests, bidderRequest)
+      const bids = spec.interpretResponse(undefined, bidRequest)
 
-      expect(bids.length).to.equal(0);
-    });
+      expect(bids.length).to.equal(0)
+    })
 
     it('should return bids array when serverResponse is defined and seatbid array is not empty', () => {
       const bidResponse = {
@@ -119,7 +119,7 @@ describe('BT Bid Adapter', () => {
             },
           ],
         },
-      };
+      }
 
       const expectedBids = [
         {
@@ -138,23 +138,23 @@ describe('BT Bid Adapter', () => {
           ttl: 60,
           width: 300,
         },
-      ];
+      ]
 
-      const request = spec.buildRequests(validBidRequests, bidderRequest)[0];
-      const bids = spec.interpretResponse(bidResponse, request);
+      const request = spec.buildRequests(validBidRequests, bidderRequest)[0]
+      const bids = spec.interpretResponse(bidResponse, request)
 
-      expect(bids).to.deep.equal(expectedBids);
-    });
-  });
+      expect(bids).to.deep.equal(expectedBids)
+    })
+  })
 
   describe('getUserSyncs', () => {
-    const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
+    const SYNC_URL = 'https://cdn.btloader.com/user_sync.html'
 
     it('should return an empty array if no sync options are provided', () => {
-      const syncs = spec.getUserSyncs({}, [], null, null, null);
+      const syncs = spec.getUserSyncs({}, [], null, null, null)
 
-      expect(syncs).to.deep.equal([]);
-    });
+      expect(syncs).to.deep.equal([])
+    })
 
     it('should return an empty array if no server responses are provided', () => {
       const syncs = spec.getUserSyncs(
@@ -163,31 +163,31 @@ describe('BT Bid Adapter', () => {
         null,
         null,
         null
-      );
+      )
 
-      expect(syncs).to.deep.equal([]);
-    });
+      expect(syncs).to.deep.equal([])
+    })
 
     it('should pass consent parameters and bidder codes in sync URL if they are provided', () => {
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'GDPRConsentString123',
-      };
+      }
       const gppConsent = {
         gppString: 'GPPString123',
         applicableSections: ['sectionA'],
-      };
-      const us_privacy = '1YNY';
-      const expectedSyncUrl = new URL(SYNC_URL);
-      expectedSyncUrl.searchParams.set('bidders', 'pubmatic,ix');
-      expectedSyncUrl.searchParams.set('gdpr', 1);
+      }
+      const us_privacy = '1YNY'
+      const expectedSyncUrl = new URL(SYNC_URL)
+      expectedSyncUrl.searchParams.set('bidders', 'pubmatic,ix')
+      expectedSyncUrl.searchParams.set('gdpr', 1)
       expectedSyncUrl.searchParams.set(
         'gdpr_consent',
         gdprConsent.consentString
-      );
-      expectedSyncUrl.searchParams.set('gpp', gppConsent.gppString);
-      expectedSyncUrl.searchParams.set('gpp_sid', 'sectionA');
-      expectedSyncUrl.searchParams.set('us_privacy', us_privacy);
+      )
+      expectedSyncUrl.searchParams.set('gpp', gppConsent.gppString)
+      expectedSyncUrl.searchParams.set('gpp_sid', 'sectionA')
+      expectedSyncUrl.searchParams.set('us_privacy', us_privacy)
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
         [
@@ -197,11 +197,11 @@ describe('BT Bid Adapter', () => {
         gdprConsent,
         us_privacy,
         gppConsent
-      );
+      )
 
       expect(syncs).to.deep.equal([
         { type: 'iframe', url: expectedSyncUrl.href },
-      ]);
-    });
-  });
-});
+      ])
+    })
+  })
+})

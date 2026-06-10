@@ -1,22 +1,22 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { deepAccess } from '../src/utils.js'
 
-const BIDDER_CODE = 'logicad';
-const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
+const BIDDER_CODE = 'logicad'
+const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid'
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.tid);
+    return !!(bid.params && bid.params.tid)
   },
   buildRequests: function (bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests)
 
-    const requests = [];
+    const requests = []
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const request = {
         method: 'POST',
@@ -24,25 +24,25 @@ export const spec = {
         data: JSON.stringify(newBidRequest(bidRequests[i], bidderRequest)),
         options: {},
         bidderRequest
-      };
-      requests.push(request);
+      }
+      requests.push(request)
     }
-    return requests;
+    return requests
   },
   interpretResponse: function (serverResponse, bidderRequest) {
-    serverResponse = serverResponse.body;
+    serverResponse = serverResponse.body
 
-    const bids = [];
+    const bids = []
 
     if (!serverResponse || serverResponse.error) {
-      return bids;
+      return bids
     }
 
     serverResponse.seatbid.forEach(function (seatbid) {
-      bids.push(seatbid.bid);
+      bids.push(seatbid.bid)
     })
 
-    return bids;
+    return bids
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     if (serverResponses.length > 0 && serverResponses[0].body.userSync &&
@@ -50,11 +50,11 @@ export const spec = {
       return [{
         type: 'image',
         url: serverResponses[0].body.userSync.url
-      }];
+      }]
     }
-    return [];
+    return []
   },
-};
+}
 
 function newBidRequest(bidRequest, bidderRequest) {
   const bid = {
@@ -76,24 +76,24 @@ function newBidRequest(bidRequest, bidderRequest) {
     referrer: bidderRequest.refererInfo.page,
     auctionStartTime: bidderRequest.auctionStart,
     eids: bidRequest.userIdAsEids,
-  };
+  }
 
-  const sua = deepAccess(bidRequest, 'ortb2.device.sua');
+  const sua = deepAccess(bidRequest, 'ortb2.device.sua')
   if (sua) {
-    data.sua = sua;
+    data.sua = sua
   }
 
-  const userData = deepAccess(bidRequest, 'ortb2.user.data');
+  const userData = deepAccess(bidRequest, 'ortb2.user.data')
   if (userData) {
-    data.userData = userData;
+    data.userData = userData
   }
 
-  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  const schain = bidRequest?.ortb2?.source?.ext?.schain
   if (schain) {
-    data.schain = schain;
+    data.schain = schain
   }
 
-  return data;
+  return data
 }
 
-registerBidder(spec);
+registerBidder(spec)

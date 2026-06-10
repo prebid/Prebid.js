@@ -1,6 +1,6 @@
-import * as optimeraRTD from '../../../modules/optimeraRtdProvider.js';
+import * as optimeraRTD from '../../../modules/optimeraRtdProvider.js'
 
-const utils = require('src/utils.js');
+const utils = require('src/utils.js')
 
 describe('Optimera RTD sub module', () => {
   it('should init, return true, and set the params', () => {
@@ -14,14 +14,14 @@ describe('Optimera RTD sub module', () => {
           transmitWithBidRequests: 'allow',
         }
       }]
-    };
-    expect(optimeraRTD.init(conf.dataProviders[0])).to.equal(true);
-    expect(optimeraRTD.clientID).to.equal('9999');
-    expect(optimeraRTD.optimeraKeyName).to.equal('optimera');
-    expect(optimeraRTD.device).to.equal('de');
-    expect(optimeraRTD.transmitWithBidRequests).to.equal('allow');
-  });
-});
+    }
+    expect(optimeraRTD.init(conf.dataProviders[0])).to.equal(true)
+    expect(optimeraRTD.clientID).to.equal('9999')
+    expect(optimeraRTD.optimeraKeyName).to.equal('optimera')
+    expect(optimeraRTD.device).to.equal('de')
+    expect(optimeraRTD.transmitWithBidRequests).to.equal('allow')
+  })
+})
 
 describe('Optimera RTD score file URL is properly set for v0', () => {
   it('should properly set the score file URL', () => {
@@ -35,13 +35,13 @@ describe('Optimera RTD score file URL is properly set for v0', () => {
           apiVersion: 'v0',
         }
       }]
-    };
-    optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
-    optimeraRTD.setScores();
-    expect(optimeraRTD.apiVersion).to.equal('v0');
-    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
-  });
+    }
+    optimeraRTD.init(conf.dataProviders[0])
+    optimeraRTD.setScoresURL()
+    optimeraRTD.setScores()
+    expect(optimeraRTD.apiVersion).to.equal('v0')
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js')
+  })
 
   it('should properly set the score file URL without apiVersion set', () => {
     const conf = {
@@ -53,13 +53,13 @@ describe('Optimera RTD score file URL is properly set for v0', () => {
           device: 'de',
         }
       }]
-    };
-    optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
-    optimeraRTD.setScores();
-    expect(optimeraRTD.apiVersion).to.equal('v0');
-    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
-  });
+    }
+    optimeraRTD.init(conf.dataProviders[0])
+    optimeraRTD.setScoresURL()
+    optimeraRTD.setScores()
+    expect(optimeraRTD.apiVersion).to.equal('v0')
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js')
+  })
 
   it('should properly set the score file URL with an api version other than v0 or v1', () => {
     const conf = {
@@ -72,13 +72,13 @@ describe('Optimera RTD score file URL is properly set for v0', () => {
           apiVersion: 'v15',
         }
       }]
-    };
-    optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
-    optimeraRTD.setScores();
-    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js');
-  });
-});
+    }
+    optimeraRTD.init(conf.dataProviders[0])
+    optimeraRTD.setScoresURL()
+    optimeraRTD.setScores()
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost%3A9876/context.html.js')
+  })
+})
 
 describe('Optimera RTD score file URL is properly set for v1', () => {
   it('should properly set the score file URL', () => {
@@ -92,14 +92,14 @@ describe('Optimera RTD score file URL is properly set for v1', () => {
           apiVersion: 'v1',
         }
       }]
-    };
-    optimeraRTD.init(conf.dataProviders[0]);
-    optimeraRTD.setScoresURL();
-    optimeraRTD.setScores();
-    expect(optimeraRTD.apiVersion).to.equal('v1');
-    expect(optimeraRTD.scoresURL).to.equal('https://v1.oapi26b.com/api/products/scores?c=9999&h=localhost:9876&p=/context.html&s=de');
-  });
-});
+    }
+    optimeraRTD.init(conf.dataProviders[0])
+    optimeraRTD.setScoresURL()
+    optimeraRTD.setScores()
+    expect(optimeraRTD.apiVersion).to.equal('v1')
+    expect(optimeraRTD.scoresURL).to.equal('https://v1.oapi26b.com/api/products/scores?c=9999&h=localhost:9876&p=/context.html&s=de')
+  })
+})
 
 describe('Optimera RTD score file properly sets targeting values', () => {
   const scores = {
@@ -127,13 +127,13 @@ describe('Optimera RTD score file properly sets targeting values', () => {
       ilv: ['div-5'],
       miv: ['div-6'],
     }
-  };
+  }
   it('Properly set the score file url and scores', () => {
-    optimeraRTD.setScores(JSON.stringify(scores));
-    expect(optimeraRTD.optimeraTargeting['div-0']).to.include.ordered.members(['A5', 'A6']);
-    expect(optimeraRTD.optimeraTargeting['div-1']).to.include.ordered.members(['A7', 'A8']);
-  });
-});
+    optimeraRTD.setScores(JSON.stringify(scores))
+    expect(optimeraRTD.optimeraTargeting['div-0']).to.include.ordered.members(['A5', 'A6'])
+    expect(optimeraRTD.optimeraTargeting['div-1']).to.include.ordered.members(['A7', 'A8'])
+  })
+})
 
 describe('Optimera RTD propery sets the window.optimera object', () => {
   const scores = {
@@ -167,13 +167,13 @@ describe('Optimera RTD propery sets the window.optimera object', () => {
       'LB_9999',
       'LC_9999',
     ]
-  };
+  }
   it('Properly set the score file url and scores', () => {
-    optimeraRTD.setScores(JSON.stringify(scores));
-    expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8']);
-    expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
-    expect(window.optimera.pagelevel).to.include.ordered.members(['U', 'LA_9999', 'LB_9999', 'LC_9999']);
-  });
+    optimeraRTD.setScores(JSON.stringify(scores))
+    expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8'])
+    expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0'])
+    expect(window.optimera.pagelevel).to.include.ordered.members(['U', 'LA_9999', 'LB_9999', 'LC_9999'])
+  })
 
   const scoresWithoutPageLevel = {
     'div-0': ['A1', 'A2'],
@@ -200,36 +200,36 @@ describe('Optimera RTD propery sets the window.optimera object', () => {
       ilv: ['div-5'],
       miv: ['div-6'],
     },
-  };
+  }
 
   it('Properly leaves pagelevel empty when it is not provided', () => {
-    window.optimera = {};
+    window.optimera = {}
 
-    optimeraRTD.setScores(JSON.stringify(scoresWithoutPageLevel));
-    expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8']);
-    expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0']);
-    expect(window.optimera.pagelevel).to.deep.equal([]);
-  });
-});
+    optimeraRTD.setScores(JSON.stringify(scoresWithoutPageLevel))
+    expect(window.optimera.data['div-1']).to.include.ordered.members(['A7', 'A8'])
+    expect(window.optimera.insights.ilv).to.include.ordered.members(['div-0'])
+    expect(window.optimera.pagelevel).to.deep.equal([])
+  })
+})
 
 describe('Optimera RTD targeting object is properly formed', () => {
-  const adDivs = ['div-0', 'div-1'];
+  const adDivs = ['div-0', 'div-1']
   it('applyTargeting properly created the targeting object', () => {
-    const targeting = optimeraRTD.returnTargetingData(adDivs);
-    expect(targeting).to.deep.include({ 'div-0': { optimera: [['A5', 'A6']] } });
-    expect(targeting).to.deep.include({ 'div-1': { optimera: [['A7', 'A8']] } });
-  });
-});
+    const targeting = optimeraRTD.returnTargetingData(adDivs)
+    expect(targeting).to.deep.include({ 'div-0': { optimera: [['A5', 'A6']] } })
+    expect(targeting).to.deep.include({ 'div-1': { optimera: [['A7', 'A8']] } })
+  })
+})
 
 describe('Optimera RTD error logging', () => {
-  let utilsLogErrorStub;
+  let utilsLogErrorStub
 
   beforeEach(() => {
-    utilsLogErrorStub = sinon.stub(utils, 'logError');
-  });
+    utilsLogErrorStub = sinon.stub(utils, 'logError')
+  })
   afterEach(() => {
-    utilsLogErrorStub.restore();
-  });
+    utilsLogErrorStub.restore()
+  })
 
   it('ommitting clientID should log an error', () => {
     const conf = {
@@ -240,39 +240,39 @@ describe('Optimera RTD error logging', () => {
           device: 'de'
         }
       }]
-    };
-    optimeraRTD.init(conf.dataProviders[0]);
-    expect(utils.logError.called).to.equal(true);
-  });
+    }
+    optimeraRTD.init(conf.dataProviders[0])
+    expect(utils.logError.called).to.equal(true)
+  })
 
   it('if adUnits is not an array should log an error', () => {
-    optimeraRTD.returnTargetingData('test');
-    expect(utils.logError.called).to.equal(true);
-  });
-});
+    optimeraRTD.returnTargetingData('test')
+    expect(utils.logError.called).to.equal(true)
+  })
+})
 
 describe('Optimera RTD injectOrtbScores', () => {
   it('injects optimera targeting into ortb2Imp.ext.data', () => {
     const adUnits = [
       { code: 'div-0', ortb2Imp: {} },
       { code: 'div-1', ortb2Imp: {} }
-    ];
+    ]
 
-    const reqBidsConfigObj = { adUnits };
+    const reqBidsConfigObj = { adUnits }
 
-    optimeraRTD.injectOrtbScores(reqBidsConfigObj);
+    optimeraRTD.injectOrtbScores(reqBidsConfigObj)
 
-    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.optimera).to.deep.equal(['A5', 'A6']);
-    expect(reqBidsConfigObj.adUnits[1].ortb2Imp.ext.data.optimera).to.deep.equal(['A7', 'A8']);
-  });
+    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.optimera).to.deep.equal(['A5', 'A6'])
+    expect(reqBidsConfigObj.adUnits[1].ortb2Imp.ext.data.optimera).to.deep.equal(['A7', 'A8'])
+  })
 
   it('does not inject when no targeting data is available', () => {
-    const adUnits = [{ code: 'div-unknown', ortb2Imp: {} }];
+    const adUnits = [{ code: 'div-unknown', ortb2Imp: {} }]
 
-    const reqBidsConfigObj = { adUnits };
+    const reqBidsConfigObj = { adUnits }
 
-    optimeraRTD.injectOrtbScores(reqBidsConfigObj);
+    optimeraRTD.injectOrtbScores(reqBidsConfigObj)
 
-    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
-  });
-});
+    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined
+  })
+})

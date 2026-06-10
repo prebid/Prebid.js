@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getBidIdParameter, isEmpty } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { getBidIdParameter, isEmpty } from '../src/utils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,9 +13,9 @@ import { getBidIdParameter, isEmpty } from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'suim';
-const ENDPOINT = 'https://ad.suimad.com/bid';
-const SYNC_URL = 'https://ad.suimad.com/usersync';
+const BIDDER_CODE = 'suim'
+const ENDPOINT = 'https://ad.suimad.com/bid'
+const SYNC_URL = 'https://ad.suimad.com/usersync'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -28,7 +28,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!bid.params.ad_space_id;
+    return !!bid.params.ad_space_id
   },
 
   /**
@@ -39,11 +39,11 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const refererInfo = bidderRequest.refererInfo;
-    const url = refererInfo.topmostLocation;
+    const refererInfo = bidderRequest.refererInfo
+    const url = refererInfo.topmostLocation
 
     return validBidRequests.map((request) => {
-      const adSpaceId = getBidIdParameter('ad_space_id', request.params);
+      const adSpaceId = getBidIdParameter('ad_space_id', request.params)
       const data = {
         bids: [
           {
@@ -53,7 +53,7 @@ export const spec = {
             src_url: url,
           },
         ],
-      };
+      }
       return {
         method: 'POST',
         url: ENDPOINT,
@@ -61,8 +61,8 @@ export const spec = {
         options: {
           contentType: 'text/plain',
         },
-      };
-    });
+      }
+    })
   },
 
   /**
@@ -72,9 +72,9 @@ export const spec = {
    * @returns {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const res = serverResponse.body;
+    const res = serverResponse.body
     if (isEmpty(res)) {
-      return [];
+      return []
     }
 
     return [
@@ -90,7 +90,7 @@ export const spec = {
         netRevenue: res.netRevenue,
         meta: res.meta,
       },
-    ];
+    ]
   },
 
   /**
@@ -106,8 +106,8 @@ export const spec = {
         url: SYNC_URL,
         type: 'image',
       },
-    ];
+    ]
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

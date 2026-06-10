@@ -1,4 +1,4 @@
-export type ThirtyThreeAcrossIdSystemModuleName = '33acrossId';
+export type ThirtyThreeAcrossIdSystemModuleName = '33acrossId'
 
 export type ThirtyThreeAcrossIdSystemParams = {
   /**

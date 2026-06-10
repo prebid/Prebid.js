@@ -160,8 +160,8 @@ describe('sovrnBidAdapter', function() {
         const minduration = 5
         const maxduration = 60
         const startdelay = 0
-        const modifiedBidRequest = baseBidRequest;
-        delete modifiedBidRequest.sizes;
+        const modifiedBidRequest = baseBidRequest
+        delete modifiedBidRequest.sizes
         const videoBidRequest = {
           ...modifiedBidRequest,
           mediaTypes: {
@@ -423,13 +423,13 @@ describe('sovrnBidAdapter', function() {
             osv: '17.4',
           },
         },
-      };
+      }
 
-      const request = spec.buildRequests([baseBidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([baseBidRequest], bidderRequest)
+      const payload = JSON.parse(request.data)
 
-      expect(payload.device).to.deep.equal(bidderRequest.ortb2.device);
-    });
+      expect(payload.device).to.deep.equal(bidderRequest.ortb2.device)
+    })
 
     it('should not send gpp info when gppConsent is not defined', function () {
       const bidderRequest = {
@@ -531,7 +531,7 @@ describe('sovrnBidAdapter', function() {
             ]
           }
         ]
-      };
+      }
       const criteoIdRequests = [criteoIdRequest, baseBidRequest]
       const ext = JSON.parse(spec.buildRequests(criteoIdRequests, baseBidderRequest).data).user.ext
       const firstEID = ext.eids[0]
@@ -643,7 +643,7 @@ describe('sovrnBidAdapter', function() {
           user: {
             data: 'some user data'
           }
-        };
+        }
 
         const request = spec.buildRequests([baseBidRequest], { ...baseBidderRequest, ortb2 })
         const { user, site } = JSON.parse(request.data)

@@ -12,98 +12,98 @@ import {
   setOrtb2,
   setUidInStorage,
   sirdataSubmodule
-} from 'modules/sirdataRtdProvider.js';
-import { expect } from 'chai';
-import { deepSetValue } from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
+} from 'modules/sirdataRtdProvider.js'
+import { expect } from 'chai'
+import { deepSetValue } from 'src/utils.js'
+import { server } from 'test/mocks/xhr.js'
 
-const responseHeader = { 'Content-Type': 'application/json' };
+const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('sirdataRtdProvider', function () {
   describe('sirdata Submodule init', function () {
     it('exists', function () {
-      expect(sirdataSubmodule.init).to.be.a('function');
-    });
+      expect(sirdataSubmodule.init).to.be.a('function')
+    })
     it('successfully instantiates', function () {
       const moduleConfig = {
         params: {
           partnerId: 1,
           key: 1,
         }
-      };
-      expect(sirdataSubmodule.init(moduleConfig)).to.equal(true);
-    });
+      }
+      expect(sirdataSubmodule.init(moduleConfig)).to.equal(true)
+    })
     it('has the correct module name', function () {
-      expect(sirdataSubmodule.name).to.equal('SirdataRTDModule');
-    });
-  });
+      expect(sirdataSubmodule.name).to.equal('SirdataRTDModule')
+    })
+  })
 
   describe('Sanitize content', function () {
     it('removes PII from content', function () {
-      const doc = document.implementation.createHTMLDocument('');
-      const div = doc.createElement('div');
-      div.className = 'test';
-      div.setAttribute('test', 'test');
-      div.textContent = 'My email is test@test.com, My bank account number is 123456789012, my SSN is 123-45-6789, and my credit card number is 1234 5678 9101 1121.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
-      const div2 = doc.createElement('div');
-      const div3 = doc.createElement('div');
-      div3.innerText = 'hello';
-      div2.appendChild(div3);
-      div.appendChild(div2);
-      doc.body.appendChild(div);
-      const cleanedDom = removePII(doc.documentElement.innerHTML);
-      const sanitizedDom = sanitizeContent(doc);
-      expect(cleanedDom).to.equal('<head><title></title></head><body><div class="test" test="test">My email is , My bank account number is , my SSN is , and my credit card number is .Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<div><div>hello</div></div></div></body>');
-      expect(sanitizedDom.documentElement.innerHTML).to.equal('<head></head><body><div>My email is , My bank account number is , my SSN is , and my credit card number is .Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<div><div>hello</div></div></div></body>');
-    });
-  });
+      const doc = document.implementation.createHTMLDocument('')
+      const div = doc.createElement('div')
+      div.className = 'test'
+      div.setAttribute('test', 'test')
+      div.textContent = 'My email is test@test.com, My bank account number is 123456789012, my SSN is 123-45-6789, and my credit card number is 1234 5678 9101 1121.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
+      const div2 = doc.createElement('div')
+      const div3 = doc.createElement('div')
+      div3.innerText = 'hello'
+      div2.appendChild(div3)
+      div.appendChild(div2)
+      doc.body.appendChild(div)
+      const cleanedDom = removePII(doc.documentElement.innerHTML)
+      const sanitizedDom = sanitizeContent(doc)
+      expect(cleanedDom).to.equal('<head><title></title></head><body><div class="test" test="test">My email is , My bank account number is , my SSN is , and my credit card number is .Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<div><div>hello</div></div></div></body>')
+      expect(sanitizedDom.documentElement.innerHTML).to.equal('<head></head><body><div>My email is , My bank account number is , my SSN is , and my credit card number is .Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<div><div>hello</div></div></div></body>')
+    })
+  })
 
   describe('setUidInStorage', function () {
     it('sets Id in Storage', function () {
-      setUidInStorage('123456789');
-      const val = getUidFromStorage();
-      expect(val).to.deep.equal([{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }] }]);
-    });
-  });
+      setUidInStorage('123456789')
+      const val = getUidFromStorage()
+      expect(val).to.deep.equal([{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }] }])
+    })
+  })
 
   describe('mergeEuidsArrays', function () {
     it('merges Euids Arrays', function () {
-      const object1 = [{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }] }];
-      const object2 = [{ source: 'sddan.com', uids: [{ id: '987654321', atype: 1 }] }];
-      const object3 = mergeEuidsArrays(object1, object2);
-      expect(object3).to.deep.equal([{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }, { id: '987654321', atype: 1 }] }]);
-    });
-  });
+      const object1 = [{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }] }]
+      const object2 = [{ source: 'sddan.com', uids: [{ id: '987654321', atype: 1 }] }]
+      const object3 = mergeEuidsArrays(object1, object2)
+      expect(object3).to.deep.equal([{ source: 'sddan.com', uids: [{ id: '123456789', atype: 1 }, { id: '987654321', atype: 1 }] }])
+    })
+  })
 
   describe('onDocumentReady', function () {
     it('on Document Ready function execution', function () {
-      const testString = '';
-      const testFunction = function() { return true; };
-      let resString;
+      const testString = ''
+      const testFunction = function() { return true }
+      let resString
       try {
-        resString = onDocumentReady(testString);
+        resString = onDocumentReady(testString)
       } catch (e) {}
-      expect(resString).to.be.false;
-      const resFunction = onDocumentReady(testFunction);
-      expect(resFunction).to.be.true;
-    });
-  });
+      expect(resString).to.be.false
+      const resFunction = onDocumentReady(testFunction)
+      expect(resFunction).to.be.true
+    })
+  })
 
   describe('postContentForSemanticAnalysis', function () {
     it('gets content for analysis', function () {
-      const res = postContentForSemanticAnalysis('1223456', 'https://www.sirdata.com/');
-      const resEmpty = postContentForSemanticAnalysis('1223456', '');
-      expect(res).to.be.true;
-      expect(resEmpty).to.be.false;
-    });
-  });
+      const res = postContentForSemanticAnalysis('1223456', 'https://www.sirdata.com/')
+      const resEmpty = postContentForSemanticAnalysis('1223456', '')
+      expect(res).to.be.true
+      expect(resEmpty).to.be.false
+    })
+  })
 
   describe('loadCustomFunction', function () {
     it('load function', function () {
-      const res = loadCustomFunction(function(...args) { return true; }, {}, {}, {}, {});
-      expect(res).to.be.true;
-    });
-  });
+      const res = loadCustomFunction(function(...args) { return true }, {}, {}, {}, {})
+      expect(res).to.be.true
+    })
+  })
 
   describe('onDataDeletionRequest', function () {
     it('destroy id', function () {
@@ -112,11 +112,11 @@ describe('sirdataRtdProvider', function () {
           partnerId: 1,
           key: 1,
         }
-      };
-      const res = onDataDeletionRequest(moduleConfig);
-      expect(res).to.be.true;
-    });
-  });
+      }
+      const res = onDataDeletionRequest(moduleConfig)
+      expect(res).to.be.true
+    })
+  })
 
   describe('Add Segment Data', function () {
     it('adds segment data', function () {
@@ -131,8 +131,8 @@ describe('sirdataRtdProvider', function () {
           cookieAccessGranted: true,
           bidders: []
         }
-      };
-      sirdataSubmodule.init(firstConfig);
+      }
+      sirdataSubmodule.init(firstConfig)
 
       const adUnits = [
         {
@@ -145,14 +145,14 @@ describe('sirdataRtdProvider', function () {
             bidder: 'other'
           }]
         }
-      ];
+      ]
 
       const firstReqBidsConfigObj = {
         adUnits: adUnits,
         ortb2Fragments: {
           global: {}
         }
-      };
+      }
 
       const firstData = {
         segments: [111111, 222222],
@@ -178,15 +178,15 @@ describe('sirdataRtdProvider', function () {
           'post_content_token': '987654321'
         }
       }
-      addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function() { return true; });
-      expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
-    });
-  });
+      addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function() { return true })
+      expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4)
+    })
+  })
 
   describe('Get Segments And Categories', function () {
     it('gets data from async request and adds segment data', function () {
       const overrideAppnexus = function (adUnit, list, data, bid) {
-        deepSetValue(bid, 'params.keywords.custom', list.segments.concat(list.categories));
+        deepSetValue(bid, 'params.keywords.custom', list.segments.concat(list.categories))
       }
 
       const config = {
@@ -212,8 +212,8 @@ describe('sirdataRtdProvider', function () {
             curationId: 27484
           }]
         }
-      };
-      sirdataSubmodule.init(config);
+      }
+      sirdataSubmodule.init(config)
 
       const reqBidsConfigObj = {
         adUnits: [{
@@ -274,7 +274,7 @@ describe('sirdataRtdProvider', function () {
         ortb2Fragments: {
           global: {}
         }
-      };
+      }
 
       const data = {
         'segments': [111111, 222222],
@@ -305,33 +305,33 @@ describe('sirdataRtdProvider', function () {
         },
         'sddan_id': '123456789',
         'post_content_token': '987654321'
-      };
+      }
 
       getSegmentsAndCategories(reqBidsConfigObj, () => {
-      }, {}, {});
+      }, {}, {})
 
-      const request = server.requests[0];
-      request.respond(200, responseHeader, JSON.stringify(data));
+      const request = server.requests[0]
+      request.respond(200, responseHeader, JSON.stringify(data))
 
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].name).to.equal(
         'sirdata.com'
-      );
+      )
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment).to.eql([
         { id: '345' },
         { id: '456' }
-      ]);
-      expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].ext.segtax).to.equal(7);
+      ])
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].ext.segtax).to.equal(7)
 
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].name).to.equal(
         'sirdata.com'
-      );
+      )
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment).to.eql([
         { id: '123' },
         { id: '234' }
-      ]);
-      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
-    });
-  });
+      ])
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4)
+    })
+  })
 
   describe('Set ortb2 for bidder', function () {
     it('set ortb2 for a givent bidder', function () {
@@ -347,16 +347,16 @@ describe('sirdataRtdProvider', function () {
         ortb2Fragments: {
           global: {}
         }
-      };
+      }
 
-      window.googletag = window.googletag || {};
-      window.googletag.cmd = window.googletag.cmd || [];
+      window.googletag = window.googletag || {}
+      window.googletag.cmd = window.googletag.cmd || []
 
-      let test = setOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', []);
-      expect(test).to.be.false;
+      let test = setOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', [])
+      expect(test).to.be.false
 
-      test = setOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', ['1']);
-      expect(test).to.be.true;
-    });
-  });
-});
+      test = setOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', ['1'])
+      expect(test).to.be.true
+    })
+  })
+})

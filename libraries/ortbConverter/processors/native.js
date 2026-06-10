@@ -1,11 +1,11 @@
-import { isPlainObject, logWarn, mergeDeep } from '../../../src/utils.js';
-import { NATIVE } from '../../../src/mediaTypes.js';
+import { isPlainObject, logWarn, mergeDeep } from '../../../src/utils.js'
+import { NATIVE } from '../../../src/mediaTypes.js'
 
 export function fillNativeImp(imp, bidRequest, context) {
-  if (context.mediaType && context.mediaType !== NATIVE) return;
-  let nativeReq = bidRequest.nativeOrtbRequest;
+  if (context.mediaType && context.mediaType !== NATIVE) return
+  let nativeReq = bidRequest.nativeOrtbRequest
   if (nativeReq) {
-    nativeReq = Object.assign({}, context.nativeRequest, nativeReq);
+    nativeReq = Object.assign({}, context.nativeRequest, nativeReq)
     if (nativeReq.assets?.length) {
       imp.native = mergeDeep({}, {
         request: JSON.stringify(nativeReq),
@@ -19,11 +19,11 @@ export function fillNativeImp(imp, bidRequest, context) {
 
 export function fillNativeResponse(bidResponse, bid) {
   if (bidResponse.mediaType === NATIVE) {
-    let ortb;
+    let ortb
     if (typeof bid.adm === 'string') {
-      ortb = JSON.parse(bid.adm);
+      ortb = JSON.parse(bid.adm)
     } else {
-      ortb = bid.adm;
+      ortb = bid.adm
     }
 
     if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
@@ -31,7 +31,7 @@ export function fillNativeResponse(bidResponse, bid) {
         ortb,
       }
     } else {
-      throw new Error('ORTB native response contained no assets');
+      throw new Error('ORTB native response contained no assets')
     }
   }
 }

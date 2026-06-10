@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/adqueryBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from '../../../src/utils.js';
+import * as utils from '../../../src/utils.js'
 
 describe('adqueryBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -72,10 +72,10 @@ describe('adqueryBidAdapter', function () {
     })
 
     it('should return false when sizes for banner are not specified', () => {
-      const bid = utils.deepClone(bidRequest);
-      delete bid.mediaTypes.banner.sizes;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      const bid = utils.deepClone(bidRequest)
+      delete bid.mediaTypes.banner.sizes
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
 
     it('should return false when sizes for video are not specified', () => {
       expect(spec.isBidRequestValid(
@@ -261,8 +261,8 @@ describe('adqueryBidAdapter', function () {
             }
           }
         }
-      )).to.equal(false);
-    });
+      )).to.equal(false)
+    })
     it('should return false when sizes for video are specified', () => {
       expect(spec.isBidRequestValid(
         {
@@ -316,8 +316,8 @@ describe('adqueryBidAdapter', function () {
           "auctionId": null,
           "src": "client",
         }
-      )).to.equal(true);
-    });
+      )).to.equal(true)
+    })
     it('should return false when context for video is correct', () => {
       expect(spec.isBidRequestValid(
         {
@@ -371,8 +371,8 @@ describe('adqueryBidAdapter', function () {
           "auctionId": null,
           "src": "client",
         }
-      )).to.equal(true);
-    });
+      )).to.equal(true)
+    })
     it('should return true when context for video is instream', () => {
       expect(spec.isBidRequestValid(
         {
@@ -409,8 +409,8 @@ describe('adqueryBidAdapter', function () {
           "auctionId": null,
           "src": "client",
         }
-      )).to.equal(true);
-    });
+      )).to.equal(true)
+    })
     it('should return true when context for video is outstream', () => {
       expect(spec.isBidRequestValid(
         {
@@ -447,8 +447,8 @@ describe('adqueryBidAdapter', function () {
           "auctionId": null,
           "src": "client",
         }
-      )).to.equal(true);
-    });
+      )).to.equal(true)
+    })
   })
 
   describe('buildRequests', function () {
@@ -715,65 +715,65 @@ describe('adqueryBidAdapter', function () {
     })
 
     it('data must have id key', function () {
-      expect(req_video.data.id).not.be.null;
+      expect(req_video.data.id).not.be.null
     })
 
     it('data must have cur key', function () {
-      expect(req_video.data.cur).not.be.null;
+      expect(req_video.data.cur).not.be.null
     })
 
     it('data must have video key', function () {
-      expect(req_video.data.imp[0].video).not.be.null;
+      expect(req_video.data.imp[0].video).not.be.null
     })
 
     it('data must have video h property', function () {
-      expect(req_video.data.imp[0].video.h).not.be.null;
+      expect(req_video.data.imp[0].video.h).not.be.null
     })
 
     it('data must have video w property', function () {
-      expect(req_video.data.imp[0].video.w).not.be.null;
+      expect(req_video.data.imp[0].video.w).not.be.null
     })
 
     it('data must have video protocols property', function () {
-      expect(req_video.data.imp[0].video.protocols).not.be.null;
+      expect(req_video.data.imp[0].video.protocols).not.be.null
     })
 
     it('data must have video mimes property', function () {
-      expect(req_video.data.imp[0].video.mimes).not.be.null;
+      expect(req_video.data.imp[0].video.mimes).not.be.null
     })
 
     it('data must have video bidfloor property', function () {
-      expect(req_video.data.imp[0].video.bidfloor).not.exist;
+      expect(req_video.data.imp[0].video.bidfloor).not.exist
     })
 
     it('data must have video bidfloorcur property', function () {
-      expect(req_video.data.imp[0].video.bidfloorcur).not.exist;
+      expect(req_video.data.imp[0].video.bidfloorcur).not.exist
     })
 
     it('data must have bidder placementCode', function () {
-      expect(req_video.data.site.ext.bidder.placementId).eq('d30f79cf7fef47bd7a5611719f936539bec0d2e9');
+      expect(req_video.data.site.ext.bidder.placementId).eq('d30f79cf7fef47bd7a5611719f936539bec0d2e9')
     })
 
     it('data must have user key', function () {
-      expect(req_video.data.user).not.be.null;
+      expect(req_video.data.user).not.be.null
     })
 
     it('data must have device.ua key', function () {
-      expect(req_video.data.device.ua).not.be.null;
+      expect(req_video.data.device.ua).not.be.null
     })
 
     it('data must have site.page key', function () {
-      expect(req_video.data.site.page).not.be.null;
+      expect(req_video.data.site.page).not.be.null
     })
 
     it('data must have site.domain key', function () {
-      expect(req_video.data.site.domain).not.be.null;
+      expect(req_video.data.site.domain).not.be.null
     })
 
     const req_video_for_floor = spec.buildRequests([
       {
         "getFloor": function () {
-          return { currency: "USD", floor: 1.13 };
+          return { currency: "USD", floor: 1.13 }
         },
         "bidder": "adquery",
         "params": {
@@ -963,11 +963,11 @@ describe('adqueryBidAdapter', function () {
     ], { refererInfo: {} })[0]
 
     it('data with floor must have video bidfloor property', function () {
-      expect(req_video_for_floor.data.imp[0].video.bidfloor).eq(1.13);
+      expect(req_video_for_floor.data.imp[0].video.bidfloor).eq(1.13)
     })
 
     it('data with floor must have video bidfloorcur property', function () {
-      expect(req_video_for_floor.data.imp[0].video.bidfloorcur).eq("USD");
+      expect(req_video_for_floor.data.imp[0].video.bidfloorcur).eq("USD")
     })
 
     describe('GDPR and USP consent in banner requests', function () {
@@ -975,34 +975,34 @@ describe('adqueryBidAdapter', function () {
         const req = spec.buildRequests([bidRequest], {
           refererInfo: {},
           gdprConsent: { gdprApplies: true, consentString: 'test-consent-string' }
-        })[0];
-        expect(req.data.gdpr).to.equal(1);
-        expect(req.data.gdpr_consent).to.equal('test-consent-string');
-      });
+        })[0]
+        expect(req.data.gdpr).to.equal(1)
+        expect(req.data.gdpr_consent).to.equal('test-consent-string')
+      })
 
       it('should set gdpr=0 when gdprApplies is false', function () {
         const req = spec.buildRequests([bidRequest], {
           refererInfo: {},
           gdprConsent: { gdprApplies: false, consentString: 'test-consent-string' }
-        })[0];
-        expect(req.data.gdpr).to.equal(0);
-      });
+        })[0]
+        expect(req.data.gdpr).to.equal(0)
+      })
 
       it('should default gdpr=0 and empty strings when no consent provided', function () {
-        const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
-        expect(req.data.gdpr).to.equal(0);
-        expect(req.data.gdpr_consent).to.equal('');
-        expect(req.data.us_privacy).to.equal('');
-      });
+        const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0]
+        expect(req.data.gdpr).to.equal(0)
+        expect(req.data.gdpr_consent).to.equal('')
+        expect(req.data.us_privacy).to.equal('')
+      })
 
       it('should set us_privacy when uspConsent provided', function () {
         const req = spec.buildRequests([bidRequest], {
           refererInfo: {},
           uspConsent: '1YNN'
-        })[0];
-        expect(req.data.us_privacy).to.equal('1YNN');
-      });
-    });
+        })[0]
+        expect(req.data.us_privacy).to.equal('1YNN')
+      })
+    })
 
     describe('GDPR and USP consent in video requests', function () {
       const minimalVideoBid = {
@@ -1014,38 +1014,38 @@ describe('adqueryBidAdapter', function () {
         ortb2Imp: { video: { w: 640, h: 360 } },
         ortb2: {},
         bidId: 'test-bid-id-video'
-      };
+      }
 
       it('should set regs.ext.gdpr and user.consent in video request when gdprConsent provided', function () {
         const req = spec.buildRequests([minimalVideoBid], {
           refererInfo: {},
           gdprConsent: { gdprApplies: true, consentString: 'video-consent-string' }
-        })[0];
-        expect(req.data.regs.ext.gdpr).to.equal(1);
-        expect(req.data.user.consent).to.equal('video-consent-string');
-      });
+        })[0]
+        expect(req.data.regs.ext.gdpr).to.equal(1)
+        expect(req.data.user.consent).to.equal('video-consent-string')
+      })
 
       it('should set regs.ext.gdpr=0 when gdprApplies is false for video', function () {
         const req = spec.buildRequests([minimalVideoBid], {
           refererInfo: {},
           gdprConsent: { gdprApplies: false, consentString: 'video-consent-string' }
-        })[0];
-        expect(req.data.regs.ext.gdpr).to.equal(0);
-      });
+        })[0]
+        expect(req.data.regs.ext.gdpr).to.equal(0)
+      })
 
       it('should not set regs when no gdprConsent or uspConsent for video', function () {
-        const req = spec.buildRequests([minimalVideoBid], { refererInfo: {} })[0];
-        expect(req.data.regs).to.be.undefined;
-      });
+        const req = spec.buildRequests([minimalVideoBid], { refererInfo: {} })[0]
+        expect(req.data.regs).to.be.undefined
+      })
 
       it('should set regs.ext.us_privacy in video request when uspConsent provided', function () {
         const req = spec.buildRequests([minimalVideoBid], {
           refererInfo: {},
           uspConsent: '1YNN'
-        })[0];
-        expect(req.data.regs.ext.us_privacy).to.equal('1YNN');
-      });
-    });
+        })[0]
+        expect(req.data.regs.ext.us_privacy).to.equal('1YNN')
+      })
+    })
 
     describe('userId resolution via userIdAsEids', function () {
       it('should use adquery.io EID as userId when available', function () {
@@ -1054,26 +1054,26 @@ describe('adqueryBidAdapter', function () {
             { source: 'other.com', uids: [{ id: 'other-id' }] },
             { source: 'adquery.io', uids: [{ id: 'qd_adquery-id' }] }
           ]
-        });
-        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.equal('qd_adquery-id');
-      });
+        })
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0]
+        expect(req.data.bidQid).to.equal('qd_adquery-id')
+      })
 
       it('should fall back to first EID when no adquery.io EID available', function () {
         const bid = Object.assign({}, bidRequest, {
           userIdAsEids: [
             { source: 'other.com', uids: [{ id: 'fallback-id' }] }
           ]
-        });
-        const req = spec.buildRequests([bid], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.equal('fallback-id');
-      });
+        })
+        const req = spec.buildRequests([bid], { refererInfo: {} })[0]
+        expect(req.data.bidQid).to.equal('fallback-id')
+      })
 
       it('should generate qd_ prefixed userId when no userIdAsEids present', function () {
-        const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0];
-        expect(req.data.bidQid).to.match(/^qd_/);
-      });
-    });
+        const req = spec.buildRequests([bidRequest], { refererInfo: {} })[0]
+        expect(req.data.bidQid).to.match(/^qd_/)
+      })
+    })
   })
 
   describe('interpretResponse', function () {
@@ -1083,15 +1083,15 @@ describe('adqueryBidAdapter', function () {
     })
 
     it('validate response params', function() {
-      const newResponse = spec.interpretResponse(expectedResponse, bidRequest);
+      const newResponse = spec.interpretResponse(expectedResponse, bidRequest)
       expect(newResponse[0].requestId).to.be.equal(1)
-    });
+    })
     it('handles empty bid response', function () {
       const response = {
         body: {}
-      };
-      const result = spec.interpretResponse(response);
-      expect(result.length).to.equal(0);
+      }
+      const result = spec.interpretResponse(response)
+      expect(result.length).to.equal(0)
     })
 
     it('validate video response params, seatbid', function () {
@@ -1121,9 +1121,9 @@ describe('adqueryBidAdapter', function () {
             "test": "1"
           }
         }
-      }, bidRequest);
+      }, bidRequest)
       expect(newResponse[0].requestId).to.be.equal("48169c9f-f033-48fa-878d-a319273e5c15")
-    });
+    })
 
     it('validate video response params, seatbid: nurl, vastXml', function () {
       const newResponse = spec.interpretResponse({
@@ -1152,16 +1152,16 @@ describe('adqueryBidAdapter', function () {
             "test": "1"
           }
         }
-      }, bidRequest);
+      }, bidRequest)
       expect(newResponse[0].nurl).to.be.equal("https://bidder.adquery.io/openrtb2/uuid/nurl/d")
       expect(newResponse[0].vastXml).to.be.equal("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VAST version=\"2.0\"><\/VAST>\n")
-    });
+    })
 
     it('should not include referrer field in banner bid response', function () {
-      const result = spec.interpretResponse(expectedResponse);
-      const bannerBid = result[result.length - 1];
-      expect(bannerBid.referrer).to.be.undefined;
-    });
+      const result = spec.interpretResponse(expectedResponse)
+      const bannerBid = result[result.length - 1]
+      expect(bannerBid.referrer).to.be.undefined
+    })
   })
 
   describe('getUserSyncs', function () {
@@ -1204,93 +1204,93 @@ describe('adqueryBidAdapter', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, {});
-      expect(syncData).to.be.an('array').which.is.not.empty;
+      }, {})
+      expect(syncData).to.be.an('array').which.is.not.empty
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
-    });
+    })
 
     it('should not include qid in sync URL even when window.qid is set', function () {
-      const originalQid = window.qid;
-      window.qid = 'test-qid-value';
+      const originalQid = window.qid
+      window.qid = 'test-qid-value'
       try {
-        const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {});
-        expect(sync[0].url).to.not.include('qid');
+        const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {})
+        expect(sync[0].url).to.not.include('qid')
       } finally {
-        window.qid = originalQid;
+        window.qid = originalQid
       }
-    });
+    })
   })
 
   describe('test onBidWon function', function () {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
-    });
+      sinon.stub(utils, 'triggerPixel')
+    })
     afterEach(function() {
-      utils.triggerPixel.restore();
-    });
+      utils.triggerPixel.restore()
+    })
     it('exists and is a function', () => {
-      expect(spec.onBidWon).to.exist.and.to.be.a('function');
-    });
+      expect(spec.onBidWon).to.exist.and.to.be.a('function')
+    })
     it('should return nothing', function () {
-      var response = spec.onBidWon({});
+      var response = spec.onBidWon({})
       expect(response).to.be.an('undefined')
-      expect(utils.triggerPixel.called).to.equal(true);
-    });
+      expect(utils.triggerPixel.called).to.equal(true)
+    })
     it('should use nurl if exists', function () {
-      var response = spec.onBidWon({ nurl: "https://example.com/test-nurl" });
+      var response = spec.onBidWon({ nurl: "https://example.com/test-nurl" })
       expect(response).to.be.an('undefined')
-      expect(utils.triggerPixel.calledWith("https://example.com/test-nurl")).to.equal(true);
-    });
+      expect(utils.triggerPixel.calledWith("https://example.com/test-nurl")).to.equal(true)
+    })
     it('should extract uuid from ad string and remove ad from payload', function () {
       spec.onBidWon({
         ad: '<script src="https://example.com/js/example.js"></script><example-ad data-uuid="test-uuid-example"></example-ad>',
-      });
-      const calledUrl = utils.triggerPixel.getCall(0).args[0];
-      const qMatch = calledUrl.match(/[?&]q=([^&]*)/);
-      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])));
-      expect(decodedBid.uuid).to.equal('test-uuid-example');
-      expect(decodedBid.ad).to.be.undefined;
-    });
+      })
+      const calledUrl = utils.triggerPixel.getCall(0).args[0]
+      const qMatch = calledUrl.match(/[?&]q=([^&]*)/)
+      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])))
+      expect(decodedBid.uuid).to.equal('test-uuid-example')
+      expect(decodedBid.ad).to.be.undefined
+    })
     it('should set uuid to null when ad has no data-uuid attribute', function () {
       spec.onBidWon({
         ad: '<script src="https://example.com/js/example.js"></script><example-ad></example-ad>',
-      });
-      const calledUrl = utils.triggerPixel.getCall(0).args[0];
-      const qMatch = calledUrl.match(/[?&]q=([^&]*)/);
-      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])));
-      expect(decodedBid.uuid).to.be.null;
-      expect(decodedBid.ad).to.be.undefined;
-    });
+      })
+      const calledUrl = utils.triggerPixel.getCall(0).args[0]
+      const qMatch = calledUrl.match(/[?&]q=([^&]*)/)
+      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])))
+      expect(decodedBid.uuid).to.be.null
+      expect(decodedBid.ad).to.be.undefined
+    })
     it('should set uuid to null when bid has no ad field (e.g. video bid with vastXml)', function () {
       spec.onBidWon({
         mediaType: 'video',
         vastXml: '<?xml version="1.0"?><VAST version="2.0"></VAST>',
         cpm: 1.5,
-      });
-      const calledUrl = utils.triggerPixel.getCall(0).args[0];
-      const qMatch = calledUrl.match(/[?&]q=([^&]*)/);
-      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])));
-      expect(decodedBid.uuid).to.be.null;
-      expect(decodedBid.ad).to.be.undefined;
-    });
+      })
+      const calledUrl = utils.triggerPixel.getCall(0).args[0]
+      const qMatch = calledUrl.match(/[?&]q=([^&]*)/)
+      const decodedBid = JSON.parse(atob(decodeURIComponent(qMatch[1])))
+      expect(decodedBid.uuid).to.be.null
+      expect(decodedBid.ad).to.be.undefined
+    })
   })
 
   describe('onTimeout', function () {
     const timeoutData = [{
       timeout: null
-    }];
+    }]
 
     it('should exists and be a function', () => {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    });
-    it('should include timeoutData', function () {
-      expect(spec.onTimeout(timeoutData)).to.be.undefined;
+      expect(spec.onTimeout).to.exist.and.to.be.a('function')
     })
-  });
+    it('should include timeoutData', function () {
+      expect(spec.onTimeout(timeoutData)).to.be.undefined
+    })
+  })
 
   it(`onSetTargeting is present and type function`, function () {
     expect(spec.onSetTargeting).to.exist.and.to.be.a('function')
-  });
+  })
 })

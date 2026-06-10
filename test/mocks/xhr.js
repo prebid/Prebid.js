@@ -1,49 +1,49 @@
-import { getUniqueIdentifierStr } from '../../src/utils.js';
-import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
-import { fakeXhr } from 'nise';
-import { dep } from 'src/ajax.js';
+import { getUniqueIdentifierStr } from '../../src/utils.js'
+import { GreedyPromise } from 'libraries/greedy/greedyPromise.js'
+import { fakeXhr } from 'nise'
+import { dep } from 'src/ajax.js'
 
-export const xhr = fakeXhr.useFakeXMLHttpRequest();
-export const server = mockFetchServer();
+export const xhr = fakeXhr.useFakeXMLHttpRequest()
+export const server = mockFetchServer()
 
 /**
  * An (incomplete) replica of nise's fakeServer, but backing fetch used in ajax.js (rather than XHR).
  */
 function mockFetchServer() {
-  const sandbox = sinon.createSandbox();
-  const bodies = new WeakMap();
-  const requests = [];
-  const { DONE, UNSENT } = XMLHttpRequest;
+  const sandbox = sinon.createSandbox()
+  const bodies = new WeakMap()
+  const requests = []
+  const { DONE, UNSENT } = XMLHttpRequest
 
   function makeRequest(resource, options) {
-    const requestBody = options?.body || bodies.get(resource);
+    const requestBody = options?.body || bodies.get(resource)
     const request = new Request(resource, Object.assign({
       // firefox will lose keepalive otherwise
       keepalive: resource?.keepalive
-    }, options));
+    }, options))
     request.clone = () => ({
       ...request,
       blob: () => GreedyPromise.resolve(new Blob([requestBody]))
     })
-    bodies.set(request, requestBody);
-    return request;
+    bodies.set(request, requestBody)
+    return request
   }
 
   function mockXHR(resource, options) {
-    let resolve, reject;
+    let resolve, reject
     const promise = new GreedyPromise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
+      resolve = res
+      reject = rej
+    })
 
     function error(reason = new TypeError('Failed to fetch')) {
-      mockReq.status = 0;
-      reject(reason);
+      mockReq.status = 0
+      reject(reason)
     }
 
-    const request = makeRequest(resource, options);
-    request.signal.onabort = () => error(new DOMException('The user aborted a request'));
-    let responseHeaders;
+    const request = makeRequest(resource, options)
+    request.signal.onabort = () => error(new DOMException('The user aborted a request'))
+    let responseHeaders
 
     const mockReq = {
       fetch: {
@@ -59,13 +59,13 @@ function mockFetchServer() {
       statusText: '',
       requestHeaders: new Proxy(request.headers, {
         get(target, prop) {
-          return typeof prop === 'string' && target.has(prop) ? target.get(prop) : {}[prop];
+          return typeof prop === 'string' && target.has(prop) ? target.get(prop) : {}[prop]
         },
         has(target, prop) {
-          return typeof prop === 'string' && target.has(prop);
+          return typeof prop === 'string' && target.has(prop)
         },
         ownKeys(target) {
-          return Array.from(target.keys());
+          return Array.from(target.keys())
         },
         getOwnPropertyDescriptor(target, prop) {
           if (typeof prop === 'string' && target.has(prop)) {
@@ -81,17 +81,17 @@ function mockFetchServer() {
       withCredentials: request.credentials === 'include',
       setStatus(status) {
         // nise replaces invalid status with 200
-        status = typeof status === 'number' ? status : 200;
-        mockReq.status = status;
-        mockReq.statusText = fakeXhr.FakeXMLHttpRequest.statusCodes[status] || '';
+        status = typeof status === 'number' ? status : 200
+        mockReq.status = status
+        mockReq.statusText = fakeXhr.FakeXMLHttpRequest.statusCodes[status] || ''
       },
       setResponseHeaders(headers) {
-        responseHeaders = headers;
+        responseHeaders = headers
       },
       setResponseBody(body) {
         if (mockReq.status === 0) {
-          error();
-          return;
+          error()
+          return
         }
         const resp = Object.defineProperties(new Response(body, {
           status: mockReq.status,
@@ -101,124 +101,124 @@ function mockFetchServer() {
           url: {
             get: () => mockReq.fetch.request.url,
           }
-        });
-        mockReq.readyState = DONE;
+        })
+        mockReq.readyState = DONE
         // tests expect respond() to run everything immediately,
         // so make body available syncronously
-        resp.text = () => GreedyPromise.resolve(body || '');
+        resp.text = () => GreedyPromise.resolve(body || '')
         Object.assign(mockReq.fetch, {
           response: resp,
           responseBody: body || ''
         })
-        resolve(resp);
+        resolve(resp)
       },
       respond(status = 200, headers, body) {
-        mockReq.setStatus(status);
-        mockReq.setResponseHeaders(headers);
-        mockReq.setResponseBody(body);
+        mockReq.setStatus(status)
+        mockReq.setResponseHeaders(headers)
+        mockReq.setResponseBody(body)
       },
       error
-    };
-    return mockReq;
+    }
+    return mockReq
   }
 
-  let enabled = false;
-  let timeoutsEnabled = false;
+  let enabled = false
+  let timeoutsEnabled = false
 
   function enable() {
     if (!enabled) {
       sandbox.stub(dep, 'fetch').callsFake((resource, options) => {
-        const req = mockXHR(resource, options);
-        requests.push(req);
-        return req.fetch.promise;
-      });
-      sandbox.stub(dep, 'makeRequest').callsFake(makeRequest);
-      const timeout = dep.timeout;
+        const req = mockXHR(resource, options)
+        requests.push(req)
+        return req.fetch.promise
+      })
+      sandbox.stub(dep, 'makeRequest').callsFake(makeRequest)
+      const timeout = dep.timeout
       sandbox.stub(dep, 'timeout').callsFake(function () {
         if (timeoutsEnabled) {
-          return timeout.apply(null, arguments);
+          return timeout.apply(null, arguments)
         } else {
-          return {};
+          return {}
         }
-      });
-      enabled = true;
+      })
+      enabled = true
     }
   }
 
-  enable();
+  enable()
 
-  const responders = [];
+  const responders = []
 
   function respondWith() {
-    let response, urlMatcher, methodMatcher;
-    urlMatcher = methodMatcher = () => true;
+    let response, urlMatcher, methodMatcher
+    urlMatcher = methodMatcher = () => true
     switch (arguments.length) {
       case 1:
-        ([response] = arguments);
-        break;
+        ([response] = arguments)
+        break
       case 2:
-        ([urlMatcher, response] = arguments);
-        break;
+        ([urlMatcher, response] = arguments)
+        break
       case 3:
-        ([methodMatcher, urlMatcher, response] = arguments);
-        methodMatcher = ((toMatch) => (method) => method === toMatch)(methodMatcher);
-        break;
+        ([methodMatcher, urlMatcher, response] = arguments)
+        methodMatcher = ((toMatch) => (method) => method === toMatch)(methodMatcher)
+        break
       default:
-        throw new Error('Invalid respondWith invocation');
+        throw new Error('Invalid respondWith invocation')
     }
     if (typeof urlMatcher.exec === 'function') {
-      urlMatcher = ((rx) => (url) => rx.exec(url)?.slice(1))(urlMatcher);
+      urlMatcher = ((rx) => (url) => rx.exec(url)?.slice(1))(urlMatcher)
     } else if (typeof urlMatcher === 'string') {
-      urlMatcher = ((toMatch) => (url) => url === toMatch)(urlMatcher);
+      urlMatcher = ((toMatch) => (url) => url === toMatch)(urlMatcher)
     }
     responders.push((req) => {
       if (req.readyState !== DONE && methodMatcher(req.method)) {
-        const arg = urlMatcher(req.url);
+        const arg = urlMatcher(req.url)
         if (arg) {
           if (typeof response === 'function') {
-            response(req, ...(Array.isArray(arg) ? arg : []));
+            response(req, ...(Array.isArray(arg) ? arg : []))
           } else if (typeof response === 'string') {
-            req.respond(200, null, response);
+            req.respond(200, null, response)
           } else {
-            req.respond.apply(req, response);
+            req.respond.apply(req, response)
           }
         }
       }
-    });
+    })
   }
 
   function resetState() {
-    requests.length = 0;
-    responders.length = 0;
-    timeoutsEnabled = false;
+    requests.length = 0
+    responders.length = 0
+    timeoutsEnabled = false
   }
 
   return {
     requests,
     enable,
     restore() {
-      resetState();
-      sandbox.restore();
-      enabled = false;
+      resetState()
+      sandbox.restore()
+      enabled = false
     },
     reset() {
-      sandbox.resetHistory();
-      resetState();
+      sandbox.resetHistory()
+      resetState()
     },
     respondWith,
     respond() {
       if (arguments.length > 0) {
-        respondWith.apply(null, arguments);
+        respondWith.apply(null, arguments)
       }
       requests.forEach(req => {
         for (let i = responders.length - 1; i >= 0; i--) {
-          responders[i](req);
-          if (req.readyState === DONE) break;
+          responders[i](req)
+          if (req.readyState === DONE) break
         }
         if (req.readyState !== DONE) {
-          req.respond(404, {}, '');
+          req.respond(404, {}, '')
         }
-      });
+      })
     },
     /**
      * the timeout mechanism is quite different between XHR and fetch
@@ -228,20 +228,20 @@ function mockFetchServer() {
      * assertions
      */
     get autoTimeout() {
-      return timeoutsEnabled;
+      return timeoutsEnabled
     },
     set autoTimeout(val) {
-      timeoutsEnabled = !!val;
+      timeoutsEnabled = !!val
     }
-  };
+  }
 }
 
 beforeEach(function () {
-  server.reset();
-});
+  server.reset()
+})
 
-const bid = getUniqueIdentifierStr().substring(4);
-let fid = 0;
+const bid = getUniqueIdentifierStr().substring(4)
+let fid = 0
 
 /* eslint-disable */
 afterEach(function () {

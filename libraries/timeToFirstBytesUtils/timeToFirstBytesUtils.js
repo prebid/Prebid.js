@@ -8,7 +8,7 @@
  * @returns {string} The TTFB in milliseconds as a string, or an empty string if the TTFB cannot be determined.
  */
 export function getTimeToFirstByte(win) {
-  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance
 
   const ttfbWithTimingV2 = performance &&
         typeof performance.getEntriesByType === 'function' &&
@@ -20,10 +20,10 @@ export function getTimeToFirstByte(win) {
         performance.getEntriesByType('navigation')[0].requestStart > 0 &&
         Math.round(
           performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
-        );
+        )
 
   if (ttfbWithTimingV2) {
-    return ttfbWithTimingV2.toString();
+    return ttfbWithTimingV2.toString()
   }
 
   const ttfbWithTimingV1 = performance &&
@@ -31,7 +31,7 @@ export function getTimeToFirstByte(win) {
         performance.timing.requestStart &&
         performance.timing.responseStart > 0 &&
         performance.timing.requestStart > 0 &&
-        performance.timing.responseStart - performance.timing.requestStart;
+        performance.timing.responseStart - performance.timing.requestStart
 
-  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : ''
 }

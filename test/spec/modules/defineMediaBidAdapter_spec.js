@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert } from 'chai';
-import { spec } from 'modules/defineMediaBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+import { assert } from 'chai'
+import { spec } from 'modules/defineMediaBidAdapter.js'
+import { deepClone } from 'src/utils.js'
 
 describe('Define Media Bid Adapter', function () {
   const mockValidBids = [
@@ -341,52 +341,52 @@ describe('Define Media Bid Adapter', function () {
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       for (const bidRequest of mockValidBids) {
-        assert.isTrue(spec.isBidRequestValid(bidRequest));
+        assert.isTrue(spec.isBidRequestValid(bidRequest))
       }
-    });
+    })
 
     it('should return false when supplierDomainName is not set', function () {
-      let invalidBids = deepClone(mockValidBids);
+      let invalidBids = deepClone(mockValidBids)
       for (const bidRequest of invalidBids) {
-        bidRequest.params = {};
-        assert.isFalse(spec.isBidRequestValid(bidRequest));
+        bidRequest.params = {}
+        assert.isFalse(spec.isBidRequestValid(bidRequest))
       }
-    });
-  });
+    })
+  })
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
-      let requests = spec.buildRequests(mockValidBids, mockBidderRequest);
+      let requests = spec.buildRequests(mockValidBids, mockBidderRequest)
       for (const request of requests) {
-        assert.equal(request.method, 'POST');
-        assert.ok(request.data);
+        assert.equal(request.method, 'POST')
+        assert.ok(request.data)
       }
-    });
+    })
 
     it('should have default request structure', function () {
-      let keys = 'id,imp,site,source,device'.split(',');
-      let requests = spec.buildRequests(mockValidBids, mockBidderRequest);
+      let keys = 'id,imp,site,source,device'.split(',')
+      let requests = spec.buildRequests(mockValidBids, mockBidderRequest)
 
       for (const request of requests) {
-        let data = Object.keys(request.data);
-        assert.includeDeepMembers(data, keys);
+        let data = Object.keys(request.data)
+        assert.includeDeepMembers(data, keys)
       }
-    });
+    })
 
     it('Verify the site url', function () {
-      let siteUrl = 'https://www.yourdomain.tld/your-directory/';
-      let bidderRequest = deepClone(mockBidderRequest);
+      let siteUrl = 'https://www.yourdomain.tld/your-directory/'
+      let bidderRequest = deepClone(mockBidderRequest)
 
-      bidderRequest.ortb2.site.page = siteUrl;
-      bidderRequest.refererInfo.page = siteUrl;
+      bidderRequest.ortb2.site.page = siteUrl
+      bidderRequest.refererInfo.page = siteUrl
 
-      let requests = spec.buildRequests(mockValidBids, bidderRequest);
+      let requests = spec.buildRequests(mockValidBids, bidderRequest)
 
       for (const request of requests) {
-        assert.equal(request.data.site.page, siteUrl);
+        assert.equal(request.data.site.page, siteUrl)
       }
-    });
-  });
+    })
+  })
 })
 
 describe('interpretResponse', function () {
@@ -792,22 +792,22 @@ describe('interpretResponse', function () {
       data: deepClone(goodBannerRequest)
     }
 
-    const result = spec.interpretResponse(serverResponse, request);
-    assert.equal(result.length, 0);
-  });
+    const result = spec.interpretResponse(serverResponse, request)
+    assert.equal(result.length, 0)
+  })
 
   it('should return the correct params', function () {
     const computedRequest = spec.buildRequests(formerBids, formerBidRequest)[0]
-    let computedRequestExpected = deepClone(computedRequest.data);
+    let computedRequestExpected = deepClone(computedRequest.data)
     assert.deepInclude(computedRequestExpected, goodBannerRequest)
     let serverResponse = {
       body: deepClone(goodBannerResponse)
     }
-    const result = spec.interpretResponse(serverResponse, computedRequest);
-    assert.notEqual(result, null);
+    const result = spec.interpretResponse(serverResponse, computedRequest)
+    assert.notEqual(result, null)
 
     const bid = result[0].cpm
-    assert.isAbove(bid, 0.01, "Bid price should be higher 0.0");
+    assert.isAbove(bid, 0.01, "Bid price should be higher 0.0")
     assert.deepInclude(result[0], goodInterpretedBannerResponses[0])
-  });
+  })
 })

@@ -1,27 +1,27 @@
-import { expect } from 'chai';
-import { config } from 'src/config.js';
-import { filterBidData, init } from 'modules/dataControllerModule/index.js';
-import { startAuction } from 'src/prebid.js';
+import { expect } from 'chai'
+import { config } from 'src/config.js'
+import { filterBidData, init } from 'modules/dataControllerModule/index.js'
+import { startAuction } from 'src/prebid.js'
 
 describe('data controller', function () {
-  let spyFn;
+  let spyFn
 
   beforeEach(function () {
-    spyFn = sinon.spy();
-  });
+    spyFn = sinon.spy()
+  })
 
   afterEach(function () {
-    config.resetConfig();
-  });
+    config.resetConfig()
+  })
 
   describe('data controller', function () {
-    let result;
-    let callbackFn;
-    let req;
+    let result
+    let callbackFn
+    let req
 
     beforeEach(function () {
-      init();
-      result = null;
+      init()
+      result = null
       req = {
         'adUnits': [{
           'bids': [
@@ -77,30 +77,30 @@ describe('data controller', function () {
             }
           }
         }
-      };
+      }
       callbackFn = function (request) {
-        result = request;
-      };
-    });
+        result = request
+      }
+    })
 
     afterEach(function () {
-      config.resetConfig();
-      startAuction.getHooks({ hook: filterBidData }).remove();
-    });
+      config.resetConfig()
+      startAuction.getHooks({ hook: filterBidData }).remove()
+    })
 
     it('filterEIDwhenSDA for All SDA ', function () {
       const dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['*']
         }
-      };
-      config.setConfig(dataControllerConfiguration);
-      filterBidData(callbackFn, req);
-      expect(req.adUnits[0].bids[0].userIdAsEids).that.is.empty;
-      expect(req.adUnits[0].bids[0].userId).that.is.empty;
-      expect(req.ortb2Fragments.bidder.ix.user.ext.eids).that.is.empty;
-      expect(req.ortb2Fragments.global.user.ext.eids).that.is.empty;
-    });
+      }
+      config.setConfig(dataControllerConfiguration)
+      filterBidData(callbackFn, req)
+      expect(req.adUnits[0].bids[0].userIdAsEids).that.is.empty
+      expect(req.adUnits[0].bids[0].userId).that.is.empty
+      expect(req.ortb2Fragments.bidder.ix.user.ext.eids).that.is.empty
+      expect(req.ortb2Fragments.global.user.ext.eids).that.is.empty
+    })
 
     it('filterEIDwhenSDA for available SAD permutive.com:4:777777 ', function () {
       const dataControllerConfiguration = {
@@ -108,27 +108,27 @@ describe('data controller', function () {
           filterEIDwhenSDA: ['permutive.com:4:777777']
         }
 
-      };
-      config.setConfig(dataControllerConfiguration);
-      filterBidData(callbackFn, req);
-      expect(req.adUnits[0].bids[0].userIdAsEids).that.is.empty;
-      expect(req.adUnits[0].bids[0].userId).that.is.empty;
+      }
+      config.setConfig(dataControllerConfiguration)
+      filterBidData(callbackFn, req)
+      expect(req.adUnits[0].bids[0].userIdAsEids).that.is.empty
+      expect(req.adUnits[0].bids[0].userId).that.is.empty
 
-      expect(req.ortb2Fragments.bidder.ix.user.ext.eids).that.is.empty;
-      expect(req.ortb2Fragments.global.user.ext.eids).that.is.empty;
-    });
+      expect(req.ortb2Fragments.bidder.ix.user.ext.eids).that.is.empty
+      expect(req.ortb2Fragments.global.user.ext.eids).that.is.empty
+    })
 
     it('filterEIDwhenSDA for unavailable SAD test.com:4:9999 ', function () {
       const dataControllerConfiguration = {
         'dataController': {
           filterEIDwhenSDA: ['test.com:4:99999']
         }
-      };
-      config.setConfig(dataControllerConfiguration);
-      filterBidData(callbackFn, req);
-      expect(req.adUnits[0].bids[0].userIdAsEids).that.is.not.empty;
-      expect(req.adUnits[0].bids[0].userId).that.is.not.empty;
-    });
+      }
+      config.setConfig(dataControllerConfiguration)
+      filterBidData(callbackFn, req)
+      expect(req.adUnits[0].bids[0].userIdAsEids).that.is.not.empty
+      expect(req.adUnits[0].bids[0].userId).that.is.not.empty
+    })
     // Test for global
     it('filterEIDwhenSDA for available global SAD test.com:4:777777 ', function () {
       const dataControllerConfiguration = {
@@ -136,8 +136,8 @@ describe('data controller', function () {
           filterEIDwhenSDA: ['test.com:5:11111']
         }
 
-      };
-      config.setConfig(dataControllerConfiguration);
+      }
+      config.setConfig(dataControllerConfiguration)
       const globalObject = {
         'ortb2Fragments': {
           'global': {
@@ -164,47 +164,47 @@ describe('data controller', function () {
             }
           }
         }
-      };
-      const globalRequest = Object.assign({}, req, globalObject);
-      filterBidData(callbackFn, globalRequest);
-      expect(globalRequest.adUnits[0].bids[0].userIdAsEids).that.is.empty;
-      expect(globalRequest.adUnits[0].bids[0].userId).that.is.empty;
-    });
+      }
+      const globalRequest = Object.assign({}, req, globalObject)
+      filterBidData(callbackFn, globalRequest)
+      expect(globalRequest.adUnits[0].bids[0].userIdAsEids).that.is.empty
+      expect(globalRequest.adUnits[0].bids[0].userId).that.is.empty
+    })
 
     it('filterSDAwhenEID for id5-sync.com EID ', function () {
       const dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['id5-sync.com']
         }
-      };
-      config.setConfig(dataControllerConfiguration);
-      filterBidData(callbackFn, req);
-      expect(req.ortb2Fragments.bidder.ix.user.data).that.is.empty;
-    });
+      }
+      config.setConfig(dataControllerConfiguration)
+      filterBidData(callbackFn, req)
+      expect(req.ortb2Fragments.bidder.ix.user.data).that.is.empty
+    })
 
     it('filterSDAwhenEID for All EID ', function () {
       const dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['*']
         }
-      };
-      config.setConfig(dataControllerConfiguration);
+      }
+      config.setConfig(dataControllerConfiguration)
 
-      filterBidData(callbackFn, req);
-      expect(req.ortb2Fragments.bidder.ix.user.data).that.is.empty;
-      expect(req.ortb2Fragments.global.user.data).that.is.empty;
-    });
+      filterBidData(callbackFn, req)
+      expect(req.ortb2Fragments.bidder.ix.user.data).that.is.empty
+      expect(req.ortb2Fragments.global.user.data).that.is.empty
+    })
 
     it('filterSDAwhenEID for unavailable source test-sync.com EID ', function () {
       const dataControllerConfiguration = {
         'dataController': {
           filterSDAwhenEID: ['test-sync.com']
         }
-      };
-      config.setConfig(dataControllerConfiguration);
-      filterBidData(callbackFn, req);
-      expect(req.ortb2Fragments.bidder.ix.user.data).that.is.not.empty;
-    });
+      }
+      config.setConfig(dataControllerConfiguration)
+      filterBidData(callbackFn, req)
+      expect(req.ortb2Fragments.bidder.ix.user.data).that.is.not.empty
+    })
   }
-  );
-});
+  )
+})

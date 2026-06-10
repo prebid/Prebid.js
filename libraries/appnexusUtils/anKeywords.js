@@ -1,28 +1,28 @@
-import { _each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn } from '../../src/utils.js';
-import { getAllOrtbKeywords } from '../keywords/keywords.js';
-import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
+import { _each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn } from '../../src/utils.js'
+import { getAllOrtbKeywords } from '../keywords/keywords.js'
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js'
 
 const ORTB_SEGTAX_KEY_MAP = {
   526: '1plusX',
   527: '1plusX',
   541: 'captify_segments',
   540: 'perid'
-};
+}
 const ORTB_SEG_PATHS = ['user.data'].concat(
   CLIENT_SECTIONS.map((prefix) => `${prefix}.content.data`)
-);
+)
 
 function getValueString(param, val, defaultValue) {
   if (val === undefined || val === null) {
-    return defaultValue;
+    return defaultValue
   }
   if (isStr(val)) {
-    return val;
+    return val
   }
   if (isNumber(val)) {
-    return val.toString();
+    return val.toString()
   }
-  logWarn('Unsuported type for param: ' + param + ' required type: String');
+  logWarn('Unsuported type for param: ' + param + ' required type: String')
 }
 
 /**
@@ -35,35 +35,35 @@ function getValueString(param, val, defaultValue) {
  * @returns {Array<{key, value}>}
  */
 export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
-  const arrs = [];
+  const arrs = []
 
   _each(keywords, (v, k) => {
     if (isArray(v)) {
-      const values = [];
+      const values = []
       _each(v, (val) => {
-        val = getValueString(paramName + '.' + k, val);
+        val = getValueString(paramName + '.' + k, val)
         if (val || val === '') {
-          values.push(val);
+          values.push(val)
         }
-      });
-      v = values;
+      })
+      v = values
     } else {
-      v = getValueString(paramName + '.' + k, v);
+      v = getValueString(paramName + '.' + k, v)
       if (isStr(v)) {
-        v = [v];
+        v = [v]
       } else {
-        return;
+        return
       } // unsuported types - don't send a key
     }
     v = v.filter(kw => kw !== '')
     const entry = { key: k }
     if (v.length > 0) {
-      entry.value = v;
+      entry.value = v
     }
-    arrs.push(entry);
-  });
+    arrs.push(entry)
+  })
 
-  return arrs;
+  return arrs
 }
 
 // converts a comma separated list of keywords into the standard keyword object format used in appnexus bid params
@@ -71,7 +71,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
 export function convertKeywordStringToANMap(keyStr) {
   if (isStr(keyStr) && keyStr !== '') {
     // will split based on commas and will eat white space before/after the comma
-    return convertKeywordsToANMap(keyStr.split(/\s*(?:,)\s*/));
+    return convertKeywordsToANMap(keyStr.split(/\s*(?:,)\s*/))
   } else {
     return {}
   }
@@ -82,27 +82,27 @@ export function convertKeywordStringToANMap(keyStr) {
  * @return {{}} appnexus-style keyword map
  */
 function convertKeywordsToANMap(kwarray) {
-  const result = {};
+  const result = {}
   kwarray.forEach(kw => {
     // if = exists, then split
     if (kw.indexOf('=') !== -1) {
-      const kwPair = kw.split('=');
-      const key = kwPair[0];
-      const val = kwPair[1];
+      const kwPair = kw.split('=')
+      const key = kwPair[0]
+      const val = kwPair[1]
 
       // then check for existing key in result > if so add value to the array > if not, add new key and create value array
       if (result.hasOwnProperty(key)) {
-        result[key].push(val);
+        result[key].push(val)
       } else {
-        result[key] = [val];
+        result[key] = [val]
       }
     } else {
       if (!result.hasOwnProperty(kw)) {
-        result[kw] = [];
+        result[kw] = []
       }
     }
   })
-  return result;
+  return result
 }
 
 /**
@@ -110,7 +110,7 @@ function convertKeywordsToANMap(kwarray) {
  * @return {{}} appnexus-style keyword map using all keywords contained in ortb2
  */
 export function getANMapFromOrtbKeywords(ortb2) {
-  return convertKeywordsToANMap(getAllOrtbKeywords(ortb2));
+  return convertKeywordsToANMap(getAllOrtbKeywords(ortb2))
 }
 
 export function getANKewyordParamFromMaps(...anKeywordMaps) {
@@ -123,13 +123,13 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
 }
 
 export function getANMapFromOrtbIASKeywords(ortb2) {
-  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety']
   if (iasBrandSafety && typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length > 0) {
     // Convert IAS object to array of key=value strings
-    const iasArray = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`);
-    return convertKeywordsToANMap(iasArray);
+    const iasArray = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`)
+    return convertKeywordsToANMap(iasArray)
   }
-  return {};
+  return {}
 }
 
 export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
@@ -142,23 +142,23 @@ export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
 }
 
 export function getANMapFromOrtbSegments(ortb2) {
-  const ortbSegData = {};
+  const ortbSegData = {}
   ORTB_SEG_PATHS.forEach(path => {
-    const ortbSegsArrObj = deepAccess(ortb2, path) || [];
+    const ortbSegsArrObj = deepAccess(ortb2, path) || []
     ortbSegsArrObj.forEach(segObj => {
       // only read segment data from known sources
-      const segtax = ORTB_SEGTAX_KEY_MAP[segObj?.ext?.segtax];
+      const segtax = ORTB_SEGTAX_KEY_MAP[segObj?.ext?.segtax]
       if (segtax) {
         segObj.segment.forEach(seg => {
           // if source was in multiple locations of ortb or had multiple segments in same area, stack them together into an array
           if (ortbSegData[segtax]) {
-            ortbSegData[segtax].push(seg.id);
+            ortbSegData[segtax].push(seg.id)
           } else {
             ortbSegData[segtax] = [seg.id]
           }
-        });
+        })
       }
-    });
-  });
-  return ortbSegData;
+    })
+  })
+  return ortbSegData
 }

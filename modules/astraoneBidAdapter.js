@@ -1,4 +1,4 @@
-import { _map } from '../src/utils.js';
+import { _map } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 
@@ -9,13 +9,13 @@ import { BANNER } from '../src/mediaTypes.js'
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'astraone';
-const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid';
-const TTL = 60;
+const BIDDER_CODE = 'astraone'
+const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid'
+const TTL = 60
 
 function buildBidRequests(validBidRequests) {
   return _map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
+    const params = validBidRequest.params
     const bidRequest = {
       bidId: validBidRequest.bidId,
       transactionId: validBidRequest.ortb2Imp?.ext?.tid,
@@ -23,9 +23,9 @@ function buildBidRequests(validBidRequests) {
       placement: params.placement,
       placeId: params.placeId,
       imageUrl: params.imageUrl
-    };
+    }
 
-    return bidRequest;
+    return bidRequest
   })
 }
 
@@ -43,11 +43,11 @@ function buildBid(bidData) {
     },
     ttl: TTL,
     content: bidData.content
-  };
+  }
 
-  bid.ad = wrapAd(bid, bidData);
+  bid.ad = wrapAd(bid, bidData)
 
-  return bid;
+  return bid
 }
 
 function getMediaTypeFromBid(bid) {
@@ -75,7 +75,7 @@ function wrapAd(bid, bidData) {
             window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
         </script>
     </body>
-  </html>`;
+  </html>`
 }
 
 export const spec = {
@@ -95,7 +95,7 @@ export const spec = {
       !!bid.params.imageUrl &&
       !!bid.params.placement &&
       (bid.params.placement === 'inImage')
-    );
+    )
   },
 
   /**
@@ -109,15 +109,15 @@ export const spec = {
       url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       bidRequests: buildBidRequests(validBidRequests)
-    };
-
-    if (payload.cmp) {
-      const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-      if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
-      payload['cs'] = bidderRequest.gdprConsent.consentString;
     }
 
-    const payloadString = JSON.stringify(payload);
+    if (payload.cmp) {
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies
+      if (gdprApplies !== undefined) payload['ga'] = gdprApplies
+      payload['cs'] = bidderRequest.gdprConsent.consentString
+    }
+
+    const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',
       url: SSP_ENDPOINT,
@@ -135,10 +135,10 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    const bids = serverResponse.body && serverResponse.body.bids;
+    const bids = serverResponse.body && serverResponse.body.bids
 
     return Array.isArray(bids) ? bids.map(bid => buildBid(bid)) : []
   }
 
 }
-registerBidder(spec);
+registerBidder(spec)

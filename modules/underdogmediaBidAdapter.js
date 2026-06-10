@@ -7,31 +7,31 @@ import {
   logMessage,
   logWarn,
   parseSizesInput
-} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
-import { isIframe } from '../libraries/omsUtils/index.js';
-import { getAdUnitElement } from '../src/utils/adUnits.js';
+} from '../src/utils.js'
+import { config } from '../src/config.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js'
+import { percentInView } from '../libraries/percentInView/percentInView.js'
+import { isIframe } from '../libraries/omsUtils/index.js'
+import { getAdUnitElement } from '../src/utils/adUnits.js'
 
-const BIDDER_CODE = 'underdogmedia';
-const UDM_ADAPTER_VERSION = '7.30V';
-const UDM_VENDOR_ID = '159';
-const prebidVersion = '$prebid.version$';
-const NON_MEASURABLE = -1;
+const BIDDER_CODE = 'underdogmedia'
+const UDM_ADAPTER_VERSION = '7.30V'
+const UDM_VENDOR_ID = '159'
+const prebidVersion = '$prebid.version$'
+const NON_MEASURABLE = -1
 const PRODUCT = {
   standard: 1,
   sticky: 2
 }
 
-let USER_SYNCED = false;
+let USER_SYNCED = false
 
-logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 2023 01 26`);
+logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 2023 01 26`)
 
 // helper function for testing user syncs
 export function resetUserSync() {
-  USER_SYNCED = false;
+  USER_SYNCED = false
 }
 
 export const spec = {
@@ -43,48 +43,48 @@ export const spec = {
   isBidRequestValid: function (bid) {
     if (!bid.params) {
       logWarn('[Underdog Media] bid params are missing')
-      return false;
+      return false
     }
 
     if (!bid.params.siteId) {
       logWarn('[Underdog Media] siteId is missing')
-      return false;
+      return false
     }
 
     if (bid.params.productId) {
       if (!PRODUCT[bid.params.productId]) {
         logWarn('[Underdog Media] invalid productId')
-        return false;
+        return false
       }
     }
 
-    const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
+    const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes
     if (!bidSizes || bidSizes.length < 1) {
       logWarn('[Underdog Media] bid sizes are missing')
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    var sizes = [];
-    var siteId = 0;
+    var sizes = []
+    var siteId = 0
 
-    let userIds = [];
-    let thirtyThreeAcrossId;
-    let unifiedId;
-    let pubcid;
+    let userIds = []
+    let thirtyThreeAcrossId
+    let unifiedId
+    let pubcid
     if (validBidRequests[0].userIdAsEids?.length > 0) {
-      userIds = validBidRequests[0].userIdAsEids;
+      userIds = validBidRequests[0].userIdAsEids
     }
     userIds.forEach(idObj => {
       if (idObj.source === '33across.com') {
-        thirtyThreeAcrossId = idObj.uids[0].id;
+        thirtyThreeAcrossId = idObj.uids[0].id
       } else if (idObj.source === 'adserver.org') {
-        unifiedId = idObj.uids[0].id;
+        unifiedId = idObj.uids[0].id
       } else if (idObj.source === 'pubcid.org') {
-        pubcid = idObj.uids[0].id;
+        pubcid = idObj.uids[0].id
       }
     })
 
@@ -106,9 +106,9 @@ export const spec = {
 
     validBidRequests.forEach(bidParam => {
       const placementObject = {}
-      const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
-      sizes = flatten(sizes, parseSizesInput(bidParamSizes));
-      siteId = +bidParam.params.siteId;
+      const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes
+      sizes = flatten(sizes, parseSizesInput(bidParamSizes))
+      siteId = +bidParam.params.siteId
       const adUnitCode = bidParam.adUnitCode
       const element = _getAdSlotHTMLElement(bidParam)
       const minSize = _getMinSize(bidParamSizes)
@@ -139,25 +139,25 @@ export const spec = {
       }
 
       data.placements.push(placementObject)
-    });
+    })
 
     data.sid = siteId
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-        data.gdpr.gdprApplies = !!(bidderRequest.gdprConsent.gdprApplies);
+        data.gdpr.gdprApplies = !!(bidderRequest.gdprConsent.gdprApplies)
       }
       if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
         typeof bidderRequest.gdprConsent.vendorData.vendorConsents[UDM_VENDOR_ID] !== 'undefined') {
-        data.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[UDM_VENDOR_ID]);
+        data.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[UDM_VENDOR_ID])
       }
       if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
-        data.gdpr.consentData = bidderRequest.gdprConsent.consentString;
+        data.gdpr.consentData = bidderRequest.gdprConsent.consentString
       }
     }
 
     if (bidderRequest.uspConsent) {
-      data.usp.uspConsent = bidderRequest.uspConsent;
+      data.usp.uspConsent = bidderRequest.uspConsent
     }
 
     if (!data.gdpr || !data.gdpr.gdprApplies || data.gdpr.consentGiven) {
@@ -166,34 +166,34 @@ export const spec = {
         url: `https://udmserve.net/udm/img.fetch?sid=${siteId}`,
         data: data,
         bidParams: validBidRequests
-      };
+      }
     }
   },
 
   getUserSyncs: function (syncOptions, serverResponses) {
     if (!USER_SYNCED && serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.userSyncs && serverResponses[0].body.userSyncs.length > 0) {
-      USER_SYNCED = true;
-      const userSyncs = serverResponses[0].body.userSyncs;
+      USER_SYNCED = true
+      const userSyncs = serverResponses[0].body.userSyncs
       const syncs = userSyncs.filter(sync => {
-        const { type } = sync;
+        const { type } = sync
         if (syncOptions.iframeEnabled && type === 'iframe') {
           return true
         }
         if (syncOptions.pixelEnabled && type === 'image') {
           return true
         }
-        return false;
+        return false
       })
-      return syncs;
+      return syncs
     }
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
+    const bidResponses = []
     const mids = serverResponse.body.mids
     mids.forEach(mid => {
       const bidParam = bidRequest.bidParams.find((bidParam) => {
-        return mid.ad_unit_code === bidParam.adUnitCode;
+        return mid.ad_unit_code === bidParam.adUnitCode
       })
 
       if (!bidParam) {
@@ -213,23 +213,23 @@ export const spec = {
         meta: {
           advertiserDomains: mid.advertiser_domains || []
         }
-      };
+      }
 
       if (bidResponse.cpm <= 0) {
-        return;
+        return
       }
       if (bidResponse.ad.length <= 0) {
-        return;
+        return
       }
 
-      bidResponse.ad += makeNotification(bidResponse, mid, bidParam);
+      bidResponse.ad += makeNotification(bidResponse, mid, bidParam)
 
-      bidResponses.push(bidResponse);
-    });
+      bidResponses.push(bidResponse)
+    })
 
-    return bidResponses;
+    return bidResponses
   },
-};
+}
 
 function _getMinSize(bidParamSizes) {
   return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
@@ -237,29 +237,29 @@ function _getMinSize(bidParamSizes) {
 
 function _getAdSlotHTMLElement(bidRequest) {
   return getAdUnitElement(bidRequest) ||
-    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode));
+    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode))
 }
 
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (isGptPubadsDefined()) {
     // eslint-disable-next-line no-undef
-    const adSlots = googletag.pubads().getSlots();
-    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);
+    const adSlots = googletag.pubads().getSlots()
+    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode)
 
     for (let i = 0; i < adSlots.length; i++) {
       if (isMatchingAdSlot(adSlots[i])) {
-        const id = adSlots[i].getSlotElementId();
+        const id = adSlots[i].getSlotElementId()
 
-        logInfo(`[Underdogmedia Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
+        logInfo(`[Underdogmedia Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`)
 
-        return id;
+        return id
       }
     }
   }
 
-  logWarn(`[Underdogmedia Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
+  logWarn(`[Underdogmedia Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`)
 
-  return null;
+  return null
 }
 
 function _isViewabilityMeasurable(element) {
@@ -279,38 +279,38 @@ function _getViewability(element, topWin, {
 }
 
 function makeNotification(bid, mid, bidParam) {
-  let url = mid.notification_url;
+  let url = mid.notification_url
 
   const versionIndex = url.indexOf(';version=')
   if (versionIndex + 1) {
     url = url.substring(0, versionIndex)
   }
 
-  url += `;version=${UDM_ADAPTER_VERSION}`;
-  url += ';cb=' + Math.random();
-  url += ';qqq=' + (1 / bid.cpm);
-  url += ';hbt=' + config.getConfig('bidderTimeout');
-  url += ';style=adapter';
-  url += ';vis=' + encodeURIComponent(document.visibilityState);
+  url += `;version=${UDM_ADAPTER_VERSION}`
+  url += ';cb=' + Math.random()
+  url += ';qqq=' + (1 / bid.cpm)
+  url += ';hbt=' + config.getConfig('bidderTimeout')
+  url += ';style=adapter'
+  url += ';vis=' + encodeURIComponent(document.visibilityState)
 
-  url += ';traffic_info=' + encodeURIComponent(JSON.stringify(getUrlVars()));
+  url += ';traffic_info=' + encodeURIComponent(JSON.stringify(getUrlVars()))
   if (bidParam.params.subId) {
-    url += ';subid=' + encodeURIComponent(bidParam.params.subId);
+    url += ';subid=' + encodeURIComponent(bidParam.params.subId)
   }
-  return '<script async src="' + url + '"></script>';
+  return '<script async src="' + url + '"></script>'
 }
 
 function getUrlVars() {
-  var vars = {};
-  var hash;
-  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+  var vars = {}
+  var hash
+  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&')
   for (var i = 0; i < hashes.length; i++) {
-    hash = hashes[i].split('=');
+    hash = hashes[i].split('=')
     if (hash[0].match(/^utm_/)) {
-      vars[hash[0]] = hash[1].substr(0, 150);
+      vars[hash[0]] = hash[1].substr(0, 150)
     }
   }
-  return vars;
+  return vars
 }
 
-registerBidder(spec);
+registerBidder(spec)

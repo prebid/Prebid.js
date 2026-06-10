@@ -1,4 +1,4 @@
-export type LotamePanoramaIdSystemModuleName = 'lotamePanoramaId';
+export type LotamePanoramaIdSystemModuleName = 'lotamePanoramaId'
 
 declare module './userId/spec' {
   interface UserId {

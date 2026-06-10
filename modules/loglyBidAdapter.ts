@@ -1,8 +1,8 @@
-import { config } from '../src/config.js';
-import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-const BIDDER_CODE = 'logly';
-const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v2';
+import { config } from '../src/config.js'
+import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+const BIDDER_CODE = 'logly'
+const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v2'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,7 +22,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.adspotId);
+    return !!(bid.params && bid.params.adspotId)
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -31,7 +31,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const requests = [];
+    const requests = []
     for (let i = 0; i < validBidRequests.length; i++) {
       const request = {
         method: 'POST',
@@ -39,10 +39,10 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         data: JSON.stringify(newBidRequest(validBidRequests[i], bidderRequest)),
         options: {},
         bidderRequest
-      };
-      requests.push(request);
+      }
+      requests.push(request)
     }
-    return requests;
+    return requests
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -51,18 +51,18 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = [];
-    const body = serverResponse.body;
+    const bidResponses = []
+    const body = serverResponse.body
     if (!body || body.error) {
-      return [];
+      return []
     }
     if (!Array.isArray(body.bids)) {
-      return [];
+      return []
     }
     body.bids.forEach(bid => {
-      bidResponses.push(bid);
-    });
-    return bidResponses;
+      bidResponses.push(bid)
+    })
+    return bidResponses
   },
 
   /**
@@ -73,15 +73,15 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-    return syncs;
+    const syncs = []
+    return syncs
   },
-};
+}
 
 function newBidRequest(bid, bidderRequest) {
-  const currencyObj = config.getConfig('currency');
-  const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
-  const imUid = getImUid(bid);
+  const currencyObj = config.getConfig('currency')
+  const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD'
+  const imUid = getImUid(bid)
 
   return {
     auctionId: bid.auctionId,
@@ -99,14 +99,14 @@ function newBidRequest(bid, bidderRequest) {
     currency: currency,
     timeout: config.getConfig('bidderTimeout'),
     ...(imUid ? { im_uid: imUid } : {})
-  };
+  }
 }
 
 function getImUid(bid) {
-  const eids = bid.userIdAsEids || [];
-  const imEid = eids.find(eid => eid.source === 'intimatemerger.com');
+  const eids = bid.userIdAsEids || []
+  const imEid = eids.find(eid => eid.source === 'intimatemerger.com')
 
-  return imEid?.uids?.[0]?.id;
+  return imEid?.uids?.[0]?.id
 }
 
-registerBidder(spec);
+registerBidder(spec)

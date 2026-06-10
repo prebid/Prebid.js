@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/waardexBidAdapter.js';
-import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/waardexBidAdapter.js'
+import { auctionManager } from 'src/auctionManager.js'
+import { deepClone } from 'src/utils.js'
 
 describe('waardexBidAdapter', () => {
   describe('isBidRequestValid', () => {
@@ -14,10 +14,10 @@ describe('waardexBidAdapter', () => {
           traffic: 'banner',
           zoneId: 1,
         }
-      });
+      })
 
-      expect(result).to.be.true;
-    });
+      expect(result).to.be.true
+    })
 
     it('should return false. bidId is not present in bid object', () => {
       const result = spec.isBidRequestValid({
@@ -27,10 +27,10 @@ describe('waardexBidAdapter', () => {
           traffic: 'banner',
           zoneId: 1,
         }
-      });
+      })
 
-      expect(result).to.be.false;
-    });
+      expect(result).to.be.false
+    })
 
     it('should return false. zoneId is not present in bid.params object', () => {
       const result = spec.isBidRequestValid({
@@ -40,10 +40,10 @@ describe('waardexBidAdapter', () => {
           placementId: 1,
           traffic: 'banner',
         }
-      });
+      })
 
-      expect(result).to.be.false;
-    });
+      expect(result).to.be.false
+    })
 
     it('should return true when mediaTypes field is empty', () => {
       const result = spec.isBidRequestValid({
@@ -54,10 +54,10 @@ describe('waardexBidAdapter', () => {
           traffic: 'banner',
           zoneId: 1,
         }
-      });
+      })
 
-      expect(result).to.be.true;
-    });
+      expect(result).to.be.true
+    })
 
     it('should return false when mediaTypes.video.playerSize field is empty', () => {
       const result = spec.isBidRequestValid({
@@ -71,10 +71,10 @@ describe('waardexBidAdapter', () => {
         mediaTypes: {
           video: {}
         }
-      });
+      })
 
-      expect(result).to.be.false;
-    });
+      expect(result).to.be.false
+    })
 
     it('should return false when mediaTypes.video.playerSize field is not an array', () => {
       const result = spec.isBidRequestValid({
@@ -90,10 +90,10 @@ describe('waardexBidAdapter', () => {
             playerSize: 'not-array'
           }
         }
-      });
+      })
 
-      expect(result).to.be.false;
-    });
+      expect(result).to.be.false
+    })
 
     it('should return false when mediaTypes.video.playerSize field is an empty array', () => {
       const result = spec.isBidRequestValid({
@@ -109,10 +109,10 @@ describe('waardexBidAdapter', () => {
             playerSize: []
           }
         }
-      });
+      })
 
-      expect(result).to.be.false;
-    });
+      expect(result).to.be.false
+    })
 
     it('should return false when mediaTypes.video.playerSize field is empty array', () => {
       const result = spec.isBidRequestValid({
@@ -128,10 +128,10 @@ describe('waardexBidAdapter', () => {
             playerSize: []
           }
         }
-      });
+      })
 
-      expect(result).to.be.false;
-    });
+      expect(result).to.be.false
+    })
 
     it('should return true when mediaTypes.video.playerSize field is non-empty array', () => {
       const result = spec.isBidRequestValid({
@@ -147,14 +147,14 @@ describe('waardexBidAdapter', () => {
             playerSize: [[640, 400]]
           }
         }
-      });
+      })
 
-      expect(result).to.be.true;
-    });
-  });
+      expect(result).to.be.true
+    })
+  })
 
   describe('buildRequests', () => {
-    let getAdUnitsStub;
+    let getAdUnitsStub
     const validBidRequests = [
       {
         bidId: 'fergr675ujgh',
@@ -195,25 +195,25 @@ describe('waardexBidAdapter', () => {
           linearity: 1,
         }
       }
-    ];
+    ]
 
     const bidderRequest = {
       refererInfo: {
         referer: 'https://www.google.com/?some_param=some_value'
       },
-    };
+    }
 
-    beforeEach(() => getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(() => []));
-    afterEach(() => getAdUnitsStub.restore());
+    beforeEach(() => getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(() => []))
+    afterEach(() => getAdUnitsStub.restore())
 
     it('should return valid build request object', () => {
       const {
         data: payload,
         url,
         method
-      } = spec.buildRequests(validBidRequests, bidderRequest);
+      } = spec.buildRequests(validBidRequests, bidderRequest)
 
-      const ENDPOINT = `https://hb.justbidit2.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
+      const ENDPOINT = `https://hb.justbidit2.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`
 
       expect(payload.bidRequests[0]).deep.equal({
         bidId: validBidRequests[0].bidId,
@@ -232,11 +232,11 @@ describe('waardexBidAdapter', () => {
             },
           ],
         }
-      });
-      expect(url).to.equal(ENDPOINT);
-      expect(method).to.equal('POST');
-    });
-  });
+      })
+      expect(url).to.equal(ENDPOINT)
+      expect(method).to.equal('POST')
+    })
+  })
 
   describe('interpretResponse', () => {
     const serverResponse = {
@@ -269,7 +269,7 @@ describe('waardexBidAdapter', () => {
           }
         ],
       },
-    };
+    }
 
     const request = {
       'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/86.0.4240.198 Safari/537.36',
@@ -297,10 +297,10 @@ describe('waardexBidAdapter', () => {
           },
         ]
       }
-    };
+    }
 
     it('bid response is valid', () => {
-      const result = spec.interpretResponse(serverResponse, request);
+      const result = spec.interpretResponse(serverResponse, request)
 
       const expected = [
         {
@@ -321,56 +321,56 @@ describe('waardexBidAdapter', () => {
             mediaType: (serverResponse.body.seatbid[0].bid[0].ext || {}).mediaType,
           },
         }
-      ];
-      expect(result).deep.equal(expected);
-    });
+      ]
+      expect(result).deep.equal(expected)
+    })
 
     it('invalid bid response. requestId is not exists in bid response', () => {
-      const invalidServerResponse = deepClone(serverResponse);
-      delete invalidServerResponse.body.seatbid[0].bid[0].id;
+      const invalidServerResponse = deepClone(serverResponse)
+      delete invalidServerResponse.body.seatbid[0].bid[0].id
 
-      const result = spec.interpretResponse(invalidServerResponse);
-      expect(result).deep.equal([]);
-    });
+      const result = spec.interpretResponse(invalidServerResponse)
+      expect(result).deep.equal([])
+    })
 
     it('invalid bid response. cpm is not exists in bid response', () => {
-      const invalidServerResponse = deepClone(serverResponse);
-      delete invalidServerResponse.body.seatbid[0].bid[0].price;
+      const invalidServerResponse = deepClone(serverResponse)
+      delete invalidServerResponse.body.seatbid[0].bid[0].price
 
-      const result = spec.interpretResponse(invalidServerResponse);
-      expect(result).deep.equal([]);
-    });
+      const result = spec.interpretResponse(invalidServerResponse)
+      expect(result).deep.equal([])
+    })
 
     it('invalid bid response. creativeId is not exists in bid response', () => {
-      const invalidServerResponse = deepClone(serverResponse);
-      delete invalidServerResponse.body.seatbid[0].bid[0].crid;
+      const invalidServerResponse = deepClone(serverResponse)
+      delete invalidServerResponse.body.seatbid[0].bid[0].crid
 
-      const result = spec.interpretResponse(invalidServerResponse);
-      expect(result).deep.equal([]);
-    });
+      const result = spec.interpretResponse(invalidServerResponse)
+      expect(result).deep.equal([])
+    })
 
     it('invalid bid response. width is not exists in bid response', () => {
-      const invalidServerResponse = deepClone(serverResponse);
-      delete invalidServerResponse.body.seatbid[0].bid[0].w;
+      const invalidServerResponse = deepClone(serverResponse)
+      delete invalidServerResponse.body.seatbid[0].bid[0].w
 
-      const result = spec.interpretResponse(invalidServerResponse);
-      expect(result).deep.equal([]);
-    });
+      const result = spec.interpretResponse(invalidServerResponse)
+      expect(result).deep.equal([])
+    })
 
     it('invalid bid response. height is not exists in bid response', () => {
-      const invalidServerResponse = deepClone(serverResponse);
-      delete invalidServerResponse.body.seatbid[0].bid[0].h;
+      const invalidServerResponse = deepClone(serverResponse)
+      delete invalidServerResponse.body.seatbid[0].bid[0].h
 
-      const result = spec.interpretResponse(invalidServerResponse);
-      expect(result).deep.equal([]);
-    });
+      const result = spec.interpretResponse(invalidServerResponse)
+      expect(result).deep.equal([])
+    })
 
     it('invalid bid response. ad is not exists in bid response', () => {
-      const invalidServerResponse = deepClone(serverResponse);
-      delete invalidServerResponse.body.seatbid[0].bid[0].adm;
+      const invalidServerResponse = deepClone(serverResponse)
+      delete invalidServerResponse.body.seatbid[0].bid[0].adm
 
-      const result = spec.interpretResponse(invalidServerResponse);
-      expect(result).deep.equal([]);
-    });
-  });
-});
+      const result = spec.interpretResponse(invalidServerResponse)
+      expect(result).deep.equal([])
+    })
+  })
+})

@@ -1,10 +1,10 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/tapnativeBidAdapter.js';
-import * as utils from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/tapnativeBidAdapter.js'
+import * as utils from '../../../src/utils.js'
 
 describe('tapnative adapter', function () {
-  let bannerRequest, nativeRequest;
-  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse;
+  let bannerRequest, nativeRequest
+  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse
 
   beforeEach(function () {
     bannerRequest = [
@@ -20,7 +20,7 @@ describe('tapnative adapter', function () {
           bid_floor: 0.5
         }
       }
-    ];
+    ]
     nativeRequest = [
       {
         bidder: 'tapnative',
@@ -40,7 +40,7 @@ describe('tapnative adapter', function () {
           bid_floor: 1
         }
       }
-    ];
+    ]
     bannerResponse = {
       'body': {
         'id': '006ac3b3-67f0-43bf-a33a-388b2f869fef',
@@ -65,7 +65,7 @@ describe('tapnative adapter', function () {
         'cur': 'USD',
         'bidid': 'BIDDER_-1'
       }
-    };
+    }
     nativeResponse = {
       'body': {
         'id': '453ade66-9113-4944-a674-5bbdcb9808ac',
@@ -88,7 +88,7 @@ describe('tapnative adapter', function () {
         'cur': 'USD',
         'bidid': 'BIDDER_-1'
       }
-    };
+    }
     invalidBannerResponse = {
       'body': {
         'id': '006ac3b3-67f0-43bf-a33a-388b2f869fef',
@@ -113,7 +113,7 @@ describe('tapnative adapter', function () {
         'cur': 'USD',
         'bidid': 'BIDDER_-1'
       }
-    };
+    }
     invalidNativeResponse = {
       'body': {
         'id': '453ade66-9113-4944-a674-5bbdcb9808ac',
@@ -136,8 +136,8 @@ describe('tapnative adapter', function () {
         'cur': 'USD',
         'bidid': 'BIDDER_-1'
       }
-    };
-  });
+    }
+  })
 
   describe('validations', function () {
     it('isBidValid : placement_id is passed', function () {
@@ -146,10 +146,10 @@ describe('tapnative adapter', function () {
         params: {
           placement_id: 111520
         }
-      };
-      const isValid = spec.isBidRequestValid(bid);
-      expect(isValid).to.equals(true);
-    });
+      }
+      const isValid = spec.isBidRequestValid(bid)
+      expect(isValid).to.equals(true)
+    })
     it('isBidValid : placement_id is not passed', function () {
       const bid = {
         bidder: 'tapnative',
@@ -159,145 +159,145 @@ describe('tapnative adapter', function () {
           domain: '',
           bid_floor: 0.5
         }
-      };
-      const isValid = spec.isBidRequestValid(bid);
-      expect(isValid).to.equals(false);
-    });
-  });
+      }
+      const isValid = spec.isBidRequestValid(bid)
+      expect(isValid).to.equals(false)
+    })
+  })
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
-      const _Request = utils.deepClone(bannerRequest);
-      const bidRequest = spec.buildRequests(bannerRequest);
-      expect(bannerRequest).to.deep.equal(_Request);
-    });
+      const _Request = utils.deepClone(bannerRequest)
+      const bidRequest = spec.buildRequests(bannerRequest)
+      expect(bannerRequest).to.deep.equal(_Request)
+    })
     it('Validate bidder connection', function () {
-      const _Request = spec.buildRequests(bannerRequest);
-      expect(_Request.url).to.equal('https://rtb-east.tapnative.com/hb');
-      expect(_Request.method).to.equal('POST');
-      expect(_Request.options.contentType).to.equal('application/json');
-    });
+      const _Request = spec.buildRequests(bannerRequest)
+      expect(_Request.url).to.equal('https://rtb-east.tapnative.com/hb')
+      expect(_Request.method).to.equal('POST')
+      expect(_Request.options.contentType).to.equal('application/json')
+    })
     it('Validate bid request : Impression', function () {
-      const _Request = spec.buildRequests(bannerRequest);
-      const data = JSON.parse(_Request.data);
+      const _Request = spec.buildRequests(bannerRequest)
+      const data = JSON.parse(_Request.data)
       // expect(data.at).to.equal(1); // auction type
-      expect(data[0].imp[0].id).to.equal(bannerRequest[0].bidId);
-      expect(data[0].placementId).to.equal(111520);
-    });
+      expect(data[0].imp[0].id).to.equal(bannerRequest[0].bidId)
+      expect(data[0].placementId).to.equal(111520)
+    })
     it('Validate bid request : ad size', function () {
-      const _Request = spec.buildRequests(bannerRequest);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].imp[0].banner).to.be.a('object');
-      expect(data[0].imp[0].banner.w).to.equal(300);
-      expect(data[0].imp[0].banner.h).to.equal(250);
-    });
+      const _Request = spec.buildRequests(bannerRequest)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].imp[0].banner).to.be.a('object')
+      expect(data[0].imp[0].banner.w).to.equal(300)
+      expect(data[0].imp[0].banner.h).to.equal(250)
+    })
     it('Validate bid request : user object', function () {
-      const _Request = spec.buildRequests(bannerRequest);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].user).to.be.a('object');
-      expect(data[0].user.id).to.be.a('string');
-    });
+      const _Request = spec.buildRequests(bannerRequest)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].user).to.be.a('object')
+      expect(data[0].user.id).to.be.a('string')
+    })
     it('Validate bid request : CCPA Check', function () {
       const bidRequest = {
         uspConsent: '1NYN'
-      };
-      const _Request = spec.buildRequests(bannerRequest, bidRequest);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].regs.ext.us_privacy).to.equal('1NYN');
+      }
+      const _Request = spec.buildRequests(bannerRequest, bidRequest)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].regs.ext.us_privacy).to.equal('1NYN')
       //   let _bidRequest = {};
       //   let _Request1 = spec.buildRequests(request, _bidRequest);
       //   let data1 = JSON.parse(_Request1.data);
       //   expect(data1.regs).to.equal(undefined);
-    });
-  });
+    })
+  })
   describe('Validate banner response ', function () {
     it('Validate bid response : valid bid response', function () {
-      const _Request = spec.buildRequests(bannerRequest);
-      const bResponse = spec.interpretResponse(bannerResponse, _Request);
-      expect(bResponse).to.be.an('array').with.length.above(0);
-      expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
-      expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w);
-      expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h);
-      expect(bResponse[0].currency).to.equal('USD');
-      expect(bResponse[0].netRevenue).to.equal(false);
-      expect(bResponse[0].mediaType).to.equal('banner');
-      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['google.com']);
-      expect(bResponse[0].ttl).to.equal(300);
-      expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
-      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
-    });
+      const _Request = spec.buildRequests(bannerRequest)
+      const bResponse = spec.interpretResponse(bannerResponse, _Request)
+      expect(bResponse).to.be.an('array').with.length.above(0)
+      expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid)
+      expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w)
+      expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h)
+      expect(bResponse[0].currency).to.equal('USD')
+      expect(bResponse[0].netRevenue).to.equal(false)
+      expect(bResponse[0].mediaType).to.equal('banner')
+      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['google.com'])
+      expect(bResponse[0].ttl).to.equal(300)
+      expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid)
+      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId)
+    })
     it('Invalid bid response check ', function () {
-      const bRequest = spec.buildRequests(bannerRequest);
-      const response = spec.interpretResponse(invalidBannerResponse, bRequest);
-      expect(response[0].ad).to.equal('invalid response');
-    });
-  });
+      const bRequest = spec.buildRequests(bannerRequest)
+      const response = spec.interpretResponse(invalidBannerResponse, bRequest)
+      expect(response[0].ad).to.equal('invalid response')
+    })
+  })
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
-      const _Request = utils.deepClone(nativeRequest);
-      const bidRequest = spec.buildRequests(nativeRequest);
-      expect(nativeRequest).to.deep.equal(_Request);
-    });
+      const _Request = utils.deepClone(nativeRequest)
+      const bidRequest = spec.buildRequests(nativeRequest)
+      expect(nativeRequest).to.deep.equal(_Request)
+    })
     it('Validate bidder connection', function () {
-      const _Request = spec.buildRequests(nativeRequest);
-      expect(_Request.url).to.equal('https://rtb-east.tapnative.com/hb');
-      expect(_Request.method).to.equal('POST');
-      expect(_Request.options.contentType).to.equal('application/json');
-    });
+      const _Request = spec.buildRequests(nativeRequest)
+      expect(_Request.url).to.equal('https://rtb-east.tapnative.com/hb')
+      expect(_Request.method).to.equal('POST')
+      expect(_Request.options.contentType).to.equal('application/json')
+    })
     it('Validate bid request : Impression', function () {
-      const _Request = spec.buildRequests(nativeRequest);
-      const data = JSON.parse(_Request.data);
+      const _Request = spec.buildRequests(nativeRequest)
+      const data = JSON.parse(_Request.data)
       // expect(data.at).to.equal(1); // auction type
-      expect(data[0].imp[0].id).to.equal(nativeRequest[0].bidId);
-      expect(data[0].placementId).to.equal(111519);
-    });
+      expect(data[0].imp[0].id).to.equal(nativeRequest[0].bidId)
+      expect(data[0].placementId).to.equal(111519)
+    })
     it('Validate bid request : user object', function () {
-      const _Request = spec.buildRequests(nativeRequest);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].user).to.be.a('object');
-      expect(data[0].user.id).to.be.a('string');
-    });
+      const _Request = spec.buildRequests(nativeRequest)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].user).to.be.a('object')
+      expect(data[0].user.id).to.be.a('string')
+    })
     it('Validate bid request : CCPA Check', function () {
       const bidRequest = {
         uspConsent: '1NYN'
-      };
-      const _Request = spec.buildRequests(nativeRequest, bidRequest);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].regs.ext.us_privacy).to.equal('1NYN');
+      }
+      const _Request = spec.buildRequests(nativeRequest, bidRequest)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].regs.ext.us_privacy).to.equal('1NYN')
       //   let _bidRequest = {};
       //   let _Request1 = spec.buildRequests(request, _bidRequest);
       //   let data1 = JSON.parse(_Request1.data);
       //   expect(data1.regs).to.equal(undefined);
-    });
-  });
+    })
+  })
   describe('Validate native response ', function () {
     it('Validate bid response : valid bid response', function () {
-      const _Request = spec.buildRequests(nativeRequest);
-      const bResponse = spec.interpretResponse(nativeResponse, _Request);
-      expect(bResponse).to.be.an('array').with.length.above(0);
-      expect(bResponse[0].requestId).to.equal(nativeResponse.body.seatbid[0].bid[0].impid);
+      const _Request = spec.buildRequests(nativeRequest)
+      const bResponse = spec.interpretResponse(nativeResponse, _Request)
+      expect(bResponse).to.be.an('array').with.length.above(0)
+      expect(bResponse[0].requestId).to.equal(nativeResponse.body.seatbid[0].bid[0].impid)
       // expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w);
       // expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h);
-      expect(bResponse[0].currency).to.equal('USD');
-      expect(bResponse[0].netRevenue).to.equal(false);
-      expect(bResponse[0].mediaType).to.equal('native');
-      expect(bResponse[0].native.clickUrl).to.be.a('string').and.not.be.empty;
-      expect(bResponse[0].native.impressionTrackers).to.be.an('array').with.length.above(0);
-      expect(bResponse[0].native.title).to.be.a('string').and.not.be.empty;
-      expect(bResponse[0].native.image.url).to.be.a('string').and.not.be.empty;
-      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['www.diabetesincontrol.com']);
-      expect(bResponse[0].ttl).to.equal(300);
-      expect(bResponse[0].creativeId).to.equal(nativeResponse.body.seatbid[0].bid[0].crid);
-      expect(bResponse[0].dealId).to.equal(nativeResponse.body.seatbid[0].bid[0].dealId);
-    });
-  });
+      expect(bResponse[0].currency).to.equal('USD')
+      expect(bResponse[0].netRevenue).to.equal(false)
+      expect(bResponse[0].mediaType).to.equal('native')
+      expect(bResponse[0].native.clickUrl).to.be.a('string').and.not.be.empty
+      expect(bResponse[0].native.impressionTrackers).to.be.an('array').with.length.above(0)
+      expect(bResponse[0].native.title).to.be.a('string').and.not.be.empty
+      expect(bResponse[0].native.image.url).to.be.a('string').and.not.be.empty
+      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['www.diabetesincontrol.com'])
+      expect(bResponse[0].ttl).to.equal(300)
+      expect(bResponse[0].creativeId).to.equal(nativeResponse.body.seatbid[0].bid[0].crid)
+      expect(bResponse[0].dealId).to.equal(nativeResponse.body.seatbid[0].bid[0].dealId)
+    })
+  })
   describe('GPP and coppa', function () {
     it('Request params check with GPP Consent', function () {
-      const bidderReq = { gppConsent: { gppString: 'gpp-string-test', applicableSections: [5] } };
-      const _Request = spec.buildRequests(bannerRequest, bidderReq);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].regs.gpp).to.equal('gpp-string-test');
-      expect(data[0].regs.gpp_sid[0]).to.equal(5);
-    });
+      const bidderReq = { gppConsent: { gppString: 'gpp-string-test', applicableSections: [5] } }
+      const _Request = spec.buildRequests(bannerRequest, bidderReq)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].regs.gpp).to.equal('gpp-string-test')
+      expect(data[0].regs.gpp_sid[0]).to.equal(5)
+    })
     it('Request params check with GPP Consent read from ortb2', function () {
       const bidderReq = {
         ortb2: {
@@ -306,17 +306,17 @@ describe('tapnative adapter', function () {
             gpp_sid: [5]
           }
         }
-      };
-      const _Request = spec.buildRequests(bannerRequest, bidderReq);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].regs.gpp).to.equal('gpp-test-string');
-      expect(data[0].regs.gpp_sid[0]).to.equal(5);
-    });
+      }
+      const _Request = spec.buildRequests(bannerRequest, bidderReq)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].regs.gpp).to.equal('gpp-test-string')
+      expect(data[0].regs.gpp_sid[0]).to.equal(5)
+    })
     it(' Bid request should have coppa flag if its true', () => {
-      const bidderReq = { ortb2: { regs: { coppa: 1 } } };
-      const _Request = spec.buildRequests(bannerRequest, bidderReq);
-      const data = JSON.parse(_Request.data);
-      expect(data[0].regs.coppa).to.equal(1);
-    });
-  });
-});
+      const bidderReq = { ortb2: { regs: { coppa: 1 } } }
+      const _Request = spec.buildRequests(bannerRequest, bidderReq)
+      const data = JSON.parse(_Request.data)
+      expect(data[0].regs.coppa).to.equal(1)
+    })
+  })
+})

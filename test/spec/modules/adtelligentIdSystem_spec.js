@@ -1,8 +1,8 @@
 import { adtelligentIdModule } from 'modules/adtelligentIdSystem'
-import * as ajaxLib from 'src/ajax.js';
+import * as ajaxLib from 'src/ajax.js'
 
-const adtUserIdRemoteResponse = { u: 'test1' };
-const adtUserIdLocalResponse = 'test2';
+const adtUserIdRemoteResponse = { u: 'test1' }
+const adtUserIdLocalResponse = 'test2'
 
 describe('AdtelligentId module', function () {
   it('gets remote id', function () {
@@ -10,21 +10,21 @@ describe('AdtelligentId module', function () {
       return (url, cbObj) => {
         cbObj.success(JSON.stringify(adtUserIdRemoteResponse))
       }
-    });
-    const moduleIdCallbackResponse = adtelligentIdModule.getId();
+    })
+    const moduleIdCallbackResponse = adtelligentIdModule.getId()
     moduleIdCallbackResponse.callback((id) => {
       expect(id).to.equal(adtUserIdRemoteResponse.u)
     })
-    ajaxBuilderStub.restore();
+    ajaxBuilderStub.restore()
   })
   it('gets id from page context', function () {
     window.adtDmp = {
       ready: true,
       getUID() {
-        return adtUserIdLocalResponse;
+        return adtUserIdLocalResponse
       }
     }
-    const moduleIdResponse = adtelligentIdModule.getId();
-    assert.deepEqual(moduleIdResponse, { id: adtUserIdLocalResponse });
+    const moduleIdResponse = adtelligentIdModule.getId()
+    assert.deepEqual(moduleIdResponse, { id: adtUserIdLocalResponse })
   })
 })

@@ -1,30 +1,30 @@
 /* COPYRIGHT SCALEABLE LLC 2019 */
 
-import { ajax } from '../src/ajax.js';
-import { EVENTS } from '../src/constants.js';
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
-import { logMessage } from '../src/utils.js';
+import { ajax } from '../src/ajax.js'
+import { EVENTS } from '../src/constants.js'
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
+import adapterManager from '../src/adapterManager.js'
+import { logMessage } from '../src/utils.js'
 
 // Object.entries polyfill
 const entries = Object.entries || function(obj) {
-  const ownProps = Object.keys(obj);
-  let i = ownProps.length;
-  const resArray = new Array(i); // preallocate the Array
-  while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
+  const ownProps = Object.keys(obj)
+  let i = ownProps.length
+  const resArray = new Array(i) // preallocate the Array
+  while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]] }
 
-  return resArray;
-};
+  return resArray
+}
 
-const BID_TIMEOUT = EVENTS.BID_TIMEOUT;
-const AUCTION_INIT = EVENTS.AUCTION_INIT;
-const BID_WON = EVENTS.BID_WON;
-const AUCTION_END = EVENTS.AUCTION_END;
+const BID_TIMEOUT = EVENTS.BID_TIMEOUT
+const AUCTION_INIT = EVENTS.AUCTION_INIT
+const BID_WON = EVENTS.BID_WON
+const AUCTION_END = EVENTS.AUCTION_END
 
-const URL = 'https://auction.scaleable.ai/';
-const ANALYTICS_TYPE = 'endpoint';
+const URL = 'https://auction.scaleable.ai/'
+const ANALYTICS_TYPE = 'endpoint'
 
-let auctionData = {};
+let auctionData = {}
 
 const scaleableAnalytics = Object.assign({},
   adapter({
@@ -36,55 +36,55 @@ const scaleableAnalytics = Object.assign({},
     track({ eventType, args }) {
       switch (eventType) {
         case AUCTION_INIT:
-          onAuctionInit(args);
-          break;
+          onAuctionInit(args)
+          break
         case AUCTION_END:
-          onAuctionEnd(args);
-          break;
+          onAuctionEnd(args)
+          break
         case BID_WON:
-          onBidWon(args);
-          break;
+          onBidWon(args)
+          break
         case BID_TIMEOUT:
-          onBidTimeout(args);
-          break;
+          onBidTimeout(args)
+          break
         default:
-          break;
+          break
       }
     }
   }
-);
+)
 
-scaleableAnalytics.config = {};
-scaleableAnalytics.originEnableAnalytics = scaleableAnalytics.enableAnalytics;
+scaleableAnalytics.config = {}
+scaleableAnalytics.originEnableAnalytics = scaleableAnalytics.enableAnalytics
 scaleableAnalytics.enableAnalytics = config => {
-  scaleableAnalytics.config = config;
+  scaleableAnalytics.config = config
 
-  scaleableAnalytics.originEnableAnalytics(config);
+  scaleableAnalytics.originEnableAnalytics(config)
 
   scaleableAnalytics.enableAnalytics = function _enable() {
-    return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
-  };
+    return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`)
+  }
 }
 
 scaleableAnalytics.getAuctionData = () => {
-  return auctionData;
-};
+  return auctionData
+}
 
-const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
+const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data))
 
 // Track auction initiated
 const onAuctionInit = args => {
-  const config = scaleableAnalytics.config || { options: {} };
+  const config = scaleableAnalytics.config || { options: {} }
 
-  const adunitObj = {};
-  const adunits = [];
+  const adunitObj = {}
+  const adunits = []
 
   // Loop through adunit codes first
   args.adUnitCodes.forEach((code) => {
     adunitObj[code] = [{
       bidder: 'scaleable_adunit_request'
     }]
-  });
+  })
 
   // Loop through bidder requests and bids
   args.bidderRequests.forEach((bidderObj) => {
@@ -93,15 +93,15 @@ const onAuctionInit = args => {
         bidder: bidObj.bidder,
         params: bidObj.params
       })
-    });
-  });
+    })
+  })
 
   entries(adunitObj).forEach(([adunitCode, bidRequests]) => {
     adunits.push({
       code: adunitCode,
       bidRequests: bidRequests
-    });
-  });
+    })
+  })
 
   const data = {
     event: 'request',
@@ -109,19 +109,19 @@ const onAuctionInit = args => {
     adunits: adunits
   }
 
-  sendDataToServer(data);
+  sendDataToServer(data)
 }
 
 // Handle all events besides requests and wins
 const onAuctionEnd = args => {
-  const config = scaleableAnalytics.config || { options: {} };
+  const config = scaleableAnalytics.config || { options: {} }
 
-  const adunitObj = {};
-  const adunits = [];
+  const adunitObj = {}
+  const adunits = []
 
   // Add Bids Received
   args.bidsReceived.forEach((bidObj) => {
-    if (!adunitObj[bidObj.adUnitCode]) { adunitObj[bidObj.adUnitCode] = []; }
+    if (!adunitObj[bidObj.adUnitCode]) { adunitObj[bidObj.adUnitCode] = [] }
 
     adunitObj[bidObj.adUnitCode].push({
       bidder: bidObj.bidderCode || bidObj.bidder,
@@ -131,19 +131,19 @@ const onAuctionEnd = args => {
       type: bidObj.mediaType,
       ttr: bidObj.timeToRespond,
       size: bidObj.size
-    });
-  });
+    })
+  })
 
   // Add in other data (timeouts) as we push to adunits
   entries(adunitObj).forEach(([adunitCode, bidsReceived]) => {
-    const bidData = bidsReceived.concat(auctionData[adunitCode] || []);
+    const bidData = bidsReceived.concat(auctionData[adunitCode] || [])
     adunits.push({
       code: adunitCode,
       bidData: bidData
-    });
+    })
 
-    delete auctionData[adunitCode];
-  });
+    delete auctionData[adunitCode]
+  })
 
   // Add in any missed auction data
   entries(auctionData).forEach(([adunitCode, bidData]) => {
@@ -151,7 +151,7 @@ const onAuctionEnd = args => {
       code: adunitCode,
       bidData: bidData
     })
-  });
+  })
 
   const data = {
     event: 'bids',
@@ -159,7 +159,7 @@ const onAuctionEnd = args => {
     adunits: adunits
   }
 
-  if (adunits.length) { sendDataToServer(data); }
+  if (adunits.length) { sendDataToServer(data) }
 
   // Reset auctionData
   auctionData = {}
@@ -167,7 +167,7 @@ const onAuctionEnd = args => {
 
 // Bid Win Events occur after auction end
 const onBidWon = args => {
-  const config = scaleableAnalytics.config || { options: {} };
+  const config = scaleableAnalytics.config || { options: {} }
 
   const data = {
     event: 'win',
@@ -177,9 +177,9 @@ const onBidWon = args => {
     cpm: args.cpm,
     ttr: args.timeToRespond,
     params: args.params
-  };
+  }
 
-  sendDataToServer(data);
+  sendDataToServer(data)
 }
 
 const onBidTimeout = args => {
@@ -191,8 +191,8 @@ const onBidTimeout = args => {
     auctionData[currObj.adUnitCode].push({
       timeouts: 1,
       bidder: currObj.bidder
-    });
-  });
+    })
+  })
 }
 
 adapterManager.registerAnalyticsAdapter({
@@ -200,4 +200,4 @@ adapterManager.registerAnalyticsAdapter({
   code: 'scaleable'
 })
 
-export default scaleableAnalytics;
+export default scaleableAnalytics

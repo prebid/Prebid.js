@@ -1,5 +1,5 @@
-import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isArray, isEmptyStr, isFn } from '../../src/utils.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js'
+import { deepAccess, isArray, isEmptyStr, isFn } from '../../src/utils.js'
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -26,7 +26,7 @@ export function fillUsersIds(bidRequest, payload) {
       did_id5: 'id5-sync.com',
       did_uqid: 'utiq.com',
       did_id5_linktype: ['id5-sync.com', function (e) {
-        return e.uids?.[0]?.ext?.linkType;
+        return e.uids?.[0]?.ext?.linkType
       }],
       did_euid: 'euid.eu',
       did_yhid: 'yahoo.com',
@@ -34,68 +34,68 @@ export function fillUsersIds(bidRequest, payload) {
         if (e.uids?.length) {
           for (let i = 0; i < e.uids.length; i++) {
             if ('id' in e.uids[i] && deepAccess(e.uids[i], 'ext.stype') === 'ppuid') {
-              return (e.uids[i].atype ?? '') + ':' + e.source + ':' + e.uids[i].id;
+              return (e.uids[i].atype ?? '') + ':' + e.source + ':' + e.uids[i].id
             }
           }
         }
       }],
-    };
+    }
     bidRequest.userIdAsEids?.forEach(eid => {
       for (const paramName in didMapping) {
-        let targetSource = didMapping[paramName];
+        let targetSource = didMapping[paramName]
 
         // func support
-        let func = null;
+        let func = null
         if (Array.isArray(targetSource)) {
-          func = targetSource[1];
-          targetSource = targetSource[0];
+          func = targetSource[1]
+          targetSource = targetSource[0]
         }
 
         // regexp support
-        let targetSourceType = 'eq';
+        let targetSourceType = 'eq'
         if (targetSource.includes('regexp:')) {
-          targetSourceType = 'regexp';
-          targetSource = targetSource.substring(7);
+          targetSourceType = 'regexp'
+          targetSource = targetSource.substring(7)
         }
 
         // fill payload
-        const isMatches = targetSourceType === 'eq' ? eid.source === targetSource : eid.source.match(targetSource);
+        const isMatches = targetSourceType === 'eq' ? eid.source === targetSource : eid.source.match(targetSource)
         if (isMatches) {
           if (func == null) {
             if (eid.uids?.[0]?.id) {
-              payload[paramName] = eid.uids[0].id;
+              payload[paramName] = eid.uids[0].id
             }
           } else {
-            payload[paramName] = func(eid);
+            payload[paramName] = func(eid)
           }
         }
       }
-    });
+    })
   }
-  payload["did_cpubcid"] = bidRequest.crumbs?.pubcid;
+  payload["did_cpubcid"] = bidRequest.crumbs?.pubcid
 }
 
 export function appendToUrl(url, what) {
   if (!what) {
-    return url;
+    return url
   }
-  return url + (url.indexOf('?') !== -1 ? '&' : '?') + what;
+  return url + (url.indexOf('?') !== -1 ? '&' : '?') + what
 }
 
 export function objectToQueryString(obj, prefix) {
-  const str = [];
-  let p;
+  const str = []
+  let p
   for (p in obj) {
     if (obj.hasOwnProperty(p)) {
-      const k = prefix ? prefix + '[' + p + ']' : p;
-      const v = obj[p];
-      if (v === null || v === undefined) continue;
+      const k = prefix ? prefix + '[' + p + ']' : p
+      const v = obj[p]
+      if (v === null || v === undefined) continue
       str.push((typeof v === 'object')
         ? objectToQueryString(v, k)
-        : encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        : encodeURIComponent(k) + '=' + encodeURIComponent(v))
     }
   }
-  return str.filter(n => n).join('&');
+  return str.filter(n => n).join('&')
 }
 
 /**
@@ -105,7 +105,7 @@ export function objectToQueryString(obj, prefix) {
  * @returns {boolean} True if it's a banner bid
  */
 export function isBannerRequest(bid) {
-  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
+  return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid)
 }
 
 /**
@@ -115,7 +115,7 @@ export function isBannerRequest(bid) {
  * @returns {boolean} True if it's a video bid
  */
 export function isVideoRequest(bid) {
-  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video')
 }
 
 /**
@@ -125,7 +125,7 @@ export function isVideoRequest(bid) {
  * @returns {object}
  */
 export function getVideoSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes)
 }
 
 /**
@@ -135,7 +135,7 @@ export function getVideoSizes(bid) {
  * @returns {object}
  */
 export function getVideoContext(bid) {
-  return deepAccess(bid, 'mediaTypes.video.context') || 'unknown';
+  return deepAccess(bid, 'mediaTypes.video.context') || 'unknown'
 }
 
 /**
@@ -145,7 +145,7 @@ export function getVideoContext(bid) {
  * @returns {object} True if it's a video bid
  */
 export function getBannerSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes)
 }
 
 /**
@@ -155,9 +155,9 @@ export function getBannerSizes(bid) {
  */
 export function parseSize(size) {
   const sizeObj = {}
-  sizeObj.width = parseInt(size[0], 10);
-  sizeObj.height = parseInt(size[1], 10);
-  return sizeObj;
+  sizeObj.width = parseInt(size[0], 10)
+  sizeObj.height = parseInt(size[1], 10)
+  return sizeObj
 }
 
 /**
@@ -167,9 +167,9 @@ export function parseSize(size) {
  */
 export function parseSizes(sizes) {
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
-    return sizes.map(size => parseSize(size));
+    return sizes.map(size => parseSize(size))
   }
-  return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
+  return [parseSize(sizes)] // or a single one ? (ie. [728,90])
 }
 
 /**
@@ -179,13 +179,13 @@ export function parseSizes(sizes) {
  * @returns {*}
  */
 export function convertMediaInfoForRequest(mediaTypesInfo) {
-  const requestData = {};
+  const requestData = {}
   Object.keys(mediaTypesInfo).forEach(mediaType => {
     requestData[mediaType] = mediaTypesInfo[mediaType].map(size => {
-      return size.width + 'x' + size.height;
-    }).join(',');
-  });
-  return requestData;
+      return size.width + 'x' + size.height
+    }).join(',')
+  })
+  return requestData
 }
 
 /**
@@ -194,21 +194,21 @@ export function convertMediaInfoForRequest(mediaTypesInfo) {
  * @param bid
  */
 export function getMediaTypesInfo(bid) {
-  const mediaTypesInfo = {};
+  const mediaTypesInfo = {}
 
   if (bid.mediaTypes) {
     Object.keys(bid.mediaTypes).forEach(mediaType => {
       if (mediaType === BANNER) {
-        mediaTypesInfo[mediaType] = getBannerSizes(bid);
+        mediaTypesInfo[mediaType] = getBannerSizes(bid)
       }
       if (mediaType === VIDEO) {
-        mediaTypesInfo[mediaType] = getVideoSizes(bid);
+        mediaTypesInfo[mediaType] = getVideoSizes(bid)
       }
-    });
+    })
   } else {
-    mediaTypesInfo[BANNER] = getBannerSizes(bid);
+    mediaTypesInfo[BANNER] = getBannerSizes(bid)
   }
-  return mediaTypesInfo;
+  return mediaTypesInfo
 }
 
 /**
@@ -218,7 +218,7 @@ export function getMediaTypesInfo(bid) {
  */
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
+    return deepAccess(bid, 'params.bidfloor', 0)
   }
 
   try {
@@ -226,8 +226,8 @@ export function getBidFloor(bid) {
       currency: 'EUR',
       mediaType: '*',
       size: '*',
-    });
-    return bidFloor?.floor;
+    })
+    return bidFloor?.floor
   } catch (_) {
     return 0
   }
@@ -239,31 +239,31 @@ export function getBidFloor(bid) {
  */
 export function siteContentToString(content) {
   if (!content) {
-    return '';
+    return ''
   }
-  const stringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'isrc', 'url', 'keywords'];
-  const intKeys = ['episode', 'context', 'livestream'];
-  const arrKeys = ['cat'];
-  const retArr = [];
+  const stringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'isrc', 'url', 'keywords']
+  const intKeys = ['episode', 'context', 'livestream']
+  const arrKeys = ['cat']
+  const retArr = []
   arrKeys.forEach(k => {
-    const val = deepAccess(content, k);
+    const val = deepAccess(content, k)
     if (val && Array.isArray(val)) {
-      retArr.push(k + ':' + val.join('|'));
+      retArr.push(k + ':' + val.join('|'))
     }
-  });
+  })
   intKeys.forEach(k => {
-    const val = deepAccess(content, k);
+    const val = deepAccess(content, k)
     if (val && typeof val === 'number') {
-      retArr.push(k + ':' + val);
+      retArr.push(k + ':' + val)
     }
-  });
+  })
   stringKeys.forEach(k => {
-    const val = deepAccess(content, k);
+    const val = deepAccess(content, k)
     if (val && typeof val === 'string') {
-      retArr.push(k + ':' + encodeURIComponent(val));
+      retArr.push(k + ':' + encodeURIComponent(val))
     }
-  });
-  return retArr.join(',');
+  })
+  return retArr.join(',')
 }
 
 /**
@@ -274,7 +274,7 @@ export function siteContentToString(content) {
 export function assignDefinedValues(target, values) {
   for (const key in values) {
     if (values[key] !== undefined) {
-      target[key] = values[key];
+      target[key] = values[key]
     }
   }
 }
@@ -285,36 +285,36 @@ export function assignDefinedValues(target, values) {
  * @returns {{segclass: *, segtax: *, segments: *}|undefined} - User segments/topics or undefined if not found
  */
 export function extractUserSegments(bid) {
-  const userData = deepAccess(bid, 'ortb2.user.data') || [];
+  const userData = deepAccess(bid, 'ortb2.user.data') || []
   for (const dataObj of userData) {
     if (dataObj.segment && isArray(dataObj.segment) && dataObj.segment.length > 0) {
       const segments = dataObj.segment
         .filter(seg => seg.id && !isEmptyStr(seg.id) && isFinite(seg.id))
-        .map(seg => Number(seg.id));
+        .map(seg => Number(seg.id))
       if (segments.length > 0) {
         return {
           segtax: deepAccess(dataObj, 'ext.segtax'),
           segclass: deepAccess(dataObj, 'ext.segclass'),
           segments: segments.join(',')
-        };
+        }
       }
     }
   }
-  return undefined;
+  return undefined
 }
 
 export function handleSyncUrls(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (!serverResponses || serverResponses.length === 0) {
-    return [];
+    return []
   }
 
-  const syncs = [];
-  let gdprParams = '';
+  const syncs = []
+  let gdprParams = ''
   if (gdprConsent) {
     if ('gdprApplies' in gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
-      gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
     } else {
-      gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      gdprParams = `gdpr_consent=${gdprConsent.consentString}`
     }
   }
 
@@ -323,27 +323,27 @@ export function handleSyncUrls(syncOptions, serverResponses, gdprConsent, uspCon
       serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
         type: 'iframe',
         url: appendToUrl(url, gdprParams)
-      }));
+      }))
     }
     if (syncOptions.pixelEnabled) {
       serverResponses[0].body.userSync.imageUrl.forEach((url) => syncs.push({
         type: 'image',
         url: appendToUrl(url, gdprParams)
-      }));
+      }))
     }
   }
-  return syncs;
+  return syncs
 }
 
 export function interpretResponse(serverResponse, bidRequest, rendererFunc) {
-  const bidResponses = [];
-  const response = serverResponse.body;
-  const crid = response.crid || 0;
-  const cpm = response.cpm / 1000000 || 0;
+  const bidResponses = []
+  const response = serverResponse.body
+  const crid = response.crid || 0
+  const cpm = response.cpm / 1000000 || 0
   if (cpm !== 0 && crid !== 0) {
-    const dealId = response.dealid || '';
-    const currency = response.currency || 'EUR';
-    const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
+    const dealId = response.dealid || ''
+    const currency = response.currency || 'EUR'
+    const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue
     const bidResponse = {
       requestId: response.bid_id,
       cpm: cpm,
@@ -358,35 +358,35 @@ export function interpretResponse(serverResponse, bidRequest, rendererFunc) {
       meta: {
         advertiserDomains: response.adomain || []
       }
-    };
+    }
 
     if (response.vastUrl) {
-      bidResponse.vastUrl = response.vastUrl;
-      bidResponse.mediaType = 'video';
+      bidResponse.vastUrl = response.vastUrl
+      bidResponse.mediaType = 'video'
     }
     if (response.vastXml) {
-      bidResponse.vastXml = response.vastXml;
-      bidResponse.mediaType = 'video';
+      bidResponse.vastXml = response.vastXml
+      bidResponse.mediaType = 'video'
     }
     if (response.renderer) {
-      bidResponse.renderer = rendererFunc(bidRequest, response);
+      bidResponse.renderer = rendererFunc(bidRequest, response)
     }
 
     if (response.videoCacheKey) {
-      bidResponse.videoCacheKey = response.videoCacheKey;
+      bidResponse.videoCacheKey = response.videoCacheKey
     }
 
     if (response.adTag) {
-      bidResponse.ad = response.adTag;
+      bidResponse.ad = response.adTag
     }
 
     if (response.bid_appendix) {
       Object.keys(response.bid_appendix).forEach(fieldName => {
-        bidResponse[fieldName] = response.bid_appendix[fieldName];
-      });
+        bidResponse[fieldName] = response.bid_appendix[fieldName]
+      })
     }
 
-    bidResponses.push(bidResponse);
+    bidResponses.push(bidResponse)
   }
-  return bidResponses;
+  return bidResponses
 }

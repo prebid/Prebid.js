@@ -1,19 +1,19 @@
-import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
-import { spec } from 'modules/pixfutureBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
-import { auctionManager } from 'src/auctionManager.js';
-import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai' // may prefer 'assert' in place of 'expect'
+import { spec } from 'modules/pixfutureBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import * as bidderFactory from 'src/adapters/bidderFactory.js'
+import { auctionManager } from 'src/auctionManager.js'
+import { deepClone } from 'src/utils.js'
+import { config } from 'src/config.js'
 
 describe('PixFutureAdapter', function () {
   it('<description of unit or feature being tested>', function () {
-    const adapter = newBidder(spec);
+    const adapter = newBidder(spec)
     describe('inherited functions', function () {
       it('exists and is a function', function () {
-        expect(adapter.callBids).to.exist.and.to.be.a('function');
-      });
-    });
+        expect(adapter.callBids).to.exist.and.to.be.a('function')
+      })
+    })
 
     // Test of isBidRequestValid method
 
@@ -29,28 +29,28 @@ describe('PixFutureAdapter', function () {
         'params': {
           'pix_id': '777'
         }
-      };
+      }
       it('should return true when required params found (bid)', function () {
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
 
       it('should return true when required params found (bid.param=true)', function () {
-        delete bid.params;
+        delete bid.params
         bid.params = {
           'pix_id': '777'
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
 
       it('should return false when required params are not passed', function () {
-        const invalidBid = Object.assign({}, bid);
-        delete invalidBid.params;
+        const invalidBid = Object.assign({}, bid)
+        delete invalidBid.params
         invalidBid.params = {
           'pix_id': 0
-        };
-        expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-      });
-    });
+        }
+        expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+      })
+    })
 
     // Test of buildRequest method
 
@@ -137,7 +137,7 @@ describe('PixFutureAdapter', function () {
             'hp': 1
           }]
         }
-      }];
+      }]
 
       const bidderRequests =
                     {
@@ -238,18 +238,18 @@ describe('PixFutureAdapter', function () {
                         'canonicalUrl': null
                       },
                       'start': 1620934247117
-                    };
+                    }
 
       // let bidderRequest = Object.assign({}, bidderRequests);
-      const request = spec.buildRequests(validBidRequests, bidderRequests);
+      const request = spec.buildRequests(validBidRequests, bidderRequests)
       // console.log(JSON.stringify(request));
-      const bidRequest = Object.assign({}, request[0]);
+      const bidRequest = Object.assign({}, request[0])
 
-      expect(bidRequest.data).to.exist;
-      expect(bidRequest.data.sizes).to.deep.equal([[300, 250]]);
-      expect(bidRequest.data.params).to.deep.equal({ 'pix_id': '777' });
-      expect(bidRequest.data.adUnitCode).to.deep.equal('26335x300x250x14x_ADSLOT88');
-    });
-  });
+      expect(bidRequest.data).to.exist
+      expect(bidRequest.data.sizes).to.deep.equal([[300, 250]])
+      expect(bidRequest.data.params).to.deep.equal({ 'pix_id': '777' })
+      expect(bidRequest.data.adUnitCode).to.deep.equal('26335x300x250x14x_ADSLOT88')
+    })
+  })
   // Add other `describe` or `it` blocks as necessary
-});
+})

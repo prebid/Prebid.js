@@ -1,18 +1,18 @@
-import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
-import { Renderer } from 'src/Renderer.js';
-import * as utils from '../../../src/utils.js';
+import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js'
+import { Renderer } from 'src/Renderer.js'
+import * as utils from '../../../src/utils.js'
 import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
 
 describe('Equativ bid adapter tests', () => {
-  let sandBox;
+  let sandBox
 
   beforeEach(() => {
-    sandBox = sinon.createSandbox();
-    sandBox.stub(utils, 'logError');
-    sandBox.stub(utils, 'logWarn');
-  });
+    sandBox = sinon.createSandbox()
+    sandBox.stub(utils, 'logError')
+    sandBox.stub(utils, 'logWarn')
+  })
 
-  afterEach(() => sandBox.restore());
+  afterEach(() => sandBox.restore())
 
   const DEFAULT_BANNER_BID_REQUESTS = [
     {
@@ -37,7 +37,7 @@ describe('Equativ bid adapter tests', () => {
         },
       },
     }
-  ];
+  ]
 
   const DEFAULT_VIDEO_BID_REQUESTS = [
     {
@@ -76,7 +76,7 @@ describe('Equativ bid adapter tests', () => {
         },
       },
     }
-  ];
+  ]
 
   const nativeOrtbRequest = {
     assets: [{
@@ -110,7 +110,7 @@ describe('Equativ bid adapter tests', () => {
     plcmttype: 1,
     privacy: 1,
     ver: '1.2',
-  };
+  }
 
   const DEFAULT_NATIVE_BID_REQUESTS = [
     {
@@ -135,7 +135,7 @@ describe('Equativ bid adapter tests', () => {
         },
       },
     }
-  ];
+  ]
 
   const DEFAULT_MULTI_IMP_BID_REQUESTS = [
     {
@@ -159,32 +159,32 @@ describe('Equativ bid adapter tests', () => {
       },
       getFloor: ({ mediaType, size }) => {
         if ((mediaType === 'banner' && size[0] === 300 && size[1] === 250) || mediaType === 'native') {
-          return { floor: 1.1 };
+          return { floor: 1.1 }
         }
-        return { floor: 0.9 };
+        return { floor: 0.9 }
       }
     }
-  ];
+  ]
 
   const DEFAULT_BANNER_BIDDER_REQUEST = {
     bidderCode: 'equativ',
     bids: DEFAULT_BANNER_BID_REQUESTS,
-  };
+  }
 
   const DEFAULT_VIDEO_BIDDER_REQUEST = {
     bidderCode: 'equativ',
     bids: DEFAULT_VIDEO_BID_REQUESTS,
-  };
+  }
 
   const DEFAULT_NATIVE_BIDDER_REQUEST = {
     bidderCode: 'equativ',
     bids: DEFAULT_NATIVE_BID_REQUESTS,
-  };
+  }
 
   const DEFAULT_MULTI_IMP_BIDDER_REQUEST = {
     bidderCode: 'equativ',
     bids: DEFAULT_MULTI_IMP_BID_REQUESTS,
-  };
+  }
 
   const SAMPLE_RESPONSE = {
     body: {
@@ -213,18 +213,18 @@ describe('Equativ bid adapter tests', () => {
       cur: 'USD',
       statuscode: 0,
     },
-  };
+  }
 
   describe('buildRequests', () => {
     it('should build correct requests using ORTB converter', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      );
+      )
       const dataFromConverter = converter.toORTB({
         bidderRequest: DEFAULT_BANNER_BIDDER_REQUEST,
         bidRequests: DEFAULT_BANNER_BID_REQUESTS,
-      });
+      })
       expect(request[0]).to.deep.equal({
         data: {
           ...dataFromConverter,
@@ -238,67 +238,67 @@ describe('Equativ bid adapter tests', () => {
         },
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-      });
-    });
+      })
+    })
 
     it('should generate a 14-char id for each imp object', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      );
+      )
 
       request[0].data.imp.forEach(imp => {
-        expect(imp.id).to.have.lengthOf(14);
-      });
-    });
+        expect(imp.id).to.have.lengthOf(14)
+      })
+    })
 
     it('should add ext.bidder to imp object when siteId is defined', () => {
       const bidRequests = [
         { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { siteId: 123 } },
-      ];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      ]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
       expect(request.data.imp[0].ext.bidder).to.deep.equal({
         siteId: 123,
-      });
-    });
+      })
+    })
 
     it('should add ext.bidder to imp object when pageId is defined', () => {
       const bidRequests = [
         { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { pageId: 123 } },
-      ];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      ]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
       expect(request.data.imp[0].ext.bidder).to.deep.equal({
         pageId: 123,
-      });
-    });
+      })
+    })
 
     it('should add ext.bidder to imp object when formatId is defined', () => {
       const bidRequests = [
         { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { formatId: 123 } },
-      ];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      ]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
       expect(request.data.imp[0].ext.bidder).to.deep.equal({
         formatId: 123,
-      });
-    });
+      })
+    })
 
     it('should not add ext.bidder to imp object when siteId, pageId, formatId are not defined', () => {
-      const bidRequests = [{ ...DEFAULT_BANNER_BID_REQUESTS[0], params: {} }];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.imp[0].ext.bidder).to.be.undefined;
-    });
+      const bidRequests = [{ ...DEFAULT_BANNER_BID_REQUESTS[0], params: {} }]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.imp[0].ext.bidder).to.be.undefined
+    })
 
     it('should add site.publisher.id param', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      expect(request.data.site.publisher.id).to.equal(111);
-    });
+      )[0]
+      expect(request.data.site.publisher.id).to.equal(111)
+    })
 
     it('should pass ortb2.site.publisher.id', () => {
       const bidRequests = [{
@@ -310,12 +310,12 @@ describe('Equativ bid adapter tests', () => {
             }
           }
         }
-      }];
-      delete bidRequests[0].params;
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.site.publisher.id).to.equal(98);
-    });
+      }]
+      delete bidRequests[0].params
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.site.publisher.id).to.equal(98)
+    })
 
     it('should pass networkId as site.publisher.id', () => {
       const bidRequests = [{
@@ -325,11 +325,11 @@ describe('Equativ bid adapter tests', () => {
             publisher: {}
           }
         }
-      }];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.site.publisher.id).to.equal(111);
-    });
+      }]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.site.publisher.id).to.equal(111)
+    })
 
     it('should pass ortb2.app.publisher.id', () => {
       const bidRequests = [{
@@ -341,12 +341,12 @@ describe('Equativ bid adapter tests', () => {
             }
           }
         }
-      }];
-      delete bidRequests[0].params;
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.app.publisher.id).to.equal(27);
-    });
+      }]
+      delete bidRequests[0].params
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.app.publisher.id).to.equal(27)
+    })
 
     it('should pass networkId as app.publisher.id', () => {
       const bidRequests = [{
@@ -356,11 +356,11 @@ describe('Equativ bid adapter tests', () => {
             publisher: {}
           }
         }
-      }];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.app.publisher.id).to.equal(111);
-    });
+      }]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.app.publisher.id).to.equal(111)
+    })
 
     it('should pass ortb2.dooh.publisher.id', () => {
       const bidRequests = [{
@@ -372,12 +372,12 @@ describe('Equativ bid adapter tests', () => {
             }
           }
         }
-      }];
-      delete bidRequests[0].params;
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.dooh.publisher.id).to.equal(35);
-    });
+      }]
+      delete bidRequests[0].params
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.dooh.publisher.id).to.equal(35)
+    })
 
     it('should pass networkId as dooh.publisher.id', () => {
       const bidRequests = [{
@@ -387,79 +387,79 @@ describe('Equativ bid adapter tests', () => {
             publisher: {}
           }
         }
-      }];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.dooh.publisher.id).to.equal(111);
-    });
+      }]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.dooh.publisher.id).to.equal(111)
+    })
 
     it('should not send floor by default', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      expect(request.data.imp[0]).to.not.have.property('bidfloor');
-    });
+      )[0]
+      expect(request.data.imp[0]).to.not.have.property('bidfloor')
+    })
 
     it('should send secure connection', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      expect(request.data.imp[0]).to.have.property('secure').that.eq(1);
-    });
+      )[0]
+      expect(request.data.imp[0]).to.have.property('secure').that.eq(1)
+    })
 
     it('should have tagid', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      expect(request.data.imp[0]).to.have.property('tagid').that.eq(DEFAULT_BANNER_BID_REQUESTS[0].adUnitCode);
-    });
+      )[0]
+      expect(request.data.imp[0]).to.have.property('tagid').that.eq(DEFAULT_BANNER_BID_REQUESTS[0].adUnitCode)
+    })
 
     it('should remove dt', () => {
       const bidRequests = [
         { ...DEFAULT_BANNER_BID_REQUESTS[0], ortb2Imp: { dt: 1728377558235 } }
-      ];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.imp[0]).to.not.have.property('dt');
-    });
+      ]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.imp[0]).to.not.have.property('dt')
+    })
 
     it('should read and send pid as buyeruid', () => {
       const localStorageData = {
         'eqt_pid': '7789746781'
-      };
-      const getDataFromLocalStorage = sinon.stub(storage, 'getDataFromLocalStorage');
-      getDataFromLocalStorage.callsFake(name => localStorageData[name]);
+      }
+      const getDataFromLocalStorage = sinon.stub(storage, 'getDataFromLocalStorage')
+      getDataFromLocalStorage.callsFake(name => localStorageData[name])
 
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
+      )[0]
 
-      expect(request.data.user).to.have.property('buyeruid').that.eq(localStorageData['eqt_pid']);
+      expect(request.data.user).to.have.property('buyeruid').that.eq(localStorageData['eqt_pid'])
 
-      getDataFromLocalStorage.restore();
-    });
+      getDataFromLocalStorage.restore()
+    })
 
     it('should not send buyeruid', () => {
-      const getDataFromLocalStorage = sinon.stub(storage, 'getDataFromLocalStorage');
-      getDataFromLocalStorage.callsFake(() => null);
+      const getDataFromLocalStorage = sinon.stub(storage, 'getDataFromLocalStorage')
+      getDataFromLocalStorage.callsFake(() => null)
 
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
+      )[0]
 
-      expect(request.data).to.not.have.property('user');
+      expect(request.data).to.not.have.property('user')
 
-      getDataFromLocalStorage.restore();
-    });
+      getDataFromLocalStorage.restore()
+    })
 
     it('should pass buyeruid defined in config', () => {
-      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      getDataFromLocalStorageStub.callsFake(() => undefined);
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
+      getDataFromLocalStorageStub.callsFake(() => undefined)
 
       const bidRequest = {
         ...DEFAULT_BANNER_BIDDER_REQUEST,
@@ -468,30 +468,30 @@ describe('Equativ bid adapter tests', () => {
             buyeruid: 'buyeruid-provided-by-publisher'
           }
         }
-      };
-      const request = spec.buildRequests([DEFAULT_BANNER_BID_REQUESTS[0]], bidRequest)[0];
+      }
+      const request = spec.buildRequests([DEFAULT_BANNER_BID_REQUESTS[0]], bidRequest)[0]
 
-      expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
+      expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid)
 
-      getDataFromLocalStorageStub.restore();
-    });
+      getDataFromLocalStorageStub.restore()
+    })
 
     it('should pass prebid version as ext.equativprebidjsversion param', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
-    });
+      )[0]
+      expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$')
+    })
 
     it('should default imp.displaymanager and imp.displaymanagerver to Prebid.js and prebid version', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
-      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
-    });
+      )[0]
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js')
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$')
+    })
 
     it('should preserve publisher-provided ortb2Imp.displaymanager', () => {
       const bidRequests = [{
@@ -500,12 +500,12 @@ describe('Equativ bid adapter tests', () => {
           ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
           displaymanager: 'Smart RTB+',
         },
-      }];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.imp[0].displaymanager).to.equal('Smart RTB+');
-      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
-    });
+      }]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.imp[0].displaymanager).to.equal('Smart RTB+')
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$')
+    })
 
     it('should preserve publisher-provided ortb2Imp.displaymanagerver', () => {
       const bidRequests = [{
@@ -514,42 +514,42 @@ describe('Equativ bid adapter tests', () => {
           ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
           displaymanagerver: 'Android SDK7.20.2',
         },
-      }];
-      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
-      expect(request.data.imp[0].displaymanagerver).to.equal('Android SDK7.20.2');
-    });
+      }]
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests }
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js')
+      expect(request.data.imp[0].displaymanagerver).to.equal('Android SDK7.20.2')
+    })
 
     it('should build a video request properly under normal circumstances', () => {
       // ASSEMBLE
       if (FEATURES.VIDEO) {
         // ACT
-        const request = spec.buildRequests(DEFAULT_VIDEO_BID_REQUESTS, {})[0].data;
+        const request = spec.buildRequests(DEFAULT_VIDEO_BID_REQUESTS, {})[0].data
 
         // ASSERT
-        expect(request.imp[0]).to.have.property('video');
+        expect(request.imp[0]).to.have.property('video')
 
-        const videoObj = request.imp[0].video;
+        const videoObj = request.imp[0].video
 
-        expect(videoObj).to.have.property('api').and.to.deep.equal([3]);
-        expect(videoObj).to.have.property('battr').and.to.deep.equal([13, 14]);
-        expect(videoObj).to.have.property('linearity').and.to.equal(1);
-        expect(videoObj).to.have.property('mimes').and.to.deep.equal(['video/x-flv', 'video/mp4']);
-        expect(videoObj).to.have.property('minbitrate').and.to.equal(300);
-        expect(videoObj).to.have.property('maxbitrate').and.to.equal(600);
-        expect(videoObj).to.have.property('minduration').and.to.equal(10);
-        expect(videoObj).to.have.property('maxduration').and.to.equal(30);
-        expect(videoObj).to.have.property('placement').and.to.equal(1);
-        expect(videoObj).to.have.property('playbackmethod').and.to.deep.equal([1]);
-        expect(videoObj).to.have.property('pos').and.to.equal(3);
-        expect(videoObj).to.have.property('skip').and.to.equal(1);
-        expect(videoObj).to.have.property('startdelay').and.to.equal(42);
-        expect(videoObj).to.have.property('w').and.to.equal(640);
-        expect(videoObj).to.have.property('h').and.to.equal(480);
-        expect(videoObj).not.to.have.property('ext');
+        expect(videoObj).to.have.property('api').and.to.deep.equal([3])
+        expect(videoObj).to.have.property('battr').and.to.deep.equal([13, 14])
+        expect(videoObj).to.have.property('linearity').and.to.equal(1)
+        expect(videoObj).to.have.property('mimes').and.to.deep.equal(['video/x-flv', 'video/mp4'])
+        expect(videoObj).to.have.property('minbitrate').and.to.equal(300)
+        expect(videoObj).to.have.property('maxbitrate').and.to.equal(600)
+        expect(videoObj).to.have.property('minduration').and.to.equal(10)
+        expect(videoObj).to.have.property('maxduration').and.to.equal(30)
+        expect(videoObj).to.have.property('placement').and.to.equal(1)
+        expect(videoObj).to.have.property('playbackmethod').and.to.deep.equal([1])
+        expect(videoObj).to.have.property('pos').and.to.equal(3)
+        expect(videoObj).to.have.property('skip').and.to.equal(1)
+        expect(videoObj).to.have.property('startdelay').and.to.equal(42)
+        expect(videoObj).to.have.property('w').and.to.equal(640)
+        expect(videoObj).to.have.property('h').and.to.equal(480)
+        expect(videoObj).not.to.have.property('ext')
       }
-    });
+    })
 
     it('should read and pass ortb2Imp.rwdd', () => {
       // ASSEMBLE
@@ -561,14 +561,14 @@ describe('Equativ bid adapter tests', () => {
               rwdd: 1
             }
           }
-        ];
+        ]
         // ACT
-        const request = spec.buildRequests(bidRequestsWithOrtb2ImpRwdd, {})[0].data;
+        const request = spec.buildRequests(bidRequestsWithOrtb2ImpRwdd, {})[0].data
 
         // ASSERT
-        expect(request.imp[0]).to.have.property('rwdd').and.to.equal(1);
+        expect(request.imp[0]).to.have.property('rwdd').and.to.equal(1)
       }
-    });
+    })
 
     it('should read mediaTypes.video.ext.rewarded and pass as rwdd', () => {
       // ASSEMBLE
@@ -584,14 +584,14 @@ describe('Equativ bid adapter tests', () => {
               }
             }
           }
-        ];
+        ]
         // ACT
-        const request = spec.buildRequests(bidRequestsWithExtReworded, {})[0].data;
+        const request = spec.buildRequests(bidRequestsWithExtReworded, {})[0].data
 
         // ASSERT
-        expect(request.imp[0]).to.have.property('rwdd').and.to.equal(1);
+        expect(request.imp[0]).to.have.property('rwdd').and.to.equal(1)
       }
-    });
+    })
 
     it('should prioritize ortb2Imp.rwdd over mediaTypes.video.ext.rewarded', () => {
       // ASSEMBLE
@@ -610,34 +610,34 @@ describe('Equativ bid adapter tests', () => {
               rwdd: 2
             }
           }
-        ];
+        ]
         // ACT
-        const request = spec.buildRequests(bidRequestsWithBothRewordedParams, {})[0].data;
+        const request = spec.buildRequests(bidRequestsWithBothRewordedParams, {})[0].data
 
         // ASSERT
-        expect(request.imp[0]).to.have.property('rwdd').and.to.equal(2);
+        expect(request.imp[0]).to.have.property('rwdd').and.to.equal(2)
       }
-    });
+    })
 
     it('should warn about missing required properties for video requests', () => {
       // ASSEMBLE
-      const missingRequiredVideoRequest = DEFAULT_VIDEO_BID_REQUESTS[0];
+      const missingRequiredVideoRequest = DEFAULT_VIDEO_BID_REQUESTS[0]
 
       // removing required properties
-      delete missingRequiredVideoRequest.mediaTypes.video.mimes;
-      delete missingRequiredVideoRequest.mediaTypes.video.placement;
+      delete missingRequiredVideoRequest.mediaTypes.video.mimes
+      delete missingRequiredVideoRequest.mediaTypes.video.placement
 
-      const bidRequests = [missingRequiredVideoRequest];
-      const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
+      const bidRequests = [missingRequiredVideoRequest]
+      const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests }
 
       // ACT
-      spec.buildRequests(bidRequests, bidderRequest);
+      spec.buildRequests(bidRequests, bidderRequest)
 
       // ASSERT
-      expect(utils.logWarn.callCount).to.equal(2);
-      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.mimes" is missing'));
-      expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.placement" is missing'));
-    });
+      expect(utils.logWarn.callCount).to.equal(2)
+      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.mimes" is missing'))
+      expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.placement" is missing'))
+    })
 
     it('should not send a video request when it has an empty body and no other impressions with any media types are defined', () => {
       // ASSEMBLE
@@ -646,39 +646,39 @@ describe('Equativ bid adapter tests', () => {
         mediaTypes: {
           video: {}
         }
-      };
-      const bidRequests = [emptyVideoRequest];
-      const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
+      }
+      const bidRequests = [emptyVideoRequest]
+      const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests }
 
       // ACT
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
 
       // ASSERT
-      expect(utils.logError.calledOnce).to.equal(true);
-      expect(utils.logError.args[0][0]).to.satisfy(arg => arg.includes('No request'));
-      expect(request).to.be.undefined;
-    });
+      expect(utils.logError.calledOnce).to.equal(true)
+      expect(utils.logError.args[0][0]).to.satisfy(arg => arg.includes('No request'))
+      expect(request).to.be.undefined
+    })
 
     it('should build a native request properly under normal circumstances', () => {
       if (FEATURES.NATIVE) {
         // ACT
-        const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, {})[0].data;
+        const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, {})[0].data
 
         // ASSERT
-        expect(request.imp[0]).to.have.property('native');
+        expect(request.imp[0]).to.have.property('native')
 
-        const nativeObj = request.imp[0].native;
-        expect(nativeObj).to.have.property('ver').and.to.equal('1.2');
-        expect(nativeObj).to.have.property('request').and.to.be.a('string');
+        const nativeObj = request.imp[0].native
+        expect(nativeObj).to.have.property('ver').and.to.equal('1.2')
+        expect(nativeObj).to.have.property('request').and.to.be.a('string')
 
-        const requestObj = JSON.parse(nativeObj.request);
-        expect(requestObj).to.have.property('assets').and.to.be.an('array');
-        expect(requestObj).to.have.property('eventtrackers').and.to.be.an('array');
-        expect(requestObj).to.have.property('plcmttype').and.to.equal(1);
-        expect(requestObj).to.have.property('privacy').and.to.equal(1);
-        expect(requestObj).to.have.property('ver').and.to.equal('1.2');
+        const requestObj = JSON.parse(nativeObj.request)
+        expect(requestObj).to.have.property('assets').and.to.be.an('array')
+        expect(requestObj).to.have.property('eventtrackers').and.to.be.an('array')
+        expect(requestObj).to.have.property('plcmttype').and.to.equal(1)
+        expect(requestObj).to.have.property('privacy').and.to.equal(1)
+        expect(requestObj).to.have.property('ver').and.to.equal('1.2')
       }
-    });
+    })
 
     it('should not send a native request when it has an empty body and no other impressions with any media types are defined', () => {
       if (FEATURES.NATIVE) {
@@ -688,66 +688,66 @@ describe('Equativ bid adapter tests', () => {
           mediaTypes: {
             native: {}
           }
-        };
-        const bidRequests = [emptyNativeRequest];
-        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
+        }
+        const bidRequests = [emptyNativeRequest]
+        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests }
 
         // ACT
-        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const request = spec.buildRequests(bidRequests, bidderRequest)
 
         // ASSERT
-        expect(utils.logError.calledOnce).to.equal(true);
-        expect(utils.logError.args[0][0]).to.satisfy(arg => arg.includes('No request'));
-        expect(request).to.be.undefined;
+        expect(utils.logError.calledOnce).to.equal(true)
+        expect(utils.logError.args[0][0]).to.satisfy(arg => arg.includes('No request'))
+        expect(request).to.be.undefined
       }
-    });
+    })
 
     it('should warn about missing "assets" property for native requests', () => {
       if (FEATURES.NATIVE) {
         // ASSEMBLE
-        const missingRequiredNativeRequest = utils.deepClone(DEFAULT_NATIVE_BID_REQUESTS[0]);
+        const missingRequiredNativeRequest = utils.deepClone(DEFAULT_NATIVE_BID_REQUESTS[0])
 
         // removing just "assets" for this test
-        delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-        const bidRequests = [missingRequiredNativeRequest];
-        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
+        delete missingRequiredNativeRequest.nativeOrtbRequest.assets
+        const bidRequests = [missingRequiredNativeRequest]
+        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests }
 
         // this value comes from native.js, part of the ortbConverter library
         const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.'
 
         // ACT
-        spec.buildRequests(bidRequests, bidderRequest);
+        spec.buildRequests(bidRequests, bidderRequest)
 
         // ASSERT
-        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes(warningMsgFromLibrary));
+        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes(warningMsgFromLibrary))
       }
-    });
+    })
 
     it('should warn about other missing required properties for native requests', () => {
       if (FEATURES.NATIVE) {
         // ASSEMBLE
-        const missingRequiredNativeRequest = utils.deepClone(DEFAULT_NATIVE_BID_REQUESTS[0]);
+        const missingRequiredNativeRequest = utils.deepClone(DEFAULT_NATIVE_BID_REQUESTS[0])
 
         // ortbConverter library will warn about missing assets; we supply warnings for these properties here
-        delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-        delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers;
-        delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
-        delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
+        delete missingRequiredNativeRequest.nativeOrtbRequest.assets
+        delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers
+        delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype
+        delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy
 
-        const bidRequests = [missingRequiredNativeRequest];
-        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
+        const bidRequests = [missingRequiredNativeRequest]
+        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests }
 
         // ACT
-        spec.buildRequests(bidRequests, bidderRequest);
+        spec.buildRequests(bidRequests, bidderRequest)
 
         // ASSERT
-        expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
-        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
-        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.privacy" is missing'));
-        expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.plcmttype" is missing'));
-        expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.eventtrackers" is missing'));
+        expect(utils.logWarn.callCount).to.equal(4) // the first message, regarding missing assets, is supplied by the ortbConverter library
+        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'))
+        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.privacy" is missing'))
+        expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.plcmttype" is missing'))
+        expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.eventtrackers" is missing'))
       }
-    });
+    })
 
     it('should split banner sizes per floor', () => {
       const bids = [
@@ -755,48 +755,48 @@ describe('Equativ bid adapter tests', () => {
           ...DEFAULT_BANNER_BID_REQUESTS[0],
           getFloor: ({ size }) => ({ floor: size[0] * size[1] / 100_000 })
         }
-      ];
+      ]
 
       const request = spec.buildRequests(
         bids,
         { ...DEFAULT_BANNER_BIDDER_REQUEST, bids }
-      );
+      )
 
-      expect(request[0].data.imp).to.have.lengthOf(2);
+      expect(request[0].data.imp).to.have.lengthOf(2)
 
-      const firstImp = request[0].data.imp[0];
-      expect(firstImp.bidfloor).to.equal(300 * 250 / 100_000);
-      expect(firstImp.banner.format).to.have.lengthOf(1);
-      expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 });
+      const firstImp = request[0].data.imp[0]
+      expect(firstImp.bidfloor).to.equal(300 * 250 / 100_000)
+      expect(firstImp.banner.format).to.have.lengthOf(1)
+      expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 })
 
-      const secondImp = request[0].data.imp[1];
-      expect(secondImp.bidfloor).to.equal(300 * 600 / 100_000);
-      expect(secondImp.banner.format).to.have.lengthOf(1);
-      expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 });
-    });
+      const secondImp = request[0].data.imp[1]
+      expect(secondImp.bidfloor).to.equal(300 * 600 / 100_000)
+      expect(secondImp.banner.format).to.have.lengthOf(1)
+      expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 })
+    })
 
     it('should group media types per floor', () => {
       if (FEATURES.NATIVE) {
         const request = spec.buildRequests(
           DEFAULT_MULTI_IMP_BID_REQUESTS,
           DEFAULT_MULTI_IMP_BIDDER_REQUEST
-        );
+        )
 
-        const firstImp = request[0].data.imp[0];
-        expect(firstImp.bidfloor).to.equal(1.1);
-        expect(firstImp.banner.format).to.have.lengthOf(1);
-        expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 });
-        expect(firstImp).to.have.property('native');
-        expect(firstImp).to.not.have.property('video');
+        const firstImp = request[0].data.imp[0]
+        expect(firstImp.bidfloor).to.equal(1.1)
+        expect(firstImp.banner.format).to.have.lengthOf(1)
+        expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 })
+        expect(firstImp).to.have.property('native')
+        expect(firstImp).to.not.have.property('video')
 
-        const secondImp = request[0].data.imp[1];
-        expect(secondImp.bidfloor).to.equal(0.9);
-        expect(secondImp.banner.format).to.have.lengthOf(1);
-        expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 });
-        expect(secondImp).to.not.have.property('native');
-        expect(secondImp).to.have.property('video');
+        const secondImp = request[0].data.imp[1]
+        expect(secondImp.bidfloor).to.equal(0.9)
+        expect(secondImp.banner.format).to.have.lengthOf(1)
+        expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 })
+        expect(secondImp).to.not.have.property('native')
+        expect(secondImp).to.have.property('video')
       }
-    });
+    })
 
     it('should not send ext.prebid', () => {
       const request = spec.buildRequests(
@@ -817,15 +817,15 @@ describe('Equativ bid adapter tests', () => {
             }
           }
         }
-      )[0];
-      expect(request.data.ext).not.to.have.property('prebid');
-    });
+      )[0]
+      expect(request.data.ext).not.to.have.property('prebid')
+    })
 
     it('should send feedback data when lost', () => {
-      const bidId = 'abcd1234';
-      const cpm = 3.7;
-      const impIdMap = getImpIdMap();
-      const token = 'y7hd87dw8';
+      const bidId = 'abcd1234'
+      const cpm = 3.7
+      const impIdMap = getImpIdMap()
+      const token = 'y7hd87dw8'
       const RESPONSE_WITH_FEEDBACK = {
         body: {
           seatbid: [
@@ -841,14 +841,14 @@ describe('Equativ bid adapter tests', () => {
             }
           ]
         }
-      };
+      }
 
       let request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
+      )[0]
 
-      spec.interpretResponse(RESPONSE_WITH_FEEDBACK, request);
+      spec.interpretResponse(RESPONSE_WITH_FEEDBACK, request)
 
       request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
@@ -868,20 +868,20 @@ describe('Equativ bid adapter tests', () => {
             }
           }
         }
-      )[0];
+      )[0]
 
       expect(request.data.ext).to.have.property('bid_feedback').and.to.deep.equal({
         feedback_token: token,
         loss: 102,
         price: cpm
-      });
-    });
+      })
+    })
 
     it('should send feedback data when won', () => {
-      const bidId = 'abcd1234';
-      const cpm = 2.34;
-      const impIdMap = getImpIdMap();
-      const token = '87187y83';
+      const bidId = 'abcd1234'
+      const cpm = 2.34
+      const impIdMap = getImpIdMap()
+      const token = '87187y83'
       const RESPONSE_WITH_FEEDBACK = {
         body: {
           seatbid: [
@@ -897,14 +897,14 @@ describe('Equativ bid adapter tests', () => {
             }
           ]
         }
-      };
+      }
 
       let request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
+      )[0]
 
-      spec.interpretResponse(RESPONSE_WITH_FEEDBACK, request);
+      spec.interpretResponse(RESPONSE_WITH_FEEDBACK, request)
 
       request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
@@ -924,36 +924,36 @@ describe('Equativ bid adapter tests', () => {
             }
           }
         }
-      )[0];
+      )[0]
 
       expect(request.data.ext).to.have.property('bid_feedback').and.to.deep.equal({
         feedback_token: token,
         loss: 0,
         price: cpm
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('getUserSyncs', () => {
-    let handleCookieSyncStub;
+    let handleCookieSyncStub
 
     beforeEach(() => {
-      handleCookieSyncStub = sinon.stub(equativUtils, 'handleCookieSync');
-    });
+      handleCookieSyncStub = sinon.stub(equativUtils, 'handleCookieSync')
+    })
     afterEach(() => {
-      handleCookieSyncStub.restore();
-    });
+      handleCookieSyncStub.restore()
+    })
 
     it('should call handleCookieSync with correct parameters and return its result', () => {
       const expectedResult = [
         { type: 'iframe', url: 'https://sync.example.com' },
-      ];
+      ]
 
       handleCookieSyncStub.returns(expectedResult)
 
       const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } })
 
       sinon.assert.calledWithMatch(
         handleCookieSyncStub,
@@ -962,76 +962,76 @@ describe('Equativ bid adapter tests', () => {
         { gdprApplies: true, vendorData: { vendor: { consents: {} } } },
         sinon.match.number,
         sinon.match.object
-      );
+      )
 
-      expect(result).to.deep.equal(expectedResult);
-    });
+      expect(result).to.deep.equal(expectedResult)
+    })
 
     it('should return an empty array if handleCookieSync returns an empty array', () => {
-      handleCookieSyncStub.returns([]);
+      handleCookieSyncStub.returns([])
 
       const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,
-        { gdprApplies: true, vendorData: { vendor: { consents: {} } } });
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } })
 
-      expect(result).to.deep.equal([]);
-    });
-  });
+      expect(result).to.deep.equal([])
+    })
+  })
 
   describe('interpretResponse', () => {
     it('should return data returned by ORTB converter', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      const bids = spec.interpretResponse(SAMPLE_RESPONSE, request);
+      )[0]
+      const bids = spec.interpretResponse(SAMPLE_RESPONSE, request)
       expect(bids).to.deep.equal(
         converter.fromORTB({
           request: request.data,
           response: SAMPLE_RESPONSE.body,
         })
-      );
-    });
+      )
+    })
 
     it('should not fail if bidRequest.data.imp is undefined', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      delete request.data.imp;
-      expect(spec.interpretResponse(SAMPLE_RESPONSE, request)).to.not.throw;
-    });
+      )[0]
+      delete request.data.imp
+      expect(spec.interpretResponse(SAMPLE_RESPONSE, request)).to.not.throw
+    })
 
     it('should not fail if serverResponse.body.seatbid is undefined', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
-      const response = utils.deepClone(SAMPLE_RESPONSE);
-      delete response.body.seatbid;
-      expect(spec.interpretResponse(response, request)).to.not.throw;
-    });
+      )[0]
+      const response = utils.deepClone(SAMPLE_RESPONSE)
+      delete response.body.seatbid
+      expect(spec.interpretResponse(response, request)).to.not.throw
+    })
 
     it('should pass exp as ttl parameter with its value', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
-      )[0];
+      )[0]
 
-      const response = utils.deepClone(SAMPLE_RESPONSE);
-      const bidId = 'abcd1234';
-      const impIdMap = getImpIdMap();
+      const response = utils.deepClone(SAMPLE_RESPONSE)
+      const bidId = 'abcd1234'
+      const impIdMap = getImpIdMap()
 
-      response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
-      response.body.seatbid[0].bid[0].exp = 120;
+      response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId)
+      response.body.seatbid[0].bid[0].exp = 120
 
-      const result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request)
 
-      expect(result.bids[0]).to.have.property('ttl').that.eq(120);
-    });
+      expect(result.bids[0]).to.have.property('ttl').that.eq(120)
+    })
 
     describe('outstream', () => {
-      const bidId = 'abcd1234';
+      const bidId = 'abcd1234'
 
       const bidRequests = [{
         bidId,
@@ -1046,7 +1046,7 @@ describe('Equativ bid adapter tests', () => {
         params: {
           networkId: 111
         }
-      }];
+      }]
 
       it('should add renderer', () => {
         const request = spec.buildRequests(
@@ -1055,7 +1055,7 @@ describe('Equativ bid adapter tests', () => {
             bidderCode: 'equativ',
             bids: bidRequests
           }
-        )[0];
+        )[0]
 
         const response = {
           body: {
@@ -1065,27 +1065,27 @@ describe('Equativ bid adapter tests', () => {
               }
             ]
           }
-        };
+        }
 
-        const impIdMap = getImpIdMap();
-        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
-        const bid = spec.interpretResponse(response, request).bids[0];
+        const impIdMap = getImpIdMap()
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId)
+        const bid = spec.interpretResponse(response, request).bids[0]
 
-        expect(bid).to.have.property('renderer');
-        expect(bid.renderer).to.be.instanceof(Renderer);
-        expect(bid.renderer.url).eq('https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js');
-      });
+        expect(bid).to.have.property('renderer')
+        expect(bid.renderer).to.be.instanceof(Renderer)
+        expect(bid.renderer.url).eq('https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js')
+      })
 
       it('should initialize and set renderer', () => {
         const fakeRenderer = {
           push: (cb) => cb(),
           setRender: sinon.stub()
-        };
+        }
 
-        const installStub = sandBox.stub(Renderer, 'install').returns(fakeRenderer);
-        const renderAdStub = sandBox.stub();
+        const installStub = sandBox.stub(Renderer, 'install').returns(fakeRenderer)
+        const renderAdStub = sandBox.stub()
 
-        window.EquativVideoOutstream = { renderAd: renderAdStub };
+        window.EquativVideoOutstream = { renderAd: renderAdStub }
 
         const request = spec.buildRequests(
           bidRequests,
@@ -1093,10 +1093,10 @@ describe('Equativ bid adapter tests', () => {
             bidderCode: 'equativ',
             bids: bidRequests
           }
-        )[0];
+        )[0]
 
-        expect(installStub.notCalled).to.be.true;
-        expect(fakeRenderer.setRender.notCalled).to.be.true;
+        expect(installStub.notCalled).to.be.true
+        expect(fakeRenderer.setRender.notCalled).to.be.true
 
         const response = {
           body: {
@@ -1109,26 +1109,26 @@ describe('Equativ bid adapter tests', () => {
               }
             ]
           }
-        };
+        }
 
-        const impIdMap = getImpIdMap();
-        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+        const impIdMap = getImpIdMap()
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId)
 
-        const bid = spec.interpretResponse(response, request).bids[0];
+        const bid = spec.interpretResponse(response, request).bids[0]
 
-        expect(installStub.calledOnce).to.be.true;
-        expect(fakeRenderer.setRender.calledOnce).to.be.true;
+        expect(installStub.calledOnce).to.be.true
+        expect(fakeRenderer.setRender.calledOnce).to.be.true
 
-        const renderFn = fakeRenderer.setRender.firstCall.args[0];
+        const renderFn = fakeRenderer.setRender.firstCall.args[0]
 
-        renderFn(bid);
+        renderFn(bid)
 
-        expect(renderAdStub.calledOnce).to.be.true;
-        expect(renderAdStub.firstCall.args[0]).to.have.property('slotId');
-        expect(renderAdStub.firstCall.args[0]).to.have.property('vast');
-      });
-    });
-  });
+        expect(renderAdStub.calledOnce).to.be.true
+        expect(renderAdStub.firstCall.args[0]).to.have.property('slotId')
+        expect(renderAdStub.firstCall.args[0]).to.have.property('vast')
+      })
+    })
+  })
 
   describe('isBidRequestValid', () => {
     it('should return true if params.networkId is set', () => {
@@ -1136,9 +1136,9 @@ describe('Equativ bid adapter tests', () => {
         params: {
           networkId: 123,
         },
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return true if ortb2.site.publisher.id is set', () => {
       const bidRequest = {
@@ -1149,9 +1149,9 @@ describe('Equativ bid adapter tests', () => {
             },
           },
         },
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return true if ortb2.app.publisher.id is set', () => {
       const bidRequest = {
@@ -1162,9 +1162,9 @@ describe('Equativ bid adapter tests', () => {
             },
           },
         },
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return true if ortb2.dooh.publisher.id is set', () => {
       const bidRequest = {
@@ -1175,13 +1175,13 @@ describe('Equativ bid adapter tests', () => {
             },
           },
         },
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return false if networkId is not set', () => {
-      const bidRequest = {};
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
-  });
-});
+      const bidRequest = {}
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
+  })
+})

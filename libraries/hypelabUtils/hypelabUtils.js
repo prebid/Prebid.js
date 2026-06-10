@@ -5,14 +5,14 @@ export function getWalletPresence() {
     eth: typeof window !== 'undefined' && !!window.ethereum,
     sol: typeof window !== 'undefined' && !!window.solana,
     tron: typeof window !== 'undefined' && !!window.tron,
-  };
+  }
 }
 
 function tryCatch(fn, fallback) {
   try {
-    return fn();
+    return fn()
   } catch (e) {
-    return fallback;
+    return fallback
   }
 }
 
@@ -23,12 +23,12 @@ export function getWalletProviderFlags() {
     eth: tryCatch(getEthWalletProviderFlags, []),
     sol: tryCatch(getSolWalletProviderFlags, []),
     tron: tryCatch(getTronWalletProviderFlags, []),
-  };
+  }
 }
 
 function getAdaWalletProviderFlags() {
-  const flags = [];
-  if (typeof window === 'undefined') return flags;
+  const flags = []
+  if (typeof window === 'undefined') return flags
   if (window.cardano) {
     const allWalletProviderFlags = [
       'eternl',
@@ -41,17 +41,17 @@ function getAdaWalletProviderFlags() {
       'gerowallet',
       'typhon',
       'begin',
-    ];
+    ]
     for (const flag of allWalletProviderFlags) {
-      if (window.cardano[flag]) flags.push(flag);
+      if (window.cardano[flag]) flags.push(flag)
     }
   }
-  return flags;
+  return flags
 }
 
 function getBnbWalletProviderFlags() {
-  const flags = [];
-  if (typeof window === 'undefined') return flags;
+  const flags = []
+  if (typeof window === 'undefined') return flags
   if (window.BinanceChain) {
     const allWalletProviderFlags = [
       'isTrustWallet',
@@ -59,27 +59,27 @@ function getBnbWalletProviderFlags() {
       'isKaiWallet',
       'isMetaMask',
       'isNifyWallet',
-    ];
+    ]
     for (const flag of allWalletProviderFlags) {
-      if (window.BinanceChain[flag]) flags.push(flag);
+      if (window.BinanceChain[flag]) flags.push(flag)
     }
     // Coin98 adds additional flags
     if (flags.includes('isCoin98') && flags.includes('isKaiWallet')) {
-      flags.splice(flags.indexOf('isKaiWallet'), 1);
+      flags.splice(flags.indexOf('isKaiWallet'), 1)
     }
     if (flags.includes('isCoin98') && flags.includes('isNifyWallet')) {
-      flags.splice(flags.indexOf('isNifyWallet'), 1);
+      flags.splice(flags.indexOf('isNifyWallet'), 1)
     }
     if (flags.includes('isCoin98') && flags.includes('isMetaMask')) {
-      flags.splice(flags.indexOf('isMetaMask'), 1);
+      flags.splice(flags.indexOf('isMetaMask'), 1)
     }
   }
-  return flags;
+  return flags
 }
 
 function getEthWalletProviderFlags() {
-  const flags = [];
-  if (typeof window === 'undefined') return flags;
+  const flags = []
+  if (typeof window === 'undefined') return flags
   if (window.ethereum) {
     const allWalletProviderFlags = [
       'isApexWallet',
@@ -119,9 +119,9 @@ function getEthWalletProviderFlags() {
       'isTrustWallet',
       'isXDEFI',
       'isZerion',
-    ];
+    ]
     for (const flag of allWalletProviderFlags) {
-      if (window.ethereum[flag]) flags.push(flag);
+      if (window.ethereum[flag]) flags.push(flag)
     }
     // Filter MetaMask lookalikes
     if (
@@ -146,37 +146,37 @@ function getEthWalletProviderFlags() {
         'isZerion',
       ].some((f) => flags.includes(f))
     ) {
-      flags.splice(flags.indexOf('isMetaMask'), 1);
+      flags.splice(flags.indexOf('isMetaMask'), 1)
     }
   }
-  return flags;
+  return flags
 }
 
 function getSolWalletProviderFlags() {
-  const flags = [];
-  if (typeof window === 'undefined') return flags;
+  const flags = []
+  if (typeof window === 'undefined') return flags
   if (window.solana) {
-    const allWalletProviderFlags = ['isPhantom', 'isNufi'];
+    const allWalletProviderFlags = ['isPhantom', 'isNufi']
     for (const flag of allWalletProviderFlags) {
-      if (window.solana[flag]) flags.push(flag);
+      if (window.solana[flag]) flags.push(flag)
     }
     if (flags.includes('isNufi') && flags.includes('isPhantom')) {
-      flags.splice(flags.indexOf('isPhantom'), 1);
+      flags.splice(flags.indexOf('isPhantom'), 1)
     }
   }
-  if (window.solflare) flags.push('isSolflare');
-  if (window.backpack) flags.push('isBackpack');
-  return flags;
+  if (window.solflare) flags.push('isSolflare')
+  if (window.backpack) flags.push('isBackpack')
+  return flags
 }
 
 function getTronWalletProviderFlags() {
-  const flags = [];
-  if (typeof window === 'undefined') return flags;
+  const flags = []
+  if (typeof window === 'undefined') return flags
   if (window.tron) {
-    const allWalletProviderFlags = ['isTronLink'];
+    const allWalletProviderFlags = ['isTronLink']
     for (const flag of allWalletProviderFlags) {
-      if (window.tron[flag]) flags.push(flag);
+      if (window.tron[flag]) flags.push(flag)
     }
   }
-  return flags;
+  return flags
 }

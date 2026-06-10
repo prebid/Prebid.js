@@ -5,8 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js'
+import { submodule } from '../src/hook.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -14,17 +14,17 @@ import { submodule } from '../src/hook.js';
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  */
 
-const bidderCode = 'mygaruId';
-const syncUrl = 'https://ident.mygaru.com/v2/id';
+const bidderCode = 'mygaruId'
+const syncUrl = 'https://ident.mygaru.com/v2/id'
 
 export function buildUrl(opts) {
-  const queryPairs = [];
+  const queryPairs = []
   for (const key in opts) {
     if (opts[key] !== undefined) {
-      queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
+      queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`)
     }
   }
-  return `${syncUrl}?${queryPairs.join('&')}`;
+  return `${syncUrl}?${queryPairs.join('&')}`
 }
 
 function requestRemoteIdAsync(url) {
@@ -34,15 +34,15 @@ function requestRemoteIdAsync(url) {
       {
         success: response => {
           try {
-            const jsonResponse = JSON.parse(response);
-            const { iuid } = jsonResponse;
-            resolve(iuid);
+            const jsonResponse = JSON.parse(response)
+            const { iuid } = jsonResponse
+            resolve(iuid)
           } catch (e) {
-            resolve();
+            resolve()
           }
         },
         error: () => {
-          resolve();
+          resolve()
         },
       },
       undefined,
@@ -50,8 +50,8 @@ function requestRemoteIdAsync(url) {
         method: 'GET',
         contentType: 'application/json'
       }
-    );
-  });
+    )
+  })
 }
 
 /** @type {Submodule} */
@@ -67,7 +67,7 @@ export const mygaruIdSubmodule = {
    * @returns {{id: string} | null}
    */
   decode(id) {
-    return id;
+    return id
   },
   /**
    * get the MyGaru Id from local storages and initiate a new user sync
@@ -77,18 +77,18 @@ export const mygaruIdSubmodule = {
    * @returns {{id: string | undefined}}
    */
   getId(config, consentData) {
-    const gdprApplies = consentData?.gdpr?.gdprApplies === true ? 1 : 0;
-    const gdprConsentString = gdprApplies ? consentData.gdpr.consentString : undefined;
+    const gdprApplies = consentData?.gdpr?.gdprApplies === true ? 1 : 0
+    const gdprConsentString = gdprApplies ? consentData.gdpr.consentString : undefined
     const url = buildUrl({
       gdprApplies,
       gdprConsentString
-    });
+    })
 
     return {
       url,
       callback: function (done) {
         return requestRemoteIdAsync(url).then((id) => {
-          done({ mygaruId: id });
+          done({ mygaruId: id })
         })
       }
     }
@@ -99,6 +99,6 @@ export const mygaruIdSubmodule = {
       atype: 1
     },
   }
-};
+}
 
-submodule('userId', mygaruIdSubmodule);
+submodule('userId', mygaruIdSubmodule)

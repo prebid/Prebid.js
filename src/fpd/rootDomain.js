@@ -1,7 +1,7 @@
-import { memoize } from '../utils.js';
-import { canSetCookie, getCoreStorageManager } from '../storageManager.js';
+import { memoize } from '../utils.js'
+import { canSetCookie, getCoreStorageManager } from '../storageManager.js'
 
-export const coreStorage = getCoreStorageManager('fpdEnrichment');
+export const coreStorage = getCoreStorageManager('fpdEnrichment')
 
 /**
  * Find the root domain by testing for the topmost domain that will allow setting cookies.
@@ -9,24 +9,24 @@ export const coreStorage = getCoreStorageManager('fpdEnrichment');
 
 export const findRootDomain = memoize(function findRootDomain(fullDomain = window.location.host) {
   if (!coreStorage.cookiesAreEnabled()) {
-    return fullDomain;
+    return fullDomain
   }
 
-  const domainParts = fullDomain.split('.');
+  const domainParts = fullDomain.split('.')
   if (domainParts.length === 2) {
-    return fullDomain;
+    return fullDomain
   }
-  let rootDomain;
-  let continueSearching;
-  let startIndex = -2;
+  let rootDomain
+  let continueSearching
+  let startIndex = -2
   do {
-    rootDomain = domainParts.slice(startIndex).join('.');
+    rootDomain = domainParts.slice(startIndex).join('.')
     if (canSetCookie(rootDomain, coreStorage)) {
-      continueSearching = false;
+      continueSearching = false
     } else {
-      startIndex += -1;
-      continueSearching = Math.abs(startIndex) <= domainParts.length;
+      startIndex += -1
+      continueSearching = Math.abs(startIndex) <= domainParts.length
     }
-  } while (continueSearching);
-  return rootDomain;
-});
+  } while (continueSearching)
+  return rootDomain
+})

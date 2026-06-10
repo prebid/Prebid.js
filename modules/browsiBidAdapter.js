@@ -1,20 +1,20 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { VIDEO } from '../src/mediaTypes.js';
-import { logError, logInfo, isArray, isStr } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { VIDEO } from '../src/mediaTypes.js'
+import { logError, logInfo, isArray, isStr } from '../src/utils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDDER_CODE = 'browsi';
-const DATA = 'brwvidtag';
-const ADAPTER = '__bad';
-const USP_TO_REPLACE = '__USP__';
-const GDPR_STR_TO_REPLACE = '__GDPR_STR__';
-const GDPR_TO_REPLACE = '__GDPR__';
-export const ENDPOINT = 'https://rtb.avantisvideo.com/api/v2/auction/getbid';
+const BIDDER_CODE = 'browsi'
+const DATA = 'brwvidtag'
+const ADAPTER = '__bad'
+const USP_TO_REPLACE = '__USP__'
+const GDPR_STR_TO_REPLACE = '__GDPR_STR__'
+const GDPR_TO_REPLACE = '__GDPR__'
+export const ENDPOINT = 'https://rtb.avantisvideo.com/api/v2/auction/getbid'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -27,11 +27,11 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!bid.params) {
-      return false;
+      return false
     }
     const { pubId, tagId } = bid.params
-    const { mediaTypes } = bid;
-    return !!(validateBrowsiIds(pubId, tagId) && mediaTypes?.[VIDEO]);
+    const { mediaTypes } = bid
+    return !!(validateBrowsiIds(pubId, tagId) && mediaTypes?.[VIDEO])
   },
   /**
    * Make a server request from the list of BidRequests
@@ -40,12 +40,12 @@ export const spec = {
    * @returns ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const requests = [];
-    const { refererInfo, bidderRequestId, gdprConsent, uspConsent } = bidderRequest;
+    const requests = []
+    const { refererInfo, bidderRequestId, gdprConsent, uspConsent } = bidderRequest
     validBidRequests.forEach(bidRequest => {
-      const { bidId, adUnitCode, auctionId, ortb2Imp, params } = bidRequest;
-      const schain = bidRequest?.ortb2?.source?.ext?.schain;
-      const video = getVideoMediaType(bidRequest);
+      const { bidId, adUnitCode, auctionId, ortb2Imp, params } = bidRequest
+      const schain = bidRequest?.ortb2?.source?.ext?.schain
+      const video = getVideoMediaType(bidRequest)
 
       const request = {
         method: 'POST',
@@ -67,10 +67,10 @@ export const spec = {
           schain: schain,
           params: params
         }
-      };
-      requests.push(request);
+      }
+      requests.push(request)
     })
-    return requests;
+    return requests
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -79,9 +79,9 @@ export const spec = {
    * @returns {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, request) {
-    const bidResponses = [];
-    const response = serverResponse?.body;
-    if (!response) { return bidResponses; }
+    const bidResponses = []
+    const response = serverResponse?.body
+    if (!response) { return bidResponses }
     const {
       bidId,
       w,
@@ -92,8 +92,8 @@ export const spec = {
       cur,
       ttl,
       ...extraParams
-    } = response;
-    delete extraParams.userSyncs;
+    } = response
+    delete extraParams.userSyncs
     const bidResponse = {
       requestId: request.data.bidId,
       bidId,
@@ -106,9 +106,9 @@ export const spec = {
       height: h,
       currency: cur,
       ...extraParams
-    };
-    bidResponses.push(bidResponse);
-    return bidResponses;
+    }
+    bidResponses.push(bidResponse)
+    return bidResponses
   },
   /**
    * Extracts user-syncs information from server response
@@ -119,30 +119,30 @@ export const spec = {
    * @returns {UserSync[]}
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const serverResponse = isArray(serverResponses) ? serverResponses[0] : serverResponses;
-    const syncParams = serverResponse?.body?.userSyncs;
-    const userSyncs = [];
-    const allowedTypes = [];
-    syncOptions.iframeEnabled && allowedTypes.push('iframe');
-    syncOptions.pixelEnabled && allowedTypes.push('image');
+    const serverResponse = isArray(serverResponses) ? serverResponses[0] : serverResponses
+    const syncParams = serverResponse?.body?.userSyncs
+    const userSyncs = []
+    const allowedTypes = []
+    syncOptions.iframeEnabled && allowedTypes.push('iframe')
+    syncOptions.pixelEnabled && allowedTypes.push('image')
     if (syncParams && allowedTypes.length) {
       syncParams.forEach(syncParam => {
-        let { url, type } = syncParam;
-        if (!allowedTypes.includes(type)) { return; }
-        url = getValidUrl(url, gdprConsent, uspConsent);
+        let { url, type } = syncParam
+        if (!allowedTypes.includes(type)) { return }
+        url = getValidUrl(url, gdprConsent, uspConsent)
         userSyncs.push({
           type,
           url
-        });
+        })
       })
     }
-    return userSyncs;
+    return userSyncs
   },
   onTimeout(timeoutData) {
-    logInfo(`${BIDDER_CODE} bidder timed out`, timeoutData);
+    logInfo(`${BIDDER_CODE} bidder timed out`, timeoutData)
   },
   onBidderError: function ({ error }) {
-    logError(`${BIDDER_CODE} bidder error`, error);
+    logError(`${BIDDER_CODE} bidder error`, error)
   }
 }
 /**
@@ -155,23 +155,23 @@ export const spec = {
 const getValidUrl = function (url, gdprConsent, uspConsent) {
   let validUrl = url.replace(GDPR_TO_REPLACE, gdprConsent?.gdprApplies || '')
     .replace(GDPR_STR_TO_REPLACE, encodeURIComponent(gdprConsent?.consentString || ''))
-    .replace(USP_TO_REPLACE, encodeURIComponent(uspConsent?.consentString || ''));
+    .replace(USP_TO_REPLACE, encodeURIComponent(uspConsent?.consentString || ''))
   if (validUrl.indexOf('http') < 0) {
-    validUrl = 'http://' + validUrl;
+    validUrl = 'http://' + validUrl
   }
-  return validUrl;
+  return validUrl
 }
 
 const validateBrowsiIds = function (pubId, tagId) {
-  return pubId && tagId && isStr(pubId) && isStr(tagId);
+  return pubId && tagId && isStr(pubId) && isStr(tagId)
 }
 const getData = function () {
-  return window[DATA]?.[ADAPTER];
+  return window[DATA]?.[ADAPTER]
 }
 const getTimeout = function (bidderRequest) {
-  return bidderRequest.timeout || config.getConfig('bidderTimeout');
+  return bidderRequest.timeout || config.getConfig('bidderTimeout')
 }
 const getVideoMediaType = function (bidRequest) {
-  return bidRequest.mediaTypes?.[VIDEO];
+  return bidRequest.mediaTypes?.[VIDEO]
 }
-registerBidder(spec);
+registerBidder(spec)

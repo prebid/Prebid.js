@@ -1,13 +1,13 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert, expect } from 'chai';
-import { spec } from 'modules/revcontentBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+import { assert, expect } from 'chai'
+import { spec } from 'modules/revcontentBidAdapter.js'
+import { NATIVE } from 'src/mediaTypes.js'
+import { config } from 'src/config.js'
+import * as utils from 'src/utils.js'
 
 describe('revcontent adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
-  const bids = [];
+  let serverResponse, bidRequest, bidResponses
+  const bids = []
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -20,17 +20,17 @@ describe('revcontent adapter', function () {
         domain: 'test.com',
         endpoint: 'trends-s0.revcontent.com'
       }
-    };
+    }
 
     it('should return true when required params found', function () {
-      assert(spec.isBidRequestValid(bid));
-    });
+      assert(spec.isBidRequestValid(bid))
+    })
 
     it('should return false when required params are missing', function () {
-      bid.params.apiKey = undefined;
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
-  });
+      bid.params.apiKey = undefined
+      assert.isFalse(spec.isBidRequestValid(bid))
+    })
+  })
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
@@ -44,17 +44,17 @@ describe('revcontent adapter', function () {
           widgetId: 33861,
           endpoint: 'trends-s0.revcontent.com'
         }
-      }];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
-      request = request[0];
-      assert.equal(request.method, 'POST');
-      assert.equal(request.url, 'https://trends-s0.revcontent.com/rtb?apiKey=8a33fa9cf220ae685dcc3544f847cdda858d3b1c&userId=673&widgetId=33861');
-      assert.deepEqual(request.options, { contentType: 'application/json' });
-      assert.ok(request.data);
-    });
+      }]
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
+      request = request[0]
+      assert.equal(request.method, 'POST')
+      assert.equal(request.url, 'https://trends-s0.revcontent.com/rtb?apiKey=8a33fa9cf220ae685dcc3544f847cdda858d3b1c&userId=673&widgetId=33861')
+      assert.deepEqual(request.options, { contentType: 'application/json' })
+      assert.ok(request.data)
+    })
 
     it('should have default request structure', function () {
-      const keys = 'method,options,url,data,bid'.split(',');
+      const keys = 'method,options,url,data,bid'.split(',')
       const validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {},
@@ -65,14 +65,14 @@ describe('revcontent adapter', function () {
           domain: 'test.com',
           endpoint: 'trends-s0.revcontent.com'
         }
-      }];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
+      }]
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
 
-      request = request[0];
-      const data = Object.keys(request);
+      request = request[0]
+      const data = Object.keys(request)
 
-      assert.deepEqual(keys, data);
-    });
+      assert.deepEqual(keys, data)
+    })
 
     it('should send info about device and unique bidfloor', function () {
       const validBidRequests = [{
@@ -86,12 +86,12 @@ describe('revcontent adapter', function () {
           endpoint: 'trends-s0.revcontent.com',
           bidfloor: 0.05
         }
-      }];
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
-      request = JSON.parse(request[0].data);
-      assert.equal(request.imp[0].bidfloor, 0.05);
-      assert.equal(request.device.ua, navigator.userAgent);
-    });
+      }]
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
+      request = JSON.parse(request[0].data)
+      assert.equal(request.imp[0].bidfloor, 0.05)
+      assert.equal(request.device.ua, navigator.userAgent)
+    })
 
     it('should send info about device and use getFloor', function () {
       const validBidRequests = [{
@@ -105,18 +105,18 @@ describe('revcontent adapter', function () {
           endpoint: 'trends-s0.revcontent.com',
           bidfloor: 0.05
         }
-      }];
+      }]
       validBidRequests[0].getFloor = () => {
         return {
           floor: 0.07,
           currency: 'USD'
-        };
-      };
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
-      request = JSON.parse(request[0].data);
-      assert.equal(request.imp[0].bidfloor, 0.07);
-      assert.equal(request.device.ua, navigator.userAgent);
-    });
+        }
+      }
+      let request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
+      request = JSON.parse(request[0].data)
+      assert.equal(request.imp[0].bidfloor, 0.07)
+      assert.equal(request.device.ua, navigator.userAgent)
+    })
 
     it('should send info about the site and default bidfloor', function () {
       const validBidRequests = [{
@@ -145,28 +145,28 @@ describe('revcontent adapter', function () {
           domain: 'test.com',
           endpoint: 'trends-s0.revcontent.com'
         }
-      }];
-      const refererInfo = { page: 'page' };
-      let request = spec.buildRequests(validBidRequests, { refererInfo });
+      }]
+      const refererInfo = { page: 'page' }
+      let request = spec.buildRequests(validBidRequests, { refererInfo })
 
-      request = JSON.parse(request[0].data);
-      assert.equal(request.imp[0].bidfloor, 0.1);
+      request = JSON.parse(request[0].data)
+      assert.equal(request.imp[0].bidfloor, 0.1)
       assert.deepEqual(request.site, {
         domain: 'test.com',
         page: 'page',
         publisher: { id: 673, domain: 'test.com' }
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should return if no body in response', function () {
-      const serverResponse = {};
-      const bidRequest = {};
+      const serverResponse = {}
+      const bidRequest = {}
 
-      const result = spec.interpretResponse(serverResponse, bidRequest);
-      assert.equal(result.length, 0);
-    });
+      const result = spec.interpretResponse(serverResponse, bidRequest)
+      assert.equal(result.length, 0)
+    })
 
     const serverResponse = {
       body: {
@@ -188,7 +188,7 @@ describe('revcontent adapter', function () {
         bidid: '7f729368-edb2-427a-bde7-a55b3bf8837c'
       },
       headers: {}
-    };
+    }
 
     const bidRequest = {
       method: 'POST',
@@ -261,59 +261,59 @@ describe('revcontent adapter', function () {
           bidderWinsCount: 0
         }
       ]
-    };
+    }
 
     it('should set correct native params', function () {
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
 
-      assert.equal(result.mediaType, 'native');
-      assert.equal(result.requestId, '294a7f446202848');
-      assert.equal(result.cpm, '0.1');
-      assert.equal(result.creativeId, '4162547');
-    });
+      assert.equal(result.mediaType, 'native')
+      assert.equal(result.requestId, '294a7f446202848')
+      assert.equal(result.cpm, '0.1')
+      assert.equal(result.creativeId, '4162547')
+    })
 
     it('validate template 728x90', function () {
-      bidRequest.bid[0].params.size.width = 728;
-      bidRequest.bid[0].params.size.height = 90;
+      bidRequest.bid[0].params.size.width = 728
+      bidRequest.bid[0].params.size.height = 90
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.mediaType, 'native');
-      assert.equal(result.requestId, '294a7f446202848');
-      assert.equal(result.cpm, '0.1');
-      assert.equal(result.creativeId, '4162547');
-    });
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
+      assert.equal(result.mediaType, 'native')
+      assert.equal(result.requestId, '294a7f446202848')
+      assert.equal(result.cpm, '0.1')
+      assert.equal(result.creativeId, '4162547')
+    })
 
     it('validate template 300x600', function () {
-      bidRequest.bid[0].params.size.width = 300;
-      bidRequest.bid[0].params.size.height = 600;
+      bidRequest.bid[0].params.size.width = 300
+      bidRequest.bid[0].params.size.height = 600
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.mediaType, 'native');
-      assert.equal(result.requestId, '294a7f446202848');
-      assert.equal(result.cpm, '0.1');
-      assert.equal(result.creativeId, '4162547');
-    });
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
+      assert.equal(result.mediaType, 'native')
+      assert.equal(result.requestId, '294a7f446202848')
+      assert.equal(result.cpm, '0.1')
+      assert.equal(result.creativeId, '4162547')
+    })
 
     it('validate template custom template', function () {
-      bidRequest.bid[0].params.template = '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 298px;    height: 248px;    display: block;"><div style="background-image:url({image});width: 300px;height: 165px;background-repeat: none;background-size: cover;"><div style="position: absolute;top: 160px;left:12px"><h1 style="color: #000;font-family: Arial, sans-serif;font-size: 19px; position: relative; width: 290px;">{title}</h1> <div style="border:1px solid #000;text-align:center;width:94%;font-family:Verdana;font-size:12px;color:#000">SEE MORE</div></div></div></a>';
+      bidRequest.bid[0].params.template = '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 298px;    height: 248px;    display: block;"><div style="background-image:url({image});width: 300px;height: 165px;background-repeat: none;background-size: cover;"><div style="position: absolute;top: 160px;left:12px"><h1 style="color: #000;font-family: Arial, sans-serif;font-size: 19px; position: relative; width: 290px;">{title}</h1> <div style="border:1px solid #000;text-align:center;width:94%;font-family:Verdana;font-size:12px;color:#000">SEE MORE</div></div></div></a>'
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.mediaType, 'native');
-      assert.equal(result.requestId, '294a7f446202848');
-      assert.equal(result.cpm, '0.1');
-      assert.equal(result.creativeId, '4162547');
-    });
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
+      assert.equal(result.mediaType, 'native')
+      assert.equal(result.requestId, '294a7f446202848')
+      assert.equal(result.cpm, '0.1')
+      assert.equal(result.creativeId, '4162547')
+    })
 
     it('validate template custom invalid template', function () {
-      bidRequest.bid[0].params.size.width = 100;
-      bidRequest.bid[0].params.size.height = 200;
+      bidRequest.bid[0].params.size.width = 100
+      bidRequest.bid[0].params.size.height = 200
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.mediaType, 'native');
-      assert.equal(result.requestId, '294a7f446202848');
-      assert.equal(result.cpm, '0.1');
-      assert.equal(result.creativeId, '4162547');
-    });
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
+      assert.equal(result.mediaType, 'native')
+      assert.equal(result.requestId, '294a7f446202848')
+      assert.equal(result.cpm, '0.1')
+      assert.equal(result.creativeId, '4162547')
+    })
 
     it('should return empty when there is no bids in response', function () {
       const serverResponse = {
@@ -323,44 +323,44 @@ describe('revcontent adapter', function () {
           seatbid: [{ bid: [] }],
           cur: 'USD'
         }
-      };
+      }
       const bidRequest = {
         data: '{}',
         bids: [{ bidId: 'bidId1' }]
-      };
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.ok(!result);
-    });
-  });
+      }
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
+      assert.ok(!result)
+    })
+  })
 
   describe('onBidWon', function () {
     it('default bid won', function () {
       const bid = {
         nurl: 'https://trends-s0.revcontent.com/push/track/?p=${AUCTION_PRICE}&d=nTCdHIfsgKOLFuV7DS1LF%2FnTk5HiFduGU65BgKgB%2BvKyG9YV7ceQWN76HMbBE0C6gwQeXUjravv3Hq5x9TT8CM6r2oUNgkGC9mhgv2yroTH9i3cSoH%2BilxyY19fMXFirtBz%2BF%2FEXKi4bsNh%2BDMPfj0L4elo%2FJEZmx4nslvOneJJjsFjJJtUJc%2F3UPivOisSCa%2B36mAgFQqt%2FSWBriYB%2BVAufz70LaGspF6T6jDzuIyVFJUpLhZVDtLRSJEzh7Lyzzw1FmYarp%2FPg0gZDY48aDdjw5A3Tlj%2Bap0cPHLDprNOyF0dmHDn%2FOVJEDRTWvrQ2JNK1t%2Fg1bGHIih0ec6XBVIBNurqRpLFBuUY6LgXCt0wRZWTByTEZ8AEv8IoYVILJAL%2BXL%2F9IyS4eTcdOUfn5X7gT8QBghCrAFrsCg8ZXKgWddTEXbpN1lU%2FzHdI5eSHkxkJ6WcYxSkY9PyripaIbmKiyb98LQMgTD%2B20RJO5dAmXTQTAcauw6IUPTjgSPEU%2Bd6L5Txd3CM00Hbd%2Bw1bREIQcpKEmlMwrRSwe4bu1BCjlh5A9gvU9Xc2sf7ekS3qPPmtp059r5IfzdNFQJB5aH9HqeDEU%2FxbMHx4ggMgojLBBL1fKrCKLAteEDQxd7PVmFJv7GHU2733vt5TnjKiEhqxHVFyi%2B0MIYMGIziM5HfUqfq3KUf%2F%2FeiCtJKXjg7FS6hOambdimSt7BdGDIZq9QECWdXsXcQqqVLwli27HYDMFVU3TWWRyjkjbhnQID9gQJlcpwIi87jVAODb6qP%2FKGQ%3D%3D',
         cpm: '0.1'
-      };
-      const result = spec.onBidWon(bid);
-      assert.ok(result);
-    });
-  });
+      }
+      const result = spec.onBidWon(bid)
+      assert.ok(result)
+    })
+  })
 
   describe('onBidWon', function() {
     const bid = {
       nurl: 'https://trends-s0.revcontent.com/push/track/?p=${AUCTION_PRICE}&d=nTCdHIfsgKOLFuV7DS1LF%2FnTk5HiFduGU65BgKgB%2BvKyG9YV7ceQWN76HMbBE0C6gwQeXUjravv3Hq5x9TT8CM6r2oUNgkGC9mhgv2yroTH9i3cSoH%2BilxyY19fMXFirtBz%2BF%2FEXKi4bsNh%2BDMPfj0L4elo%2FJEZmx4nslvOneJJjsFjJJtUJc%2F3UPivOisSCa%2B36mAgFQqt%2FSWBriYB%2BVAufz70LaGspF6T6jDzuIyVFJUpLhZVDtLRSJEzh7Lyzzw1FmYarp%2FPg0gZDY48aDdjw5A3Tlj%2Bap0cPHLDprNOyF0dmHDn%2FOVJEDRTWvrQ2JNK1t%2Fg1bGHIih0ec6XBVIBNurqRpLFBuUY6LgXCt0wRZWTByTEZ8AEv8IoYVILJAL%2BXL%2F9IyS4eTcdOUfn5X7gT8QBghCrAFrsCg8ZXKgWddTEXbpN1lU%2FzHdI5eSHkxkJ6WcYxSkY9PyripaIbmKiyb98LQMgTD%2B20RJO5dAmXTQTAcauw6IUPTjgSPEU%2Bd6L5Txd3CM00Hbd%2Bw1bREIQcpKEmlMwrRSwe4bu1BCjlh5A9gvU9Xc2sf7ekS3qPPmtp059r5IfzdNFQJB5aH9HqeDEU%2FxbMHx4ggMgojLBBL1fKrCKLAteEDQxd7PVmFJv7GHU2733vt5TnjKiEhqxHVFyi%2B0MIYMGIziM5HfUqfq3KUf%2F%2FeiCtJKXjg7FS6hOambdimSt7BdGDIZq9QECWdXsXcQqqVLwli27HYDMFVU3TWWRyjkjbhnQID9gQJlcpwIi87jVAODb6qP%2FKGQ%3D%3D',
       cpm: '0.1'
-    };
+    }
 
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
-    });
+      sinon.stub(utils, 'triggerPixel')
+    })
 
     afterEach(function() {
-      utils.triggerPixel.restore();
-    });
+      utils.triggerPixel.restore()
+    })
 
     it('make sure only 1 ajax call is happening', function() {
-      spec.onBidWon(bid);
-      expect(utils.triggerPixel.calledOnce).to.equal(true);
-    });
-  });
-});
+      spec.onBidWon(bid)
+      expect(utils.triggerPixel.calledOnce).to.equal(true)
+    })
+  })
+})

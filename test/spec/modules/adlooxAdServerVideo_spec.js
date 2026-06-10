@@ -1,16 +1,16 @@
-import adapterManager from 'src/adapterManager.js';
-import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
-import { buildVideoUrl } from 'modules/adlooxAdServerVideo.js';
-import { expect } from 'chai';
-import * as events from 'src/events.js';
-import { targeting } from 'src/targeting.js';
-import * as utils from 'src/utils.js';
-import { server } from '../../mocks/xhr.js';
+import adapterManager from 'src/adapterManager.js'
+import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js'
+import { buildVideoUrl } from 'modules/adlooxAdServerVideo.js'
+import { expect } from 'chai'
+import * as events from 'src/events.js'
+import { targeting } from 'src/targeting.js'
+import * as utils from 'src/utils.js'
+import { server } from '../../mocks/xhr.js'
 
-const analyticsAdapterName = 'adloox';
+const analyticsAdapterName = 'adloox'
 
 describe('Adloox Ad Server Video', function () {
-  let sandbox;
+  let sandbox
 
   const adUnit = {
     code: 'ad-slot-1',
@@ -25,29 +25,29 @@ describe('Adloox Ad Server Video', function () {
         bidder: 'dummy'
       }
     ]
-  };
+  }
 
   const bid = {
     bidder: adUnit.bids[0].bidder,
     adUnitCode: adUnit.code,
     mediaType: 'video'
-  };
+  }
 
   const analyticsOptions = {
     client: 'adlooxtest',
     clientid: 127,
     platformid: 0,
     tagid: 0
-  };
+  }
 
-  const urlVAST = 'https://j.adlooxtracking.com/ads/vast/tag.php';
+  const urlVAST = 'https://j.adlooxtracking.com/ads/vast/tag.php'
 
-  const creativeUrl = 'http://example.invalid/c';
+  const creativeUrl = 'http://example.invalid/c'
   const vastHeaders = {
     'content-type': 'application/xml;charset=utf-8'
-  };
+  }
 
-  const vastUrl = 'http://example.invalid/w';
+  const vastUrl = 'http://example.invalid/w'
   const vastContent =
 `<?xml version="1.0" encoding="UTF-8" ?>
 <VAST version="3.0">
@@ -81,7 +81,7 @@ describe('Adloox Ad Server Video', function () {
   </Ad>
 </VAST>`
 
-  const wrapperUrl = 'http://example.invalid/w';
+  const wrapperUrl = 'http://example.invalid/w'
   const wrapperContent =
 `<?xml version="1.0" encoding="UTF-8" ?>
 <VAST version="2.0">
@@ -90,191 +90,191 @@ describe('Adloox Ad Server Video', function () {
       <VASTAdTagURI><![CDATA[${vastUrl}]]></VASTAdTagURI>
     </Wrapper>
   </Ad>
-</VAST>`;
+</VAST>`
 
   adapterManager.registerAnalyticsAdapter({
     code: analyticsAdapterName,
     adapter: analyticsAdapter
-  });
+  })
 
   before(function () {
-    sandbox = sinon.createSandbox();
-    sandbox.stub(events, 'getEvents').returns([]);
+    sandbox = sinon.createSandbox()
+    sandbox.stub(events, 'getEvents').returns([])
 
     adapterManager.enableAnalytics({
       provider: analyticsAdapterName,
       options: analyticsOptions
-    });
-    expect(analyticsAdapter.context).is.not.null;
-  });
+    })
+    expect(analyticsAdapter.context).is.not.null
+  })
 
   after(function () {
-    analyticsAdapter.disableAnalytics();
-    expect(analyticsAdapter.context).is.null;
+    analyticsAdapter.disableAnalytics()
+    expect(analyticsAdapter.context).is.null
 
-    sandbox.restore();
-    sandbox = undefined;
-  });
+    sandbox.restore()
+    sandbox = undefined
+  })
 
   describe('buildVideoUrl', function () {
     beforeEach(() => {
-      sinon.stub(URL, 'createObjectURL');
-      sinon.stub(URL, 'revokeObjectURL');
-    });
+      sinon.stub(URL, 'createObjectURL')
+      sinon.stub(URL, 'revokeObjectURL')
+    })
 
     afterEach(() => {
       URL.createObjectURL.restore()
       URL.revokeObjectURL.restore()
-    });
+    })
 
     describe('invalid arguments', function () {
       it('should require callback', function (done) {
-        const ret = buildVideoUrl();
+        const ret = buildVideoUrl()
 
-        expect(ret).is.false;
+        expect(ret).is.false
 
-        done();
-      });
+        done()
+      })
 
       it('should require options', function (done) {
-        const ret = buildVideoUrl(undefined, function () {});
+        const ret = buildVideoUrl(undefined, function () {})
 
-        expect(ret).is.false;
+        expect(ret).is.false
 
-        done();
-      });
+        done()
+      })
 
       it('should reject non-string options.url_vast', function (done) {
-        const ret = buildVideoUrl({ url_vast: null }, function () {});
+        const ret = buildVideoUrl({ url_vast: null }, function () {})
 
-        expect(ret).is.false;
+        expect(ret).is.false
 
-        done();
-      });
+        done()
+      })
 
       it('should require options.adUnit or options.bid', function (done) {
-        const BID = utils.deepClone(bid);
+        const BID = utils.deepClone(bid)
 
         const getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
-        getWinningBidsStub.withArgs(adUnit.code).returns([BID]);
+        getWinningBidsStub.withArgs(adUnit.code).returns([BID])
 
-        const ret = buildVideoUrl({ url: vastUrl }, function () {});
-        expect(ret).is.false;
+        const ret = buildVideoUrl({ url: vastUrl }, function () {})
+        expect(ret).is.false
 
         const retAdUnit = buildVideoUrl({ url: vastUrl, adUnit: utils.deepClone(adUnit) }, function () {})
-        expect(retAdUnit).is.true;
+        expect(retAdUnit).is.true
 
-        const retBid = buildVideoUrl({ url: vastUrl, bid: BID }, function () {});
-        expect(retBid).is.true;
+        const retBid = buildVideoUrl({ url: vastUrl, bid: BID }, function () {})
+        expect(retBid).is.true
 
-        getWinningBidsStub.restore();
+        getWinningBidsStub.restore()
 
-        done();
-      });
+        done()
+      })
 
       it('should reject non-string options.url', function (done) {
-        const ret = buildVideoUrl({ url: null, bid: utils.deepClone(bid) }, function () {});
+        const ret = buildVideoUrl({ url: null, bid: utils.deepClone(bid) }, function () {})
 
-        expect(ret).is.false;
+        expect(ret).is.false
 
-        done();
-      });
+        done()
+      })
 
       it('should reject non-boolean options.wrap', function (done) {
-        const ret = buildVideoUrl({ wrap: null, url: vastUrl, bid: utils.deepClone(bid) }, function () {});
+        const ret = buildVideoUrl({ wrap: null, url: vastUrl, bid: utils.deepClone(bid) }, function () {})
 
-        expect(ret).is.false;
+        expect(ret).is.false
 
-        done();
-      });
+        done()
+      })
 
       it('should reject non-boolean options.blob', function (done) {
-        const ret = buildVideoUrl({ blob: null, url: vastUrl, bid: utils.deepClone(bid) }, function () {});
+        const ret = buildVideoUrl({ blob: null, url: vastUrl, bid: utils.deepClone(bid) }, function () {})
 
-        expect(ret).is.false;
+        expect(ret).is.false
 
-        done();
-      });
-    });
+        done()
+      })
+    })
 
     describe('process VAST', function () {
-      let BID = null;
-      let getWinningBidsStub;
+      let BID = null
+      let getWinningBidsStub
       beforeEach(function () {
-        BID = utils.deepClone(bid);
+        BID = utils.deepClone(bid)
         getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
-        getWinningBidsStub.withArgs(adUnit.code).returns([BID]);
-      });
+        getWinningBidsStub.withArgs(adUnit.code).returns([BID])
+      })
       afterEach(function () {
-        getWinningBidsStub.restore();
-        getWinningBidsStub = undefined;
-        BID = null;
-      });
+        getWinningBidsStub.restore()
+        getWinningBidsStub = undefined
+        BID = null
+      })
 
       it('should return URL unchanged for non-VAST', function (done) {
         const ret = buildVideoUrl({ url: vastUrl, bid: BID }, function (url) {
-          expect(url).is.equal(vastUrl);
+          expect(url).is.equal(vastUrl)
 
-          done();
-        });
-        expect(ret).is.true;
+          done()
+        })
+        expect(ret).is.true
 
-        const request = server.requests[0];
-        expect(request.url).is.equal(vastUrl);
-        request.respond(200, { 'content-type': 'application/octet-stream' }, 'notvast');
-      });
+        const request = server.requests[0]
+        expect(request.url).is.equal(vastUrl)
+        request.respond(200, { 'content-type': 'application/octet-stream' }, 'notvast')
+      })
 
       it('should return URL unchanged for empty VAST', function (done) {
         const ret = buildVideoUrl({ url: vastUrl, bid: BID }, function (url) {
-          expect(url).is.equal(vastUrl);
+          expect(url).is.equal(vastUrl)
 
-          done();
-        });
-        expect(ret).is.true;
+          done()
+        })
+        expect(ret).is.true
 
-        const request = server.requests[0];
-        expect(request.url).is.equal(vastUrl);
-        request.respond(200, vastHeaders, '<?xml version="1.0" encoding="UTF-8" ?>\n<VAST version="3.0"/>');
-      });
+        const request = server.requests[0]
+        expect(request.url).is.equal(vastUrl)
+        request.respond(200, vastHeaders, '<?xml version="1.0" encoding="UTF-8" ?>\n<VAST version="3.0"/>')
+      })
 
       it('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
-        BID.responseTimestamp = utils.timestamp();
-        BID.ttl = 30;
+        BID.responseTimestamp = utils.timestamp()
+        BID.ttl = 30
 
-        const clock = sandbox.useFakeTimers(BID.responseTimestamp);
+        const clock = sandbox.useFakeTimers(BID.responseTimestamp)
 
         const options = {
           url_vast: urlVAST,
           url: wrapperUrl,
           bid: BID
-        };
+        }
 
-        URL.createObjectURL.callsFake(() => 'mock-blob-url');
+        URL.createObjectURL.callsFake(() => 'mock-blob-url')
 
         const ret = buildVideoUrl(options, function (url) {
-          expect(url.substr(0, options.url_vast.length)).is.equal(options.url_vast);
-          expect(url).to.match(/[?&]vast=mock-blob-url/);
-          sinon.assert.calledWith(URL.createObjectURL, sinon.match((val) => val.type === vastHeaders['content-type']));
-          clock.runAll();
-          sinon.assert.calledWith(URL.revokeObjectURL, 'mock-blob-url');
-          done();
-        });
-        expect(ret).is.true;
+          expect(url.substr(0, options.url_vast.length)).is.equal(options.url_vast)
+          expect(url).to.match(/[?&]vast=mock-blob-url/)
+          sinon.assert.calledWith(URL.createObjectURL, sinon.match((val) => val.type === vastHeaders['content-type']))
+          clock.runAll()
+          sinon.assert.calledWith(URL.revokeObjectURL, 'mock-blob-url')
+          done()
+        })
+        expect(ret).is.true
 
-        const wrapperRequestCORS = server.requests[0];
-        expect(wrapperRequestCORS.url).is.equal(wrapperUrl);
-        expect(wrapperRequestCORS.withCredentials).is.true;
-        wrapperRequestCORS.respond(0);
+        const wrapperRequestCORS = server.requests[0]
+        expect(wrapperRequestCORS.url).is.equal(wrapperUrl)
+        expect(wrapperRequestCORS.withCredentials).is.true
+        wrapperRequestCORS.respond(0)
 
-        const wrapperRequest = server.requests[1];
-        expect(wrapperRequest.url).is.equal(wrapperUrl);
-        expect(wrapperRequest.withCredentials).is.false;
-        wrapperRequest.respond(200, vastHeaders, wrapperContent);
+        const wrapperRequest = server.requests[1]
+        expect(wrapperRequest.url).is.equal(wrapperUrl)
+        expect(wrapperRequest.withCredentials).is.false
+        wrapperRequest.respond(200, vastHeaders, wrapperContent)
 
-        const vastRequest = server.requests[2];
-        expect(vastRequest.url).is.equal(vastUrl);
-        vastRequest.respond(200, vastHeaders, vastContent);
-      });
+        const vastRequest = server.requests[2]
+        expect(vastRequest.url).is.equal(vastUrl)
+        vastRequest.respond(200, vastHeaders, vastContent)
+      })
 
       it('should fetch, follow and return a wrapped non-blob', function (done) {
         const options = {
@@ -282,37 +282,37 @@ describe('Adloox Ad Server Video', function () {
           url: wrapperUrl,
           bid: BID,
           blob: false
-        };
+        }
         const ret = buildVideoUrl(options, function (url) {
-          expect(url.substr(0, options.url_vast.length)).is.equal(options.url_vast);
-          expect(/[?&]vast=blob%3/.test(url)).is.false;
+          expect(url.substr(0, options.url_vast.length)).is.equal(options.url_vast)
+          expect(/[?&]vast=blob%3/.test(url)).is.false
 
-          done();
-        });
-        expect(ret).is.true;
+          done()
+        })
+        expect(ret).is.true
 
-        const wrapperRequest = server.requests[0];
-        expect(wrapperRequest.url).is.equal(wrapperUrl);
-        wrapperRequest.respond(200, vastHeaders, wrapperContent);
+        const wrapperRequest = server.requests[0]
+        expect(wrapperRequest.url).is.equal(wrapperUrl)
+        wrapperRequest.respond(200, vastHeaders, wrapperContent)
 
-        const vastRequest = server.requests[1];
-        expect(vastRequest.url).is.equal(vastUrl);
-        vastRequest.respond(200, vastHeaders, vastContent);
-      });
+        const vastRequest = server.requests[1]
+        expect(vastRequest.url).is.equal(vastUrl)
+        vastRequest.respond(200, vastHeaders, vastContent)
+      })
 
       it('should not follow and return URL unchanged for non-wrap', function (done) {
         const options = {
           url: wrapperUrl,
           bid: BID,
           wrap: false
-        };
+        }
         const ret = buildVideoUrl(options, function (url) {
-          expect(url).is.equal(options.url);
+          expect(url).is.equal(options.url)
 
-          done();
-        });
-        expect(ret).is.true;
-      });
-    });
-  });
-});
+          done()
+        })
+        expect(ret).is.true
+      })
+    })
+  })
+})

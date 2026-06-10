@@ -1,4 +1,4 @@
-import { MediaTypes } from '../../src/mediaTypes.js';
+import { MediaTypes } from '../../src/mediaTypes.js'
 
 export interface VidazooBaseBidderParams {
   /**

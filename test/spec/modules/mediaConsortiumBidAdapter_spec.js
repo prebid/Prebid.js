@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { spec, OPTIMIZATIONS_STORAGE_KEY, getOptimizationsFromLocalStorage } from 'modules/mediaConsortiumBidAdapter.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
+import { expect } from 'chai'
+import { spec, OPTIMIZATIONS_STORAGE_KEY, getOptimizationsFromLocalStorage } from 'modules/mediaConsortiumBidAdapter.js'
+import { getGlobal } from '../../../src/prebidGlobal.js'
 
 const BANNER_BID = {
   adUnitCode: 'dfp_ban_atf',
@@ -109,7 +109,7 @@ describe('Media Consortium Bid Adapter', function () {
   })
 
   afterEach(function () {
-    getGlobal().bidderSettings = {};
+    getGlobal().bidderSettings = {}
   })
 
   describe('buildRequests', function () {
@@ -126,7 +126,7 @@ describe('Media Consortium Bid Adapter', function () {
           domain: 'localhost.com'
         }
       }
-    };
+    }
 
     it('should build a banner request', function () {
       const builtSyncRequest = {
@@ -166,7 +166,7 @@ describe('Media Consortium Bid Adapter', function () {
       }
 
       const bids = [BANNER_BID]
-      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids })
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -215,7 +215,7 @@ describe('Media Consortium Bid Adapter', function () {
       }
 
       const bids = [VIDEO_BID]
-      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids })
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -264,7 +264,7 @@ describe('Media Consortium Bid Adapter', function () {
       }
 
       const bids = [MULTI_MEDIATYPES_BID]
-      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids })
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest)
       expect(auctionRequest.data).to.deep.equal(builtBidRequest)
@@ -283,7 +283,7 @@ describe('Media Consortium Bid Adapter', function () {
 
       localStorage.setItem(OPTIMIZATIONS_STORAGE_KEY, JSON.stringify(optimizations))
 
-      const requests = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const requests = spec.buildRequests(bids, { ...bidderRequest, bids })
 
       localStorage.removeItem(OPTIMIZATIONS_STORAGE_KEY)
 
@@ -341,7 +341,7 @@ describe('Media Consortium Bid Adapter', function () {
 
   describe('interpretResponse', function () {
     it('should return an empty array if the response is invalid', function () {
-      expect(spec.interpretResponse({ body: 'INVALID_BODY' }, {})).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: 'INVALID_BODY' }, {})).to.deep.equal([])
     })
 
     it('should return a formatted banner bid', function () {
@@ -401,7 +401,7 @@ describe('Media Consortium Bid Adapter', function () {
 
       localStorage.removeItem(OPTIMIZATIONS_STORAGE_KEY)
 
-      expect(formattedResponse).to.deep.equal([formattedBid]);
+      expect(formattedResponse).to.deep.equal([formattedBid])
 
       expect(storedOptimizations['test_ad_unit_code']).to.exist
       expect(storedOptimizations['test_ad_unit_code'].isEnabled).to.equal(false)
@@ -551,12 +551,12 @@ describe('Media Consortium Bid Adapter', function () {
       expect(formattedResponse).to.have.length(1)
       expect(formattedResponse[0]).to.not.have.property('renderer')
     })
-  });
+  })
 
   describe('getUserSyncs', function () {
     it('should return an empty response if the response is invalid or missing data', function () {
-      expect(spec.getUserSyncs(null, [{ body: 'INVALID_BODY' }])).to.be.undefined;
-      expect(spec.getUserSyncs(null, [{ body: 'INVALID_BODY' }, { body: 'INVALID_BODY' }])).to.be.undefined;
+      expect(spec.getUserSyncs(null, [{ body: 'INVALID_BODY' }])).to.be.undefined
+      expect(spec.getUserSyncs(null, [{ body: 'INVALID_BODY' }, { body: 'INVALID_BODY' }])).to.be.undefined
     })
 
     it('should return an array of user syncs', function () {
@@ -581,9 +581,9 @@ describe('Media Consortium Bid Adapter', function () {
         { type: 'iframe', url: 'https://test-url.com' }
       ]
 
-      expect(spec.getUserSyncs(null, serverResponses)).to.deep.equal(formattedUserSyncs);
+      expect(spec.getUserSyncs(null, serverResponses)).to.deep.equal(formattedUserSyncs)
     })
-  });
+  })
 
   describe('renderer integration', function () {
     it('should create renderer with correct configuration when video bid is processed', function () {
@@ -754,4 +754,4 @@ describe('Media Consortium Bid Adapter', function () {
       expect(formattedResponse[0].renderer.config.selector).to.include('video-unit-with-special-chars')
     })
   })
-});
+})

@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import * as utils from '../src/utils.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { loadExternalScript } from '../src/adloader.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -20,13 +20,13 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('./ftrackIdSystem.d.ts').FtrackIdSystemModuleName} FtrackIdSystemModuleName
  */
 
-const MODULE_NAME = 'ftrackId';
-const LOG_PREFIX = 'FTRACK - ';
-const LOCAL_STORAGE_EXP_DAYS = 30;
-const LOCAL_STORAGE = 'html5';
-const FTRACK_STORAGE_NAME = 'ftrackId';
-const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+const MODULE_NAME = 'ftrackId'
+const LOG_PREFIX = 'FTRACK - '
+const LOCAL_STORAGE_EXP_DAYS = 30
+const LOCAL_STORAGE = 'html5'
+const FTRACK_STORAGE_NAME = 'ftrackId'
+const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`
+const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 const consentInfo = {
   gdpr: {
@@ -37,7 +37,7 @@ const consentInfo = {
   usPrivacy: {
     value: null
   }
-};
+}
 
 /** @type {IdProviderSpec<FtrackIdSystemModuleName>} */
 export const ftrackIdSubmodule = {
@@ -57,7 +57,7 @@ export const ftrackIdSubmodule = {
    */
   decode (value, config) {
     if (!value) {
-      return;
+      return
     };
 
     const DECODE_RESPONSE = {
@@ -72,23 +72,23 @@ export const ftrackIdSubmodule = {
     // -- if array, convert to string then assign value.
     // -- If neither type, assign value as empty string
     for (var key in value) {
-      let keyValue = value[key];
+      let keyValue = value[key]
       if (Array.isArray(keyValue)) {
-        keyValue = keyValue.join('|');
+        keyValue = keyValue.join('|')
       } else if (typeof value[key] !== 'string') {
         // Unexpected value type, should be string or array
-        keyValue = '';
+        keyValue = ''
       }
 
-      DECODE_RESPONSE.ftrackId.ext[key] = keyValue;
+      DECODE_RESPONSE.ftrackId.ext[key] = keyValue
     }
 
     // If we have DeviceId value, assign it to the uid property
     if (DECODE_RESPONSE.ftrackId.ext.hasOwnProperty('DeviceID')) {
-      DECODE_RESPONSE.ftrackId.uid = DECODE_RESPONSE.ftrackId.ext.DeviceID;
+      DECODE_RESPONSE.ftrackId.uid = DECODE_RESPONSE.ftrackId.ext.DeviceID
     }
 
-    return DECODE_RESPONSE;
+    return DECODE_RESPONSE
   },
 
   /**
@@ -101,7 +101,7 @@ export const ftrackIdSubmodule = {
    * @returns {IdResponse|undefined} A response object that contains id and/or callback.
    */
   getId (config, consentData, cacheIdObj) {
-    if (this.isConfigOk(config) === false || this.isThereConsent(consentData) === false) return undefined;
+    if (this.isConfigOk(config) === false || this.isThereConsent(consentData) === false) return undefined
 
     return {
       callback: function (cb) {
@@ -109,43 +109,43 @@ export const ftrackIdSubmodule = {
           UserID: '99999999999999',
           CampID: '3175',
           CCampID: '148556'
-        };
+        }
         window.D9r = {
           callback: function(response) {
             if (response) {
-              storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString());
-              storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}`, JSON.stringify(response));
+              storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString())
+              storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}`, JSON.stringify(response))
 
-              storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString());
-              storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}`, JSON.stringify(consentInfo));
+              storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString())
+              storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}`, JSON.stringify(consentInfo))
             };
 
-            if (typeof cb === 'function') cb(response);
+            if (typeof cb === 'function') cb(response)
 
-            return response;
+            return response
           }
-        };
+        }
 
         // If config.params.ids does not exist, set defaults
         if (!config.params.hasOwnProperty('ids')) {
-          window.D9r.DeviceID = true;
-          window.D9r.SingleDeviceID = true;
+          window.D9r.DeviceID = true
+          window.D9r.SingleDeviceID = true
         } else {
           if (config.params.ids.hasOwnProperty('device id') && config.params.ids['device id'] === true) {
-            window.D9r.DeviceID = true;
+            window.D9r.DeviceID = true
           }
           if (config.params.ids.hasOwnProperty('single device id') && config.params.ids['single device id'] === true) {
-            window.D9r.SingleDeviceID = true;
+            window.D9r.SingleDeviceID = true
           }
           if (config.params.ids.hasOwnProperty('household id') && config.params.ids['household id'] === true) {
-            window.D9r.HHID = true;
+            window.D9r.HHID = true
           }
         }
 
         // Creates an async script element and appends it to the document
-        loadExternalScript(config.params.url, MODULE_TYPE_UID, MODULE_NAME);
+        loadExternalScript(config.params.url, MODULE_TYPE_UID, MODULE_NAME)
       }
-    };
+    }
   },
 
   /**
@@ -158,8 +158,8 @@ export const ftrackIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   extendId (config, consentData, cacheIdObj) {
-    this.isConfigOk(config);
-    return cacheIdObj;
+    this.isConfigOk(config)
+    return cacheIdObj
   },
 
   /*
@@ -170,42 +170,42 @@ export const ftrackIdSubmodule = {
    */
   isConfigOk: function(config) {
     if (!config.storage || !config.storage.type || !config.storage.name) {
-      utils.logError(LOG_PREFIX + 'config.storage required to be set.');
-      return false;
+      utils.logError(LOG_PREFIX + 'config.storage required to be set.')
+      return false
     }
 
     // in a future release, we may return false if storage type or name are not set as required
     if (config.storage.type !== LOCAL_STORAGE) {
-      utils.logWarn(LOG_PREFIX + 'config.storage.type recommended to be "' + LOCAL_STORAGE + '".');
+      utils.logWarn(LOG_PREFIX + 'config.storage.type recommended to be "' + LOCAL_STORAGE + '".')
     }
     // in a future release, we may return false if storage type or name are not set as required
     if (config.storage.name !== FTRACK_STORAGE_NAME) {
-      utils.logWarn(LOG_PREFIX + 'config.storage.name recommended to be "' + FTRACK_STORAGE_NAME + '".');
+      utils.logWarn(LOG_PREFIX + 'config.storage.name recommended to be "' + FTRACK_STORAGE_NAME + '".')
     }
 
     if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url')) {
-      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run.');
-      return false;
+      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run.')
+      return false
     }
 
-    return true;
+    return true
   },
 
   isThereConsent: function(consentData) {
-    let consentValue = true;
-    const { gdpr, usp } = consentData ?? {};
+    let consentValue = true
+    const { gdpr, usp } = consentData ?? {}
     /*
      * Scenario 1: GDPR
      *   if GDPR Applies is true|1, we do not have consent
      *   if GDPR Applies does not exist or is false|0, we do not NOT have consent
      */
     if (gdpr?.gdprApplies === true || gdpr?.gdprApplies === 1) {
-      consentInfo.gdpr.applies = 1;
-      consentValue = false;
+      consentInfo.gdpr.applies = 1
+      consentValue = false
     }
     // If consentString exists, then we store it even though we are not using it
     if (typeof gdpr?.consentString !== 'undefined' && !utils.isEmpty(gdpr.consentString) && !utils.isEmptyStr(gdpr.consentString)) {
-      consentInfo.gdpr.consentString = consentData.consentString;
+      consentInfo.gdpr.consentString = consentData.consentString
     }
 
     /*
@@ -214,37 +214,37 @@ export const ftrackIdSubmodule = {
      *     parse the us_privacy string to see if we have consent
      *     for version 1 of us_privacy strings, if 'Opt-Out Sale' is 'Y' we do not track
      */
-    let usPrivacyVersion;
+    let usPrivacyVersion
     // let usPrivacyOptOut;
-    let usPrivacyOptOutSale;
+    let usPrivacyOptOutSale
     // let usPrivacyLSPA;
     if (typeof usp !== 'undefined' && !utils.isEmpty(usp) && !utils.isEmptyStr(usp)) {
-      consentInfo.usPrivacy.value = usp;
-      usPrivacyVersion = usp[0];
+      consentInfo.usPrivacy.value = usp
+      usPrivacyVersion = usp[0]
       // usPrivacyOptOut = usp[1];
-      usPrivacyOptOutSale = usp[2];
+      usPrivacyOptOutSale = usp[2]
       // usPrivacyLSPA = usp[3];
     }
-    if (usPrivacyVersion === '1' && usPrivacyOptOutSale === 'Y') consentValue = false;
+    if (usPrivacyVersion === '1' && usPrivacyOptOutSale === 'Y') consentValue = false
 
-    return consentValue;
+    return consentValue
   },
   eids: {
     'ftrackId': {
       source: 'flashtalking.com',
       atype: 1,
       getValue: function(data) {
-        let value = '';
+        let value = ''
         if (data && data.ext && data.ext.DeviceID) {
-          value = data.ext.DeviceID;
+          value = data.ext.DeviceID
         }
-        return value;
+        return value
       },
       getUidExt: function(data) {
-        return data && data.ext;
+        return data && data.ext
       }
     },
   }
-};
+}
 
-submodule('userId', ftrackIdSubmodule);
+submodule('userId', ftrackIdSubmodule)

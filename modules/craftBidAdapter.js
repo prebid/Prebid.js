@@ -1,17 +1,17 @@
-import { getBidRequest } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
-import { interpretResponseUtil } from '../libraries/interpretResponseUtils/index.js';
+import { getBidRequest } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { ajax } from '../src/ajax.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js'
+import { interpretResponseUtil } from '../libraries/interpretResponseUtils/index.js'
 
-const BIDDER_CODE = 'craft';
-const URL_BASE = 'https://gacraft.jp/prebid-v3';
-const TTL = 360;
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const BIDDER_CODE = 'craft'
+const URL_BASE = 'https://gacraft.jp/prebid-v3'
+const TTL = 360
+const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 export const spec = {
   code: BIDDER_CODE,
@@ -19,15 +19,15 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    return !!bid.params.sitekey && !!bid.params.placementId && !isAmp();
+    return !!bid.params.sitekey && !!bid.params.placementId && !isAmp()
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-    const bidRequest = bidRequests[0] || {};
-    const tags = bidRequests.map(bidToTag);
-    const schain = bidRequest.ortb2?.source?.ext?.schain;
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests)
+    const bidRequest = bidRequests[0] || {}
+    const tags = bidRequests.map(bidToTag)
+    const schain = bidRequest.ortb2?.source?.ext?.schain
     const payload = {
       tags: [...tags],
       ua: navigator.userAgent,
@@ -38,16 +38,16 @@ export const spec = {
       user: {
         eids: bidRequest.userIdAsEids,
       },
-    };
+    }
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
         payload.gdpr_consent = {
           consent_string: bidderRequest.gdprConsent.consentString,
           consent_required: bidderRequest.gdprConsent.gdprApplies
-        };
+        }
       }
       if (bidderRequest.uspConsent) {
-        payload.us_privacy = bidderRequest.uspConsent;
+        payload.us_privacy = bidderRequest.uspConsent
       }
       if (bidderRequest.refererInfo) {
         const refererinfo = {
@@ -55,33 +55,33 @@ export const spec = {
           rd_ref: bidderRequest.refererInfo.topmostLocation,
           rd_top: bidderRequest.refererInfo.reachedTop,
           rd_ifs: bidderRequest.refererInfo.numIframes
-        };
-        if (bidderRequest.refererInfo.stack) {
-          refererinfo.rd_stk = bidderRequest.refererInfo.stack.join(',');
         }
-        payload.referrer_detection = refererinfo;
+        if (bidderRequest.refererInfo.stack) {
+          refererinfo.rd_stk = bidderRequest.refererInfo.stack.join(',')
+        }
+        payload.referrer_detection = refererinfo
       }
       if (bidRequest.userId) {
         payload.userId = bidRequest.userId
       }
     }
-    const request = formatRequest(payload, bidderRequest);
-    return request;
+    const request = formatRequest(payload, bidderRequest)
+    return request
   },
 
   interpretResponse: function(serverResponse, { bidderRequest }) {
     try {
       const bids = interpretResponseUtil(serverResponse, { bidderRequest }, serverBid => {
-        const rtbBid = getRtbBid(serverBid);
+        const rtbBid = getRtbBid(serverBid)
         if (rtbBid && rtbBid.cpm !== 0 && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
-          const bid = newBid(serverBid, rtbBid, bidderRequest);
-          bid.mediaType = parseMediaType(rtbBid);
-          return bid;
+          const bid = newBid(serverBid, rtbBid, bidderRequest)
+          bid.mediaType = parseMediaType(rtbBid)
+          return bid
         }
-      });
-      return bids;
+      })
+      return bids
     } catch (e) {
-      return [];
+      return []
     }
   },
 
@@ -89,30 +89,30 @@ export const spec = {
     ajax(bid._prebidWon, null, null, {
       method: 'POST',
       contentType: 'application/json'
-    });
+    })
   }
-};
+}
 
 function formatRequest(payload, bidderRequest) {
-  let options = {};
+  let options = {}
   if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     options = {
       withCredentials: false
-    };
+    }
   }
-  const baseUrl = payload.tags[0].url || URL_BASE;
-  const payloadString = JSON.stringify(payload);
+  const baseUrl = payload.tags[0].url || URL_BASE
+  const payloadString = JSON.stringify(payload)
   return {
     method: 'POST',
     url: `${baseUrl}/${payload.tags[0].sitekey}`,
     data: payloadString,
     bidderRequest,
     options
-  };
+  }
 }
 
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest])
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -128,64 +128,64 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     _adUnitCode: bidRequest.adUnitCode,
     _bidKey: serverBid.bid_key,
     _prebidWon: serverBid.won_url,
-  };
-  return bid;
+  }
+  return bid
 }
 
 function bidToTag(bid) {
-  const tag = {};
+  const tag = {}
   for (var k in bid.params) {
-    tag[k] = bid.params[k];
+    tag[k] = bid.params[k]
   }
   try {
     if (storage.hasLocalStorage()) {
-      tag.uid = JSON.parse(storage.getDataFromLocalStorage(`${bid.params.sitekey}_uid`));
+      tag.uid = JSON.parse(storage.getDataFromLocalStorage(`${bid.params.sitekey}_uid`))
     }
   } catch (e) {
   }
-  tag.sizes = bid.sizes;
-  tag.primary_size = tag.sizes[0];
-  tag.ad_types = [];
-  tag.uuid = bid.bidId;
-  const keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
+  tag.sizes = bid.sizes
+  tag.primary_size = tag.sizes[0]
+  tag.ad_types = []
+  tag.uuid = bid.bidId
+  const keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
   if (keywords.length) {
-    tag.keywords = keywords;
+    tag.keywords = keywords
   }
   if (bid.mediaTypes?.banner) {
-    tag.ad_types.push(BANNER);
+    tag.ad_types.push(BANNER)
   }
   if (tag.ad_types.length === 0) {
-    delete tag.ad_types;
+    delete tag.ad_types
   }
 
-  return tag;
+  return tag
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb)
 }
 
 function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
+  const adType = rtbBid.ad_type
   if (adType === VIDEO) {
-    return VIDEO;
+    return VIDEO
   } else if (adType === NATIVE) {
-    return NATIVE;
+    return NATIVE
   } else {
-    return BANNER;
+    return BANNER
   }
 }
 
 function isAmp() {
   try {
-    const ampContext = window.context || window.parent.context;
+    const ampContext = window.context || window.parent.context
     if (ampContext && ampContext.pageViewId) {
-      return ampContext;
+      return ampContext
     }
-    return false;
+    return false
   } catch (e) {
-    return false;
+    return false
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

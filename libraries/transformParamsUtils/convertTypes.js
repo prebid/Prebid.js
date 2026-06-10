@@ -1,4 +1,4 @@
-import { isFn } from '../../src/utils.js';
+import { isFn } from '../../src/utils.js'
 
 /**
  * Try to convert a value to a type.
@@ -9,11 +9,11 @@ import { isFn } from '../../src/utils.js';
  */
 function tryConvertType(typeToConvert, value) {
   if (typeToConvert === 'string') {
-    return value && value.toString();
+    return value && value.toString()
   } else if (typeToConvert === 'number') {
-    return Number(value);
+    return Number(value)
   } else {
-    return value;
+    return value
   }
 }
 
@@ -21,16 +21,16 @@ export function convertTypes(types, params) {
   Object.keys(types).forEach(key => {
     if (params[key]) {
       if (isFn(types[key])) {
-        params[key] = types[key](params[key]);
+        params[key] = types[key](params[key])
       } else {
-        params[key] = tryConvertType(types[key], params[key]);
+        params[key] = tryConvertType(types[key], params[key])
       }
 
       // don't send invalid values
       if (isNaN(params[key])) {
-        delete params.key;
+        delete params.key
       }
     }
-  });
-  return params;
+  })
+  return params
 }

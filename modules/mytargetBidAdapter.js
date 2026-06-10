@@ -1,57 +1,57 @@
-import { _map } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { _map } from '../src/utils.js'
+import { config } from '../src/config.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-const BIDDER_CODE = 'mytarget';
-const BIDDER_URL = '//ad.mail.ru/hbid_prebid/';
-const DEFAULT_CURRENCY = 'RUB';
-const DEFAULT_TTL = 180;
+const BIDDER_CODE = 'mytarget'
+const BIDDER_URL = '//ad.mail.ru/hbid_prebid/'
+const DEFAULT_CURRENCY = 'RUB'
+const DEFAULT_TTL = 180
 
 function buildPlacement(bidRequest) {
-  const { bidId, params } = bidRequest;
-  const { placementId, position, response, bidfloor } = params;
+  const { bidId, params } = bidRequest
+  const { placementId, position, response, bidfloor } = params
   const placement = {
     placementId,
     id: bidId,
     position: position || 0,
     response: response || 0
-  };
-
-  if (typeof bidfloor !== 'undefined') {
-    placement.bidfloor = bidfloor;
   }
 
-  return placement;
+  if (typeof bidfloor !== 'undefined') {
+    placement.bidfloor = bidfloor
+  }
+
+  return placement
 }
 
 function getSiteName(referrer) {
-  let sitename = config.getConfig('mytarget.sitename');
+  let sitename = config.getConfig('mytarget.sitename')
 
   if (!sitename) {
-    const parsed = document.createElement('a');
-    parsed.href = decodeURIComponent(referrer);
-    sitename = parsed.hostname;
+    const parsed = document.createElement('a')
+    parsed.href = decodeURIComponent(referrer)
+    sitename = parsed.hostname
   }
 
-  return sitename;
+  return sitename
 }
 
 function generateRandomId() {
-  return Math.random().toString(16).substring(2);
+  return Math.random().toString(16).substring(2)
 }
 
 export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    return !!bid.params.placementId;
+    return !!bid.params.placementId
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let referrer = '';
+    let referrer = ''
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.page;
+      referrer = bidderRequest.refererInfo.page
     }
 
     const payload = {
@@ -67,17 +67,17 @@ export const spec = {
           height: window.screen.height
         }
       }
-    };
+    }
 
     return {
       method: 'POST',
       url: BIDDER_URL,
       data: payload,
-    };
+    }
   },
 
   interpretResponse: function(serverResponse, bidRequest) {
-    const { body } = serverResponse;
+    const { body } = serverResponse
 
     if (body.bids) {
       return _map(body.bids, (bid) => {
@@ -96,17 +96,17 @@ export const spec = {
         }
 
         if (bid.adm) {
-          bidResponse.ad = bid.adm;
+          bidResponse.ad = bid.adm
         } else {
-          bidResponse.adUrl = bid.displayUrl;
+          bidResponse.adUrl = bid.displayUrl
         }
 
-        return bidResponse;
-      });
+        return bidResponse
+      })
     }
 
-    return [];
+    return []
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

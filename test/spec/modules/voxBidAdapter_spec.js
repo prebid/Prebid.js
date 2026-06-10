@@ -15,7 +15,7 @@ function getSlotConfigs(mediaTypes, params) {
 }
 
 describe('VOX Adapter', function() {
-  const PLACE_ID = '5af45ad34d506ee7acad0c26';
+  const PLACE_ID = '5af45ad34d506ee7acad0c26'
   const bidderRequest = {
     refererInfo: { page: 'referer' }
   }
@@ -254,17 +254,17 @@ describe('VOX Adapter', function() {
       })
 
       it('should request floor price in adserver currency', function () {
-        const configCurrency = 'DKK';
-        setCurrencyConfig({ adServerCurrency: configCurrency });
+        const configCurrency = 'DKK'
+        setCurrencyConfig({ adServerCurrency: configCurrency })
         return addFPDToBidderRequest(bidderRequest).then(res => {
           const request = spec.buildRequests([getBidWithFloor()], res)
           const data = JSON.parse(request.data)
           data.bidRequests.forEach(bid => {
             expect(bid.floorInfo.currency).to.equal(configCurrency)
           })
-          setCurrencyConfig({});
-        });
-      });
+          setCurrencyConfig({})
+        })
+      })
 
       function getBidWithFloor(floor) {
         return {

@@ -1,9 +1,9 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 import {
   spec, STORAGE, getAdgridLocalStorage,
-} from 'modules/adgridBidAdapter.js';
-import sinon from 'sinon';
-const sandbox = sinon.createSandbox();
+} from 'modules/adgridBidAdapter.js'
+import sinon from 'sinon'
+const sandbox = sinon.createSandbox()
 
 describe('adgrid bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -30,10 +30,10 @@ describe('adgrid bid adapter tests', () => {
         domain: 'publisher.com',
       }],
     },
-  };
+  }
 
   describe('isBidRequestValid()', () => {
-    let bannerBid;
+    let bannerBid
     beforeEach(() => {
       bannerBid = {
         bidder: 'adgrid',
@@ -45,90 +45,90 @@ describe('adgrid bid adapter tests', () => {
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
       }
-    });
+    })
 
     it('We verify isBidRequestValid unvalid domainId', () => {
-      bannerBid.params = { domainid: 1 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { domainid: 1 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with uncorrect domainId', () => {
-      bannerBid.params = { domainId: '1234', placement: 'testadgd' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { domainId: '1234', placement: 'testadgd' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with uncorrect placement', () => {
-      bannerBid.params = { domainId: 1234, placement: 4321 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { domainId: 1234, placement: 4321 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('We verify isBidRequestValid with correct payload', () => {
-      bannerBid.params = { domainId: 1234, placement: '4321' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
-    });
-  });
+      bannerBid.params = { domainId: 1234, placement: '4321' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true)
+    })
+  })
 
   describe('getLocalStorage disabled', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false);
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false)
+    })
     it('We test if we get the adgridId', () => {
-      const output = getAdgridLocalStorage();
-      expect(output).to.be.eql(null);
-    });
+      const output = getAdgridLocalStorage()
+      expect(output).to.be.eql(null)
+    })
     after(() => {
       sandbox.restore()
-    });
+    })
   })
 
   describe('getLocalStorage enabled but nothing', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null)
+    })
     it('We test if we get the adgridId', () => {
-      const output = getAdgridLocalStorage();
-      expect(typeof output.adgridId).to.be.eql('string');
-    });
+      const output = getAdgridLocalStorage()
+      expect(typeof output.adgridId).to.be.eql('string')
+    })
     after(() => {
       sandbox.restore()
-    });
+    })
   })
 
   describe('getLocalStorage enabled but wrong payload', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}')
+    })
     it('We test if we get the adgridId', () => {
-      const output = getAdgridLocalStorage();
-      expect(output).to.be.eql(null);
-    });
+      const output = getAdgridLocalStorage()
+      expect(output).to.be.eql(null)
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('getLocalStorage enabled', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(STORAGE, 'setDataInLocalStorage');
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
-    });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
+      sandbox.stub(STORAGE, 'setDataInLocalStorage')
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}')
+    })
     it('We test if we get the adgridId', () => {
-      const output = getAdgridLocalStorage();
-      expect(output.adgridId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
-    });
+      const output = getAdgridLocalStorage()
+      expect(output.adgridId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4')
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('buildRequests()', () => {
     before(() => {
-      const documentStub = sandbox.stub(document, 'getElementById');
+      const documentStub = sandbox.stub(document, 'getElementById')
       documentStub.withArgs('div-1').returns({
         offsetWidth: 200,
         offsetHeight: 250,
@@ -136,8 +136,8 @@ describe('adgrid bid adapter tests', () => {
           maxWidth: '400px',
           maxHeight: '350px',
         }
-      });
-    });
+      })
+    })
     describe('We test with a multiple display bids', () => {
       const sampleBids = [
         {
@@ -236,17 +236,17 @@ describe('adgrid bid adapter tests', () => {
           gdprApplies: true,
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
-      };
+      }
       it('We perform a test with 2 display adunits', () => {
-        const displayBids = structuredClone(sampleBids);
+        const displayBids = structuredClone(sampleBids)
         displayBids[0].mediaTypes = {
           banner: {
             sizes: [[300, 250], [300, 600]]
           }
-        };
-        const request = spec.buildRequests(displayBids, bidderRequest);
-        const requestContent = request.data;
-        expect(request).to.have.property('method').and.to.equal('POST');
+        }
+        const request = spec.buildRequests(displayBids, bidderRequest)
+        const requestContent = request.data
+        expect(request).to.have.property('method').and.to.equal('POST')
         const expectedRequest = {
           imp: [
             {
@@ -305,13 +305,13 @@ describe('adgrid bid adapter tests', () => {
             'USD',
           ],
           user: {},
-        };
-        expect(requestContent).to.be.eql(expectedRequest);
-      });
+        }
+        expect(requestContent).to.be.eql(expectedRequest)
+      })
 
       if (FEATURES.VIDEO) {
         it('We perform a test with a multiformat adunit', () => {
-          const multiformatBids = structuredClone(sampleBids);
+          const multiformatBids = structuredClone(sampleBids)
           multiformatBids[0].mediaTypes = {
             banner: {
               sizes: [[300, 250], [300, 600]]
@@ -325,9 +325,9 @@ describe('adgrid bid adapter tests', () => {
               skip: 1,
               playback_method: ['auto_play_sound_off']
             }
-          };
-          const request = spec.buildRequests(multiformatBids, bidderRequest);
-          const video = request.data.imp[0].video;
+          }
+          const request = spec.buildRequests(multiformatBids, bidderRequest)
+          const video = request.data.imp[0].video
           const expectedVideo = {
             mimes: ['video/mp4'],
             protocols: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -339,12 +339,12 @@ describe('adgrid bid adapter tests', () => {
               playerSize: [640, 480],
               context: 'outstream',
             },
-          };
-          expect(video).to.eql(expectedVideo);
-        });
+          }
+          expect(video).to.eql(expectedVideo)
+        })
 
         it('We perform a test with a instream adunit', () => {
-          const videoBids = structuredClone(sampleBids);
+          const videoBids = structuredClone(sampleBids)
           videoBids[0].mediaTypes = {
             video: {
               context: 'instream',
@@ -354,28 +354,28 @@ describe('adgrid bid adapter tests', () => {
               playbackmethod: [2],
               skip: 1
             }
-          };
-          const request = spec.buildRequests(videoBids, bidderRequest);
-          const requestContent = request.data;
-          expect(request).to.have.property('method').and.to.equal('POST');
-          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
-          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-        });
+          }
+          const request = spec.buildRequests(videoBids, bidderRequest)
+          const requestContent = request.data
+          expect(request).to.have.property('method').and.to.equal('POST')
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream')
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2)
+        })
       }
-    });
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('We test intepretResponse', () => {
     it('empty response', () => {
       const response = {
         body: ''
-      };
-      const output = spec.interpretResponse(response);
-      expect(output.length).to.be.eql(0);
-    });
+      }
+      const output = spec.interpretResponse(response)
+      expect(output.length).to.be.eql(0)
+    })
     it('banner responses with adm', () => {
       const response = {
         body: {
@@ -414,8 +414,8 @@ describe('adgrid bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
-      const output = spec.interpretResponse(response);
+      }
+      const output = spec.interpretResponse(response)
       const expectedOutput = [{
         requestId: '226175918ebeda',
         cpm: 1.5,
@@ -433,9 +433,9 @@ describe('adgrid bid adapter tests', () => {
           demandSource: 'test',
         },
         ad: '<div>TestAd</div>',
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
+      }]
+      expect(output).to.eql(expectedOutput)
+    })
 
     it('instream responses', () => {
       const response = {
@@ -470,9 +470,9 @@ describe('adgrid bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
+      }
 
-      const output = spec.interpretResponse(response);
+      const output = spec.interpretResponse(response)
       const expectedOutput = [{
         requestId: '263cba3b8bfb72',
         cpm: 5,
@@ -488,9 +488,9 @@ describe('adgrid bid adapter tests', () => {
           demandSource: 'test'
         },
         vastXml: '<VAST>vast</VAST>',
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
+      }]
+      expect(output).to.eql(expectedOutput)
+    })
 
     it('outstream responses', () => {
       const response = {
@@ -526,9 +526,9 @@ describe('adgrid bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
+      }
 
-      const output = spec.interpretResponse(response);
+      const output = spec.interpretResponse(response)
       const expectedOutut = [{
         requestId: '4ce809b61a3928',
         cpm: 5,
@@ -543,34 +543,34 @@ describe('adgrid bid adapter tests', () => {
         meta: { advertiserDomains: ['adgrid.com'], demandSource: 'test' },
         vastXml: '<VAST>vast</VAST>',
         renderer: output[0].renderer,
-      }];
-      expect(output).to.eql(expectedOutut);
-    });
-  });
+      }]
+      expect(output).to.eql(expectedOutut)
+    })
+  })
 
   describe('getUserSyncs()', () => {
-    const response = { body: { cookies: [] } };
+    const response = { body: { cookies: [] } }
     it('Verifies user sync without cookie in bid response', () => {
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
+      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+    })
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
         cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
-      };
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
-      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];
-      expect(syncs).to.eql(expectedSyncs);
-    });
+      }
+      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent)
+      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }]
+      expect(syncs).to.eql(expectedSyncs)
+    })
     it('Verifies user sync with no bid response', () => {
-      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
+      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+    })
     it('Verifies user sync with no bid body response', () => {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
-  });
-});
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+    })
+  })
+})

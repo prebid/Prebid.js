@@ -1,18 +1,18 @@
-import * as sinon from 'sinon';
-import yandexAnalytics, { EVENTS_TO_TRACK, PBJS_INIT_EVENT_NAME } from 'modules/yandexAnalyticsAdapter.js';
+import * as sinon from 'sinon'
+import yandexAnalytics, { EVENTS_TO_TRACK, PBJS_INIT_EVENT_NAME } from 'modules/yandexAnalyticsAdapter.js'
 import * as log from '../../../src/utils.js'
-import * as events from '../../../src/events.js';
-import * as globalUtils from '../../../src/prebidGlobal.js';
+import * as events from '../../../src/events.js'
+import * as globalUtils from '../../../src/prebidGlobal.js'
 
 describe('Yandex analytics adapter testing', () => {
-  const sandbox = sinon.createSandbox();
-  let clock;
-  let logError;
-  let getEvents;
-  let onEvent;
-  const counterId = 123;
-  const counterWindowKey = 'yaCounter123';
-  const prebidVersion = '123.0';
+  const sandbox = sinon.createSandbox()
+  let clock
+  let logError
+  let getEvents
+  let onEvent
+  const counterId = 123
+  const counterWindowKey = 'yaCounter123'
+  const prebidVersion = '123.0'
   const prebidInitEvent = {
     event: PBJS_INIT_EVENT_NAME,
     data: {
@@ -21,43 +21,43 @@ describe('Yandex analytics adapter testing', () => {
   }
 
   beforeEach(() => {
-    yandexAnalytics.counters = {};
-    yandexAnalytics.counterInitTimeouts = {};
-    yandexAnalytics.bufferedEvents = [];
-    yandexAnalytics.oneCounterInited = false;
-    clock = sinon.useFakeTimers();
-    logError = sandbox.stub(log, 'logError');
+    yandexAnalytics.counters = {}
+    yandexAnalytics.counterInitTimeouts = {}
+    yandexAnalytics.bufferedEvents = []
+    yandexAnalytics.oneCounterInited = false
+    clock = sinon.useFakeTimers()
+    logError = sandbox.stub(log, 'logError')
     sandbox.stub(globalUtils, 'getGlobal').returns({
       version: prebidVersion,
-    });
-    sandbox.stub(log, 'logInfo');
-    getEvents = sandbox.stub(events, 'getEvents').returns([]);
-    onEvent = sandbox.stub(events, 'on');
+    })
+    sandbox.stub(log, 'logInfo')
+    getEvents = sandbox.stub(events, 'getEvents').returns([])
+    onEvent = sandbox.stub(events, 'on')
     sandbox.stub(window.document, 'createElement').callsFake((tag) => {
       const element = {
         tag,
         events: {},
         attributes: {},
         addEventListener: (event, cb) => {
-          element.events[event] = cb;
+          element.events[event] = cb
         },
         removeEventListener: (event, cb) => {
-          chai.expect(element.events[event]).to.equal(cb);
+          chai.expect(element.events[event]).to.equal(cb)
         },
         setAttribute: (attr, val) => {
-          element.attributes[attr] = val;
+          element.attributes[attr] = val
         },
-      };
-      return element;
-    });
-  });
+      }
+      return element
+    })
+  })
 
   afterEach(() => {
-    window.Ya = null;
-    window[counterWindowKey] = null;
-    sandbox.restore();
-    clock.restore();
-  });
+    window.Ya = null
+    window[counterWindowKey] = null
+    sandbox.restore()
+    clock.restore()
+  })
 
   it('fails if timeout for counter insertion is exceeded', () => {
     yandexAnalytics.enableAnalytics({
@@ -66,12 +66,12 @@ describe('Yandex analytics adapter testing', () => {
           123,
         ],
       },
-    });
-    clock.tick(25001);
-    chai.expect(yandexAnalytics.bufferedEvents).to.deep.equal([]);
-    sinon.assert.calledWith(logError, `Can't find metrika counter after 25 seconds.`);
-    sinon.assert.calledWith(logError, `Aborting yandex analytics provider initialization.`);
-  });
+    })
+    clock.tick(25001)
+    chai.expect(yandexAnalytics.bufferedEvents).to.deep.equal([])
+    sinon.assert.calledWith(logError, `Can't find metrika counter after 25 seconds.`)
+    sinon.assert.calledWith(logError, `Aborting yandex analytics provider initialization.`)
+  })
 
   it('fails if no valid counters provided', () => {
     yandexAnalytics.enableAnalytics({
@@ -80,14 +80,14 @@ describe('Yandex analytics adapter testing', () => {
           'abc',
         ],
       },
-    });
-    sinon.assert.calledWith(logError, 'options.counters contains no valid counter ids');
-  });
+    })
+    sinon.assert.calledWith(logError, 'options.counters contains no valid counter ids')
+  })
 
   it('subscribes to events if counter is already present', () => {
     window[counterWindowKey] = {
       pbjs: sandbox.stub(),
-    };
+    }
 
     getEvents.returns([
       {
@@ -96,7 +96,7 @@ describe('Yandex analytics adapter testing', () => {
       {
         eventType: 'Some_untracked_event',
       }
-    ]);
+    ])
     const eventsToSend = [
       prebidInitEvent,
       {
@@ -105,7 +105,7 @@ describe('Yandex analytics adapter testing', () => {
           eventType: EVENTS_TO_TRACK[0],
         }
       }
-    ];
+    ]
 
     yandexAnalytics.enableAnalytics({
       options: {
@@ -113,26 +113,26 @@ describe('Yandex analytics adapter testing', () => {
           counterId,
         ],
       },
-    });
+    })
 
     EVENTS_TO_TRACK.forEach((eventName, i) => {
-      const [event, callback] = onEvent.getCall(i).args;
-      chai.expect(event).to.equal(eventName);
-      callback(i);
+      const [event, callback] = onEvent.getCall(i).args
+      chai.expect(event).to.equal(eventName)
+      callback(i)
       eventsToSend.push({
         event: eventName,
         data: i,
-      });
-    });
+      })
+    })
 
-    clock.tick(1501);
+    clock.tick(1501)
 
-    const [sentEvents] = window[counterWindowKey].pbjs.getCall(0).args;
-    chai.expect(sentEvents).to.deep.equal(eventsToSend);
-  });
+    const [sentEvents] = window[counterWindowKey].pbjs.getCall(0).args
+    chai.expect(sentEvents).to.deep.equal(eventsToSend)
+  })
 
   it('waits for counter initialization', () => {
-    window.Ya = {};
+    window.Ya = {}
     // Simulatin metrika script initialization
     yandexAnalytics.enableAnalytics({
       options: {
@@ -140,25 +140,25 @@ describe('Yandex analytics adapter testing', () => {
           counterId,
         ],
       },
-    });
+    })
 
     // Sending event
-    const [event, eventCallback] = onEvent.getCall(0).args;
-    eventCallback({});
+    const [event, eventCallback] = onEvent.getCall(0).args
+    eventCallback({})
 
-    const counterPbjsMethod = sandbox.stub();
+    const counterPbjsMethod = sandbox.stub()
     window[`yaCounter${counterId}`] = {
       pbjs: counterPbjsMethod,
-    };
-    clock.tick(2001);
+    }
+    clock.tick(2001)
 
-    const [sentEvents] = counterPbjsMethod.getCall(0).args;
+    const [sentEvents] = counterPbjsMethod.getCall(0).args
     chai.expect(sentEvents).to.deep.equal([
       prebidInitEvent,
       {
         event,
         data: {},
       }
-    ]);
-  });
-});
+    ])
+  })
+})

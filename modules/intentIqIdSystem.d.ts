@@ -1,4 +1,4 @@
-export type IntentIqIdSystemModuleName = 'intentIqId';
+export type IntentIqIdSystemModuleName = 'intentIqId'
 
 /**
  * A/B testing configuration source — controls how the test group is assigned.
@@ -7,7 +7,7 @@ export type IntentIqIdSystemModuleName = 'intentIqId';
  * - `'IIQServer'`   — server-driven assignment (default)
  * - `'disabled'`    — A/B testing disabled; always use IIQ
  */
-export type IntentIqABConfigSource = 'percentage' | 'group' | 'IIQServer' | 'disabled';
+export type IntentIqABConfigSource = 'percentage' | 'group' | 'IIQServer' | 'disabled'
 
 export interface IntentIqIdSystemParams {
   /**
@@ -132,4 +132,4 @@ declare module './userId/spec' {
   }
 }
 
-export {};
+export {}

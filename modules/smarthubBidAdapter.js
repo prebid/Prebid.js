@@ -1,22 +1,22 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import {
   buildPlacementProcessingFunction,
   buildRequestsBase,
   interpretResponseBuilder,
   isBidRequestValid,
   getUserSyncs as baseSync
-} from '../libraries/teqblazeUtils/bidderUtils.js';
+} from '../libraries/teqblazeUtils/bidderUtils.js'
 
-const BIDDER_CODE = 'smarthub';
-const DEFAULT_PROVIDER = 'attekmi';
-const DEFAULT_REGION = 'us_east';
+const BIDDER_CODE = 'smarthub'
+const DEFAULT_PROVIDER = 'attekmi'
+const DEFAULT_REGION = 'us_east'
 
 const SYNC_URLS = {
   '1': 'https://us.shb-sync.com',
   '4': 'https://us4.shb-sync.com',
   '13': 'https://wls-stckp.shb-sync.com'
-};
+}
 
 const ALIASES = {
   'attekmi': { area: '1', pid: '300' },
@@ -33,13 +33,13 @@ const ALIASES = {
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
   'stackup': { area: '13', pid: '469' }
-};
+}
 
 const BASE_URL_TEMPLATES = {
   'attekmi-us_east': 'https://prebid.attekmi.co/pbjs',
   'attekmi-apac': 'https://prebid-apac.attekmi.co/pbjs',
   'attekmi-eu': 'https://prebid-eu.attekmi.co/pbjs',
-};
+}
 
 const PARTNER_ENDPOINTS = {
   markapp: {
@@ -83,51 +83,51 @@ const PARTNER_ENDPOINTS = {
   stackup: {
     us_east: 'https://stackup-prebid.attekmi.co/pbjs',
   }
-};
+}
 
 // -- codespace --
 
 const normalizeRegion = (region) => {
-  if (!region) return DEFAULT_REGION;
-  return String(region).toLowerCase();
-};
+  if (!region) return DEFAULT_REGION
+  return String(region).toLowerCase()
+}
 
 const resolveEndpoint = ({ partner, region, seat, token }) => {
-  const normalizedRegion = normalizeRegion(region);
-  const partnerEndpoints = PARTNER_ENDPOINTS[partner];
+  const normalizedRegion = normalizeRegion(region)
+  const partnerEndpoints = PARTNER_ENDPOINTS[partner]
 
   const partnerEndpoint =
     partnerEndpoints?.[normalizedRegion] ||
-    partnerEndpoints?.[DEFAULT_REGION];
+    partnerEndpoints?.[DEFAULT_REGION]
 
   if (partnerEndpoint) {
-    const params = new URLSearchParams({ seat, token });
+    const params = new URLSearchParams({ seat, token })
 
-    return `${partnerEndpoint}?${params.toString()}`;
+    return `${partnerEndpoint}?${params.toString()}`
   }
 
-  const providerKey = `${DEFAULT_PROVIDER}-${normalizedRegion}`;
+  const providerKey = `${DEFAULT_PROVIDER}-${normalizedRegion}`
 
   const base =
     BASE_URL_TEMPLATES[providerKey] ||
-    BASE_URL_TEMPLATES[`${DEFAULT_PROVIDER}-us_east`];
+    BASE_URL_TEMPLATES[`${DEFAULT_PROVIDER}-us_east`]
 
-  const params = new URLSearchParams({ partnerName: partner, seat, token });
+  const params = new URLSearchParams({ partnerName: partner, seat, token })
 
-  return `${base}?${params.toString()}`;
-};
+  return `${base}?${params.toString()}`
+}
 
 const getPartnerName = (bid) => {
-  const paramName = bid.params?.partnerName;
-  const bidder = bid.bidder;
+  const paramName = bid.params?.partnerName
+  const bidder = bid.bidder
 
-  return String(paramName || bidder).toLowerCase();
-};
+  return String(paramName || bidder).toLowerCase()
+}
 
 const getPlacementReqData = buildPlacementProcessingFunction({
   addPlacementType() {},
   addCustomFieldsToPlacement(bid, bidderRequest, placement) {
-    const { seat, token, iabCat, minBidfloor, pos, region } = bid.params;
+    const { seat, token, iabCat, minBidfloor, pos, region } = bid.params
 
     Object.assign(placement, {
       partnerName: getPartnerName(bid),
@@ -137,78 +137,78 @@ const getPlacementReqData = buildPlacementProcessingFunction({
       minBidfloor,
       pos,
       region: normalizeRegion(region)
-    });
+    })
   }
 })
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
-  const bidsByKey = {};
+  const bidsByKey = {}
 
   validBidRequests.forEach((bid) => {
-    const partner = getPartnerName(bid);
-    const region = normalizeRegion(bid.params?.region);
-    const { seat, token } = bid.params || {};
+    const partner = getPartnerName(bid)
+    const region = normalizeRegion(bid.params?.region)
+    const { seat, token } = bid.params || {}
 
     const key = `${partner}|${region}|${seat}|${token}`;
 
-    (bidsByKey[key] = bidsByKey[key] || []).push(bid);
-  });
+    (bidsByKey[key] = bidsByKey[key] || []).push(bid)
+  })
 
   return Object.values(bidsByKey).map((bids) => {
-    const partner = getPartnerName(bids[0]);
-    const region = normalizeRegion(bids[0].params.region);
-    const { seat, token } = bids[0].params || {};
-    const endpoint = resolveEndpoint({ partner, region, seat, token });
+    const partner = getPartnerName(bids[0])
+    const region = normalizeRegion(bids[0].params.region)
+    const { seat, token } = bids[0].params || {}
+    const endpoint = resolveEndpoint({ partner, region, seat, token })
 
     const request = buildRequestsBase({
       adUrl: endpoint,
       bidderRequest,
       validBidRequests: bids,
       placementProcessingFunction: getPlacementReqData
-    });
+    })
 
     return {
       ...request,
       validBidRequests: bids
-    };
-  });
-};
+    }
+  })
+}
 
 const baseInterpretResponse = interpretResponseBuilder({
   addtlBidValidation(bid) {
-    return bid.hasOwnProperty('netRevenue');
+    return bid.hasOwnProperty('netRevenue')
   }
-});
+})
 
 const interpretResponse = (serverResponse, request = {}) => {
-  const bids = request.validBidRequests || [];
+  const bids = request.validBidRequests || []
   if (!bids.length) {
-    return baseInterpretResponse(serverResponse);
+    return baseInterpretResponse(serverResponse)
   }
 
-  const partner = getPartnerName(bids[0]);
-  const alias = ALIASES[partner] || { area: '1', pid: '300' };
+  const partner = getPartnerName(bids[0])
+  const alias = ALIASES[partner] || { area: '1', pid: '300' }
 
-  serverResponse.partner = partner;
-  serverResponse.area = alias.area;
-  serverResponse.pid = alias.pid;
+  serverResponse.partner = partner
+  serverResponse.area = alias.area
+  serverResponse.pid = alias.pid
 
-  return baseInterpretResponse(serverResponse);
-};
+  return baseInterpretResponse(serverResponse)
+}
 
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  let res = serverResponses?.find?.(r => r.partner && r.area && r.pid);
+  let res = serverResponses?.find?.(r => r.partner && r.area && r.pid)
 
   if (!res) {
-    res = ALIASES[DEFAULT_PROVIDER];
+    res = ALIASES[DEFAULT_PROVIDER]
   }
 
-  const { area, pid } = res;
+  const { area, pid } = res
 
-  const syncUrl = SYNC_URLS[area];
+  const syncUrl = SYNC_URLS[area]
 
   if (!syncUrl || !pid) {
-    return [];
+    return []
   }
 
   const syncs = baseSync(syncUrl)(
@@ -217,13 +217,13 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     gdprConsent,
     uspConsent,
     gppConsent
-  );
+  )
 
   return syncs.map(sync => ({
     ...sync,
     url: `${sync.url}&pid=${pid}`
-  }));
-};
+  }))
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -233,6 +233,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

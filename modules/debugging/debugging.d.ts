@@ -1,6 +1,6 @@
-import type { BidRequest } from "../../src/adapterManager";
-import type { Bid } from "../../src/bidfactory";
-import type { BidderCode } from "../../src/types/common";
+import type { BidRequest } from "../../src/adapterManager"
+import type { Bid } from "../../src/bidfactory"
+import type { BidderCode } from "../../src/types/common"
 
 export type DebugModuleConfiguration = {
   enabled?: boolean;
@@ -35,7 +35,7 @@ export type InterceptRule = {
      */
     | {
       [K in keyof BidRequest<BidderCode | null>]?: BidRequest<BidderCode | null>[K] | ((value: BidRequest<BidderCode | null>[K]) => boolean) | RegExp
-    };
+    }
 
   type ReplaceRule =
     /**
@@ -54,7 +54,7 @@ export type InterceptRule = {
     /**
      * Indicates no bid.
      */
-    | null;
+    | null
 
   type RuleOptions = {
     /**

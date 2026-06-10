@@ -5,47 +5,47 @@
  * @module modules/epomDspBidAdapter
  */
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { logError, logWarn, deepClone } from '../src/utils.js';
-import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { logError, logWarn, deepClone } from '../src/utils.js'
+import { config } from '../src/config.js'
 
-const BIDDER_CODE = 'epom_dsp';
+const BIDDER_CODE = 'epom_dsp'
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['epomdsp'],
 
   isBidRequestValid(bid) {
-    const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {};
-    const endpoint = bid.params?.endpoint || globalSettings.endpoint;
+    const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {}
+    const endpoint = bid.params?.endpoint || globalSettings.endpoint
     if (!endpoint || typeof endpoint !== 'string') {
-      logWarn(`[${BIDDER_CODE}] Invalid endpoint: expected a non-empty string.`);
-      return false;
+      logWarn(`[${BIDDER_CODE}] Invalid endpoint: expected a non-empty string.`)
+      return false
     }
 
     if (!(endpoint.startsWith('https://') || endpoint.startsWith('http://'))) {
-      logWarn(`[${BIDDER_CODE}] Invalid endpoint: must start with "https://".`);
-      return false;
+      logWarn(`[${BIDDER_CODE}] Invalid endpoint: must start with "https://".`)
+      return false
     }
-    return true;
+    return true
   },
 
   buildRequests(bidRequests, bidderRequest) {
     try {
-      const bidderConfig = config.getBidderConfig();
-      const globalSettings = bidderConfig[BIDDER_CODE]?.epomSettings || {};
+      const bidderConfig = config.getBidderConfig()
+      const globalSettings = bidderConfig[BIDDER_CODE]?.epomSettings || {}
 
       return bidRequests.map((bid) => {
-        const endpoint = bid.params?.endpoint || globalSettings.endpoint;
+        const endpoint = bid.params?.endpoint || globalSettings.endpoint
         if (!endpoint) {
-          logWarn(`[${BIDDER_CODE}] Missing endpoint for bid request.`);
-          return null;
+          logWarn(`[${BIDDER_CODE}] Missing endpoint for bid request.`)
+          return null
         }
 
-        const impArray = Array.isArray(bid.imp) ? bid.imp : [];
-        const defaultSize = bid.mediaTypes?.banner?.sizes?.[0] || bid.sizes?.[0];
+        const impArray = Array.isArray(bid.imp) ? bid.imp : []
+        const defaultSize = bid.mediaTypes?.banner?.sizes?.[0] || bid.sizes?.[0]
         if (!defaultSize) {
-          logWarn(`[${BIDDER_CODE}] No size found in mediaTypes or bid.sizes.`);
+          logWarn(`[${BIDDER_CODE}] No size found in mediaTypes or bid.sizes.`)
         }
 
         impArray.forEach(imp => {
@@ -53,10 +53,10 @@ export const spec = {
             imp.banner = {
               w: defaultSize[0],
               h: defaultSize[1],
-            };
+            }
           }
-        });
-        const extraData = deepClone(bid);
+        })
+        const extraData = deepClone(bid)
         const payload = {
           ...extraData,
           id: bid.id,
@@ -64,7 +64,7 @@ export const spec = {
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
           uspConsent: bidderRequest?.uspConsent,
-        };
+        }
 
         return {
           method: 'POST',
@@ -74,24 +74,24 @@ export const spec = {
             contentType: 'application/json',
             withCredentials: false,
           },
-        };
-      }).filter(req => req !== null);
+        }
+      }).filter(req => req !== null)
     } catch (error) {
-      logError(`[${BIDDER_CODE}] Error in buildRequests:`, error);
-      return [];
+      logError(`[${BIDDER_CODE}] Error in buildRequests:`, error)
+      return []
     }
   },
 
   interpretResponse(serverResponse, request) {
-    const bidResponses = [];
-    const response = serverResponse.body;
+    const bidResponses = []
+    const response = serverResponse.body
 
     if (response && response.seatbid && Array.isArray(response.seatbid)) {
       response.seatbid.forEach(seat => {
         seat.bid.forEach(bid => {
           if (!bid.adm) {
-            logError(`[${BIDDER_CODE}] Missing 'adm' in bid response`, bid);
-            return;
+            logError(`[${BIDDER_CODE}] Missing 'adm' in bid response`, bid)
+            return
           }
           bidResponses.push({
             requestId: request?.data?.bidId || bid.impid,
@@ -107,18 +107,18 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain || []
             }
-          });
-        });
-      });
+          })
+        })
+      })
     } else {
-      logError(`[${BIDDER_CODE}] Empty or invalid response`, serverResponse);
+      logError(`[${BIDDER_CODE}] Empty or invalid response`, serverResponse)
     }
 
-    return bidResponses;
+    return bidResponses
   },
 
   getUserSyncs(syncOptions, serverResponses) {
-    const syncs = [];
+    const syncs = []
 
     if (syncOptions.iframeEnabled && serverResponses.length > 0) {
       serverResponses.forEach((response) => {
@@ -126,9 +126,9 @@ export const spec = {
           syncs.push({
             type: 'iframe',
             url: response.body.userSync.iframe,
-          });
+          })
         }
-      });
+      })
     }
 
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
@@ -137,13 +137,13 @@ export const spec = {
           syncs.push({
             type: 'image',
             url: response.body.userSync.pixel,
-          });
+          })
         }
-      });
+      })
     }
 
-    return syncs;
+    return syncs
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

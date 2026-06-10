@@ -1,10 +1,10 @@
-import { logError, replaceAuctionPrice, triggerPixel, isStr } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { logError, replaceAuctionPrice, triggerPixel, isStr } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { NATIVE, BANNER } from '../src/mediaTypes.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
 
-export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
+export const ENDPOINT = 'https://app.readpeak.com/header/prebid'
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 70,
@@ -13,10 +13,10 @@ const NATIVE_DEFAULTS = {
   IMG_MIN: 150,
   ICON_MIN: 50,
   CTA_LEN: 50
-};
+}
 
-const BIDDER_CODE = 'readpeak';
-const GVLID = 290;
+const BIDDER_CODE = 'readpeak'
+const GVLID = 290
 
 export const spec = {
   code: BIDDER_CODE,
@@ -28,10 +28,10 @@ export const spec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests)
 
-    const currencyObj = config.getConfig('currency');
-    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
+    const currencyObj = config.getConfig('currency')
+    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD'
 
     const request = {
       id: bidRequests[0].bidderRequestId,
@@ -48,26 +48,26 @@ export const spec = {
           prebid: '$prebid.version$'
         }
       }
-    };
+    }
 
     if (bidderRequest.gdprConsent) {
       request.user = {
         ext: {
           consent: bidderRequest.gdprConsent.consentString || ''
         },
-      };
+      }
       request.regs = {
         ext: {
           gdpr: bidderRequest.gdprConsent.gdprApplies !== undefined ? bidderRequest.gdprConsent.gdprApplies : true
         }
-      };
+      }
     }
 
     return {
       method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(request)
-    };
+    }
   },
 
   interpretResponse: (response, request) => {
@@ -76,30 +76,30 @@ export const spec = {
 
   onBidWon: (bid) => {
     if (bid.burl && isStr(bid.burl)) {
-      bid.burl = replaceAuctionPrice(bid.burl, bid.cpm);
-      triggerPixel(bid.burl);
+      bid.burl = replaceAuctionPrice(bid.burl, bid.cpm)
+      triggerPixel(bid.burl)
     }
   },
-};
+}
 
 function bidResponseAvailable(bidRequest, bidResponse) {
-  const idToImpMap = {};
-  const idToBidMap = {};
+  const idToImpMap = {}
+  const idToBidMap = {}
   if (!bidResponse['body']) {
-    return [];
+    return []
   }
-  bidResponse = bidResponse.body;
+  bidResponse = bidResponse.body
   parse(bidRequest.data).imp.forEach(imp => {
-    idToImpMap[imp.id] = imp;
-  });
+    idToImpMap[imp.id] = imp
+  })
   if (bidResponse) {
     bidResponse.seatbid.forEach(seatBid =>
       seatBid.bid.forEach(bid => {
-        idToBidMap[bid.impid] = bid;
+        idToBidMap[bid.impid] = bid
       })
-    );
+    )
   }
-  const bids = [];
+  const bids = []
   Object.keys(idToImpMap).forEach(id => {
     if (idToBidMap[id]) {
       const bid = {
@@ -110,9 +110,9 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         netRevenue: true,
         mediaType: idToImpMap[id].native ? NATIVE : BANNER,
         currency: bidResponse.cur
-      };
+      }
       if (idToImpMap[id].native) {
-        bid.native = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid.native = nativeResponse(idToImpMap[id], idToBidMap[id])
       } else if (idToImpMap[id].banner) {
         bid.ad = idToBidMap[id].adm
         bid.width = idToBidMap[id].w
@@ -124,10 +124,10 @@ function bidResponseAvailable(bidRequest, bidResponse) {
           advertiserDomains: idToBidMap[id].adomain
         }
       }
-      bids.push(bid);
+      bids.push(bid)
     }
-  });
-  return bids;
+  })
+  return bids
 }
 
 function impression(slot) {
@@ -137,31 +137,31 @@ function impression(slot) {
       currency: 'USD',
       mediaType: 'native',
       size: '*'
-    });
-    bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
+    })
+    bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined
   }
   const imp = {
     id: slot.bidId,
     bidfloor: bidFloorFromModule || slot.params.bidfloor || 0,
     bidfloorcur: (bidFloorFromModule && 'USD') || slot.params.bidfloorcur || 'USD',
     tagId: slot.params.tagId || '0'
-  };
+  }
 
   if (slot.mediaTypes.native) {
-    imp.native = nativeImpression(slot);
+    imp.native = nativeImpression(slot)
   } else if (slot.mediaTypes.banner) {
-    imp.banner = bannerImpression(slot);
+    imp.banner = bannerImpression(slot)
   }
   return imp
 }
 
 function nativeImpression(slot) {
   if (slot.nativeParams) {
-    const assets = [];
+    const assets = []
     addAsset(
       assets,
       titleAsset(1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN)
-    );
+    )
     addAsset(
       assets,
       imageAsset(
@@ -171,7 +171,7 @@ function nativeImpression(slot) {
         slot.nativeParams.wmin || NATIVE_DEFAULTS.IMG_MIN,
         slot.nativeParams.hmin || NATIVE_DEFAULTS.IMG_MIN
       )
-    );
+    )
     addAsset(
       assets,
       dataAsset(
@@ -180,26 +180,26 @@ function nativeImpression(slot) {
         1,
         NATIVE_DEFAULTS.SPONSORED_BY_LEN
       )
-    );
+    )
     addAsset(
       assets,
       dataAsset(4, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN)
-    );
+    )
     addAsset(
       assets,
       dataAsset(5, slot.nativeParams.cta, 12, NATIVE_DEFAULTS.CTA_LEN)
-    );
+    )
     return {
       request: JSON.stringify({ assets }),
       ver: '1.1'
-    };
+    }
   }
-  return null;
+  return null
 }
 
 function addAsset(assets, asset) {
   if (asset) {
-    assets.push(asset);
+    assets.push(asset)
   }
 }
 
@@ -211,9 +211,9 @@ function titleAsset(id, params, defaultLen) {
       title: {
         len: params.len || defaultLen
       }
-    };
+    }
   }
-  return null;
+  return null
 }
 
 function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
@@ -227,7 +227,7 @@ function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
           hmin: params.hmin || defaultMinHeight
         }
       }
-    : null;
+    : null
 }
 
 function dataAsset(id, params, type, defaultLen) {
@@ -240,11 +240,11 @@ function dataAsset(id, params, type, defaultLen) {
           len: params.len || defaultLen
         }
       }
-    : null;
+    : null
 }
 
 function bannerImpression(slot) {
-  var sizes = slot.mediaTypes.banner.sizes || slot.sizes;
+  var sizes = slot.mediaTypes.banner.sizes || slot.sizes
   return {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
     w: sizes[0][0],
@@ -256,10 +256,10 @@ function site(bidRequests, bidderRequest) {
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
-      : '0';
+      : '0'
   const siteId =
-    bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : '0';
-  const appParams = bidRequests[0].params.app;
+    bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : '0'
+  const appParams = bidRequests[0].params.app
   if (!appParams) {
     return {
       publisher: {
@@ -269,17 +269,17 @@ function site(bidRequests, bidderRequest) {
       id: siteId ? siteId.toString() : pubId.toString(),
       page: bidderRequest?.refererInfo?.page,
       domain: bidderRequest?.refererInfo?.domain
-    };
+    }
   }
-  return undefined;
+  return undefined
 }
 
 function app(bidderRequest) {
   const pubId =
     bidderRequest && bidderRequest.length > 0
       ? bidderRequest[0].params.publisherId
-      : '0';
-  const appParams = bidderRequest[0].params.app;
+      : '0'
+  const appParams = bidderRequest[0].params.app
   if (appParams) {
     return {
       publisher: {
@@ -288,19 +288,19 @@ function app(bidderRequest) {
       bundle: appParams.bundle,
       storeurl: appParams.storeUrl,
       domain: appParams.domain
-    };
+    }
   }
-  return undefined;
+  return undefined
 }
 
 function isMobile() {
-  return /(ios|ipod|ipad|iphone|android)/i.test(window.navigator.userAgent);
+  return /(ios|ipod|ipad|iphone|android)/i.test(window.navigator.userAgent)
 }
 
 function isConnectedTV() {
   return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(
     window.navigator.userAgent
-  );
+  )
 }
 
 function device() {
@@ -312,34 +312,34 @@ function device() {
       navigator.userLanguage ||
       navigator.systemLanguage,
     devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2
-  };
+  }
 }
 
 function parse(rawResponse) {
   try {
     if (rawResponse) {
       if (typeof rawResponse === 'object') {
-        return rawResponse;
+        return rawResponse
       } else {
-        return JSON.parse(rawResponse);
+        return JSON.parse(rawResponse)
       }
     }
   } catch (ex) {
-    logError('readpeakBidAdapter.safeParse', 'ERROR', ex);
+    logError('readpeakBidAdapter.safeParse', 'ERROR', ex)
   }
-  return null;
+  return null
 }
 
 function nativeResponse(imp, bid) {
   if (imp && imp['native']) {
-    const nativeAd = parse(bid.adm);
-    const keys = {};
+    const nativeAd = parse(bid.adm)
+    const keys = {}
     if (nativeAd && nativeAd.assets) {
       nativeAd.assets.forEach(asset => {
-        keys.title = asset.title ? asset.title.text : keys.title;
-        keys.body = asset.data && asset.id === 4 ? asset.data.value : keys.body;
+        keys.title = asset.title ? asset.title.text : keys.title
+        keys.body = asset.data && asset.id === 4 ? asset.data.value : keys.body
         keys.sponsoredBy =
-          asset.data && asset.id === 3 ? asset.data.value : keys.sponsoredBy;
+          asset.data && asset.id === 3 ? asset.data.value : keys.sponsoredBy
         keys.image =
           asset.img && asset.id === 2
             ? {
@@ -347,19 +347,19 @@ function nativeResponse(imp, bid) {
                 width: asset.img.w || 750,
                 height: asset.img.h || 500
               }
-            : keys.image;
-        keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
-      });
+            : keys.image
+        keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta
+      })
       if (nativeAd.link) {
-        keys.clickUrl = nativeAd.link.url;
+        keys.clickUrl = nativeAd.link.url
       }
-      const trackers = nativeAd.imptrackers || [];
-      trackers.unshift(replaceAuctionPrice(bid.burl, bid.price));
-      keys.impressionTrackers = trackers;
-      return keys;
+      const trackers = nativeAd.imptrackers || []
+      trackers.unshift(replaceAuctionPrice(bid.burl, bid.price))
+      keys.impressionTrackers = trackers
+      return keys
     }
   }
-  return null;
+  return null
 }
 
-registerBidder(spec);
+registerBidder(spec)

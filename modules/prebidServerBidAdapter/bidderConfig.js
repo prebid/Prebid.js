@@ -1,5 +1,5 @@
-import { mergeDeep, deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js';
-import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js';
+import { mergeDeep, deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js'
+import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js'
 
 /**
  * Perform a partial pre-merge of bidder config for PBS.
@@ -22,15 +22,15 @@ export function getPBSBidderConfig({ global, bidder }) {
 function replaceArrays(config, mergedConfig) {
   return Object.fromEntries(
     Object.entries(config).map(([key, value]) => {
-      const mergedValue = mergedConfig[key];
+      const mergedValue = mergedConfig[key]
       if (Array.isArray(value)) {
         if (!deepEqual(value, mergedValue) && Array.isArray(mergedValue)) {
-          value = mergedValue;
+          value = mergedValue
         }
       } else if (value != null && typeof value === 'object') {
-        value = replaceArrays(value, mergedValue);
+        value = replaceArrays(value, mergedValue)
       }
-      return [key, value];
+      return [key, value]
     })
   )
 }
@@ -45,41 +45,41 @@ function replaceArrays(config, mergedConfig) {
  *   - `conflicts` is a set containing all EID sources that appear in multiple, otherwise different, EID objects.
  */
 export function extractEids({ global, bidder }) {
-  const entries = [];
-  const bySource = {};
+  const entries = []
+  const bySource = {}
   const conflicts = new Set()
 
   function getEntry(eid) {
-    let entry = entries.find((candidate) => deepEqual(candidate.eid, eid));
+    let entry = entries.find((candidate) => deepEqual(candidate.eid, eid))
     if (entry == null) {
       entry = { eid, bidders: new Set() }
-      entries.push(entry);
+      entries.push(entry)
     }
     if (bySource[eid.source] == null) {
-      bySource[eid.source] = entry.eid;
+      bySource[eid.source] = entry.eid
     } else if (entry.eid === eid) {
       // if this is the first time we see this eid, but not the first time we see its source, we have a conflict
-      conflicts.add(eid.source);
+      conflicts.add(eid.source)
     }
-    return entry;
+    return entry
   }
 
   ORTB_EIDS_PATHS.forEach(path => {
     (deepAccess(global, path) || []).forEach(eid => {
-      getEntry(eid).bidders = false;
-    });
+      getEntry(eid).bidders = false
+    })
   })
   Object.entries(bidder).forEach(([bidderCode, bidderConfig]) => {
     ORTB_EIDS_PATHS.forEach(path => {
       (deepAccess(bidderConfig, path) || []).forEach(eid => {
-        const entry = getEntry(eid);
+        const entry = getEntry(eid)
         if (entry.bidders !== false) {
-          entry.bidders.add(bidderCode);
+          entry.bidders.add(bidderCode)
         }
       })
     })
   })
-  return { eids: entries.map(({ eid, bidders }) => ({ eid, bidders: bidders && Array.from(bidders) })), conflicts };
+  return { eids: entries.map(({ eid, bidders }) => ({ eid, bidders: bidders && Array.from(bidders) })), conflicts }
 }
 
 /**
@@ -96,12 +96,12 @@ export function extractEids({ global, bidder }) {
  *  - `permissions` is a list of EID permissions as expected by PBS.
  */
 export function consolidateEids({ eids, conflicts = new Set() }, requestedBidders) {
-  const globalEntries = [];
-  const bidderEntries = [];
-  const byBidder = {};
+  const globalEntries = []
+  const bidderEntries = []
+  const byBidder = {}
   eids.forEach(eid => {
-    (eid.bidders === false ? globalEntries : bidderEntries).push(eid);
-  });
+    (eid.bidders === false ? globalEntries : bidderEntries).push(eid)
+  })
   bidderEntries.forEach(({ eid, bidders }) => {
     if (!conflicts.has(eid.source)) {
       globalEntries.push({ eid, bidders })
@@ -110,7 +110,7 @@ export function consolidateEids({ eids, conflicts = new Set() }, requestedBidder
         (byBidder[bidderCode] = byBidder[bidderCode] || []).push(eid)
       })
     }
-  });
+  })
 
   const permissions = Object.fromEntries(
     globalEntries.filter(({ bidders }) => bidders !== false)
@@ -118,7 +118,7 @@ export function consolidateEids({ eids, conflicts = new Set() }, requestedBidder
         source: eid.source,
         bidders: bidders.filter(bidder => !requestedBidders?.length || requestedBidders.includes(bidder))
       }]))
-  );
+  )
 
   return {
     global: globalEntries.map(({ eid }) => eid).filter(eid => permissions[eid.source] == null || permissions[eid.source].bidders.length > 0),
@@ -128,24 +128,24 @@ export function consolidateEids({ eids, conflicts = new Set() }, requestedBidder
 }
 
 function replaceEids({ global, bidder }, requestedBidders) {
-  const consolidated = consolidateEids(extractEids({ global, bidder }), requestedBidders);
-  global = deepClone(global);
-  bidder = deepClone(bidder);
+  const consolidated = consolidateEids(extractEids({ global, bidder }), requestedBidders)
+  global = deepClone(global)
+  bidder = deepClone(bidder)
   function removeEids(target) {
-    delete target?.user?.eids;
-    delete target?.user?.ext?.eids;
+    delete target?.user?.eids
+    delete target?.user?.ext?.eids
   }
-  removeEids(global);
-  Object.values(bidder).forEach(removeEids);
+  removeEids(global)
+  Object.values(bidder).forEach(removeEids)
   if (consolidated.global.length) {
-    deepSetValue(global, 'user.ext.eids', consolidated.global);
+    deepSetValue(global, 'user.ext.eids', consolidated.global)
   }
   if (consolidated.permissions.length) {
-    deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);
+    deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions)
   }
   Object.entries(consolidated.bidder).forEach(([bidderCode, bidderEids]) => {
     if (bidderEids.length) {
-      deepSetValue(bidder[bidderCode], 'user.ext.eids', bidderEids);
+      deepSetValue(bidder[bidderCode], 'user.ext.eids', bidderEids)
     }
   })
   return { global, bidder }
@@ -153,12 +153,12 @@ function replaceEids({ global, bidder }, requestedBidders) {
 
 export function premergeFpd(ortb2Fragments, requestedBidders) {
   if (ortb2Fragments == null || Object.keys(ortb2Fragments.bidder || {}).length === 0) {
-    return ortb2Fragments;
+    return ortb2Fragments
   } else {
-    ortb2Fragments = replaceEids(ortb2Fragments, requestedBidders);
+    ortb2Fragments = replaceEids(ortb2Fragments, requestedBidders)
     return {
       ...ortb2Fragments,
       bidder: getPBSBidderConfig(ortb2Fragments)
-    };
+    }
   }
 }

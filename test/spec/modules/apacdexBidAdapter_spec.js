@@ -1,9 +1,9 @@
-import { expect } from 'chai';
-import { spec, validateGeoObject } from '../../../modules/apacdexBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { userSync } from '../../../src/userSync.js';
-import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import { expect } from 'chai'
+import { spec, validateGeoObject } from '../../../modules/apacdexBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { userSync } from '../../../src/userSync.js'
+import { config } from 'src/config.js'
+import { deepClone } from 'src/utils.js'
 
 describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -33,9 +33,9 @@ describe('ApacdexBidAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
 
     it('should return false if there is no siteId or placementId param', () => {
       const bid = {
@@ -53,9 +53,9 @@ describe('ApacdexBidAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
 
     it('should return false if there is no mediaTypes', () => {
       const bid = {
@@ -69,9 +69,9 @@ describe('ApacdexBidAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
 
     it('should return true if the bid is valid', () => {
       const bid = {
@@ -88,9 +88,9 @@ describe('ApacdexBidAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     describe('banner', () => {
       it('should return false if there are no banner sizes', () => {
@@ -108,9 +108,9 @@ describe('ApacdexBidAdapter', function () {
           'bidId': '30b31c1838de1e',
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
 
       it('should return true if there is banner sizes', () => {
         const bid = {
@@ -127,10 +127,10 @@ describe('ApacdexBidAdapter', function () {
           'bidId': '30b31c1838de1e',
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-    });
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+    })
 
     describe('video', () => {
       it('should return false if there is no playerSize defined in the video mediaType', () => {
@@ -149,9 +149,9 @@ describe('ApacdexBidAdapter', function () {
           'bidId': '30b31c1838de1e',
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
 
       it('should return true if there is playerSize defined on the video mediaType', () => {
         const bid = {
@@ -169,19 +169,19 @@ describe('ApacdexBidAdapter', function () {
           'bidId': '30b31c1838de1e',
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-    });
-  });
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+    })
+  })
 
   describe('.buildRequests', function () {
     beforeEach(function () {
-      sinon.stub(userSync, 'canBidderRegisterSync');
-    });
+      sinon.stub(userSync, 'canBidderRegisterSync')
+    })
     afterEach(function () {
-      userSync.canBidderRegisterSync.restore();
-    });
+      userSync.canBidderRegisterSync.restore()
+    })
     const bidRequest = [{
       'ortb2': {
         'source': {
@@ -238,7 +238,7 @@ describe('ApacdexBidAdapter', function () {
       'sizes': [[120, 600], [300, 600], [160, 600]],
       'targetKey': 1,
       'bidId': '30b31c1838de1e',
-    }];
+    }]
 
     const bidderRequests = {
       'gdprConsent': {
@@ -253,13 +253,13 @@ describe('ApacdexBidAdapter', function () {
         'stack': ['https://example.com']
       },
       uspConsent: 'someCCPAString'
-    };
+    }
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.bidderRequests).to.eql(bidRequest);
+      expect(bidRequests.bidderRequests).to.eql(bidRequest)
     })
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
@@ -271,7 +271,7 @@ describe('ApacdexBidAdapter', function () {
     })
 
     it('should return a properly formatted request with GDPR applies set to false', function () {
-      bidderRequests.gdprConsent.gdprApplies = false;
+      bidderRequests.gdprConsent.gdprApplies = false
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
@@ -291,7 +291,7 @@ describe('ApacdexBidAdapter', function () {
           'referer': 'https://example.com',
           'stack': ['https://example.com']
         }
-      };
+      }
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
@@ -311,7 +311,7 @@ describe('ApacdexBidAdapter', function () {
           'referer': 'https://example.com',
           'stack': ['https://example.com']
         }
-      };
+      }
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
@@ -319,68 +319,68 @@ describe('ApacdexBidAdapter', function () {
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
     })
     it('should return a properly formatted request with schain defined', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].ortb2.source.ext.schain)
-    });
+    })
     it('should return a properly formatted request with eids defined', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
-    });
+    })
     it('should return a properly formatted request with us_privacy included', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
-    });
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.us_privacy).to.equal('someCCPAString')
+    })
     it('should attach bidFloor param when either bid param floorPrice or getFloor function exists', function () {
-      const getFloorResponse = { currency: 'USD', floor: 3 };
-      let singleBidRequest; let request; let payload = null;
+      const getFloorResponse = { currency: 'USD', floor: 3 }
+      let singleBidRequest; let request; let payload = null
 
       // 1 -> floorPrice not defined, getFloor not defined > empty
-      singleBidRequest = deepClone(bidRequest[0]);
-      request = spec.buildRequests([singleBidRequest], bidderRequests);
-      payload = request.data;
-      expect(payload.bids[0].bidFloor).to.not.exist;
+      singleBidRequest = deepClone(bidRequest[0])
+      request = spec.buildRequests([singleBidRequest], bidderRequests)
+      payload = request.data
+      expect(payload.bids[0].bidFloor).to.not.exist
 
       // 2 -> floorPrice is defined, getFloor not defined > floorPrice is used
-      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest = deepClone(bidRequest[0])
       singleBidRequest.params = {
         'siteId': '1890909',
         'floorPrice': 0.5
-      };
-      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      }
+      request = spec.buildRequests([singleBidRequest], bidderRequests)
       payload = request.data
-      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(0.5);
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(0.5)
 
       // 3 -> floorPrice is defined, getFloor is defined > getFloor is used
-      singleBidRequest = deepClone(bidRequest[0]);
+      singleBidRequest = deepClone(bidRequest[0])
       singleBidRequest.params = {
         'siteId': '1890909',
         'floorPrice': 0.5
-      };
-      singleBidRequest.getFloor = () => getFloorResponse;
-      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      }
+      singleBidRequest.getFloor = () => getFloorResponse
+      request = spec.buildRequests([singleBidRequest], bidderRequests)
       payload = request.data
-      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3)
 
       // 4 -> floorPrice not defined, getFloor is defined > getFloor is used
-      singleBidRequest = deepClone(bidRequest[0]);
-      singleBidRequest.getFloor = () => getFloorResponse;
-      request = spec.buildRequests([singleBidRequest], bidderRequests);
+      singleBidRequest = deepClone(bidRequest[0])
+      singleBidRequest.getFloor = () => getFloorResponse
+      request = spec.buildRequests([singleBidRequest], bidderRequests)
       payload = request.data
-      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
-    });
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3)
+    })
     describe('debug test', function () {
       beforeEach(function () {
-        config.setConfig({ debug: true });
-      });
+        config.setConfig({ debug: true })
+      })
       afterEach(function () {
-        config.setConfig({ debug: false });
-      });
+        config.setConfig({ debug: false })
+      })
       it('should return a properly formatted request with pbjs_debug is true', function () {
-        const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-        expect(bidRequests.data.test).to.equal(1);
-      });
-    });
-  });
+        const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+        expect(bidRequests.data.test).to.equal(1)
+      })
+    })
+  })
 
   describe('.interpretResponse', function () {
     const bidRequests = {
@@ -530,7 +530,7 @@ describe('ApacdexBidAdapter', function () {
           }
         }
       ]
-    };
+    }
 
     const serverResponse = {
       'body': {
@@ -589,7 +589,7 @@ describe('ApacdexBidAdapter', function () {
           'type': 'image'
         }]
       }
-    };
+    }
 
     const prebidResponse = [
       {
@@ -631,30 +631,30 @@ describe('ApacdexBidAdapter', function () {
         'dealId': 'apacdex',
         'mediaType': 'video'
       }
-    ];
+    ]
 
     it('should map bidResponse to prebidResponse', function () {
-      const response = spec.interpretResponse(serverResponse, bidRequests);
+      const response = spec.interpretResponse(serverResponse, bidRequests)
       response.forEach((resp, i) => {
-        expect(resp.requestId).to.equal(prebidResponse[i].requestId);
-        expect(resp.cpm).to.equal(prebidResponse[i].cpm);
-        expect(resp.width).to.equal(prebidResponse[i].width);
-        expect(resp.height).to.equal(prebidResponse[i].height);
-        expect(resp.ttl).to.equal(prebidResponse[i].ttl);
-        expect(resp.creativeId).to.equal(prebidResponse[i].creativeId);
-        expect(resp.netRevenue).to.equal(prebidResponse[i].netRevenue);
-        expect(resp.currency).to.equal(prebidResponse[i].currency);
-        expect(resp.dealId).to.equal(prebidResponse[i].dealId);
+        expect(resp.requestId).to.equal(prebidResponse[i].requestId)
+        expect(resp.cpm).to.equal(prebidResponse[i].cpm)
+        expect(resp.width).to.equal(prebidResponse[i].width)
+        expect(resp.height).to.equal(prebidResponse[i].height)
+        expect(resp.ttl).to.equal(prebidResponse[i].ttl)
+        expect(resp.creativeId).to.equal(prebidResponse[i].creativeId)
+        expect(resp.netRevenue).to.equal(prebidResponse[i].netRevenue)
+        expect(resp.currency).to.equal(prebidResponse[i].currency)
+        expect(resp.dealId).to.equal(prebidResponse[i].dealId)
         if (resp.mediaType === 'video') {
-          expect(resp.vastXml.indexOf('apacdex')).to.be.greaterThan(0);
+          expect(resp.vastXml.indexOf('apacdex')).to.be.greaterThan(0)
         }
         if (resp.mediaType === 'banner') {
-          expect(resp.ad.indexOf('Apacdex AD')).to.be.greaterThan(0);
+          expect(resp.ad.indexOf('Apacdex AD')).to.be.greaterThan(0)
         }
-        expect(resp.meta.advertiserDomains).to.deep.equal(['https://example.com']);
-      });
-    });
-  });
+        expect(resp.meta.advertiserDomains).to.deep.equal(['https://example.com'])
+      })
+    })
+  })
 
   describe('.getUserSyncs', function () {
     const bidResponse = [{
@@ -664,29 +664,29 @@ describe('ApacdexBidAdapter', function () {
           'type': 'image'
         }]
       }
-    }];
+    }]
 
     it('should return one sync pixel', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.deep.equal([{
         type: 'image',
         url: 'https://pixel-test'
-      }]);
-    });
+      }])
+    })
     it('should return an empty array when sync is enabled but there are no bidResponses', function () {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
-    });
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0)
+    })
 
     it('should return an empty array when sync is enabled but no sync pixel returned', function () {
-      const pixel = Object.assign({}, bidResponse);
-      delete pixel[0].body.pixel;
-      expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.have.length(0);
-    });
+      const pixel = Object.assign({}, bidResponse)
+      delete pixel[0].body.pixel
+      expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.have.length(0)
+    })
 
     it('should return an empty array', function () {
-      expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
-    });
-  });
+      expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0)
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0)
+    })
+  })
 
   describe('validateGeoObject', function () {
     it('should return true if the geo object is valid', () => {
@@ -694,41 +694,41 @@ describe('ApacdexBidAdapter', function () {
         lat: 123.5624234,
         lon: 23.6712341,
         accuracy: 20
-      };
-      expect(validateGeoObject(geoObject)).to.equal(true);
-    });
+      }
+      expect(validateGeoObject(geoObject)).to.equal(true)
+    })
 
     it('should return false if the geo object is not plain object', () => {
       const geoObject = [{
         lat: 123.5624234,
         lon: 23.6712341,
         accuracy: 20
-      }];
-      expect(validateGeoObject(geoObject)).to.equal(false);
-    });
+      }]
+      expect(validateGeoObject(geoObject)).to.equal(false)
+    })
 
     it('should return false if the geo object is missing lat attribute', () => {
       const geoObject = {
         lon: 23.6712341,
         accuracy: 20
-      };
-      expect(validateGeoObject(geoObject)).to.equal(false);
-    });
+      }
+      expect(validateGeoObject(geoObject)).to.equal(false)
+    })
 
     it('should return false if the geo object is missing lon attribute', () => {
       const geoObject = {
         lat: 123.5624234,
         accuracy: 20
-      };
-      expect(validateGeoObject(geoObject)).to.equal(false);
-    });
+      }
+      expect(validateGeoObject(geoObject)).to.equal(false)
+    })
 
     it('should return false if the geo object is missing accuracy attribute', () => {
       const geoObject = {
         lat: 123.5624234,
         lon: 23.6712341
-      };
-      expect(validateGeoObject(geoObject)).to.equal(false);
-    });
-  });
-});
+      }
+      expect(validateGeoObject(geoObject)).to.equal(false)
+    })
+  })
+})

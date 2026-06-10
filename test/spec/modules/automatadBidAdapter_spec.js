@@ -133,7 +133,7 @@ describe('automatadBidAdapter', function () {
     it('should get the correct bid response', function () {
       const result = spec.interpretResponse(expectedResponse[0])
       expect(result).to.be.an('array').that.is.not.empty
-      expect(result[0].meta.advertiserDomains[0]).to.equal('someAdDomain');
+      expect(result[0].meta.advertiserDomains[0]).to.equal('someAdDomain')
     })
 
     it('should interpret multiple bids in seatbid', function () {
@@ -178,12 +178,12 @@ describe('automatadBidAdapter', function () {
         }
       }]
       const result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
-        const { requestId } = bid;
-        return [requestId];
-      });
+        const { requestId } = bid
+        return [requestId]
+      })
 
-      assert.equal(result.length, 2);
-      assert.deepEqual(result, [['imp1'], ['imp2']]);
+      assert.equal(result.length, 2)
+      assert.deepEqual(result, [['imp1'], ['imp2']])
     })
 
     it('handles empty bid response', function () {
@@ -211,13 +211,13 @@ describe('automatadBidAdapter', function () {
     }
 
     it('should exists and be a function', function () {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    });
+      expect(spec.onTimeout).to.exist.and.to.be.a('function')
+    })
 
     it('should include timeoutData', function () {
-      expect(spec.onTimeout(timeoutData)).to.be.undefined;
+      expect(spec.onTimeout(timeoutData)).to.be.undefined
     })
-  });
+  })
 
   describe('onBidWon', function () {
     const serverResponses = spec.interpretResponse(expectedResponse[0])

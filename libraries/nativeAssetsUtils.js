@@ -1,4 +1,4 @@
-import { isEmpty } from '../src/utils.js';
+import { isEmpty } from '../src/utils.js'
 
 export const NATIVE_PARAMS = {
   title: {
@@ -75,41 +75,41 @@ export const NATIVE_PARAMS = {
     name: 'data',
     type: 8
   }
-};
+}
 
 const NATIVE_ID_MAP = Object.entries(NATIVE_PARAMS).reduce((result, [key, asset]) => {
-  result[asset.id] = key;
-  return result;
-}, {});
+  result[asset.id] = key
+  return result
+}, {})
 
 export function buildNativeRequest(nativeParams) {
-  const assets = [];
+  const assets = []
   if (nativeParams) {
     Object.keys(nativeParams).forEach((key) => {
       if (NATIVE_PARAMS[key]) {
-        const { name, type, id } = NATIVE_PARAMS[key];
-        const assetObj = type ? { type } : {};
-        let { len, sizes, required, aspect_ratios: aRatios } = nativeParams[key];
+        const { name, type, id } = NATIVE_PARAMS[key]
+        const assetObj = type ? { type } : {}
+        let { len, sizes, required, aspect_ratios: aRatios } = nativeParams[key]
         if (len) {
-          assetObj.len = len;
+          assetObj.len = len
         }
         if (aRatios && aRatios[0]) {
-          aRatios = aRatios[0];
-          const wmin = aRatios.min_width || 0;
-          const hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-          assetObj.wmin = wmin;
-          assetObj.hmin = hmin;
+          aRatios = aRatios[0]
+          const wmin = aRatios.min_width || 0
+          const hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0
+          assetObj.wmin = wmin
+          assetObj.hmin = hmin
         }
         if (sizes && sizes.length) {
-          sizes = [].concat(...sizes);
-          assetObj.w = sizes[0];
-          assetObj.h = sizes[1];
+          sizes = [].concat(...sizes)
+          assetObj.w = sizes[0]
+          assetObj.h = sizes[1]
         }
-        const asset = { required: required ? 1 : 0, id };
-        asset[name] = assetObj;
-        assets.push(asset);
+        const asset = { required: required ? 1 : 0, id }
+        asset[name] = assetObj
+        assets.push(asset)
       }
-    });
+    })
   }
   return {
     ver: '1.2',
@@ -119,11 +119,11 @@ export function buildNativeRequest(nativeParams) {
       plcmttype: 1,
       ver: '1.2'
     }
-  };
+  }
 }
 
 export function parseNativeResponse(native) {
-  const { assets, link, imptrackers, jstracker } = native;
+  const { assets, link, imptrackers, jstracker } = native
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || [],
@@ -132,22 +132,22 @@ export function parseNativeResponse(native) {
   };
 
   (assets || []).forEach((asset) => {
-    const { id, img, data, title } = asset;
-    const key = NATIVE_ID_MAP[id];
+    const { id, img, data, title } = asset
+    const key = NATIVE_ID_MAP[id]
     if (key) {
       if (!isEmpty(title)) {
-        result.title = title.text;
+        result.title = title.text
       } else if (!isEmpty(img)) {
         result[key] = {
           url: img.url,
           height: img.h,
           width: img.w
-        };
+        }
       } else if (!isEmpty(data)) {
-        result[key] = data.value;
+        result[key] = data.value
       }
     }
-  });
+  })
 
-  return result;
+  return result
 }

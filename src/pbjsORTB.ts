@@ -1,12 +1,12 @@
-export const PROCESSOR_TYPES = ['request', 'imp', 'bidResponse', 'response'] as const;
-export const PROCESSOR_DIALECTS = ['default', 'pbs'];
-export const [REQUEST, IMP, BID_RESPONSE, RESPONSE] = PROCESSOR_TYPES;
-export const [DEFAULT, PBS] = PROCESSOR_DIALECTS;
+export const PROCESSOR_TYPES = ['request', 'imp', 'bidResponse', 'response'] as const
+export const PROCESSOR_DIALECTS = ['default', 'pbs']
+export const [REQUEST, IMP, BID_RESPONSE, RESPONSE] = PROCESSOR_TYPES
+export const [DEFAULT, PBS] = PROCESSOR_DIALECTS
 
-const types = new Set(PROCESSOR_TYPES);
+const types = new Set(PROCESSOR_TYPES)
 
 export function processorRegistry() {
-  const processors = {};
+  const processors = {}
 
   return {
     registerOrtbProcessor({ type, name, fn, priority = 0, dialects = [DEFAULT] }) {
@@ -15,10 +15,10 @@ export function processorRegistry() {
       }
       dialects.forEach(dialect => {
         if (!processors.hasOwnProperty(dialect)) {
-          processors[dialect] = {};
+          processors[dialect] = {}
         }
         if (!processors[dialect].hasOwnProperty(type)) {
-          processors[dialect][type] = {};
+          processors[dialect][type] = {}
         }
         processors[dialect][type][name] = {
           priority,
@@ -27,9 +27,9 @@ export function processorRegistry() {
       })
     },
     getProcessors(dialect) {
-      return processors[dialect] || {};
+      return processors[dialect] || {}
     }
   }
 }
 
-export const { registerOrtbProcessor, getProcessors } = processorRegistry();
+export const { registerOrtbProcessor, getProcessors } = processorRegistry()

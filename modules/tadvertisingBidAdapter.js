@@ -9,43 +9,43 @@ import {
   isFn,
   isPlainObject,
   isInteger
-} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from "../src/mediaTypes.js";
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { ajax, sendBeacon } from "../src/ajax.js";
+} from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from "../src/mediaTypes.js"
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { ajax, sendBeacon } from "../src/ajax.js"
 
 export const dep = {
   ajax,
   sendBeacon
-};
+}
 
-const BIDDER_CODE = 'tadvertising';
-const GVL_ID = 213;
-const ENDPOINT_URL = 'https://prebid.tads.xplosion.de/bid';
-const NOTIFICATION_URL = 'https://prebid.tads.xplosion.de/notify';
-const USER_SYNC_URL = 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=pxpinp0&ttd_tpi=1';
-const BID_TTL = 360;
+const BIDDER_CODE = 'tadvertising'
+const GVL_ID = 213
+const ENDPOINT_URL = 'https://prebid.tads.xplosion.de/bid'
+const NOTIFICATION_URL = 'https://prebid.tads.xplosion.de/notify'
+const USER_SYNC_URL = 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=pxpinp0&ttd_tpi=1'
+const BID_TTL = 360
 
 const MEDIA_TYPES = {
   [BANNER]: 1,
   [VIDEO]: 2,
-};
+}
 
-const pageCache = {};
+const pageCache = {}
 
 const converter = ortbConverter({
   bidResponse: (buildBidResponse, bid, context) => {
-    let mediaType = BANNER;
+    let mediaType = BANNER
     if (bid.adm && bid.adm.startsWith('<VAST')) {
-      mediaType = VIDEO;
+      mediaType = VIDEO
     }
-    bid.mtype = MEDIA_TYPES[mediaType];
+    bid.mtype = MEDIA_TYPES[mediaType]
 
-    return buildBidResponse(bid, context);
+    return buildBidResponse(bid, context)
   },
-});
+})
 
 export function buildSuccessNotification(bidEvent) {
   return Object.fromEntries(
@@ -66,7 +66,7 @@ export function buildSuccessNotification(bidEvent) {
       status: bidEvent.status,
       ttr: bidEvent.timeToRespond
     }).filter(([_, value]) => value != null)
-  );
+  )
 }
 
 export function buildErrorNotification(bidEvent, error = null) {
@@ -83,7 +83,7 @@ export function buildErrorNotification(bidEvent, error = null) {
       statusCode: error?.status,
       response: error?.responseText
     }).filter(([_, value]) => value != null)
-  );
+  )
 }
 
 export function buildTimeoutNotification(bidEvent) {
@@ -97,33 +97,33 @@ export function buildTimeoutNotification(bidEvent) {
       page: deepAccess(bidEvent, 'ortb2.site.page'),
       timeout: deepAccess(bidEvent, 'timeout'),
     }).filter(([_, value]) => value != null)
-  );
+  )
 }
 
 export function getBidFloor (bid) {
   // value from params takes precedance over value set by Floor Module
   if (bid.params.bidfloor) {
-    return bid.params.bidfloor;
+    return bid.params.bidfloor
   }
 
   if (!isFn(bid.getFloor)) {
-    return null;
+    return null
   }
 
   let floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
-  });
+  })
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
+    return floor.floor
   }
-  return null;
+  return null
 }
 
 export const sendNotification = (notifyUrl, eventType, data) => {
   try {
-    const notificationUrl = `${notifyUrl}/${eventType}`;
+    const notificationUrl = `${notifyUrl}/${eventType}`
     const payload = JSON.stringify(data)
 
     if (!dep.sendBeacon(notificationUrl, payload)) {
@@ -132,10 +132,10 @@ export const sendNotification = (notifyUrl, eventType, data) => {
         method: 'POST',
         contentType: 'text/plain',
         keepalive: true,
-      });
+      })
     }
   } catch (error) {
-    logError(BIDDER_CODE, `Failed to notify event: ${eventType}`, error);
+    logError(BIDDER_CODE, `Failed to notify event: ${eventType}`, error)
   }
 }
 
@@ -148,45 +148,45 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (!bid.params.publisherId) {
-      logWarn(BIDDER_CODE + ': Missing required parameter params.publisherId');
-      return false;
+      logWarn(BIDDER_CODE + ': Missing required parameter params.publisherId')
+      return false
     }
     if (bid.params.publisherId.length > 32) {
-      logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
-      return false;
+      logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less')
+      return false
     }
     if (!bid.params.placementId) {
-      logWarn(BIDDER_CODE + ': Missing required parameter params.placementId');
-      return false;
+      logWarn(BIDDER_CODE + ': Missing required parameter params.placementId')
+      return false
     }
 
-    const mediaTypesBanner = deepAccess(bid, 'mediaTypes.banner');
-    const mediaTypesVideo = deepAccess(bid, 'mediaTypes.video');
+    const mediaTypesBanner = deepAccess(bid, 'mediaTypes.banner')
+    const mediaTypesVideo = deepAccess(bid, 'mediaTypes.video')
 
     if (!mediaTypesBanner && !mediaTypesVideo) {
-      logWarn(BIDDER_CODE + ': one of mediaTypes.banner or mediaTypes.video must be passed');
-      return false;
+      logWarn(BIDDER_CODE + ': one of mediaTypes.banner or mediaTypes.video must be passed')
+      return false
     }
 
     if (FEATURES.VIDEO && mediaTypesVideo) {
       if (!mediaTypesVideo.maxduration || !isInteger(mediaTypesVideo.maxduration)) {
-        logWarn(BIDDER_CODE + ': mediaTypes.video.maxduration must be set to the maximum video ad duration in seconds');
-        return false;
+        logWarn(BIDDER_CODE + ': mediaTypes.video.maxduration must be set to the maximum video ad duration in seconds')
+        return false
       }
       if (!mediaTypesVideo.api || mediaTypesVideo.api.length === 0) {
-        logWarn(BIDDER_CODE + ': mediaTypes.video.api should be an array of supported api frameworks. See the Open RTB v2.5 spec for valid values');
-        return false;
+        logWarn(BIDDER_CODE + ': mediaTypes.video.api should be an array of supported api frameworks. See the Open RTB v2.5 spec for valid values')
+        return false
       }
       if (!mediaTypesVideo.mimes || mediaTypesVideo.mimes.length === 0) {
-        logWarn(BIDDER_CODE + ': mediaTypes.video.mimes should be an array of supported mime types');
-        return false;
+        logWarn(BIDDER_CODE + ': mediaTypes.video.mimes should be an array of supported mime types')
+        return false
       }
       if (!mediaTypesVideo.protocols) {
-        logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values');
-        return false;
+        logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values')
+        return false
       }
     }
-    return true;
+    return true
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -200,61 +200,61 @@ export const spec = {
     }
 
     if (deepAccess(validBidRequests[0], 'userIdAsEids')) {
-      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
+      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids)
     }
 
     bidderRequest.bids.forEach((bid, index) => {
-      pageCache[bid.bidId] = deepAccess(bid, 'ortb2.site.page');
-      deepSetValue(data, `imp.${index}.ext.gpid`, bid.params.placementId);
+      pageCache[bid.bidId] = deepAccess(bid, 'ortb2.site.page')
+      deepSetValue(data, `imp.${index}.ext.gpid`, bid.params.placementId)
     })
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: data,
-    };
+    }
   },
 
   interpretResponse: function (response, serverRequest) {
     if (isEmpty(response.body.seatbid)) {
-      return [];
+      return []
     }
     deepSetValue(response, 'body.seatbid.0.bid.0.impid', deepAccess(serverRequest, 'data.imp.0.id'))
 
-    const bids = converter.fromORTB({ response: response.body, request: serverRequest.data }).bids;
+    const bids = converter.fromORTB({ response: response.body, request: serverRequest.data }).bids
 
     bids.forEach(bid => {
-      bid.ttl = BID_TTL;
-      bid.netRevenue = true;
-      bid.currency = bid.currency || 'USD';
-      bid.dealId = bid.dealId || null;
+      bid.ttl = BID_TTL
+      bid.netRevenue = true
+      bid.currency = bid.currency || 'USD'
+      bid.dealId = bid.dealId || null
       if (bid.vastXml) {
-        bid.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm);
+        bid.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm)
       } else {
-        bid.ad = replaceAuctionPrice(bid.ad, bid.cpm);
+        bid.ad = replaceAuctionPrice(bid.ad, bid.cpm)
       }
     })
 
-    return bids;
+    return bids
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = []
     if (serverResponses[0]?.body?.ext?.uss === 1 && gdprConsent && hasPurpose1Consent(gdprConsent)) {
-      let gdprParams;
+      let gdprParams
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        gdprParams = `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
       } else {
-        gdprParams = `&gdpr_consent=${gdprConsent.consentString}`;
+        gdprParams = `&gdpr_consent=${gdprConsent.consentString}`
       }
 
       if (syncOptions.pixelEnabled) {
         syncs.push({
           type: 'image',
           url: USER_SYNC_URL + gdprParams
-        });
+        })
       }
     }
-    return syncs;
+    return syncs
   },
 
   onBidWon: function (bid) {
@@ -264,7 +264,7 @@ export const spec = {
 
   onBidBillable: function (bid) {
     if (bid.burl) {
-      triggerPixel(replaceAuctionPrice(bid.burl, bid.cpm));
+      triggerPixel(replaceAuctionPrice(bid.burl, bid.cpm))
     }
     const payload = buildSuccessNotification(bid)
     sendNotification(spec.notify_url, "billable", payload)
@@ -281,4 +281,4 @@ export const spec = {
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

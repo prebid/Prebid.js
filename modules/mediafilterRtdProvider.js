@@ -10,17 +10,17 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
-import { logError, generateUUID } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
-import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js'
+import { logError, generateUUID } from '../src/utils.js'
+import { loadExternalScript } from '../src/adloader.js'
+import * as events from '../src/events.js'
+import { EVENTS } from '../src/constants.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
 
 /** The event type for Media Filter. */
-export const MEDIAFILTER_EVENT_TYPE = 'com.mediatrust.pbjs.';
+export const MEDIAFILTER_EVENT_TYPE = 'com.mediatrust.pbjs.'
 /** The base URL for Media Filter scripts. */
-export const MEDIAFILTER_BASE_URL = 'https://scripts.webcontentassessor.com/scripts/';
+export const MEDIAFILTER_BASE_URL = 'https://scripts.webcontentassessor.com/scripts/'
 
 export const MediaFilter = {
   /**
@@ -30,7 +30,7 @@ export const MediaFilter = {
     submodule('realTimeData', {
       'name': 'mediafilter',
       'init': this.generateInitHandler()
-    });
+    })
   },
 
   /**
@@ -38,8 +38,8 @@ export const MediaFilter = {
    * @param {object} configuration - The configuration object.
    */
   setup: function(configuration) {
-    this.setupEventListener(configuration.configurationHash);
-    this.setupScript(configuration.configurationHash);
+    this.setupEventListener(configuration.configurationHash)
+    this.setupScript(configuration.configurationHash)
   },
 
   /**
@@ -47,7 +47,7 @@ export const MediaFilter = {
    * @param {string} configurationHash - The configuration hash.
    */
   setupEventListener: function(configurationHash) {
-    window.addEventListener('message', this.generateEventHandler(configurationHash));
+    window.addEventListener('message', this.generateEventHandler(configurationHash))
   },
 
   /**
@@ -56,7 +56,7 @@ export const MediaFilter = {
    */
   setupScript: function(configurationHash) {
     loadExternalScript(MEDIAFILTER_BASE_URL.concat(configurationHash), MODULE_TYPE_RTD, 'mediafilter', () => {
-    });
+    })
   },
 
   /**
@@ -72,9 +72,9 @@ export const MediaFilter = {
           'configurationHash': configurationHash,
           'type': 'impression',
           'vendor': 'mediafilter',
-        });
+        })
       }
-    };
+    }
   },
 
   /**
@@ -84,13 +84,13 @@ export const MediaFilter = {
   generateInitHandler: function() {
     return (configuration) => {
       try {
-        this.setup(configuration);
+        this.setup(configuration)
       } catch (error) {
-        logError(`Error in initialization: ${error.message}`);
+        logError(`Error in initialization: ${error.message}`)
       }
-    };
+    }
   }
-};
+}
 
 // Register the module
-MediaFilter.register();
+MediaFilter.register()

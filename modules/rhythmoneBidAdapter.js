@@ -1,63 +1,63 @@
-'use strict';
+'use strict'
 
-import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, parseSizesInput, isArray } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { getDNT } from '../libraries/dnt/index.js'
 
 function RhythmOneBidAdapter() {
-  this.code = 'rhythmone';
-  this.supportedMediaTypes = [VIDEO, BANNER];
-  this.gvlid = 36;
+  this.code = 'rhythmone'
+  this.supportedMediaTypes = [VIDEO, BANNER]
+  this.gvlid = 36
 
-  const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
-  const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
-  const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
-  const SUPPORTED_VIDEO_DELIVERY = [1];
-  const SUPPORTED_VIDEO_API = [1, 2, 5];
-  const slotsToBids = {};
-  const version = '2.1';
+  const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
+  const SUPPORTED_VIDEO_MIMES = ['video/mp4']
+  const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4]
+  const SUPPORTED_VIDEO_DELIVERY = [1]
+  const SUPPORTED_VIDEO_API = [1, 2, 5]
+  const slotsToBids = {}
+  const version = '2.1'
 
   this.isBidRequestValid = function (bid) {
-    return !!(bid.params && bid.params.placementId);
-  };
+    return !!(bid.params && bid.params.placementId)
+  }
 
   this.getUserSyncs = function (syncOptions, responses, gdprConsent) {
-    return [];
-  };
+    return []
+  }
 
   function frameImp(BRs, bidderRequest) {
-    var impList = [];
-    var isSecure = 0;
+    var impList = []
+    var isSecure = 0
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
       // clever trick to get the protocol
-      var el = document.createElement('a');
-      el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol === 'https:') ? 1 : 0;
+      var el = document.createElement('a')
+      el.href = bidderRequest.refererInfo.stack[0]
+      isSecure = (el.protocol === 'https:') ? 1 : 0
     }
     for (var i = 0; i < BRs.length; i++) {
-      slotsToBids[BRs[i].adUnitCode] = BRs[i];
-      var impObj = {};
-      impObj.id = BRs[i].adUnitCode;
-      impObj.bidfloor = 0;
-      impObj.secure = isSecure;
+      slotsToBids[BRs[i].adUnitCode] = BRs[i]
+      var impObj = {}
+      impObj.id = BRs[i].adUnitCode
+      impObj.bidfloor = 0
+      impObj.secure = isSecure
 
       if (deepAccess(BRs[i], 'mediaTypes.banner') || deepAccess(BRs[i], 'mediaType') === 'banner') {
-        const banner = frameBanner(BRs[i]);
+        const banner = frameBanner(BRs[i])
         if (banner) {
-          impObj.banner = banner;
+          impObj.banner = banner
         }
       }
       if (deepAccess(BRs[i], 'mediaTypes.video') || deepAccess(BRs[i], 'mediaType') === 'video') {
-        impObj.video = frameVideo(BRs[i]);
+        impObj.video = frameVideo(BRs[i])
       }
       if (!(impObj.banner || impObj.video)) {
-        continue;
+        continue
       }
-      impObj.ext = frameExt(BRs[i]);
-      impList.push(impObj);
+      impObj.ext = frameExt(BRs[i])
+      impList.push(impObj)
     }
-    return impList;
+    return impList
   }
 
   function frameSite(bidderRequest) {
@@ -77,52 +77,52 @@ function RhythmOneBidAdapter() {
   }
 
   function getValidSizeSet(dimensionList) {
-    const w = parseInt(dimensionList[0]);
-    const h = parseInt(dimensionList[1]);
+    const w = parseInt(dimensionList[0])
+    const h = parseInt(dimensionList[1])
     if (!Number.isNaN(w) && !Number.isNaN(h)) {
-      return [w, h];
+      return [w, h]
     }
-    return false;
+    return false
   }
 
   function frameBanner(adUnit) {
     // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
-    var sizeList = adUnit.sizes;
+    var sizeList = adUnit.sizes
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
-      sizeList = adUnit.mediaTypes.banner.sizes;
+      sizeList = adUnit.mediaTypes.banner.sizes
     }
-    var sizeStringList = parseSizesInput(sizeList);
-    var format = [];
+    var sizeStringList = parseSizesInput(sizeList)
+    var format = []
     sizeStringList.forEach(function(size) {
       if (size) {
-        var dimensionList = getValidSizeSet(size.split('x'));
+        var dimensionList = getValidSizeSet(size.split('x'))
         if (dimensionList) {
           format.push({
             'w': dimensionList[0],
             'h': dimensionList[1],
-          });
+          })
         }
       }
-    });
+    })
     if (format.length) {
       return {
         'format': format
-      };
+      }
     }
 
-    return false;
+    return false
   }
 
   function frameVideo(bid) {
-    var size = [];
+    var size = []
     if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
-      var dimensionSet = bid.mediaTypes.video.playerSize;
+      var dimensionSet = bid.mediaTypes.video.playerSize
       if (isArray(bid.mediaTypes.video.playerSize[0])) {
-        dimensionSet = bid.mediaTypes.video.playerSize[0];
+        dimensionSet = bid.mediaTypes.video.playerSize[0]
       }
       var validSize = getValidSizeSet(dimensionSet)
       if (validSize) {
-        size = validSize;
+        size = validSize
       }
     }
     return {
@@ -166,8 +166,8 @@ function RhythmOneBidAdapter() {
           gdpr: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
         }
       }
-    };
-    const schain = BRs[0]?.ortb2?.source?.ext?.schain;
+    }
+    const schain = BRs[0]?.ortb2?.source?.ext?.schain
     if (schain) {
       bid.source = {
         'ext': {
@@ -175,65 +175,65 @@ function RhythmOneBidAdapter() {
         }
       }
     }
-    return bid;
+    return bid
   }
 
   function getFirstParam(key, validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       if (validBidRequests[i].params && validBidRequests[i].params[key]) {
-        return validBidRequests[i].params[key];
+        return validBidRequests[i].params[key]
       }
     }
   }
 
   this.buildRequests = function (BRs, bidderRequest) {
-    const fallbackPlacementId = getFirstParam('placementId', BRs);
+    const fallbackPlacementId = getFirstParam('placementId', BRs)
     if (fallbackPlacementId === undefined || BRs.length < 1) {
-      return [];
+      return []
     }
 
-    var rmpUrl = getFirstParam('endpoint', BRs) || 'https://tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
-    var defaultZone = getFirstParam('zone', BRs) || '1r';
-    var defaultPath = getFirstParam('path', BRs) || 'mvo';
+    var rmpUrl = getFirstParam('endpoint', BRs) || 'https://tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}'
+    var defaultZone = getFirstParam('zone', BRs) || '1r'
+    var defaultPath = getFirstParam('path', BRs) || 'mvo'
 
-    rmpUrl = rmpUrl.replace(/\{placementId\}/i, fallbackPlacementId);
-    rmpUrl = rmpUrl.replace(/\{zone\}/i, defaultZone);
-    rmpUrl = rmpUrl.replace(/\{path\}/i, defaultPath);
+    rmpUrl = rmpUrl.replace(/\{placementId\}/i, fallbackPlacementId)
+    rmpUrl = rmpUrl.replace(/\{zone\}/i, defaultZone)
+    rmpUrl = rmpUrl.replace(/\{path\}/i, defaultPath)
 
-    var fat = /(^v|(\.0)+$)/gi;
-    var prebidVersion = '$prebid.version$';
-    rmpUrl += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '');
+    var fat = /(^v|(\.0)+$)/gi
+    var prebidVersion = '$prebid.version$'
+    rmpUrl += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '')
 
-    var bidRequest = frameBid(BRs, bidderRequest);
+    var bidRequest = frameBid(BRs, bidderRequest)
     if (!bidRequest.imp.length) {
-      return {};
+      return {}
     }
 
     return {
       method: 'POST',
       url: rmpUrl,
       data: JSON.stringify(bidRequest)
-    };
-  };
+    }
+  }
 
   this.interpretResponse = function (serverResponse) {
-    let responses = serverResponse.body || [];
-    const bids = [];
-    let i = 0;
+    let responses = serverResponse.body || []
+    const bids = []
+    let i = 0
 
     if (responses.seatbid) {
-      const temp = [];
+      const temp = []
       for (i = 0; i < responses.seatbid.length; i++) {
         for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
-          temp.push(responses.seatbid[i].bid[j]);
+          temp.push(responses.seatbid[i].bid[j])
         }
       }
-      responses = temp;
+      responses = temp
     }
 
     for (i = 0; i < responses.length; i++) {
-      const bid = responses[i];
-      const bidRequest = slotsToBids[bid.impid];
+      const bid = responses[i]
+      const bidRequest = slotsToBids[bid.impid]
       const bidResponse = {
         requestId: bidRequest.bidId,
         cpm: parseFloat(bid.price),
@@ -246,21 +246,21 @@ function RhythmOneBidAdapter() {
         currency: 'USD',
         netRevenue: true,
         ttl: 350
-      };
+      }
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
-        bidResponse.vastUrl = bid.nurl;
-        bidResponse.mediaType = 'video';
-        bidResponse.ttl = 600;
+        bidResponse.vastUrl = bid.nurl
+        bidResponse.mediaType = 'video'
+        bidResponse.ttl = 600
       } else {
-        bidResponse.ad = bid.adm;
+        bidResponse.ad = bid.adm
       }
-      bids.push(bidResponse);
+      bids.push(bidResponse)
     }
 
-    return bids;
-  };
+    return bids
+  }
 }
 
-export const spec = new RhythmOneBidAdapter();
-registerBidder(spec);
+export const spec = new RhythmOneBidAdapter()
+registerBidder(spec)

@@ -1,12 +1,12 @@
-import { expect } from 'chai';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { spec } from 'modules/lifestreetBidAdapter.js';
+import { expect } from 'chai'
+import { BANNER, VIDEO } from 'src/mediaTypes.js'
+import { spec } from 'modules/lifestreetBidAdapter.js'
 
 describe('lifestreetBidAdapter', function() {
-  let bidRequests;
-  let videoBidRequests;
-  let bidResponses;
-  let videoBidResponses;
+  let bidRequests
+  let videoBidRequests
+  let bidResponses
+  let videoBidResponses
   beforeEach(function() {
     bidRequests = [
       {
@@ -29,7 +29,7 @@ describe('lifestreetBidAdapter', function() {
           [300, 600]
         ]
       }
-    ];
+    ]
 
     bidResponses = {
       body: {
@@ -44,7 +44,7 @@ describe('lifestreetBidAdapter', function() {
         height: 600,
         status: 1
       }
-    };
+    }
     videoBidRequests = [
       {
         bidder: 'lifestreet',
@@ -76,8 +76,8 @@ describe('lifestreetBidAdapter', function() {
         height: 480,
         status: 1
       }
-    };
-  });
+    }
+  })
   describe('implementation', function() {
     describe('Bid validations', function() {
       it('valid bid case', function() {
@@ -88,13 +88,13 @@ describe('lifestreetBidAdapter', function() {
             adkey: '78c',
             ad_size: '160x600'
           }
-        };
-        expect(spec.isBidRequestValid(validBid)).to.equal(true);
-      });
+        }
+        expect(spec.isBidRequestValid(validBid)).to.equal(true)
+      })
 
       it('invalid bid case', function() {
-        expect(spec.isBidRequestValid()).to.equal(false);
-      });
+        expect(spec.isBidRequestValid()).to.equal(false)
+      })
 
       it('invalid bid case: slot not passed', function() {
         var validBid = {
@@ -103,9 +103,9 @@ describe('lifestreetBidAdapter', function() {
             adkey: '78c',
             ad_size: '160x600'
           }
-        };
-        expect(spec.isBidRequestValid(validBid)).to.equal(false);
-      });
+        }
+        expect(spec.isBidRequestValid(validBid)).to.equal(false)
+      })
 
       it('invalid bid case: adkey not passed', function() {
         const validBid = {
@@ -114,9 +114,9 @@ describe('lifestreetBidAdapter', function() {
             slot: 'slot166704',
             ad_size: '160x600'
           }
-        };
-        expect(spec.isBidRequestValid(validBid)).to.equal(false);
-      });
+        }
+        expect(spec.isBidRequestValid(validBid)).to.equal(false)
+      })
 
       it('invalid bid case: ad_size is not passed', function() {
         const validBid = {
@@ -125,36 +125,36 @@ describe('lifestreetBidAdapter', function() {
             slot: 'slot166704',
             adkey: '78c'
           }
-        };
-        expect(spec.isBidRequestValid(validBid)).to.equal(false);
-      });
-    });
+        }
+        expect(spec.isBidRequestValid(validBid)).to.equal(false)
+      })
+    })
 
     describe('buildRequests spec method', function () {
       it('method exists and is a function', function () {
-        expect(spec.buildRequests).to.exist.and.to.be.a('function');
-      });
+        expect(spec.buildRequests).to.exist.and.to.be.a('function')
+      })
 
       it('should not return request when no bids are present', function () {
-        const [request] = spec.buildRequests([]);
-        expect(request).to.be.undefined;
-      });
+        const [request] = spec.buildRequests([])
+        expect(request).to.be.undefined
+      })
 
       it('should return an url and request method ', function () {
-        const [request] = spec.buildRequests(bidRequests);
-        expect(request.method).to.equal('GET');
-        expect(request.url).to.be.a('string');
-      });
+        const [request] = spec.buildRequests(bidRequests)
+        expect(request.method).to.equal('GET')
+        expect(request.url).to.be.a('string')
+      })
 
       it('should return an url that contains all required fields', function () {
-        const [request] = spec.buildRequests(bidRequests);
-        expect(request.url).to.have.string('adkey');
-        expect(request.url).to.have.string('slot');
-        expect(request.url).to.have.string('ad_size');
-      });
+        const [request] = spec.buildRequests(bidRequests)
+        expect(request.url).to.have.string('adkey')
+        expect(request.url).to.have.string('slot')
+        expect(request.url).to.have.string('ad_size')
+      })
 
       it('should add GDPR consent information to the request', function () {
-        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
         const bidderRequest = {
           bidderCode: 'lifestreet',
           auctionId: '1d1a030790a875',
@@ -164,69 +164,69 @@ describe('lifestreetBidAdapter', function() {
             consentString: consentString,
             gdprApplies: true
           }
-        };
-        bidderRequest.bids = bidRequests;
+        }
+        bidderRequest.bids = bidRequests
 
-        const [request] = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.url).to.have.string('__gdpr=1');
-        expect(request.url).to.have.string(`__consent=${consentString}`);
-      });
+        const [request] = spec.buildRequests(bidRequests, bidderRequest)
+        expect(request.url).to.have.string('__gdpr=1')
+        expect(request.url).to.have.string(`__consent=${consentString}`)
+      })
 
       it('should add US privacy string to request', function() {
-        const consentString = '1YA-';
+        const consentString = '1YA-'
         const bidderRequest = {
           bidderCode: 'lifestreet',
           auctionId: '1d1a030790a875',
           bidderRequestId: '22edbae2744bf6',
           timeout: 3000,
           uspConsent: consentString
-        };
-        bidderRequest.bids = bidRequests;
+        }
+        bidderRequest.bids = bidRequests
 
-        const [request] = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.url).to.have.string(`__us_privacy=${consentString}`);
-      });
-    });
+        const [request] = spec.buildRequests(bidRequests, bidderRequest)
+        expect(request.url).to.have.string(`__us_privacy=${consentString}`)
+      })
+    })
 
     describe('server response', function() {
       it('should return valid proper values', function() {
-        const request = spec.buildRequests(bidRequests);
-        const response = spec.interpretResponse(bidResponses, request);
-        expect(response).to.be.an('array').with.length.above(0);
-        expect(response[0].cpm).to.equal(bidResponses.body.cpm);
-        expect(response[0].width).to.equal(bidResponses.body.width);
-        expect(response[0].height).to.equal(bidResponses.body.height);
-        expect(response[0].creativeId).to.equal(bidResponses.body.creativeId);
-        expect(response[0].currency).to.equal('USD');
-        expect(response[0].netRevenue).to.equal(true);
-        expect(response[0].ttl).to.equal(bidResponses.body.ttl);
-      });
+        const request = spec.buildRequests(bidRequests)
+        const response = spec.interpretResponse(bidResponses, request)
+        expect(response).to.be.an('array').with.length.above(0)
+        expect(response[0].cpm).to.equal(bidResponses.body.cpm)
+        expect(response[0].width).to.equal(bidResponses.body.width)
+        expect(response[0].height).to.equal(bidResponses.body.height)
+        expect(response[0].creativeId).to.equal(bidResponses.body.creativeId)
+        expect(response[0].currency).to.equal('USD')
+        expect(response[0].netRevenue).to.equal(true)
+        expect(response[0].ttl).to.equal(bidResponses.body.ttl)
+      })
 
       it('should return proper mediaType for BANNER', function() {
-        const request = spec.buildRequests(bidRequests);
-        const [response] = spec.interpretResponse(bidResponses, request);
-        expect(response.mediaType).to.equal(BANNER);
-      });
+        const request = spec.buildRequests(bidRequests)
+        const [response] = spec.interpretResponse(bidResponses, request)
+        expect(response.mediaType).to.equal(BANNER)
+      })
 
       it('should return proper mediaType for VIDEO', function() {
-        const request = spec.buildRequests(videoBidRequests);
-        const [response] = spec.interpretResponse(videoBidResponses, request);
-        expect(response.mediaType).to.equal(VIDEO);
-      });
+        const request = spec.buildRequests(videoBidRequests)
+        const [response] = spec.interpretResponse(videoBidResponses, request)
+        expect(response.mediaType).to.equal(VIDEO)
+      })
 
       it('should return a VAST XML for VIDEO', function() {
-        const request = spec.buildRequests(videoBidRequests);
-        const [response] = spec.interpretResponse(videoBidResponses, request);
-        expect(response.vastXml).to.be.a('string');
-        expect(response.vastXml).to.have.string('iframe');
-      });
+        const request = spec.buildRequests(videoBidRequests)
+        const [response] = spec.interpretResponse(videoBidResponses, request)
+        expect(response.vastXml).to.be.a('string')
+        expect(response.vastXml).to.have.string('iframe')
+      })
 
       it('should return an ad content for BANNER', function() {
-        const request = spec.buildRequests(bidRequests);
-        const [response] = spec.interpretResponse(bidResponses, request);
-        expect(response.ad).to.be.a('string');
-        expect(response.ad).to.have.string('iframe');
-      });
-    });
-  });
-});
+        const request = spec.buildRequests(bidRequests)
+        const [response] = spec.interpretResponse(bidResponses, request)
+        expect(response.ad).to.be.a('string')
+        expect(response.ad).to.have.string('iframe')
+      })
+    })
+  })
+})

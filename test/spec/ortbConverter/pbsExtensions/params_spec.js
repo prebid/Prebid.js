@@ -1,10 +1,10 @@
-import { setImpBidParams } from '../../../../libraries/pbsExtensions/processors/params.js';
+import { setImpBidParams } from '../../../../libraries/pbsExtensions/processors/params.js'
 
 describe('pbjs -> ortb bid params to imp[].ext.prebid.BIDDER', () => {
   function setParams(bidRequest = {}) {
-    const imp = {};
+    const imp = {}
     setImpBidParams(imp, bidRequest)
-    return imp;
+    return imp
   }
 
   it('sets params in ext.prebid.bidder.BIDDER', () => {
@@ -19,9 +19,9 @@ describe('pbjs -> ortb bid params to imp[].ext.prebid.BIDDER', () => {
         }
       }
     })
-  });
+  })
 
   it('has no effect if bidRequest has no params', () => {
-    expect(setParams({ bidder: 'mockBidder' })).to.eql({});
-  });
-});
+    expect(setParams({ bidder: 'mockBidder' })).to.eql({})
+  })
+})

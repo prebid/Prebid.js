@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-const BIDDER_CODE = 'docereeadmanager';
-const END_POINT = 'https://dai.doceree.com/drs/quest';
-const GVLID = 1063;
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { BANNER } from '../src/mediaTypes.js'
+const BIDDER_CODE = 'docereeadmanager'
+const END_POINT = 'https://dai.doceree.com/drs/quest'
+const GVLID = 1063
 
 export const spec = {
   code: BIDDER_CODE,
@@ -12,25 +12,25 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    const { placementId } = bid.params;
-    return !!placementId;
+    const { placementId } = bid.params
+    return !!placementId
   },
   isGdprConsentPresent: (bid) => {
-    const { gdpr, gdprconsent } = bid.params;
+    const { gdpr, gdprconsent } = bid.params
     if (gdpr === '1') {
-      return !!gdprconsent;
+      return !!gdprconsent
     }
-    return true;
+    return true
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const serverRequests = [];
-    const { data } = config.getConfig('docereeadmanager.user') || {};
+    const serverRequests = []
+    const { data } = config.getConfig('docereeadmanager.user') || {}
 
     validBidRequests.forEach(function (validBidRequest) {
-      const payload = getPayload(validBidRequest, data, bidderRequest);
+      const payload = getPayload(validBidRequest, data, bidderRequest)
 
       if (!payload) {
-        return;
+        return
       }
 
       serverRequests.push({
@@ -41,13 +41,13 @@ export const spec = {
           contentType: 'application/json',
           withCredentials: true,
         },
-      });
-    });
+      })
+    })
 
-    return serverRequests;
+    return serverRequests
   },
   interpretResponse: (serverResponse) => {
-    const responseJson = serverResponse ? serverResponse.body : {};
+    const responseJson = serverResponse ? serverResponse.body : {}
     const bidResponse = {
       ad: responseJson.ad,
       width: Number(responseJson.width),
@@ -66,39 +66,39 @@ export const spec = {
             ? responseJson.meta.advertiserDomains
             : [],
       },
-    };
+    }
 
-    return [bidResponse];
+    return [bidResponse]
   },
-};
+}
 
 export function getPageUrl() {
-  let url = '';
+  let url = ''
   try {
-    url = window.location.href;
+    url = window.location.href
   } catch (error) {
   }
-  return url;
+  return url
 }
 
 const handleConsent = (consentValue) => {
   try {
     if (consentValue === 0 || consentValue === '0') {
-      consentValue = '0';
+      consentValue = '0'
     }
   } catch (error) {
 
   }
-  return consentValue;
+  return consentValue
 }
 
 export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
-    return false;
+    return false
   }
 
-  const { bidId, params } = bid;
-  const { placementId, publisherUrl } = params;
+  const { bidId, params } = bid
+  const { placementId, publisherUrl } = params
   const {
     userid,
     email,
@@ -120,7 +120,7 @@ export function getPayload(bid, userData, bidderRequest) {
     platformUid,
     mobile,
     userconsent
-  } = userData;
+  } = userData
 
   const data = {
     userid: platformUid || userid || '',
@@ -145,11 +145,11 @@ export function getPayload(bid, userData, bidderRequest) {
     upref: handleConsent(userconsent) || '',
     mobile: mobile || '',
     pageurl: getPageUrl() || publisherUrl || ''
-  };
+  }
 
   try {
     if (bidderRequest && bidderRequest.gdprConsent) {
-      const { gdprApplies, consentString } = bidderRequest.gdprConsent;
+      const { gdprApplies, consentString } = bidderRequest.gdprConsent
       data['consent'] = {
         'gdpr': gdprApplies ? 1 : 0,
         'gdprstr': consentString || '',
@@ -161,7 +161,7 @@ export function getPayload(bid, userData, bidderRequest) {
 
   return {
     data,
-  };
+  }
 }
 
-registerBidder(spec);
+registerBidder(spec)

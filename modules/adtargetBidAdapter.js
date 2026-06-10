@@ -1,18 +1,18 @@
-import { _map, deepAccess, flatten, isArray, logError, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { chunk } from '../libraries/chunk/chunk.js';
+import { _map, deepAccess, flatten, isArray, logError, parseSizesInput } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { config } from '../src/config.js'
+import { chunk } from '../libraries/chunk/chunk.js'
 import {
   createTag, getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
-} from '../libraries/adtelligentUtils/adtelligentUtils.js';
+} from '../libraries/adtelligentUtils/adtelligentUtils.js'
 
-const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/';
-const BIDDER_CODE = 'adtarget';
-const DISPLAY = 'display';
-const syncsCache = {};
+const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/'
+const BIDDER_CODE = 'adtarget'
+const DISPLAY = 'display'
+const syncsCache = {}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,89 +25,89 @@ export const spec = {
 
   buildRequests: function (bidRequests, adapterRequest) {
     const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
-    const { tag, bids } = bidToTag(bidRequests, adapterRequest);
-    const bidChunks = chunk(bids, chunkSize);
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10)
+    const { tag, bids } = bidToTag(bidRequests, adapterRequest)
+    const bidChunks = chunk(bids, chunkSize)
     return _map(bidChunks, (bids) => {
       return {
         data: Object.assign({}, tag, { BidRequests: bids }),
         adapterRequest,
         method: 'POST',
         url: ENDPOINT
-      };
+      }
     })
   },
   interpretResponse: function (serverResponse, { adapterRequest }) {
-    serverResponse = serverResponse.body;
-    let bids = [];
+    serverResponse = serverResponse.body
+    let bids = []
 
     if (!isArray(serverResponse)) {
-      return parseResponse(serverResponse, adapterRequest);
+      return parseResponse(serverResponse, adapterRequest)
     }
 
     serverResponse.forEach(serverBidResponse => {
-      bids = flatten(bids, parseResponse(serverBidResponse, adapterRequest));
-    });
+      bids = flatten(bids, parseResponse(serverBidResponse, adapterRequest))
+    })
 
-    return bids;
+    return bids
   }
-};
+}
 
 function parseResponse(serverResponse, adapterRequest) {
-  const isInvalidValidResp = !serverResponse || !isArray(serverResponse.bids);
-  const bids = [];
+  const isInvalidValidResp = !serverResponse || !isArray(serverResponse.bids)
+  const bids = []
 
   if (isInvalidValidResp) {
-    const extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
-    const errorMessage = `in response for ${adapterRequest.bidderCode} adapter ${extMessage}`;
+    const extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : ''
+    const errorMessage = `in response for ${adapterRequest.bidderCode} adapter ${extMessage}`
 
-    logError(errorMessage);
+    logError(errorMessage)
 
-    return bids;
+    return bids
   }
 
   serverResponse.bids.forEach(serverBid => {
     const request = ((adapterRequest.bids) || []).find((bidRequest) => {
-      return bidRequest.bidId === serverBid.requestId;
-    });
+      return bidRequest.bidId === serverBid.requestId
+    })
 
     if (serverBid.cpm !== 0 && request !== undefined) {
-      const bid = createBid(serverBid, request);
+      const bid = createBid(serverBid, request)
 
-      bids.push(bid);
+      bids.push(bid)
     }
-  });
+  })
 
-  return bids;
+  return bids
 }
 
 function bidToTag(bidRequests, adapterRequest) {
-  const tag = createTag(bidRequests, adapterRequest);
+  const tag = createTag(bidRequests, adapterRequest)
 
-  const bids = [];
+  const bids = []
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
-    const bid = prepareBidRequests(bidRequests[i]);
-    bids.push(bid);
+    const bid = prepareBidRequests(bidRequests[i])
+    bids.push(bid)
   }
 
-  return { tag, bids };
+  return { tag, bids }
 }
 
 function prepareBidRequests(bidReq) {
-  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
-  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY
+  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes')
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
     'AdType': mediaType,
     'Sizes': parseSizesInput(sizes).join(',')
-  };
-  return bidReqParams;
+  }
+  return bidReqParams
 }
 
 function getMediaType(bidderRequest) {
-  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
+  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER
 }
 
 function createBid(bidResponse, bidRequest) {
@@ -125,17 +125,17 @@ function createBid(bidResponse, bidRequest) {
     meta: {
       advertiserDomains: bidResponse.adomain || []
     }
-  };
+  }
 
   if (mediaType === BANNER) {
     return Object.assign(bid, {
       ad: bidResponse.ad
-    });
+    })
   }
   Object.assign(bid, {
     vastUrl: bidResponse.vastUrl
-  });
-  return bid;
+  })
+  return bid
 }
 
-registerBidder(spec);
+registerBidder(spec)

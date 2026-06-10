@@ -1,10 +1,10 @@
 // import or require modules necessary for the test, e.g.:
-import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
-import { spec } from '../../../modules/pilotxBidAdapter.js';
+import { expect } from 'chai' // may prefer 'assert' in place of 'expect'
+import { spec } from '../../../modules/pilotxBidAdapter.js'
 
 describe('pilotxAdapter', function () {
   describe('isBidRequestValid', function () {
-    let banner;
+    let banner
     beforeEach(function () {
       banner = {
         bidder: 'pilotx',
@@ -15,24 +15,24 @@ describe('pilotxAdapter', function () {
         params: {
           placementId: '1'
         }
-      };
-    });
+      }
+    })
 
     it('should return false if sizes is empty', function () {
       banner.sizes = []
-      expect(spec.isBidRequestValid(banner)).to.equal(false);
-    });
+      expect(spec.isBidRequestValid(banner)).to.equal(false)
+    })
     it('should return true if all is valid/ is not empty', function () {
-      expect(spec.isBidRequestValid(banner)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(banner)).to.equal(true)
+    })
     it('should return false if there is no placement id found', function () {
       banner.params = {}
-      expect(spec.isBidRequestValid(banner)).to.equal(false);
-    });
+      expect(spec.isBidRequestValid(banner)).to.equal(false)
+    })
     it('should return false if sizes is empty', function () {
       banner.sizes = []
-      expect(spec.isBidRequestValid(banner)).to.equal(false);
-    });
+      expect(spec.isBidRequestValid(banner)).to.equal(false)
+    })
     it('should return false for no size and empty params', function () {
       const emptySizes = {
         bidder: 'pilotx',
@@ -43,8 +43,8 @@ describe('pilotxAdapter', function () {
           placementId: '1',
           sizes: []
         }
-      };
-      expect(spec.isBidRequestValid(emptySizes)).to.equal(false);
+      }
+      expect(spec.isBidRequestValid(emptySizes)).to.equal(false)
     })
     it('should return true for no size and valid size params', function () {
       const emptySizes = {
@@ -56,8 +56,8 @@ describe('pilotxAdapter', function () {
           placementId: '1',
           sizes: [[300, 250], [468, 60]]
         }
-      };
-      expect(spec.isBidRequestValid(emptySizes)).to.equal(true);
+      }
+      expect(spec.isBidRequestValid(emptySizes)).to.equal(true)
     })
     it('should return false for no size items', function () {
       const emptySizes = {
@@ -68,13 +68,13 @@ describe('pilotxAdapter', function () {
         params: {
           placementId: '1'
         }
-      };
-      expect(spec.isBidRequestValid(emptySizes)).to.equal(false);
+      }
+      expect(spec.isBidRequestValid(emptySizes)).to.equal(false)
     })
-  });
+  })
 
   describe('buildRequests', function () {
-    const mockRequest = { refererInfo: {} };
+    const mockRequest = { refererInfo: {} }
     const mockRequestGDPR = {
       refererInfo: {},
       gdprConsent: {
@@ -125,7 +125,7 @@ describe('pilotxAdapter', function () {
       sizes: [[640, 480]],
       src: 'client',
       transactionId: 'fec9f2ff-da13-4921-8437-8d679c2be7fe',
-    }];
+    }]
     const mockVideo2 = [{
       adUnitCode: 'video1',
       auctionId: '01618029-7ae9-4e98-a73a-1ed0c817f414',
@@ -157,41 +157,41 @@ describe('pilotxAdapter', function () {
       sizes: [640, 480],
       src: 'client',
       transactionId: 'fec9f2ff-da13-4921-8437-8d679c2be7fe',
-    }];
+    }]
     it('should return correct response', function () {
       const builtRequest = spec.buildRequests(mockVideo1, mockRequest)
       const builtRequestData = builtRequest.data
       const data = JSON.parse(builtRequestData)
       expect(data['379'].bidId).to.equal(mockVideo1[0].bidId)
-    });
+    })
     it('should return correct response for only array of size', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequest)
       const builtRequestData = builtRequest.data
       const data = JSON.parse(builtRequestData)
       expect(data['379'].sizes[0][0]).to.equal(mockVideo2[0].sizes[0])
       expect(data['379'].sizes[0][1]).to.equal(mockVideo2[0].sizes[1])
-    });
+    })
     it('should be valid and pass gdpr items correctly', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequestGDPR)
       const builtRequestData = builtRequest.data
       const data = JSON.parse(builtRequestData)
       expect(data['379'].gdprConsentString).to.equal(mockRequestGDPR.gdprConsent.consentString)
       expect(data['379'].gdprConsentRequired).to.equal(mockRequestGDPR.gdprConsent.gdprApplies)
-    });
+    })
     it('should be valid and pass gpp items correctly', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequestgGPP)
       const builtRequestData = builtRequest.data
       const data = JSON.parse(builtRequestData)
       expect(data['379'].gppString).to.equal(mockRequestgGPP.gppConsent.gppString)
       expect(data['379'].gppApplicableSections).to.deep.equal(mockRequestgGPP.gppConsent.applicableSections)
-    });
+    })
     it('should be valid and pass usp correctly', function () {
       const builtRequest = spec.buildRequests(mockVideo2, mockRequestgUSP)
       const builtRequestData = builtRequest.data
       const data = JSON.parse(builtRequestData)
       expect(data['379'].uspConsent).to.equal(mockRequestgUSP.uspConsent)
-    });
-  });
+    })
+  })
   describe('interpretResponse', function () {
     const bidRequest = {}
     const serverResponse = {
@@ -306,7 +306,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].mediaType).to.equal(serverResponse.mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse.mediaType)
       expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse.advertiserDomains)
-    });
+    })
     it('should be valid from bidRequest for banner', function () {
       const bidResponses = spec.interpretResponse(serverResponseBanner, bidRequest)
       expect(bidResponses[0].requestId).to.equal(serverResponse2.requestId)
@@ -321,7 +321,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].mediaType).to.equal(serverResponse2.mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse2.mediaType)
       expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse2.advertiserDomains)
-    });
+    })
     it('should be valid from bidRequest for banner and video', function () {
       const bidResponses = spec.interpretResponse(serverResponseVideoAndBanner, bidRequest)
       expect(bidResponses[0].requestId).to.equal(serverResponse3.bids[0].requestId)
@@ -377,18 +377,18 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[1].mediaType).to.equal(serverResponse4.bids[1].mediaType)
       expect(bidResponses[1].meta.mediaType).to.equal(serverResponse4.bids[1].mediaType)
       expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse4.bids[1].advertiserDomains)
-    });
-  });
+    })
+  })
   describe('setPlacementID', function () {
     const multiplePlacementIds = ['380', '381']
     it('should be valid with an array of placement ids passed', function () {
       const placementID = spec.setPlacementID(multiplePlacementIds)
       expect(placementID).to.equal('380#381')
-    });
+    })
     it('should be valid with single placement ID passed', function () {
       const placementID = spec.setPlacementID('381')
       expect(placementID).to.equal('381')
-    });
-  });
+    })
+  })
   // Add other `describe` or `it` blocks as necessary
-});
+})

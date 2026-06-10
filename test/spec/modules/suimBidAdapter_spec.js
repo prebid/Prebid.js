@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/suimBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/suimBidAdapter.js'
 
-const ENDPOINT = 'https://ad.suimad.com/bid';
-const SYNC_URL = 'https://ad.suimad.com/usersync';
+const ENDPOINT = 'https://ad.suimad.com/bid'
+const SYNC_URL = 'https://ad.suimad.com/usersync'
 
 describe('SuimAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -12,18 +12,18 @@ describe('SuimAdapter', function () {
         params: {
           ad_space_id: '123456',
         },
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function () {
       const invalidBid = {
         bidder: 'suim',
         params: {},
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -46,18 +46,18 @@ describe('SuimAdapter', function () {
         bidderRequestId: '20098c23bb863c',
         auctionId: '1c0ceb30-c9c9-4988-b9ff-2724cf91e7db',
       },
-    ];
+    ]
 
     const bidderRequest = {
       refererInfo: {
         topmostLocation: 'https://example.com',
       },
-    };
+    }
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.equal(ENDPOINT);
-      expect(requests[0].method).to.equal('POST');
+      const requests = spec.buildRequests(bidRequests, bidderRequest)
+      expect(requests[0].url).to.equal(ENDPOINT)
+      expect(requests[0].method).to.equal('POST')
       expect(requests[0].data).to.deep.equal({
         bids: [
           {
@@ -75,9 +75,9 @@ describe('SuimAdapter', function () {
             src_url: 'https://example.com',
           }
         ]
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
     const bidResponse = {
@@ -93,7 +93,7 @@ describe('SuimAdapter', function () {
       meta: {
         advertiserDomains: [],
       },
-    };
+    }
     const bidderRequests = {
       bids: [{
         bidId: '22a91eced2e93a',
@@ -112,8 +112,8 @@ describe('SuimAdapter', function () {
     }
 
     it('should interpret response', function () {
-      const result = spec.interpretResponse({ body: bidResponse }, bidderRequests);
-      expect(result).to.have.lengthOf(1);
+      const result = spec.interpretResponse({ body: bidResponse }, bidderRequests)
+      expect(result).to.have.lengthOf(1)
       expect(result[0]).to.deep.equal({
         requestId: bidResponse.requestId,
         cpm: 300,
@@ -127,28 +127,28 @@ describe('SuimAdapter', function () {
         meta: {
           advertiserDomains: [],
         },
-      });
-    });
+      })
+    })
 
     it('should return empty array when response is empty', function () {
-      const response = [];
-      const result = spec.interpretResponse({ body: response }, bidderRequests);
-      expect(result.length).to.equal(0);
-    });
-  });
+      const response = []
+      const result = spec.interpretResponse({ body: response }, bidderRequests)
+      expect(result.length).to.equal(0)
+    })
+  })
 
   describe('getUserSyncs', function () {
     it('should return user syncs', function () {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true, iframeEnabled: true },
         {}
-      );
+      )
       expect(syncs).to.deep.equal([
         {
           type: 'image',
           url: SYNC_URL,
         },
-      ]);
-    });
-  });
-});
+      ])
+    })
+  })
+})

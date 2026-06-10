@@ -1,13 +1,13 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { triggerPixel } from '../src/utils.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { triggerPixel } from '../src/utils.js'
+import { NATIVE, BANNER } from '../src/mediaTypes.js'
+import { config } from '../src/config.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
 
-const BIDDER_CODE = 'adrino';
-const REQUEST_METHOD = 'POST';
-const BIDDER_HOST = 'https://prd-prebid-bidder.adrino.io';
-const GVLID = 1072;
+const BIDDER_CODE = 'adrino'
+const REQUEST_METHOD = 'POST'
+const BIDDER_HOST = 'https://prd-prebid-bidder.adrino.io'
+const GVLID = 1072
 
 export const spec = {
   code: BIDDER_CODE,
@@ -15,7 +15,7 @@ export const spec = {
   supportedMediaTypes: [NATIVE, BANNER],
 
   getBidderConfig: function (property) {
-    return config.getConfig(`${BIDDER_CODE}.${property}`);
+    return config.getConfig(`${BIDDER_CODE}.${property}`)
   },
 
   isBidRequestValid: function (bid) {
@@ -29,9 +29,9 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
-    const bids = [];
+    const bids = []
     for (let i = 0; i < validBidRequests.length; i++) {
       const requestData = {
         adUnitCode: validBidRequests[i].adUnitCode,
@@ -43,11 +43,11 @@ export const spec = {
       }
 
       if (validBidRequests[i].sizes != null && validBidRequests[i].sizes.length > 0) {
-        requestData.bannerParams = { sizes: validBidRequests[i].sizes };
+        requestData.bannerParams = { sizes: validBidRequests[i].sizes }
       }
 
       if (validBidRequests[i].nativeParams != null) {
-        requestData.nativeParams = validBidRequests[i].nativeParams;
+        requestData.nativeParams = validBidRequests[i].nativeParams
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -57,11 +57,11 @@ export const spec = {
         }
       }
 
-      bids.push(requestData);
+      bids.push(requestData)
     }
 
-    const host = this.getBidderConfig('host') || BIDDER_HOST;
-    const bidRequests = [];
+    const host = this.getBidderConfig('host') || BIDDER_HOST
+    const bidRequests = []
     bidRequests.push({
       method: REQUEST_METHOD,
       url: host + '/bidder/bids/',
@@ -70,32 +70,32 @@ export const spec = {
         contentType: 'application/json',
         withCredentials: false,
       }
-    });
+    })
 
-    return bidRequests;
+    return bidRequests
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const response = serverResponse.body;
-    const output = [];
+    const response = serverResponse.body
+    const output = []
 
     if (response.bidResponses) {
       for (const bidResponse of response.bidResponses) {
         if (!bidResponse.noAd) {
-          output.push(bidResponse);
+          output.push(bidResponse)
         }
       }
     }
 
-    return output;
+    return output
   },
 
   onBidWon: function (bid) {
     if (bid['requestId']) {
-      const host = this.getBidderConfig('host') || BIDDER_HOST;
-      triggerPixel(host + '/bidder/won/' + bid['requestId']);
+      const host = this.getBidderConfig('host') || BIDDER_HOST
+      triggerPixel(host + '/bidder/won/' + bid['requestId'])
     }
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { spec } from 'modules/resetdigitalBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai'
+import { spec } from 'modules/resetdigitalBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const br = {
   body: {
@@ -211,14 +211,14 @@ describe('resetdigitalBidAdapter', function () {
           name: 'seller',
           domain: 'example.com'
         }]
-      };
+      }
 
       const bidRequest = {
         bidId: 'schain-test-id',
         params: {
           pubId: 'schain-pub'
         }
-      };
+      }
 
       const bidderRequest = {
         ortb2: {
@@ -229,13 +229,13 @@ describe('resetdigitalBidAdapter', function () {
           }
         },
         refererInfo: {}
-      };
+      }
 
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const payload = JSON.parse(request.data)
 
-      expect(payload.schain).to.deep.equal(schain);
-    });
+      expect(payload.schain).to.deep.equal(schain)
+    })
 
     it('should not include schain if not present in bidderRequest', function () {
       const bidRequest = {
@@ -243,7 +243,7 @@ describe('resetdigitalBidAdapter', function () {
         params: {
           pubId: 'no-schain-pub'
         }
-      };
+      }
 
       const bidderRequest = {
         ortb2: {
@@ -252,12 +252,12 @@ describe('resetdigitalBidAdapter', function () {
           }
         },
         refererInfo: {}
-      };
+      }
 
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data);
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const payload = JSON.parse(request.data)
 
-      expect(payload).to.not.have.property('schain');
-    });
-  });
+      expect(payload).to.not.have.property('schain')
+    })
+  })
 })

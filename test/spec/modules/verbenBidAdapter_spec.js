@@ -1,9 +1,9 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/verbenBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
-import { getUniqueIdentifierStr } from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/verbenBidAdapter.js'
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js'
+import { getUniqueIdentifierStr } from '../../../src/utils.js'
 
-const bidder = 'verben';
+const bidder = 'verben'
 
 describe('VerbenBidAdapter', function () {
   const userIdAsEids = [{
@@ -15,7 +15,7 @@ describe('VerbenBidAdapter', function () {
         third: '01***********'
       }
     }]
-  }];
+  }]
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
@@ -71,7 +71,7 @@ describe('VerbenBidAdapter', function () {
       },
       userIdAsEids
     }
-  ];
+  ]
 
   const invalidBid = {
     bidId: getUniqueIdentifierStr(),
@@ -104,38 +104,38 @@ describe('VerbenBidAdapter', function () {
       }
     },
     timeout: 500
-  };
+  }
 
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and key parameters present', function () {
-      expect(spec.isBidRequestValid(bids[0])).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bids[0])).to.be.true
+    })
     it('Should return false if at least one of parameters is not present', function () {
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
-  });
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false
+    })
+  })
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests(bids, bidderRequest);
+    let serverRequest = spec.buildRequests(bids, bidderRequest)
 
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist;
-      expect(serverRequest.method).to.exist;
-      expect(serverRequest.url).to.exist;
-      expect(serverRequest.data).to.exist;
-    });
+      expect(serverRequest).to.exist
+      expect(serverRequest.method).to.exist
+      expect(serverRequest.url).to.exist
+      expect(serverRequest.data).to.exist
+    })
 
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST');
-    });
+      expect(serverRequest.method).to.equal('POST')
+    })
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://east-node.verben.com/pbjs');
-    });
+      expect(serverRequest.url).to.equal('https://east-node.verben.com/pbjs')
+    })
 
     it('Returns general data valid', function () {
-      const data = serverRequest.data;
-      expect(data).to.be.an('object');
+      const data = serverRequest.data
+      expect(data).to.be.an('object')
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
         'device',
@@ -151,49 +151,49 @@ describe('VerbenBidAdapter', function () {
         'bcat',
         'badv',
         'bapp'
-      );
-      expect(data.deviceWidth).to.be.a('number');
-      expect(data.deviceHeight).to.be.a('number');
-      expect(data.language).to.be.a('string');
-      expect(data.secure).to.be.within(0, 1);
-      expect(data.host).to.be.a('string');
-      expect(data.page).to.be.a('string');
-      expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('object');
-      expect(data.ccpa).to.be.a('string');
-      expect(data.tmax).to.be.a('number');
-      expect(data.placements).to.have.lengthOf(3);
-    });
+      )
+      expect(data.deviceWidth).to.be.a('number')
+      expect(data.deviceHeight).to.be.a('number')
+      expect(data.language).to.be.a('string')
+      expect(data.secure).to.be.within(0, 1)
+      expect(data.host).to.be.a('string')
+      expect(data.page).to.be.a('string')
+      expect(data.coppa).to.be.a('number')
+      expect(data.gdpr).to.be.a('object')
+      expect(data.ccpa).to.be.a('string')
+      expect(data.tmax).to.be.a('number')
+      expect(data.placements).to.have.lengthOf(3)
+    })
 
     it('Returns valid placements', function () {
-      const { placements } = serverRequest.data;
+      const { placements } = serverRequest.data
       for (let i = 0, len = placements.length; i < len; i++) {
-        const placement = placements[i];
-        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
-        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
-        expect(placement.bidId).to.be.a('string');
-        expect(placement.schain).to.be.an('object');
-        expect(placement.bidfloor).to.exist.and.to.equal(0);
-        expect(placement.type).to.exist.and.to.equal('publisher');
-        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
+        const placement = placements[i]
+        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative'])
+        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE])
+        expect(placement.bidId).to.be.a('string')
+        expect(placement.schain).to.be.an('object')
+        expect(placement.bidfloor).to.exist.and.to.equal(0)
+        expect(placement.type).to.exist.and.to.equal('publisher')
+        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids)
 
         switch (placement.adFormat) {
           case BANNER:
-            expect(placement.sizes).to.be.an('array');
-            expect(placement.battr).to.deep.equal([1, 3]);
-            break;
+            expect(placement.sizes).to.be.an('array')
+            expect(placement.battr).to.deep.equal([1, 3])
+            break
           case VIDEO:
-            expect(placement.playerSize).to.be.an('array');
-            expect(placement.minduration).to.be.an('number');
-            expect(placement.maxduration).to.be.an('number');
-            expect(placement.battr).to.deep.equal([1, 3]);
-            break;
+            expect(placement.playerSize).to.be.an('array')
+            expect(placement.minduration).to.be.an('number')
+            expect(placement.maxduration).to.be.an('number')
+            expect(placement.battr).to.deep.equal([1, 3])
+            break
           case NATIVE:
-            expect(placement.native).to.be.an('object');
-            break;
+            expect(placement.native).to.be.an('object')
+            break
         }
       }
-    });
+    })
 
     it('Returns valid endpoints', function () {
       const bids = [
@@ -210,91 +210,91 @@ describe('VerbenBidAdapter', function () {
           },
           userIdAsEids
         }
-      ];
+      ]
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const serverRequest = spec.buildRequests(bids, bidderRequest)
 
-      const { placements } = serverRequest.data;
+      const { placements } = serverRequest.data
       for (let i = 0, len = placements.length; i < len; i++) {
-        const placement = placements[i];
-        expect(placement.endpointId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
-        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
-        expect(placement.bidId).to.be.a('string');
-        expect(placement.schain).to.be.an('object');
-        expect(placement.bidfloor).to.exist.and.to.equal(0);
-        expect(placement.type).to.exist.and.to.equal('network');
-        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
+        const placement = placements[i]
+        expect(placement.endpointId).to.be.oneOf(['testBanner', 'testVideo', 'testNative'])
+        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE])
+        expect(placement.bidId).to.be.a('string')
+        expect(placement.schain).to.be.an('object')
+        expect(placement.bidfloor).to.exist.and.to.equal(0)
+        expect(placement.type).to.exist.and.to.equal('network')
+        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids)
 
         switch (placement.adFormat) {
           case BANNER:
-            expect(placement.sizes).to.be.an('array');
-            break;
+            expect(placement.sizes).to.be.an('array')
+            break
           case VIDEO:
-            expect(placement.playerSize).to.be.an('array');
-            expect(placement.minduration).to.be.an('number');
-            expect(placement.maxduration).to.be.an('number');
-            break;
+            expect(placement.playerSize).to.be.an('array')
+            expect(placement.minduration).to.be.an('number')
+            expect(placement.maxduration).to.be.an('number')
+            break
           case NATIVE:
-            expect(placement.native).to.be.an('object');
-            break;
+            expect(placement.native).to.be.an('object')
+            break
         }
       }
-    });
+    })
 
     it('Returns data with gdprConsent and without uspConsent', function () {
-      delete bidderRequest.uspConsent;
-      serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
-      expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('object');
-      expect(data.gdpr).to.have.property('consentString');
-      expect(data.gdpr).to.not.have.property('vendorData');
-      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
-      expect(data.ccpa).to.not.exist;
-      delete bidderRequest.gdprConsent;
-    });
+      delete bidderRequest.uspConsent
+      serverRequest = spec.buildRequests(bids, bidderRequest)
+      const data = serverRequest.data
+      expect(data.gdpr).to.exist
+      expect(data.gdpr).to.be.a('object')
+      expect(data.gdpr).to.have.property('consentString')
+      expect(data.gdpr).to.not.have.property('vendorData')
+      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString)
+      expect(data.ccpa).to.not.exist
+      delete bidderRequest.gdprConsent
+    })
 
     it('Returns data with uspConsent and without gdprConsent', function () {
-      bidderRequest.uspConsent = '1---';
-      delete bidderRequest.gdprConsent;
-      serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
-      expect(data.ccpa).to.exist;
-      expect(data.ccpa).to.be.a('string');
-      expect(data.ccpa).to.equal(bidderRequest.uspConsent);
-      expect(data.gdpr).to.not.exist;
-    });
-  });
+      bidderRequest.uspConsent = '1---'
+      delete bidderRequest.gdprConsent
+      serverRequest = spec.buildRequests(bids, bidderRequest)
+      const data = serverRequest.data
+      expect(data.ccpa).to.exist
+      expect(data.ccpa).to.be.a('string')
+      expect(data.ccpa).to.equal(bidderRequest.uspConsent)
+      expect(data.gdpr).to.not.exist
+    })
+  })
 
   describe('gpp consent', function () {
     it('bidderRequest.gppConsent', () => {
       bidderRequest.gppConsent = {
         gppString: 'abc123',
         applicableSections: [8]
-      };
+      }
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('gpp');
-      expect(data).to.have.property('gpp_sid');
+      const serverRequest = spec.buildRequests(bids, bidderRequest)
+      const data = serverRequest.data
+      expect(data).to.be.an('object')
+      expect(data).to.have.property('gpp')
+      expect(data).to.have.property('gpp_sid')
 
-      delete bidderRequest.gppConsent;
+      delete bidderRequest.gppConsent
     })
 
     it('bidderRequest.ortb2.regs.gpp', () => {
-      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
-      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
-      bidderRequest.ortb2.regs.gpp = 'abc123';
-      bidderRequest.ortb2.regs.gpp_sid = [8];
+      bidderRequest.ortb2 = bidderRequest.ortb2 || {}
+      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {}
+      bidderRequest.ortb2.regs.gpp = 'abc123'
+      bidderRequest.ortb2.regs.gpp_sid = [8]
 
-      const serverRequest = spec.buildRequests(bids, bidderRequest);
-      const data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('gpp');
-      expect(data).to.have.property('gpp_sid');
+      const serverRequest = spec.buildRequests(bids, bidderRequest)
+      const data = serverRequest.data
+      expect(data).to.be.an('object')
+      expect(data).to.have.property('gpp')
+      expect(data).to.have.property('gpp_sid')
     })
-  });
+  })
 
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
@@ -316,23 +316,23 @@ describe('VerbenBidAdapter', function () {
             advertiserId: 1234
           }
         }]
-      };
-      const bannerResponses = spec.interpretResponse(banner);
-      expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      const dataItem = bannerResponses[0];
+      }
+      const bannerResponses = spec.interpretResponse(banner)
+      expect(bannerResponses).to.be.an('array').that.is.not.empty
+      const dataItem = bannerResponses[0]
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
-      expect(dataItem.requestId).to.equal(banner.body[0].requestId);
-      expect(dataItem.cpm).to.equal(banner.body[0].cpm);
-      expect(dataItem.width).to.equal(banner.body[0].width);
-      expect(dataItem.height).to.equal(banner.body[0].height);
-      expect(dataItem.ad).to.equal(banner.body[0].ad);
-      expect(dataItem.ttl).to.equal(banner.body[0].ttl);
-      expect(dataItem.creativeId).to.equal(banner.body[0].creativeId);
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal(banner.body[0].currency);
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
-    });
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta')
+      expect(dataItem.requestId).to.equal(banner.body[0].requestId)
+      expect(dataItem.cpm).to.equal(banner.body[0].cpm)
+      expect(dataItem.width).to.equal(banner.body[0].width)
+      expect(dataItem.height).to.equal(banner.body[0].height)
+      expect(dataItem.ad).to.equal(banner.body[0].ad)
+      expect(dataItem.ttl).to.equal(banner.body[0].ttl)
+      expect(dataItem.creativeId).to.equal(banner.body[0].creativeId)
+      expect(dataItem.netRevenue).to.be.true
+      expect(dataItem.currency).to.equal(banner.body[0].currency)
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains')
+    })
     it('Should interpret video response', function () {
       const video = {
         body: [{
@@ -350,22 +350,22 @@ describe('VerbenBidAdapter', function () {
             advertiserId: 1234
           }
         }]
-      };
-      const videoResponses = spec.interpretResponse(video);
-      expect(videoResponses).to.be.an('array').that.is.not.empty;
+      }
+      const videoResponses = spec.interpretResponse(video)
+      expect(videoResponses).to.be.an('array').that.is.not.empty
 
-      const dataItem = videoResponses[0];
+      const dataItem = videoResponses[0]
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
-      expect(dataItem.requestId).to.equal('23fhj33i987f');
-      expect(dataItem.cpm).to.equal(0.5);
-      expect(dataItem.vastUrl).to.equal('test.com');
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
-    });
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta')
+      expect(dataItem.requestId).to.equal('23fhj33i987f')
+      expect(dataItem.cpm).to.equal(0.5)
+      expect(dataItem.vastUrl).to.equal('test.com')
+      expect(dataItem.ttl).to.equal(120)
+      expect(dataItem.creativeId).to.equal('2')
+      expect(dataItem.netRevenue).to.be.true
+      expect(dataItem.currency).to.equal('USD')
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains')
+    })
     it('Should interpret native response', function () {
       const native = {
         body: [{
@@ -387,26 +387,26 @@ describe('VerbenBidAdapter', function () {
             advertiserId: 1234
           }
         }]
-      };
-      const nativeResponses = spec.interpretResponse(native);
-      expect(nativeResponses).to.be.an('array').that.is.not.empty;
+      }
+      const nativeResponses = spec.interpretResponse(native)
+      expect(nativeResponses).to.be.an('array').that.is.not.empty
 
-      const dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
+      const dataItem = nativeResponses[0]
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta')
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
-      expect(dataItem.requestId).to.equal('23fhj33i987f');
-      expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.native.clickUrl).to.equal('test.com');
-      expect(dataItem.native.title).to.equal('Test');
-      expect(dataItem.native.image).to.equal('test.com');
-      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty;
-      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com');
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
-    });
+      expect(dataItem.requestId).to.equal('23fhj33i987f')
+      expect(dataItem.cpm).to.equal(0.4)
+      expect(dataItem.native.clickUrl).to.equal('test.com')
+      expect(dataItem.native.title).to.equal('Test')
+      expect(dataItem.native.image).to.equal('test.com')
+      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty
+      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com')
+      expect(dataItem.ttl).to.equal(120)
+      expect(dataItem.creativeId).to.equal('2')
+      expect(dataItem.netRevenue).to.be.true
+      expect(dataItem.currency).to.equal('USD')
+      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains')
+    })
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
         body: [{
@@ -420,11 +420,11 @@ describe('VerbenBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      };
+      }
 
-      const serverResponses = spec.interpretResponse(invBanner);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
+      const serverResponses = spec.interpretResponse(invBanner)
+      expect(serverResponses).to.be.an('array').that.is.empty
+    })
     it('Should return an empty array if invalid video response is passed', function () {
       const invVideo = {
         body: [{
@@ -437,10 +437,10 @@ describe('VerbenBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      };
-      const serverResponses = spec.interpretResponse(invVideo);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
+      }
+      const serverResponses = spec.interpretResponse(invVideo)
+      expect(serverResponses).to.be.an('array').that.is.empty
+    })
     it('Should return an empty array if invalid native response is passed', function () {
       const invNative = {
         body: [{
@@ -454,10 +454,10 @@ describe('VerbenBidAdapter', function () {
           netRevenue: true,
           currency: 'USD',
         }]
-      };
-      const serverResponses = spec.interpretResponse(invNative);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
+      }
+      const serverResponses = spec.interpretResponse(invNative)
+      expect(serverResponses).to.be.an('array').that.is.empty
+    })
     it('Should return an empty array if invalid response is passed', function () {
       const invalid = {
         body: [{
@@ -467,9 +467,9 @@ describe('VerbenBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      };
-      const serverResponses = spec.interpretResponse(invalid);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-  });
-});
+      }
+      const serverResponses = spec.interpretResponse(invalid)
+      expect(serverResponses).to.be.an('array').that.is.empty
+    })
+  })
+})

@@ -1,15 +1,15 @@
-import { deepAccess, deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 
-const BIDDER_CODE = 'aso';
-const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
-const DEFAULT_SERVER_PATH = '/prebid/bidder';
-const DEFAULT_CURRENCY = 'USD';
-const VERSION = '$prebid.version$_2.0';
-const TTL = 300;
+const BIDDER_CODE = 'aso'
+const DEFAULT_SERVER_URL = 'https://srv.aso1.net'
+const DEFAULT_SERVER_PATH = '/prebid/bidder'
+const DEFAULT_CURRENCY = 'USD'
+const VERSION = '$prebid.version$_2.0'
+const TTL = 300
 
 export const spec = {
 
@@ -24,14 +24,14 @@ export const spec = {
   ],
 
   isBidRequestValid: bid => {
-    return !!bid.params && !!bid.params.zone;
+    return !!bid.params && !!bid.params.zone
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const requests = [];
+    const requests = []
 
     bidRequests.forEach(bid => {
-      const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
+      const data = converter.toORTB({ bidRequests: [bid], bidderRequest })
       requests.push({
         method: 'POST',
         url: getEndpoint(bid),
@@ -42,62 +42,62 @@ export const spec = {
         },
         bidderRequest
       })
-    });
-    return requests;
+    })
+    return requests
   },
 
   interpretResponse: (response, request) => {
     if (response.body) {
-      return converter.fromORTB({ response: response.body, request: request.data }).bids;
+      return converter.fromORTB({ response: response.body, request: request.data }).bids
     }
-    return [];
+    return []
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const urls = [];
+    const urls = []
 
     if (serverResponses && serverResponses.length !== 0) {
-      let query = '';
+      let query = ''
       if (gdprConsent) {
-        query = tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
-        query = tryAppendQueryString(query, 'consents_str', gdprConsent.consentString);
-        const consentsIds = getConsentsIds(gdprConsent);
+        query = tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0))
+        query = tryAppendQueryString(query, 'consents_str', gdprConsent.consentString)
+        const consentsIds = getConsentsIds(gdprConsent)
         if (consentsIds) {
-          query = tryAppendQueryString(query, 'consents', consentsIds);
+          query = tryAppendQueryString(query, 'consents', consentsIds)
         }
       }
 
       if (uspConsent) {
-        query = tryAppendQueryString(query, 'us_privacy', uspConsent);
+        query = tryAppendQueryString(query, 'us_privacy', uspConsent)
       }
 
       if (query.slice(-1) === '&') {
-        query = query.slice(0, -1);
+        query = query.slice(0, -1)
       }
 
       serverResponses.forEach(resp => {
-        const userSyncs = deepAccess(resp, 'body.ext.user_syncs');
+        const userSyncs = deepAccess(resp, 'body.ext.user_syncs')
         if (!userSyncs) {
-          return;
+          return
         }
 
         userSyncs.forEach(us => {
-          let url = us.url;
+          let url = us.url
           if (query) {
-            url = url + (url.indexOf('?') === -1 ? '?' : '&') + query;
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + query
           }
 
           urls.push({
             type: us.type,
             url: url
-          });
-        });
-      });
+          })
+        })
+      })
     }
 
-    return urls;
+    return urls
   }
-};
+}
 
 const converter = ortbConverter({
   context: {
@@ -106,33 +106,33 @@ const converter = ortbConverter({
   },
 
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context)
 
-    imp.tagid = bidRequest.adUnitCode;
-    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
-    return imp;
+    imp.tagid = bidRequest.adUnitCode
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1
+    return imp
   },
 
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    const request = buildRequest(imps, bidderRequest, context)
 
     if (bidderRequest.gdprConsent) {
-      const consentsIds = getConsentsIds(bidderRequest.gdprConsent);
+      const consentsIds = getConsentsIds(bidderRequest.gdprConsent)
       if (consentsIds) {
-        deepSetValue(request, 'user.ext.consents', consentsIds);
+        deepSetValue(request, 'user.ext.consents', consentsIds)
       }
     }
 
     if (!request.cur) {
-      request.cur = [DEFAULT_CURRENCY];
+      request.cur = [DEFAULT_CURRENCY]
     }
 
-    return request;
+    return request
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    context.mediaType = deepAccess(bid, 'ext.prebid.type');
-    return buildBidResponse(bid, context);
+    context.mediaType = deepAccess(bid, 'ext.prebid.type')
+    return buildBidResponse(bid, context)
   },
 
   overrides: {
@@ -142,24 +142,24 @@ const converter = ortbConverter({
       }
     }
   }
-});
+})
 
 function getEndpoint(bidRequest) {
-  const serverUrl = bidRequest.params.server || DEFAULT_SERVER_URL;
-  return serverUrl + DEFAULT_SERVER_PATH + '?zid=' + bidRequest.params.zone + '&pbjs=' + VERSION;
+  const serverUrl = bidRequest.params.server || DEFAULT_SERVER_URL
+  return serverUrl + DEFAULT_SERVER_PATH + '?zid=' + bidRequest.params.zone + '&pbjs=' + VERSION
 }
 
 function getConsentsIds(gdprConsent) {
-  const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
-  const consentsIds = [];
+  const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', [])
+  const consentsIds = []
 
   Object.keys(consents).forEach(key => {
     if (consents[key] === true) {
-      consentsIds.push(key);
+      consentsIds.push(key)
     }
-  });
+  })
 
-  return consentsIds.join(',');
+  return consentsIds.join(',')
 }
 
-registerBidder(spec);
+registerBidder(spec)

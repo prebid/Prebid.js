@@ -16,10 +16,10 @@
  * @property {?boolean} allowAccess
  */
 
-import { submodule } from '../src/hook.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js';
-import { getSlotTargeting } from '../src/utils/gptTargeting.js';
+import { submodule } from '../src/hook.js'
+import { ajaxBuilder } from '../src/ajax.js'
+import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js'
+import { getSlotTargeting } from '../src/utils/gptTargeting.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -29,15 +29,15 @@ import { getSlotTargeting } from '../src/utils/gptTargeting.js';
 const MessageType = {
   IMPRESSION_REQUEST: 'rsdk:impression:req',
   IMPRESSION_RESPONSE: 'rsdk:impression:res'
-};
+}
 /** @type {ModuleParams} */
 const DEFAULT_PARAMS = {
   initUrl: 'https://confirm.fiduciadlt.com/init',
   impressionUrl: 'https://confirm.fiduciadlt.com/pimp',
   allowAccess: false,
-};
+}
 /** @type {ModuleParams} */
-let _moduleParams = {};
+let _moduleParams = {}
 
 /**
  * Handle postMesssage from ad creative, track impression
@@ -45,31 +45,31 @@ let _moduleParams = {};
  * @param {Event} e
  */
 function handleAdMessage(e) {
-  let data = {};
-  let adUnitId = '';
-  let adDeliveryId = '';
+  let data = {}
+  let adUnitId = ''
+  let adDeliveryId = ''
 
   try {
-    data = JSON.parse(e.data);
+    data = JSON.parse(e.data)
   } catch (e) {
-    return;
+    return
   }
 
   if (data.type === MessageType.IMPRESSION_REQUEST) {
     if (isGptPubadsDefined()) {
       // 1. Find the last iframed window before window.top where the tracker was injected
       // (the tracker could be injected in nested iframes)
-      const adWin = getTopIFrameWin(e.source);
+      const adWin = getTopIFrameWin(e.source)
       if (adWin && adWin !== window.top) {
         // 2. Find the GPT slot for the iframed window
-        const adSlot = getSlotByWin(adWin);
+        const adSlot = getSlotByWin(adWin)
         // 3. Get AdUnit IDs for the selected slot
         if (adSlot) {
-          adUnitId = adSlot.getAdUnitPath();
-          adDeliveryId = getSlotTargeting(adSlot, 'RSDK_ADID');
+          adUnitId = adSlot.getAdUnitPath()
+          adDeliveryId = getSlotTargeting(adSlot, 'RSDK_ADID')
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
-            : `${timestamp()}-${generateUUID()}`;
+            : `${timestamp()}-${generateUUID()}`
         }
       }
     }
@@ -80,9 +80,9 @@ function handleAdMessage(e) {
       publisherMemberId: _moduleParams.publisherMemberId,
       adUnitId,
       adDeliveryId,
-    });
+    })
 
-    track.trackPost(_moduleParams.impressionUrl, args);
+    track.trackPost(_moduleParams.impressionUrl, args)
 
     // Send response back to the Advertiser tag
     const response = {
@@ -94,17 +94,17 @@ function handleAdMessage(e) {
         },
         data.args
       ),
-    };
+    }
 
     // If access is allowed - add ad unit id to response
     if (_moduleParams.allowAccess) {
       Object.assign(response.args, {
         adUnitId,
         adDeliveryId,
-      });
+      })
     }
 
-    e.source.postMessage(JSON.stringify(response), '*');
+    e.source.postMessage(JSON.stringify(response), '*')
   }
 }
 
@@ -119,19 +119,19 @@ function handleAdMessage(e) {
  * @param {Window} topWin top window
  */
 export function getTopIFrameWin(win, topWin) {
-  topWin = topWin || window;
+  topWin = topWin || window
 
   if (!win) {
-    return null;
+    return null
   }
 
   try {
     while (win.parent !== topWin) {
-      win = win.parent;
+      win = win.parent
     }
-    return win;
+    return win
   } catch (e) {
-    return null;
+    return null
   }
 }
 
@@ -140,7 +140,7 @@ export function getTopIFrameWin(win, topWin) {
  * @return {Object[]} slot GoogleTag slots
  */
 function getAllSlots() {
-  return isGptPubadsDefined() && window.googletag.pubads().getSlots();
+  return isGptPubadsDefined() && window.googletag.pubads().getSlots()
 }
 
 /**
@@ -149,16 +149,16 @@ function getAllSlots() {
  * @return {?Object}
  */
 function getSlotByCode(code) {
-  const slots = getAllSlots();
+  const slots = getAllSlots()
   if (!slots || !slots.length) {
-    return null;
+    return null
   }
   return (
     ((
       slots) || []).find(
       (s) => s.getSlotElementId() === code || s.getAdUnitPath() === code
     ) || null
-  );
+  )
 }
 
 /**
@@ -167,27 +167,27 @@ function getSlotByCode(code) {
  * @return {?Object}
  */
 export function getSlotByWin(win) {
-  const slots = getAllSlots();
+  const slots = getAllSlots()
 
   if (!slots || !slots.length) {
-    return null;
+    return null
   }
 
   return (
     ((slots) || []).find((s) => {
-      const slotElement = document.getElementById(s.getSlotElementId());
+      const slotElement = document.getElementById(s.getSlotElementId())
 
       if (slotElement) {
-        const slotIframe = slotElement.querySelector('iframe');
+        const slotIframe = slotElement.querySelector('iframe')
 
         if (slotIframe && slotIframe.contentWindow === win) {
-          return true;
+          return true
         }
       }
 
-      return false;
+      return false
     }) || null
-  );
+  )
 }
 
 /**
@@ -195,7 +195,7 @@ export function getSlotByWin(win) {
  * impressions messages from ad creative
  */
 function initListeners() {
-  window.addEventListener('message', handleAdMessage, false);
+  window.addEventListener('message', handleAdMessage, false)
 }
 
 /**
@@ -210,7 +210,7 @@ function trackInit(adUnits) {
       publisherDomain: window.location.hostname,
       publisherMemberId: _moduleParams.publisherMemberId,
     }
-  );
+  )
 }
 
 /**
@@ -221,7 +221,7 @@ function trackInit(adUnits) {
  */
 export const track = {
   trackPost(url, data) {
-    const ajax = ajaxBuilder();
+    const ajax = ajaxBuilder()
 
     ajax(
       url,
@@ -230,7 +230,7 @@ export const track = {
       {
         method: 'POST',
       }
-    );
+    )
   }
 }
 
@@ -240,33 +240,33 @@ export const track = {
  * @return {Object} key-value object with custom targetings
  */
 function getReconciliationData(adUnitsCodes) {
-  const dataToReturn = {};
-  const adUnitsToTrack = [];
+  const dataToReturn = {}
+  const adUnitsToTrack = []
 
   adUnitsCodes.forEach((adUnitCode) => {
     if (!adUnitCode) {
-      return;
+      return
     }
 
-    const adSlot = getSlotByCode(adUnitCode);
-    const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode;
-    const adDeliveryId = `${timestamp()}-${generateUUID()}`;
+    const adSlot = getSlotByCode(adUnitCode)
+    const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode
+    const adDeliveryId = `${timestamp()}-${generateUUID()}`
 
     dataToReturn[adUnitCode] = {
       RSDK_AUID: adUnitId,
       RSDK_ADID: adDeliveryId,
-    };
+    }
 
     adUnitsToTrack.push({
       adUnitId,
       adDeliveryId
-    });
-  }, {});
+    })
+  }, {})
 
   // Track init event
-  trackInit(adUnitsToTrack);
+  trackInit(adUnitsToTrack)
 
-  return dataToReturn;
+  return dataToReturn
 }
 
 /** @type {RtdSubmodule} */
@@ -283,17 +283,17 @@ export const reconciliationSubmodule = {
    */
   getTargetingData: getReconciliationData,
   init: init,
-};
-
-function init(moduleConfig) {
-  const params = moduleConfig.params;
-  if (params && params.publisherMemberId) {
-    _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);
-    initListeners();
-  } else {
-    logError('missing params for Reconciliation provider');
-  }
-  return true;
 }
 
-submodule('realTimeData', reconciliationSubmodule);
+function init(moduleConfig) {
+  const params = moduleConfig.params
+  if (params && params.publisherMemberId) {
+    _moduleParams = Object.assign({}, DEFAULT_PARAMS, params)
+    initListeners()
+  } else {
+    logError('missing params for Reconciliation provider')
+  }
+  return true
+}
+
+submodule('realTimeData', reconciliationSubmodule)

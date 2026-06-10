@@ -1,4 +1,4 @@
-import { _internal as videoCache } from 'src/videoCache.js';
+import { _internal as videoCache } from 'src/videoCache.js'
 
 /**
  * Function which can be called from unit tests to stub out the video cache.
@@ -10,25 +10,25 @@ import { _internal as videoCache } from 'src/videoCache.js';
  * @return {function} A function which returns the current stubs for the mocked functions.
  */
 export default function useVideoCacheStub(responses) {
-  let storeStub;
+  let storeStub
 
   beforeEach(function () {
-    storeStub = sinon.stub(videoCache, 'store');
+    storeStub = sinon.stub(videoCache, 'store')
 
     if (responses.store instanceof Error) {
-      storeStub.callsArgWith(1, responses.store);
+      storeStub.callsArgWith(1, responses.store)
     } else {
-      storeStub.callsArgWith(1, null, responses.store);
+      storeStub.callsArgWith(1, null, responses.store)
     }
-  });
+  })
 
   afterEach(function () {
-    videoCache.store.restore();
-  });
+    videoCache.store.restore()
+  })
 
   return function() {
     return {
       store: storeStub
-    };
+    }
   }
 }

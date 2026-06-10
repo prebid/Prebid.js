@@ -1,4 +1,4 @@
-import { PbPromise } from '../../src/utils/promise.js';
+import { PbPromise } from '../../src/utils/promise.js'
 
 /**
  * @typedef {function} CMPClient
@@ -10,9 +10,9 @@ import { PbPromise } from '../../src/utils/promise.js';
  * @property {() => void} close close the client; currently, this just stops listening for cross-frame messages.
  */
 
-export const MODE_MIXED = 0;
-export const MODE_RETURN = 1;
-export const MODE_CALLBACK = 2;
+export const MODE_MIXED = 0
+export const MODE_RETURN = 1
+export const MODE_CALLBACK = 2
 
 /**
  * Returns a client function that can interface with a CMP regardless of where it's located.
@@ -54,31 +54,31 @@ export function cmpClient(
   },
   win = window
 ) {
-  const cmpCallbacks = {};
-  const callName = `${apiName}Call`;
-  const cmpDataPkgName = `${apiName}Return`;
+  const cmpCallbacks = {}
+  const callName = `${apiName}Call`
+  const cmpDataPkgName = `${apiName}Return`
 
   function handleMessage(event) {
-    const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
+    const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data
     if (json?.[cmpDataPkgName]?.callId) {
-      const payload = json[cmpDataPkgName];
+      const payload = json[cmpDataPkgName]
 
       if (cmpCallbacks.hasOwnProperty(payload.callId)) {
-        cmpCallbacks[payload.callId](...callbackArgs.map(name => payload[name]));
+        cmpCallbacks[payload.callId](...callbackArgs.map(name => payload[name]))
       }
     }
   }
 
   function findCMP() {
-    let f = win;
-    let cmpFrame;
-    let isDirect = false;
+    let f = win
+    let cmpFrame
+    let isDirect = false
     while (f != null) {
       try {
         if (typeof f[apiName] === 'function') {
-          cmpFrame = f;
-          isDirect = true;
-          break;
+          cmpFrame = f
+          isDirect = true
+          break
         }
       } catch (e) {
       }
@@ -86,47 +86,47 @@ export function cmpClient(
       // need separate try/catch blocks due to the exception errors thrown when trying to check for a frame that doesn't exist in 3rd party env
       try {
         if (f.frames[`${apiName}Locator`]) {
-          cmpFrame = f;
-          break;
+          cmpFrame = f
+          break
         }
       } catch (e) {
       }
 
-      if (f === win.top) break;
-      f = f.parent;
+      if (f === win.top) break
+      f = f.parent
     }
 
     return [
       cmpFrame,
       isDirect
-    ];
+    ]
   }
 
-  const [cmpFrame, isDirect] = findCMP();
+  const [cmpFrame, isDirect] = findCMP()
 
   if (!cmpFrame) {
-    return;
+    return
   }
 
   function resolveParams(params) {
-    params = Object.assign({ version: apiVersion }, params);
+    params = Object.assign({ version: apiVersion }, params)
     return apiArgs.map(arg => [arg, params[arg]])
   }
 
   function wrapCallback(callback, resolve, reject, preamble) {
-    const haveCb = typeof callback === 'function';
+    const haveCb = typeof callback === 'function'
 
     return function (result, success) {
-      preamble && preamble();
+      preamble && preamble()
       if (mode !== MODE_RETURN) {
-        const resolver = success == null || success ? resolve : reject;
-        resolver(haveCb ? undefined : result);
+        const resolver = success == null || success ? resolve : reject
+        resolver(haveCb ? undefined : result)
       }
-      haveCb && callback.apply(this, arguments);
+      haveCb && callback.apply(this, arguments)
     }
   }
 
-  let client;
+  let client
 
   if (isDirect) {
     client = function invokeCMPDirect(params = {}) {
@@ -134,36 +134,36 @@ export function cmpClient(
         const ret = cmpFrame[apiName](...resolveParams({
           ...params,
           callback: (params.callback || mode === MODE_CALLBACK) ? wrapCallback(params.callback, resolve, reject) : undefined,
-        }).map(([_, val]) => val));
+        }).map(([_, val]) => val))
         if (mode === MODE_RETURN || (params.callback == null && mode === MODE_MIXED)) {
-          resolve(ret);
+          resolve(ret)
         }
-      });
-    };
+      })
+    }
   } else {
-    win.addEventListener('message', handleMessage, false);
+    win.addEventListener('message', handleMessage, false)
 
     client = function invokeCMPFrame(params, once = false) {
       return new PbPromise((resolve, reject) => {
         // call CMP via postMessage
-        const callId = Math.random().toString();
+        const callId = Math.random().toString()
         const msg = {
           [callName]: {
             ...Object.fromEntries(resolveParams(params).filter(([param]) => param !== 'callback')),
             callId: callId
           }
-        };
+        }
 
-        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId] }));
-        cmpFrame.postMessage(msg, '*');
-        if (mode === MODE_RETURN) resolve();
-      });
-    };
+        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId] }))
+        cmpFrame.postMessage(msg, '*')
+        if (mode === MODE_RETURN) resolve()
+      })
+    }
   }
   return Object.assign(client, {
     isDirect,
     close() {
-      !isDirect && win.removeEventListener('message', handleMessage);
+      !isDirect && win.removeEventListener('message', handleMessage)
     }
   })
 }

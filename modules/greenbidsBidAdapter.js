@@ -1,18 +1,18 @@
-import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation } from '../src/utils.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { getHLen } from '../libraries/navigatorData/navigatorData.js';
-import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
-import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from '../libraries/pageInfosUtils/pageInfosUtils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation } from '../src/utils.js'
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { getHLen } from '../libraries/navigatorData/navigatorData.js'
+import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js'
+import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from '../libraries/pageInfosUtils/pageInfosUtils.js'
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'greenbids';
-export const ENDPOINT_URL = 'https://hb.greenbids.ai';
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const BIDDER_CODE = 'greenbids'
+export const ENDPOINT_URL = 'https://hb.greenbids.ai'
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,11 +25,11 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (typeof bid.params !== 'undefined' && parseInt(getValue(bid.params, 'placementId')) > 0) {
-      logInfo('Greenbids bidder adapter valid bid request');
-      return true;
+      logInfo('Greenbids bidder adapter valid bid request')
+      return true
     } else {
-      logError('Greenbids bidder adapter requires placementId to be defined and a positive number');
-      return false;
+      logError('Greenbids bidder adapter requires placementId to be defined and a positive number')
+      return false
     }
   },
   /**
@@ -41,19 +41,19 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(bids => {
-      const reqObj = {};
-      const placementId = getValue(bids.params, 'placementId');
-      const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
-      reqObj.sizes = getSizes(bids);
-      reqObj.bidId = getBidIdParameter('bidId', bids);
-      reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bids);
-      reqObj.placementId = parseInt(placementId, 10);
-      reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
-      reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
-      if (gpid) { reqObj.gpid = gpid; }
-      return reqObj;
-    });
-    const topWindow = window.top;
+      const reqObj = {}
+      const placementId = getValue(bids.params, 'placementId')
+      const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid')
+      reqObj.sizes = getSizes(bids)
+      reqObj.bidId = getBidIdParameter('bidId', bids)
+      reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bids)
+      reqObj.placementId = parseInt(placementId, 10)
+      reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids)
+      reqObj.transactionId = bids.ortb2Imp?.ext?.tid || ''
+      if (gpid) { reqObj.gpid = gpid }
+      return reqObj
+    })
+    const topWindow = window.top
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -72,35 +72,35 @@ export const spec = {
       viewportHeight: getWinDimensions().visualViewport.height,
       viewportWidth: getWinDimensions().visualViewport.width,
       prebid_version: '$prebid.version$',
-    };
+    }
 
-    const firstBidRequest = validBidRequests[0];
+    const firstBidRequest = validBidRequests[0]
 
-    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+    const schain = firstBidRequest?.ortb2?.source?.ext?.schain
     if (schain) {
-      payload.schain = schain;
+      payload.schain = schain
     }
 
-    hydratePayloadWithGppConsentData(payload, bidderRequest.gppConsent);
-    hydratePayloadWithGdprConsentData(payload, bidderRequest.gdprConsent);
-    hydratePayloadWithUspConsentData(payload, bidderRequest.uspConsent);
+    hydratePayloadWithGppConsentData(payload, bidderRequest.gppConsent)
+    hydratePayloadWithGdprConsentData(payload, bidderRequest.gdprConsent)
+    hydratePayloadWithUspConsentData(payload, bidderRequest.uspConsent)
 
-    const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua')
     if (userAgentClientHints) {
-      payload.userAgentClientHints = userAgentClientHints;
+      payload.userAgentClientHints = userAgentClientHints
     }
 
-    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa')
     if (dsa) {
-      payload.dsa = dsa;
+      payload.dsa = dsa
     }
 
-    const payloadString = JSON.stringify(payload);
+    const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString,
-    };
+    }
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -109,9 +109,9 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server response.
    */
   interpretResponse: function (serverResponse) {
-    serverResponse = serverResponse.body;
+    serverResponse = serverResponse.body
     if (!serverResponse.responses) {
-      return [];
+      return []
     }
     return serverResponse.responses.map((bid) => {
       const bidResponse = {
@@ -129,19 +129,19 @@ export const spec = {
         requestId: bid.bidId,
         creativeId: bid.creativeId,
         placementId: bid.placementId,
-      };
+      }
       if (bid.dealId) {
         bidResponse.dealId = bid.dealId
       }
       if (bid?.ext?.dsa) {
-        bidResponse.meta.dsa = bid.ext.dsa;
+        bidResponse.meta.dsa = bid.ext.dsa
       }
-      return bidResponse;
-    });
+      return bidResponse
+    })
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
 
 /**
  * Converts the sizes from the bid object to the required format.
@@ -151,7 +151,7 @@ registerBidder(spec);
  * @returns {Array} - The parsed sizes in the required format.
  */
 function getSizes(bid) {
-  return parseSizesInput(bid.sizes);
+  return parseSizesInput(bid.sizes)
 }
 
 // Privacy handling
@@ -165,15 +165,15 @@ function getSizes(bid) {
  * @param {number[]} gppData.applicableSections - An array of applicable section IDs.
  */
 function hydratePayloadWithGppConsentData(payload, gppData) {
-  if (!gppData) { return; }
-  const isValidConsentString = typeof gppData.gppString === 'string';
+  if (!gppData) { return }
+  const isValidConsentString = typeof gppData.gppString === 'string'
   const validateApplicableSections =
       Array.isArray(gppData.applicableSections) &&
       gppData.applicableSections.every((section) => typeof (section) === 'number')
   payload.gpp = {
     consentString: isValidConsentString ? gppData.gppString : '',
     applicableSectionIds: validateApplicableSections ? gppData.applicableSections : [],
-  };
+  }
 }
 
 /**
@@ -187,17 +187,17 @@ function hydratePayloadWithGppConsentData(payload, gppData) {
  * @param {Object} gdprData.vendorData - Additional vendor data related to GDPR.
  */
 function hydratePayloadWithGdprConsentData(payload, gdprData) {
-  if (!gdprData) { return; }
-  const isCmp = typeof gdprData.gdprApplies === 'boolean';
-  const isConsentString = typeof gdprData.consentString === 'string';
+  if (!gdprData) { return }
+  const isCmp = typeof gdprData.gdprApplies === 'boolean'
+  const isConsentString = typeof gdprData.consentString === 'string'
   const status = isCmp
     ? findGdprStatus(gdprData.gdprApplies, gdprData.vendorData)
-    : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
+    : gdprStatus.CMP_NOT_FOUND_OR_ERROR
   payload.gdpr_iab = {
     consent: isConsentString ? gdprData.consentString : '',
     status: status,
     apiVersion: gdprData.apiVersion
-  };
+  }
 }
 
 /**
@@ -207,8 +207,8 @@ function hydratePayloadWithGdprConsentData(payload, gdprData) {
  * @param {string} uspConsentData - The USP consent string to be added to the payload.
  */
 function hydratePayloadWithUspConsentData(payload, uspConsentData) {
-  if (!uspConsentData) { return; }
-  payload.us_privacy = uspConsentData;
+  if (!uspConsentData) { return }
+  payload.us_privacy = uspConsentData
 }
 
 const gdprStatus = {
@@ -216,7 +216,7 @@ const gdprStatus = {
   GDPR_APPLIES_GLOBAL: 11,
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND_OR_ERROR: 22
-};
+}
 
 /**
  * Determines the GDPR status based on whether GDPR applies and the provided GDPR data.
@@ -227,13 +227,13 @@ const gdprStatus = {
  * @returns {string} The GDPR status.
  */
 function findGdprStatus(gdprApplies, gdprData) {
-  let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
+  let status = gdprStatus.GDPR_APPLIES_PUBLISHER
   if (gdprApplies) {
     if (gdprData && !gdprData.isServiceSpecific) {
-      status = gdprStatus.GDPR_APPLIES_GLOBAL;
+      status = gdprStatus.GDPR_APPLIES_GLOBAL
     }
   } else {
-    status = gdprStatus.GDPR_DOESNT_APPLY;
+    status = gdprStatus.GDPR_DOESNT_APPLY
   }
-  return status;
+  return status
 }

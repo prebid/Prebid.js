@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/adtargetBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec } from 'modules/adtargetBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { config } from 'src/config.js'
 
 const DISPLAY_REQUEST = {
   'bidder': 'adtarget',
@@ -14,7 +14,7 @@ const DISPLAY_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-};
+}
 
 const VIDEO_REQUEST = {
   'bidder': 'adtarget',
@@ -30,7 +30,7 @@ const VIDEO_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d'
-};
+}
 
 const SERVER_VIDEO_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
@@ -47,7 +47,7 @@ const SERVER_VIDEO_RESPONSE = {
     'cpm': 0.9,
     'adomain': ['a.com']
   }]
-};
+}
 const SERVER_DISPLAY_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
@@ -61,7 +61,7 @@ const SERVER_DISPLAY_RESPONSE = {
     'cpm': 0.9
   }],
   'cookieURLs': ['link1', 'link2']
-};
+}
 const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
@@ -76,16 +76,16 @@ const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
   }],
   'cookieURLs': ['link3', 'link4'],
   'cookieURLSTypes': ['image', 'iframe']
-};
+}
 const videoBidderRequest = {
   bidderCode: 'bidderCode',
   bids: [{ mediaTypes: { video: {} }, bidId: '2e41f65424c87c' }]
-};
+}
 
 const displayBidderRequest = {
   bidderCode: 'bidderCode',
   bids: [{ bidId: '2e41f65424c87c' }]
-};
+}
 
 const displayBidderRequestWithConsents = {
   bidderCode: 'bidderCode',
@@ -104,7 +104,7 @@ const displayBidderRequestWithConsents = {
       }
     }
   }
-};
+}
 
 const videoEqResponse = [{
   vastUrl: 'https://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
@@ -120,7 +120,7 @@ const videoEqResponse = [{
   meta: {
     advertiserDomains: ['a.com']
   }
-}];
+}]
 
 const displayEqResponse = [{
   requestId: '2e41f65424c87c',
@@ -136,32 +136,32 @@ const displayEqResponse = [{
   meta: {
     advertiserDomains: []
   }
-}];
+}]
 
 describe('adtargetBidAdapter', () => {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('user syncs', () => {
     describe('as image', () => {
       it('should be returned if pixel enabled', () => {
-        const syncs = spec.getUserSyncs({ pixelEnabled: true }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
+        const syncs = spec.getUserSyncs({ pixelEnabled: true }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }])
 
-        expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]]);
-        expect(syncs.map(s => s.type)).to.deep.equal(['image']);
+        expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]])
+        expect(syncs.map(s => s.type)).to.deep.equal(['image'])
       })
     })
 
     describe('as iframe', () => {
       it('should be returned if iframe enabled', () => {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }])
 
-        expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
-        expect(syncs.map(s => s.type)).to.deep.equal(['iframe']);
+        expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]])
+        expect(syncs.map(s => s.type)).to.deep.equal(['iframe'])
       })
     })
 
@@ -170,92 +170,92 @@ describe('adtargetBidAdapter', () => {
         const syncs = spec.getUserSyncs({
           iframeEnabled: true,
           pixelEnabled: true
-        }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
+        }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }])
 
-        expect(syncs).to.deep.equal([]);
+        expect(syncs).to.deep.equal([])
       })
 
       it('should not be returned if pixel not set', () => {
-        const syncs = spec.getUserSyncs({}, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
+        const syncs = spec.getUserSyncs({}, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }])
 
-        expect(syncs).to.be.empty;
-      });
-    });
+        expect(syncs).to.be.empty
+      })
+    })
     describe('user syncs with both types', () => {
       it('should be returned if pixel and iframe enabled', () => {
-        const mockedServerResponse = Object.assign({}, SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS, { 'cookieURLs': ['link5', 'link6'] });
+        const mockedServerResponse = Object.assign({}, SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS, { 'cookieURLs': ['link5', 'link6'] })
         const syncs = spec.getUserSyncs({
           iframeEnabled: true,
           pixelEnabled: true
-        }, [{ body: mockedServerResponse }]);
+        }, [{ body: mockedServerResponse }])
 
-        expect(syncs.map(s => s.url)).to.deep.equal(mockedServerResponse.cookieURLs);
-        expect(syncs.map(s => s.type)).to.deep.equal(mockedServerResponse.cookieURLSTypes);
-      });
-    });
-  });
+        expect(syncs.map(s => s.url)).to.deep.equal(mockedServerResponse.cookieURLs)
+        expect(syncs.map(s => s.type)).to.deep.equal(mockedServerResponse.cookieURLSTypes)
+      })
+    })
+  })
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', () => {
-      const bid = Object.assign({}, VIDEO_REQUEST);
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
+      const bid = Object.assign({}, VIDEO_REQUEST)
+      delete bid.params
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', () => {
-    const videoBidRequests = [VIDEO_REQUEST];
-    const displayBidRequests = [DISPLAY_REQUEST];
-    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
-    const displayRequest = spec.buildRequests(displayBidRequests, {});
-    const videoRequest = spec.buildRequests(videoBidRequests, {});
-    const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
+    const videoBidRequests = [VIDEO_REQUEST]
+    const displayBidRequests = [DISPLAY_REQUEST]
+    const videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST]
+    const displayRequest = spec.buildRequests(displayBidRequests, {})
+    const videoRequest = spec.buildRequests(videoBidRequests, {})
+    const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {})
 
     it('building requests as arrays', () => {
-      expect(videoRequest).to.be.a('array');
-      expect(displayRequest).to.be.a('array');
-      expect(videoAndDisplayRequests).to.be.a('array');
+      expect(videoRequest).to.be.a('array')
+      expect(displayRequest).to.be.a('array')
+      expect(videoAndDisplayRequests).to.be.a('array')
     })
 
     it('sending as POST', () => {
       const postActionMethod = 'POST'
-      const comparator = br => br.method === postActionMethod;
-      expect(videoRequest.every(comparator)).to.be.true;
-      expect(displayRequest.every(comparator)).to.be.true;
-      expect(videoAndDisplayRequests.every(comparator)).to.be.true;
-    });
+      const comparator = br => br.method === postActionMethod
+      expect(videoRequest.every(comparator)).to.be.true
+      expect(displayRequest.every(comparator)).to.be.true
+      expect(videoAndDisplayRequests.every(comparator)).to.be.true
+    })
 
     it('sends correct video bid parameters', () => {
-      const data = videoRequest[0].data;
+      const data = videoRequest[0].data
 
       const eq = {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
         Sizes: '480x360,640x480'
-      };
-      expect(data.BidRequests[0]).to.deep.equal(eq);
-    });
+      }
+      expect(data.BidRequests[0]).to.deep.equal(eq)
+    })
 
     it('sends correct display bid parameters', () => {
-      const data = displayRequest[0].data;
+      const data = displayRequest[0].data
 
       const eq = {
         CallbackId: '84ab500420319d',
         AdType: 'display',
         Aid: 12345,
         Sizes: '300x250'
-      };
+      }
 
-      expect(data.BidRequests[0]).to.deep.equal(eq);
-    });
+      expect(data.BidRequests[0]).to.deep.equal(eq)
+    })
 
     it('sends correct video and display bid parameters', () => {
-      const bidRequests = videoAndDisplayRequests[0].data;
+      const bidRequests = videoAndDisplayRequests[0].data
       const expectedBidReqs = [{
         CallbackId: '84ab500420319d',
         AdType: 'display',
@@ -268,86 +268,86 @@ describe('adtargetBidAdapter', () => {
         Sizes: '480x360,640x480'
       }]
 
-      expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
-    });
+      expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs)
+    })
 
     describe('publisher environment', () => {
-      const sandbox = sinon.createSandbox();
+      const sandbox = sinon.createSandbox()
       sandbox.stub(config, 'getConfig').callsFake((key) => {
         const config = {
           'coppa': true
-        };
-        return config[key];
-      });
-      const bidRequestWithPubSettingsData = spec.buildRequests([DISPLAY_REQUEST], displayBidderRequestWithConsents)[0].data;
-      sandbox.restore();
+        }
+        return config[key]
+      })
+      const bidRequestWithPubSettingsData = spec.buildRequests([DISPLAY_REQUEST], displayBidderRequestWithConsents)[0].data
+      sandbox.restore()
       it('sets GDPR', () => {
-        expect(bidRequestWithPubSettingsData.GDPR).to.be.equal(1);
-        expect(bidRequestWithPubSettingsData.GDPRConsent).to.be.equal(displayBidderRequestWithConsents.gdprConsent.consentString);
-      });
+        expect(bidRequestWithPubSettingsData.GDPR).to.be.equal(1)
+        expect(bidRequestWithPubSettingsData.GDPRConsent).to.be.equal(displayBidderRequestWithConsents.gdprConsent.consentString)
+      })
       it('sets USP', () => {
-        expect(bidRequestWithPubSettingsData.USP).to.be.equal(displayBidderRequestWithConsents.uspConsent);
+        expect(bidRequestWithPubSettingsData.USP).to.be.equal(displayBidderRequestWithConsents.uspConsent)
       })
       it('sets Coppa', () => {
-        expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1);
+        expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1)
       })
       it('sets Schain', () => {
-        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain);
+        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain)
       })
       it('sets UserId\'s', () => {
-        expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);
+        expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId)
       })
     })
-  });
+  })
 
   describe('interpretResponse', () => {
-    let serverResponse;
-    let adapterRequest;
-    let eqResponse;
+    let serverResponse
+    let adapterRequest
+    let eqResponse
 
     afterEach(() => {
-      serverResponse = null;
-      adapterRequest = null;
-      eqResponse = null;
-    });
+      serverResponse = null
+      adapterRequest = null
+      eqResponse = null
+    })
 
     it('should get correct video bid response', () => {
-      serverResponse = SERVER_VIDEO_RESPONSE;
-      adapterRequest = videoBidderRequest;
-      eqResponse = videoEqResponse;
+      serverResponse = SERVER_VIDEO_RESPONSE
+      adapterRequest = videoBidderRequest
+      eqResponse = videoEqResponse
 
-      bidServerResponseCheck();
-    });
+      bidServerResponseCheck()
+    })
 
     it('should get correct display bid response', () => {
-      serverResponse = SERVER_DISPLAY_RESPONSE;
-      adapterRequest = displayBidderRequest;
-      eqResponse = displayEqResponse;
+      serverResponse = SERVER_DISPLAY_RESPONSE
+      adapterRequest = displayBidderRequest
+      eqResponse = displayEqResponse
 
-      bidServerResponseCheck();
-    });
+      bidServerResponseCheck()
+    })
 
     function bidServerResponseCheck() {
-      const result = spec.interpretResponse({ body: serverResponse }, { adapterRequest });
+      const result = spec.interpretResponse({ body: serverResponse }, { adapterRequest })
 
-      expect(result).to.deep.equal(eqResponse);
+      expect(result).to.deep.equal(eqResponse)
     }
 
     function nobidServerResponseCheck() {
-      const noBidServerResponse = { bids: [] };
-      const noBidResult = spec.interpretResponse({ body: noBidServerResponse }, { adapterRequest });
+      const noBidServerResponse = { bids: [] }
+      const noBidResult = spec.interpretResponse({ body: noBidServerResponse }, { adapterRequest })
 
-      expect(noBidResult.length).to.equal(0);
+      expect(noBidResult.length).to.equal(0)
     }
 
     it('handles video nobid responses', () => {
-      adapterRequest = videoBidderRequest;
-      nobidServerResponseCheck();
-    });
+      adapterRequest = videoBidderRequest
+      nobidServerResponseCheck()
+    })
 
     it('handles display nobid responses', () => {
-      adapterRequest = displayBidderRequest;
-      nobidServerResponseCheck();
-    });
-  });
-});
+      adapterRequest = displayBidderRequest
+      nobidServerResponseCheck()
+    })
+  })
+})

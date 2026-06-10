@@ -1,21 +1,21 @@
-import { expect } from 'chai';
-import { spec } from 'modules/codefuelBidAdapter.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { server } from 'test/mocks/xhr';
+import { expect } from 'chai'
+import { spec } from 'modules/codefuelBidAdapter.js'
+import { config } from 'src/config.js'
+import * as utils from 'src/utils.js'
+import { server } from 'test/mocks/xhr'
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
-const DEFAULT_USER_AGENT = window.navigator.userAgent;
-const setUADefault = () => { window.navigator.__defineGetter__('userAgent', function () { return DEFAULT_USER_AGENT }) };
-const setUAMock = () => { window.navigator.__defineGetter__('userAgent', function () { return USER_AGENT }) };
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36'
+const DEFAULT_USER_AGENT = window.navigator.userAgent
+const setUADefault = () => { window.navigator.__defineGetter__('userAgent', function () { return DEFAULT_USER_AGENT }) }
+const setUAMock = () => { window.navigator.__defineGetter__('userAgent', function () { return USER_AGENT }) }
 
 describe('Codefuel Adapter', function () {
-  let sandbox;
+  let sandbox
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
-  });
+    sandbox = sinon.createSandbox()
+  })
   afterEach(() => {
-    sandbox.restore();
+    sandbox.restore()
   })
   describe('Bid request and response', function () {
     const commonBidRequest = {
@@ -208,14 +208,14 @@ describe('Codefuel Adapter', function () {
         const res = spec.buildRequests([bidRequest], bidderRequest)
         const resData = res.data
         expect(resData.tmax).to.equal(500)
-      });
+      })
     })
 
     describe('interpretResponse', function () {
       it('should return empty array if no valid bids', function () {
         const res = spec.interpretResponse({}, [])
         expect(res).to.be.an('array').that.is.empty
-      });
+      })
 
       it('should interpret display response', function () {
         const serverResponse = {
@@ -275,12 +275,12 @@ describe('Codefuel Adapter', function () {
 
         const res = spec.interpretResponse(serverResponse, request)
         expect(res).to.deep.equal(expectedRes)
-      });
+      })
     })
   })
 
   describe('getUserSyncs', function () {
-    const usersyncUrl = 'https://usersync-url.com';
+    const usersyncUrl = 'https://usersync-url.com'
     beforeEach(() => {
       config.setConfig({
         codefuel: {
@@ -313,14 +313,14 @@ describe('Codefuel Adapter', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.to.be.an('array').that.is.empty
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.be.an('array').that.is.empty
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.be.an('array').that.is.empty
-    });
+    })
 
     it('should not pass US consent', function() {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.be.an('array').that.is.empty
-    });
+    })
 
     it('should pass GDPR and US consent', function() {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.be.an('array').that.is.empty
-    });
+    })
   })
 })

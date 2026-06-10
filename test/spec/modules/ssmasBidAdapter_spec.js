@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec, SSMAS_CODE, SSMAS_ENDPOINT, SSMAS_REQUEST_METHOD } from 'modules/ssmasBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as utils from 'src/utils.js';
+import { expect } from 'chai'
+import { spec, SSMAS_CODE, SSMAS_ENDPOINT, SSMAS_REQUEST_METHOD } from 'modules/ssmasBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import * as utils from 'src/utils.js'
 
 describe('ssmasBidAdapter', function () {
   const bid = {
@@ -14,7 +14,7 @@ describe('ssmasBidAdapter', function () {
     params: {
       placementId: '1'
     }
-  };
+  }
 
   const bidderRequest = {
     'bidderCode': SSMAS_CODE,
@@ -44,49 +44,49 @@ describe('ssmasBidAdapter', function () {
       }
     },
     'start': 1684799653737
-  };
+  }
 
   describe('Build Requests', () => {
     it('Check bid request', function () {
-      const request = spec.buildRequests([bid], bidderRequest);
-      expect(request[0].method).to.equal(SSMAS_REQUEST_METHOD);
-      expect(request[0].url).to.equal(SSMAS_ENDPOINT);
-    });
-  });
+      const request = spec.buildRequests([bid], bidderRequest)
+      expect(request[0].method).to.equal(SSMAS_REQUEST_METHOD)
+      expect(request[0].url).to.equal(SSMAS_ENDPOINT)
+    })
+  })
 
   describe('register adapter functions', () => {
-    const adapter = newBidder(spec);
+    const adapter = newBidder(spec)
     it('is registered', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     it('validate bid request building', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
 
     it('test bad bid request', function () {
       // empty bid
-      expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false;
+      expect(spec.isBidRequestValid({ bidId: '', params: {} })).to.be.false
 
       // empty bidId
-      bid.bidId = '';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      bid.bidId = ''
+      expect(spec.isBidRequestValid(bid)).to.be.false
 
       // empty placementId
-      bid.bidId = '1231';
-      bid.params.placementId = '';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
+      bid.bidId = '1231'
+      bid.params.placementId = ''
+      expect(spec.isBidRequestValid(bid)).to.be.false
+    })
 
     it('check bid request bidder is Sem Seo & Mas', function() {
       const invalidBid = {
         ...bid, bidder: 'invalidBidder'
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false
+    })
+  })
 
   describe('interpretResponse', function () {
     const bidOrtbResponse = {
@@ -137,7 +137,7 @@ describe('ssmasBidAdapter', function () {
       'bidid': '408731cc-c018-4976-bfc6-89f9c61e97a0',
       'cur': 'EUR',
       'nbr': -1
-    };
+    }
     const bidResponse = {
       'mediaType': 'banner',
       'ad': '<a href=\"https://ssmas.com/es\" target=\"blank\"><img src=\"https://source.unsplash.com/featured/300x202\"/></a><style>body{overflow:hidden;}</style>',
@@ -157,7 +157,7 @@ describe('ssmasBidAdapter', function () {
           'ssmas.com'
         ]
       }
-    };
+    }
     const bidRequest = {
       'imp': [
         {
@@ -223,22 +223,22 @@ describe('ssmasBidAdapter', function () {
         'tid': '8cc2f4b0-084d-4f40-acfa-5bec2023b1ab'
       }
     }
-  });
+  })
 
   describe('test onBidWon function', function () {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
-    });
+      sinon.stub(utils, 'triggerPixel')
+    })
     afterEach(function() {
-      utils.triggerPixel.restore();
-    });
+      utils.triggerPixel.restore()
+    })
     it('exists and is a function', () => {
-      expect(spec.onBidWon).to.exist.and.to.be.a('function');
-    });
+      expect(spec.onBidWon).to.exist.and.to.be.a('function')
+    })
     it('should return nothing', function () {
-      var response = spec.onBidWon({});
+      var response = spec.onBidWon({})
       expect(response).to.be.an('undefined')
-      expect(utils.triggerPixel.called).to.equal(false);
-    });
-  });
-});
+      expect(utils.triggerPixel.called).to.equal(false)
+    })
+  })
+})

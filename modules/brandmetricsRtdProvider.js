@@ -5,12 +5,12 @@
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
-import { submodule } from '../src/hook.js';
-import { deepAccess, deepSetValue, logError, mergeDeep, generateUUID } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
-import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js'
+import { deepAccess, deepSetValue, logError, mergeDeep, generateUUID } from '../src/utils.js'
+import { loadExternalScript } from '../src/adloader.js'
+import * as events from '../src/events.js'
+import { EVENTS } from '../src/constants.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -124,7 +124,7 @@ function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
   const bidders = deepAccess(moduleConfig, 'params.bidders')
   if (bidders && bidders.length > 0) {
     bidders.forEach(bidder => {
-      deepSetValue(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.user.ext.data.${key}`, val);
+      deepSetValue(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.user.ext.data.${key}`, val)
     })
   }
 }
@@ -156,7 +156,7 @@ function initializeBillableEvents() {
         event: 'creative_in_view',
         handler: (ev) => {
           if (ev.source && ev.source.type === 'pbj') {
-            const bid = ev.source.data;
+            const bid = ev.source.data
             events.emit(EVENTS.BILLABLE_EVENT, {
               vendor: 'brandmetrics',
               type: 'creative_in_view',
@@ -164,7 +164,7 @@ function initializeBillableEvents() {
               billingId: generateUUID(),
               auctionId: bid.auctionId,
               transactionId: bid.transactionId,
-            });
+            })
           }
         },
       }

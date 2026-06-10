@@ -6,8 +6,8 @@
  */
 
 import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -15,10 +15,10 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'growthCodeId';
-const GCID_KEY = 'gcid';
+const MODULE_NAME = 'growthCodeId'
+const GCID_KEY = 'gcid'
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 /** @type {Submodule} */
 export const growthCodeIdSubmodule = {
@@ -34,7 +34,7 @@ export const growthCodeIdSubmodule = {
    * @returns {{growthCodeId: {string}}|undefined}
    */
   decode(value) {
-    return value && value !== '' ? { 'growthCodeId': value } : undefined;
+    return value && value !== '' ? { 'growthCodeId': value } : undefined
   },
 
   /**
@@ -44,9 +44,9 @@ export const growthCodeIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    const configParams = (config && config.params) || {};
+    const configParams = (config && config.params) || {}
 
-    let ids = [];
+    let ids = []
     const gcid = storage.getDataFromLocalStorage(GCID_KEY, null)
 
     if (gcid !== null) {
@@ -70,6 +70,6 @@ export const growthCodeIdSubmodule = {
     return { id: ids }
   },
 
-};
+}
 
-submodule('userId', growthCodeIdSubmodule);
+submodule('userId', growthCodeIdSubmodule)

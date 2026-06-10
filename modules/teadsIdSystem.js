@@ -6,10 +6,10 @@
  */
 
 import { isStr, isNumber, logError, logInfo, isEmpty, timestamp } from '../src/utils.js'
-import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -20,24 +20,24 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('./teadsIdSystem.d.ts').TeadsIdSystemModuleName} TeadsIdSystemModuleName
  */
 
-const MODULE_NAME = 'teadsId';
-const GVL_ID = 132;
-const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
+const MODULE_NAME = 'teadsId'
+const GVL_ID = 132
+const FP_TEADS_ID_COOKIE_NAME = '_tfpvi'
+const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT'
 
 export const gdprStatus = {
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND_OR_ERROR: 22,
   GDPR_APPLIES_PUBLISHER: 12,
-};
+}
 
 export const gdprReason = {
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND: 220,
   GDPR_APPLIES_PUBLISHER_CLASSIC: 120,
-};
+}
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 /** @type {IdProviderSpec<TeadsIdSystemModuleName>} */
 export const teadsIdSubmodule = {
@@ -69,34 +69,34 @@ export const teadsIdSubmodule = {
    */
   getId(submoduleConfig, consentData) {
     const resp = function (callback) {
-      const url = buildAnalyticsTagUrl(submoduleConfig, consentData);
+      const url = buildAnalyticsTagUrl(submoduleConfig, consentData)
 
       const callbacks = {
         success: (bodyResponse, responseObj) => {
           if (responseObj && responseObj.status === 200) {
             if (isStr(bodyResponse) && !isEmpty(bodyResponse)) {
-              const cookiesMaxAge = getTimestampFromDays(365); // 1 year
-              const expirationCookieDate = getCookieExpirationDate(cookiesMaxAge);
-              storage.setCookie(FP_TEADS_ID_COOKIE_NAME, bodyResponse, expirationCookieDate);
-              callback(bodyResponse);
+              const cookiesMaxAge = getTimestampFromDays(365) // 1 year
+              const expirationCookieDate = getCookieExpirationDate(cookiesMaxAge)
+              storage.setCookie(FP_TEADS_ID_COOKIE_NAME, bodyResponse, expirationCookieDate)
+              callback(bodyResponse)
             } else {
-              storage.setCookie(FP_TEADS_ID_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
-              callback();
+              storage.setCookie(FP_TEADS_ID_COOKIE_NAME, '', EXPIRED_COOKIE_DATE)
+              callback()
             }
           } else {
-            logInfo(`${MODULE_NAME}: Server error while fetching ID`);
-            callback();
+            logInfo(`${MODULE_NAME}: Server error while fetching ID`)
+            callback()
           }
         },
         error: error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-          callback();
+          logError(`${MODULE_NAME}: ID fetch encountered an error`, error)
+          callback()
         }
-      };
+      }
 
-      ajax(url, callbacks, undefined, { method: 'GET' });
-    };
-    return { callback: resp };
+      ajax(url, callbacks, undefined, { method: 'GET' })
+    }
+    return { callback: resp }
   },
   eids: {
     teadsId: {
@@ -104,7 +104,7 @@ export const teadsIdSubmodule = {
       atype: 1
     }
   }
-};
+}
 
 /**
  * Build the full URL from the Submodule config & consentData
@@ -113,12 +113,12 @@ export const teadsIdSubmodule = {
  * @returns {string}
  */
 export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
-  const pubId = getPublisherId(submoduleConfig);
-  const teadsViewerId = getTeadsViewerId();
-  const status = getGdprStatus(consentData?.gdpr);
-  const gdprConsentString = getGdprConsentString(consentData?.gdpr);
-  const ccpaConsentString = getCcpaConsentString(consentData?.usp);
-  const gdprReason = getGdprReasonFromStatus(status);
+  const pubId = getPublisherId(submoduleConfig)
+  const teadsViewerId = getTeadsViewerId()
+  const status = getGdprStatus(consentData?.gdpr)
+  const gdprConsentString = getGdprConsentString(consentData?.gdpr)
+  const ccpaConsentString = getCcpaConsentString(consentData?.usp)
+  const gdprReason = getGdprReasonFromStatus(status)
   const params = {
     analytics_tag_id: pubId,
     tfpvi: teadsViewerId,
@@ -127,16 +127,16 @@ export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
     gdpr_reason: gdprReason,
     ccpa_consent: ccpaConsentString,
     sv: 'prebid-v1',
-  };
-
-  const url = 'https://at.teads.tv/fpc';
-  const queryParams = new URLSearchParams();
-
-  for (const param in params) {
-    queryParams.append(param, params[param]);
   }
 
-  return url + '?' + queryParams.toString();
+  const url = 'https://at.teads.tv/fpc'
+  const queryParams = new URLSearchParams()
+
+  for (const param in params) {
+    queryParams.append(param, params[param])
+  }
+
+  return url + '?' + queryParams.toString()
 }
 
 /**
@@ -145,15 +145,15 @@ export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
  * @param submoduleConfig
  */
 export function getPublisherId(submoduleConfig) {
-  const pubId = submoduleConfig?.params?.pubId;
-  const prefix = 'PUB_';
+  const pubId = submoduleConfig?.params?.pubId
+  const prefix = 'PUB_'
   if (isNumber(pubId)) {
-    return prefix + pubId.toString();
+    return prefix + pubId.toString()
   }
   if (isStr(pubId) && parseInt(pubId)) {
-    return prefix + pubId;
+    return prefix + pubId
   }
-  return '';
+  return ''
 }
 
 /**
@@ -162,13 +162,13 @@ export function getPublisherId(submoduleConfig) {
  * @returns {number}
  */
 export function getGdprStatus(consentData) {
-  const gdprApplies = consentData?.gdprApplies;
+  const gdprApplies = consentData?.gdprApplies
   if (gdprApplies === true) {
-    return gdprStatus.GDPR_APPLIES_PUBLISHER;
+    return gdprStatus.GDPR_APPLIES_PUBLISHER
   } else if (gdprApplies === false) {
-    return gdprStatus.GDPR_DOESNT_APPLY;
+    return gdprStatus.GDPR_DOESNT_APPLY
   } else {
-    return gdprStatus.CMP_NOT_FOUND_OR_ERROR;
+    return gdprStatus.CMP_NOT_FOUND_OR_ERROR
   }
 }
 
@@ -178,11 +178,11 @@ export function getGdprStatus(consentData) {
  * @returns {string}
  */
 export function getGdprConsentString(consentData) {
-  const consentString = consentData?.consentString;
+  const consentString = consentData?.consentString
   if (isStr(consentString)) {
-    return consentString;
+    return consentString
   } else {
-    return '';
+    return ''
   }
 }
 
@@ -194,13 +194,13 @@ export function getGdprConsentString(consentData) {
 function getGdprReasonFromStatus(status) {
   switch (status) {
     case gdprStatus.GDPR_DOESNT_APPLY:
-      return gdprReason.GDPR_DOESNT_APPLY;
+      return gdprReason.GDPR_DOESNT_APPLY
     case gdprStatus.CMP_NOT_FOUND_OR_ERROR:
-      return gdprReason.CMP_NOT_FOUND;
+      return gdprReason.CMP_NOT_FOUND
     case gdprStatus.GDPR_APPLIES_PUBLISHER:
-      return gdprReason.GDPR_APPLIES_PUBLISHER_CLASSIC;
+      return gdprReason.GDPR_APPLIES_PUBLISHER_CLASSIC
     default:
-      return -1;
+      return -1
   }
 }
 
@@ -211,9 +211,9 @@ function getGdprReasonFromStatus(status) {
  */
 export function getCcpaConsentString(ccpaConsentString) {
   if (isStr(ccpaConsentString)) {
-    return ccpaConsentString;
+    return ccpaConsentString
   } else {
-    return '';
+    return ''
   }
 }
 
@@ -235,12 +235,12 @@ function getTeadsViewerId() {
   if (isStr(teadsViewerId)) {
     return teadsViewerId
   } else {
-    return '';
+    return ''
   }
 }
 
 function readCookie() {
-  return storage.cookiesAreEnabled(null) ? storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null) : null;
+  return storage.cookiesAreEnabled(null) ? storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null) : null
 }
 
 /**
@@ -249,6 +249,6 @@ function readCookie() {
  * @returns {number}
  */
 export function getTimestampFromDays(days) {
-  return days * 24 * 60 * 60 * 1000;
+  return days * 24 * 60 * 60 * 1000
 }
-submodule('userId', teadsIdSubmodule);
+submodule('userId', teadsIdSubmodule)

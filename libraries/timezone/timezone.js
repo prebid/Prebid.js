@@ -1,8 +1,8 @@
-import { isFingerprintingApiDisabled } from '../fingerprinting/fingerprinting.js';
+import { isFingerprintingApiDisabled } from '../fingerprinting/fingerprinting.js'
 
 export function getTimeZone() {
   if (isFingerprintingApiDisabled('resolvedoptions')) {
-    return '';
+    return ''
   }
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
 }

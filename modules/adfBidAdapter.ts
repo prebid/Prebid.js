@@ -1,11 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, setOnAny } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import type { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse } from '../src/adapters/bidderFactory.js';
-import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
-import type { Bid } from '../src/bidfactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { deepAccess, deepSetValue, setOnAny } from '../src/utils.js'
+import { Renderer } from '../src/Renderer.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import type { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse } from '../src/adapters/bidderFactory.js'
+import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js'
+import type { Bid } from '../src/bidfactory.js'
 
 /**
  * Common optional parameters shared by all Adf bid request configurations.
@@ -57,7 +57,7 @@ interface AdfInvParams extends AdfCommonParams {
  *
  * Either `mid` or both `inv` and `mname` must be provided.
  */
-export type AdfBidderParams = AdfMidParams | AdfInvParams;
+export type AdfBidderParams = AdfMidParams | AdfInvParams
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -75,44 +75,44 @@ declare global {
   }
 }
 
-const BIDDER_CODE = 'adf';
-const GVLID = 50;
+const BIDDER_CODE = 'adf'
+const GVLID = 50
 const BIDDER_ALIAS = [
   { code: 'adformOpenRTB' as const, gvlid: GVLID },
   { code: 'adform' as const, gvlid: GVLID }
-];
+]
 
-const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
+const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js'
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     ttl: 360,
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    const { mid, inv, mname } = bidRequest.params;
+    const imp = buildImp(bidRequest, context)
+    const { mid, inv, mname } = bidRequest.params
 
     if (mid) {
-      imp.tagid = String(mid);
+      imp.tagid = String(mid)
     } else {
-      deepSetValue(imp, 'ext.bidder', { inv, mname });
+      deepSetValue(imp, 'ext.bidder', { inv, mname })
     }
 
-    return imp;
+    return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
-    deepSetValue(request, 'source.fd', 1);
-    deepSetValue(request, 'ext.pt', context.pt);
+    const request = buildRequest(imps, bidderRequest, context)
+    deepSetValue(request, 'source.fd', 1)
+    deepSetValue(request, 'ext.pt', context.pt)
 
-    return request;
+    return request
   },
   bidResponse(buildBidResponse, bid, context) {
-    context.mediaType = deepAccess(bid, 'ext.prebid.type');
-    const bidResponse = buildBidResponse(bid, context);
+    context.mediaType = deepAccess(bid, 'ext.prebid.type')
+    const bidResponse = buildBidResponse(bid, context)
 
-    bidResponse.meta = bidResponse.meta || {};
-    bidResponse.meta.mediaType = context.mediaType;
+    bidResponse.meta = bidResponse.meta || {}
+    bidResponse.meta.mediaType = context.mediaType
 
     // Outstream renderer
     if (bidResponse.mediaType === VIDEO &&
@@ -122,46 +122,46 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
         id: context.bidRequest.bidId,
         url: OUTSTREAM_RENDERER_URL,
         adUnitCode: context.bidRequest.adUnitCode
-      });
-      bidResponse.renderer.setRender(outstreamRenderer);
+      })
+      bidResponse.renderer.setRender(outstreamRenderer)
     }
 
-    return bidResponse;
+    return bidResponse
   }
-});
+})
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
-  const { mid, inv, mname } = bid.params || {};
-  return !!(mid || (inv && mname));
-};
+  const { mid, inv, mname } = bid.params || {}
+  return !!(mid || (inv && mname))
+}
 
 const buildRequests = (
   validBidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
-  const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
+  const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net'
+  const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net'
 
   const data = converter.toORTB({
     bidRequests: validBidRequests,
     bidderRequest,
     context: { netRevenue: pt === 'net', pt }
-  });
+  })
 
   return {
     method: 'POST',
     url: 'https://' + adxDomain + '/adx/openrtb',
     data
-  };
-};
+  }
+}
 
 const interpretResponse = (serverResponse: ServerResponse, request: AdapterRequest): AdapterResponse => {
   if (!serverResponse.body) {
-    return [];
+    return []
   }
-  const response = converter.fromORTB({ request: request.data, response: serverResponse.body }) as ExtendedResponse;
-  return response.bids || [];
-};
+  const response = converter.fromORTB({ request: request.data, response: serverResponse.body }) as ExtendedResponse
+  return response.bids || []
+}
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
@@ -171,12 +171,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
 
 function outstreamRenderer(bid: Bid) {
   bid.renderer!.push(() => {
-    window.Adform.renderOutstream(bid);
-  });
+    window.Adform.renderOutstream(bid)
+  })
 }

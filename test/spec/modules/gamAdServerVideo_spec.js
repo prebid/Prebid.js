@@ -1,44 +1,44 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 
-import parse from 'url-parse';
-import { buildGamVideoUrl as buildDfpVideoUrl, dep, getVastXml } from 'modules/gamAdServerVideo.js';
-import AD_UNIT from 'test/fixtures/video/adUnit.json';
-import * as utils from 'src/utils.js';
-import { deepClone, generateUUID } from 'src/utils.js';
-import { config } from 'src/config.js';
-import { targeting } from 'src/targeting.js';
-import { auctionManager } from 'src/auctionManager.js';
-import { gdprDataHandler } from 'src/adapterManager.js';
+import parse from 'url-parse'
+import { buildGamVideoUrl as buildDfpVideoUrl, dep, getVastXml } from 'modules/gamAdServerVideo.js'
+import AD_UNIT from 'test/fixtures/video/adUnit.json'
+import * as utils from 'src/utils.js'
+import { deepClone, generateUUID } from 'src/utils.js'
+import { config } from 'src/config.js'
+import { targeting } from 'src/targeting.js'
+import { auctionManager } from 'src/auctionManager.js'
+import { gdprDataHandler } from 'src/adapterManager.js'
 
-import * as adServer from 'src/adserver.js';
-import { hook } from '../../../src/hook.js';
-import { stubAuctionIndex } from '../../helpers/indexStub.js';
-import { AuctionIndex } from '../../../src/auctionIndex.js';
-import { server } from '../../mocks/xhr.js';
-import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
+import * as adServer from 'src/adserver.js'
+import { hook } from '../../../src/hook.js'
+import { stubAuctionIndex } from '../../helpers/indexStub.js'
+import { AuctionIndex } from '../../../src/auctionIndex.js'
+import { server } from '../../mocks/xhr.js'
+import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js'
 
 describe('The DFP video support module', function () {
   before(() => {
-    hook.ready();
-  });
+    hook.ready()
+  })
 
-  let sandbox, bid, adUnit;
+  let sandbox, bid, adUnit
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.createSandbox()
     bid = {
       videoCacheKey: 'abc',
       adserverTargeting: {
         hb_uuid: 'abc',
         hb_cache_id: 'abc',
       },
-    };
-    adUnit = deepClone(AD_UNIT);
-  });
+    }
+    adUnit = deepClone(AD_UNIT)
+  })
 
   afterEach(() => {
-    sandbox.restore();
-  });
+    sandbox.restore()
+  })
 
   function getURL(options) {
     return parse(buildDfpVideoUrl(Object.assign({
@@ -50,11 +50,11 @@ describe('The DFP video support module', function () {
     }, options)))
   }
   function getQueryParams(options) {
-    return utils.parseQS(getURL(options).query);
+    return utils.parseQS(getURL(options).query)
   }
 
   function getCustomParams(options) {
-    return utils.parseQS('?' + decodeURIComponent(getQueryParams(options).cust_params));
+    return utils.parseQS('?' + decodeURIComponent(getQueryParams(options).cust_params))
   }
 
   Object.entries({
@@ -69,17 +69,17 @@ describe('The DFP video support module', function () {
   }).forEach(([t, options]) => {
     describe(`when using ${t}`, () => {
       it('should use page location as default for description_url', () => {
-        sandbox.stub(dep, 'ri').callsFake(() => ({ page: 'example.com' }));
-        const prm = getQueryParams(options);
-        expect(prm.description_url).to.eql('example.com');
-      });
+        sandbox.stub(dep, 'ri').callsFake(() => ({ page: 'example.com' }))
+        const prm = getQueryParams(options)
+        expect(prm.description_url).to.eql('example.com')
+      })
 
       it('should use a URI encoded page location as default for description_url', () => {
-        sandbox.stub(dep, 'ri').callsFake(() => ({ page: 'https://example.com?iu=/99999999/news&cust_params=current_hour%3D12%26newscat%3Dtravel&pbjs_debug=true' }));
-        const prm = getQueryParams(options);
-        expect(prm.description_url).to.eql('https%3A%2F%2Fexample.com%3Fiu%3D%2F99999999%2Fnews%26cust_params%3Dcurrent_hour%253D12%2526newscat%253Dtravel%26pbjs_debug%3Dtrue');
-      });
-    });
+        sandbox.stub(dep, 'ri').callsFake(() => ({ page: 'https://example.com?iu=/99999999/news&cust_params=current_hour%3D12%26newscat%3Dtravel&pbjs_debug=true' }))
+        const prm = getQueryParams(options)
+        expect(prm.description_url).to.eql('https%3A%2F%2Fexample.com%3Fiu%3D%2F99999999%2Fnews%26cust_params%3Dcurrent_hour%253D12%2526newscat%253Dtravel%26pbjs_debug%3Dtrue')
+      })
+    })
   })
 
   it('should make a legal request URL when given the required params', function () {
@@ -89,106 +89,106 @@ describe('The DFP video support module', function () {
         'description_url': 'someUrl.com',
       }
     })
-    expect(url.protocol).to.equal('https:');
-    expect(url.host).to.equal('securepubads.g.doubleclick.net');
+    expect(url.protocol).to.equal('https:')
+    expect(url.host).to.equal('securepubads.g.doubleclick.net')
 
-    const queryParams = utils.parseQS(url.query);
-    expect(queryParams).to.have.property('correlator');
-    expect(queryParams).to.have.property('description_url', 'someUrl.com');
-    expect(queryParams).to.have.property('env', 'vp');
-    expect(queryParams).to.have.property('gdfp_req', '1');
-    expect(queryParams).to.have.property('iu', 'my/adUnit');
-    expect(queryParams).to.have.property('output', 'vast');
-    expect(queryParams).to.have.property('sz', '640x480');
-    expect(queryParams).to.have.property('unviewed_position_start', '1');
-    expect(queryParams).to.have.property('url');
-  });
+    const queryParams = utils.parseQS(url.query)
+    expect(queryParams).to.have.property('correlator')
+    expect(queryParams).to.have.property('description_url', 'someUrl.com')
+    expect(queryParams).to.have.property('env', 'vp')
+    expect(queryParams).to.have.property('gdfp_req', '1')
+    expect(queryParams).to.have.property('iu', 'my/adUnit')
+    expect(queryParams).to.have.property('output', 'vast')
+    expect(queryParams).to.have.property('sz', '640x480')
+    expect(queryParams).to.have.property('unviewed_position_start', '1')
+    expect(queryParams).to.have.property('url')
+  })
 
   it('can take an adserver url as a parameter', function () {
-    bid.vastUrl = 'vastUrl.example';
+    bid.vastUrl = 'vastUrl.example'
     const url = getURL({
       url: 'https://video.adserver.example/',
     })
-    expect(url.host).to.equal('video.adserver.example');
-  });
+    expect(url.host).to.equal('video.adserver.example')
+  })
 
   it('requires a params object or url', function () {
     const url = buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
-    });
+    })
 
-    expect(url).to.be.undefined;
-  });
+    expect(url).to.be.undefined
+  })
 
   it('overwrites url params when both url and params object are given', function () {
     const params = getQueryParams({
       url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s',
       params: { iu: 'my/adUnit' }
-    });
+    })
 
-    expect(params.iu).to.equal('my/adUnit');
-  });
+    expect(params.iu).to.equal('my/adUnit')
+  })
 
   it('should override param defaults with user-provided ones', function () {
     const params = getQueryParams({
       params: {
         'output': 'vast',
       }
-    });
-    expect(params.output).to.equal('vast');
-  });
+    })
+    expect(params.output).to.equal('vast')
+  })
 
   it('should include the cache key and adserver targeting in cust_params', function () {
     bid.adserverTargeting = Object.assign(bid.adserverTargeting, {
       hb_adid: 'ad_id',
-    });
+    })
 
     const customParams = getCustomParams()
 
-    expect(customParams).to.have.property('hb_adid', 'ad_id');
-    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
-    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
-  });
+    expect(customParams).to.have.property('hb_adid', 'ad_id')
+    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey)
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey)
+  })
 
   it('should include the GDPR keys when GDPR Consent is available', function () {
     sandbox.stub(gdprDataHandler, 'getConsentData').returns({
       gdprApplies: true,
       consentString: 'consent',
       addtlConsent: 'moreConsent'
-    });
-    const queryObject = getQueryParams();
-    expect(queryObject.gdpr).to.equal('1');
-    expect(queryObject.gdpr_consent).to.equal('consent');
-    expect(queryObject.addtl_consent).to.equal('moreConsent');
-  });
+    })
+    const queryObject = getQueryParams()
+    expect(queryObject.gdpr).to.equal('1')
+    expect(queryObject.gdpr_consent).to.equal('consent')
+    expect(queryObject.addtl_consent).to.equal('moreConsent')
+  })
 
   it('should not include the GDPR keys when GDPR Consent is not available', function () {
     const queryObject = getQueryParams()
-    expect(queryObject.gdpr).to.equal(undefined);
-    expect(queryObject.gdpr_consent).to.equal(undefined);
-    expect(queryObject.addtl_consent).to.equal(undefined);
-  });
+    expect(queryObject.gdpr).to.equal(undefined)
+    expect(queryObject.gdpr_consent).to.equal(undefined)
+    expect(queryObject.addtl_consent).to.equal(undefined)
+  })
 
   it('should only include the GDPR keys for GDPR Consent fields with values', function () {
     sandbox.stub(gdprDataHandler, 'getConsentData').returns({
       gdprApplies: true,
       consentString: 'consent',
-    });
+    })
     const queryObject = getQueryParams()
-    expect(queryObject.gdpr).to.equal('1');
-    expect(queryObject.gdpr_consent).to.equal('consent');
-    expect(queryObject.addtl_consent).to.equal(undefined);
-  });
+    expect(queryObject.gdpr).to.equal('1')
+    expect(queryObject.gdpr_consent).to.equal('consent')
+    expect(queryObject.addtl_consent).to.equal(undefined)
+  })
   describe('GAM PPID', () => {
-    let ppid;
-    let getPPIDStub;
+    let ppid
+    let getPPIDStub
     beforeEach(() => {
-      getPPIDStub = sinon.stub(adServer, 'getPPID').callsFake(() => ppid);
-    });
+      getPPIDStub = sinon.stub(adServer, 'getPPID').callsFake(() => ppid)
+    })
     afterEach(() => {
-      getPPIDStub.restore();
-    });
+      getPPIDStub.restore()
+    })
 
     Object.entries({
       'params': { params: { 'iu': 'mock/unit' } },
@@ -196,15 +196,15 @@ describe('The DFP video support module', function () {
     }).forEach(([t, opts]) => {
       describe(`when using ${t}`, () => {
         it('should be included if available', () => {
-          ppid = 'mockPPID';
-          const q = getQueryParams(opts);
-          expect(q.ppid).to.equal('mockPPID');
-        });
+          ppid = 'mockPPID'
+          const q = getQueryParams(opts)
+          expect(q.ppid).to.equal('mockPPID')
+        })
 
         it('should not be included if not available', () => {
-          ppid = undefined;
-          const q = getQueryParams(opts);
-          expect(q.hasOwnProperty('ppid')).to.be.false;
+          ppid = undefined
+          const q = getQueryParams(opts)
+          expect(q.hasOwnProperty('ppid')).to.be.false
         })
       })
     })
@@ -321,40 +321,40 @@ describe('The DFP video support module', function () {
         cases.forEach(({ video, expected }) => {
           describe(`when mediaTypes.video has ${JSON.stringify(video)}`, () => {
             it(`fills in ${param} = ${expected}`, () => {
-              Object.assign(adUnit.mediaTypes.video, video);
-              expect(getQueryParams()[param]).to.eql(expected);
-            });
+              Object.assign(adUnit.mediaTypes.video, video)
+              expect(getQueryParams()[param]).to.eql(expected)
+            })
             it(`does not override pub-provided params.${param}`, () => {
-              Object.assign(adUnit.mediaTypes.video, video);
+              Object.assign(adUnit.mediaTypes.video, video)
               expect(getQueryParams({
                 params: {
                   [param]: 'OG'
                 }
-              })[param]).to.eql('OG');
-            });
+              })[param]).to.eql('OG')
+            })
             it('does not fill if param has no value', () => {
-              expect(getQueryParams().hasOwnProperty(param)).to.be.false;
+              expect(getQueryParams().hasOwnProperty(param)).to.be.false
             })
           })
         })
       })
     })
-  });
+  })
 
   describe('ppsj', () => {
-    let ortb2;
+    let ortb2
     beforeEach(() => {
-      ortb2 = null;
+      ortb2 = null
     })
 
     function getSignals() {
-      const ppsj = JSON.parse(atob(getQueryParams().ppsj));
-      return Object.fromEntries(ppsj.PublisherProvidedTaxonomySignals.map(sig => [sig.taxonomy, sig.values]));
+      const ppsj = JSON.parse(atob(getQueryParams().ppsj))
+      return Object.fromEntries(ppsj.PublisherProvidedTaxonomySignals.map(sig => [sig.taxonomy, sig.values]))
     }
 
     Object.entries({
       'FPD from bid request'() {
-        bid.requestId = 'req-id';
+        bid.requestId = 'req-id'
         sandbox.stub(auctionManager, 'index').get(() => stubAuctionIndex({
           bidRequests: [
             {
@@ -362,20 +362,20 @@ describe('The DFP video support module', function () {
               ortb2
             }
           ]
-        }));
+        }))
       },
       'global FPD from auction'() {
-        bid.auctionId = 'auid';
+        bid.auctionId = 'auid'
         sandbox.stub(auctionManager, 'index').get(() => new AuctionIndex(() => [{
           getAuctionId: () => 'auid',
           getFPD: () => ({
             global: ortb2
           })
-        }]));
+        }]))
       }
     }).forEach(([t, setup]) => {
       describe(`using ${t}`, () => {
-        beforeEach(setup);
+        beforeEach(setup)
         it('does not fill if there\'s no segments in segtax 4 or 6', () => {
           ortb2 = {
             site: {
@@ -403,8 +403,8 @@ describe('The DFP video support module', function () {
               ]
             }
           }
-          expect(getQueryParams().ppsj).to.not.exist;
-        });
+          expect(getQueryParams().ppsj).to.not.exist
+        })
 
         const SEGMENTS = [
           {
@@ -492,25 +492,25 @@ describe('The DFP video support module', function () {
       'hb_pb_appnexus': '5.00',
       'hb_adid_appnexus': '44e0b5f2e5cace',
       'hb_bidder_appnexus': 'appnexus'
-    };
-    let targetingStub;
+    }
+    let targetingStub
 
     before(function () {
-      targetingStub = sinon.stub(targeting, 'getAllTargeting');
-      targetingStub.returns({ 'video1': allTargetingData });
+      targetingStub = sinon.stub(targeting, 'getAllTargeting')
+      targetingStub.returns({ 'video1': allTargetingData })
 
       config.setConfig({
         enableSendAllBids: true
-      });
-    });
+      })
+    })
 
     after(function () {
-      config.resetConfig();
-      targetingStub.restore();
-    });
+      config.resetConfig()
+      targetingStub.restore()
+    })
 
     it('should include all adserver targeting in cust_params if pbjs.enableSendAllBids is true', function () {
-      const adUnitsCopy = utils.deepClone(adUnit);
+      const adUnitsCopy = utils.deepClone(adUnit)
       adUnitsCopy.bids.push({
         'bidder': 'testBidder2',
         'params': {
@@ -520,12 +520,12 @@ describe('The DFP video support module', function () {
             'playback_methods': ['auto_play_sound_off']
           }
         }
-      });
+      })
 
-      const bidCopy = utils.deepClone(bid);
+      const bidCopy = utils.deepClone(bid)
       bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
         hb_adid: 'ad_id',
-      });
+      })
 
       const url = parse(buildDfpVideoUrl({
         adUnit: adUnitsCopy,
@@ -533,23 +533,23 @@ describe('The DFP video support module', function () {
         params: {
           'iu': 'my/adUnit'
         }
-      }));
-      const queryObject = utils.parseQS(url.query);
-      const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+      }))
+      const queryObject = utils.parseQS(url.query)
+      const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params))
 
-      expect(customParams).to.have.property('hb_adid', 'ad_id');
-      expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
-      expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
-      expect(customParams).to.have.property('hb_bidder_appnexus', 'appnexus');
-      expect(customParams).to.have.property('hb_bidder_testBidder2', 'testBidder2');
-    });
-  });
+      expect(customParams).to.have.property('hb_adid', 'ad_id')
+      expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey)
+      expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey)
+      expect(customParams).to.have.property('hb_bidder_appnexus', 'appnexus')
+      expect(customParams).to.have.property('hb_bidder_testBidder2', 'testBidder2')
+    })
+  })
 
   it('should merge the user-provided cust_params with the default ones', function () {
-    const bidCopy = utils.deepClone(bid);
+    const bidCopy = utils.deepClone(bid)
     bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    });
+    })
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -560,39 +560,39 @@ describe('The DFP video support module', function () {
           'my_targeting': 'foo',
         },
       },
-    }));
-    const queryObject = utils.parseQS(url.query);
-    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    }))
+    const queryObject = utils.parseQS(url.query)
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params))
 
-    expect(customParams).to.have.property('hb_adid', 'ad_id');
-    expect(customParams).to.have.property('my_targeting', 'foo');
-  });
+    expect(customParams).to.have.property('hb_adid', 'ad_id')
+    expect(customParams).to.have.property('my_targeting', 'foo')
+  })
 
   it('should merge the user-provided cust-params with the default ones when using url object', function () {
-    const bidCopy = utils.deepClone(bid);
+    const bidCopy = utils.deepClone(bid)
     bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    });
+    })
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bidCopy,
       url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s&cust_params=section%3dblog%26mykey%3dmyvalue'
-    }));
+    }))
 
-    const queryObject = utils.parseQS(url.query);
-    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query)
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params))
 
-    expect(customParams).to.have.property('hb_adid', 'ad_id');
-    expect(customParams).to.have.property('section', 'blog');
-    expect(customParams).to.have.property('mykey', 'myvalue');
-    expect(customParams).to.have.property('hb_uuid', 'abc');
-    expect(customParams).to.have.property('hb_cache_id', 'abc');
-  });
+    expect(customParams).to.have.property('hb_adid', 'ad_id')
+    expect(customParams).to.have.property('section', 'blog')
+    expect(customParams).to.have.property('mykey', 'myvalue')
+    expect(customParams).to.have.property('hb_uuid', 'abc')
+    expect(customParams).to.have.property('hb_cache_id', 'abc')
+  })
 
   it('should not overwrite an existing description_url for object input and cache disabled', function () {
-    const bidCopy = utils.deepClone(bid);
-    bidCopy.vastUrl = 'vastUrl.example';
+    const bidCopy = utils.deepClone(bid)
+    bidCopy.vastUrl = 'vastUrl.example'
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -601,25 +601,25 @@ describe('The DFP video support module', function () {
         iu: 'my/adUnit',
         description_url: 'descriptionurl.example'
       }
-    }));
+    }))
 
-    const queryObject = utils.parseQS(url.query);
-    expect(queryObject.description_url).to.equal('descriptionurl.example');
-  });
+    const queryObject = utils.parseQS(url.query)
+    expect(queryObject.description_url).to.equal('descriptionurl.example')
+  })
 
   it('should work with nobid responses', function () {
     const url = buildDfpVideoUrl({
       adUnit: adUnit,
       params: { 'iu': 'my/adUnit' }
-    });
+    })
 
-    expect(url).to.be.a('string');
-  });
+    expect(url).to.be.a('string')
+  })
 
   it('should include hb_uuid and hb_cache_id in cust_params when both keys are exluded from overwritten bidderSettings', function () {
-    const bidCopy = utils.deepClone(bid);
-    delete bidCopy.adserverTargeting.hb_uuid;
-    delete bidCopy.adserverTargeting.hb_cache_id;
+    const bidCopy = utils.deepClone(bid)
+    delete bidCopy.adserverTargeting.hb_uuid
+    delete bidCopy.adserverTargeting.hb_cache_id
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -627,20 +627,20 @@ describe('The DFP video support module', function () {
       params: {
         'iu': 'my/adUnit'
       }
-    }));
-    const queryObject = utils.parseQS(url.query);
-    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    }))
+    const queryObject = utils.parseQS(url.query)
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params))
 
-    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
-    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
-  });
+    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey)
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey)
+  })
 
   it('should include hb_uuid and hb_cache_id in cust params from overwritten standard bidderSettings', function () {
-    const bidCopy = utils.deepClone(bid);
+    const bidCopy = utils.deepClone(bid)
     bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_uuid: 'def',
       hb_cache_id: 'def'
-    });
+    })
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -648,13 +648,13 @@ describe('The DFP video support module', function () {
       params: {
         'iu': 'my/adUnit'
       }
-    }));
-    const queryObject = utils.parseQS(url.query);
-    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    }))
+    const queryObject = utils.parseQS(url.query)
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params))
 
-    expect(customParams).to.have.property('hb_uuid', 'def');
-    expect(customParams).to.have.property('hb_cache_id', 'def');
-  });
+    expect(customParams).to.have.property('hb_uuid', 'def')
+    expect(customParams).to.have.property('hb_cache_id', 'def')
+  })
 
   it('should keep the url protocol, host, and pathname when using url and params', function () {
     const url = parse(buildDfpVideoUrl({
@@ -666,12 +666,12 @@ describe('The DFP video support module', function () {
           hb_rand: 'random'
         }
       }
-    }));
+    }))
 
-    expect(url.protocol).to.equal('http:');
-    expect(url.host).to.equal('video.adserver.example');
-    expect(url.pathname).to.equal('/ads');
-  });
+    expect(url.protocol).to.equal('http:')
+    expect(url.host).to.equal('video.adserver.example')
+    expect(url.pathname).to.equal('/ads')
+  })
 
   it('should append to the url size param', () => {
     const url = parse(buildDfpVideoUrl({
@@ -683,11 +683,11 @@ describe('The DFP video support module', function () {
           hb_rand: 'random'
         }
       }
-    }));
+    }))
 
-    const queryObject = utils.parseQS(url.query);
-    expect(queryObject.sz).to.equal('360x240|640x480');
-  });
+    const queryObject = utils.parseQS(url.query)
+    expect(queryObject.sz).to.equal('360x240|640x480')
+  })
 
   it('should append to the existing url cust params', () => {
     const url = parse(buildDfpVideoUrl({
@@ -699,15 +699,15 @@ describe('The DFP video support module', function () {
           hb_rand: 'random'
         }
       }
-    }));
+    }))
 
-    const queryObject = utils.parseQS(url.query);
-    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query)
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params))
 
-    expect(customParams).to.have.property('existing_key', 'existing_value');
-    expect(customParams).to.have.property('other_key', 'other_value');
-    expect(customParams).to.have.property('hb_rand', 'random');
-  });
+    expect(customParams).to.have.property('existing_key', 'existing_value')
+    expect(customParams).to.have.property('other_key', 'other_value')
+    expect(customParams).to.have.property('hb_rand', 'random')
+  })
 
   it('should return unmodified fetched gam vast wrapper if local cache is not used', (done) => {
     const gamWrapper = (
@@ -719,27 +719,27 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
-    );
-    server.respondWith(gamWrapper);
+    )
+    server.respondWith(gamWrapper)
 
     getVastXml({})
       .then((finalGamWrapper) => {
-        expect(finalGamWrapper).to.deep.eql(gamWrapper);
-        done();
-      });
+        expect(finalGamWrapper).to.deep.eql(gamWrapper)
+        done()
+      })
 
-    server.respond();
-  });
+    server.respond()
+  })
 
   it('should substitue vast ad tag uri in gam wrapper with blob content in data uri format', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
+    config.setConfig({ cache: { useLocal: true } })
     const url = 'https://pubads.g.doubleclick.net/gampad/ads'
-    const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>';
-    const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
-    const uuid = generateUUID();
-    const localMap = new Map([[uuid, blobUrl]]);
+    const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>'
+    const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }))
+    const uuid = generateUUID()
+    const localMap = new Map([[uuid, blobUrl]])
 
-    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuid;
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuid
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -749,9 +749,9 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
-    );
+    )
 
-    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`
     const expectedOutput = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -761,39 +761,39 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
-    );
+    )
 
-    server.respondWith(/^https:\/\/pubads.*/, gamWrapper);
-    server.respondWith(/^blob:http:*/, blobContent);
+    server.respondWith(/^https:\/\/pubads.*/, gamWrapper)
+    server.respondWith(/^blob:http:*/, blobContent)
 
     getVastXml({ url, adUnit: {}, bid: {} }, localMap)
       .then((vastXml) => {
-        expect(vastXml).to.deep.eql(expectedOutput);
-        done();
+        expect(vastXml).to.deep.eql(expectedOutput)
+        done()
       })
-      .finally(config.resetConfig);
+      .finally(config.resetConfig)
 
-    server.respond();
+    server.respond()
 
-    let timeout;
+    let timeout
 
     const waitForSecondRequest = () => {
       if (server.requests.length >= 2) {
-        server.respond();
-        clearTimeout(timeout);
+        server.respond()
+        clearTimeout(timeout)
       } else {
-        timeout = setTimeout(waitForSecondRequest, 50);
+        timeout = setTimeout(waitForSecondRequest, 50)
       }
-    };
+    }
 
-    waitForSecondRequest();
-  });
+    waitForSecondRequest()
+  })
 
   it('should return unmodified gam vast wrapper if it doesn\'nt contain locally cached uuid', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
-    const uuidNotPresentInCache = '4536229c-eddb-45b3-a919-89d889e925aa';
-    const uuidPresentInCache = '64fcdc86-5325-4750-bc60-02f63b23175a';
-    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuidNotPresentInCache;
+    config.setConfig({ cache: { useLocal: true } })
+    const uuidNotPresentInCache = '4536229c-eddb-45b3-a919-89d889e925aa'
+    const uuidPresentInCache = '64fcdc86-5325-4750-bc60-02f63b23175a'
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuidNotPresentInCache
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -803,24 +803,24 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
-    );
-    const localCacheMap = new Map([[uuidPresentInCache, 'blob:http://localhost:9999/uri']]);
-    server.respondWith(gamWrapper);
+    )
+    const localCacheMap = new Map([[uuidPresentInCache, 'blob:http://localhost:9999/uri']])
+    server.respondWith(gamWrapper)
 
     getVastXml({}, localCacheMap)
       .then((finalGamWrapper) => {
-        expect(finalGamWrapper).to.deep.eql(gamWrapper);
-        done();
+        expect(finalGamWrapper).to.deep.eql(gamWrapper)
+        done()
       })
       .finally(config.resetConfig)
 
-    server.respond();
-  });
+    server.respond()
+  })
 
   it('should return unmodified gam vast wrapper if it contains more than 1 saved uuids', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
-    const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa';
-    const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a';
+    config.setConfig({ cache: { useLocal: true } })
+    const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa'
+    const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a'
     const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`
     const gamWrapper = (
       `<VAST version="3.0">` +
@@ -831,25 +831,25 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
-    );
+    )
     const localCacheMap = new Map([
       [uuid1, 'blob:http://localhost:9999/uri'],
       [uuid2, 'blob:http://localhost:9999/uri'],
-    ]);
-    server.respondWith(gamWrapper);
+    ])
+    server.respondWith(gamWrapper)
 
     getVastXml({}, localCacheMap)
       .then((finalGamWrapper) => {
-        expect(finalGamWrapper).to.deep.eql(gamWrapper);
-        done();
+        expect(finalGamWrapper).to.deep.eql(gamWrapper)
+        done()
       })
       .finally(config.resetConfig)
 
-    server.respond();
-  });
+    server.respond()
+  })
 
   it('should return returned unmodified gam vast wrapper if exception has been thrown', (done) => {
-    config.setConfig({ cache: { useLocal: true } });
+    config.setConfig({ cache: { useLocal: true } })
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -859,20 +859,20 @@ describe('The DFP video support module', function () {
           `</Wrapper>` +
        `</Ad>` +
       `</VAST>`
-    );
-    server.respondWith(gamWrapper);
+    )
+    server.respondWith(gamWrapper)
     getVastXml({}, null) // exception thrown when passing null as localCacheMap
       .then((finalGamWrapper) => {
-        expect(finalGamWrapper).to.deep.eql(gamWrapper);
-        done();
+        expect(finalGamWrapper).to.deep.eql(gamWrapper)
+        done()
       })
-      .finally(config.resetConfig);
-    server.respond();
-  });
+      .finally(config.resetConfig)
+    server.respond()
+  })
 
   describe('Retrieve US Privacy string from GPP when using the IMA player', () => {
     beforeEach(() => {
-      config.setConfig({ cache: { useLocal: true } });
+      config.setConfig({ cache: { useLocal: true } })
       // Install a fake IMA object, because the us_privacy is only set when IMA is available
       window.google = {
         ima: {
@@ -881,12 +881,12 @@ describe('The DFP video support module', function () {
       }
     })
     afterEach(() => {
-      config.resetConfig();
+      config.resetConfig()
     })
 
     async function obtainUsPrivacyInVastXmlRequest() {
       const url = 'https://pubads.g.doubleclick.net/gampad/ads'
-      const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=4536229c-eddb-45b3-a919-89d889e925aa';
+      const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=4536229c-eddb-45b3-a919-89d889e925aa'
       const gamWrapper = (
         `<VAST version="3.0">` +
           `<Ad>` +
@@ -896,22 +896,22 @@ describe('The DFP video support module', function () {
             `</Wrapper>` +
          `</Ad>` +
         `</VAST>`
-      );
-      server.respondWith(gamWrapper);
+      )
+      server.respondWith(gamWrapper)
 
       const result = getVastXml({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } }, []).then(() => {
-        const request = server.requests[0];
-        const url = new URL(request.url);
-        return url.searchParams.get('us_privacy');
-      });
-      server.respond();
+        const request = server.requests[0]
+        const url = new URL(request.url)
+        return url.searchParams.get('us_privacy')
+      })
+      server.respond()
 
-      return result;
+      return result
     }
 
     function obtainUsPrivacyInGamVideoUrl() {
       const url = 'https://pubads.g.doubleclick.net/gampad/ads'
-      return new URLSearchParams(buildDfpVideoUrl({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } })).get('us_privacy');
+      return new URLSearchParams(buildDfpVideoUrl({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } })).get('us_privacy')
     }
 
     function mockGpp(gpp) {
@@ -927,8 +927,8 @@ describe('The DFP video support module', function () {
     }
 
     it('should use usp when available, even when gpp is available', async () => {
-      const usPrivacy = '1YYY';
-      sandbox.stub(uspDataHandler, 'getConsentData').returns(usPrivacy);
+      const usPrivacy = '1YYY'
+      sandbox.stub(uspDataHandler, 'getConsentData').returns(usPrivacy)
       mockGpp(wrapParsedSectionsIntoGPPData({
         "uspv1": {
           "Version": 1,
@@ -936,23 +936,23 @@ describe('The DFP video support module', function () {
           "OptOutSale": "N",
           "LspaCovered": "Y"
         }
-      }));
+      }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal(usPrivacy);
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.equal(usPrivacy)
 
       // In this case, the IMA player will add the us_privacy string
       // It is not included in the URL returned by Prebid
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.be.null
     })
 
     it('no us_privacy when neither usp nor gpp is present', async () => {
-      const usPrivacyFromRequqest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequqest).to.be.null;
+      const usPrivacyFromRequqest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequqest).to.be.null
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.be.null
     })
 
     it('can retrieve from usp section in gpp', async () => {
@@ -963,13 +963,13 @@ describe('The DFP video support module', function () {
           "OptOutSale": "N",
           "LspaCovered": "Y"
         }
-      }));
+      }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY');
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.equal('1YNY')
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YNY');
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.equal('1YNY')
     })
     it('can retrieve from usnat section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1014,13 +1014,13 @@ describe('The DFP video support module', function () {
           "GpcSegmentType": 1,
           "Gpc": false
         }
-      }));
+      }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YYY');
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.equal('1YYY')
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YYY');
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.equal('1YYY')
     })
     it('can retrieve from usnat section in gpp when usnat is an array', async() => {
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1047,11 +1047,11 @@ describe('The DFP video support module', function () {
         ]
       }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY');
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.equal('1YNY')
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YNY');
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.equal('1YNY')
     })
     it('no us_privacy when either SaleOptOutNotice or SaleOptOut is missing', async () => {
       // Missing SaleOptOutNotice
@@ -1096,13 +1096,13 @@ describe('The DFP video support module', function () {
           "GpcSegmentType": 1,
           "Gpc": false
         }
-      }));
+      }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.be.null;
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.be.null
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.be.null
     })
     it('no us_privacy when either SaleOptOutNotice or SaleOptOut is null', async () => {
       // null SaleOptOut
@@ -1148,13 +1148,13 @@ describe('The DFP video support module', function () {
           "GpcSegmentType": 1,
           "Gpc": false
         }
-      }));
+      }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.be.null;
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.be.null
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.be.null
     })
 
     it('can retrieve from usca section in gpp', async () => {
@@ -1188,13 +1188,13 @@ describe('The DFP video support module', function () {
           "GpcSegmentType": 1,
           "Gpc": false
         }
-      }));
+      }))
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY');
+      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest()
+      expect(usPrivacyFromRequest).to.equal('1YNY')
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YNY');
+      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl()
+      expect(usPrivacyFromUrl).to.equal('1YNY')
     })
-  });
-});
+  })
+})

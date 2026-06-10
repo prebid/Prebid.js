@@ -1,7 +1,7 @@
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { BANNER, VIDEO } from "../src/mediaTypes.js";
-import { config } from "../src/config.js";
-import { ortbConverter } from "../libraries/ortbConverter/converter.js";
+import { registerBidder } from "../src/adapters/bidderFactory.js"
+import { BANNER, VIDEO } from "../src/mediaTypes.js"
+import { config } from "../src/config.js"
+import { ortbConverter } from "../libraries/ortbConverter/converter.js"
 import {
   deepSetValue,
   deepAccess,
@@ -10,14 +10,14 @@ import {
   logWarn,
   triggerPixel,
   replaceAuctionPrice
-} from "../src/utils.js";
+} from "../src/utils.js"
 
-const BIDDER_CODE = 'rumble';
-const ENDPOINT = 'https://a.ads.rmbl.ws/v1/sites/:id/ortb';
-const VERSION = '1.0.0';
+const BIDDER_CODE = 'rumble'
+const ENDPOINT = 'https://a.ads.rmbl.ws/v1/sites/:id/ortb'
+const VERSION = '1.0.0'
 
 function fillParameters(bid) {
-  const global = config.getConfig('rumble') || {};
+  const global = config.getConfig('rumble') || {}
 
   bid.params = bid.params || {};
 
@@ -27,15 +27,15 @@ function fillParameters(bid) {
     'test',
   ].forEach(function(k) {
     if (bid.params[k]) {
-      return;
+      return
     }
 
     if (global[k]) {
-      bid.params[k] = global[k];
+      bid.params[k] = global[k]
     }
   })
 
-  return bid.params;
+  return bid.params
 }
 
 export const converter = ortbConverter({
@@ -45,7 +45,7 @@ export const converter = ortbConverter({
     currency: "USD"
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    const request = buildRequest(imps, bidderRequest, context)
     const params = fillParameters(bidderRequest?.bids[0])
 
     if (params?.test) {
@@ -57,7 +57,7 @@ export const converter = ortbConverter({
       name: 'prebidjs'
     })
 
-    return request;
+    return request
   }
 })
 
@@ -69,37 +69,37 @@ export const spec = {
     fillParameters(bid)
 
     if (bid && typeof bid.params !== 'object') {
-      logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
-      return false;
+      logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.')
+      return false
     }
 
-    const required = ['publisherId', 'siteId'];
+    const required = ['publisherId', 'siteId']
 
     for (let i = 0; i < required.length; i++) {
       if (!getBidIdParameter(required[i], bid.params)) {
-        logError(BIDDER_CODE + `: ${required[i]} must be set as a bidder parameter`);
-        return false;
+        logError(BIDDER_CODE + `: ${required[i]} must be set as a bidder parameter`)
+        return false
       }
     }
 
-    const banner = deepAccess(bid, `mediaTypes.banner`);
-    const video = deepAccess(bid, `mediaTypes.video`);
+    const banner = deepAccess(bid, `mediaTypes.banner`)
+    const video = deepAccess(bid, `mediaTypes.video`)
 
     if (!banner && !video) {
       logWarn(BIDDER_CODE + ': either banner or video mediaType must be provided')
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
   buildRequests: function(bidRequests, bidderRequest) {
-    const publisherId = bidRequests[0].params.publisherId;
-    const siteId = bidRequests[0].params.siteId;
-    const zoneId = bidRequests[0].params.zoneId;
-    let endpoint = ENDPOINT.replace(':id', siteId) + "?pid=" + publisherId;
+    const publisherId = bidRequests[0].params.publisherId
+    const siteId = bidRequests[0].params.siteId
+    const zoneId = bidRequests[0].params.zoneId
+    let endpoint = ENDPOINT.replace(':id', siteId) + "?pid=" + publisherId
 
     if (zoneId) {
-      endpoint += "&a=" + zoneId;
+      endpoint += "&a=" + zoneId
     }
 
     return bidRequests.map(bid => {
@@ -108,21 +108,21 @@ export const spec = {
         method: 'POST',
         data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
         bidRequest: bid,
-      };
+      }
     })
   },
   interpretResponse(response, request) {
-    return converter.fromORTB({ response: response.body, request: request.data }).bids;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids
   },
   onBidWon: function(bid) {
     if (bid.burl) {
-      triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm));
+      triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm))
     }
 
     if (bid.nurl) {
-      triggerPixel(replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm));
+      triggerPixel(replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm))
     }
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

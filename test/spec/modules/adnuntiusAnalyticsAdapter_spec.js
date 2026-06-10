@@ -1,12 +1,12 @@
-import adnAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/adnuntiusAnalyticsAdapter.js';
-import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
-import * as adUnits from 'src/utils/adUnits';
+import adnAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/adnuntiusAnalyticsAdapter.js'
+import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js'
+import { config } from 'src/config.js'
+import { server } from 'test/mocks/xhr.js'
+import * as adUnits from 'src/utils/adUnits'
 
-const events = require('src/events');
-const utils = require('src/utils');
-const adapterManager = require('src/adapterManager').default;
+const events = require('src/events')
+const utils = require('src/utils')
+const adapterManager = require('src/adapterManager').default
 
 const {
   AUCTION_INIT,
@@ -18,7 +18,7 @@ const {
   BID_TIMEOUT,
   SET_TARGETING,
   AD_RENDER_FAILED
-} = EVENTS;
+} = EVENTS
 
 const BID1 = {
   width: 980,
@@ -38,9 +38,9 @@ const BID1 = {
   },
   dealId: 'dealid',
   getStatusCode() {
-    return STATUS.GOOD;
+    return STATUS.GOOD
   }
-};
+}
 
 const BID2 = Object.assign({}, BID1, {
   width: 300,
@@ -57,7 +57,7 @@ const BID2 = Object.assign({}, BID1, {
     data: 'value2'
   },
   dealId: undefined
-});
+})
 
 const BID3 = {
   bidId: '4ecff0db240757',
@@ -66,9 +66,9 @@ const BID3 = {
   auctionId: '1234-4567-7890',
   mediaType: 'banner',
   getStatusCode() {
-    return STATUS.GOOD;
+    return STATUS.GOOD
   }
-};
+}
 
 const MOCK = {
   AUCTION_INIT: {
@@ -135,7 +135,7 @@ const MOCK = {
       'bid': BID1
     }
   ]
-};
+}
 
 const ANALYTICS_MESSAGE = {
   publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
@@ -272,52 +272,52 @@ const ANALYTICS_MESSAGE = {
       msg: 'message'
     },
   ]
-};
+}
 
 function performStandardAuction() {
-  events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-  events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-  events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-  events.emit(AUCTION_END, MOCK.AUCTION_END);
-  events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-  events.emit(BID_WON, MOCK.BID_WON[0]);
-  events.emit(BID_WON, MOCK.BID_WON[1]);
-  events.emit(AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED[0]);
+  events.emit(AUCTION_INIT, MOCK.AUCTION_INIT)
+  events.emit(BID_REQUESTED, MOCK.BID_REQUESTED)
+  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0])
+  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1])
+  events.emit(BIDDER_DONE, MOCK.BIDDER_DONE)
+  events.emit(AUCTION_END, MOCK.AUCTION_END)
+  events.emit(SET_TARGETING, MOCK.SET_TARGETING)
+  events.emit(BID_WON, MOCK.BID_WON[0])
+  events.emit(BID_WON, MOCK.BID_WON[1])
+  events.emit(AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED[0])
 }
 
 describe('Adnuntius analytics adapter', function () {
-  let sandbox;
-  let clock;
+  let sandbox
+  let clock
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
+    sandbox = sinon.createSandbox()
 
     const element = {
       getAttribute: function() {
-        return 'adunitid';
+        return 'adunitid'
       }
     }
-    sandbox.stub(events, 'getEvents').returns([]);
-    sandbox.stub(utils, 'timestamp').returns(1519149562416);
-    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
+    sandbox.stub(events, 'getEvents').returns([])
+    sandbox.stub(utils, 'timestamp').returns(1519149562416)
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element)
 
-    clock = sandbox.useFakeTimers(1519767013781);
-  });
+    clock = sandbox.useFakeTimers(1519767013781)
+  })
 
   afterEach(function () {
-    sandbox.restore();
-    config.resetConfig();
-    clock.runAll();
-    clock.restore();
-  });
+    sandbox.restore()
+    config.resetConfig()
+    clock.runAll()
+    clock.restore()
+  })
 
   describe('when handling events', function () {
     adapterManager.registerAnalyticsAdapter({
       code: 'adnuntius',
       adapter: adnAnalyticsAdapter
-    });
+    })
 
     beforeEach(function () {
       adapterManager.enableAnalytics({
@@ -325,76 +325,76 @@ describe('Adnuntius analytics adapter', function () {
         options: {
           publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7'
         }
-      });
-    });
+      })
+    })
 
     afterEach(function () {
-      adnAnalyticsAdapter.disableAnalytics();
-    });
+      adnAnalyticsAdapter.disableAnalytics()
+    })
 
     it('should build a batched message from prebid events', function () {
-      performStandardAuction();
+      performStandardAuction()
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
+      expect(server.requests.length).to.equal(1)
+      const request = server.requests[0]
 
-      expect(request.url).to.equal('https://analytics.adnuntius.com/prebid');
+      expect(request.url).to.equal('https://analytics.adnuntius.com/prebid')
 
-      const message = JSON.parse(request.requestBody);
-      expect(message).to.deep.equal(ANALYTICS_MESSAGE);
-    });
+      const message = JSON.parse(request.requestBody)
+      expect(message).to.deep.equal(ANALYTICS_MESSAGE)
+    })
 
     it('should send batched message without BID_WON AND AD_RENDER_FAILED if necessary and further BID_WON and AD_RENDER_FAILED events individually', function () {
-      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
-      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT)
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED)
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0])
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1])
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE)
+      events.emit(AUCTION_END, MOCK.AUCTION_END)
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING)
+      events.emit(BID_WON, MOCK.BID_WON[0])
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      events.emit(BID_WON, MOCK.BID_WON[1]);
-      events.emit(AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1])
+      events.emit(AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED[0])
 
-      expect(server.requests.length).to.equal(3);
+      expect(server.requests.length).to.equal(3)
 
-      let message = JSON.parse(server.requests[0].requestBody);
-      expect(message.wins.length).to.equal(1);
-      expect(message.requests).to.deep.equal(ANALYTICS_MESSAGE.requests);
-      expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[0]);
+      let message = JSON.parse(server.requests[0].requestBody)
+      expect(message.wins.length).to.equal(1)
+      expect(message.requests).to.deep.equal(ANALYTICS_MESSAGE.requests)
+      expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[0])
 
-      message = JSON.parse(server.requests[1].requestBody);
-      expect(message.wins.length).to.equal(1);
-      expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[1]);
+      message = JSON.parse(server.requests[1].requestBody)
+      expect(message.wins.length).to.equal(1)
+      expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[1])
 
-      message = JSON.parse(server.requests[2].requestBody);
-      expect(message.rf.length).to.equal(1);
-      expect(message.rf[0]).to.deep.equal(ANALYTICS_MESSAGE.rf[0]);
-    });
+      message = JSON.parse(server.requests[2].requestBody)
+      expect(message.rf.length).to.equal(1)
+      expect(message.rf[0]).to.deep.equal(ANALYTICS_MESSAGE.rf[0])
+    })
 
     it('should properly mark bids as timed out', function () {
-      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT)
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED)
+      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT)
+      events.emit(AUCTION_END, MOCK.AUCTION_END)
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      expect(server.requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1)
 
-      const message = JSON.parse(server.requests[0].requestBody);
-      expect(message.timeouts.length).to.equal(1);
-      expect(message.timeouts[0].bidder).to.equal('adnuntius');
-      expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
-    });
+      const message = JSON.parse(server.requests[0].requestBody)
+      expect(message.timeouts.length).to.equal(1)
+      expect(message.timeouts[0].bidder).to.equal('adnuntius')
+      expect(message.timeouts[0].adUnit).to.equal('panorama_d_1')
+    })
 
     it('should forward GDPR data', function () {
-      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT)
       events.emit(BID_REQUESTED, {
         'bidder': 'adnuntius',
         'auctionId': '1234-4567-7890',
@@ -417,60 +417,60 @@ describe('Adnuntius analytics adapter', function () {
           'consentString': 'consentstring'
         }
       },
-      );
+      )
 
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(BID_WON, MOCK.BID_WON[0]);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0])
+      events.emit(BID_WON, MOCK.BID_WON[0])
+      events.emit(AUCTION_END, MOCK.AUCTION_END)
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      expect(server.requests.length).to.equal(1)
+      const request = server.requests[0]
+      const message = JSON.parse(request.requestBody)
 
-      expect(message.gdpr.length).to.equal(1);
-      expect(message.gdpr[0].gdprApplies).to.equal(true);
-      expect(message.gdpr[0].gdprConsent).to.equal('consentstring');
-      expect(message.requests.length).to.equal(2);
-      expect(message.requests[0].gdpr).to.equal(0);
-      expect(message.requests[1].gdpr).to.equal(0);
+      expect(message.gdpr.length).to.equal(1)
+      expect(message.gdpr[0].gdprApplies).to.equal(true)
+      expect(message.gdpr[0].gdprConsent).to.equal('consentstring')
+      expect(message.requests.length).to.equal(2)
+      expect(message.requests[0].gdpr).to.equal(0)
+      expect(message.requests[1].gdpr).to.equal(0)
 
-      expect(message.responses.length).to.equal(1);
-      expect(message.responses[0].gdpr).to.equal(0);
+      expect(message.responses.length).to.equal(1)
+      expect(message.responses[0].gdpr).to.equal(0)
 
-      expect(message.wins.length).to.equal(1);
-      expect(message.wins[0].gdpr).to.equal(0);
-    });
+      expect(message.wins.length).to.equal(1)
+      expect(message.wins[0].gdpr).to.equal(0)
+    })
 
     it('should forward runner-up data as given by Adnuntius wrapper', function () {
-      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT)
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED)
 
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0])
       events.emit(BID_WON, Object.assign({},
         MOCK.BID_WON[0],
         {
           'rUp': 'rUpObject'
-        }));
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
+        }))
+      events.emit(AUCTION_END, MOCK.AUCTION_END)
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      expect(server.requests.length).to.equal(1)
+      const request = server.requests[0]
+      const message = JSON.parse(request.requestBody)
 
-      expect(message.wins.length).to.equal(1);
-      expect(message.wins[0].rUp).to.equal('rUpObject');
-    });
-  });
+      expect(message.wins.length).to.equal(1)
+      expect(message.wins[0].rUp).to.equal('rUpObject')
+    })
+  })
 
   describe('when given other endpoint', function () {
     adapterManager.registerAnalyticsAdapter({
       code: 'adnuntius',
       adapter: adnAnalyticsAdapter
-    });
+    })
 
     beforeEach(function () {
       adapterManager.enableAnalytics({
@@ -479,30 +479,30 @@ describe('Adnuntius analytics adapter', function () {
           publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
           endPoint: 'https://whitelabeled.com/analytics/10'
         }
-      });
-    });
+      })
+    })
 
     afterEach(function () {
-      adnAnalyticsAdapter.disableAnalytics();
-    });
+      adnAnalyticsAdapter.disableAnalytics()
+    })
 
     it('should call the endpoint', function () {
-      performStandardAuction();
+      performStandardAuction()
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
+      expect(server.requests.length).to.equal(1)
+      const request = server.requests[0]
 
-      expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
-    });
-  });
+      expect(request.url).to.equal('https://whitelabeled.com/analytics/10')
+    })
+  })
 
   describe('when given extended options', function () {
     adapterManager.registerAnalyticsAdapter({
       code: 'adnuntius',
       adapter: adnAnalyticsAdapter
-    });
+    })
 
     beforeEach(function () {
       adapterManager.enableAnalytics({
@@ -513,24 +513,24 @@ describe('Adnuntius analytics adapter', function () {
             testparam: 123
           }
         }
-      });
-    });
+      })
+    })
 
     afterEach(function () {
-      adnAnalyticsAdapter.disableAnalytics();
-    });
+      adnAnalyticsAdapter.disableAnalytics()
+    })
 
     it('should forward the extended options', function () {
-      performStandardAuction();
+      performStandardAuction()
 
-      clock.tick(BID_WON_TIMEOUT + 1000);
+      clock.tick(BID_WON_TIMEOUT + 1000)
 
-      expect(server.requests.length).to.equal(1);
-      const request = server.requests[0];
-      const message = JSON.parse(request.requestBody);
+      expect(server.requests.length).to.equal(1)
+      const request = server.requests[0]
+      const message = JSON.parse(request.requestBody)
 
-      expect(message.ext).to.not.equal(null);
-      expect(message.ext.testparam).to.equal(123);
-    });
-  });
-});
+      expect(message.ext).to.not.equal(null)
+      expect(message.ext.testparam).to.equal(123)
+    })
+  })
+})

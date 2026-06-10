@@ -1,7 +1,7 @@
 /**
  * This module adds the LiveIntent provider to the Real Time Data module (rtdModule).
  */
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.js'
 import { deepAccess, deepSetValue } from '../src/utils.js'
 
 /**
@@ -10,8 +10,8 @@ import { deepAccess, deepSetValue } from '../src/utils.js'
  * @typedef {import('../modules/rtdModule/index.js').UserConsentData} UserConsentData
  */
 
-const SUBMODULE_NAME = 'liveintent';
-const GVLID = 148;
+const SUBMODULE_NAME = 'liveintent'
+const GVLID = 148
 
 /**
  * Init
@@ -20,7 +20,7 @@ const GVLID = 148;
  * @returns true
  */
 const init = (config, userConsent) => {
-  return true;
+  return true
 }
 
 /**
@@ -47,6 +47,6 @@ export const liveIntentRtdSubmodule = {
   gvlid: GVLID,
   init: init,
   onBidRequestEvent: onBidRequest
-};
+}
 
-submodule('realTimeData', liveIntentRtdSubmodule);
+submodule('realTimeData', liveIntentRtdSubmodule)

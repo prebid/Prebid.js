@@ -116,15 +116,15 @@ describe('alkimiBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let sandbox;
+    let sandbox
 
     beforeEach(function() {
-      sandbox = sinon.createSandbox();
-    });
+      sandbox = sinon.createSandbox()
+    })
 
     afterEach(function() {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
 
     const bidRequests = [REQUEST]
     const requestData = {
@@ -197,173 +197,173 @@ describe('alkimiBidAdapter', function () {
           userTokenType: 'Alkimi',
           signature: 'test-signature',
           randomUUID: 'test-uuid-123'
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user).to.exist;
-        expect(bidderRequest.data.ortb2.user.ext.userWalletAddress).to.equal('0x1234567890abcdef');
-        expect(bidderRequest.data.ortb2.user.ext.userParams).to.deep.equal({ segment: 'premium', interests: ['crypto', 'defi'] });
-        expect(bidderRequest.data.ortb2.user.ext.userWalletConnected).to.equal('true');
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20']);
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi']);
-        expect(bidderRequest.data.signature).to.equal('test-signature');
-        expect(bidderRequest.data.signRequest.randomUUID).to.equal('test-uuid-123');
-      });
+        expect(bidderRequest.data.ortb2.user).to.exist
+        expect(bidderRequest.data.ortb2.user.ext.userWalletAddress).to.equal('0x1234567890abcdef')
+        expect(bidderRequest.data.ortb2.user.ext.userParams).to.deep.equal({ segment: 'premium', interests: ['crypto', 'defi'] })
+        expect(bidderRequest.data.ortb2.user.ext.userWalletConnected).to.equal('true')
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20'])
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi'])
+        expect(bidderRequest.data.signature).to.equal('test-signature')
+        expect(bidderRequest.data.signRequest.randomUUID).to.equal('test-uuid-123')
+      })
 
       it('should handle comma-separated string values for wallet protocol and token type', function () {
         const alkimiConfigStub = {
           userWalletAddress: '0xtest',
           userWalletProtocol: 'ERC-20, TRC-20, BSC',
           userTokenType: 'Alkimi, USDT, ETH'
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20', 'TRC-20', 'BSC']);
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi', 'USDT', 'ETH']);
-      });
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20', 'TRC-20', 'BSC'])
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi', 'USDT', 'ETH'])
+      })
 
       it('should handle array values for wallet protocol and token type', function () {
         const alkimiConfigStub = {
           userWalletAddress: '0xtest',
           userWalletProtocol: ['ERC-20', 'TRC-20'],
           userTokenType: ['Alkimi', 'USDT']
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20', 'TRC-20']);
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi', 'USDT']);
-      });
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20', 'TRC-20'])
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi', 'USDT'])
+      })
 
       it('should handle single string value (non-comma) for wallet protocol and token type', function () {
         const alkimiConfigStub = {
           userWalletAddress: '0xtest',
           userWalletProtocol: 'ERC20',
           userTokenType: 'Alkimi'
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC20']);
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi']);
-      });
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC20'])
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi'])
+      })
 
       it('should handle partial wallet config with only some parameters', function () {
         const alkimiConfigStub = {
           userWalletAddress: '0xpartial',
           userWalletConnected: 'false'
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user).to.exist;
-        expect(bidderRequest.data.ortb2.user.ext.userWalletAddress).to.equal('0xpartial');
-        expect(bidderRequest.data.ortb2.user.ext.userWalletConnected).to.equal('false');
-        expect(bidderRequest.data.ortb2.user.ext.userParams).to.be.undefined;
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.be.undefined;
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.be.undefined;
-      });
+        expect(bidderRequest.data.ortb2.user).to.exist
+        expect(bidderRequest.data.ortb2.user.ext.userWalletAddress).to.equal('0xpartial')
+        expect(bidderRequest.data.ortb2.user.ext.userWalletConnected).to.equal('false')
+        expect(bidderRequest.data.ortb2.user.ext.userParams).to.be.undefined
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.be.undefined
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.be.undefined
+      })
 
       it('should include user object with only userId when no wallet config exists', function () {
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(undefined);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-        sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('alkimiUserID').returns('stored-user-id');
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(undefined)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true)
+        sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('alkimiUserID').returns('stored-user-id')
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user).to.exist;
-        expect(bidderRequest.data.ortb2.user.id).to.equal('stored-user-id');
-        expect(bidderRequest.data.ortb2.user.ext.userWalletAddress).to.be.undefined;
-        expect(bidderRequest.data.ortb2.user.ext.userParams).to.be.undefined;
-        expect(bidderRequest.data.ortb2.user.ext.userWalletConnected).to.be.undefined;
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.be.undefined;
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.be.undefined;
-      });
+        expect(bidderRequest.data.ortb2.user).to.exist
+        expect(bidderRequest.data.ortb2.user.id).to.equal('stored-user-id')
+        expect(bidderRequest.data.ortb2.user.ext.userWalletAddress).to.be.undefined
+        expect(bidderRequest.data.ortb2.user.ext.userParams).to.be.undefined
+        expect(bidderRequest.data.ortb2.user.ext.userWalletConnected).to.be.undefined
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.be.undefined
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.be.undefined
+      })
 
       it('should not include user object when no wallet config and no userId exists', function () {
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(undefined);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(undefined)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user).to.be.undefined;
-      });
+        expect(bidderRequest.data.ortb2.user).to.be.undefined
+      })
 
       it('should filter out empty strings from comma-separated values', function () {
         const alkimiConfigStub = {
           userWalletAddress: '0xtest',
           userWalletProtocol: 'ERC-20, , TRC-20, ',
           userTokenType: 'Alkimi, , , ETH'
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub);
-        sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+        sandbox.stub(config, 'getConfig').withArgs('alkimi').returns(alkimiConfigStub)
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(false)
 
-        const bidderRequest = spec.buildRequests(bidRequests, requestData);
+        const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
-        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20', 'TRC-20']);
-        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi', 'ETH']);
-      });
-    });
+        expect(bidderRequest.data.ortb2.user.ext.userWalletProtocol).to.deep.equal(['ERC-20', 'TRC-20'])
+        expect(bidderRequest.data.ortb2.user.ext.userTokenType).to.deep.equal(['Alkimi', 'ETH'])
+      })
+    })
 
     // Currency Test Cases
     describe('Multi-Currency Support', function () {
       it('should handle floor with default USD currency', function () {
-        const requestWithFloor = Object.assign({}, REQUEST);
+        const requestWithFloor = Object.assign({}, REQUEST)
         requestWithFloor.getFloor = function (arg) {
           if (arg.currency === 'USD' && arg.mediaType === 'banner' && JSON.stringify(arg.size) === JSON.stringify([300, 250])) {
-            return { currency: 'USD', floor: 0.3 };
+            return { currency: 'USD', floor: 0.3 }
           }
-        };
+        }
 
-        const bidderRequestFloor = spec.buildRequests([requestWithFloor], requestData);
-        expect(bidderRequestFloor.data.signRequest.bids[0].bidFloor).to.equal(0.3);
-        expect(bidderRequestFloor.data.signRequest.bids[0].currency).to.equal('USD');
-      });
+        const bidderRequestFloor = spec.buildRequests([requestWithFloor], requestData)
+        expect(bidderRequestFloor.data.signRequest.bids[0].bidFloor).to.equal(0.3)
+        expect(bidderRequestFloor.data.signRequest.bids[0].currency).to.equal('USD')
+      })
 
       it('should handle floor with EUR currency config', function () {
-        const requestWithFloor = Object.assign({}, REQUEST);
+        const requestWithFloor = Object.assign({}, REQUEST)
         requestWithFloor.getFloor = function (arg) {
           if (arg.currency === 'EUR' && arg.mediaType === 'banner') {
-            return { currency: 'EUR', floor: 2.0 };
+            return { currency: 'EUR', floor: 2.0 }
           }
-        };
+        }
 
-        sandbox.stub(config, 'getConfig').withArgs('currency').returns({ adServerCurrency: 'EUR' });
+        sandbox.stub(config, 'getConfig').withArgs('currency').returns({ adServerCurrency: 'EUR' })
 
-        const bidderRequest = spec.buildRequests([requestWithFloor], requestData);
+        const bidderRequest = spec.buildRequests([requestWithFloor], requestData)
 
-        expect(bidderRequest.data.signRequest.bids[0].bidFloor).to.equal(2.0);
-        expect(bidderRequest.data.signRequest.bids[0].currency).to.equal('EUR');
-      });
+        expect(bidderRequest.data.signRequest.bids[0].bidFloor).to.equal(2.0)
+        expect(bidderRequest.data.signRequest.bids[0].currency).to.equal('EUR')
+      })
 
       it('should use params.bidFloor with default currency when getFloor is not available', function () {
-        const requestWithoutGetFloor = Object.assign({}, REQUEST);
-        delete requestWithoutGetFloor.getFloor;
-        requestWithoutGetFloor.params.bidFloor = 0.5;
+        const requestWithoutGetFloor = Object.assign({}, REQUEST)
+        delete requestWithoutGetFloor.getFloor
+        requestWithoutGetFloor.params.bidFloor = 0.5
 
-        const bidderRequest = spec.buildRequests([requestWithoutGetFloor], requestData);
+        const bidderRequest = spec.buildRequests([requestWithoutGetFloor], requestData)
 
-        expect(bidderRequest.data.signRequest.bids[0].bidFloor).to.equal(0.5);
-        expect(bidderRequest.data.signRequest.bids[0].currency).to.equal('USD');
-      });
+        expect(bidderRequest.data.signRequest.bids[0].bidFloor).to.equal(0.5)
+        expect(bidderRequest.data.signRequest.bids[0].currency).to.equal('USD')
+      })
 
       it('should select minimum floor when multiple media types are present', function () {
         const multiFormatRequest = Object.assign({}, REQUEST, {
@@ -371,24 +371,24 @@ describe('alkimiBidAdapter', function () {
             banner: { sizes: [[300, 250]] },
             video: { playerSize: [[640, 480]] }
           }
-        });
+        })
 
         multiFormatRequest.getFloor = function (arg) {
           if (arg.mediaType === 'banner') {
-            return { currency: 'USD', floor: 2.5 };
+            return { currency: 'USD', floor: 2.5 }
           }
           if (arg.mediaType === 'video') {
-            return { currency: 'USD', floor: 1.8 };
+            return { currency: 'USD', floor: 1.8 }
           }
-        };
+        }
 
-        const bidderRequest = spec.buildRequests([multiFormatRequest], requestData);
+        const bidderRequest = spec.buildRequests([multiFormatRequest], requestData)
 
-        expect(bidderRequest.data.signRequest.bids[0].bidFloor).to.equal(1.8);
-        expect(bidderRequest.data.signRequest.bids[0].currency).to.equal('USD');
-      });
-    });
-  });
+        expect(bidderRequest.data.signRequest.bids[0].bidFloor).to.equal(1.8)
+        expect(bidderRequest.data.signRequest.bids[0].currency).to.equal('USD')
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
     it('handles banner request : should get correct bid response', function () {
@@ -450,13 +450,13 @@ describe('alkimiBidAdapter', function () {
           netRevenue: true,
           mediaType: 'banner'
         }]
-      };
+      }
 
-      const result = spec.interpretResponse({ body: responseWithCurrency }, {});
+      const result = spec.interpretResponse({ body: responseWithCurrency }, {})
 
-      expect(result[0].currency).to.equal('EUR');
-      expect(result[0].cpm).to.equal(1.5);
-    });
+      expect(result[0].currency).to.equal('EUR')
+      expect(result[0].cpm).to.equal(1.5)
+    })
 
     it('should default to USD when currency is not in response', function () {
       const responseWithoutCurrency = {
@@ -471,13 +471,13 @@ describe('alkimiBidAdapter', function () {
           netRevenue: true,
           mediaType: 'banner'
         }]
-      };
+      }
 
-      const result = spec.interpretResponse({ body: responseWithoutCurrency }, {});
+      const result = spec.interpretResponse({ body: responseWithoutCurrency }, {})
 
-      expect(result[0].currency).to.equal('USD');
-      expect(result[0].cpm).to.equal(2.0);
-    });
+      expect(result[0].currency).to.equal('USD')
+      expect(result[0].cpm).to.equal(2.0)
+    })
   })
 
   describe('onBidWon', function () {

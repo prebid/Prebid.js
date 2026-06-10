@@ -1,23 +1,23 @@
-import { expect } from 'chai';
-import { spec, storage } from 'modules/visxBidAdapter.js';
-import { config } from 'src/config.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as utils from 'src/utils.js';
-import { makeSlot } from '../integration/faker/googletag.js';
-import { mergeDeep } from '../../../src/utils.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
-import * as adUnits from 'src/utils/adUnits';
+import { expect } from 'chai'
+import { spec, storage } from 'modules/visxBidAdapter.js'
+import { config } from 'src/config.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import * as utils from 'src/utils.js'
+import { makeSlot } from '../integration/faker/googletag.js'
+import { mergeDeep } from '../../../src/utils.js'
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
+import { addFPDToBidderRequest } from '../../helpers/fpd.js'
+import { getGlobal } from '../../../src/prebidGlobal.js'
+import * as adUnits from 'src/utils/adUnits'
 
 describe('VisxAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -30,65 +30,65 @@ describe('VisxAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
       invalidBid.params = {
         'uid': 0
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
 
     it('should return false when uid can not be parsed as number', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
       invalidBid.params = {
         'uid': 'sdvsdv'
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
 
     it('it should fail on invalid video bid', function () {
-      const videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid)
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
           mimes: ['video/mp4'],
           protocols: [3, 6]
         }
-      };
-      expect(spec.isBidRequestValid(videoBid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(videoBid)).to.equal(false)
+    })
 
     it('it should pass on valid video bid', function () {
-      const videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid)
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
           playerSize: [[400, 300]]
         }
-      };
-      expect(spec.isBidRequestValid(videoBid)).to.equal(true);
+      }
+      expect(spec.isBidRequestValid(videoBid)).to.equal(true)
     })
-  });
+  })
 
   describe('buildRequests', function () {
     function parseRequest(url) {
       const res = {};
       (url.split('?')[1] || '').split('&').forEach((it) => {
-        const couple = it.split('=');
-        res[couple[0]] = decodeURIComponent(couple[1]);
-      });
-      return res;
+        const couple = it.split('=')
+        res[couple[0]] = decodeURIComponent(couple[1])
+      })
+      return res
     }
 
-    let cookiesAreEnabledStub, localStorageIsEnabledStub;
+    let cookiesAreEnabledStub, localStorageIsEnabledStub
 
     const bidderRequest = {
       timeout: 3000,
@@ -132,15 +132,15 @@ describe('VisxAdapter', function () {
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
       }
-    };
-    const referrer = bidderRequest.refererInfo.page;
+    }
+    const referrer = bidderRequest.refererInfo.page
     const schainObject = {
       ver: '1.0',
       nodes: [
         { asi: 'exchange2.com', sid: 'abcd', hp: 1 },
         { asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com' }
       ]
-    };
+    }
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -195,7 +195,7 @@ describe('VisxAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }
-    ];
+    ]
 
     const expectedFullImps = [{
       'id': '30b31c1838de1e',
@@ -223,36 +223,36 @@ describe('VisxAdapter', function () {
         'maxduration': 30
       },
       'ext': { 'bidder': { 'uid': 903537 } }
-    }];
+    }]
 
     before(() => {
       getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
-      };
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-      localStorageIsEnabledStub.returns(false);
-      cookiesAreEnabledStub.returns(false);
-    });
+      }
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled')
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled')
+      localStorageIsEnabledStub.returns(false)
+      cookiesAreEnabledStub.returns(false)
+    })
 
     after(() => {
-      localStorageIsEnabledStub.restore();
-      cookiesAreEnabledStub.restore();
-      getGlobal().bidderSettings = {};
-    });
+      localStorageIsEnabledStub.restore()
+      cookiesAreEnabledStub.restore()
+      getGlobal().bidderSettings = {}
+    })
 
     it('should attach valid params to the tag', function () {
-      const firstBid = bidRequests[0];
-      const bids = [firstBid];
-      const request = spec.buildRequests(bids, bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(request.url).to.be.an('string');
-      expect(payload).to.have.property('auids', '903535');
+      const firstBid = bidRequests[0]
+      const bids = [firstBid]
+      const request = spec.buildRequests(bids, bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(request.url).to.be.an('string')
+      expect(payload).to.have.property('auids', '903535')
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': [expectedFullImps[0]],
@@ -294,17 +294,17 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
-    });
+      })
+    })
 
     it('should attach valid params to the tag with multiformat request', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537')
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps,
@@ -346,18 +346,18 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
-    });
+      })
+    })
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
       config.setConfig({ currency: { bidderCurrencyDefault: { visx: 'GBP' } } })
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('auids', '903535,903535,903536,903537')
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps,
@@ -399,31 +399,31 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
+      })
 
-      config.resetConfig();
-    });
+      config.resetConfig()
+    })
 
     it('should add currency from currency.adServerCurrency', function () {
       setCurrencyConfig({ adServerCurrency: 'USD' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const request = spec.buildRequests(bidRequests, res);
-        const payload = parseRequest(request.url);
-        expect(payload).to.be.an('object');
-        expect(payload).to.have.property('auids', '903535,903535,903536,903537');
+        const request = spec.buildRequests(bidRequests, res)
+        const payload = parseRequest(request.url)
+        expect(payload).to.be.an('object')
+        expect(payload).to.have.property('auids', '903535,903535,903536,903537')
 
-        const postData = request.data;
-        expect(postData).to.be.an('object');
-        expect(postData.cur).to.deep.equal(['USD']);
+        const postData = request.data
+        expect(postData).to.be.an('object')
+        expect(postData.cur).to.deep.equal(['USD'])
         setCurrencyConfig({})
-      });
-    });
+      })
+    })
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const request = spec.buildRequests(bidRequests, Object.assign({ gdprConsent: { consentString: 'AAA', gdprApplies: true } }, bidderRequest));
+      const request = spec.buildRequests(bidRequests, Object.assign({ gdprConsent: { consentString: 'AAA', gdprApplies: true } }, bidderRequest))
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps,
@@ -471,14 +471,14 @@ describe('VisxAdapter', function () {
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         },
         'user': { 'ext': { 'consent': 'AAA' } },
-      });
-    });
+      })
+    })
 
     it('if gdprApplies is false gdpr_applies must be 0', function () {
-      const request = spec.buildRequests(bidRequests, Object.assign({ gdprConsent: { consentString: 'AAA', gdprApplies: false } }, bidderRequest));
+      const request = spec.buildRequests(bidRequests, Object.assign({ gdprConsent: { consentString: 'AAA', gdprApplies: false } }, bidderRequest))
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps,
@@ -522,14 +522,14 @@ describe('VisxAdapter', function () {
         },
         'user': { 'ext': { 'consent': 'AAA' } },
         'regs': { 'ext': { 'gdpr': 0 } }
-      });
-    });
+      })
+    })
 
     it('if gdprApplies is undefined gdpr_applies must be 1', function () {
-      const request = spec.buildRequests(bidRequests, Object.assign({ gdprConsent: { consentString: 'AAA' } }, bidderRequest));
+      const request = spec.buildRequests(bidRequests, Object.assign({ gdprConsent: { consentString: 'AAA' } }, bidderRequest))
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps,
@@ -573,22 +573,22 @@ describe('VisxAdapter', function () {
         },
         'user': { 'ext': { 'consent': 'AAA' } },
         'regs': { 'ext': { 'gdpr': 1 } }
-      });
-    });
+      })
+    })
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
         Object.assign({ ortb2: { source: { ext: { schain: schainObject } } } }, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
-      ];
-      const request = spec.buildRequests(schainBidRequests, bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535,903535,903536');
+      ]
+      const request = spec.buildRequests(schainBidRequests, bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('auids', '903535,903535,903536')
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps.slice(0, -1),
@@ -636,8 +636,8 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
-    });
+      })
+    })
 
     it('if userId is available payload must have appropriate params', function () {
       const eids = [
@@ -658,7 +658,7 @@ describe('VisxAdapter', function () {
             }
           }]
         }
-      ];
+      ]
       const userIdBidRequests = [
         Object.assign({
           userId: {
@@ -670,11 +670,11 @@ describe('VisxAdapter', function () {
         }, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
-      ];
-      const request = spec.buildRequests(userIdBidRequests, bidderRequest);
+      ]
+      const request = spec.buildRequests(userIdBidRequests, bidderRequest)
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps.slice(0, -1),
@@ -722,14 +722,14 @@ describe('VisxAdapter', function () {
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         },
         'user': { 'ext': { 'eids': eids } }
-      });
-    });
+      })
+    })
 
     it('should pass grouped video bid\'s params in payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': expectedFullImps,
@@ -776,31 +776,31 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
-    });
+      })
+    })
 
     it('if gpid is present payload must have gpid param', function () {
-      const firstBid = Object.assign({}, bidRequests[0]);
+      const firstBid = Object.assign({}, bidRequests[0])
       firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } }
-      const bids = [firstBid];
-      const request = spec.buildRequests(bids, bidderRequest);
-      const postData = request.data;
+      const bids = [firstBid]
+      const request = spec.buildRequests(bids, bidderRequest)
+      const postData = request.data
 
-      expect(postData).to.be.an('object');
-      expect(postData.imp[0].ext.gpid).to.equal('adunit-gpid-1');
-    });
-  });
+      expect(postData).to.be.an('object')
+      expect(postData.imp[0].ext.gpid).to.equal('adunit-gpid-1')
+    })
+  })
 
   describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
     function parseRequest(url) {
       const res = {};
       (url.split('?')[1] || '').split('&').forEach((it) => {
-        const couple = it.split('=');
-        res[couple[0]] = decodeURIComponent(couple[1]);
-      });
-      return res;
+        const couple = it.split('=')
+        res[couple[0]] = decodeURIComponent(couple[1])
+      })
+      return res
     }
-    let cookiesAreEnabledStub, localStorageIsEnabledStub;
+    let cookiesAreEnabledStub, localStorageIsEnabledStub
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -843,8 +843,8 @@ describe('VisxAdapter', function () {
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
       }
-    };
-    const referrer = bidderRequest.refererInfo.page;
+    }
+    const referrer = bidderRequest.refererInfo.page
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -863,33 +863,33 @@ describe('VisxAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a476'
       }
-    ];
+    ]
 
     before(() => {
       getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
-      };
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-      localStorageIsEnabledStub.returns(false);
-      cookiesAreEnabledStub.returns(false);
-    });
+      }
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled')
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled')
+      localStorageIsEnabledStub.returns(false)
+      cookiesAreEnabledStub.returns(false)
+    })
 
     after(() => {
-      localStorageIsEnabledStub.restore();
-      cookiesAreEnabledStub.restore();
-      getGlobal().bidderSettings = {};
-    });
+      localStorageIsEnabledStub.restore()
+      cookiesAreEnabledStub.restore()
+      getGlobal().bidderSettings = {}
+    })
 
     it('should send request for banner bid', function () {
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903538');
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('auids', '903538')
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': [{
@@ -946,20 +946,20 @@ describe('VisxAdapter', function () {
             'mobile': 0
           },
         }
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('buildRequests (check ad slot exists)', function () {
     function parseRequest(url) {
       const res = {};
       (url.split('?')[1] || '').split('&').forEach((it) => {
-        const couple = it.split('=');
-        res[couple[0]] = decodeURIComponent(couple[1]);
-      });
-      return res;
+        const couple = it.split('=')
+        res[couple[0]] = decodeURIComponent(couple[1])
+      })
+      return res
     }
-    let cookiesAreEnabledStub, localStorageIsEnabledStub;
+    let cookiesAreEnabledStub, localStorageIsEnabledStub
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -1002,8 +1002,8 @@ describe('VisxAdapter', function () {
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
       }
-    };
-    const referrer = bidderRequest.refererInfo.page;
+    }
+    const referrer = bidderRequest.refererInfo.page
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1027,42 +1027,42 @@ describe('VisxAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }
-    ];
-    let sandbox;
-    let documentStub;
+    ]
+    let sandbox
+    let documentStub
 
     before(function() {
-      sandbox = sinon.createSandbox();
+      sandbox = sinon.createSandbox()
       sandbox.stub(adUnits, 'getAdUnitElement').callsFake(({ adUnitCode }) => {
-        return ['visx-adunit-code-1', 'visx-adunit-code-2'].includes(adUnitCode);
+        return ['visx-adunit-code-1', 'visx-adunit-code-2'].includes(adUnitCode)
       })
 
       getGlobal().bidderSettings = {
         visx: {
           storageAllowed: false
         }
-      };
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-      localStorageIsEnabledStub.returns(false);
-      cookiesAreEnabledStub.returns(false);
-    });
+      }
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled')
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled')
+      localStorageIsEnabledStub.returns(false)
+      cookiesAreEnabledStub.returns(false)
+    })
 
     after(function() {
-      sandbox.restore();
-      localStorageIsEnabledStub.restore();
-      cookiesAreEnabledStub.restore();
-      getGlobal().bidderSettings = {};
-    });
+      sandbox.restore()
+      localStorageIsEnabledStub.restore()
+      cookiesAreEnabledStub.restore()
+      getGlobal().bidderSettings = {}
+    })
 
     it('should find ad slot by ad unit code as element id', function () {
-      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535');
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('auids', '903535')
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': [{
@@ -1113,19 +1113,19 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
-    });
+      })
+    })
 
     it('should find ad slot by ad unit code as adUnitPath', function () {
-      makeSlot({ code: 'visx-adunit-code-2', divId: 'visx-adunit-element-2' });
+      makeSlot({ code: 'visx-adunit-code-2', divId: 'visx-adunit-element-2' })
 
-      const request = spec.buildRequests([bidRequests[1]], bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535');
+      const request = spec.buildRequests([bidRequests[1]], bidderRequest)
+      const payload = parseRequest(request.url)
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('auids', '903535')
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
+      const postData = request.data
+      expect(postData).to.be.an('object')
       expect(postData).to.deep.equal({
         'id': '22edbae2733bf6',
         'imp': [{
@@ -1176,9 +1176,9 @@ describe('VisxAdapter', function () {
           },
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
     const responses = [
@@ -1190,7 +1190,7 @@ describe('VisxAdapter', function () {
       undefined,
       { 'bid': [], 'seat': '1' },
       { 'seat': '1' },
-    ];
+    ]
 
     it('should get correct bid response', function () {
       const bidRequests = [
@@ -1205,8 +1205,8 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'requestId': '300bfeb0d71a5b',
@@ -1236,11 +1236,11 @@ describe('VisxAdapter', function () {
             }
           }
         }
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': { 'seatbid': [responses[0]] } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
+      const result = spec.interpretResponse({ 'body': { 'seatbid': [responses[0]] } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
 
     it('should get correct multi bid response', function () {
       const bidRequests = [
@@ -1277,8 +1277,8 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '2c2bb1972df9a',
           'auctionId': '1fa09aee5c8c99'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'requestId': '300bfeb0d71a5b',
@@ -1340,11 +1340,11 @@ describe('VisxAdapter', function () {
             'mediaType': 'banner',
           },
         }
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': { 'seatbid': responses.slice(0, 3) } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
+      const result = spec.interpretResponse({ 'body': { 'seatbid': responses.slice(0, 3) } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
 
     it('should return right currency', function () {
       const bidRequests = [
@@ -1359,9 +1359,9 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b'
         }
-      ];
-      const getConfigStub = sinon.stub(config, 'getConfig').returns('PLN');
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const getConfigStub = sinon.stub(config, 'getConfig').returns('PLN')
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'requestId': '300bfeb0d71a5b',
@@ -1391,14 +1391,14 @@ describe('VisxAdapter', function () {
             }
           }
         }
-      ];
+      ]
 
-      const response = Object.assign({}, responses[0]);
-      response.bid = [Object.assign({}, response.bid[0], { 'cur': 'PLN' })];
-      const result = spec.interpretResponse({ 'body': { 'seatbid': [response] } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-      getConfigStub.restore();
-    });
+      const response = Object.assign({}, responses[0])
+      response.bid = [Object.assign({}, response.bid[0], { 'cur': 'PLN' })]
+      const result = spec.interpretResponse({ 'body': { 'seatbid': [response] } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+      getConfigStub.restore()
+    })
 
     it('handles wrong and nobid responses', function () {
       const bidRequests = [
@@ -1435,11 +1435,11 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '2c2bb1972d23af',
           'auctionId': '1fa09aee5c84d34'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
-      const result = spec.interpretResponse({ 'body': { 'seatbid': responses.slice(3) } }, request);
-      expect(result.length).to.equal(0);
-    });
+      ]
+      const request = spec.buildRequests(bidRequests)
+      const result = spec.interpretResponse({ 'body': { 'seatbid': responses.slice(3) } }, request)
+      expect(result.length).to.equal(0)
+    })
 
     it('complicated case', function () {
       const fullResponse = [
@@ -1448,7 +1448,7 @@ describe('VisxAdapter', function () {
         { 'bid': [{ 'price': 0.15, 'impid': '26d6f897b516', 'adm': '<div>test content 3</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 90, 'w': 728, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
         { 'bid': [{ 'price': 0.15, 'impid': '326bde7fbf69', 'adm': '<div>test content 4</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 600, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
         { 'bid': [{ 'price': 0.5, 'impid': '1751cd90161', 'adm': '<div>test content 5</div>', 'auid': 903536, 'crid': 'visx_1', 'h': 600, 'w': 350, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
-      ];
+      ]
       const bidRequests = [
         {
           'bidder': 'visx',
@@ -1505,8 +1505,8 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '106efe3247',
           'auctionId': '32a1f276cb87cb8'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'requestId': '2164be6358b9',
@@ -1588,17 +1588,17 @@ describe('VisxAdapter', function () {
             'mediaType': 'banner',
           },
         }
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
         { 'bid': [{ 'price': 1.15, 'impid': '5126e301f4be', 'adm': '<div>test content 1</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
         { 'bid': [{ 'price': 0.5, 'impid': '57b2ebe70e16', 'adm': '<div>test content 2</div>', 'auid': 903535, 'crid': 'visx_1', 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner' }], 'seat': '1' },
-      ];
+      ]
       const bidRequests = [
         {
           'bidder': 'visx',
@@ -1633,8 +1633,8 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '171c5405a390',
           'auctionId': '35bcbc0f7e79c'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'requestId': '5126e301f4be',
@@ -1668,16 +1668,16 @@ describe('VisxAdapter', function () {
             'mediaType': 'banner',
           },
         }
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
 
     it('handles video bid', function () {
       const fullResponse = [
         { 'bid': [{ 'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'crid': 'visx_1', 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video' }], 'seat': '1' },
-      ];
+      ]
       const bidRequests = [
         {
           'bidder': 'visx',
@@ -1698,8 +1698,8 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '106efe3247',
           'auctionId': '32a1f276cb87cb8'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'mediaType': 'video',
@@ -1718,15 +1718,15 @@ describe('VisxAdapter', function () {
             'mediaType': 'video',
           },
         }
-      ];
-      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
+      ]
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
 
     it('handles multiformat bid response with outstream+banner as banner', function () {
       const fullResponse = [
         { 'bid': [{ 'price': 0.5, 'impid': '2164be6358b9', 'adm': '<VAST/>', 'auid': 903537, 'crid': 'visx_1', 'w': 400, 'h': 300, 'cur': 'EUR', 'mediaType': 'video' }], 'seat': '1' },
-      ];
+      ]
       const bidRequests = [
         {
           'bidder': 'visx',
@@ -1750,8 +1750,8 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '106efe3247',
           'auctionId': '32a1f276cb87cb8'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
+      ]
+      const request = spec.buildRequests(bidRequests)
       const expectedResponse = [
         {
           'ad': '<VAST/>',
@@ -1769,10 +1769,10 @@ describe('VisxAdapter', function () {
             'mediaType': 'video',
           },
         }
-      ];
-      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
+      ]
+      const result = spec.interpretResponse({ 'body': { 'seatbid': fullResponse } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
 
     it('should get right ext data in bid response', function () {
       const bidRequests = [
@@ -1787,11 +1787,11 @@ describe('VisxAdapter', function () {
           'bidderRequestId': '5f2009617a7c0a',
           'auctionId': '1cbd2feafe5e8b'
         }
-      ];
-      const request = spec.buildRequests(bidRequests);
-      const pendingUrl = 'https://t.visx.net/track/pending/123123123';
-      const winUrl = 'https://t.visx.net/track/win/53245341';
-      const runtimeUrl = 'https://t.visx.net/track/status/12345678';
+      ]
+      const request = spec.buildRequests(bidRequests)
+      const pendingUrl = 'https://t.visx.net/track/pending/123123123'
+      const winUrl = 'https://t.visx.net/track/win/53245341'
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678'
       const expectedResponse = [
         {
           'requestId': '300bfeb0d71a5b',
@@ -1826,137 +1826,137 @@ describe('VisxAdapter', function () {
             }
           }
         }
-      ];
-      const serverResponse = Object.assign({}, responses[0]);
-      serverResponse.bid = [Object.assign({}, serverResponse.bid[0])];
-      serverResponse.bid[0].ext.prebid = Object.assign({}, serverResponse.bid[0].ext.prebid);
+      ]
+      const serverResponse = Object.assign({}, responses[0])
+      serverResponse.bid = [Object.assign({}, serverResponse.bid[0])]
+      serverResponse.bid[0].ext.prebid = Object.assign({}, serverResponse.bid[0].ext.prebid)
       utils.deepSetValue(serverResponse.bid[0], 'ext.prebid.events', {
         pending: pendingUrl,
         win: winUrl,
-      });
+      })
       utils.deepSetValue(serverResponse.bid[0], 'ext.visx.events', {
         runtime: runtimeUrl
-      });
-      const result = spec.interpretResponse({ 'body': { 'seatbid': [serverResponse] } }, request);
-      expect(result).to.deep.equal(expectedResponse);
-    });
-  });
+      })
+      const result = spec.interpretResponse({ 'body': { 'seatbid': [serverResponse] } }, request)
+      expect(result).to.deep.equal(expectedResponse)
+    })
+  })
   describe('check trackers', function () {
     beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
-    });
+      sinon.stub(utils, 'triggerPixel')
+    })
 
     afterEach(function () {
-      utils.triggerPixel.restore();
-    });
+      utils.triggerPixel.restore()
+    })
 
     it('onSetTargeting', function () {
-      const trackUrl = 'https://t.visx.net/track/pending/123123123';
-      const bid = { ext: { events: { pending: trackUrl } } };
-      spec.onSetTargeting(bid);
-      expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true);
-    });
+      const trackUrl = 'https://t.visx.net/track/pending/123123123'
+      const bid = { ext: { events: { pending: trackUrl } } }
+      spec.onSetTargeting(bid)
+      expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true)
+    })
 
     it('onBidWon', function () {
-      const trackUrl = 'https://t.visx.net/track/win/123123123';
-      const bid = { ext: { events: { win: trackUrl } } };
-      spec.onBidWon(bid);
-      expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true);
-    });
+      const trackUrl = 'https://t.visx.net/track/win/123123123'
+      const bid = { ext: { events: { win: trackUrl } } }
+      spec.onBidWon(bid)
+      expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true)
+    })
 
     it('onBidWon with runtime tracker (0 < timeToRespond <= 5000 )', function () {
-      const trackUrl = 'https://t.visx.net/track/win/123123123';
-      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
-      const bid = { auctionId: '1', ext: { events: { win: trackUrl, runtime: runtimeUrl } }, timeToRespond: 100 };
-      spec.onBidWon(bid);
-      expect(utils.triggerPixel.calledTwice).to.equal(true);
-      expect(utils.triggerPixel.calledWith(trackUrl)).to.equal(true);
-      expect(utils.triggerPixel.calledWith(runtimeUrl.replace('{STATUS_CODE}', 999002))).to.equal(true);
-    });
+      const trackUrl = 'https://t.visx.net/track/win/123123123'
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}'
+      const bid = { auctionId: '1', ext: { events: { win: trackUrl, runtime: runtimeUrl } }, timeToRespond: 100 }
+      spec.onBidWon(bid)
+      expect(utils.triggerPixel.calledTwice).to.equal(true)
+      expect(utils.triggerPixel.calledWith(trackUrl)).to.equal(true)
+      expect(utils.triggerPixel.calledWith(runtimeUrl.replace('{STATUS_CODE}', 999002))).to.equal(true)
+    })
 
     it('onBidWon with runtime tracker (timeToRespond <= 0 )', function () {
-      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
-      const bid = { auctionId: '2', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 0 };
-      spec.onBidWon(bid);
-      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999000))).to.equal(true);
-    });
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}'
+      const bid = { auctionId: '2', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 0 }
+      spec.onBidWon(bid)
+      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999000))).to.equal(true)
+    })
 
     it('onBidWon with runtime tracker (timeToRespond > 5000 )', function () {
-      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
-      const bid = { auctionId: '3', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 5001 };
-      spec.onBidWon(bid);
-      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999100))).to.equal(true);
-    });
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}'
+      const bid = { auctionId: '3', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 5001 }
+      spec.onBidWon(bid)
+      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999100))).to.equal(true)
+    })
 
     it('onBidWon runtime tracker should be called once per auction', function () {
-      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
-      const bid1 = { auctionId: '4', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 100 };
-      spec.onBidWon(bid1);
-      const bid2 = { auctionId: '4', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 200 };
-      spec.onBidWon(bid2);
-      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999002))).to.equal(true);
-    });
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}'
+      const bid1 = { auctionId: '4', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 100 }
+      spec.onBidWon(bid1)
+      const bid2 = { auctionId: '4', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 200 }
+      spec.onBidWon(bid2)
+      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999002))).to.equal(true)
+    })
 
     it('onTimeout', function () {
-      const data = [{ timeout: 3000, adUnitCode: 'adunit-code-1', auctionId: '1cbd2feafe5e8b', bidder: 'visx', bidId: '23423', params: [{ uid: '1' }] }];
-      const expectedData = [{ timeout: 3000, params: [{ uid: 1 }] }];
-      spec.onTimeout(data);
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(expectedData))).to.equal(true);
-    });
-  });
+      const data = [{ timeout: 3000, adUnitCode: 'adunit-code-1', auctionId: '1cbd2feafe5e8b', bidder: 'visx', bidId: '23423', params: [{ uid: '1' }] }]
+      const expectedData = [{ timeout: 3000, params: [{ uid: 1 }] }]
+      spec.onTimeout(data)
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(expectedData))).to.equal(true)
+    })
+  })
 
   describe('user sync', function () {
     function parseUrl(url) {
-      const [, path, querySt] = url.match(/^https?:\/\/[^\/]+(?:\/([^?]+)?)?(?:\?(.+)?)?$/) || [];
+      const [, path, querySt] = url.match(/^https?:\/\/[^\/]+(?:\/([^?]+)?)?(?:\?(.+)?)?$/) || []
       const query = {};
       (querySt || '').split('&').forEach((q) => {
-        var kv = q.split('=');
+        var kv = q.split('=')
         if (kv[0]) {
-          query[kv[0]] = decodeURIComponent(kv[1] || '');
+          query[kv[0]] = decodeURIComponent(kv[1] || '')
         }
-      });
-      return { path, query };
+      })
+      return { path, query }
     }
     it('should call iframe', function () {
       const syncs = spec.getUserSyncs({
         iframeEnabled: true
-      });
+      })
 
-      expect(Array.isArray(syncs)).to.equal(true);
-      expect(syncs.length).to.equal(1);
-      expect(syncs[0]).to.have.property('type', 'iframe');
-      expect(syncs[0]).to.have.property('url');
-      expect(syncs[0].url).to.be.an('string');
+      expect(Array.isArray(syncs)).to.equal(true)
+      expect(syncs.length).to.equal(1)
+      expect(syncs[0]).to.have.property('type', 'iframe')
+      expect(syncs[0]).to.have.property('url')
+      expect(syncs[0].url).to.be.an('string')
 
-      const { path, query } = parseUrl(syncs[0].url);
-      expect(path).to.equal('push_sync');
-      expect(query).to.deep.equal({ iframe: '1' });
-    });
+      const { path, query } = parseUrl(syncs[0].url)
+      expect(path).to.equal('push_sync')
+      expect(query).to.deep.equal({ iframe: '1' })
+    })
 
     it('should call image', function () {
       const syncs = spec.getUserSyncs({
         pixelEnabled: true
-      });
+      })
 
-      expect(Array.isArray(syncs)).to.equal(true);
-      expect(syncs.length).to.equal(1);
-      expect(syncs[0]).to.have.property('type', 'image');
-      expect(syncs[0]).to.have.property('url');
-      expect(syncs[0].url).to.be.an('string');
+      expect(Array.isArray(syncs)).to.equal(true)
+      expect(syncs.length).to.equal(1)
+      expect(syncs[0]).to.have.property('type', 'image')
+      expect(syncs[0]).to.have.property('url')
+      expect(syncs[0].url).to.be.an('string')
 
-      const { path, query } = parseUrl(syncs[0].url);
-      expect(path).to.equal('push_sync');
-      expect(query).to.deep.equal({});
-    });
-  });
+      const { path, query } = parseUrl(syncs[0].url)
+      expect(path).to.equal('push_sync')
+      expect(query).to.deep.equal({})
+    })
+  })
 
   describe('first party user id', function () {
-    const USER_ID_KEY = '__vads';
-    const USER_ID_DUMMY_VALUE_COOKIE = 'dummy_id_cookie';
-    const USER_ID_DUMMY_VALUE_LOCAL_STORAGE = 'dummy_id_local_storage';
+    const USER_ID_KEY = '__vads'
+    const USER_ID_DUMMY_VALUE_COOKIE = 'dummy_id_cookie'
+    const USER_ID_DUMMY_VALUE_LOCAL_STORAGE = 'dummy_id_local_storage'
 
-    let getDataFromLocalStorageStub, localStorageIsEnabledStub;
-    let getCookieStub, cookiesAreEnabledStub;
+    let getDataFromLocalStorageStub, localStorageIsEnabledStub
+    let getCookieStub, cookiesAreEnabledStub
 
     const bidRequests = [
       {
@@ -1970,7 +1970,7 @@ describe('VisxAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }
-    ];
+    ]
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -2013,79 +2013,79 @@ describe('VisxAdapter', function () {
           'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
         }
       }
-    };
+    }
 
     beforeEach(() => {
       getGlobal().bidderSettings = {
         visx: {
           storageAllowed: true
         }
-      };
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    });
+      }
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled')
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled')
+    })
 
     afterEach(() => {
-      cookiesAreEnabledStub.restore();
-      localStorageIsEnabledStub.restore();
+      cookiesAreEnabledStub.restore()
+      localStorageIsEnabledStub.restore()
       if (getCookieStub) {
-        getCookieStub.restore();
+        getCookieStub.restore()
       }
       if (getDataFromLocalStorageStub) {
-        getDataFromLocalStorageStub.restore();
+        getDataFromLocalStorageStub.restore()
       }
-      getGlobal().bidderSettings = {};
-    });
+      getGlobal().bidderSettings = {}
+    })
 
     it('should not pass user id if both cookies and local storage are not available', function () {
-      cookiesAreEnabledStub.returns(false);
-      localStorageIsEnabledStub.returns(false);
+      cookiesAreEnabledStub.returns(false)
+      localStorageIsEnabledStub.returns(false)
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(request.data.user).to.be.undefined;
-    });
+      expect(request.data.user).to.be.undefined
+    })
 
     it('should get user id from cookie if available', function () {
-      cookiesAreEnabledStub.returns(true);
-      localStorageIsEnabledStub.returns(false);
-      getCookieStub = sinon.stub(storage, 'getCookie');
-      getCookieStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_COOKIE);
+      cookiesAreEnabledStub.returns(true)
+      localStorageIsEnabledStub.returns(false)
+      getCookieStub = sinon.stub(storage, 'getCookie')
+      getCookieStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_COOKIE)
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_COOKIE);
-    });
+      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_COOKIE)
+    })
 
     it('should get user id from local storage if available', function () {
-      cookiesAreEnabledStub.returns(false);
-      localStorageIsEnabledStub.returns(true);
-      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      getDataFromLocalStorageStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_LOCAL_STORAGE);
+      cookiesAreEnabledStub.returns(false)
+      localStorageIsEnabledStub.returns(true)
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
+      getDataFromLocalStorageStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_LOCAL_STORAGE)
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
 
-      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_LOCAL_STORAGE);
-    });
+      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_LOCAL_STORAGE)
+    })
 
     it('should create user id and store it in cookies (if user id does not exist)', function () {
-      cookiesAreEnabledStub.returns(true);
-      localStorageIsEnabledStub.returns(false);
+      cookiesAreEnabledStub.returns(true)
+      localStorageIsEnabledStub.returns(false)
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(storage.getCookie(USER_ID_KEY)).to.be.a('string');
-      expect(request.data.user.ext.vads).to.be.a('string');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(storage.getCookie(USER_ID_KEY)).to.be.a('string')
+      expect(request.data.user.ext.vads).to.be.a('string')
+    })
 
     it('should create user id and store it in local storage (if user id does not exist)', function () {
-      cookiesAreEnabledStub.returns(false);
-      localStorageIsEnabledStub.returns(true);
+      cookiesAreEnabledStub.returns(false)
+      localStorageIsEnabledStub.returns(true)
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(storage.getDataFromLocalStorage(USER_ID_KEY)).to.be.a('string');
-      expect(request.data.user.ext.vads).to.be.a('string');
-    });
-  });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(storage.getDataFromLocalStorage(USER_ID_KEY)).to.be.a('string')
+      expect(request.data.user.ext.vads).to.be.a('string')
+    })
+  })
 
   describe('ortb2 data', function () {
     const bidRequests = [
@@ -2100,7 +2100,7 @@ describe('VisxAdapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }
-    ];
+    ]
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -2191,22 +2191,22 @@ describe('VisxAdapter', function () {
           }
         }
       }
-    };
+    }
 
     it('should pass interests if ortb2 has interests in user data', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.user.ext.data.interests).not.to.be.undefined;
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.user.ext.data.interests).not.to.be.undefined
+    })
 
     it('should pass device if ortb2 has device', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.device).not.to.be.undefined;
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.device).not.to.be.undefined
+    })
 
     it('should pass site if ortb2 has site', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.site).not.to.be.undefined;
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.site).not.to.be.undefined
+    })
 
     it('should merge if user object exists', function () {
       const user = {
@@ -2233,7 +2233,7 @@ describe('VisxAdapter', function () {
             ]
           }
         ]
-      };
+      }
       const userOrtb2 = {
         'keywords': 'x,y',
         'data': [
@@ -2258,8 +2258,8 @@ describe('VisxAdapter', function () {
           }
         }
       }
-      const userReq = mergeDeep(user, userOrtb2);
-      expect(userReq.ext.vads).not.to.be.undefined;
-    });
-  });
-});
+      const userReq = mergeDeep(user, userOrtb2)
+      expect(userReq.ext.vads).not.to.be.undefined
+    })
+  })
+})

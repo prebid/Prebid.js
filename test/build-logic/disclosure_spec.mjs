@@ -1,15 +1,15 @@
-import { describe, it } from 'mocha';
-import { expect } from 'chai';
-import { getDisclosureUrl } from '../../metadata/storageDisclosure.mjs';
+import { describe, it } from 'mocha'
+import { expect } from 'chai'
+import { getDisclosureUrl } from '../../metadata/storageDisclosure.mjs'
 
 describe('getDisclosureUrl', () => {
-  let gvl;
+  let gvl
 
   beforeEach(() => {
-    gvl = null;
-  });
+    gvl = null
+  })
 
-  const getGvl = () => Promise.resolve(gvl);
+  const getGvl = () => Promise.resolve(gvl)
 
   it('should not return url from gvl when vendor has deletedDate', async () => {
     gvl = {
@@ -19,8 +19,8 @@ describe('getDisclosureUrl', () => {
           deletedDate: '2024-06-11T00:00:00Z'
         }
       }
-    };
-    const url = await getDisclosureUrl(123, getGvl);
-    expect(url).to.not.exist;
-  });
-});
+    }
+    const url = await getDisclosureUrl(123, getGvl)
+    expect(url).to.not.exist
+  })
+})

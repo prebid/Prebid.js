@@ -1,17 +1,17 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as mediaTypes from '../src/mediaTypes.js';
-import { _map, deepAccess, isEmpty } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { parseNativeResponse, getBidFloor } from '../libraries/nexverseUtils/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import * as mediaTypes from '../src/mediaTypes.js'
+import { _map, deepAccess, isEmpty } from '../src/utils.js'
+import { ajax } from '../src/ajax.js'
+import { INSTREAM, OUTSTREAM } from '../src/video.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { parseNativeResponse, getBidFloor } from '../libraries/nexverseUtils/index.js'
 
-const BIDDER_CODE = 'dailyhunt';
-const BIDDER_ALIAS = 'dh';
-const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.VIDEO];
+const BIDDER_CODE = 'dailyhunt'
+const BIDDER_ALIAS = 'dh'
+const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.VIDEO]
 
-const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=';
+const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner='
+const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner='
 
 const ORTB_NATIVE_PARAMS = {
   title: {
@@ -48,14 +48,14 @@ const ORTB_NATIVE_PARAMS = {
     name: 'data',
     type: 10
   }
-};
+}
 
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
   for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i].params, key);
+    result = deepAccess(collection[i].params, key)
     if (result) {
-      return result;
+      return result
     }
   }
   return undefined
@@ -63,11 +63,11 @@ const extractKeyInfo = (collection, key) => {
 
 // Flattern Array.
 const flatten = (arr) => {
-  return [].concat(...arr);
+  return [].concat(...arr)
 }
 
 const createOrtbRequest = (validBidRequests, bidderRequest) => {
-  const device = createOrtbDeviceObj(validBidRequests);
+  const device = createOrtbDeviceObj(validBidRequests)
   const user = createOrtbUserObj(validBidRequests)
   const site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.page)
   return {
@@ -76,20 +76,20 @@ const createOrtbRequest = (validBidRequests, bidderRequest) => {
     site,
     device,
     user,
-  };
+  }
 }
 
 const createOrtbDeviceObj = (validBidRequests) => {
-  const device = { ...extractKeyInfo(validBidRequests, `device`) };
-  device.ua = navigator.userAgent;
-  return device;
+  const device = { ...extractKeyInfo(validBidRequests, `device`) }
+  device.ua = navigator.userAgent
+  return device
 }
 
 const createOrtbUserObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `user`) })
 
 const createOrtbSiteObj = (validBidRequests, page) => {
-  const site = { ...extractKeyInfo(validBidRequests, `site`), page };
-  const publisher = createOrtbPublisherObj(validBidRequests);
+  const site = { ...extractKeyInfo(validBidRequests, `site`), page }
+  const publisher = createOrtbPublisherObj(validBidRequests)
   if (!site.publisher) {
     site.publisher = publisher
   }
@@ -103,9 +103,9 @@ const createOrtbImpObj = (bid) => {
   const testMode = !!bid.params.test_mode
 
   // Validate Banner Request.
-  const bannerObj = deepAccess(bid.mediaTypes, `banner`);
-  const nativeObj = deepAccess(bid.mediaTypes, `native`);
-  const videoObj = deepAccess(bid.mediaTypes, `video`);
+  const bannerObj = deepAccess(bid.mediaTypes, `banner`)
+  const nativeObj = deepAccess(bid.mediaTypes, `native`)
+  const videoObj = deepAccess(bid.mediaTypes, `video`)
 
   const imp = {
     id: bid.bidId,
@@ -116,34 +116,34 @@ const createOrtbImpObj = (bid) => {
         partner: params.partner_name
       }
     }
-  };
+  }
 
   // Test Mode Campaign.
   if (testMode) {
-    imp.ext.test_mode = testMode;
+    imp.ext.test_mode = testMode
   }
 
   if (bannerObj) {
     imp.banner = {
       ...createOrtbImpBannerObj(bid, bannerObj)
     }
-    imp.bidfloor = getBidFloor(bid, 'banner');
+    imp.bidfloor = getBidFloor(bid, 'banner')
   } else if (nativeObj) {
     imp.native = {
       ...createOrtbImpNativeObj(bid, nativeObj)
     }
-    imp.bidfloor = getBidFloor(bid, 'native');
+    imp.bidfloor = getBidFloor(bid, 'native')
   } else if (videoObj) {
     imp.video = {
       ...createOrtbImpVideoObj(bid, videoObj)
     }
-    imp.bidfloor = getBidFloor(bid, 'video');
+    imp.bidfloor = getBidFloor(bid, 'video')
   }
-  return imp;
+  return imp
 }
 
 const createOrtbImpBannerObj = (bid, bannerObj) => {
-  const format = [];
+  const format = []
   bannerObj.sizes.forEach(size => format.push({ w: size[0], h: size[1] }))
 
   return {
@@ -154,20 +154,20 @@ const createOrtbImpBannerObj = (bid, bannerObj) => {
 
 const createOrtbImpNativeObj = (bid, nativeObj) => {
   const assets = _map(bid.nativeParams, (bidParams, key) => {
-    const props = ORTB_NATIVE_PARAMS[key];
+    const props = ORTB_NATIVE_PARAMS[key]
     const asset = {
       required: bidParams.required & 1,
-    };
+    }
     if (props) {
-      let h = 0;
-      let w = 0;
+      let h = 0
+      let w = 0
 
-      asset.id = props.id;
+      asset.id = props.id
 
       if (bidParams.sizes) {
-        const sizes = flatten(bidParams.sizes);
-        w = sizes[0];
-        h = sizes[1];
+        const sizes = flatten(bidParams.sizes)
+        w = sizes[0]
+        h = sizes[1]
       }
 
       asset[props.name] = {
@@ -175,20 +175,20 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
         type: props.type,
         w,
         h
-      };
+      }
 
-      return asset;
+      return asset
     }
-  }).filter(Boolean);
+  }).filter(Boolean)
   const request = {
     assets,
     ver: '1,0'
   }
-  return { request: JSON.stringify(request) };
+  return { request: JSON.stringify(request) }
 }
 
 const createOrtbImpVideoObj = (bid, videoObj) => {
-  let obj = {};
+  let obj = {}
   const params = bid.params
   if (!isEmpty(bid.params.video)) {
     obj = {
@@ -201,20 +201,20 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
       protocols: getProtocols(params.video),
       w: params.video.playerSize[0][0],
       h: params.video.playerSize[0][1],
-    };
+    }
   } else {
     obj = {
       mimes: ['video/mp4'],
-    };
+    }
   }
   obj.ext = {
     ...videoObj,
   }
-  return obj;
+  return obj
 }
 
 export function getProtocols({ protocols }) {
-  const defaultValue = [2, 3, 5, 6, 7, 8];
+  const defaultValue = [2, 3, 5, 6, 7, 8]
   const listProtocols = [
     { key: 'VAST_1_0', value: 1 },
     { key: 'VAST_2_0', value: 2 },
@@ -224,13 +224,13 @@ export function getProtocols({ protocols }) {
     { key: 'VAST_3_0_WRAPPER', value: 6 },
     { key: 'VAST_4_0', value: 7 },
     { key: 'VAST_4_0_WRAPPER', value: 8 }
-  ];
+  ]
   if (protocols) {
     return listProtocols.filter(p => {
       return protocols.indexOf(p.key) !== -1
-    }).map(p => p.value);
+    }).map(p => p.value)
   } else {
-    return defaultValue;
+    return defaultValue
   }
 }
 
@@ -288,31 +288,31 @@ const createPrebidVideoBid = (bid, bidResponse) => {
     mediaType: 'video',
     winUrl: bidResponse.nurl,
     adomain: bidResponse.adomain
-  };
+  }
 
-  const videoContext = bid.mediaTypes.video.context;
+  const videoContext = bid.mediaTypes.video.context
   switch (videoContext) {
     case OUTSTREAM:
-      videoBid.vastXml = bidResponse.adm;
-      break;
+      videoBid.vastXml = bidResponse.adm
+      break
     case INSTREAM:
-      videoBid.videoCacheKey = bidResponse.ext.bidder.cacheKey;
-      videoBid.vastUrl = bidResponse.ext.bidder.vastUrl;
-      break;
+      videoBid.videoCacheKey = bidResponse.ext.bidder.cacheKey
+      videoBid.vastUrl = bidResponse.ext.bidder.vastUrl
+      break
   }
-  return videoBid;
+  return videoBid
 }
 
 const getQueryVariable = (variable) => {
-  const query = window.location.search.substring(1);
-  const vars = query.split('&');
+  const query = window.location.search.substring(1)
+  const vars = query.split('&')
   for (var i = 0; i < vars.length; i++) {
-    const pair = vars[i].split('=');
+    const pair = vars[i].split('=')
     if (decodeURIComponent(pair[0]) === variable) {
-      return decodeURIComponent(pair[1]);
+      return decodeURIComponent(pair[1])
     }
   }
-  return false;
+  return false
 }
 
 export const spec = {
@@ -326,47 +326,47 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
-    const serverRequests = [];
+    const serverRequests = []
 
     // ORTB Request.
-    const ortbReq = createOrtbRequest(validBidRequests, bidderRequest);
+    const ortbReq = createOrtbRequest(validBidRequests, bidderRequest)
 
     validBidRequests.forEach((bid) => {
       const imp = createOrtbImpObj(bid)
-      ortbReq.imp.push(imp);
-    });
+      ortbReq.imp.push(imp)
+    })
 
-    serverRequests.push({ ...createServerRequest(ortbReq, validBidRequests, getQueryVariable('dh_test')) });
+    serverRequests.push({ ...createServerRequest(ortbReq, validBidRequests, getQueryVariable('dh_test')) })
 
-    return serverRequests;
+    return serverRequests
   },
 
   interpretResponse: function (serverResponse, request) {
-    const { seatbid } = serverResponse.body;
-    const bids = request.bids;
-    const prebidResponse = [];
+    const { seatbid } = serverResponse.body
+    const bids = request.bids
+    const prebidResponse = []
 
-    const seatBids = seatbid[0].bid;
+    const seatBids = seatbid[0].bid
 
     seatBids.forEach(ortbResponseBid => {
-      const bidId = ortbResponseBid.impid;
-      const actualBid = ((bids) || []).find((bid) => bid.bidId === bidId);
+      const bidId = ortbResponseBid.impid
+      const actualBid = ((bids) || []).find((bid) => bid.bidId === bidId)
       const bidMediaType = ortbResponseBid.ext.prebid.type
       switch (bidMediaType) {
         case mediaTypes.BANNER:
-          prebidResponse.push(createPrebidBannerBid(actualBid, ortbResponseBid));
-          break;
+          prebidResponse.push(createPrebidBannerBid(actualBid, ortbResponseBid))
+          break
         case mediaTypes.NATIVE:
-          prebidResponse.push(createPrebidNativeBid(actualBid, ortbResponseBid));
-          break;
+          prebidResponse.push(createPrebidNativeBid(actualBid, ortbResponseBid))
+          break
         case mediaTypes.VIDEO:
-          prebidResponse.push(createPrebidVideoBid(actualBid, ortbResponseBid));
-          break;
+          prebidResponse.push(createPrebidVideoBid(actualBid, ortbResponseBid))
+          break
       }
     })
-    return prebidResponse;
+    return prebidResponse
   },
 
   onBidWon: function(bid) {
@@ -376,4 +376,4 @@ export const spec = {
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

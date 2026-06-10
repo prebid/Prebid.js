@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-const BIDDER_CODE = 'addefend';
-const GVLID = 539;
+const BIDDER_CODE = 'addefend'
+const GVLID = 539
 
 export const spec = {
   code: BIDDER_CODE,
@@ -9,12 +9,12 @@ export const spec = {
   hostname: 'https://addefend-platform.com',
 
   getHostname() {
-    return this.hostname;
+    return this.hostname
   },
   isBidRequestValid: function(bid) {
     return (bid.sizes !== undefined && bid.bidId !== undefined && bid.params !== undefined &&
               (bid.params.pageId !== undefined && (typeof bid.params.pageId === 'string')) &&
-              (bid.params.placementId !== undefined && (typeof bid.params.placementId === 'string')));
+              (bid.params.placementId !== undefined && (typeof bid.params.placementId === 'string')))
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const bid = {
@@ -26,59 +26,59 @@ export const spec = {
       // TODO: is 'page' the correct item here?
       referer: bidderRequest.refererInfo.page,
       bids: [],
-    };
+    }
 
     for (var i = 0; i < validBidRequests.length; i++) {
-      const vb = validBidRequests[i];
-      const o = vb.params;
+      const vb = validBidRequests[i]
+      const o = vb.params
       // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      bid.auctionId = vb.auctionId;
-      o.bidId = vb.bidId;
-      o.transactionId = vb.transactionId;
-      o.sizes = [];
+      bid.auctionId = vb.auctionId
+      o.bidId = vb.bidId
+      o.transactionId = vb.transactionId
+      o.sizes = []
       if (o.trafficTypes) {
-        bid.trafficTypes = o.trafficTypes;
+        bid.trafficTypes = o.trafficTypes
       }
-      delete o.trafficTypes;
+      delete o.trafficTypes
 
-      bid.pageId = o.pageId;
-      delete o.pageId;
+      bid.pageId = o.pageId
+      delete o.pageId
 
       if (vb.sizes && Array.isArray(vb.sizes)) {
         for (var j = 0; j < vb.sizes.length; j++) {
-          const s = vb.sizes[j];
+          const s = vb.sizes[j]
           if (Array.isArray(s) && s.length === 2) {
-            o.sizes.push(s[0] + 'x' + s[1]);
+            o.sizes.push(s[0] + 'x' + s[1])
           }
         }
       }
-      bid.bids.push(o);
+      bid.bids.push(o)
     }
     return [{
       method: 'POST',
       url: this.getHostname() + '/bid',
       options: { withCredentials: true },
       data: bid
-    }];
+    }]
   },
   interpretResponse: function(serverResponse, request) {
-    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'advertiserDomains'];
-    const validBidResponses = [];
-    serverResponse = serverResponse.body;
+    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'advertiserDomains']
+    const validBidResponses = []
+    serverResponse = serverResponse.body
     if (serverResponse && (serverResponse.length > 0)) {
       serverResponse.forEach((bid) => {
-        const bidResponse = {};
+        const bidResponse = {}
         for (const requiredKey of requiredKeys) {
           if (!bid.hasOwnProperty(requiredKey)) {
-            return [];
+            return []
           }
-          bidResponse[requiredKey] = bid[requiredKey];
+          bidResponse[requiredKey] = bid[requiredKey]
         }
-        validBidResponses.push(bidResponse);
-      });
+        validBidResponses.push(bidResponse)
+      })
     }
-    return validBidResponses;
+    return validBidResponses
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

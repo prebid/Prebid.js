@@ -1,9 +1,9 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder, type AdapterRequest, type BidderSpec, type ServerResponse } from '../src/adapters/bidderFactory.js';
-import { buildRequests as xeBuildRequests, getUserSyncs, interpretResponse as xeInterpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { registerBidder, type AdapterRequest, type BidderSpec, type ServerResponse } from '../src/adapters/bidderFactory.js'
+import { buildRequests as xeBuildRequests, getUserSyncs, interpretResponse as xeInterpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js'
 
-const BIDDER_CODE = 'matterfull';
-const ENDPOINT = 'https://pbjs.bematterfull.com';
+const BIDDER_CODE = 'matterfull'
+const ENDPOINT = 'https://pbjs.bematterfull.com'
 
 export type MatterfullBidParams = {
   pid: string;
@@ -26,4 +26,4 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   getUserSyncs
 }
 
-registerBidder(spec);
+registerBidder(spec)

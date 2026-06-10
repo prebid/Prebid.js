@@ -1,13 +1,13 @@
-import { registerActivityControl } from '../../src/activities/rules.js';
+import { registerActivityControl } from '../../src/activities/rules.js'
 import {
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
   ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_UFPD
-} from '../../src/activities/activities.js';
-import { gppDataHandler } from '../../src/adapterManager.js';
-import { logInfo } from '../../src/utils.js';
+} from '../../src/activities/activities.js'
+import { gppDataHandler } from '../../src/adapterManager.js'
+import { logInfo } from '../../src/utils.js'
 
 export interface MSPAConfig {
   /**
@@ -28,7 +28,7 @@ declare module '../../modules/consentManagementGpp' {
 // default interpretation for MSPA consent(s):
 // https://docs.prebid.org/features/mspa-usnat.html
 
-const SENSITIVE_DATA_GEO = 7;
+const SENSITIVE_DATA_GEO = 7
 
 function isApplicable(val) {
   return val != null && val !== 0
@@ -46,7 +46,7 @@ export function isBasicConsentDenied(cd) {
     // minors under 13 cannot consent
     isApplicable(cd.KnownChildSensitiveDataConsents[1]) ||
     // covered cannot be zero
-    cd.MspaCoveredTransaction === 0;
+    cd.MspaCoveredTransaction === 0
 }
 
 export function sensitiveNoticeIs(cd, value) {
@@ -56,29 +56,29 @@ export function sensitiveNoticeIs(cd, value) {
 export function isConsentDenied(cd) {
   return isBasicConsentDenied(cd) ||
     ['Sale', 'Sharing', 'TargetedAdvertising'].some(scope => {
-      const oo = cd[`${scope}OptOut`];
-      const notice = cd[`${scope}OptOutNotice`];
+      const oo = cd[`${scope}OptOut`]
+      const notice = cd[`${scope}OptOutNotice`]
       // user opted out
       return oo === 1 ||
       // opt-out notice was not given
         notice === 2 ||
       // do not trust CMP if it signals opt-in but no opt-out notice was given
-        (oo === 2 && notice === 0);
+        (oo === 2 && notice === 0)
     }) ||
     // no sharing notice was given ...
     cd.SharingNotice === 2 ||
     // ... or the CMP says it was not applicable, while also claiming it got consent
-    (cd.SharingOptOut === 2 && cd.SharingNotice === 0);
+    (cd.SharingOptOut === 2 && cd.SharingNotice === 0)
 }
 
 export const isTransmitUfpdConsentDenied = (() => {
   const sensitiveFlags = (() => {
     // deny anything that smells like: genetic, biometric, state/national ID, financial, union membership,
     // personal communication data, status as victim of crime (version 2), status as transgender/nonbinary (version 2)
-    const cannotBeInScope = [6, 7, 9, 10, 12, 14, 16].map(el => --el);
+    const cannotBeInScope = [6, 7, 9, 10, 12, 14, 16].map(el => --el)
     // require consent for everything else (except geo, which is treated separately)
     const allExceptGeo = Array.from(Array(16).keys()).filter((el) => el !== SENSITIVE_DATA_GEO)
-    const mustHaveConsent = allExceptGeo.filter(el => !cannotBeInScope.includes(el));
+    const mustHaveConsent = allExceptGeo.filter(el => !cannotBeInScope.includes(el))
 
     return Object.fromEntries(
       Object.entries({
@@ -96,7 +96,7 @@ export const isTransmitUfpdConsentDenied = (() => {
   })()
 
   return function (cd) {
-    const { cannotBeInScope, mustHaveConsent, allExceptGeo } = sensitiveFlags[cd.Version];
+    const { cannotBeInScope, mustHaveConsent, allExceptGeo } = sensitiveFlags[cd.Version]
     return isConsentDenied(cd) ||
       // no notice about sensitive data was given
       sensitiveNoticeIs(cd, 2) ||
@@ -107,10 +107,10 @@ export const isTransmitUfpdConsentDenied = (() => {
       // CMP says it has consent, but did not give notice about it
       (sensitiveNoticeIs(cd, 0) && allExceptGeo.some(i => cd.SensitiveDataProcessing[i] === 2))
   }
-})();
+})()
 
 export function isTransmitGeoConsentDenied(cd) {
-  const geoConsent = cd.SensitiveDataProcessing[SENSITIVE_DATA_GEO];
+  const geoConsent = cd.SensitiveDataProcessing[SENSITIVE_DATA_GEO]
   return geoConsent === 1 ||
     isBasicConsentDenied(cd) ||
     // no sensitive data notice was given
@@ -126,39 +126,39 @@ const CONSENT_RULES = {
   [ACTIVITY_ENRICH_UFPD]: isConsentDenied,
   [ACTIVITY_TRANSMIT_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
-};
+}
 
 export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDataHandler.getConsentData()?.applicableSections) {
   return function () {
     if (applicableSids().some(sid => sids.includes(sid))) {
-      const consent = getConsent();
+      const consent = getConsent()
       if (consent == null) {
-        return { allow: false, reason: 'consent data not available' };
+        return { allow: false, reason: 'consent data not available' }
       }
       if (![1, 2].includes(consent.Version)) {
         return { allow: false, reason: `unsupported consent specification version "${consent.Version}"` }
       }
       if (denies(consent)) {
-        return { allow: false };
+        return { allow: false }
       }
     }
-  };
+  }
 }
 
 function flatSection(subsections) {
-  if (!Array.isArray(subsections)) return subsections;
+  if (!Array.isArray(subsections)) return subsections
   return subsections.reduceRight((subsection, consent) => {
-    return Object.assign(consent, subsection);
-  }, {});
+    return Object.assign(consent, subsection)
+  }, {})
 }
 
 export function getRules(restrictActivities) {
-  return Object.assign(Object.fromEntries((restrictActivities ?? []).map(activity => [activity, isConsentDenied])), CONSENT_RULES);
+  return Object.assign(Object.fromEntries((restrictActivities ?? []).map(activity => [activity, isConsentDenied])), CONSENT_RULES)
 }
 
 export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = (c) => c, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
-  const unreg = [];
-  const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
+  const unreg = []
+  const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`
   logInfo(`Enabling activity controls for ${ruleName}`)
   Object.entries(rules).forEach(([activity, denies]) => {
     unreg.push(registerRule(activity, ruleName, mspaRule(
@@ -166,7 +166,7 @@ export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = 
       () => normalizeConsent(flatSection(getConsentData()?.parsedSections?.[api])),
       denies,
       () => getConsentData()?.applicableSections || []
-    )));
-  });
-  return () => unreg.forEach(ur => ur());
+    )))
+  })
+  return () => unreg.forEach(ur => ur())
 }

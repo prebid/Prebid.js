@@ -1,22 +1,22 @@
-import { config } from 'src/config.js';
-import { RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, blueconicSubmodule, storage } from 'modules/blueconicRtdProvider.js';
+import { config } from 'src/config.js'
+import { RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, blueconicSubmodule, storage } from 'modules/blueconicRtdProvider.js'
 
 describe('blueconicRtdProvider', function() {
-  let getDataFromLocalStorageStub;
+  let getDataFromLocalStorageStub
   beforeEach(function() {
-    config.resetConfig();
-    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-  });
+    config.resetConfig()
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
+  })
 
   afterEach(function () {
-    getDataFromLocalStorageStub.restore();
-  });
+    getDataFromLocalStorageStub.restore()
+  })
 
   describe('blueconicSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(blueconicSubmodule.init()).to.equal(true);
-    });
-  });
+      expect(blueconicSubmodule.init()).to.equal(true)
+    })
+  })
 
   describe('Add Blueconic Real-Time Data', function() {
     it('merges ortb2Fragment data', function() {
@@ -24,13 +24,13 @@ describe('blueconicRtdProvider', function() {
         name: 'www.dataprovider1.com',
         ext: { segtax: 1 },
         segment: [{ id: '1776' }]
-      };
+      }
       const setConfigUserObj2 = {
         name: 'www.dataprovider2.com',
         ext: { segtax: 1 },
         segment: [{ id: '1914' }
         ]
-      };
+      }
 
       const bidConfig = {
         ortb2Fragments: {
@@ -40,14 +40,14 @@ describe('blueconicRtdProvider', function() {
             }
           }
         }
-      };
+      }
 
       const rtdUserObj1 = {
         name: 'www.dataprovider4.com',
         ext: { segtax: 1 },
         segment: [{ id: '1918' }, { id: '1939' }
         ]
-      };
+      }
 
       const rtd = {
         ortb2: {
@@ -55,13 +55,13 @@ describe('blueconicRtdProvider', function() {
             data: [rtdUserObj1]
           }
         }
-      };
+      }
 
-      addRealTimeData(bidConfig.ortb2Fragments.global, rtd);
+      addRealTimeData(bidConfig.ortb2Fragments.global, rtd)
 
-      const ortb2Config = bidConfig.ortb2Fragments.global;
-      expect(ortb2Config.user.data).to.deep.include.members([setConfigUserObj1, setConfigUserObj2, rtdUserObj1]);
-    });
+      const ortb2Config = bidConfig.ortb2Fragments.global
+      expect(ortb2Config.user.data).to.deep.include.members([setConfigUserObj1, setConfigUserObj2, rtdUserObj1])
+    })
 
     it('merges data without duplication', function() {
       const userObj1 = {
@@ -69,13 +69,13 @@ describe('blueconicRtdProvider', function() {
         ext: { segtax: 1 },
         segment: [{ id: '1776' }
         ]
-      };
+      }
 
       const userObj2 = {
         ext: { segtax: 1 },
         name: 'www.dataprovider2.com',
         segment: [{ id: '1914' }]
-      };
+      }
 
       const bidConfig = {
         ortb2Fragments:
@@ -86,7 +86,7 @@ describe('blueconicRtdProvider', function() {
             }
           }
         }
-      };
+      }
 
       const rtd = {
         ortb2: {
@@ -94,16 +94,16 @@ describe('blueconicRtdProvider', function() {
             data: [userObj1]
           }
         }
-      };
+      }
 
-      addRealTimeData(bidConfig.ortb2Fragments.global, rtd);
+      addRealTimeData(bidConfig.ortb2Fragments.global, rtd)
 
-      const ortb2Config = bidConfig.ortb2Fragments.global;
+      const ortb2Config = bidConfig.ortb2Fragments.global
 
-      expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
-      expect(bidConfig.ortb2Fragments.global.user.data).to.have.lengthOf(2);
-    });
-  });
+      expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2])
+      expect(bidConfig.ortb2Fragments.global.user.data).to.have.lengthOf(2)
+    })
+  })
 
   describe('Get BlueConic Real-Time Data', function() {
     it('gets rtd from local storage cache', function() {
@@ -114,22 +114,22 @@ describe('blueconicRtdProvider', function() {
             coppa: true
           }
         }
-      };
+      }
 
-      const bidConfig = { ortb2Fragments: { global: {} } };
+      const bidConfig = { ortb2Fragments: { global: {} } }
 
       const rtdUserObj1 = {
         name: 'blueconic',
         ext: { segtax: 1 },
         segment: [{ id: 'bf23d802-931d-4619-8266-ce9a6328aa2a' }],
         bidId: '1234'
-      };
+      }
 
       const cachedRtd = { ext: { segtax: 1 }, 'segment': [{ id: 'bf23d802-931d-4619-8266-ce9a6328aa2a' }], 'bidId': '1234' }
-      getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd));
+      getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd))
 
-      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
-      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
-    });
-  });
-});
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {})
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1])
+    })
+  })
+})

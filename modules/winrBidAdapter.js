@@ -6,45 +6,45 @@ import {
   isNumber,
   isPlainObject,
   logError
-} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
-import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
-import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
-import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
+} from '../src/utils.js'
+import { config } from '../src/config.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js'
+import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js'
+import { transformSizes } from '../libraries/sizeUtils/tranformSize.js'
+import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'winr';
-const URL = 'https://ib.adnxs.com/ut/v3/prebid';
-const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
-const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
-const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
-const SOURCE = 'pbjs';
-const DEFAULT_CURRENCY = 'USD';
-const GATE_COOKIE_NAME = 'wnr_gate';
+const BIDDER_CODE = 'winr'
+const URL = 'https://ib.adnxs.com/ut/v3/prebid'
+const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid'
+const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language']
+const APP_DEVICE_PARAMS = ['geo', 'device_id'] // appid is collected separately
+const SOURCE = 'pbjs'
+const DEFAULT_CURRENCY = 'USD'
+const GATE_COOKIE_NAME = 'wnr_gate'
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 function buildBid(bidData) {
-  const bid = bidData;
+  const bid = bidData
   const position = {
     domParent: bid.meta.domParent ? `'${bid.meta.domParent}'` : null,
     child: bid.meta.child ? bid.meta.child : 4
   }
-  bid.ad = wrapAd(bid, position);
-  return bid;
+  bid.ad = wrapAd(bid, position)
+  return bid
 }
 
 function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
+  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
 }
 
 function wrapAd(bid, position) {
@@ -98,7 +98,7 @@ function wrapAd(bid, position) {
         });
       </script>
     </body>
-  </html>`;
+  </html>`
 }
 
 export const spec = {
@@ -115,25 +115,25 @@ export const spec = {
   isBidRequestValid: function (bid) {
     // Return false for each bid request if the media type is not 'banner'
     if (getMediaTypeFromBid(bid) !== BANNER) {
-      return false;
+      return false
     }
 
     // Return false for each bid request if the cookies disabled
     if (!storage.cookiesAreEnabled()) {
-      return false;
+      return false
     }
 
     // Return false for each bid request if the gate cookie is set
     if (storage.getCookie(GATE_COOKIE_NAME) !== null) {
-      return false;
+      return false
     }
 
     // Return false for each bid request if no placementId exists
     if (!bid.params.placementId) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
 
   /**
@@ -143,59 +143,59 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const tags = bidRequests.map(bidToTag);
-    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
-    let userObj = {};
+    const tags = bidRequests.map(bidToTag)
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo)
+    let userObj = {}
     if (config.getConfig('coppa') === true) {
-      userObj = { 'coppa': true };
+      userObj = { 'coppa': true }
     }
 
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
         .filter((param) => USER_PARAMS.includes(param))
         .forEach((param) => {
-          const uparam = convertCamelToUnderscore(param);
+          const uparam = convertCamelToUnderscore(param)
           if (
             param === 'segments' &&
             isArray(userObjBid.params.user[param])
           ) {
-            const segs = [];
+            const segs = []
             userObjBid.params.user[param].forEach((val) => {
               if (isNumber(val)) {
-                segs.push({ id: val });
+                segs.push({ id: val })
               } else if (isPlainObject(val)) {
-                segs.push(val);
+                segs.push(val)
               }
-            });
-            userObj[uparam] = segs;
+            })
+            userObj[uparam] = segs
           } else if (param !== 'segments') {
-            userObj[uparam] = userObjBid.params.user[param];
+            userObj[uparam] = userObjBid.params.user[param]
           }
-        });
+        })
     }
 
-    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo)
+    let appDeviceObj
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
+      appDeviceObj = {}
       Object.keys(appDeviceObjBid.params.app)
         .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
+          appDeviceObj[param] = appDeviceObjBid.params.app[param]
+        })
     }
 
-    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId)
+    let appIdObj
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
         appid: appIdObjBid.params.app.id
-      };
+      }
     }
 
-    const memberIdBid = ((bidRequests) || []).find(hasMemberId);
-    const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+    const memberIdBid = ((bidRequests) || []).find(hasMemberId)
+    const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain
 
     const payload = {
       tags: [...tags],
@@ -205,17 +205,17 @@ export const spec = {
         version: '$prebid.version$',
       },
       schain: schain
-    };
+    }
 
     if (member > 0) {
-      payload.member_id = member;
+      payload.member_id = member
     }
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj;
+      payload.device = appDeviceObj
     }
     if (appIdObjBid) {
-      payload.app = appIdObj;
+      payload.app = appIdObj
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -223,11 +223,11 @@ export const spec = {
       payload.gdpr_consent = {
         consent_string: bidderRequest.gdprConsent.consentString,
         consent_required: bidderRequest.gdprConsent.gdprApplies,
-      };
+      }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent;
+      payload.us_privacy = bidderRequest.uspConsent
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -239,30 +239,30 @@ export const spec = {
         rd_stk: bidderRequest.refererInfo.stack
           .map((url) => encodeURIComponent(url))
           .join(','),
-      };
-      payload.referrer_detection = refererinfo;
+      }
+      payload.referrer_detection = refererinfo
     }
 
     if (bidRequests[0].userId) {
-      const eids = [];
+      const eids = []
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
-      addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+      addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null)
+      addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null)
+      addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null)
+      addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID')
+      addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2')
 
       if (eids.length) {
-        payload.eids = eids;
+        payload.eids = eids
       }
     }
 
     if (tags[0].publisher_id) {
-      payload.publisher_id = tags[0].publisher_id;
+      payload.publisher_id = tags[0].publisher_id
     }
 
-    const request = formatRequest(payload, bidderRequest);
-    return request;
+    const request = formatRequest(payload, bidderRequest)
+    return request
   },
 
   /**
@@ -272,34 +272,34 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, { bidderRequest }) {
-    serverResponse = serverResponse.body;
-    const bids = [];
+    serverResponse = serverResponse.body
+    const bids = []
     if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`
       if (serverResponse && serverResponse.error) {
-        errorMessage += `: ${serverResponse.error}`;
+        errorMessage += `: ${serverResponse.error}`
       }
-      logError(errorMessage);
-      return bids;
+      logError(errorMessage)
+      return bids
     }
 
     if (serverResponse.tags) {
       serverResponse.tags.forEach((serverBid) => {
-        const rtbBid = getRtbBid(serverBid);
+        const rtbBid = getRtbBid(serverBid)
         if (rtbBid) {
           if (
             rtbBid.cpm !== 0 &&
             this.supportedMediaTypes.includes(rtbBid.ad_type)
           ) {
-            const bid = newBid(serverBid, rtbBid, bidderRequest);
-            bid.mediaType = parseMediaType(rtbBid);
-            bids.push(bid);
+            const bid = newBid(serverBid, rtbBid, bidderRequest)
+            bid.mediaType = parseMediaType(rtbBid)
+            bids.push(bid)
           }
         }
-      });
+      })
     }
 
-    return bids.map(bid => buildBid(bid));
+    return bids.map(bid => buildBid(bid))
   },
 
   getUserSyncs: function (syncOptions) {
@@ -309,21 +309,21 @@ export const spec = {
           type: 'iframe',
           url: 'https://acdn.adnxs.com/dmp/async_usersync.html',
         },
-      ];
+      ]
     }
   },
-};
+}
 
 function formatRequest(payload, bidderRequest) {
-  let request = [];
+  let request = []
   const options = {
     withCredentials: true
-  };
+  }
 
-  let endpointUrl = URL;
+  let endpointUrl = URL
 
   if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
-    endpointUrl = URL_SIMPLE;
+    endpointUrl = URL_SIMPLE
   }
 
   if (
@@ -332,19 +332,19 @@ function formatRequest(payload, bidderRequest) {
   ) {
     options.customHeaders = {
       'X-Is-Test': 1,
-    };
+    }
   }
 
-  const payloadString = JSON.stringify(payload);
+  const payloadString = JSON.stringify(payload)
   request = {
     method: 'POST',
     url: endpointUrl,
     data: payloadString,
     bidderRequest,
     options,
-  };
+  }
 
-  return request;
+  return request
 }
 
 /**
@@ -355,7 +355,7 @@ function formatRequest(payload, bidderRequest) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest])
   const bid = {
     adType: rtbBid.ad_type,
     requestId: serverBid.uuid,
@@ -378,33 +378,33 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       dealPriority: rtbBid.deal_priority,
       dealCode: rtbBid.deal_code,
     }
-  };
+  }
 
   // WE DON'T FULLY SUPPORT THIS ATM - future spot for adomain code; creating a stub for 5.0 compliance
   if (rtbBid.adomain) {
-    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [] });
+    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [] })
   }
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, {
       advertiserId: rtbBid.advertiser_id,
-    });
+    })
   }
 
   if (bidRequest.params) {
-    const { placementId, siteId, domParent, child } = bidRequest.params;
+    const { placementId, siteId, domParent, child } = bidRequest.params
     bid.meta = Object.assign({}, bid.meta, {
       placementId: placementId,
       siteId: siteId,
       domParent: domParent,
       child: child
-    });
+    })
   }
 
   Object.assign(bid, {
     width: rtbBid.rtb.banner.width,
     height: rtbBid.rtb.banner.height,
-  });
+  })
 
   try {
     if (rtbBid.rtb.banner && rtbBid.rtb.trackers) {
@@ -413,78 +413,78 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         width: rtbBid.rtb.banner.width,
         height: rtbBid.rtb.banner.height,
         trackers: rtbBid.rtb.trackers,
-      });
+      })
     }
   } catch (error) {
-    logError('Error assigning ad', error);
+    logError('Error assigning ad', error)
   }
-  return bid;
+  return bid
 }
 
 function bidToTag(bid) {
-  const tag = {};
-  tag.sizes = transformSizes(bid.sizes);
-  tag.primary_size = tag.sizes[0];
-  tag.ad_types = [];
-  tag.uuid = bid.bidId;
+  const tag = {}
+  tag.sizes = transformSizes(bid.sizes)
+  tag.primary_size = tag.sizes[0]
+  tag.ad_types = []
+  tag.uuid = bid.bidId
   if (bid.params.placementId) {
-    tag.id = parseInt(bid.params.placementId, 10);
+    tag.id = parseInt(bid.params.placementId, 10)
   } else {
-    tag.code = bid.params.invCode;
+    tag.code = bid.params.invCode
   }
-  tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false;
-  tag.prebid = true;
-  tag.disable_psa = true;
-  const bidFloor = getBidFloor(bid);
+  tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.prebid = true
+  tag.disable_psa = true
+  const bidFloor = getBidFloor(bid)
   if (bidFloor) {
-    tag.reserve = bidFloor;
+    tag.reserve = bidFloor
   }
   if (bid.params.trafficSourceCode) {
-    tag.traffic_source_code = bid.params.trafficSourceCode;
+    tag.traffic_source_code = bid.params.trafficSourceCode
   }
   if (bid.params.privateSizes) {
-    tag.private_sizes = transformSizes(bid.params.privateSizes);
+    tag.private_sizes = transformSizes(bid.params.privateSizes)
   }
   if (bid.params.pubClick) {
-    tag.pubclick = bid.params.pubClick;
+    tag.pubclick = bid.params.pubClick
   }
   if (bid.params.publisherId) {
-    tag.publisher_id = parseInt(bid.params.publisherId, 10);
+    tag.publisher_id = parseInt(bid.params.publisherId, 10)
   }
   if (bid.params.externalImpId) {
-    tag.external_imp_id = bid.params.externalImpId;
+    tag.external_imp_id = bid.params.externalImpId
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid')
   if (gpid) {
-    tag.gpid = gpid;
+    tag.gpid = gpid
   }
 
-  tag.hb_source = 1;
+  tag.hb_source = 1
 
   if (tag.ad_types.length === 0) {
-    delete tag.ad_types;
+    delete tag.ad_types
   }
 
-  return tag;
+  return tag
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb)
 }
 
 function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
+  const adType = rtbBid.ad_type
   if (adType !== BANNER) {
-    return false;
+    return false
   }
-  return BANNER;
+  return BANNER
 }
 
 function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
+  return !!parseInt(bid.params.member, 10)
 }
 
-registerBidder(spec);
+registerBidder(spec)

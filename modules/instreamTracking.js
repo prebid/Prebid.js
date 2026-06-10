@@ -1,8 +1,8 @@
-import { deepClone, getBidRequest, deepAccess } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { auctionManager } from '../src/auctionManager.js';
-import { INSTREAM } from '../src/video.js';
-import * as events from '../src/events.js';
+import { deepClone, getBidRequest, deepAccess } from '../src/utils.js'
+import { config } from '../src/config.js'
+import { auctionManager } from '../src/auctionManager.js'
+import { INSTREAM } from '../src/video.js'
+import * as events from '../src/events.js'
 import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
 
 /**
@@ -11,22 +11,22 @@ import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
  */
 
-const { CACHE_ID, UUID } = TARGETING_KEYS;
-const { BID_WON, AUCTION_END } = EVENTS;
-const { RENDERED } = BID_STATUS;
+const { CACHE_ID, UUID } = TARGETING_KEYS
+const { BID_WON, AUCTION_END } = EVENTS
+const { RENDERED } = BID_STATUS
 
 const INSTREAM_TRACKING_DEFAULT_CONFIG = {
   enabled: false,
   maxWindow: 1000 * 60, // the time in ms after which polling for instream delivery stops
   pollingFreq: 500 // the frequency of polling
-};
+}
 
 // Set instreamTracking default values
 config.setDefaults({
   'instreamTracking': deepClone(INSTREAM_TRACKING_DEFAULT_CONFIG)
-});
+})
 
-const whitelistedResources = /video|fetch|xmlhttprequest|other/;
+const whitelistedResources = /video|fetch|xmlhttprequest|other/
 
 /**
  * Here the idea is
@@ -49,73 +49,73 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  * @return {boolean} returns TRUE if tracking started
  */
 export function trackInstreamDeliveredImpressions({ adUnits, bidsReceived, bidderRequests }) {
-  const instreamTrackingConfig = config.getConfig('instreamTracking') || {};
+  const instreamTrackingConfig = config.getConfig('instreamTracking') || {}
   // check if instreamTracking is enabled and performance api is available
   if (!instreamTrackingConfig.enabled || !window.performance || !window.performance.getEntriesByType) {
-    return false;
+    return false
   }
 
   // filter for video bids
   const instreamBids = bidsReceived.filter(bid => {
-    const bidderRequest = getBidRequest(bid.requestId, bidderRequests);
-    return bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video.context') === INSTREAM && bid.videoCacheKey;
-  });
+    const bidderRequest = getBidRequest(bid.requestId, bidderRequests)
+    return bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video.context') === INSTREAM && bid.videoCacheKey
+  })
   if (!instreamBids.length) {
-    return false;
+    return false
   }
 
   // find unique instream ad units
-  const instreamAdUnitMap = {};
+  const instreamAdUnitMap = {}
   adUnits.forEach(adUnit => {
     if (!instreamAdUnitMap[adUnit.code] && deepAccess(adUnit, 'mediaTypes.video.context') === INSTREAM) {
-      instreamAdUnitMap[adUnit.code] = true;
+      instreamAdUnitMap[adUnit.code] = true
     }
-  });
-  const instreamAdUnitsCount = Object.keys(instreamAdUnitMap).length;
+  })
+  const instreamAdUnitsCount = Object.keys(instreamAdUnitMap).length
 
-  const start = Date.now();
-  const { maxWindow, pollingFreq, urlPattern } = instreamTrackingConfig;
+  const start = Date.now()
+  const { maxWindow, pollingFreq, urlPattern } = instreamTrackingConfig
 
-  let instreamWinningBidsCount = 0;
-  let lastRead = 0; // offset for performance.getEntriesByType
+  let instreamWinningBidsCount = 0
+  let lastRead = 0 // offset for performance.getEntriesByType
 
   function poll() {
     // get network entries using the last read offset
-    const entries = window.performance.getEntriesByType('resource').splice(lastRead);
+    const entries = window.performance.getEntriesByType('resource').splice(lastRead)
     for (const resource of entries) {
-      const url = resource.name;
+      const url = resource.name
       // check if the resource is of whitelisted resource to avoid checking img or css or script urls
       if (!whitelistedResources.test(resource.initiatorType)) {
-        continue;
+        continue
       }
 
       instreamBids.forEach((bid) => {
         // match the video cache key excluding ad server call
-        const matches = !(url.indexOf(CACHE_ID) !== -1 || url.indexOf(UUID) !== -1) && url.indexOf(bid.videoCacheKey) !== -1;
+        const matches = !(url.indexOf(CACHE_ID) !== -1 || url.indexOf(UUID) !== -1) && url.indexOf(bid.videoCacheKey) !== -1
         if (urlPattern && urlPattern instanceof RegExp && !urlPattern.test(url)) {
-          return;
+          return
         }
         if (matches && bid.status !== RENDERED) {
           // video found
-          instreamWinningBidsCount++;
-          auctionManager.addWinningBid(bid);
-          events.emit(BID_WON, bid);
+          instreamWinningBidsCount++
+          auctionManager.addWinningBid(bid)
+          events.emit(BID_WON, bid)
         }
-      });
+      })
     }
     // update offset
-    lastRead += entries.length;
+    lastRead += entries.length
 
-    const timeElapsed = Date.now() - start;
+    const timeElapsed = Date.now() - start
     if (timeElapsed < maxWindow && instreamWinningBidsCount < instreamAdUnitsCount) {
-      setTimeout(poll, pollingFreq);
+      setTimeout(poll, pollingFreq)
     }
   }
 
   // start polling for network entries
-  setTimeout(poll, pollingFreq);
+  setTimeout(poll, pollingFreq)
 
-  return true;
+  return true
 }
 
 events.on(AUCTION_END, trackInstreamDeliveredImpressions)

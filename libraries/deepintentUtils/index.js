@@ -1,4 +1,4 @@
-import { isInteger } from '../../src/utils.js';
+import { isInteger } from '../../src/utils.js'
 
 export const COMMON_ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -21,7 +21,7 @@ export const COMMON_ORTB_VIDEO_PARAMS = {
   'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
-};
+}
 
 export function formatResponse(bid) {
   return {

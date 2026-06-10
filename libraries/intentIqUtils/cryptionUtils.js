@@ -6,11 +6,11 @@
  * @returns {string} The encrypted text as a dot-separated string.
  */
 export function encryptData(plainText, key = 42) {
-  let out = '';
+  let out = ''
   for (let i = 0; i < plainText.length; i++) {
-    out += (plainText.charCodeAt(i) ^ key) + '.';
+    out += (plainText.charCodeAt(i) ^ key) + '.'
   }
-  return out.slice(0, -1);
+  return out.slice(0, -1)
 }
 
 /**
@@ -22,10 +22,10 @@ export function encryptData(plainText, key = 42) {
  * @returns {string} The decrypted plaintext.
  */
 export function decryptData(encryptedText, key = 42) {
-  const parts = encryptedText.split('.');
-  let out = '';
+  const parts = encryptedText.split('.')
+  let out = ''
   for (let i = 0; i < parts.length; i++) {
-    out += String.fromCharCode(parts[i] ^ key);
+    out += String.fromCharCode(parts[i] ^ key)
   }
-  return out;
+  return out
 }

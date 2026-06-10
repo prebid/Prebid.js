@@ -1,6 +1,6 @@
 export function simpleCompare(a, b) {
-  if (a === b) return 0;
-  return a < b ? -1 : 1;
+  if (a === b) return 0
+  return a < b ? -1 : 1
 }
 
 export function keyCompare(key = (item) => item) {
@@ -8,40 +8,40 @@ export function keyCompare(key = (item) => item) {
 }
 
 export function reverseCompare(compare = simpleCompare) {
-  return (a, b) => -compare(a, b) || 0;
+  return (a, b) => -compare(a, b) || 0
 }
 
 export function tiebreakCompare(...compares) {
   return function (a, b) {
     for (const cmp of compares) {
-      const val = cmp(a, b);
-      if (val !== 0) return val;
+      const val = cmp(a, b)
+      if (val !== 0) return val
     }
-    return 0;
+    return 0
   }
 }
 
 export function minimum(compare = simpleCompare) {
-  return (min, item) => compare(item, min) < 0 ? item : min;
+  return (min, item) => compare(item, min) < 0 ? item : min
 }
 
 export function maximum(compare = simpleCompare) {
-  return minimum(reverseCompare(compare));
+  return minimum(reverseCompare(compare))
 }
 
-const cpmCompare = keyCompare((bid) => bid.cpm);
-const timestampCompare = keyCompare((bid) => bid.responseTimestamp);
+const cpmCompare = keyCompare((bid) => bid.cpm)
+const timestampCompare = keyCompare((bid) => bid.responseTimestamp)
 
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
 export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))))
 
-const bidDesirabilityCompare = keyCompare((bid) => bid.desirability);
+const bidDesirabilityCompare = keyCompare((bid) => bid.desirability)
 
 // This function will get highest bid by `.desirability` (publisher `bidDesirabilityAdjustment` when set, else mirrors cpm via `adjustBids`);
 // ties use lowest `timeToRespond`, matching {@link getHighestCpm}.
 export const getHighestDesirability = maximum(
   tiebreakCompare(bidDesirabilityCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond)))
-);
+)
 
 // This function will get the oldest highest cpm value bid, in case of tie it will return the bid which came in first
 // Use case for tie: https://github.com/prebid/Prebid.js/issues/2448

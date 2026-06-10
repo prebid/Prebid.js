@@ -1,10 +1,10 @@
-import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput, logError, isEmpty } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
 import { getViewportSize } from '../libraries/viewport/viewport.js'
-import { getDNT } from '../libraries/dnt/index.js';
+import { getDNT } from '../libraries/dnt/index.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,13 +13,13 @@ import { getDNT } from '../libraries/dnt/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  */
 
-const BIDDER_CODE = 'cointraffic';
-const ENDPOINT_URL = 'https://apps.adsgravity.io/v1/request/prebid';
-const DEFAULT_CURRENCY = 'EUR';
+const BIDDER_CODE = 'cointraffic'
+const ENDPOINT_URL = 'https://apps.adsgravity.io/v1/request/prebid'
+const DEFAULT_CURRENCY = 'EUR'
 const ALLOWED_CURRENCIES = [
   'EUR', 'USD', 'JPY', 'BGN', 'CZK', 'DKK', 'GBP', 'HUF', 'PLN', 'RON', 'SEK', 'CHF', 'ISK', 'NOK', 'HRK', 'RUB', 'TRY',
   'AUD', 'BRL', 'CAD', 'CNY', 'HKD', 'IDR', 'ILS', 'INR', 'KRW', 'MXN', 'MYR', 'NZD', 'PHP', 'SGD', 'THB', 'ZAR',
-];
+]
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -33,7 +33,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placementId);
+    return !!(bid.params.placementId)
   },
 
   /**
@@ -45,13 +45,13 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.mediaTypes.banner.sizes);
-      const { width, height } = getViewportSize();
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.mediaTypes.banner.sizes)
+      const { width, height } = getViewportSize()
 
       const getCurrency = () => {
         return config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
           getCurrencyFromBidderRequest(bidderRequest) ||
-          DEFAULT_CURRENCY;
+          DEFAULT_CURRENCY
       }
 
       const getLanguage = () => {
@@ -59,14 +59,14 @@ export const spec = {
           ? navigator.language.indexOf('-') !== -1
             ? navigator.language.split('-')[0]
             : navigator.language
-          : '';
+          : ''
       }
 
-      const currency = getCurrency();
+      const currency = getCurrency()
 
       if (ALLOWED_CURRENCIES.indexOf(currency) === -1) {
-        logError('Currency is not supported - ' + currency);
-        return undefined;
+        logError('Currency is not supported - ' + currency)
+        return undefined
       }
 
       const payload = {
@@ -82,14 +82,14 @@ export const spec = {
           dnt: getDNT() ? 1 : 0,
           language: getLanguage(),
         },
-      };
+      }
 
       return {
         method: 'POST',
         url: ENDPOINT_URL,
         data: payload
-      };
-    }).filter((request) => request !== undefined);
+      }
+    }).filter((request) => request !== undefined)
   },
 
   /**
@@ -100,11 +100,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
-    const response = serverResponse.body;
+    const bidResponses = []
+    const response = serverResponse.body
 
     if (isEmpty(response)) {
-      return bidResponses;
+      return bidResponses
     }
 
     const bidResponse = {
@@ -121,12 +121,12 @@ export const spec = {
         advertiserDomains: response.adomain && response.adomain.length ? response.adomain : [],
         mediaType: response.mediaType
       }
-    };
+    }
 
-    bidResponses.push(bidResponse);
+    bidResponses.push(bidResponse)
 
-    return bidResponses;
+    return bidResponses
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

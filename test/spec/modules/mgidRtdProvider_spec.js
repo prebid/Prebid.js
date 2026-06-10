@@ -1,37 +1,37 @@
-import { mgidSubmodule, storage } from '../../../modules/mgidRtdProvider.js';
-import { expect } from 'chai';
-import * as refererDetection from '../../../src/refererDetection.js';
-import { server } from '../../mocks/xhr.js';
+import { mgidSubmodule, storage } from '../../../modules/mgidRtdProvider.js'
+import { expect } from 'chai'
+import * as refererDetection from '../../../src/refererDetection.js'
+import { server } from '../../mocks/xhr.js'
 
 describe('Mgid RTD submodule', () => {
-  let clock;
-  let getRefererInfoStub;
-  let getDataFromLocalStorageStub;
+  let clock
+  let getRefererInfoStub
+  let getDataFromLocalStorageStub
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers()
 
-    getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
+    getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo')
     getRefererInfoStub.returns({
       canonicalUrl: 'https://www.test.com/abc'
-    });
+    })
 
-    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns('qwerty654321');
-  });
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').returns('qwerty654321')
+  })
 
   afterEach(() => {
-    clock.restore();
-    getRefererInfoStub.restore();
-    getDataFromLocalStorageStub.restore();
-  });
+    clock.restore()
+    getRefererInfoStub.restore()
+    getDataFromLocalStorageStub.restore()
+  })
 
   it('init is successfull, when clientSiteId is defined', () => {
-    expect(mgidSubmodule.init({ params: { clientSiteId: 123 } })).to.be.true;
-  });
+    expect(mgidSubmodule.init({ params: { clientSiteId: 123 } })).to.be.true
+  })
 
   it('init is unsuccessfull, when clientSiteId is not defined', () => {
-    expect(mgidSubmodule.init({})).to.be.false;
-  });
+    expect(mgidSubmodule.init({})).to.be.false
+  })
 
   it('getBidRequestData send all params to our endpoint and successfully modifies ortb2', () => {
     const responseObj = {
@@ -40,7 +40,7 @@ describe('Mgid RTD submodule', () => {
       siteSegments: ['300', '400'],
       siteSegtax: 7,
       muid: 'qwerty654321',
-    };
+    }
 
     const reqBidsConfigObj = {
       ortb2Fragments: {
@@ -52,9 +52,9 @@ describe('Mgid RTD submodule', () => {
           }
         },
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -67,23 +67,23 @@ describe('Mgid RTD submodule', () => {
         },
         usp: '1YYY',
       }
-    );
+    )
 
     server.requests[0].respond(
       200,
       { 'Content-Type': 'application/json' },
       JSON.stringify(responseObj)
-    );
+    )
 
-    const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.host).to.be.eq('servicer.mgid.com');
-    expect(requestUrl.searchParams.get('gdprApplies')).to.be.eq('true');
-    expect(requestUrl.searchParams.get('consentData')).to.be.eq('testConsent');
-    expect(requestUrl.searchParams.get('uspString')).to.be.eq('1YYY');
-    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321');
-    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123');
-    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc');
-    expect(requestUrl.searchParams.get('cxlang')).to.be.eq('en');
+    const requestUrl = new URL(server.requests[0].url)
+    expect(requestUrl.host).to.be.eq('servicer.mgid.com')
+    expect(requestUrl.searchParams.get('gdprApplies')).to.be.eq('true')
+    expect(requestUrl.searchParams.get('consentData')).to.be.eq('testConsent')
+    expect(requestUrl.searchParams.get('uspString')).to.be.eq('1YYY')
+    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321')
+    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123')
+    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc')
+    expect(requestUrl.searchParams.get('cxlang')).to.be.eq('en')
 
     assert.deepInclude(
       reqBidsConfigObj.ortb2Fragments.global,
@@ -119,51 +119,51 @@ describe('Mgid RTD submodule', () => {
             }
           ],
         },
-      });
-  });
+      })
+  })
 
   it('getBidRequestData doesn\'t send params (consent and cxlang), if we haven\'t received them', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123 } },
       {}
-    );
+    )
 
     server.requests[0].respond(
       200,
       { 'Content-Type': 'application/json' },
       JSON.stringify({})
-    );
+    )
 
-    const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.host).to.be.eq('servicer.mgid.com');
-    expect(requestUrl.searchParams.get('gdprApplies')).to.be.null;
-    expect(requestUrl.searchParams.get('consentData')).to.be.null;
-    expect(requestUrl.searchParams.get('uspString')).to.be.null;
-    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321');
-    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123');
-    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc');
-    expect(requestUrl.searchParams.get('cxlang')).to.be.null;
-    expect(onDone.calledOnce).to.be.true;
-  });
+    const requestUrl = new URL(server.requests[0].url)
+    expect(requestUrl.host).to.be.eq('servicer.mgid.com')
+    expect(requestUrl.searchParams.get('gdprApplies')).to.be.null
+    expect(requestUrl.searchParams.get('consentData')).to.be.null
+    expect(requestUrl.searchParams.get('uspString')).to.be.null
+    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321')
+    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123')
+    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc')
+    expect(requestUrl.searchParams.get('cxlang')).to.be.null
+    expect(onDone.calledOnce).to.be.true
+  })
 
   it('getBidRequestData send gdprApplies event if it is false', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
@@ -176,187 +176,187 @@ describe('Mgid RTD submodule', () => {
         },
         usp: '1YYY',
       }
-    );
+    )
 
     server.requests[0].respond(
       200,
       { 'Content-Type': 'application/json' },
       JSON.stringify({})
-    );
+    )
 
-    const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.host).to.be.eq('servicer.mgid.com');
-    expect(requestUrl.searchParams.get('gdprApplies')).to.be.eq('false');
-    expect(requestUrl.searchParams.get('consentData')).to.be.eq('testConsent');
-    expect(requestUrl.searchParams.get('uspString')).to.be.eq('1YYY');
-    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321');
-    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123');
-    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc');
-    expect(requestUrl.searchParams.get('cxlang')).to.be.null;
-    expect(onDone.calledOnce).to.be.true;
-  });
+    const requestUrl = new URL(server.requests[0].url)
+    expect(requestUrl.host).to.be.eq('servicer.mgid.com')
+    expect(requestUrl.searchParams.get('gdprApplies')).to.be.eq('false')
+    expect(requestUrl.searchParams.get('consentData')).to.be.eq('testConsent')
+    expect(requestUrl.searchParams.get('uspString')).to.be.eq('1YYY')
+    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321')
+    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123')
+    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc')
+    expect(requestUrl.searchParams.get('cxlang')).to.be.null
+    expect(onDone.calledOnce).to.be.true
+  })
 
   it('getBidRequestData use og:url for cxurl, if it is available', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     const metaStub = sinon.stub(document, 'getElementsByTagName').returns([
       { getAttribute: () => 'og:test', content: 'fake' },
       { getAttribute: () => 'og:url', content: 'https://realOgUrl.com/' }
-    ]);
+    ])
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123 } },
       {}
-    );
+    )
 
     server.requests[0].respond(
       200,
       { 'Content-Type': 'application/json' },
       JSON.stringify({})
-    );
+    )
 
-    const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://realOgUrl.com/');
-    expect(onDone.calledOnce).to.be.true;
+    const requestUrl = new URL(server.requests[0].url)
+    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://realOgUrl.com/')
+    expect(onDone.calledOnce).to.be.true
 
-    metaStub.restore();
-  });
+    metaStub.restore()
+  })
 
   it('getBidRequestData use topMostLocation for cxurl, if nothing else left', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     getRefererInfoStub.returns({
       topmostLocation: 'https://www.test.com/topMost'
-    });
+    })
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123 } },
       {}
-    );
+    )
 
     server.requests[0].respond(
       200,
       { 'Content-Type': 'application/json' },
       JSON.stringify({})
-    );
+    )
 
-    const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/topMost');
-    expect(onDone.calledOnce).to.be.true;
-  });
+    const requestUrl = new URL(server.requests[0].url)
+    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/topMost')
+    expect(onDone.calledOnce).to.be.true
+  })
 
   it('getBidRequestData won\'t modify ortb2 if response is broken', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123 } },
       {}
-    );
+    )
 
     server.requests[0].respond(
       200,
       { 'Content-Type': 'application/json' },
       '{'
-    );
+    )
 
-    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {});
-    expect(onDone.calledOnce).to.be.true;
-  });
+    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {})
+    expect(onDone.calledOnce).to.be.true
+  })
 
   it('getBidRequestData won\'t modify ortb2 if response status is not 200', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123 } },
       {}
-    );
+    )
 
     server.requests[0].respond(
       204,
       { 'Content-Type': 'application/json' },
-    );
+    )
 
-    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {});
-    expect(onDone.calledOnce).to.be.true;
-  });
+    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {})
+    expect(onDone.calledOnce).to.be.true
+  })
 
   it('getBidRequestData won\'t modify ortb2 if response results in error', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123 } },
       {}
-    );
+    )
 
     server.requests[0].respond(
       500,
       { 'Content-Type': 'application/json' },
       '{}'
-    );
+    )
 
-    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {});
-    expect(onDone.calledOnce).to.be.true;
-  });
+    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {})
+    expect(onDone.calledOnce).to.be.true
+  })
 
   it('getBidRequestData won\'t modify ortb2 if response time hits timeout', () => {
     const reqBidsConfigObj = {
       ortb2Fragments: {
         global: {},
       }
-    };
+    }
 
-    const onDone = sinon.stub();
+    const onDone = sinon.stub()
 
     mgidSubmodule.getBidRequestData(
       reqBidsConfigObj,
       onDone,
       { params: { clientSiteId: 123, timeout: 500 } },
       {}
-    );
+    )
 
-    clock.tick(510);
+    clock.tick(510)
 
-    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {});
-    expect(onDone.calledOnce).to.be.true;
-  });
-});
+    assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {})
+    expect(onDone.calledOnce).to.be.true
+  })
+})

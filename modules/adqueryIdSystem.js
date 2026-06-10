@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { submodule } from '../src/hook.js';
-import { isFn, isPlainObject, isStr, logError, logInfo, logMessage } from '../src/utils.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { submodule } from '../src/hook.js'
+import { isFn, isPlainObject, isStr, logError, logInfo, logMessage } from '../src/utils.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -17,10 +17,10 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'qid';
-const AU_GVLID = 902;
+const MODULE_NAME = 'qid'
+const AU_GVLID = 902
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'qid' });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'qid' })
 
 /**
  * Param or default.
@@ -29,11 +29,11 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
  */
 function paramOrDefault(param, defaultVal, arg) {
   if (isFn(param)) {
-    return param(arg);
+    return param(arg)
   } else if (isStr(param)) {
-    return param;
+    return param
   }
-  return defaultVal;
+  return defaultVal
 }
 
 /** @type {Submodule} */
@@ -66,64 +66,64 @@ export const adqueryIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    logMessage('adqueryIdSubmodule getId');
+    logMessage('adqueryIdSubmodule getId')
 
-    const qid = storage.getDataFromLocalStorage('qid');
+    const qid = storage.getDataFromLocalStorage('qid')
 
     if (qid) {
       return {
         callback: function (callback) {
-          callback(qid);
+          callback(qid)
         }
       }
     }
 
     if (!isPlainObject(config.params)) {
-      config.params = {};
+      config.params = {}
     }
 
     const url = paramOrDefault(
       config.params.url,
       `https://bidder.adquery.io/prebid/qid`,
       config.params.urlArg
-    );
+    )
 
     const resp = function (callback) {
-      let qid = window.qid;
+      let qid = window.qid
 
       if (!qid) {
-        const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-        qid = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
+        const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)))
+        qid = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20)
 
-        logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
+        logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid)
       }
-      logInfo('adqueryIdSubmodule ID QID:', qid);
+      logInfo('adqueryIdSubmodule ID QID:', qid)
 
       const callbacks = {
         success: response => {
-          let responseObj;
+          let responseObj
           if (response) {
             try {
-              responseObj = JSON.parse(response);
+              responseObj = JSON.parse(response)
             } catch (error) {
-              logError(error);
+              logError(error)
             }
           }
           if (responseObj.qid) {
-            const myQid = responseObj.qid;
-            storage.setDataInLocalStorage('qid', myQid);
-            return callback(myQid);
+            const myQid = responseObj.qid
+            storage.setDataInLocalStorage('qid', myQid)
+            return callback(myQid)
           }
-          callback();
+          callback()
         },
         error: error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-          callback();
+          logError(`${MODULE_NAME}: ID fetch encountered an error`, error)
+          callback()
         }
-      };
-      ajax(url + '?qid=' + qid, callbacks, undefined, { method: 'GET' });
-    };
-    return { callback: resp };
+      }
+      ajax(url + '?qid=' + qid, callbacks, undefined, { method: 'GET' })
+    }
+    return { callback: resp }
   },
   eids: {
     'qid': {
@@ -131,6 +131,6 @@ export const adqueryIdSubmodule = {
       atype: 1
     },
   }
-};
+}
 
-submodule('userId', adqueryIdSubmodule);
+submodule('userId', adqueryIdSubmodule)

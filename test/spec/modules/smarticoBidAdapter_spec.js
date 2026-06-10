@@ -1,9 +1,9 @@
-import { expect } from 'chai';
-import { spec } from 'modules/smarticoBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai'
+import { spec } from 'modules/smarticoBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 describe('smarticoBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
   const bid = {
     adUnitCode: 'adunit-code',
     auctionId: '5kaj89l8-3456-2s56-c455-4g6h78jsdfgf',
@@ -37,26 +37,26 @@ describe('smarticoBidAdapter', function () {
   }
   describe('isBidRequestValid', function () {
     it('should return true where required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-  });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
+  })
   describe('buildRequests', function () {
-    const bidRequests = [bid];
-    const request = spec.buildRequests(bidRequests, bidderRequests);
+    const bidRequests = [bid]
+    const request = spec.buildRequests(bidRequests, bidderRequests)
     it('sends bid request via POST', function () {
-      expect(request.method).to.equal('POST');
-    });
+      expect(request.method).to.equal('POST')
+    })
     it('must contain token', function() {
-      expect(request.data.bidParams[0].token).to.equal('FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya');
-    });
+      expect(request.data.bidParams[0].token).to.equal('FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya')
+    })
     it('must contain auctionId', function() {
       expect(request.data.auctionId).to.exist.and.to.be.a('string')
-    });
+    })
     it('must contain valid width and height', function() {
       expect(request.data.bidParams[0]['banner-format-width']).to.exist.and.to.be.a('number')
       expect(request.data.bidParams[0]['banner-format-height']).to.exist.and.to.be.a('number')
-    });
-  });
+    })
+  })
 
   describe('interpretResponse', function () {
     const bidRequest = {
@@ -70,7 +70,7 @@ describe('smarticoBidAdapter', function () {
         'banner-format-height': 250,
         placementId: 'testPlacementId',
       }]
-    };
+    }
     const serverResponse = {
       body: [{
         bidId: '22499d052045',
@@ -85,7 +85,7 @@ describe('smarticoBidAdapter', function () {
         domains: ['www.advertiser.com'],
         title: 'Advertiser'
       }]
-    };
+    }
     const expectedResponse = [{
       requestId: bid.bidId,
       cpm: 10,
@@ -100,37 +100,37 @@ describe('smarticoBidAdapter', function () {
         advertiserDomains: ['www.advertiser.com'],
         advertiserName: 'Advertiser'
       }
-    }];
-    const result = spec.interpretResponse(serverResponse, bidRequest);
+    }]
+    const result = spec.interpretResponse(serverResponse, bidRequest)
     it('should contain correct creativeId', function () {
       expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId)
-    });
+    })
     it('should contain correct cpm', function () {
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm)
-    });
+    })
     it('should contain correct width', function () {
       expect(result[0].width).to.equal(expectedResponse[0].width)
-    });
+    })
     it('should contain correct height', function () {
       expect(result[0].height).to.equal(expectedResponse[0].height)
-    });
+    })
     it('should contain correct requestId', function () {
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId)
-    });
+    })
     it('should contain correct ttl', function () {
       expect(result[0].ttl).to.equal(expectedResponse[0].ttl)
-    });
+    })
     it('should contain correct netRevenue', function () {
       expect(result[0].netRevenue).to.equal(expectedResponse[0].netRevenue)
-    });
+    })
     it('should contain correct netRevenue', function () {
       expect(result[0].currency).to.equal(expectedResponse[0].currency)
-    });
+    })
     it('should contain correct ad content', function () {
       expect(result[0].ad).to.equal(expectedResponse[0].ad)
-    });
+    })
     it('should contain correct meta content', function () {
       expect(result[0].meta).to.deep.equal(expectedResponse[0].meta)
-    });
-  });
-});
+    })
+  })
+})

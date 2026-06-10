@@ -1,38 +1,38 @@
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
 
-const BIDDER_CODE = 'my6sense';
-const END_POINT = 'https://hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
-const END_POINT_METHOD = 'POST';
+const BIDDER_CODE = 'my6sense'
+const END_POINT = 'https://hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json'
+const END_POINT_METHOD = 'POST'
 
 // called first
 function isBidRequestValid(bid) {
-  return !(!bid.params || !bid.params.key);
+  return !(!bid.params || !bid.params.key)
 }
 
 function getUrl(url) {
   // TODO: this should probably look at refererInfo
   if (!url) {
-    url = window.location.href;// "clean" url of current web page
+    url = window.location.href// "clean" url of current web page
   }
-  var canonicalLink = null;
+  var canonicalLink = null
   // first look for meta data with property "og:url"
-  var metaElements = document.getElementsByTagName('meta');
+  var metaElements = document.getElementsByTagName('meta')
   for (var i = 0; i < metaElements.length && !canonicalLink; i++) {
     if (metaElements[i].getAttribute('property') === 'og:url') {
-      canonicalLink = metaElements[i].content;
+      canonicalLink = metaElements[i].content
     }
   }
   if (!canonicalLink) {
-    var canonicalLinkContainer = document.querySelector("link[rel='canonical']");// html element containing the canonical link
+    var canonicalLinkContainer = document.querySelector("link[rel='canonical']")// html element containing the canonical link
     if (canonicalLinkContainer) {
       // get clean url from href of <link rel='canocial' .../>
-      canonicalLink = canonicalLinkContainer.href;
+      canonicalLink = canonicalLinkContainer.href
     }
   }
-  url = canonicalLink || url;
-  return encodeURIComponent(url).toString();
+  url = canonicalLink || url
+  return encodeURIComponent(url).toString()
 }
 
 /**
@@ -46,7 +46,7 @@ function getUrl(url) {
  */
 function fixRequestParamForServer(key, value) {
   function isEmptyValue(key, value) {
-    return value === parametersMap[key].emptyValue;
+    return value === parametersMap[key].emptyValue
   }
 
   const parametersMap = {
@@ -75,14 +75,14 @@ function fixRequestParamForServer(key, value) {
       defaultValue: ''
     },
     // ZONE is not part of this object, handled on server side
-  };
+  }
 
   // if param is not in list we do not change it (return it as is)
   if (!parametersMap.hasOwnProperty(key)) {
     return {
       value: value,
       fromUser: true
-    };
+    }
   }
 
   // if no value given by user set it to default
@@ -90,13 +90,13 @@ function fixRequestParamForServer(key, value) {
     return {
       value: parametersMap[key].defaultValue,
       fromUser: false
-    };
+    }
   }
 
   return {
     value: value,
     fromUser: true
-  };
+  }
 }
 
 // called second
@@ -105,31 +105,31 @@ function buildGdprServerProperty(bidderRequest) {
   var gdprObj = {
     gdpr_consent: null,
     gdpr: null
-  };
-
-  if (bidderRequest && 'gdprConsent' in bidderRequest) {
-    gdprObj.gdpr_consent = bidderRequest.gdprConsent.consentString || null;
-
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === true ? true : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === false ? false : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? true : gdprObj.gdpr;
-    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 0 ? false : gdprObj.gdpr;
   }
 
-  return gdprObj;
+  if (bidderRequest && 'gdprConsent' in bidderRequest) {
+    gdprObj.gdpr_consent = bidderRequest.gdprConsent.consentString || null
+
+    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === true ? true : gdprObj.gdpr
+    gdprObj.gdpr = gdprObj.gdpr === null && bidderRequest.gdprConsent.gdprApplies === false ? false : gdprObj.gdpr
+    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? true : gdprObj.gdpr
+    gdprObj.gdpr = gdprObj.gdpr === null && Number(bidderRequest.gdprConsent.gdprApplies) === 0 ? false : gdprObj.gdpr
+  }
+
+  return gdprObj
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
   // convert Native ORTB definition to old-style prebid native definition
-  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
-  const requests = [];
+  const requests = []
 
   if (validBidRequests && validBidRequests.length) {
     validBidRequests.forEach(bidRequest => {
-      bidRequest.widget_num = 1; // mandatory property for server side
-      let isDataUrlSetByUser = false;
-      let debug = false;
+      bidRequest.widget_num = 1 // mandatory property for server side
+      let isDataUrlSetByUser = false
+      let debug = false
 
       if (bidRequest.params) {
         for (const key in bidRequest.params) {
@@ -137,56 +137,56 @@ function buildRequests(validBidRequests, bidderRequest) {
           if (bidRequest.params.hasOwnProperty(key)) {
             // if debug we update url string to get core debug version
             if (key === 'debug' && bidRequest.params[key] === true) {
-              debug = true;
-              delete bidRequest.params[key];
-              continue;
+              debug = true
+              delete bidRequest.params[key]
+              continue
             }
 
-            const fixedObj = fixRequestParamForServer(key, bidRequest.params[key]);
-            bidRequest.params[key] = fixedObj.value;
+            const fixedObj = fixRequestParamForServer(key, bidRequest.params[key])
+            bidRequest.params[key] = fixedObj.value
 
             // if pageUrl is set by user we should update variable for query string param
             if (key === 'pageUrl' && fixedObj.fromUser === true) {
-              isDataUrlSetByUser = true;
+              isDataUrlSetByUser = true
             }
 
             // remove empty params from request
             if (!bidRequest.params[key]) {
-              delete bidRequest.params[key];
+              delete bidRequest.params[key]
             }
           }
         }
       }
 
-      let url = `${END_POINT}?widget_key=${bidRequest.params.key}&is_data_url_set=${isDataUrlSetByUser}`; // mandatory query string for server side
+      let url = `${END_POINT}?widget_key=${bidRequest.params.key}&is_data_url_set=${isDataUrlSetByUser}` // mandatory query string for server side
       if (debug) {
-        url = `${END_POINT}?env=debug&widget_key=${bidRequest.params.key}&is_data_url_set=${isDataUrlSetByUser}`; // this url is for debugging
+        url = `${END_POINT}?env=debug&widget_key=${bidRequest.params.key}&is_data_url_set=${isDataUrlSetByUser}` // this url is for debugging
       }
 
-      bidRequest.gdpr = buildGdprServerProperty(bidderRequest);
+      bidRequest.gdpr = buildGdprServerProperty(bidderRequest)
 
       requests.push({
         url: url,
         method: END_POINT_METHOD,
         data: JSON.stringify(bidRequest)
-      });
-    });
+      })
+    })
   }
 
-  return requests;
+  return requests
 }
 
 // called third
 
 function interpretResponse(serverResponse) {
-  const bidResponses = [];
+  const bidResponses = []
   // currently server returns a single response which is the body property
   if (serverResponse.body) {
-    serverResponse.body.bidderCode = BIDDER_CODE;
-    bidResponses.push(serverResponse.body);
+    serverResponse.body.bidderCode = BIDDER_CODE
+    bidResponses.push(serverResponse.body)
   }
 
-  return bidResponses;
+  return bidResponses
 }
 
 export const spec = {
@@ -195,6 +195,6 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

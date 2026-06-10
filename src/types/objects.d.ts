@@ -2,19 +2,19 @@ export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
   Omit<T, Keys> & {
     [K in Keys]-?: Required<Pick<T, K>> &
     Partial<Pick<T, Exclude<Keys, K>>>
-  }[Keys];
+  }[Keys]
 
 export type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
-};
+}
 
-type DotNotation<PREFIX extends string, REST extends string> = `${PREFIX}.${REST}`;
+type DotNotation<PREFIX extends string, REST extends string> = `${PREFIX}.${REST}`
 
 export type DeepProperty<T extends object> = keyof T | {
   [K in keyof T]: T[K] extends object
     ? DotNotation<string & K, (string & keyof T[K]) | DotNotation<(string & keyof T[K]), any>>
     : never
-}[keyof T];
+}[keyof T]
 
 export type TypeOfDeepProperty<T extends object, K extends DeepProperty<T>> =
     K extends keyof T
@@ -26,8 +26,8 @@ export type TypeOfDeepProperty<T extends object, K extends DeepProperty<T>> =
               TypeOfDeepProperty<T[PREFIX], REST> : never
             : never
           : never
-        : never;
+        : never
 
 export type DeepPropertyName<K extends string> = K extends DotNotation<any, infer REST>
   ? DeepPropertyName<REST>
-  : K;
+  : K

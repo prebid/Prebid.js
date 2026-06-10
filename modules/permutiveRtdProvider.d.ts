@@ -3,7 +3,7 @@
  *
  * Currently only `ls` (localStorage) is supported.
  */
-export type PermutiveCustomCohortsSource = 'ls';
+export type PermutiveCustomCohortsSource = 'ls'
 
 export interface PermutiveCustomCohortsConfig {
   /**

@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 import {
   spec,
   buildBid,
@@ -7,9 +7,9 @@ import {
   BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME,
   getEffectiveConnectionType,
   getUserIds,
-} from 'modules/bliinkBidAdapter.js';
-import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
+} from 'modules/bliinkBidAdapter.js'
+import * as utils from 'src/utils.js'
+import { config } from 'src/config.js'
 
 /**
  * @description Mockup bidRequest
@@ -31,9 +31,9 @@ import { config } from 'src/config.js';
  * ortb2Imp: {ext: {data: {pbadslot: string}}}}}
  */
 
-const w = (utils.canAccessWindowTop()) ? utils.getWindowTop() : utils.getWindowSelf();
-const connectionType = getEffectiveConnectionType();
-let domLoadingDuration = utils.getDomLoadingDuration(w).toString();
+const w = (utils.canAccessWindowTop()) ? utils.getWindowTop() : utils.getWindowSelf()
+const connectionType = getEffectiveConnectionType()
+let domLoadingDuration = utils.getDomLoadingDuration(w).toString()
 const getConfigBid = (placement) => {
   return {
     adUnitCode: '/19968336/test',
@@ -70,8 +70,8 @@ const getConfigBid = (placement) => {
     },
     src: 'client',
     transactionId: 'cc6678c4-9746-4082-b9e2-d8065d078ebf',
-  };
-};
+  }
+}
 const getConfigBannerBid = () => {
   return {
     creative: {
@@ -92,8 +92,8 @@ const getConfigBannerBid = () => {
       transaction_id: '2def0c5b2a7f6e',
     },
     currency: 'EUR',
-  };
-};
+  }
+}
 const getConfigVideoBid = () => {
   return {
     creative: {
@@ -114,8 +114,8 @@ const getConfigVideoBid = () => {
       transaction_id: '2def0c5b2a7f6e',
     },
     currency: 'EUR',
-  };
-};
+  }
+}
 
 /**
  * @description Mockup response from engine.bliink.io/xxxx
@@ -147,8 +147,8 @@ const getConfigCreative = () => {
     height: 250,
     ttl: 300,
     netRevenue: true,
-  };
-};
+  }
+}
 
 const getConfigCreativeVideo = (isNoVast) => {
   return {
@@ -162,8 +162,8 @@ const getConfigCreativeVideo = (isNoVast) => {
     height: 250,
     ttl: 300,
     netRevenue: true,
-  };
-};
+  }
+}
 
 /**
  * @description Mockup BuildRequest function
@@ -181,10 +181,10 @@ const getConfigBuildRequest = (placement) => {
       reachedTop: true,
       page: 'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
     },
-  };
+  }
 
   if (!placement) {
-    return buildRequest;
+    return buildRequest
   }
 
   return Object.assign(buildRequest, {
@@ -192,8 +192,8 @@ const getConfigBuildRequest = (placement) => {
       bids: [getConfigBid(placement)],
       placement: placement,
     },
-  });
-};
+  })
+}
 
 /**
  * @description Mockup response from API
@@ -205,7 +205,7 @@ const getConfigInterpretResponse = (noAd = false) => {
     return {
       message: 'invalid tag',
       mode: 'no-ad',
-    };
+    }
   }
 
   return {
@@ -216,11 +216,11 @@ const getConfigInterpretResponse = (noAd = false) => {
       token: SAMPLE_BID_EVENT_TOKEN,
     },
     headers: {},
-  };
-};
+  }
+}
 
-const SAMPLE_BID_EVENT_TOKEN = 'sample-bid-event-token';
-const SAMPLE_VAST_EVENT_TOKEN = 'sample-vast-event-token';
+const SAMPLE_BID_EVENT_TOKEN = 'sample-bid-event-token'
+const SAMPLE_VAST_EVENT_TOKEN = 'sample-vast-event-token'
 
 /**
  * @description Mockup response from API for RTB creative
@@ -232,7 +232,7 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
     return {
       message: 'invalid tag',
       mode: 'no-ad',
-    };
+    }
   }
 
   const validVast = `
@@ -247,14 +247,14 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
       </Wrapper>
     </Ad>
   </VAST>
-  `;
+  `
   const invalidVast = `
   <VASTZ version="3">
     <Ad>
 
     </Ad>
   </VAST>
-  `;
+  `
 
   return {
     body: {
@@ -282,8 +282,8 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
       ],
       userSyncs: [],
     },
-  };
-};
+  }
+}
 
 /**
  *
@@ -335,16 +335,16 @@ const testsGetMetaList = [
       },
     ],
   },
-];
+]
 
 describe('BLIINK Adapter getMetaList', function () {
   for (const test of testsGetMetaList) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-    });
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
   }
-});
+})
 const GetUserIds = [
   {
     title: 'Should return undefined if there are no parameters',
@@ -382,16 +382,16 @@ const GetUserIds = [
       }
     ],
   },
-];
+]
 
 describe('BLIINK Adapter getUserIds', function () {
   for (const test of GetUserIds) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-    });
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
   }
-});
+})
 
 /**
  * @description Array of tests used in describe function below
@@ -434,19 +434,19 @@ const testsIsBidRequestValid = [
     },
     want: true,
   },
-];
+]
 
 describe('BLIINK Adapter isBidRequestValid', function () {
   for (const test of testsIsBidRequestValid) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-    });
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
   }
-});
+})
 
 const vastXml =
-  getConfigInterpretResponseRTB().body.bids[0].creative.video.content;
+  getConfigInterpretResponseRTB().body.bids[0].creative.video.content
 
 const testsInterpretResponse = [
   {
@@ -524,19 +524,19 @@ const testsInterpretResponse = [
     },
     want: [],
   },
-];
+]
 
 describe('BLIINK Adapter interpretResponse', function () {
   for (const test of testsInterpretResponse) {
     it(test.title, () => {
-      const res = test.args.fn;
+      const res = test.args.fn
 
       if (res) {
-        expect(res).to.eql(test.want);
+        expect(res).to.eql(test.want)
       }
-    });
+    })
   }
-});
+})
 
 /**
  * @description Array of tests used in describe function below
@@ -651,16 +651,16 @@ const testsBuildBid = [
       netRevenue: true,
     },
   },
-];
+]
 
 describe('BLIINK Adapter buildBid', function () {
   for (const test of testsBuildBid) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-    });
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
   }
-});
+})
 
 /**
  * @description Array of tests used in describe function below
@@ -965,23 +965,23 @@ const testsBuildRequests = [
       },
     },
   },
-];
+]
 
 describe('BLIINK Adapter buildRequests', function () {
   for (const test of testsBuildRequests) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-    });
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
   }
-});
+})
 
 const getSyncOptions = (pixelEnabled = true, iframeEnabled = false) => {
   return {
     pixelEnabled,
     iframeEnabled,
-  };
-};
+  }
+}
 
 const getServerResponses = () => {
   return [
@@ -1000,16 +1000,16 @@ const getServerResponses = () => {
         ],
       },
     },
-  ];
-};
+  ]
+}
 
 const getGdprConsent = () => {
   return {
     gdprApplies: 1,
     consentString: 'XXX',
     apiVersion: 2,
-  };
-};
+  }
+}
 
 const testsGetUserSyncs = [
   {
@@ -1087,42 +1087,42 @@ const testsGetUserSyncs = [
     },
     want: [],
   },
-];
+]
 
 describe('BLIINK Adapter getUserSyncs', function () {
   for (const test of testsGetUserSyncs) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-    });
+      const res = test.args.fn
+      expect(res).to.eql(test.want)
+    })
   }
-});
+})
 
 describe('BLIINK Adapter keywords & coppa true', function () {
-  let querySelectorStub;
-  let configStub;
-  let originalTitle;
+  let querySelectorStub
+  let configStub
+  let originalTitle
 
   beforeEach(() => {
-    window.bliinkBid = {};
-    const metaElement = document.createElement('meta');
-    metaElement.name = 'keywords';
-    metaElement.content = 'Bliink, Saber, Prebid';
-    sinon.stub(utils, 'getDomLoadingDuration').returns(0);
-    domLoadingDuration = '0';
-    configStub = sinon.stub(config, 'getConfig');
-    configStub.withArgs('coppa').returns(true);
-    querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement);
-    originalTitle = document.title;
-    document.title = '';
-  });
+    window.bliinkBid = {}
+    const metaElement = document.createElement('meta')
+    metaElement.name = 'keywords'
+    metaElement.content = 'Bliink, Saber, Prebid'
+    sinon.stub(utils, 'getDomLoadingDuration').returns(0)
+    domLoadingDuration = '0'
+    configStub = sinon.stub(config, 'getConfig')
+    configStub.withArgs('coppa').returns(true)
+    querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement)
+    originalTitle = document.title
+    document.title = ''
+  })
 
   afterEach(() => {
-    querySelectorStub.restore();
-    configStub.restore();
-    utils.getDomLoadingDuration.restore();
-    document.title = originalTitle;
-  });
+    querySelectorStub.restore()
+    configStub.restore()
+    utils.getDomLoadingDuration.restore()
+    document.title = originalTitle
+  })
 
   it('Should build request with keyword and coppa true if exist', () => {
     expect(
@@ -1166,30 +1166,30 @@ describe('BLIINK Adapter keywords & coppa true', function () {
           },
         ],
       },
-    });
-  });
-});
+    })
+  })
+})
 
 describe('getEffectiveConnectionType', () => {
-  let navigatorStub;
+  let navigatorStub
 
   beforeEach(() => {
     if ('connection' in navigator) {
       navigatorStub = sinon.stub(navigator, 'connection').value({
         effectiveType: undefined,
-      });
+      })
     }
-  });
+  })
 
   afterEach(() => {
     if (navigatorStub) {
-      navigatorStub.restore();
+      navigatorStub.restore()
     }
-  });
+  })
   if (navigatorStub) {
     it('should return "unsupported" when effective connection type is undefined', () => {
-      const result = getEffectiveConnectionType();
-      expect(result).to.equal('unsupported');
-    });
+      const result = getEffectiveConnectionType()
+      expect(result).to.equal('unsupported')
+    })
   }
-});
+})

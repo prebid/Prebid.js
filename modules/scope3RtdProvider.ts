@@ -5,15 +5,15 @@
  * real-time contextual signals for programmatic advertising optimization.
  */
 
-import { auctionManager } from '../src/auctionManager.js';
-import { submodule } from '../src/hook.js';
-import { logMessage, logError, logWarn, deepClone, isEmpty, getBidderCodes, mergeDeep } from '../src/utils.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import type { RtdProviderSpec } from './rtdModule/spec.ts';
-import type { StartAuctionOptions } from '../src/prebid.ts';
-import type { ORTBFragments } from '../src/types/common.d.ts';
+import { auctionManager } from '../src/auctionManager.js'
+import { submodule } from '../src/hook.js'
+import { logMessage, logError, logWarn, deepClone, isEmpty, getBidderCodes, mergeDeep } from '../src/utils.js'
+import { ajaxBuilder } from '../src/ajax.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import type { RtdProviderSpec } from './rtdModule/spec.ts'
+import type { StartAuctionOptions } from '../src/prebid.ts'
+import type { ORTBFragments } from '../src/types/common.d.ts'
 
 declare module './rtdModule/spec' {
   interface ProviderConfig {
@@ -89,39 +89,39 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const MODULE_NAME = 'scope3RtdProvider';
-const MODULE_VERSION = '1.0.0';
-const DEFAULT_ENDPOINT = 'https://prebid.scope3.com/prebid';
-const DEFAULT_TIMEOUT = 1000;
-const DEFAULT_CACHE_TTL = 300000; // 5 minutes
+const MODULE_NAME = 'scope3RtdProvider'
+const MODULE_VERSION = '1.0.0'
+const DEFAULT_ENDPOINT = 'https://prebid.scope3.com/prebid'
+const DEFAULT_TIMEOUT = 1000
+const DEFAULT_CACHE_TTL = 300000 // 5 minutes
 
-let storage: ReturnType<typeof getStorageManager> | null = null;
-let moduleConfig: any | null = null;
-let responseCache: Map<string, CacheEntry> = new Map();
+let storage: ReturnType<typeof getStorageManager> | null = null
+let moduleConfig: any | null = null
+let responseCache: Map<string, CacheEntry> = new Map()
 
 /**
  * Initialize the Scope3 RTD Provider
  */
 function initModule(config: any): boolean {
-  moduleConfig = config;
+  moduleConfig = config
 
   if (!storage) {
-    storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
+    storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME })
   }
 
   // Set defaults
-  moduleConfig.endpoint = moduleConfig.endpoint || DEFAULT_ENDPOINT;
-  moduleConfig.timeout = moduleConfig.timeout || DEFAULT_TIMEOUT;
-  moduleConfig.includeKey = moduleConfig.includeKey || 'axei';
-  moduleConfig.excludeKey = moduleConfig.excludeKey || 'axex';
-  moduleConfig.macroKey = moduleConfig.macroKey || 'axem';
-  moduleConfig.publisherTargeting = moduleConfig.publisherTargeting !== false;
-  moduleConfig.advertiserTargeting = moduleConfig.advertiserTargeting !== false;
-  moduleConfig.cacheEnabled = moduleConfig.cacheEnabled !== false;
-  moduleConfig.cacheTtl = moduleConfig.cacheTtl || DEFAULT_CACHE_TTL;
+  moduleConfig.endpoint = moduleConfig.endpoint || DEFAULT_ENDPOINT
+  moduleConfig.timeout = moduleConfig.timeout || DEFAULT_TIMEOUT
+  moduleConfig.includeKey = moduleConfig.includeKey || 'axei'
+  moduleConfig.excludeKey = moduleConfig.excludeKey || 'axex'
+  moduleConfig.macroKey = moduleConfig.macroKey || 'axem'
+  moduleConfig.publisherTargeting = moduleConfig.publisherTargeting !== false
+  moduleConfig.advertiserTargeting = moduleConfig.advertiserTargeting !== false
+  moduleConfig.cacheEnabled = moduleConfig.cacheEnabled !== false
+  moduleConfig.cacheTtl = moduleConfig.cacheTtl || DEFAULT_CACHE_TTL
 
-  logMessage(`Scope3 RTD Provider initialized with config:`, moduleConfig);
-  return true;
+  logMessage(`Scope3 RTD Provider initialized with config:`, moduleConfig)
+  return true
 }
 
 /**
@@ -129,10 +129,10 @@ function initModule(config: any): boolean {
  */
 function extractOrtb2Data(reqBidsConfigObj: StartAuctionOptions): any {
   // Deep copy the complete OpenRTB object from global fragments to preserve all data
-  const ortb2 = reqBidsConfigObj.ortb2Fragments?.global || {};
+  const ortb2 = reqBidsConfigObj.ortb2Fragments?.global || {}
 
   // Deep clone to avoid modifying the original
-  const ortb2Request = deepClone(ortb2);
+  const ortb2Request = deepClone(ortb2)
 
   // Build impression array from ad units with full mediaType information
   ortb2Request.imp = reqBidsConfigObj.adUnits?.map(adUnit => ({
@@ -153,9 +153,9 @@ function extractOrtb2Data(reqBidsConfigObj: StartAuctionOptions): any {
       ...adUnit.mediaTypes.native
     } : undefined,
     ext: adUnit.ortb2Imp?.ext || {}
-  })) || [];
+  })) || []
 
-  return ortb2Request;
+  return ortb2Request
 }
 
 /**
@@ -167,8 +167,8 @@ function generateCacheKey(ortb2Data: any): string {
     ortb2Data.site?.page || '',
     ortb2Data.user?.id || '',
     JSON.stringify(ortb2Data.user?.ext?.eids || [])
-  ];
-  return keyParts.join('|');
+  ]
+  return keyParts.join('|')
 }
 
 /**
@@ -176,20 +176,20 @@ function generateCacheKey(ortb2Data: any): string {
  */
 function getCachedData(cacheKey: string): AEESignals | null {
   if (!moduleConfig?.cacheEnabled) {
-    return null;
+    return null
   }
 
-  const cached = responseCache.get(cacheKey);
+  const cached = responseCache.get(cacheKey)
   if (cached) {
-    const now = Date.now();
+    const now = Date.now()
     if (now - cached.timestamp < moduleConfig.cacheTtl) {
-      logMessage('Scope3 RTD: Using cached data for key', cacheKey);
-      return cached.data;
+      logMessage('Scope3 RTD: Using cached data for key', cacheKey)
+      return cached.data
     } else {
-      responseCache.delete(cacheKey);
+      responseCache.delete(cacheKey)
     }
   }
-  return null;
+  return null
 }
 
 /**
@@ -197,21 +197,21 @@ function getCachedData(cacheKey: string): AEESignals | null {
  */
 function setCachedData(cacheKey: string, data: AEESignals): void {
   if (!moduleConfig?.cacheEnabled) {
-    return;
+    return
   }
 
   responseCache.set(cacheKey, {
     data: data,
     timestamp: Date.now()
-  });
+  })
 
   // Clean up old cache entries
-  const now = Date.now();
+  const now = Date.now()
   responseCache.forEach((entry, key) => {
     if (now - entry.timestamp > moduleConfig.cacheTtl) {
-      responseCache.delete(key);
+      responseCache.delete(key)
     }
-  });
+  })
 }
 
 /**
@@ -221,17 +221,17 @@ function applyAgentDecisions(
   reqBidsConfigObj: StartAuctionOptions,
   aeeSignals: AEESignals
 ): void {
-  if (!aeeSignals) return;
+  if (!aeeSignals) return
 
   // Initialize fragments if needed
-  reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
-  reqBidsConfigObj.ortb2Fragments.global = reqBidsConfigObj.ortb2Fragments.global || {};
-  reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {};
+  reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {}
+  reqBidsConfigObj.ortb2Fragments.global = reqBidsConfigObj.ortb2Fragments.global || {}
+  reqBidsConfigObj.ortb2Fragments.bidder = reqBidsConfigObj.ortb2Fragments.bidder || {}
 
   // Apply global AEE signals to multiple locations for better compatibility
   if (aeeSignals.include || aeeSignals.exclude || aeeSignals.macro) {
-    reqBidsConfigObj.ortb2Fragments.global.site = reqBidsConfigObj.ortb2Fragments.global.site || {};
-    reqBidsConfigObj.ortb2Fragments.global.site.ext = reqBidsConfigObj.ortb2Fragments.global.site.ext || {};
+    reqBidsConfigObj.ortb2Fragments.global.site = reqBidsConfigObj.ortb2Fragments.global.site || {}
+    reqBidsConfigObj.ortb2Fragments.global.site.ext = reqBidsConfigObj.ortb2Fragments.global.site.ext || {}
     reqBidsConfigObj.ortb2Fragments.global.site.ext.data = reqBidsConfigObj.ortb2Fragments.global.site.ext.data || {};
 
     // Primary location for AEE signals
@@ -239,16 +239,16 @@ function applyAgentDecisions(
       include: aeeSignals.include || [],
       exclude: aeeSignals.exclude || [],
       macro: aeeSignals.macro || ''
-    };
+    }
 
     // Also add as keywords for broader compatibility (s3kw = Scope3 keywords)
     if (aeeSignals.include && aeeSignals.include.length > 0) {
-      (reqBidsConfigObj.ortb2Fragments.global.site.ext.data as any).s3kw = aeeSignals.include;
+      (reqBidsConfigObj.ortb2Fragments.global.site.ext.data as any).s3kw = aeeSignals.include
     }
 
     // Add to site.content.data using OpenRTB segtax format
     if (aeeSignals.include && aeeSignals.include.length > 0) {
-      reqBidsConfigObj.ortb2Fragments.global.site.content = reqBidsConfigObj.ortb2Fragments.global.site.content || {};
+      reqBidsConfigObj.ortb2Fragments.global.site.content = reqBidsConfigObj.ortb2Fragments.global.site.content || {}
       reqBidsConfigObj.ortb2Fragments.global.site.content.data = reqBidsConfigObj.ortb2Fragments.global.site.content.data || [];
 
       // Add as OpenRTB segment taxonomy data
@@ -258,27 +258,27 @@ function applyAgentDecisions(
           segtax: 3333  // Scope3 Agentic Execution Engine (AEE) Targeting Signals
         },
         segment: aeeSignals.include.map(id => ({ id }))
-      });
+      })
     }
 
-    logMessage('Scope3 RTD: Applied global AEE signals', (reqBidsConfigObj.ortb2Fragments.global.site.ext.data as any).scope3_aee);
+    logMessage('Scope3 RTD: Applied global AEE signals', (reqBidsConfigObj.ortb2Fragments.global.site.ext.data as any).scope3_aee)
   }
 
   // Apply bidder-specific segments and deals
   if (aeeSignals.bidders && !isEmpty(aeeSignals.bidders)) {
-    const allowedBidders = moduleConfig?.bidders || Object.keys(aeeSignals.bidders);
+    const allowedBidders = moduleConfig?.bidders || Object.keys(aeeSignals.bidders)
 
     allowedBidders.forEach(bidder => {
-      const bidderData = aeeSignals.bidders![bidder];
-      if (!bidderData) return;
+      const bidderData = aeeSignals.bidders![bidder]
+      if (!bidderData) return
 
       // Initialize bidder fragment
-      reqBidsConfigObj.ortb2Fragments.bidder[bidder] = reqBidsConfigObj.ortb2Fragments.bidder[bidder] || {};
+      reqBidsConfigObj.ortb2Fragments.bidder[bidder] = reqBidsConfigObj.ortb2Fragments.bidder[bidder] || {}
 
       // Apply segments to user.data with proper segtax
       if (bidderData.segments && bidderData.segments.length > 0) {
-        reqBidsConfigObj.ortb2Fragments.bidder[bidder].user = reqBidsConfigObj.ortb2Fragments.bidder[bidder].user || {};
-        reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data = reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data || [];
+        reqBidsConfigObj.ortb2Fragments.bidder[bidder].user = reqBidsConfigObj.ortb2Fragments.bidder[bidder].user || {}
+        reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data = reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data || []
 
         reqBidsConfigObj.ortb2Fragments.bidder[bidder].user.data.push({
           name: 'scope3.com',
@@ -286,37 +286,37 @@ function applyAgentDecisions(
             segtax: 3333  // Scope3 Agentic Execution Engine (AEE) Targeting Signals
           },
           segment: bidderData.segments.map(seg => ({ id: seg }))
-        });
+        })
 
         // For AppNexus, also add as keywords in their expected format
         if (bidder === 'appnexus' || bidder === 'appnexusAst') {
-          reqBidsConfigObj.ortb2Fragments.bidder[bidder].site = reqBidsConfigObj.ortb2Fragments.bidder[bidder].site || {};
-          reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords = reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords || '';
+          reqBidsConfigObj.ortb2Fragments.bidder[bidder].site = reqBidsConfigObj.ortb2Fragments.bidder[bidder].site || {}
+          reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords = reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords || ''
 
           // Append Scope3 segments as keywords in AppNexus format
-          const s3Keywords = bidderData.segments.map(seg => `s3_seg=${seg}`).join(',');
+          const s3Keywords = bidderData.segments.map(seg => `s3_seg=${seg}`).join(',')
           if (reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords) {
-            reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords += ',' + s3Keywords;
+            reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords += ',' + s3Keywords
           } else {
-            reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords = s3Keywords;
+            reqBidsConfigObj.ortb2Fragments.bidder[bidder].site.keywords = s3Keywords
           }
         }
 
-        logMessage(`Scope3 RTD: Applied segments for ${bidder}`, bidderData.segments);
+        logMessage(`Scope3 RTD: Applied segments for ${bidder}`, bidderData.segments)
       }
 
       // Apply deals to ad units
       if (bidderData.deals && bidderData.deals.length > 0) {
         reqBidsConfigObj.adUnits?.forEach(adUnit => {
-          adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-          adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+          adUnit.ortb2Imp = adUnit.ortb2Imp || {}
+          adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {}
           adUnit.ortb2Imp.ext[bidder] = adUnit.ortb2Imp.ext[bidder] || {};
-          (adUnit.ortb2Imp.ext[bidder] as any).deals = bidderData.deals;
-        });
+          (adUnit.ortb2Imp.ext[bidder] as any).deals = bidderData.deals
+        })
 
-        logMessage(`Scope3 RTD: Applied deals for ${bidder}`, bidderData.deals);
+        logMessage(`Scope3 RTD: Applied deals for ${bidder}`, bidderData.deals)
       }
-    });
+    })
   }
 }
 
@@ -325,10 +325,10 @@ function applyAgentDecisions(
  */
 function preparePayload(ortb2Data: any, reqBidsConfigObj: StartAuctionOptions): any {
   // Get bidder list - use configured bidders or extract from ad units
-  let bidders = moduleConfig?.bidders;
+  let bidders = moduleConfig?.bidders
   if (!bidders || bidders.length === 0) {
     // Get all bidders from the ad units
-    bidders = getBidderCodes(reqBidsConfigObj.adUnits);
+    bidders = getBidderCodes(reqBidsConfigObj.adUnits)
   }
 
   return {
@@ -337,7 +337,7 @@ function preparePayload(ortb2Data: any, reqBidsConfigObj: StartAuctionOptions): 
     bidders: bidders,
     timestamp: Date.now(),
     source: 'prebid-rtd'
-  };
+  }
 }
 
 /**
@@ -348,48 +348,48 @@ export const scope3SubModule: RtdProviderSpec<'scope3'> = {
 
   init(config, consent) {
     try {
-      logMessage('Scope3 RTD: Initializing module', config);
+      logMessage('Scope3 RTD: Initializing module', config)
 
       if (!config || !config.params) {
-        logError('Scope3 RTD: Missing configuration or params', config);
-        return false;
+        logError('Scope3 RTD: Missing configuration or params', config)
+        return false
       }
 
       if (!config.params.orgId) {
-        logError('Scope3 RTD: Missing required orgId parameter. Config params:', config.params);
-        return false;
+        logError('Scope3 RTD: Missing required orgId parameter. Config params:', config.params)
+        return false
       }
 
-      return initModule(config.params);
+      return initModule(config.params)
     } catch (e) {
-      logError('Scope3 RTD: Error during initialization', e);
-      return false;
+      logError('Scope3 RTD: Error during initialization', e)
+      return false
     }
   },
 
   getBidRequestData(reqBidsConfigObj, callback, config, consent, timeout) {
     try {
       if (!moduleConfig) {
-        logWarn('Scope3 RTD: Module not properly initialized');
-        callback();
-        return;
+        logWarn('Scope3 RTD: Module not properly initialized')
+        callback()
+        return
       }
 
       // Extract complete OpenRTB data
-      const ortb2Data = extractOrtb2Data(reqBidsConfigObj);
+      const ortb2Data = extractOrtb2Data(reqBidsConfigObj)
 
       // Check cache first
-      const cacheKey = generateCacheKey(ortb2Data);
-      const cachedData = getCachedData(cacheKey);
+      const cacheKey = generateCacheKey(ortb2Data)
+      const cachedData = getCachedData(cacheKey)
 
       if (cachedData) {
-        applyAgentDecisions(reqBidsConfigObj, cachedData);
-        callback();
-        return;
+        applyAgentDecisions(reqBidsConfigObj, cachedData)
+        callback()
+        return
       }
 
       // Prepare payload
-      const payload = preparePayload(ortb2Data, reqBidsConfigObj);
+      const payload = preparePayload(ortb2Data, reqBidsConfigObj)
 
       // Make API request
       ajaxBuilder(moduleConfig.timeout)(
@@ -397,24 +397,24 @@ export const scope3SubModule: RtdProviderSpec<'scope3'> = {
         {
           success: (response: string) => {
             try {
-              const data = JSON.parse(response) as AEEResponse;
-              logMessage('Scope3 RTD: Received response', data);
+              const data = JSON.parse(response) as AEEResponse
+              logMessage('Scope3 RTD: Received response', data)
 
               if (data.aee_signals) {
                 // Cache the response
-                setCachedData(cacheKey, data.aee_signals);
+                setCachedData(cacheKey, data.aee_signals)
 
                 // Apply the signals
-                applyAgentDecisions(reqBidsConfigObj, data.aee_signals);
+                applyAgentDecisions(reqBidsConfigObj, data.aee_signals)
               }
             } catch (e) {
-              logError('Scope3 RTD: Error parsing response', e);
+              logError('Scope3 RTD: Error parsing response', e)
             }
-            callback();
+            callback()
           },
           error: (error: string) => {
-            logWarn('Scope3 RTD: Request failed', error);
-            callback();
+            logWarn('Scope3 RTD: Request failed', error)
+            callback()
           }
         },
         JSON.stringify(payload),
@@ -425,63 +425,63 @@ export const scope3SubModule: RtdProviderSpec<'scope3'> = {
             'x-rtd-version': MODULE_VERSION
           }
         }
-      );
+      )
     } catch (e) {
-      logError('Scope3 RTD: Error in getBidRequestData', e);
-      callback();
+      logError('Scope3 RTD: Error in getBidRequestData', e)
+      callback()
     }
   },
 
   getTargetingData(adUnits, config, consent, auction) {
-    const targetingData = {};
+    const targetingData = {}
 
     const ortb: ORTBFragments = auctionManager.index
       .getAuction(auction)
-      .getFPD().global;
-    const cacheKey = generateCacheKey(ortb);
-    const cachedData = getCachedData(cacheKey);
+      .getFPD().global
+    const cacheKey = generateCacheKey(ortb)
+    const cachedData = getCachedData(cacheKey)
 
     if (!cachedData) {
-      return targetingData;
+      return targetingData
     }
 
-    const mappedCachedData = {};
+    const mappedCachedData = {}
     if (cachedData.include) {
-      mappedCachedData[moduleConfig.includeKey] = cachedData.include;
+      mappedCachedData[moduleConfig.includeKey] = cachedData.include
     }
     if (cachedData.exclude) {
-      mappedCachedData[moduleConfig.excludeKey] = cachedData.exclude;
+      mappedCachedData[moduleConfig.excludeKey] = cachedData.exclude
     }
     if (cachedData.macro) {
-      mappedCachedData[moduleConfig.macroKey] = cachedData.macro;
+      mappedCachedData[moduleConfig.macroKey] = cachedData.macro
     }
 
     // Merge the targeting data into the ad units
     adUnits.forEach((adUnit) => {
-      targetingData[adUnit] = targetingData[adUnit] || {};
-      mergeDeep(targetingData[adUnit], mappedCachedData);
-    });
+      targetingData[adUnit] = targetingData[adUnit] || {}
+      mergeDeep(targetingData[adUnit], mappedCachedData)
+    })
 
     // If the key contains no data, remove it
     Object.keys(targetingData).forEach((adUnit) => {
       Object.keys(targetingData[adUnit]).forEach((key) => {
         if (!targetingData[adUnit][key] || !targetingData[adUnit][key].length) {
-          delete targetingData[adUnit][key];
+          delete targetingData[adUnit][key]
         }
-      });
+      })
 
       // If the ad unit contains no data, remove it
       if (!Object.keys(targetingData[adUnit]).length) {
-        delete targetingData[adUnit];
+        delete targetingData[adUnit]
       }
-    });
+    })
 
-    return targetingData;
+    return targetingData
   },
-};
+}
 
 // Register the submodule
 function registerSubModule() {
-  submodule('realTimeData', scope3SubModule);
+  submodule('realTimeData', scope3SubModule)
 }
-registerSubModule();
+registerSubModule()

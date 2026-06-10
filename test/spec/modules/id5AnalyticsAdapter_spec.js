@@ -1,19 +1,19 @@
-import adapterManager from '../../../src/adapterManager.js';
-import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
-import { expect } from 'chai';
-import * as events from '../../../src/events.js';
-import { EVENTS } from '../../../src/constants.js';
-import { generateUUID } from '../../../src/utils.js';
-import { server } from '../../mocks/xhr.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
-import { enrichEidsRule } from "../../../modules/tcfControl.ts";
-import * as utils from '../../../src/utils.js';
+import adapterManager from '../../../src/adapterManager.js'
+import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js'
+import { expect } from 'chai'
+import * as events from '../../../src/events.js'
+import { EVENTS } from '../../../src/constants.js'
+import { generateUUID } from '../../../src/utils.js'
+import { server } from '../../mocks/xhr.js'
+import { getGlobal } from '../../../src/prebidGlobal.js'
+import { enrichEidsRule } from "../../../modules/tcfControl.ts"
+import * as utils from '../../../src/utils.js'
 
-const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
-const INGEST_URL = 'https://test.me/ingest';
+const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs'
+const INGEST_URL = 'https://test.me/ingest'
 
 describe('ID5 analytics adapter', () => {
-  let config;
+  let config
 
   beforeEach(() => {
     // to enforce tcfControl initialization when running in single test mode
@@ -23,20 +23,20 @@ describe('ID5 analytics adapter', () => {
         partnerId: 12349,
         compressionDisabled: true
       }
-    };
-  });
+    }
+  })
 
   it('registers itself with the adapter manager', () => {
-    const adapter = adapterManager.getAnalyticsAdapter('id5Analytics');
-    expect(adapter).to.exist;
-    expect(adapter.gvlid).to.be.a('number');
-    expect(adapter.adapter).to.equal(id5AnalyticsAdapter);
-  });
+    const adapter = adapterManager.getAnalyticsAdapter('id5Analytics')
+    expect(adapter).to.exist
+    expect(adapter.gvlid).to.be.a('number')
+    expect(adapter.adapter).to.equal(id5AnalyticsAdapter)
+  })
 
   it('tolerates undefined or empty config', () => {
-    id5AnalyticsAdapter.enableAnalytics(undefined);
-    id5AnalyticsAdapter.enableAnalytics({});
-  });
+    id5AnalyticsAdapter.enableAnalytics(undefined)
+    id5AnalyticsAdapter.enableAnalytics({})
+  })
 
   it('calls configuration endpoint', () => {
     server.respondWith('GET', CONFIG_URL, [200,
@@ -45,26 +45,26 @@ describe('ID5 analytics adapter', () => {
         'Access-Control-Allow-Origin': '*'
       },
       `{ "sampling": 0, "ingestUrl": "${INGEST_URL}" }`
-    ]);
-    id5AnalyticsAdapter.enableAnalytics(config);
-    server.respond();
+    ])
+    id5AnalyticsAdapter.enableAnalytics(config)
+    server.respond()
 
-    expect(server.requests).to.have.length(1);
+    expect(server.requests).to.have.length(1)
 
-    id5AnalyticsAdapter.disableAnalytics();
-  });
+    id5AnalyticsAdapter.disableAnalytics()
+  })
 
   it('does not call configuration endpoint when partner id is missing', () => {
-    id5AnalyticsAdapter.enableAnalytics({});
-    server.respond();
+    id5AnalyticsAdapter.enableAnalytics({})
+    server.respond()
 
-    expect(server.requests).to.have.length(0);
+    expect(server.requests).to.have.length(0)
 
-    id5AnalyticsAdapter.disableAnalytics();
-  });
+    id5AnalyticsAdapter.disableAnalytics()
+  })
 
   describe('after configuration', () => {
-    let auction;
+    let auction
 
     beforeEach(() => {
       server.respondWith('GET', CONFIG_URL, [200,
@@ -73,7 +73,7 @@ describe('ID5 analytics adapter', () => {
           'Access-Control-Allow-Origin': '*'
         },
         `{ "sampling": 1, "ingestUrl": "${INGEST_URL}" }`
-      ]);
+      ])
 
       server.respondWith('POST', INGEST_URL, [200,
         {
@@ -81,7 +81,7 @@ describe('ID5 analytics adapter', () => {
           'Access-Control-Allow-Origin': '*'
         },
         ''
-      ]);
+      ])
 
       auction = {
         auctionId: generateUUID(),
@@ -94,88 +94,88 @@ describe('ID5 analytics adapter', () => {
           },
           adUnitCodes: ['user-728']
         }],
-      };
-    });
+      }
+    })
 
     afterEach(() => {
-      id5AnalyticsAdapter.disableAnalytics();
-    });
+      id5AnalyticsAdapter.disableAnalytics()
+    })
 
     it('sends auction end events to the backend', () => {
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
 
       // Why 3? 1: config, 2: tcfEnforcement, 3: auctionEnd
       // tcfEnforcement? yes, tcfControl module emits in reaction to auctionEnd
-      expect(server.requests).to.have.length(3);
+      expect(server.requests).to.have.length(3)
 
-      const body1 = JSON.parse(server.requests[1].requestBody);
-      expect(body1.source).to.equal('pbjs');
-      expect(body1.event).to.equal('tcf2Enforcement');
-      expect(body1.partnerId).to.equal(12349);
-      expect(body1.meta).to.be.a('object');
-      expect(body1.meta.pbjs).to.equal(getGlobal().version);
-      expect(body1.meta.sampling).to.equal(1);
-      expect(body1.meta.tz).to.be.a('number');
+      const body1 = JSON.parse(server.requests[1].requestBody)
+      expect(body1.source).to.equal('pbjs')
+      expect(body1.event).to.equal('tcf2Enforcement')
+      expect(body1.partnerId).to.equal(12349)
+      expect(body1.meta).to.be.a('object')
+      expect(body1.meta.pbjs).to.equal(getGlobal().version)
+      expect(body1.meta.sampling).to.equal(1)
+      expect(body1.meta.tz).to.be.a('number')
 
-      const body2 = JSON.parse(server.requests[2].requestBody);
-      expect(body2.source).to.equal('pbjs');
-      expect(body2.event).to.equal('auctionEnd');
-      expect(body2.partnerId).to.equal(12349);
-      expect(body2.meta).to.be.a('object');
-      expect(body2.meta.pbjs).to.equal(getGlobal().version);
-      expect(body2.meta.sampling).to.equal(1);
-      expect(body2.meta.tz).to.be.a('number');
-      expect(body2.payload).to.eql(auction);
-    });
+      const body2 = JSON.parse(server.requests[2].requestBody)
+      expect(body2.source).to.equal('pbjs')
+      expect(body2.event).to.equal('auctionEnd')
+      expect(body2.partnerId).to.equal(12349)
+      expect(body2.meta).to.be.a('object')
+      expect(body2.meta.pbjs).to.equal(getGlobal().version)
+      expect(body2.meta.sampling).to.equal(1)
+      expect(body2.meta.tz).to.be.a('number')
+      expect(body2.payload).to.eql(auction)
+    })
 
     it('compresses large events with gzip when enabled', async function() {
       // turn ON compression
-      config.options.compressionDisabled = false;
+      config.options.compressionDisabled = false
 
-      const longCode = 'x'.repeat(2048);
-      auction.adUnits[0].code = longCode;
-      auction.adUnits[0].adUnitCodes = [longCode];
+      const longCode = 'x'.repeat(2048)
+      auction.adUnits[0].code = longCode
+      auction.adUnits[0].adUnitCodes = [longCode]
 
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
 
       // Wait as gzip stream is async, we need to wait until it is processed.  3 requests: config, tcf2Enforcement, auctionEnd
-      await waitForRequests(3);
-      const eventReq = server.requests[2];
+      await waitForRequests(3)
+      const eventReq = server.requests[2]
       if (utils.isGzipCompressionSupported()) {
-        expect(eventReq.requestHeaders['Content-Encoding']).to.equal('gzip');
-        expect(eventReq.requestBody).to.be.instanceof(Uint8Array);
+        expect(eventReq.requestHeaders['Content-Encoding']).to.equal('gzip')
+        expect(eventReq.requestBody).to.be.instanceof(Uint8Array)
       } else {    // compression is not supported in some test browsers, so we expect the event to be uncompressed.
-        expect(eventReq.requestHeaders['Content-Encoding']).to.be.undefined;
-        const body = JSON.parse(eventReq.requestBody);
-        expect(body.event).to.equal(EVENTS.AUCTION_END);
+        expect(eventReq.requestHeaders['Content-Encoding']).to.be.undefined
+        const body = JSON.parse(eventReq.requestBody)
+        expect(body.event).to.equal(EVENTS.AUCTION_END)
       }
-    });
+    })
 
     it('does not repeat already sent events on new events', () => {
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
-      events.emit(EVENTS.BID_WON, auction);
-      server.respond();
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
+      events.emit(EVENTS.BID_WON, auction)
+      server.respond()
 
       // Why 4? 1: config, 2: tcfEnforcement, 3: auctionEnd 4: bidWon
-      expect(server.requests).to.have.length(4);
+      expect(server.requests).to.have.length(4)
 
-      const body1 = JSON.parse(server.requests[1].requestBody);
-      expect(body1.event).to.equal('tcf2Enforcement');
+      const body1 = JSON.parse(server.requests[1].requestBody)
+      expect(body1.event).to.equal('tcf2Enforcement')
 
-      const body2 = JSON.parse(server.requests[2].requestBody);
-      expect(body2.event).to.equal('auctionEnd');
+      const body2 = JSON.parse(server.requests[2].requestBody)
+      expect(body2.event).to.equal('auctionEnd')
 
-      const body3 = JSON.parse(server.requests[3].requestBody);
-      expect(body3.event).to.equal('bidWon');
+      const body3 = JSON.parse(server.requests[3].requestBody)
+      expect(body3.event).to.equal('bidWon')
     })
 
     it('filters unwanted IDs from the events it sends', () => {
@@ -206,7 +206,7 @@ describe('ID5 analytics adapter', () => {
             'ext': { 'linkType': 1 }
           }]
         }]
-      }];
+      }]
 
       auction.bidderRequests = [{
         'bidderCode': 'appnexus',
@@ -326,7 +326,7 @@ describe('ID5 analytics adapter', () => {
           'apiVersion': 2
         },
         'start': 1621959214763
-      }];
+      }]
 
       auction.bidsReceived = [{
         'bidderCode': 'appnexus',
@@ -355,17 +355,17 @@ describe('ID5 analytics adapter', () => {
         // Make sure cleanup is resilient
         'someNullObject': null,
         'someUndefinedProperty': undefined
-      }];
+      }]
 
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
 
-      expect(server.requests).to.have.length(3);
+      expect(server.requests).to.have.length(3)
 
-      const body = JSON.parse(server.requests[2].requestBody);
-      expect(body.event).to.equal('auctionEnd');
+      const body = JSON.parse(server.requests[2].requestBody)
+      expect(body.event).to.equal('auctionEnd')
       expect(body.payload.adUnits[0].bids[0].userId).to.eql({
         'criteoId': '__ID5_REDACTED__',
         'id5id': {
@@ -375,7 +375,7 @@ describe('ID5 analytics adapter', () => {
           }
         },
         'tdid': '__ID5_REDACTED__'
-      });
+      })
       expect(body.payload.bidderRequests[0].bids[0].userId).to.eql({
         'sharedid': '__ID5_REDACTED__',
         'id5id': {
@@ -385,22 +385,22 @@ describe('ID5 analytics adapter', () => {
           }
         },
         'tdid': '__ID5_REDACTED__'
-      });
+      })
       body.payload.adUnits[0].bids[0].userIdAsEids.forEach((userId) => {
-        expect(userId.uids[0].id).to.equal('__ID5_REDACTED__');
+        expect(userId.uids[0].id).to.equal('__ID5_REDACTED__')
         if (userId.uids[0].ext) {
-          expect(userId.uids[0].ext).to.equal('__ID5_REDACTED__');
+          expect(userId.uids[0].ext).to.equal('__ID5_REDACTED__')
         }
-      });
+      })
       body.payload.bidderRequests[0].bids[0].userIdAsEids.forEach((userId) => {
-        expect(userId.uids[0].id).to.equal('__ID5_REDACTED__');
+        expect(userId.uids[0].id).to.equal('__ID5_REDACTED__')
         if (userId.uids[0].ext) {
-          expect(userId.uids[0].ext).to.equal('__ID5_REDACTED__');
+          expect(userId.uids[0].ext).to.equal('__ID5_REDACTED__')
         }
-      });
-      expect(body.payload.bidsReceived[0].ad).to.equal(undefined);
-      expect(body.payload.bidsReceived[0].requestId).to.equal('21e0b32208ee9a');
-    });
+      })
+      expect(body.payload.bidsReceived[0].ad).to.equal(undefined)
+      expect(body.payload.bidsReceived[0].requestId).to.equal('21e0b32208ee9a')
+    })
 
     it('can override events to collect if configured to do so', () => {
       server.respondWith('GET', CONFIG_URL, [200,
@@ -409,16 +409,16 @@ describe('ID5 analytics adapter', () => {
           'Access-Control-Allow-Origin': '*'
         },
         `{ "sampling": 1, "ingestUrl": "${INGEST_URL}", "eventsToTrack": ["tcf2Enforcement"] }`
-      ]);
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
+      ])
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
 
-      expect(server.requests).to.have.length(2);
-      const body1 = JSON.parse(server.requests[1].requestBody);
-      expect(body1.event).to.equal('tcf2Enforcement');
-    });
+      expect(server.requests).to.have.length(2)
+      const body1 = JSON.parse(server.requests[1].requestBody)
+      expect(body1.event).to.equal('tcf2Enforcement')
+    })
 
     it('can extend cleanup rules from server side', () => {
       auction.bidsReceived = [{
@@ -481,27 +481,27 @@ describe('ID5 analytics adapter', () => {
         'adserverTargeting': {
           'hb_bidder': 'ix',
         }
-      }];
+      }]
       server.respondWith('GET', CONFIG_URL, [200,
         {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         },
         `{ "sampling": 1, "ingestUrl": "${INGEST_URL}", "additionalCleanupRules": {"auctionEnd": [{"match":["bidsReceived", "*", "requestId"],"apply":"erase"}]} }`
-      ]);
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
+      ])
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
 
-      expect(server.requests).to.have.length(3);
-      const body = JSON.parse(server.requests[2].requestBody);
-      expect(body.event).to.equal('auctionEnd');
-      expect(body.payload.bidsReceived[0].requestId).to.equal(undefined);
-      expect(body.payload.bidsReceived[1].requestId).to.equal(undefined);
-      expect(body.payload.bidsReceived[0].bidderCode).to.equal('appnexus');
-      expect(body.payload.bidsReceived[1].bidderCode).to.equal('ix');
-    });
+      expect(server.requests).to.have.length(3)
+      const body = JSON.parse(server.requests[2].requestBody)
+      expect(body.event).to.equal('auctionEnd')
+      expect(body.payload.bidsReceived[0].requestId).to.equal(undefined)
+      expect(body.payload.bidsReceived[1].requestId).to.equal(undefined)
+      expect(body.payload.bidsReceived[0].bidderCode).to.equal('appnexus')
+      expect(body.payload.bidsReceived[1].bidderCode).to.equal('ix')
+    })
 
     it('can replace cleanup rules from server side', () => {
       auction.bidsReceived = [{
@@ -517,40 +517,40 @@ describe('ID5 analytics adapter', () => {
             'ext': { 'linkType': 1 }
           }
         }
-      }];
+      }]
       server.respondWith('GET', CONFIG_URL, [200,
         {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         },
         `{ "sampling": 1, "ingestUrl": "${INGEST_URL}", "replaceCleanupRules":true, "additionalCleanupRules": {"auctionEnd": [{"match":["bidsReceived", "*", "meta"],"apply":"erase"}]} }`
-      ]);
-      id5AnalyticsAdapter.enableAnalytics(config);
-      server.respond();
-      events.emit(EVENTS.AUCTION_END, auction);
-      server.respond();
+      ])
+      id5AnalyticsAdapter.enableAnalytics(config)
+      server.respond()
+      events.emit(EVENTS.AUCTION_END, auction)
+      server.respond()
 
-      expect(server.requests).to.have.length(3);
-      const body = JSON.parse(server.requests[2].requestBody);
-      expect(body.event).to.equal('auctionEnd');
-      expect(body.payload.bidsReceived[0].meta).to.equal(undefined);    // new rule
-      expect(body.payload.adUnits[0].bids[0].userId.id5id.uid).to.equal(auction.adUnits[0].bids[0].userId.id5id.uid); // old, overridden rule
-    });
+      expect(server.requests).to.have.length(3)
+      const body = JSON.parse(server.requests[2].requestBody)
+      expect(body.event).to.equal('auctionEnd')
+      expect(body.payload.bidsReceived[0].meta).to.equal(undefined)    // new rule
+      expect(body.payload.adUnits[0].bids[0].userId.id5id.uid).to.equal(auction.adUnits[0].bids[0].userId.id5id.uid) // old, overridden rule
+    })
 
     // helper to wait until server has received at least `expected` requests
     async function waitForRequests(expected = 3, timeout = 2000, interval = 10) {
       return new Promise((resolve, reject) => {
-        const start = Date.now();
+        const start = Date.now()
         const timer = setInterval(() => {
           if (server.requests.length >= expected) {
-            clearInterval(timer);
-            resolve();
+            clearInterval(timer)
+            resolve()
           } else if (Date.now() - start > timeout) {
-            clearInterval(timer);
-            reject(new Error('Timed out waiting for requests: expected ' + expected));
+            clearInterval(timer)
+            reject(new Error('Timed out waiting for requests: expected ' + expected))
           }
-        }, interval);
-      });
+        }, interval)
+      })
     }
-  });
-});
+  })
+})

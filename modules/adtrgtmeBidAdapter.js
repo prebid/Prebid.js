@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 import {
   isFn,
   isStr,
@@ -8,27 +8,27 @@ import {
   isPlainObject,
   generateUUID,
   logWarn,
-} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { getDNT } from '../libraries/dnt/index.js';
+} from '../src/utils.js'
+import { config } from '../src/config.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { getDNT } from '../libraries/dnt/index.js'
 
-const BIDDER_CODE = 'adtrgtme';
-const BIDDER_VERSION = '1.0.7';
-const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
-const PREBIDJS_VERSION = '$prebid.version$';
-const DEFAULT_TTL = 300;
-const DEFAULT_CUR = 'USD';
+const BIDDER_CODE = 'adtrgtme'
+const BIDDER_VERSION = '1.0.7'
+const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s='
+const PREBIDJS_VERSION = '$prebid.version$'
+const DEFAULT_TTL = 300
+const DEFAULT_CUR = 'USD'
 
 function getFormat(s) {
-  const parseSize = ([w, h]) => ({ w: parseInt(w, 10), h: parseInt(h, 10) });
+  const parseSize = ([w, h]) => ({ w: parseInt(w, 10), h: parseInt(h, 10) })
   return Array.isArray(s) && s.length === 2 && !Array.isArray(s[0])
     ? [parseSize(s)]
-    : s.map(parseSize);
+    : s.map(parseSize)
 }
 
 function getType(b) {
-  return b?.mediaTypes?.banner ? BANNER : false;
+  return b?.mediaTypes?.banner ? BANNER : false
 }
 
 function getBidfloor(b) {
@@ -38,29 +38,29 @@ function getBidfloor(b) {
       currency: b?.params?.bidOverride?.cur ?? DEFAULT_CUR,
       mediaType: BANNER,
     })
-    : false;
+    : false
 }
 
 function getTtl(b) {
-  const t = config.getConfig('adtrgtme.ttl');
-  const validate = (t) => (isNumber(t) && t > 0 && t < 3000 ? t : DEFAULT_TTL);
-  return t ? validate(t) : validate(b?.params?.ttl);
+  const t = config.getConfig('adtrgtme.ttl')
+  const validate = (t) => (isNumber(t) && t > 0 && t < 3000 ? t : DEFAULT_TTL)
+  return t ? validate(t) : validate(b?.params?.ttl)
 }
 
 function createORTB(bR, bid) {
-  if (!bR || !bid) return;
+  if (!bR || !bid) return
 
   const { currency = bid.params?.bidOverride?.cur || DEFAULT_CUR } =
-    getBidfloor(bR);
+    getBidfloor(bR)
   const ip =
     bid.params?.bidOverride?.device?.ip ||
     bid.ortb2?.device?.ip ||
-    bid.params?.ext?.ip;
-  const site = bid.ortb2?.site || undefined;
-  const user = bid.ortb2?.user || undefined;
-  const gdpr = bR.gdprConsent?.gdprApplies ? 1 : 0;
-  const consentString = gdpr ? bR.gdprConsent?.consentString : '';
-  const usPrivacy = bR.uspConsent || '';
+    bid.params?.ext?.ip
+  const site = bid.ortb2?.site || undefined
+  const user = bid.ortb2?.user || undefined
+  const gdpr = bR.gdprConsent?.gdprApplies ? 1 : 0
+  const consentString = gdpr ? bR.gdprConsent?.consentString : ''
+  const usPrivacy = bR.uspConsent || ''
 
   const oR = {
     id: generateUUID(),
@@ -96,20 +96,20 @@ function createORTB(bR, bid) {
         ...(user?.ext || {}),
       },
     },
-  };
-
-  if (bid?.ortb2?.source?.ext?.schain) {
-    oR.source.schain.nodes[0].rid = oR.id;
   }
 
-  return oR;
+  if (bid?.ortb2?.source?.ext?.schain) {
+    oR.source.schain.nodes[0].rid = oR.id
+  }
+
+  return oR
 }
 
 function appendImp(bid, oRtb) {
-  if (!oRtb || !bid) return;
+  if (!oRtb || !bid) return
 
-  const type = getType(bid);
-  const { floor: bidfloor = 0, currency: bidfloorcur = '' } = getBidfloor(bid);
+  const type = getType(bid)
+  const { floor: bidfloor = 0, currency: bidfloorcur = '' } = getBidfloor(bid)
 
   const impObject = {
     id: bid.bidId,
@@ -125,7 +125,7 @@ function appendImp(bid, oRtb) {
     },
     ...(bid?.params?.zid && { tagid: String(bid.params.zid) }),
     ...(bid?.ortb2Imp?.instl === 1 && { instl: 1 }),
-  };
+  }
 
   if (type === BANNER) {
     impObject.banner = {
@@ -137,10 +137,10 @@ function appendImp(bid, oRtb) {
       ],
       format: getFormat(bid.sizes),
       ...(bid.mediaTypes.banner.pos && { pos: bid.mediaTypes.banner.pos }),
-    };
+    }
   }
 
-  oRtb.imp.push(impObject);
+  oRtb.imp.push(impObject)
 }
 
 function createRequest({ data, options, bidderRequest }) {
@@ -152,7 +152,7 @@ function createRequest({ data, options, bidderRequest }) {
     data,
     options,
     bidderRequest,
-  };
+  }
 }
 
 export const spec = {
@@ -161,7 +161,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    const params = bid.params;
+    const params = bid.params
     if (
       isPlainObject(params) &&
       isStr(params.sid) &&
@@ -171,54 +171,54 @@ export const spec = {
         isNumber(params.zid) ||
         (isStr(params.zid) && !isNaN(parseInt(params.zid))))
     ) {
-      return true;
+      return true
     } else {
-      logWarn('Adtrgtme request invalid');
-      return false;
+      logWarn('Adtrgtme request invalid')
+      return false
     }
   },
 
   buildRequests: function (bR, aR) {
     if (isEmpty(bR) || isEmpty(aR)) {
-      logWarn('Adtrgtme Adapter: buildRequests called with empty request');
-      return undefined;
+      logWarn('Adtrgtme Adapter: buildRequests called with empty request')
+      return undefined
     }
 
     const options = {
       contentType: 'application/json',
       withCredentials: hasPurpose1Consent(aR.gdprConsent),
-    };
+    }
 
     if (config.getConfig('adtrgtme.singleRequestMode') === true) {
-      const data = createORTB(aR, bR[0]);
+      const data = createORTB(aR, bR[0])
       bR.forEach((bid) => {
-        appendImp(bid, data);
-      });
+        appendImp(bid, data)
+      })
 
-      return createRequest({ data, options, bidderRequest: aR });
+      return createRequest({ data, options, bidderRequest: aR })
     }
 
     return bR.map((b) => {
-      const data = createORTB(aR, b);
-      appendImp(b, data);
+      const data = createORTB(aR, b)
+      appendImp(b, data)
 
       return createRequest({
         data,
         options,
         bidderRequest: b,
-      });
-    });
+      })
+    })
   },
 
   interpretResponse: function (sR, { data, bidderRequest }) {
-    const res = [];
+    const res = []
     if (!sR.body || !Array.isArray(sR.body.seatbid)) {
-      return res;
+      return res
     }
 
     sR.body.seatbid.forEach((sb) => {
       try {
-        const b = sb.bid[0];
+        const b = sb.bid[0]
 
         res.push({
           adId: b?.adId ? b.adId : b.impid || b.crid,
@@ -238,57 +238,57 @@ export const spec = {
             advertiserDomains: b.adomain || [],
             mediaType: BANNER,
           },
-        });
+        })
       } catch (e) {
-        return res;
+        return res
       }
-    });
+    })
 
-    return res;
+    return res
   },
   getUserSyncs: function (options, res, gdprConsent, uspConsent, gppConsent) {
-    const s = [];
+    const s = []
     if (!options.pixelEnabled && !options.iframeEnabled) {
-      return s;
+      return s
     }
     if (Array.isArray(res)) {
       res.forEach((response) => {
-        const p = response.body?.ext?.pixels;
+        const p = response.body?.ext?.pixels
         if (Array.isArray(p)) {
           p.forEach(([stype, url]) => {
-            const type = stype.toLowerCase();
+            const type = stype.toLowerCase()
             if (
               typeof url === 'string' &&
               url.startsWith('http') &&
               (((type === 'image' || type === 'img') && options.pixelEnabled) ||
                 (type === 'iframe' && options.iframeEnabled))
             ) {
-              s.push({ type, url: addConsentParams(url) });
+              s.push({ type, url: addConsentParams(url) })
             }
-          });
+          })
         }
-      });
+      })
     }
     function addConsentParams(url) {
       if (gdprConsent) {
         url += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${
           encodeURIComponent(gdprConsent.consentString) || ''
-        }`;
+        }`
       }
       if (uspConsent) {
-        url += `&us_privacy=${encodeURIComponent(uspConsent)}`;
+        url += `&us_privacy=${encodeURIComponent(uspConsent)}`
       }
       if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
         url += `&gpp=${encodeURIComponent(
           gppConsent.gppString
         )}&gpp_sid=${encodeURIComponent(
           gppConsent.applicableSections?.join(',')
-        )}`;
+        )}`
       }
-      return url;
+      return url
     }
-    return s;
+    return s
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

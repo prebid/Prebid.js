@@ -51,7 +51,7 @@ describe('glomexBidAdapter', function () {
 
   it('should expose gvlid', function() {
     expect(spec.gvlid).to.equal(967)
-  });
+  })
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -99,7 +99,7 @@ describe('glomexBidAdapter', function () {
         ...BIDDER_REQUEST.refererInfo,
         referer: BIDDER_REQUEST.refererInfo.topmostLocation
       }
-      delete expected.topmostLocation;
+      delete expected.topmostLocation
       expect(request.data.refererInfo).to.eql(expected)
     })
 

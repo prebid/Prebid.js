@@ -4,11 +4,11 @@
  */
 export function getPageTitle(win = window) {
   try {
-    const ogTitle = win.top.document.querySelector('meta[property="og:title"]');
-    return win.top.document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]')
+    return win.top.document.title || (ogTitle && ogTitle.content) || ''
   } catch (e) {
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    return document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    return document.title || (ogTitle && ogTitle.content) || ''
   }
 }
 
@@ -17,7 +17,7 @@ export function getPageTitle(win = window) {
  * @returns {string}
  */
 export function getPageDescription(win = window) {
-  let element;
+  let element
 
   try {
     element = win.top.document.querySelector('meta[name="description"]') ||
@@ -27,7 +27,7 @@ export function getPageDescription(win = window) {
       document.querySelector('meta[property="og:description"]')
   }
 
-  return (element && element.content) || '';
+  return (element && element.content) || ''
 }
 
 /**
@@ -35,15 +35,15 @@ export function getPageDescription(win = window) {
  * @returns {string}
  */
 export function getPageKeywords(win = window) {
-  let element;
+  let element
 
   try {
-    element = win.top.document.querySelector('meta[name="keywords"]');
+    element = win.top.document.querySelector('meta[name="keywords"]')
   } catch (e) {
-    element = document.querySelector('meta[name="keywords"]');
+    element = document.querySelector('meta[name="keywords"]')
   }
 
-  return (element && element.content) || '';
+  return (element && element.content) || ''
 }
 
 /**
@@ -51,8 +51,8 @@ export function getPageKeywords(win = window) {
  * @returns {number}
  */
 export function getConnectionDownLink(win = window) {
-  const nav = win.navigator || {};
-  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
+  const nav = win.navigator || {}
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined
 }
 
 /**
@@ -61,13 +61,13 @@ export function getConnectionDownLink(win = window) {
  * @returns {string}
  */
 export function getReferrer(bidRequest = {}, bidderRequest = {}) {
-  let pageUrl;
+  let pageUrl
   if (bidRequest.params && bidRequest.params.referrer) {
-    pageUrl = bidRequest.params.referrer;
+    pageUrl = bidRequest.params.referrer
   } else {
-    pageUrl = bidderRequest?.refererInfo?.page;
+    pageUrl = bidderRequest?.refererInfo?.page
   }
-  return pageUrl;
+  return pageUrl
 }
 
 /**
@@ -76,5 +76,5 @@ export function getReferrer(bidRequest = {}, bidderRequest = {}) {
  * @returns {*|number}
  */
 export function getDomComplexity(document) {
-  return document?.querySelectorAll('*')?.length ?? -1;
+  return document?.querySelectorAll('*')?.length ?? -1
 }

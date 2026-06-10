@@ -1,9 +1,9 @@
-import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { isBidRequestValid, buildRequests, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.ts';
+import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { isBidRequestValid, buildRequests, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.ts'
 
-const BIDDER_CODE = 'appMonstaMedia';
-const AD_URL = 'https://ssp-us.appmonsta.ai/pbjs';
+const BIDDER_CODE = 'appMonstaMedia'
+const AD_URL = 'https://ssp-us.appmonsta.ai/pbjs'
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
@@ -12,6 +12,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
   interpretResponse
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

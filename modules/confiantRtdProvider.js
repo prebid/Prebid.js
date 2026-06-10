@@ -8,22 +8,22 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
-import { logError, generateUUID } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
-import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js'
+import { logError, generateUUID } from '../src/utils.js'
+import { loadExternalScript } from '../src/adloader.js'
+import * as events from '../src/events.js'
+import { EVENTS } from '../src/constants.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
 
 /**
  * Injects the Confiant Inc. configuration script into the page, based on proprtyId provided
  * @param {string} propertyId
  */
 function injectConfigScript(propertyId) {
-  const scriptSrc = `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`;
+  const scriptSrc = `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`
 
   loadExternalScript(scriptSrc, MODULE_TYPE_RTD, 'confiant', () => {
-  });
+  })
 }
 
 /**
@@ -31,29 +31,29 @@ function injectConfigScript(propertyId) {
  * @param {Object} config
  */
 function setupPage(config) {
-  const propertyId = config?.params?.propertyId;
+  const propertyId = config?.params?.propertyId
   if (!propertyId) {
-    logError('Confiant pbjs module: no propertyId provided');
-    return false;
+    logError('Confiant pbjs module: no propertyId provided')
+    return false
   }
 
-  const confiant = window.confiant || Object.create(null);
-  confiant[propertyId] = confiant[propertyId] || Object.create(null);
-  confiant[propertyId].clientSettings = confiant[propertyId].clientSettings || Object.create(null);
-  confiant[propertyId].clientSettings.isMGBL = true;
-  confiant[propertyId].clientSettings.prebidExcludeBidders = config?.params?.prebidExcludeBidders;
-  confiant[propertyId].clientSettings.prebidNameSpace = config?.params?.prebidNameSpace;
+  const confiant = window.confiant || Object.create(null)
+  confiant[propertyId] = confiant[propertyId] || Object.create(null)
+  confiant[propertyId].clientSettings = confiant[propertyId].clientSettings || Object.create(null)
+  confiant[propertyId].clientSettings.isMGBL = true
+  confiant[propertyId].clientSettings.prebidExcludeBidders = config?.params?.prebidExcludeBidders
+  confiant[propertyId].clientSettings.prebidNameSpace = config?.params?.prebidNameSpace
 
   if (config?.params?.shouldEmitBillableEvent) {
     if (window.frames['cnftComm']) {
-      subscribeToConfiantCommFrame(window, propertyId);
+      subscribeToConfiantCommFrame(window, propertyId)
     } else {
-      setUpMutationObserver();
+      setUpMutationObserver()
     }
   }
 
-  injectConfigScript(propertyId);
-  return true;
+  injectConfigScript(propertyId)
+  return true
 }
 
 /**
@@ -61,10 +61,10 @@ function setupPage(config) {
  * @param {Window} targetWindow window instance to subscribe to
  */
 function subscribeToConfiantCommFrame(targetWindow, propertyId) {
-  targetWindow.addEventListener('message', getEventHandlerFunction(propertyId));
+  targetWindow.addEventListener('message', getEventHandlerFunction(propertyId))
 }
 
-let mutationObserver;
+let mutationObserver
 /**
  * Set up mutation observer to subscribe to Confiant's communication channel ASAP
  */
@@ -73,16 +73,16 @@ function setUpMutationObserver() {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((addedNode) => {
         if (addedNode.nodeName === 'IFRAME' && addedNode.name === 'cnftComm' && !addedNode.pbjsModuleSubscribed) {
-          addedNode.pbjsModuleSubscribed = true;
-          mutationObserver.disconnect();
-          mutationObserver = null;
-          const iframeWindow = addedNode.contentWindow;
-          subscribeToConfiantCommFrame(iframeWindow);
+          addedNode.pbjsModuleSubscribed = true
+          mutationObserver.disconnect()
+          mutationObserver = null
+          const iframeWindow = addedNode.contentWindow
+          subscribeToConfiantCommFrame(iframeWindow)
         }
-      });
-    });
-  });
-  mutationObserver.observe(document.head, { childList: true, subtree: true });
+      })
+    })
+  })
+  mutationObserver.observe(document.head, { childList: true, subtree: true })
 }
 
 /**
@@ -97,7 +97,7 @@ function getEventHandlerFunction(propertyId) {
         transactionId: e.data.transactionId,
         type: 'impression',
         vendor: 'confiant'
-      });
+      })
     }
   }
 }
@@ -110,19 +110,19 @@ function registerConfiantSubmodule() {
     name: 'confiant',
     init: (config) => {
       try {
-        return setupPage(config);
+        return setupPage(config)
       } catch (err) {
-        logError(err.message);
+        logError(err.message)
         if (mutationObserver) {
-          mutationObserver.disconnect();
+          mutationObserver.disconnect()
         }
-        return false;
+        return false
       }
     }
-  });
+  })
 }
 
-registerConfiantSubmodule();
+registerConfiantSubmodule()
 
 export default {
   injectConfigScript,
@@ -130,4 +130,4 @@ export default {
   subscribeToConfiantCommFrame,
   setUpMutationObserver,
   registerConfiantSubmodule
-};
+}

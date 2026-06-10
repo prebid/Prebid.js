@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/vdoaiBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/vdoaiBidAdapter.js'
 
 describe('vdoaiBidAdapter', function () {
   const bid1 = {
@@ -267,8 +267,8 @@ describe('vdoaiBidAdapter', function () {
         expect(serverRequest.method).to.equal('POST')
       })
       it('Returns valid data if array of bids is valid', function () {
-        const data = serverRequest.data;
-        expect(data).to.be.an('object');
+        const data = serverRequest.data
+        expect(data).to.be.an('object')
         expect(data).to.have.all.keys(
           'deviceWidth',
           'deviceHeight',
@@ -278,10 +278,10 @@ describe('vdoaiBidAdapter', function () {
           'page',
           'ortb2',
           'refererInfo'
-        );
-        expect(data.deviceWidth).to.be.a('number');
-        expect(data.deviceHeight).to.be.a('number');
-        expect(data.secure).to.be.a('boolean');
+        )
+        expect(data.deviceWidth).to.be.a('number')
+        expect(data.deviceHeight).to.be.a('number')
+        expect(data.secure).to.be.a('boolean')
         data.adUnits.forEach(adUnit => {
           expect(adUnit).to.have.all.keys(
             'id',
@@ -298,28 +298,28 @@ describe('vdoaiBidAdapter', function () {
             'custom4',
             'custom5',
             'ortb2Imp'
-          );
-          expect(adUnit.id).to.be.a('number');
-          expect(adUnit.bidId).to.be.a('string');
-          expect(adUnit.type).to.be.a('string');
-          expect(adUnit.transactionId).to.be.a('string');
-          expect(adUnit.sizes).to.be.an('array');
-          expect(adUnit.userIdAsEids).to.be.an('array');
-          expect(adUnit.supplyChain).to.be.an('object');
-          expect(adUnit.custom1).to.be.a('string');
-          expect(adUnit.custom2).to.be.a('string');
-          expect(adUnit.custom3).to.be.a('string');
-          expect(adUnit.custom4).to.be.a('string');
-          expect(adUnit.custom5).to.be.a('string');
-          expect(adUnit.ortb2Imp).to.be.an('object');
+          )
+          expect(adUnit.id).to.be.a('number')
+          expect(adUnit.bidId).to.be.a('string')
+          expect(adUnit.type).to.be.a('string')
+          expect(adUnit.transactionId).to.be.a('string')
+          expect(adUnit.sizes).to.be.an('array')
+          expect(adUnit.userIdAsEids).to.be.an('array')
+          expect(adUnit.supplyChain).to.be.an('object')
+          expect(adUnit.custom1).to.be.a('string')
+          expect(adUnit.custom2).to.be.a('string')
+          expect(adUnit.custom3).to.be.a('string')
+          expect(adUnit.custom4).to.be.a('string')
+          expect(adUnit.custom5).to.be.a('string')
+          expect(adUnit.ortb2Imp).to.be.an('object')
         })
-        expect(data.sua.browsers).to.be.a('array');
-        expect(data.sua.platform).to.be.a('array');
-        expect(data.sua.mobile).to.be.a('number');
-        expect(data.sua.architecture).to.be.a('string');
-        expect(data.page).to.be.a('string');
-        expect(data.page).to.be.equal('testPage');
-        expect(data.ortb2).to.be.an('object');
+        expect(data.sua.browsers).to.be.a('array')
+        expect(data.sua.platform).to.be.a('array')
+        expect(data.sua.mobile).to.be.a('number')
+        expect(data.sua.architecture).to.be.a('string')
+        expect(data.page).to.be.a('string')
+        expect(data.page).to.be.equal('testPage')
+        expect(data.ortb2).to.be.an('object')
       })
     })
     it('Returns valid URL', function () {
@@ -342,8 +342,8 @@ describe('vdoaiBidAdapter', function () {
       const serverRequests = spec.buildRequests([bid1], bidderRequest)
       expect(serverRequests).to.have.lengthOf(1)
       serverRequests.forEach(serverRequest => {
-        expect(serverRequest.data.page).to.be.a('string');
-        expect(serverRequest.data.page).to.be.equal('testSitePage');
+        expect(serverRequest.data.page).to.be.a('string')
+        expect(serverRequest.data.page).to.be.equal('testSitePage')
       })
     })
   })
@@ -364,32 +364,32 @@ describe('vdoaiBidAdapter', function () {
           mediaType: 'banner'
         }
       }]
-    };
-    let serverResponses = spec.interpretResponse(resObject);
+    }
+    let serverResponses = spec.interpretResponse(resObject)
     it('Returns an array of valid server responses if response object is valid', function () {
-      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      expect(serverResponses).to.be.an('array').that.is.not.empty
       for (let i = 0; i < serverResponses.length; i++) {
-        const dataItem = serverResponses[i];
+        const dataItem = serverResponses[i]
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'meta');
-        expect(dataItem.requestId).to.be.a('string');
-        expect(dataItem.cpm).to.be.a('number');
-        expect(dataItem.width).to.be.a('number');
-        expect(dataItem.height).to.be.a('number');
-        expect(dataItem.ad).to.be.a('string');
-        expect(dataItem.ttl).to.be.a('number');
-        expect(dataItem.creativeId).to.be.a('string');
-        expect(dataItem.netRevenue).to.be.a('boolean');
-        expect(dataItem.currency).to.be.a('string');
-        expect(dataItem.meta.advertiserDomains).to.be.an('array');
-        expect(dataItem.meta.mediaType).to.be.a('string');
+          'netRevenue', 'currency', 'meta')
+        expect(dataItem.requestId).to.be.a('string')
+        expect(dataItem.cpm).to.be.a('number')
+        expect(dataItem.width).to.be.a('number')
+        expect(dataItem.height).to.be.a('number')
+        expect(dataItem.ad).to.be.a('string')
+        expect(dataItem.ttl).to.be.a('number')
+        expect(dataItem.creativeId).to.be.a('string')
+        expect(dataItem.netRevenue).to.be.a('boolean')
+        expect(dataItem.currency).to.be.a('string')
+        expect(dataItem.meta.advertiserDomains).to.be.an('array')
+        expect(dataItem.meta.mediaType).to.be.a('string')
       }
       it('Returns an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
-      });
-    });
-  });
+        serverResponses = spec.interpretResponse('invalid_response')
+        expect(serverResponses).to.be.an('array').that.is.empty
+      })
+    })
+  })
   describe('interpretVideoResponse', function () {
     const resObject = {
       body: [{
@@ -407,32 +407,32 @@ describe('vdoaiBidAdapter', function () {
           mediaType: 'video'
         }
       }]
-    };
-    let serverResponses = spec.interpretResponse(resObject);
+    }
+    let serverResponses = spec.interpretResponse(resObject)
     it('Returns an array of valid server responses if response object is valid', function () {
-      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      expect(serverResponses).to.be.an('array').that.is.not.empty
       for (let i = 0; i < serverResponses.length; i++) {
-        const dataItem = serverResponses[i];
+        const dataItem = serverResponses[i]
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'meta');
-        expect(dataItem.requestId).to.be.a('string');
-        expect(dataItem.cpm).to.be.a('number');
-        expect(dataItem.width).to.be.a('number');
-        expect(dataItem.height).to.be.a('number');
-        expect(dataItem.vastXml).to.be.a('string');
-        expect(dataItem.ttl).to.be.a('number');
-        expect(dataItem.creativeId).to.be.a('string');
-        expect(dataItem.netRevenue).to.be.a('boolean');
-        expect(dataItem.currency).to.be.a('string');
-        expect(dataItem.meta.advertiserDomains).to.be.an('array');
-        expect(dataItem.meta.mediaType).to.be.a('string');
+          'netRevenue', 'currency', 'meta')
+        expect(dataItem.requestId).to.be.a('string')
+        expect(dataItem.cpm).to.be.a('number')
+        expect(dataItem.width).to.be.a('number')
+        expect(dataItem.height).to.be.a('number')
+        expect(dataItem.vastXml).to.be.a('string')
+        expect(dataItem.ttl).to.be.a('number')
+        expect(dataItem.creativeId).to.be.a('string')
+        expect(dataItem.netRevenue).to.be.a('boolean')
+        expect(dataItem.currency).to.be.a('string')
+        expect(dataItem.meta.advertiserDomains).to.be.an('array')
+        expect(dataItem.meta.mediaType).to.be.a('string')
       }
       it('should return an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
-      });
-    });
-  });
+        serverResponses = spec.interpretResponse('invalid_response')
+        expect(serverResponses).to.be.an('array').that.is.empty
+      })
+    })
+  })
   describe('isBidRequestValid', function() {
     const bid = {
       bidId: '2dd581a2b6281d',
@@ -447,18 +447,18 @@ describe('vdoaiBidAdapter', function () {
       auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
       sizes: [[300, 250]],
       transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
-    };
+    }
 
     it('should return true when required params found', function() {
       [bid, bid1, bid2, bid3].forEach(bid => {
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
-      });
-    });
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+    })
 
     it('should return true when adUnitId is zero', function() {
-      bid.params.adUnitId = 0;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      bid.params.adUnitId = 0
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function() {
       const bidFailed = {
@@ -472,10 +472,10 @@ describe('vdoaiBidAdapter', function () {
         auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
         sizes: [[300, 250]],
         transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
-      };
-      expect(spec.isBidRequestValid(bidFailed)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(bidFailed)).to.equal(false)
+    })
+  })
   describe('interpretResponse', function() {
     const resObject = {
       requestId: '123',
@@ -491,7 +491,7 @@ describe('vdoaiBidAdapter', function () {
         advertiserDomains: ['example.com'],
         mediaType: 'banner'
       }
-    };
+    }
     it('should skip responses which do not contain required params', function() {
       const bidResponses = {
         body: [{
@@ -504,36 +504,36 @@ describe('vdoaiBidAdapter', function () {
           }
         }, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
-    });
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject])
+    })
     it('should skip responses which do not contain advertiser domains', function() {
-      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
-      resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
-      delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
+      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject)
+      resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta)
+      delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains
       const bidResponses = {
         body: [resObjectWithoutAdvertiserDomains, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
-    });
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject])
+    })
     it('should return responses which contain empty advertiser domains', function() {
-      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
-      resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
-      resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
+      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject)
+      resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta)
+      resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = []
       const bidResponses = {
         body: [resObjectWithEmptyAdvertiserDomains, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
-    });
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject])
+    })
     it('should skip responses which do not contain meta media type', function() {
-      const resObjectWithoutMetaMediaType = Object.assign({}, resObject);
-      resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
-      delete resObjectWithoutMetaMediaType.meta.mediaType;
+      const resObjectWithoutMetaMediaType = Object.assign({}, resObject)
+      resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta)
+      delete resObjectWithoutMetaMediaType.meta.mediaType
       const bidResponses = {
         body: [resObjectWithoutMetaMediaType, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
-    });
-  });
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject])
+    })
+  })
   describe('getUserSyncs', function () {
     it('should return trackers for lm(only iframe) if server responses contain lm user sync header and iframe and image enabled', function () {
       const serverResponses = [
@@ -541,99 +541,99 @@ describe('vdoaiBidAdapter', function () {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-lm.ortb.net/sync';
+                return 'https://tracker-lm.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
+                return 'https://tracker-lm.ortb.net/sync.html'
               }
             }
           },
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
-      };
+      }
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'iframe',
           url: 'https://tracker-lm.ortb.net/sync.html'
         }
-      ]);
-    });
+      ])
+    })
     it('should return empty array if all sync types are disabled', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-1.ortb.net/sync';
+                return 'https://tracker-1.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-1.ortb.net/sync.html';
+                return 'https://tracker-1.ortb.net/sync.html'
               }
             }
           },
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: false
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
-    });
+      }
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty
+    })
     it('should return no pixels if iframe sync is enabled and headers are blank', function () {
       const serverResponses = [
         {
           headers: null,
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: false
-      };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
-    });
+      }
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty
+    })
     it('should return image sync urls for lm if pixel sync is enabled and headers have lm pixel', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-lm.ortb.net/sync';
+                return 'https://tracker-lm.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
+                return 'https://tracker-lm.ortb.net/sync.html'
               }
             }
           },
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
-      };
+      }
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'image',
           url: 'https://tracker-lm.ortb.net/sync'
         }
-      ]);
-    });
+      ])
+    })
     it('should return image sync urls for client1 and clien2 if pixel sync is enabled and two responses and headers have two pixels', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-1.ortb.net/sync';
+                return 'https://tracker-1.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-1.ortb.net/sync.html';
+                return 'https://tracker-1.ortb.net/sync.html'
               }
             }
           },
@@ -643,20 +643,20 @@ describe('vdoaiBidAdapter', function () {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-2.ortb.net/sync';
+                return 'https://tracker-2.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-2.ortb.net/sync.html';
+                return 'https://tracker-2.ortb.net/sync.html'
               }
             }
           },
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
-      };
+      }
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'image',
@@ -666,18 +666,18 @@ describe('vdoaiBidAdapter', function () {
           type: 'image',
           url: 'https://tracker-2.ortb.net/sync'
         }
-      ]);
-    });
+      ])
+    })
     it('should return image sync url for pll if pixel sync is enabled and two responses and headers have two same pixels', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-lm.ortb.net/sync';
+                return 'https://tracker-lm.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
+                return 'https://tracker-lm.ortb.net/sync.html'
               }
             }
           },
@@ -687,82 +687,82 @@ describe('vdoaiBidAdapter', function () {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-lm.ortb.net/sync';
+                return 'https://tracker-lm.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
+                return 'https://tracker-lm.ortb.net/sync.html'
               }
             }
           },
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
-      };
+      }
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'image',
           url: 'https://tracker-lm.ortb.net/sync'
         }
-      ]);
-    });
+      ])
+    })
     it('should return iframe sync url for pll if pixel sync is enabled and iframe is enables and headers have both iframe and img pixels', function () {
       const serverResponses = [
         {
           headers: {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-lm.ortb.net/sync';
+                return 'https://tracker-lm.ortb.net/sync'
               }
               if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
+                return 'https://tracker-lm.ortb.net/sync.html'
               }
             }
           },
           body: []
         }
-      ];
+      ]
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
-      };
+      }
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'iframe',
           url: 'https://tracker-lm.ortb.net/sync.html'
         }
-      ]);
-    });
-  });
-});
+      ])
+    })
+  })
+})
 
 function validateAdUnit(adUnit, bid) {
-  expect(adUnit.id).to.equal(bid.params.adUnitId);
-  expect(adUnit.bidId).to.equal(bid.bidId);
-  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
-  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid);
-  let bidSizes = [];
+  expect(adUnit.id).to.equal(bid.params.adUnitId)
+  expect(adUnit.bidId).to.equal(bid.bidId)
+  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase())
+  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid)
+  let bidSizes = []
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
-      bidSizes = bidSizes.concat([bid.mediaTypes.video.playerSize]);
+      bidSizes = bidSizes.concat([bid.mediaTypes.video.playerSize])
     }
     if (bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
-      bidSizes = bidSizes.concat(bid.mediaTypes.banner.sizes);
+      bidSizes = bidSizes.concat(bid.mediaTypes.banner.sizes)
     }
   }
   if (bid.sizes) {
-    bidSizes = bidSizes.concat(bid.sizes || []);
+    bidSizes = bidSizes.concat(bid.sizes || [])
   }
   expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
     return {
       width: size[0],
       height: size[1]
     }
-  }));
-  expect(adUnit.publisherId).to.equal(bid.params.publisherId);
-  expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
-  expect(adUnit.supplyChain).to.deep.equal(bid.ortb2?.source?.ext?.schain);
-  expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
+  }))
+  expect(adUnit.publisherId).to.equal(bid.params.publisherId)
+  expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids)
+  expect(adUnit.supplyChain).to.deep.equal(bid.ortb2?.source?.ext?.schain)
+  expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp)
 }

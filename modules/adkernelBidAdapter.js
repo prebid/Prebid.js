@@ -14,11 +14,11 @@ import {
   mergeDeep,
   parseGPTSingleSizeArrayToRtbSize,
   triggerPixel
-} from '../src/utils.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+} from '../src/utils.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js'
 import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js'
 
 /**
@@ -32,30 +32,30 @@ import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js'
  */
 
 const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
-  'startdelay', 'linearity', 'skip', 'skipmin', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackend', 'boxingallowed'];
-const VIDEO_FPD = ['battr', 'pos'];
-const NATIVE_FPD = ['battr', 'api'];
-const BANNER_PARAMS = ['pos'];
-const BANNER_FPD = ['btype', 'battr', 'pos', 'api'];
-const VERSION = '1.8';
-const SYNC_IFRAME = 1;
-const SYNC_IMAGE = 2;
+  'startdelay', 'linearity', 'skip', 'skipmin', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackend', 'boxingallowed']
+const VIDEO_FPD = ['battr', 'pos']
+const NATIVE_FPD = ['battr', 'api']
+const BANNER_PARAMS = ['pos']
+const BANNER_FPD = ['btype', 'battr', 'pos', 'api']
+const VERSION = '1.8'
+const SYNC_IFRAME = 1
+const SYNC_IMAGE = 2
 const SYNC_TYPES = {
   1: 'iframe',
   2: 'image'
-};
-const GVLID = 14;
+}
+const GVLID = 14
 
-const MULTI_FORMAT_SUFFIX = '__mf';
-const MULTI_FORMAT_SUFFIX_BANNER = 'b' + MULTI_FORMAT_SUFFIX;
-const MULTI_FORMAT_SUFFIX_VIDEO = 'v' + MULTI_FORMAT_SUFFIX;
-const MULTI_FORMAT_SUFFIX_NATIVE = 'n' + MULTI_FORMAT_SUFFIX;
+const MULTI_FORMAT_SUFFIX = '__mf'
+const MULTI_FORMAT_SUFFIX_BANNER = 'b' + MULTI_FORMAT_SUFFIX
+const MULTI_FORMAT_SUFFIX_VIDEO = 'v' + MULTI_FORMAT_SUFFIX
+const MULTI_FORMAT_SUFFIX_NATIVE = 'n' + MULTI_FORMAT_SUFFIX
 
 const MEDIA_TYPES = {
   BANNER: 1,
   VIDEO: 2,
   NATIVE: 4
-};
+}
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -127,7 +127,7 @@ export const spec = {
       bidRequest.mediaTypes &&
       (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video ||
         (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native))
-      );
+      )
   },
 
   /**
@@ -137,19 +137,19 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
-    const requests = [];
-    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+    const impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo)
+    const requests = []
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain
     _each(impGroups, impGroup => {
-      const { host, zoneId, imps } = impGroup;
-      const request = buildRtbRequest(imps, bidderRequest, schain);
+      const { host, zoneId, imps } = impGroup
+      const request = buildRtbRequest(imps, bidderRequest, schain)
       requests.push({
         method: 'POST',
         url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
         data: JSON.stringify(request)
-      });
-    });
-    return requests;
+      })
+    })
+    return requests
   },
 
   /**
@@ -159,18 +159,18 @@ export const spec = {
    * @returns {Bid[]}
    */
   interpretResponse: function (serverResponse, serverRequest) {
-    const response = serverResponse.body;
+    const response = serverResponse.body
     if (!response.seatbid) {
-      return [];
+      return []
     }
 
-    const rtbRequest = JSON.parse(serverRequest.data);
+    const rtbRequest = JSON.parse(serverRequest.data)
     const rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
-      .reduce((a, b) => a.concat(b), []);
+      .reduce((a, b) => a.concat(b), [])
 
     return rtbBids.map(rtbBid => {
-      const imp = ((rtbRequest.imp) || []).find(imp => imp.id === rtbBid.impid);
+      const imp = ((rtbRequest.imp) || []).find(imp => imp.id === rtbBid.impid)
       const prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
@@ -178,56 +178,56 @@ export const spec = {
         currency: response.cur || 'USD',
         ttl: 360,
         netRevenue: true
-      };
+      }
       if (prBid.requestId.endsWith(MULTI_FORMAT_SUFFIX)) {
-        prBid.requestId = stripMultiformatSuffix(prBid.requestId);
+        prBid.requestId = stripMultiformatSuffix(prBid.requestId)
       }
       if (rtbBid.mtype === MEDIA_TYPES.BANNER) {
-        prBid.mediaType = BANNER;
-        prBid.width = rtbBid.w;
-        prBid.height = rtbBid.h;
-        prBid.ad = formatAdMarkup(rtbBid);
+        prBid.mediaType = BANNER
+        prBid.width = rtbBid.w
+        prBid.height = rtbBid.h
+        prBid.ad = formatAdMarkup(rtbBid)
       } else if (rtbBid.mtype === MEDIA_TYPES.VIDEO) {
-        prBid.mediaType = VIDEO;
+        prBid.mediaType = VIDEO
         if (rtbBid.adm) {
-          prBid.vastXml = rtbBid.adm;
+          prBid.vastXml = rtbBid.adm
           if (rtbBid.nurl) {
-            prBid.nurl = rtbBid.nurl;
+            prBid.nurl = rtbBid.nurl
           }
         } else {
-          prBid.vastUrl = rtbBid.nurl;
+          prBid.vastUrl = rtbBid.nurl
         }
-        prBid.width = imp.video.w;
-        prBid.height = imp.video.h;
+        prBid.width = imp.video.w
+        prBid.height = imp.video.h
       } else if (rtbBid.mtype === MEDIA_TYPES.NATIVE) {
-        prBid.mediaType = NATIVE;
+        prBid.mediaType = NATIVE
         prBid.native = {
           ortb: buildNativeAd(rtbBid.adm)
-        };
+        }
       }
       if (isStr(rtbBid.dealid)) {
-        prBid.dealId = rtbBid.dealid;
+        prBid.dealId = rtbBid.dealid
       }
       if (isArray(rtbBid.adomain)) {
-        deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
+        deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain)
       }
       if (isArray(rtbBid.cat)) {
-        deepSetValue(prBid, 'meta.secondaryCatIds', rtbBid.cat);
+        deepSetValue(prBid, 'meta.secondaryCatIds', rtbBid.cat)
       }
       if (isPlainObject(rtbBid.ext)) {
         if (isNumber(rtbBid.ext.advertiser_id)) {
-          deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id);
+          deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id)
         }
         if (isStr(rtbBid.ext.advertiser_name)) {
-          deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name);
+          deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name)
         }
         if (isStr(rtbBid.ext.agency_name)) {
-          deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
+          deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name)
         }
       }
 
-      return prBid;
-    });
+      return prBid
+    })
   },
 
   /**
@@ -238,12 +238,12 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses || serverResponses.length === 0 || (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled)) {
-      return [];
+      return []
     }
     return serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.adk_usersync)
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
-      .map(({ url, type }) => ({ type: SYNC_TYPES[type], url: url }));
+      .map(({ url, type }) => ({ type: SYNC_TYPES[type], url: url }))
   },
 
   /**
@@ -252,12 +252,12 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid.nurl) {
-      triggerPixel(bid.nurl);
+      triggerPixel(bid.nurl)
     }
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
 
 /**
  * Dispatch impressions by ad network host and zone
@@ -265,18 +265,18 @@ registerBidder(spec);
  * @param refererInfo {refererInfo}
  */
 function groupImpressionsByHostZone(bidRequests, refererInfo) {
-  const secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
+  const secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0)
   return Object.values(
     bidRequests.map(bidRequest => buildImps(bidRequest, secure))
       .reduce((acc, curr, index) => {
-        const bidRequest = bidRequests[index];
-        const { zoneId, host } = bidRequest.params;
-        const key = `${host}_${zoneId}`;
-        acc[key] = acc[key] || { host: host, zoneId: zoneId, imps: [] };
-        acc[key].imps.push(...curr);
-        return acc;
+        const bidRequest = bidRequests[index]
+        const { zoneId, host } = bidRequest.params
+        const key = `${host}_${zoneId}`
+        acc[key] = acc[key] || { host: host, zoneId: zoneId, imps: [] }
+        acc[key].imps.push(...curr)
+        return acc
       }, {})
-  );
+  )
 }
 
 /**
@@ -288,87 +288,87 @@ function buildImps(bidRequest, secure) {
   const imp = {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
-  };
-  if (secure) {
-    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
-  var sizes = [];
-  const mediaTypes = bidRequest.mediaTypes;
-  const isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
-  const result = [];
-  let typedImp;
+  if (secure) {
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1
+  }
+  var sizes = []
+  const mediaTypes = bidRequest.mediaTypes
+  const isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1
+  const result = []
+  let typedImp
 
   if (mediaTypes?.banner) {
     if (isMultiformat) {
-      typedImp = { ...imp };
-      typedImp.id = imp.id + MULTI_FORMAT_SUFFIX_BANNER;
+      typedImp = { ...imp }
+      typedImp.id = imp.id + MULTI_FORMAT_SUFFIX_BANNER
     } else {
-      typedImp = imp;
+      typedImp = imp
     }
-    sizes = getAdUnitSizes(bidRequest);
-    const pbBanner = mediaTypes.banner;
+    sizes = getAdUnitSizes(bidRequest)
+    const pbBanner = mediaTypes.banner
     typedImp.banner = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, BANNER_FPD),
       ...getDefinedParamsOrEmpty(pbBanner, BANNER_PARAMS),
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
-    };
-    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : BANNER);
-    result.push(typedImp);
+    }
+    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : BANNER)
+    result.push(typedImp)
   }
 
   if (mediaTypes?.video) {
     if (isMultiformat) {
-      typedImp = { ...imp };
-      typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_VIDEO;
+      typedImp = { ...imp }
+      typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_VIDEO
     } else {
-      typedImp = imp;
+      typedImp = imp
     }
-    const pbVideo = mediaTypes.video;
+    const pbVideo = mediaTypes.video
     typedImp.video = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, VIDEO_FPD),
       ...getDefinedParamsOrEmpty(pbVideo, VIDEO_PARAMS)
-    };
-    if (pbVideo.playerSize) {
-      sizes = pbVideo.playerSize[0];
-      typedImp.video = Object.assign(typedImp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
-    } else if (pbVideo.w && pbVideo.h) {
-      typedImp.video.w = pbVideo.w;
-      typedImp.video.h = pbVideo.h;
     }
-    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : VIDEO);
-    result.push(typedImp);
+    if (pbVideo.playerSize) {
+      sizes = pbVideo.playerSize[0]
+      typedImp.video = Object.assign(typedImp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {})
+    } else if (pbVideo.w && pbVideo.h) {
+      typedImp.video.w = pbVideo.w
+      typedImp.video.h = pbVideo.h
+    }
+    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : VIDEO)
+    result.push(typedImp)
   }
 
   if (mediaTypes?.native) {
     if (isMultiformat) {
-      typedImp = { ...imp };
-      typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_NATIVE;
+      typedImp = { ...imp }
+      typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_NATIVE
     } else {
-      typedImp = imp;
+      typedImp = imp
     }
     typedImp.native = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, NATIVE_FPD),
       request: JSON.stringify(bidRequest.nativeOrtbRequest)
-    };
-    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : NATIVE);
-    result.push(typedImp);
+    }
+    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : NATIVE)
+    result.push(typedImp)
   }
-  return result;
+  return result
 }
 
 function initImpBidfloor(imp, bid, sizes, mediaType) {
-  const bidfloor = getBidFloor(bid, mediaType, sizes);
+  const bidfloor = getBidFloor(bid, mediaType, sizes)
   if (bidfloor) {
-    imp.bidfloor = bidfloor;
+    imp.bidfloor = bidfloor
   }
 }
 
 function getDefinedParamsOrEmpty(object, params) {
   if (object === undefined) {
-    return {};
+    return {}
   }
-  return getDefinedParams(object, params);
+  return getDefinedParams(object, params)
 }
 
 /**
@@ -379,11 +379,11 @@ function getDefinedParamsOrEmpty(object, params) {
  */
 function isSyncMethodAllowed(syncRule, bidderCode) {
   if (!syncRule) {
-    return false;
+    return false
   }
-  const bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
-  const rule = syncRule.filter === 'include';
-  return contains(bidders, bidderCode) === rule;
+  const bidders = isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode]
+  const rule = syncRule.filter === 'include'
+  return contains(bidders, bidderCode) === rule
 }
 
 /**
@@ -393,13 +393,13 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
  */
 function getAllowedSyncMethod(bidderCode) {
   if (!config.getConfig('userSync.syncEnabled')) {
-    return;
+    return
   }
-  const filterConfig = config.getConfig('userSync.filterSettings');
+  const filterConfig = config.getConfig('userSync.filterSettings')
   if (isSyncMethodAllowed(filterConfig.all, bidderCode) || isSyncMethodAllowed(filterConfig.iframe, bidderCode)) {
-    return SYNC_IFRAME;
+    return SYNC_IFRAME
   } else if (isSyncMethodAllowed(filterConfig.image, bidderCode)) {
-    return SYNC_IMAGE;
+    return SYNC_IMAGE
   }
 }
 
@@ -415,8 +415,8 @@ function makeDevice(fpd) {
     'ua': 'caller',
     'js': 1,
     'language': getLanguage()
-  }, fpd.device || {});
-  return { device: device };
+  }, fpd.device || {})
+  return { device: device }
 }
 
 /**
@@ -426,12 +426,12 @@ function makeDevice(fpd) {
  * @returns {{site: Object}|{app: Object}}
  */
 function makeSiteOrApp(bidderRequest, fpd) {
-  const { refererInfo } = bidderRequest;
-  const appConfig = config.getConfig('app');
+  const { refererInfo } = bidderRequest
+  const appConfig = config.getConfig('app')
   if (isEmpty(appConfig)) {
     return { site: createSite(refererInfo, fpd) }
   } else {
-    return { app: appConfig };
+    return { app: appConfig }
   }
 }
 
@@ -442,17 +442,17 @@ function makeSiteOrApp(bidderRequest, fpd) {
  * @returns {{user: Object} | undefined}
  */
 function makeUser(bidderRequest, fpd) {
-  const { gdprConsent } = bidderRequest;
-  const user = fpd.user || {};
+  const { gdprConsent } = bidderRequest
+  const user = fpd.user || {}
   if (gdprConsent && gdprConsent.consentString !== undefined) {
-    deepSetValue(user, 'ext.consent', gdprConsent.consentString);
+    deepSetValue(user, 'ext.consent', gdprConsent.consentString)
   }
-  const eids = getExtendedUserIds(bidderRequest);
+  const eids = getExtendedUserIds(bidderRequest)
   if (eids) {
-    deepSetValue(user, 'ext.eids', eids);
+    deepSetValue(user, 'ext.eids', eids)
   }
   if (!isEmpty(user)) {
-    return { user: user };
+    return { user: user }
   }
 }
 
@@ -462,25 +462,25 @@ function makeUser(bidderRequest, fpd) {
  * @returns {{regs: Object} | undefined}
  */
 function makeRegulations(bidderRequest) {
-  const { gdprConsent, uspConsent, gppConsent } = bidderRequest;
-  const regs = {};
+  const { gdprConsent, uspConsent, gppConsent } = bidderRequest
+  const regs = {}
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
-      deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
+      deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies)
     }
   }
   if (gppConsent) {
-    deepSetValue(regs, 'regs.gpp', gppConsent.gppString);
-    deepSetValue(regs, 'regs.gpp_sid', gppConsent.applicableSections);
+    deepSetValue(regs, 'regs.gpp', gppConsent.gppString)
+    deepSetValue(regs, 'regs.gpp_sid', gppConsent.applicableSections)
   }
   if (uspConsent) {
-    deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
+    deepSetValue(regs, 'regs.ext.us_privacy', uspConsent)
   }
   if (config.getConfig('coppa')) {
-    deepSetValue(regs, 'regs.coppa', 1);
+    deepSetValue(regs, 'regs.coppa', 1)
   }
   if (!isEmpty(regs)) {
-    return regs;
+    return regs
   }
 }
 
@@ -497,14 +497,14 @@ function makeBaseRequest(bidderRequest, imps, fpd) {
     'imp': imps,
     'at': 1,
     'tmax': parseInt(bidderRequest.timeout)
-  };
+  }
   if (!isEmpty(fpd.bcat)) {
-    request.bcat = fpd.bcat;
+    request.bcat = fpd.bcat
   }
   if (!isEmpty(fpd.badv)) {
-    request.badv = fpd.badv;
+    request.badv = fpd.badv
   }
-  return request;
+  return request
 }
 
 /**
@@ -512,12 +512,12 @@ function makeBaseRequest(bidderRequest, imps, fpd) {
  * @param bidderRequest {BidderRequest}
  */
 function makeSyncInfo(bidderRequest) {
-  const { bidderCode } = bidderRequest;
-  const syncMethod = getAllowedSyncMethod(bidderCode);
+  const { bidderCode } = bidderRequest
+  const syncMethod = getAllowedSyncMethod(bidderCode)
   if (syncMethod) {
-    const res = {};
-    deepSetValue(res, 'ext.adk_usersync', syncMethod);
-    return res;
+    const res = {}
+    deepSetValue(res, 'ext.adk_usersync', syncMethod)
+    return res
   }
 }
 
@@ -529,7 +529,7 @@ function makeSyncInfo(bidderRequest) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  const fpd = bidderRequest.ortb2 || {};
+  const fpd = bidderRequest.ortb2 || {}
 
   const req = mergeDeep(
     makeBaseRequest(bidderRequest, imps, fpd),
@@ -538,11 +538,11 @@ function buildRtbRequest(imps, bidderRequest, schain) {
     makeUser(bidderRequest, fpd),
     makeRegulations(bidderRequest),
     makeSyncInfo(bidderRequest)
-  );
+  )
   if (schain) {
-    deepSetValue(req, 'source.ext.schain', schain);
+    deepSetValue(req, 'source.ext.schain', schain)
   }
-  return req;
+  return req
 }
 
 /**
@@ -550,8 +550,8 @@ function buildRtbRequest(imps, bidderRequest, schain) {
  * @returns {String}
  */
 function getLanguage() {
-  const language = navigator.language ? 'language' : 'userLanguage';
-  return navigator[language].split('-')[0];
+  const language = navigator.language ? 'language' : 'userLanguage'
+  return navigator[language].split('-')[0]
 }
 
 /**
@@ -561,20 +561,20 @@ function createSite(refInfo, fpd) {
   const site = {
     'domain': refInfo.domain,
     'page': refInfo.page
-  };
-  mergeDeep(site, fpd.site);
-  if (refInfo.ref != null) {
-    site.ref = refInfo.ref;
-  } else {
-    delete site.ref;
   }
-  return site;
+  mergeDeep(site, fpd.site)
+  if (refInfo.ref != null) {
+    site.ref = refInfo.ref
+  } else {
+    delete site.ref
+  }
+  return site
 }
 
 function getExtendedUserIds(bidderRequest) {
-  const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids')
   if (isArray(eids)) {
-    return eids;
+    return eids
   }
 }
 
@@ -583,11 +583,11 @@ function getExtendedUserIds(bidderRequest) {
  *  @param bid rtb Bid object
  */
 function formatAdMarkup(bid) {
-  let adm = bid.adm;
+  let adm = bid.adm
   if ('nurl' in bid) {
-    adm += createTrackPixelHtml(`${bid.nurl}&px=1`);
+    adm += createTrackPixelHtml(`${bid.nurl}&px=1`)
   }
-  return adm;
+  return adm
 }
 
 /**
@@ -596,7 +596,7 @@ function formatAdMarkup(bid) {
 function validateNativeAdUnit(adUnit) {
   return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
     !deepAccess(adUnit, 'privacyLink.required') && // not supported yet
-    !deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
+    !deepAccess(adUnit, 'privacyIcon.required') // not supported yet
 }
 
 /**
@@ -604,29 +604,29 @@ function validateNativeAdUnit(adUnit) {
  */
 function validateNativeImageSize(img) {
   if (!img) {
-    return true;
+    return true
   }
   if (img.sizes) {
-    return isArrayOfNums(img.sizes, 2);
+    return isArrayOfNums(img.sizes, 2)
   }
   if (isArray(img.aspect_ratios)) {
-    return img.aspect_ratios.length > 0 && img.aspect_ratios[0].min_height && img.aspect_ratios[0].min_width;
+    return img.aspect_ratios.length > 0 && img.aspect_ratios[0].min_height && img.aspect_ratios[0].min_width
   }
-  return true;
+  return true
 }
 
 /**
  * Creates native ad for native 1.2 response
  */
 function buildNativeAd(adm) {
-  let resp = JSON.parse(adm);
+  let resp = JSON.parse(adm)
   // temporary workaround for top-level native object wrapper
   if ('native' in resp) {
-    resp = resp.native;
+    resp = resp.native
   }
-  return resp;
+  return resp
 }
 
 function stripMultiformatSuffix(impid) {
-  return impid.substr(0, impid.length - MULTI_FORMAT_SUFFIX.length - 1);
+  return impid.substr(0, impid.length - MULTI_FORMAT_SUFFIX.length - 1)
 }

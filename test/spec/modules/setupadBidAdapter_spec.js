@@ -1,4 +1,4 @@
-import { spec, biddersCreativeIds } from 'modules/setupadBidAdapter.js';
+import { spec, biddersCreativeIds } from 'modules/setupadBidAdapter.js'
 
 describe('SetupadAdapter', function () {
   const userIdAsEids = [
@@ -11,7 +11,7 @@ describe('SetupadAdapter', function () {
         },
       ],
     },
-  ];
+  ]
 
   const bidRequests = [
     {
@@ -70,7 +70,7 @@ describe('SetupadAdapter', function () {
       },
       userIdAsEids,
     },
-  ];
+  ]
 
   const bidderRequest = {
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -152,7 +152,7 @@ describe('SetupadAdapter', function () {
       page: 'http://test.com',
       referer: null,
     },
-  };
+  }
 
   const serverResponse = {
     body: {
@@ -168,7 +168,7 @@ describe('SetupadAdapter', function () {
       ],
     },
     testCase: 1,
-  };
+  }
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -177,59 +177,59 @@ describe('SetupadAdapter', function () {
         placement_id: '123',
         account_id: '123',
       },
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when placement_id is missing', function () {
-      const bidWithoutPlacementId = { ...bid };
-      delete bidWithoutPlacementId.params.placement_id;
-      expect(spec.isBidRequestValid(bidWithoutPlacementId)).to.equal(false);
-    });
+      const bidWithoutPlacementId = { ...bid }
+      delete bidWithoutPlacementId.params.placement_id
+      expect(spec.isBidRequestValid(bidWithoutPlacementId)).to.equal(false)
+    })
 
     it('should return false when account_id is missing', function () {
-      const bidWithoutAccountId = { ...bid };
-      delete bidWithoutAccountId.params.account_id;
-      expect(spec.isBidRequestValid(bidWithoutAccountId)).to.equal(false);
-    });
+      const bidWithoutAccountId = { ...bid }
+      delete bidWithoutAccountId.params.account_id
+      expect(spec.isBidRequestValid(bidWithoutAccountId)).to.equal(false)
+    })
 
     it('should return false when required params are not passed', function () {
-      delete bid.params.placement_id;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
+      delete bid.params.placement_id
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     it('should return correct storedrequest id for bids if placement_id is provided', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].ext.prebid.storedrequest.id).to.equal('123');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.imp[0].ext.prebid.storedrequest.id).to.equal('123')
+    })
 
     it('should return correct storedrequest id if account_id is provided', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.ext.prebid.storedrequest.id).to.equal('test-account-id');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.ext.prebid.storedrequest.id).to.equal('test-account-id')
+    })
 
     it('should return setupad custom adapter param', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.setupad).to.equal('adapter');
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.setupad).to.equal('adapter')
+    })
 
     // Change this to 1 whenever TEST_REQUEST = 1. This is allowed only for testing requests locally
     it('should return correct test attribute value from global value', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.test).to.equal(0);
-    });
-  });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.test).to.equal(0)
+    })
+  })
 
   describe('getUserSyncs', () => {
     it('should return user sync', () => {
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true,
-      };
+      }
       const responses = [
         {
           body: {
@@ -241,95 +241,95 @@ describe('SetupadAdapter', function () {
             },
           },
         },
-      ];
+      ]
       const gdprConsent = {
         gdprApplies: 1,
         consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
-      };
-      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
+      }
+      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb'
       const expectedUserSyncs = [
         {
           type: 'iframe',
           url: 'https://cookie.stpd.cloud/sync?bidders=%5B%22test%20seat%201%22%2C%22test%20seat%202%22%5D&gdpr=1&gdpr_consent=dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig&usp_consent=mkjvbiniwot4827obfoy8sdg8203gb&type=iframe',
         },
-      ];
+      ]
 
-      const userSyncs = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent);
+      const userSyncs = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent)
 
-      expect(userSyncs).to.deep.equal(expectedUserSyncs);
-    });
+      expect(userSyncs).to.deep.equal(expectedUserSyncs)
+    })
 
     it('should return empty user syncs when responsetimemillis is not defined', () => {
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true,
-      };
+      }
       const responses = [
         {
           body: {
             ext: {},
           },
         },
-      ];
+      ]
       const gdprConsent = {
         gdprApplies: 1,
         consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
-      };
-      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
-      const expectedUserSyncs = [];
+      }
+      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb'
+      const expectedUserSyncs = []
 
-      const userSyncs = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent);
+      const userSyncs = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent)
 
-      expect(userSyncs).to.deep.equal(expectedUserSyncs);
-    });
-  });
+      expect(userSyncs).to.deep.equal(expectedUserSyncs)
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should return empty array if error during parsing', () => {
-      const wrongServerResponse = 'wrong data';
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const result = spec.interpretResponse(wrongServerResponse, request);
+      const wrongServerResponse = 'wrong data'
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const result = spec.interpretResponse(wrongServerResponse, request)
 
-      expect(result).to.be.instanceof(Array);
-      expect(result.length).to.equal(0);
-    });
+      expect(result).to.be.instanceof(Array)
+      expect(result.length).to.equal(0)
+    })
 
     it('should update biddersCreativeIds correctly', function () {
-      spec.interpretResponse(serverResponse, bidderRequest);
+      spec.interpretResponse(serverResponse, bidderRequest)
 
       expect(biddersCreativeIds).to.deep.equal({
         123: 'pubmatic',
         1234: 'pubmatic',
         12345: 'setupad',
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('onBidWon', function () {
     it('should stop if bidder is not equal to BIDDER_CODE', function () {
       const bid = {
         bidder: 'rubicon',
-      };
-      const result = spec.onBidWon(bid);
-      expect(result).to.be.undefined;
-    });
+      }
+      const result = spec.onBidWon(bid)
+      expect(result).to.be.undefined
+    })
 
     it('should stop if bid.params is not provided', function () {
       const bid = {
         bidder: 'setupad',
-      };
-      const result = spec.onBidWon(bid);
-      expect(result).to.be.undefined;
-    });
+      }
+      const result = spec.onBidWon(bid)
+      expect(result).to.be.undefined
+    })
 
     it('should stop if bid.params is empty array', function () {
       const bid = {
         bidder: 'setupad',
         params: [],
-      };
-      const result = spec.onBidWon(bid);
-      expect(result).to.be.undefined;
-    });
+      }
+      const result = spec.onBidWon(bid)
+      expect(result).to.be.undefined
+    })
 
     it('should stop if bid.params is not array', function () {
       expect(
@@ -337,54 +337,54 @@ describe('SetupadAdapter', function () {
           bidder: 'setupad',
           params: {},
         })
-      ).to.be.undefined;
+      ).to.be.undefined
 
       expect(
         spec.onBidWon({
           bidder: 'setupad',
           params: 'test',
         })
-      ).to.be.undefined;
+      ).to.be.undefined
 
       expect(
         spec.onBidWon({
           bidder: 'setupad',
           params: 1,
         })
-      ).to.be.undefined;
+      ).to.be.undefined
 
       expect(
         spec.onBidWon({
           bidder: 'setupad',
           params: null,
         })
-      ).to.be.undefined;
+      ).to.be.undefined
 
       expect(
         spec.onBidWon({
           bidder: 'setupad',
           params: undefined,
         })
-      ).to.be.undefined;
-    });
+      ).to.be.undefined
+    })
 
     it('should stop if bid.params.placement_id is not provided', function () {
       const bid = {
         bidder: 'setupad',
         params: [{ account_id: 'test' }],
-      };
-      const result = spec.onBidWon(bid);
-      expect(result).to.be.undefined;
-    });
+      }
+      const result = spec.onBidWon(bid)
+      expect(result).to.be.undefined
+    })
 
     it('should stop if bid.params is not provided and bid.bids is not an array', function () {
       const bid = {
         bidder: 'setupad',
         params: undefined,
         bids: {},
-      };
-      const result = spec.onBidWon(bid);
-      expect(result).to.be.undefined;
-    });
-  });
-});
+      }
+      const result = spec.onBidWon(bid)
+      expect(result).to.be.undefined
+    })
+  })
+})

@@ -1,22 +1,22 @@
-import { expect } from 'chai';
-import { spec } from 'modules/adgenerationBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from 'src/mediaTypes.js';
-import prebid from 'package.json';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { expect } from 'chai'
+import { spec } from 'modules/adgenerationBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from 'src/mediaTypes.js'
+import prebid from 'package.json'
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
+import { addFPDToBidderRequest } from '../../helpers/fpd.js'
 
 describe('AdgenerationAdapter', function () {
-  const adapter = newBidder(spec);
-  const ADGENE_PREBID_VERSION = '1.6.6';
-  const ENDPOINT_STG = 'https://api-test.scaleout.jp/adgen/prebid';
-  const ENDPOINT_RELEASE = 'https://d.socdm.com/adgen/prebid';
+  const adapter = newBidder(spec)
+  const ADGENE_PREBID_VERSION = '1.6.6'
+  const ENDPOINT_STG = 'https://api-test.scaleout.jp/adgen/prebid'
+  const ENDPOINT_RELEASE = 'https://d.socdm.com/adgen/prebid'
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -24,18 +24,18 @@ describe('AdgenerationAdapter', function () {
       'params': {
         id: '58278', // banner
       }
-    };
+    }
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
+      invalidBid.params = {}
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const suaSample = {
@@ -58,8 +58,8 @@ describe('AdgenerationAdapter', function () {
         }
       ],
       mobile: 0
-    };
-    const schainSmaple = { ver: '1.0', complete: 1, nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }] };
+    }
+    const schainSmaple = { ver: '1.0', complete: 1, nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }] }
     const bidRequests = [
       { // banner
         bidder: 'adg',
@@ -171,35 +171,35 @@ describe('AdgenerationAdapter', function () {
           }
         },
       }
-    ];
+    ]
     const bidderRequest = {
       refererInfo: {
         page: 'https://example.com'
       }
-    };
+    }
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
       // check banner request
       for (const req of request) {
-        const url = new URL(req.url);
-        expect(url.origin + url.pathname).to.equal(ENDPOINT_RELEASE);
+        const url = new URL(req.url)
+        expect(url.origin + url.pathname).to.equal(ENDPOINT_RELEASE)
       }
-    });
+    })
 
     it('sends bid request to debug ENDPOINT via POST', function () {
       // change the first bidRequest to debug mode
-      const copyBidRequests = JSON.parse(JSON.stringify(bidRequests));
+      const copyBidRequests = JSON.parse(JSON.stringify(bidRequests))
       for (const copyBid of copyBidRequests) {
         copyBid.params.debug = true
       }
       // check banner request
-      const request = spec.buildRequests(copyBidRequests, bidderRequest);
+      const request = spec.buildRequests(copyBidRequests, bidderRequest)
       for (const req of request) {
-        const url = new URL(req.url);
-        expect(url.origin + url.pathname).to.equal(ENDPOINT_STG);
+        const url = new URL(req.url)
+        expect(url.origin + url.pathname).to.equal(ENDPOINT_STG)
       }
-    });
+    })
 
     it('should attache params to the banner request', function () {
       const expectedMediaTypes = {
@@ -221,25 +221,25 @@ describe('AdgenerationAdapter', function () {
           }
         ]
       }
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
       // check banner request
-      const url = new URL(request.url);
-      expect(url.searchParams.get('posall')).equal('SSPLOC');
-      expect(url.searchParams.get('id')).equal('58278');
-      expect(url.searchParams.get('sdktype')).equal('0');
-      expect(request.method).to.equal('POST');
+      const url = new URL(request.url)
+      expect(url.searchParams.get('posall')).equal('SSPLOC')
+      expect(url.searchParams.get('id')).equal('58278')
+      expect(url.searchParams.get('sdktype')).equal('0')
+      expect(request.method).to.equal('POST')
 
       // check request data
-      expect(request.data.currency).to.equal('JPY');
-      expect(request.data.pbver).to.equal(prebid.version);
-      expect(request.data.sdkname).to.equal('prebidjs');
-      expect(request.data.adapterver).to.equal(ADGENE_PREBID_VERSION);
-      expect(request.data.imark).to.equal(1);
-      expect(request.data.ortb.imp[0].id).to.equal('2f6ac468a9c15e');
-      expect(request.data.ortb.imp[0].ext.params.id).to.equal('58278');
-      expect(request.data.ortb.imp[0].ext.mediaTypes).to.deep.equal(expectedMediaTypes);
-      expect(request.data.ortb.imp[0].banner).to.deep.equal(expectedBanner);
-    });
+      expect(request.data.currency).to.equal('JPY')
+      expect(request.data.pbver).to.equal(prebid.version)
+      expect(request.data.sdkname).to.equal('prebidjs')
+      expect(request.data.adapterver).to.equal(ADGENE_PREBID_VERSION)
+      expect(request.data.imark).to.equal(1)
+      expect(request.data.ortb.imp[0].id).to.equal('2f6ac468a9c15e')
+      expect(request.data.ortb.imp[0].ext.params.id).to.equal('58278')
+      expect(request.data.ortb.imp[0].ext.mediaTypes).to.deep.equal(expectedMediaTypes)
+      expect(request.data.ortb.imp[0].banner).to.deep.equal(expectedBanner)
+    })
 
     it('should attache params to the native request', function () {
       const expectedMediaTypes = {
@@ -265,23 +265,23 @@ describe('AdgenerationAdapter', function () {
           }
         }
       }
-      const request = spec.buildRequests(bidRequests, bidderRequest)[1];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[1]
       // check native request
-      const url = new URL(request.url);
-      expect(url.searchParams.get('posall')).equal('SSPLOC');
-      expect(url.searchParams.get('id')).equal('58278');
-      expect(url.searchParams.get('sdktype')).equal('0');
-      expect(request.method).to.equal('POST');
+      const url = new URL(request.url)
+      expect(url.searchParams.get('posall')).equal('SSPLOC')
+      expect(url.searchParams.get('id')).equal('58278')
+      expect(url.searchParams.get('sdktype')).equal('0')
+      expect(request.method).to.equal('POST')
 
       // check request data
-      expect(request.data.currency).to.equal('JPY');
-      expect(request.data.pbver).to.equal(prebid.version);
-      expect(request.data.sdkname).to.equal('prebidjs');
-      expect(request.data.adapterver).to.equal(ADGENE_PREBID_VERSION);
-      expect(request.data.ortb.imp[0].id).to.equal('2f6ac468a9c15e');
-      expect(request.data.ortb.imp[0].ext.params.id).to.equal('58278');
-      expect(request.data.ortb.imp[0].ext.mediaTypes).to.deep.equal(expectedMediaTypes);
-    });
+      expect(request.data.currency).to.equal('JPY')
+      expect(request.data.pbver).to.equal(prebid.version)
+      expect(request.data.sdkname).to.equal('prebidjs')
+      expect(request.data.adapterver).to.equal(ADGENE_PREBID_VERSION)
+      expect(request.data.ortb.imp[0].id).to.equal('2f6ac468a9c15e')
+      expect(request.data.ortb.imp[0].ext.params.id).to.equal('58278')
+      expect(request.data.ortb.imp[0].ext.mediaTypes).to.deep.equal(expectedMediaTypes)
+    })
 
     it('should attache params to the bannerWithAdgextCriteoId request', function () {
       const criteoParams = {
@@ -301,9 +301,9 @@ describe('AdgenerationAdapter', function () {
           }
         }
       }
-      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: criteoParams })[0];
-      expect(request.data.ortb.user).to.deep.equal(criteoParams.user);
-    });
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: criteoParams })[0]
+      expect(request.data.ortb.user).to.deep.equal(criteoParams.user)
+    })
 
     it('should attache params to the bannerWithAdgextIds request', function () {
       const idparams = {
@@ -354,35 +354,35 @@ describe('AdgenerationAdapter', function () {
           }
         },
       }
-      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: idparams })[3];
-      expect(request.data.ortb.user).to.deep.equal(idparams.user);
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: idparams })[3]
+      expect(request.data.ortb.user).to.deep.equal(idparams.user)
 
       // gpid
-      expect(request.data.ortb.imp[0].ext.gpid).to.equal('/1111/homepage#300x250');
+      expect(request.data.ortb.imp[0].ext.gpid).to.equal('/1111/homepage#300x250')
       // sua
-      expect(request.data.ortb.device.sua).to.deep.equal(suaSample);
+      expect(request.data.ortb.device.sua).to.deep.equal(suaSample)
       // schain
-      expect(request.data.ortb.source.ext.schain).to.deep.equal(schainSmaple);
-    });
+      expect(request.data.ortb.source.ext.schain).to.deep.equal(schainSmaple)
+    })
 
     it('allows setConfig to set bidder currency for JPY', function () {
-      setCurrencyConfig({ adServerCurrency: 'JPY' });
+      setCurrencyConfig({ adServerCurrency: 'JPY' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const bidRequest = spec.buildRequests(bidRequests, res)[0];
-        expect(bidRequest.data.currency).to.equal('JPY');
-        setCurrencyConfig({});
-      });
-    });
+        const bidRequest = spec.buildRequests(bidRequests, res)[0]
+        expect(bidRequest.data.currency).to.equal('JPY')
+        setCurrencyConfig({})
+      })
+    })
 
     it('allows setConfig to set bidder currency for USD', function () {
-      setCurrencyConfig({ adServerCurrency: 'USD' });
+      setCurrencyConfig({ adServerCurrency: 'USD' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const bidRequest = spec.buildRequests(bidRequests, res)[0];
-        expect(bidRequest.data.currency).to.equal('USD');
-        setCurrencyConfig({});
-      });
-    });
-  });
+        const bidRequest = spec.buildRequests(bidRequests, res)[0]
+        expect(bidRequest.data.currency).to.equal('USD')
+        setCurrencyConfig({})
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
     const bidRequests = {
@@ -931,7 +931,7 @@ describe('AdgenerationAdapter', function () {
           'imark': 1
         },
       }
-    };
+    }
 
     const serverResponse = {
       noAd: {
@@ -1102,17 +1102,17 @@ describe('AdgenerationAdapter', function () {
         }
       },
     }
-    serverResponse.emptyAdomain = {};
-    serverResponse.emptyAdomain.banner = JSON.parse(JSON.stringify(serverResponse.normal.banner));
-    serverResponse.emptyAdomain.banner.results[0].adomain = [];
-    serverResponse.emptyAdomain.native = JSON.parse(JSON.stringify(serverResponse.normal.native));
-    serverResponse.emptyAdomain.native.results[0].adomain = [];
+    serverResponse.emptyAdomain = {}
+    serverResponse.emptyAdomain.banner = JSON.parse(JSON.stringify(serverResponse.normal.banner))
+    serverResponse.emptyAdomain.banner.results[0].adomain = []
+    serverResponse.emptyAdomain.native = JSON.parse(JSON.stringify(serverResponse.normal.native))
+    serverResponse.emptyAdomain.native.results[0].adomain = []
 
-    serverResponse.noAdomain = {};
-    serverResponse.noAdomain.banner = JSON.parse(JSON.stringify(serverResponse.normal.banner));
-    delete serverResponse.noAdomain.banner.results[0].adomain;
-    serverResponse.noAdomain.native = JSON.parse(JSON.stringify(serverResponse.normal.native));
-    delete serverResponse.noAdomain.native.results[0].adomain;
+    serverResponse.noAdomain = {}
+    serverResponse.noAdomain.banner = JSON.parse(JSON.stringify(serverResponse.normal.banner))
+    delete serverResponse.noAdomain.banner.results[0].adomain
+    serverResponse.noAdomain.native = JSON.parse(JSON.stringify(serverResponse.normal.native))
+    delete serverResponse.noAdomain.native.results[0].adomain
 
     const bidResponses = {
       normal: {
@@ -1179,132 +1179,132 @@ describe('AdgenerationAdapter', function () {
           mediaType: BANNER
         },
       }
-    };
+    }
 
     it('no bid responses', function () {
-      const result = spec.interpretResponse({ body: serverResponse.noAd }, bidRequests.banner);
-      expect(result.length).to.equal(0);
-    });
+      const result = spec.interpretResponse({ body: serverResponse.noAd }, bidRequests.banner)
+      expect(result.length).to.equal(0)
+    })
 
     it('handles ADGBrowserM responses', function () {
-      setCurrencyConfig({ adServerCurrency: 'USD' });
+      setCurrencyConfig({ adServerCurrency: 'USD' })
       const bidderRequest = {
         refererInfo: {
           page: 'https://example.com'
         }
-      };
+      }
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const sr = { body: serverResponse.normal.upperBillboard };
-        const br = { bidderRequest: res, ...bidRequests.upperBillboard };
+        const sr = { body: serverResponse.normal.upperBillboard }
+        const br = { bidderRequest: res, ...bidRequests.upperBillboard }
 
-        const result = spec.interpretResponse(sr, br)[0];
-        expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
-        expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
-        expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
-        expect(result.creativeId).to.equal(bidResponses.normal.upperBillboard.creativeId);
-        expect(result.dealId).to.equal(bidResponses.normal.upperBillboard.dealId);
-        expect(result.currency).to.equal(bidResponses.normal.upperBillboard.currency);
-        expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue);
-        expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl);
-        expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad);
-        expect(result.mediaType).to.equal(BANNER);
-        setCurrencyConfig({});
-      });
-    });
+        const result = spec.interpretResponse(sr, br)[0]
+        expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId)
+        expect(result.width).to.equal(bidResponses.normal.upperBillboard.width)
+        expect(result.height).to.equal(bidResponses.normal.upperBillboard.height)
+        expect(result.creativeId).to.equal(bidResponses.normal.upperBillboard.creativeId)
+        expect(result.dealId).to.equal(bidResponses.normal.upperBillboard.dealId)
+        expect(result.currency).to.equal(bidResponses.normal.upperBillboard.currency)
+        expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue)
+        expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl)
+        expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad)
+        expect(result.mediaType).to.equal(BANNER)
+        setCurrencyConfig({})
+      })
+    })
 
     it('handles banner responses for empty adomain', function () {
-      const result = spec.interpretResponse({ body: serverResponse.emptyAdomain.banner }, bidRequests.banner)[0];
-      expect(result.requestId).to.equal(bidResponses.normal.banner.requestId);
-      expect(result.width).to.equal(bidResponses.normal.banner.width);
-      expect(result.height).to.equal(bidResponses.normal.banner.height);
-      expect(result.creativeId).to.equal(bidResponses.normal.banner.creativeId);
-      expect(result.dealId).to.equal(bidResponses.normal.banner.dealId);
-      expect(result.currency).to.equal(bidResponses.normal.banner.currency);
-      expect(result.netRevenue).to.equal(bidResponses.normal.banner.netRevenue);
-      expect(result.ttl).to.equal(bidResponses.normal.banner.ttl);
-      expect(result.ad).to.equal(bidResponses.normal.banner.ad);
-      expect(result.mediaType).to.equal(BANNER);
+      const result = spec.interpretResponse({ body: serverResponse.emptyAdomain.banner }, bidRequests.banner)[0]
+      expect(result.requestId).to.equal(bidResponses.normal.banner.requestId)
+      expect(result.width).to.equal(bidResponses.normal.banner.width)
+      expect(result.height).to.equal(bidResponses.normal.banner.height)
+      expect(result.creativeId).to.equal(bidResponses.normal.banner.creativeId)
+      expect(result.dealId).to.equal(bidResponses.normal.banner.dealId)
+      expect(result.currency).to.equal(bidResponses.normal.banner.currency)
+      expect(result.netRevenue).to.equal(bidResponses.normal.banner.netRevenue)
+      expect(result.ttl).to.equal(bidResponses.normal.banner.ttl)
+      expect(result.ad).to.equal(bidResponses.normal.banner.ad)
+      expect(result.mediaType).to.equal(BANNER)
       // no adomian
-      expect(result).to.not.have.any.keys('meta');
-      expect(result).to.not.have.any.keys('advertiserDomains');
-    });
+      expect(result).to.not.have.any.keys('meta')
+      expect(result).to.not.have.any.keys('advertiserDomains')
+    })
 
     it('handles native responses for empty adomain', function () {
-      const result = spec.interpretResponse({ body: serverResponse.emptyAdomain.native }, bidRequests.native)[0];
-      expect(result.requestId).to.equal(bidResponses.normal.native.requestId);
-      expect(result.width).to.equal(bidResponses.normal.native.width);
-      expect(result.height).to.equal(bidResponses.normal.native.height);
-      expect(result.creativeId).to.equal(bidResponses.normal.native.creativeId);
-      expect(result.dealId).to.equal(bidResponses.normal.native.dealId);
-      expect(result.currency).to.equal(bidResponses.normal.native.currency);
-      expect(result.netRevenue).to.equal(bidResponses.normal.native.netRevenue);
-      expect(result.ttl).to.equal(bidResponses.normal.native.ttl);
-      expect(result.native.title).to.equal(bidResponses.normal.native.native.title);
-      expect(result.native.image.url).to.equal(bidResponses.normal.native.native.image.url);
-      expect(result.native.image.height).to.equal(bidResponses.normal.native.native.image.height);
-      expect(result.native.image.width).to.equal(bidResponses.normal.native.native.image.width);
-      expect(result.native.icon.url).to.equal(bidResponses.normal.native.native.icon.url);
-      expect(result.native.icon.width).to.equal(bidResponses.normal.native.native.icon.width);
-      expect(result.native.icon.height).to.equal(bidResponses.normal.native.native.icon.height);
-      expect(result.native.sponsoredBy).to.equal(bidResponses.normal.native.native.sponsoredBy);
-      expect(result.native.body).to.equal(bidResponses.normal.native.native.body);
-      expect(result.native.cta).to.equal(bidResponses.normal.native.native.cta);
-      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.normal.native.native.privacyLink);
-      expect(result.native.clickUrl).to.equal(bidResponses.normal.native.native.clickUrl);
-      expect(result.native.impressionTrackers[0]).to.equal(bidResponses.normal.native.native.impressionTrackers[0]);
-      expect(result.native.clickTrackers[0]).to.equal(bidResponses.normal.native.native.clickTrackers[0]);
-      expect(result.mediaType).to.equal(bidResponses.normal.native.mediaType);
+      const result = spec.interpretResponse({ body: serverResponse.emptyAdomain.native }, bidRequests.native)[0]
+      expect(result.requestId).to.equal(bidResponses.normal.native.requestId)
+      expect(result.width).to.equal(bidResponses.normal.native.width)
+      expect(result.height).to.equal(bidResponses.normal.native.height)
+      expect(result.creativeId).to.equal(bidResponses.normal.native.creativeId)
+      expect(result.dealId).to.equal(bidResponses.normal.native.dealId)
+      expect(result.currency).to.equal(bidResponses.normal.native.currency)
+      expect(result.netRevenue).to.equal(bidResponses.normal.native.netRevenue)
+      expect(result.ttl).to.equal(bidResponses.normal.native.ttl)
+      expect(result.native.title).to.equal(bidResponses.normal.native.native.title)
+      expect(result.native.image.url).to.equal(bidResponses.normal.native.native.image.url)
+      expect(result.native.image.height).to.equal(bidResponses.normal.native.native.image.height)
+      expect(result.native.image.width).to.equal(bidResponses.normal.native.native.image.width)
+      expect(result.native.icon.url).to.equal(bidResponses.normal.native.native.icon.url)
+      expect(result.native.icon.width).to.equal(bidResponses.normal.native.native.icon.width)
+      expect(result.native.icon.height).to.equal(bidResponses.normal.native.native.icon.height)
+      expect(result.native.sponsoredBy).to.equal(bidResponses.normal.native.native.sponsoredBy)
+      expect(result.native.body).to.equal(bidResponses.normal.native.native.body)
+      expect(result.native.cta).to.equal(bidResponses.normal.native.native.cta)
+      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.normal.native.native.privacyLink)
+      expect(result.native.clickUrl).to.equal(bidResponses.normal.native.native.clickUrl)
+      expect(result.native.impressionTrackers[0]).to.equal(bidResponses.normal.native.native.impressionTrackers[0])
+      expect(result.native.clickTrackers[0]).to.equal(bidResponses.normal.native.native.clickTrackers[0])
+      expect(result.mediaType).to.equal(bidResponses.normal.native.mediaType)
       // no adomain
-      expect(result).to.not.have.any.keys('meta');
-      expect(result).to.not.have.any.keys('advertiserDomains');
-    });
+      expect(result).to.not.have.any.keys('meta')
+      expect(result).to.not.have.any.keys('advertiserDomains')
+    })
 
     it('handles banner responses for no adomain', function () {
-      const result = spec.interpretResponse({ body: serverResponse.noAdomain.banner }, bidRequests.banner)[0];
-      expect(result.requestId).to.equal(bidResponses.normal.banner.requestId);
-      expect(result.width).to.equal(bidResponses.normal.banner.width);
-      expect(result.height).to.equal(bidResponses.normal.banner.height);
-      expect(result.creativeId).to.equal(bidResponses.normal.banner.creativeId);
-      expect(result.dealId).to.equal(bidResponses.normal.banner.dealId);
-      expect(result.currency).to.equal(bidResponses.normal.banner.currency);
-      expect(result.netRevenue).to.equal(bidResponses.normal.banner.netRevenue);
-      expect(result.ttl).to.equal(bidResponses.normal.banner.ttl);
-      expect(result.ad).to.equal(bidResponses.normal.banner.ad);
-      expect(result.mediaType).to.equal(BANNER);
+      const result = spec.interpretResponse({ body: serverResponse.noAdomain.banner }, bidRequests.banner)[0]
+      expect(result.requestId).to.equal(bidResponses.normal.banner.requestId)
+      expect(result.width).to.equal(bidResponses.normal.banner.width)
+      expect(result.height).to.equal(bidResponses.normal.banner.height)
+      expect(result.creativeId).to.equal(bidResponses.normal.banner.creativeId)
+      expect(result.dealId).to.equal(bidResponses.normal.banner.dealId)
+      expect(result.currency).to.equal(bidResponses.normal.banner.currency)
+      expect(result.netRevenue).to.equal(bidResponses.normal.banner.netRevenue)
+      expect(result.ttl).to.equal(bidResponses.normal.banner.ttl)
+      expect(result.ad).to.equal(bidResponses.normal.banner.ad)
+      expect(result.mediaType).to.equal(BANNER)
       // no adomain
-      expect(result).to.not.have.any.keys('meta');
-      expect(result).to.not.have.any.keys('advertiserDomains');
-    });
+      expect(result).to.not.have.any.keys('meta')
+      expect(result).to.not.have.any.keys('advertiserDomains')
+    })
 
     it('handles native responses for no adomain', function () {
-      const result = spec.interpretResponse({ body: serverResponse.noAdomain.native }, bidRequests.native)[0];
-      expect(result.requestId).to.equal(bidResponses.normal.native.requestId);
-      expect(result.width).to.equal(bidResponses.normal.native.width);
-      expect(result.height).to.equal(bidResponses.normal.native.height);
-      expect(result.creativeId).to.equal(bidResponses.normal.native.creativeId);
-      expect(result.dealId).to.equal(bidResponses.normal.native.dealId);
-      expect(result.currency).to.equal(bidResponses.normal.native.currency);
-      expect(result.netRevenue).to.equal(bidResponses.normal.native.netRevenue);
-      expect(result.ttl).to.equal(bidResponses.normal.native.ttl);
-      expect(result.native.title).to.equal(bidResponses.normal.native.native.title);
-      expect(result.native.image.url).to.equal(bidResponses.normal.native.native.image.url);
-      expect(result.native.image.height).to.equal(bidResponses.normal.native.native.image.height);
-      expect(result.native.image.width).to.equal(bidResponses.normal.native.native.image.width);
-      expect(result.native.icon.url).to.equal(bidResponses.normal.native.native.icon.url);
-      expect(result.native.icon.width).to.equal(bidResponses.normal.native.native.icon.width);
-      expect(result.native.icon.height).to.equal(bidResponses.normal.native.native.icon.height);
-      expect(result.native.sponsoredBy).to.equal(bidResponses.normal.native.native.sponsoredBy);
-      expect(result.native.body).to.equal(bidResponses.normal.native.native.body);
-      expect(result.native.cta).to.equal(bidResponses.normal.native.native.cta);
-      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.normal.native.native.privacyLink);
-      expect(result.native.clickUrl).to.equal(bidResponses.normal.native.native.clickUrl);
-      expect(result.native.impressionTrackers[0]).to.equal(bidResponses.normal.native.native.impressionTrackers[0]);
-      expect(result.native.clickTrackers[0]).to.equal(bidResponses.normal.native.native.clickTrackers[0]);
-      expect(result.mediaType).to.equal(bidResponses.normal.native.mediaType);
+      const result = spec.interpretResponse({ body: serverResponse.noAdomain.native }, bidRequests.native)[0]
+      expect(result.requestId).to.equal(bidResponses.normal.native.requestId)
+      expect(result.width).to.equal(bidResponses.normal.native.width)
+      expect(result.height).to.equal(bidResponses.normal.native.height)
+      expect(result.creativeId).to.equal(bidResponses.normal.native.creativeId)
+      expect(result.dealId).to.equal(bidResponses.normal.native.dealId)
+      expect(result.currency).to.equal(bidResponses.normal.native.currency)
+      expect(result.netRevenue).to.equal(bidResponses.normal.native.netRevenue)
+      expect(result.ttl).to.equal(bidResponses.normal.native.ttl)
+      expect(result.native.title).to.equal(bidResponses.normal.native.native.title)
+      expect(result.native.image.url).to.equal(bidResponses.normal.native.native.image.url)
+      expect(result.native.image.height).to.equal(bidResponses.normal.native.native.image.height)
+      expect(result.native.image.width).to.equal(bidResponses.normal.native.native.image.width)
+      expect(result.native.icon.url).to.equal(bidResponses.normal.native.native.icon.url)
+      expect(result.native.icon.width).to.equal(bidResponses.normal.native.native.icon.width)
+      expect(result.native.icon.height).to.equal(bidResponses.normal.native.native.icon.height)
+      expect(result.native.sponsoredBy).to.equal(bidResponses.normal.native.native.sponsoredBy)
+      expect(result.native.body).to.equal(bidResponses.normal.native.native.body)
+      expect(result.native.cta).to.equal(bidResponses.normal.native.native.cta)
+      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.normal.native.native.privacyLink)
+      expect(result.native.clickUrl).to.equal(bidResponses.normal.native.native.clickUrl)
+      expect(result.native.impressionTrackers[0]).to.equal(bidResponses.normal.native.native.impressionTrackers[0])
+      expect(result.native.clickTrackers[0]).to.equal(bidResponses.normal.native.native.clickTrackers[0])
+      expect(result.mediaType).to.equal(bidResponses.normal.native.mediaType)
       // no adomain
-      expect(result).to.not.have.any.keys('meta');
-      expect(result).to.not.have.any.keys('advertiserDomains');
-    });
+      expect(result).to.not.have.any.keys('meta')
+      expect(result).to.not.have.any.keys('advertiserDomains')
+    })
 
     describe('currency handling', function () {
       const bidRequest = {
@@ -1325,7 +1325,7 @@ describe('AdgenerationAdapter', function () {
             }]
           }
         }
-      };
+      }
 
       it('uses currency from data when available', function () {
         const serverResponse = {
@@ -1339,12 +1339,12 @@ describe('AdgenerationAdapter', function () {
               ad: '<div>Test Ad</div>'
             }]
           }
-        };
+        }
 
-        const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-        expect(result.currency).to.equal('USD');
-        expect(result.cpm).to.equal(100);
-      });
+        const result = spec.interpretResponse(serverResponse, bidRequest)[0]
+        expect(result.currency).to.equal('USD')
+        expect(result.cpm).to.equal(100)
+      })
 
       it('defaults to JPY when no currency information available', function () {
         const requestWithoutCurrency = {
@@ -1364,7 +1364,7 @@ describe('AdgenerationAdapter', function () {
               }]
             }
           }
-        };
+        }
 
         const serverResponse = {
           body: {
@@ -1377,11 +1377,11 @@ describe('AdgenerationAdapter', function () {
               ad: '<div>Test Ad</div>'
             }]
           }
-        };
+        }
 
-        const result = spec.interpretResponse(serverResponse, requestWithoutCurrency)[0];
-        expect(result.currency).to.equal('JPY');
-      });
+        const result = spec.interpretResponse(serverResponse, requestWithoutCurrency)[0]
+        expect(result.currency).to.equal('JPY')
+      })
 
       it('handles currency correctly with getCurrencyType function logic', function () {
         // Test the current implementation which uses bidRequests?.data?.currency || 'JPY'
@@ -1403,7 +1403,7 @@ describe('AdgenerationAdapter', function () {
               }]
             }
           }
-        };
+        }
 
         const serverResponse = {
           body: {
@@ -1416,11 +1416,11 @@ describe('AdgenerationAdapter', function () {
               ad: '<div>Test Ad</div>'
             }]
           }
-        };
+        }
 
-        const result = spec.interpretResponse(serverResponse, bidRequestWithJPY)[0];
-        expect(result.currency).to.equal('JPY');
-      });
-    });
-  });
-});
+        const result = spec.interpretResponse(serverResponse, bidRequestWithJPY)[0]
+        expect(result.currency).to.equal('JPY')
+      })
+    })
+  })
+})

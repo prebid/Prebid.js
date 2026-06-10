@@ -1,31 +1,31 @@
-import { deepAccess, isArray } from '../../src/utils.js';
-import { config } from '../../src/config.js';
-import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import { getPlacementPositionUtils } from "../placementPositionInfo/placementPositionInfo.js";
+import { deepAccess, isArray } from '../../src/utils.js'
+import { config } from '../../src/config.js'
+import { BANNER, VIDEO } from '../../src/mediaTypes.js'
+import { getPlacementPositionUtils } from "../placementPositionInfo/placementPositionInfo.js"
 
 export const supportedMediaTypes = [VIDEO, BANNER]
 
 export function isBidRequestValid (bid) {
-  return !!deepAccess(bid, 'params.aid');
+  return !!deepAccess(bid, 'params.aid')
 }
 
 export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
-  const syncs = [];
+  const syncs = []
   function addSyncs(bid) {
-    const uris = bid.cookieURLs;
-    const types = bid.cookieURLSTypes || [];
+    const uris = bid.cookieURLs
+    const types = bid.cookieURLSTypes || []
 
     if (Array.isArray(uris)) {
       uris.forEach((uri, i) => {
-        const type = types[i] || 'image';
+        const type = types[i] || 'image'
 
         if ((!syncOptions.pixelEnabled && type === 'image') ||
             (!syncOptions.iframeEnabled && type === 'iframe') ||
             syncsCache[uri]) {
-          return;
+          return
         }
 
-        syncsCache[uri] = true;
+        syncsCache[uri] = true
         syncs.push({
           type: type,
           url: uri
@@ -39,7 +39,7 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
       if (response.body) {
         if (isArray(response.body)) {
           response.body.forEach(b => {
-            addSyncs(b);
+            addSyncs(b)
           })
         } else {
           addSyncs(response.body)
@@ -47,7 +47,7 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
       }
     })
   }
-  return syncs;
+  return syncs
 }
 
 export function createTag(bidRequests, adapterRequest) {
@@ -56,27 +56,27 @@ export function createTag(bidRequests, adapterRequest) {
     // TODO: is 'page' the right value here?
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),
     ...placementEnv
-  };
+  }
 
   if (config.getConfig('coppa') === true) {
-    tag.Coppa = 1;
+    tag.Coppa = 1
   }
   if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
-    tag.GDPR = 1;
-    tag.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
+    tag.GDPR = 1
+    tag.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString')
   }
   if (deepAccess(adapterRequest, 'uspConsent')) {
-    tag.USP = deepAccess(adapterRequest, 'uspConsent');
+    tag.USP = deepAccess(adapterRequest, 'uspConsent')
   }
   if (deepAccess(adapterRequest, 'ortb2.source.ext.schain')) {
-    tag.Schain = deepAccess(adapterRequest, 'ortb2.source.ext.schain');
+    tag.Schain = deepAccess(adapterRequest, 'ortb2.source.ext.schain')
   }
   if (deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = deepAccess(bidRequests[0], 'userId');
+    tag.UserIds = deepAccess(bidRequests[0], 'userId')
   }
   if (deepAccess(bidRequests[0], 'userIdAsEids')) {
-    tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
+    tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids')
   }
 
-  return tag;
+  return tag
 }

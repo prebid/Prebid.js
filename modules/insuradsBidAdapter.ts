@@ -1,26 +1,26 @@
-import { deepSetValue, generateUUID, logError } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepSetValue, generateUUID, logError } from '../src/utils.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting as libGetGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
-import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
+import { interpretResponse as nexxInterpretResponse, enrichImp, enrichRequest, getAmxId, getGzipSetting as libGetGzipSetting, getLocalStorageFunctionGenerator, getUserSyncs } from '../libraries/nexx360Utils/index.js'
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js'
+import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js'
+import { ORTBImp, ORTBRequest } from '../src/prebid.public.js'
 
-const BIDDER_CODE = 'insurads';
-const REQUEST_URL = 'https://fast.nexx360.io/booster';
-const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '7.1';
-const GVLID = 596;
-const ALT_KEY = 'nexx360_storage';
+const BIDDER_CODE = 'insurads'
+const REQUEST_URL = 'https://fast.nexx360.io/booster'
+const PAGE_VIEW_ID = generateUUID()
+const BIDDER_VERSION = '7.1'
+const GVLID = 596
+const ALT_KEY = 'nexx360_storage'
 
 type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
   Omit<T, Keys> & {
     [K in Keys]-?: Required<Pick<T, K>> &
     Partial<Pick<T, Exclude<Keys, K>>>
-  }[Keys];
+  }[Keys]
 
 type InsurAdsBidParams = RequireAtLeastOne<{
   tagId?: string;
@@ -34,7 +34,7 @@ type InsurAdsBidParams = RequireAtLeastOne<{
   customId?: string;
   bidders?: Record<string, unknown>;
   rtdData?: Record<string, unknown>;
-}, "tagId" | "placement">;
+}, "tagId" | "placement">
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -44,16 +44,16 @@ declare module '../src/adUnits' {
 
 export const STORAGE = getStorageManager({
   bidderCode: BIDDER_CODE,
-});
+})
 
 export const getInsurAdsLocalStorage = getLocalStorageFunctionGenerator<{ nexx360Id: string }>(
   STORAGE,
   BIDDER_CODE,
   ALT_KEY,
   'nexx360Id'
-);
+)
 
-export const getGzipSetting = (): boolean => libGetGzipSetting(BIDDER_CODE, false);
+export const getGzipSetting = (): boolean => libGetGzipSetting(BIDDER_CODE, false)
 
 const converter = ortbConverter({
   context: {
@@ -61,77 +61,77 @@ const converter = ortbConverter({
     ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
-    let imp: ORTBImp = buildImp(bidRequest, context);
-    imp = enrichImp(imp, bidRequest);
-    const divId = bidRequest.params.divId || bidRequest.adUnitCode;
-    const slotEl: HTMLElement | null = typeof divId === 'string' ? document.getElementById(divId) : null;
+    let imp: ORTBImp = buildImp(bidRequest, context)
+    imp = enrichImp(imp, bidRequest)
+    const divId = bidRequest.params.divId || bidRequest.adUnitCode
+    const slotEl: HTMLElement | null = typeof divId === 'string' ? document.getElementById(divId) : null
     if (slotEl) {
-      const { width, height } = getBoundingClientRect(slotEl);
-      deepSetValue(imp, 'ext.dimensions.slotW', width);
-      deepSetValue(imp, 'ext.dimensions.slotH', height);
-      deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
-      deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
+      const { width, height } = getBoundingClientRect(slotEl)
+      deepSetValue(imp, 'ext.dimensions.slotW', width)
+      deepSetValue(imp, 'ext.dimensions.slotH', height)
+      deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth)
+      deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight)
     }
     if (bidRequest.params.rtdData) {
-      deepSetValue(imp, 'ext.rtdData', bidRequest.params.rtdData);
-      delete bidRequest.params.rtdData;
+      deepSetValue(imp, 'ext.rtdData', bidRequest.params.rtdData)
+      delete bidRequest.params.rtdData
     }
 
-    deepSetValue(imp, 'ext.nexx360', bidRequest.params);
-    deepSetValue(imp, 'ext.nexx360.divId', divId);
-    if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
-    if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName);
-    return imp;
+    deepSetValue(imp, 'ext.nexx360', bidRequest.params)
+    deepSetValue(imp, 'ext.nexx360.divId', divId)
+    if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath)
+    if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName)
+    return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
-    let request: ORTBRequest = buildRequest(imps, bidderRequest, context);
-    const amxId = getAmxId(STORAGE, BIDDER_CODE);
-    request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION);
-    return request;
+    let request: ORTBRequest = buildRequest(imps, bidderRequest, context)
+    const amxId = getAmxId(STORAGE, BIDDER_CODE)
+    request = enrichRequest(request, amxId, PAGE_VIEW_ID, BIDDER_VERSION)
+    return request
   },
-});
+})
 
 function getRtdTargetingFromRequest(request: AdapterRequest): Record<string, string> {
-  const targeting: Record<string, string> = {};
-  const imps = request?.data?.imp;
-  if (!Array.isArray(imps)) return targeting;
+  const targeting: Record<string, string> = {}
+  const imps = request?.data?.imp
+  if (!Array.isArray(imps)) return targeting
 
   for (const imp of imps) {
-    const rtdData = imp?.ext?.rtdData;
-    if (!rtdData || typeof rtdData !== 'object') continue;
+    const rtdData = imp?.ext?.rtdData
+    if (!rtdData || typeof rtdData !== 'object') continue
 
     for (const [key, value] of Object.entries(rtdData)) {
-      if (value === null || value === undefined) continue;
-      targeting[key] = String(value);
+      if (value === null || value === undefined) continue
+      targeting[key] = String(value)
     }
   }
 
-  return targeting;
+  return targeting
 }
 
 const isBidRequestValid = (bid: BidRequest<typeof BIDDER_CODE>): boolean => {
   if (bid.params.adUnitName && (typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '')) {
-    logError('bid.params.adUnitName needs to be a string');
-    return false;
+    logError('bid.params.adUnitName needs to be a string')
+    return false
   }
   if (bid.params.adUnitPath && (typeof bid.params.adUnitPath !== 'string' || bid.params.adUnitPath === '')) {
-    logError('bid.params.adUnitPath needs to be a string');
-    return false;
+    logError('bid.params.adUnitPath needs to be a string')
+    return false
   }
   if (bid.params.divId && (typeof bid.params.divId !== 'string' || bid.params.divId === '')) {
-    logError('bid.params.divId needs to be a string');
-    return false;
+    logError('bid.params.divId needs to be a string')
+    return false
   }
   if (bid.params.allBids && typeof bid.params.allBids !== 'boolean') {
-    logError('bid.params.allBids needs to be a boolean');
-    return false;
+    logError('bid.params.allBids needs to be a boolean')
+    return false
   }
   if (!bid.params.tagId && !bid.params.videoTagId && !bid.params.nativeTagId && !bid.params.placement) {
-    logError('bid.params.tagId or bid.params.videoTagId or bid.params.nativeTagId or bid.params.placement must be defined');
-    return false;
+    logError('bid.params.tagId or bid.params.videoTagId or bid.params.nativeTagId or bid.params.placement must be defined')
+    return false
   }
-  return true;
-};
+  return true
+}
 
 const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
@@ -146,15 +146,15 @@ const buildRequests = (
       endpointCompression: getGzipSetting()
     },
   }
-  return adapterRequest;
+  return adapterRequest
 }
 
 const interpretResponse = (serverResponse, request) => {
-  const responses: any[] = nexxInterpretResponse(serverResponse) as any;
-  const rtdTargeting = getRtdTargetingFromRequest(request);
+  const responses: any[] = nexxInterpretResponse(serverResponse) as any
+  const rtdTargeting = getRtdTargetingFromRequest(request)
 
   if (!rtdTargeting || Object.keys(rtdTargeting).length === 0) {
-    return responses;
+    return responses
   }
 
   return responses.map((bidResponse) => {
@@ -164,9 +164,9 @@ const interpretResponse = (serverResponse, request) => {
         ...(bidResponse?.adserverTargeting || {}),
         ...rtdTargeting,
       }
-    };
-  });
-};
+    }
+  })
+}
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
@@ -176,6 +176,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   buildRequests,
   interpretResponse,
   getUserSyncs
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

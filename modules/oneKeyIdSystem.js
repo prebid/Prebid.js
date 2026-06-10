@@ -5,8 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js';
-import { logError, logMessage } from '../src/utils.js';
+import { submodule } from '../src/hook.js'
+import { logError, logMessage } from '../src/utils.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -16,40 +16,40 @@ import { logError, logMessage } from '../src/utils.js';
  */
 
 // Pre-init OneKey if it has not load yet.
-window.OneKey = window.OneKey || {};
-window.OneKey.queue = window.OneKey.queue || [];
+window.OneKey = window.OneKey || {}
+window.OneKey.queue = window.OneKey.queue || []
 
-const logPrefix = 'OneKey.Id-Module';
+const logPrefix = 'OneKey.Id-Module'
 
 /**
  * Generate callback that deserializes the result of getIdsAndPreferences.
  */
 const onIdsAndPreferencesResult = (callback) => {
   return (result) => {
-    logMessage(logPrefix, `Has got Ids and Prefs with status: `, result);
-    callback(result.data);
-  };
-};
+    logMessage(logPrefix, `Has got Ids and Prefs with status: `, result)
+    callback(result.data)
+  }
+}
 
 /**
  * Call OneKey once it is loaded for retrieving
  * the ids and the preferences.
  */
 const getIdsAndPreferences = (callback) => {
-  logMessage(logPrefix, 'Queue getIdsAndPreferences call');
+  logMessage(logPrefix, 'Queue getIdsAndPreferences call')
   // Call OneKey in a queue so that we are sure
   // it will be called when fully load and configured
   // within the page.
   window.OneKey.queue.push(() => {
-    logMessage(logPrefix, 'Get Ids and Prefs');
+    logMessage(logPrefix, 'Get Ids and Prefs')
     window.OneKey.getIdsAndPreferences()
       .then(onIdsAndPreferencesResult(callback))
       .catch(() => {
-        logError(logPrefix, 'Cannot retrieve the ids and preferences from OneKey.');
-        callback(undefined);
-      });
-  });
-};
+        logError(logPrefix, 'Cannot retrieve the ids and preferences from OneKey.')
+        callback(undefined)
+      })
+  })
+}
 
 /** @type {Submodule} */
 export const oneKeyIdSubmodule = {
@@ -65,7 +65,7 @@ export const oneKeyIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(data) {
-    return { oneKeyData: data };
+    return { oneKeyData: data }
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -76,34 +76,34 @@ export const oneKeyIdSubmodule = {
   getId(config) {
     return {
       callback: getIdsAndPreferences
-    };
+    }
   },
   eids: {
     'oneKeyData': {
       getValue: function(data) {
         if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
-          return data.identifiers[0].value;
+          return data.identifiers[0].value
         }
       },
       source: 'paf',
       atype: 1,
       getEidExt: function(data) {
         if (data && data.preferences) {
-          return { preferences: data.preferences };
+          return { preferences: data.preferences }
         }
       },
       getUidExt: function(data) {
         if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
-          const id = data.identifiers[0];
+          const id = data.identifiers[0]
           return {
             version: id.version,
             type: id.type,
             source: id.source
-          };
+          }
         }
       }
     }
   }
-};
+}
 
-submodule('userId', oneKeyIdSubmodule);
+submodule('userId', oneKeyIdSubmodule)

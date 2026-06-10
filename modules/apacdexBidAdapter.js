@@ -1,14 +1,14 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { parseDomain } from '../src/refererDetection.js';
-import { getDNT } from '../libraries/dnt/index.js';
-const BIDDER_CODE = 'apacdex';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js'
+import { config } from '../src/config.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { parseDomain } from '../src/refererDetection.js'
+import { getDNT } from '../libraries/dnt/index.js'
+const BIDDER_CODE = 'apacdex'
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
 const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
 
-var bySlotTargetKey = {};
+var bySlotTargetKey = {}
 var bySlotSizesCount = {}
 
 export const spec = {
@@ -17,39 +17,39 @@ export const spec = {
   aliases: ['quantumdex', 'valueimpression'],
   isBidRequestValid: function (bid) {
     if (!bid.params) {
-      return false;
+      return false
     }
     if (!bid.params.siteId && !bid.params.placementId) {
-      return false;
+      return false
     }
     if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
-      return false;
+      return false
     }
     if (deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
       if (!deepAccess(bid, 'mediaTypes.banner.sizes')) {
         // sizes at the banner is required.
-        return false;
+        return false
       }
     } else if (deepAccess(bid, 'mediaTypes.video')) {
       if (!deepAccess(bid, 'mediaTypes.video.playerSize')) {
         // playerSize is required for instream adUnits.
-        return false;
+        return false
       }
     }
-    return true;
+    return true
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let schain;
-    let eids;
-    let geo;
-    let test;
-    const bids = [];
+    let schain
+    let eids
+    let geo
+    let test
+    const bids = []
 
-    test = config.getConfig('debug');
+    test = config.getConfig('debug')
 
     validBidRequests.forEach(bidReq => {
-      const bidSchain = bidReq?.ortb2?.source?.ext?.schain;
+      const bidSchain = bidReq?.ortb2?.source?.ext?.schain
       if (bidSchain) {
         schain = schain || bidSchain
       }
@@ -60,83 +60,83 @@ export const spec = {
 
       if (bidReq.params && bidReq.params.geo) {
         if (validateGeoObject(bidReq.params.geo)) {
-          geo = bidReq.params.geo;
+          geo = bidReq.params.geo
         }
       }
 
-      var targetKey = 0;
+      var targetKey = 0
       if (bySlotTargetKey[bidReq.adUnitCode] !== undefined && bySlotTargetKey[bidReq.adUnitCode] !== null) {
-        targetKey = bySlotTargetKey[bidReq.adUnitCode];
+        targetKey = bySlotTargetKey[bidReq.adUnitCode]
       } else {
-        var biggestSize = _getBiggestSize(bidReq.sizes);
+        var biggestSize = _getBiggestSize(bidReq.sizes)
         if (biggestSize) {
           if (bySlotSizesCount[biggestSize] !== undefined && bySlotSizesCount[biggestSize] !== null) {
             bySlotSizesCount[biggestSize]++
-            targetKey = bySlotSizesCount[biggestSize];
+            targetKey = bySlotSizesCount[biggestSize]
           } else {
-            bySlotSizesCount[biggestSize] = 0;
+            bySlotSizesCount[biggestSize] = 0
             targetKey = 0
           }
         }
       }
-      bySlotTargetKey[bidReq.adUnitCode] = targetKey;
-      bidReq.targetKey = targetKey;
+      bySlotTargetKey[bidReq.adUnitCode] = targetKey
+      bidReq.targetKey = targetKey
 
-      const bidFloor = getBidFloor(bidReq);
+      const bidFloor = getBidFloor(bidReq)
       if (bidFloor) {
-        bidReq.bidFloor = bidFloor;
+        bidReq.bidFloor = bidFloor
       }
 
-      bids.push(deepClone(bidReq));
-    });
+      bids.push(deepClone(bidReq))
+    })
 
-    const payload = {};
-    payload.tmax = bidderRequest.timeout;
+    const payload = {}
+    payload.tmax = bidderRequest.timeout
     if (test) {
-      payload.test = 1;
+      payload.test = 1
     }
 
-    payload.device = {};
-    payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.height;
-    payload.device.width = window.screen.width;
-    payload.device.dnt = getDNT() ? 1 : 0;
-    payload.device.language = navigator.language;
+    payload.device = {}
+    payload.device.ua = navigator.userAgent
+    payload.device.height = window.screen.height
+    payload.device.width = window.screen.width
+    payload.device.dnt = getDNT() ? 1 : 0
+    payload.device.language = navigator.language
 
-    var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
-    payload.site = {};
-    payload.site.page = pageUrl;
-    payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
+    var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest)
+    payload.site = {}
+    payload.site.page = pageUrl
+    payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest)
     // TODO: does it make sense to fall back to window.location for the domain?
-    payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl);
+    payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl)
 
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr = {};
-      payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies;
+      payload.gdpr = {}
+      payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies
       if (bidderRequest.gdprConsent.consentString) {
-        payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
+        payload.gdpr.consentString = bidderRequest.gdprConsent.consentString
       }
     }
 
     // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent;
+      payload.us_privacy = bidderRequest.uspConsent
     }
 
     // Apply schain.
     if (schain) {
-      payload.schain = schain;
+      payload.schain = schain
     }
 
     // Apply eids.
     if (eids) {
-      payload.eids = eids;
+      payload.eids = eids
     }
 
     // Apply geo
     if (geo) {
-      logError('apacdex adapter: Precise lat and long must be set on config; not on bidder parameters');
+      logError('apacdex adapter: Precise lat and long must be set on config; not on bidder parameters')
     }
 
     payload.bids = bids.map(function (bid) {
@@ -149,7 +149,7 @@ export const spec = {
         adUnitCode: bid.adUnitCode,
         bidFloor: bid.bidFloor
       }
-    });
+    })
 
     return {
       method: 'POST',
@@ -157,22 +157,22 @@ export const spec = {
       data: payload,
       withCredentials: true,
       bidderRequests: bids
-    };
+    }
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    const serverBody = serverResponse.body;
+    const serverBody = serverResponse.body
     if (!serverBody || !isPlainObject(serverBody)) {
-      return [];
+      return []
     }
 
-    const serverBids = serverBody.bids;
+    const serverBids = serverBody.bids
     if (!serverBids || !isArray(serverBids)) {
-      return [];
+      return []
     }
 
-    const bidResponses = [];
+    const bidResponses = []
     serverBids.forEach(bid => {
-      const dealId = bid.dealId || '';
+      const dealId = bid.dealId || ''
       const bidResponse = {
         requestId: bid.requestId,
         cpm: bid.cpm,
@@ -183,37 +183,37 @@ export const spec = {
         netRevenue: bid.netRevenue,
         ttl: bid.ttl,
         mediaType: bid.mediaType
-      };
+      }
       if (dealId.length > 0) {
-        bidResponse.dealId = dealId;
+        bidResponse.dealId = dealId
       }
       if (bid.vastXml) {
-        bidResponse.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm);
+        bidResponse.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm)
       } else {
-        bidResponse.ad = replaceAuctionPrice(bid.ad, bid.cpm);
+        bidResponse.ad = replaceAuctionPrice(bid.ad, bid.cpm)
       }
-      bidResponse.meta = {};
+      bidResponse.meta = {}
       if (bid.meta && bid.meta.advertiserDomains && isArray(bid.meta.advertiserDomains)) {
-        bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
+        bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains
       }
-      bidResponses.push(bidResponse);
-    });
-    return bidResponses;
+      bidResponses.push(bidResponse)
+    })
+    return bidResponses
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
+    const syncs = []
     if (hasPurpose1Consent(gdprConsent)) {
-      let params = '';
+      let params = ''
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+          params = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
         } else {
-          params = `?gdpr_consent=${gdprConsent.consentString}`;
+          params = `?gdpr_consent=${gdprConsent.consentString}`
         }
       }
       if (uspConsent) {
-        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`
       }
 
       try {
@@ -221,7 +221,7 @@ export const spec = {
           syncs.push({
             type: 'iframe',
             url: USERSYNC + params
-          });
+          })
         }
         if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
           serverResponses[0].body.pixel.forEach(px => {
@@ -229,34 +229,34 @@ export const spec = {
               syncs.push({
                 type: 'image',
                 url: px.url + params
-              });
+              })
             }
             if (px.type === 'iframe' && syncOptions.iframeEnabled) {
               syncs.push({
                 type: 'iframe',
                 url: px.url + params
-              });
+              })
             }
-          });
+          })
         }
       } catch (e) { }
     }
-    return syncs;
+    return syncs
   }
-};
+}
 
 function _getBiggestSize(sizes) {
   if (sizes.length <= 0) return false
-  var acreage = 0;
-  var index = 0;
+  var acreage = 0
+  var index = 0
   for (var i = 0; i < sizes.length; i++) {
-    var currentAcreage = sizes[i][0] * sizes[i][1];
+    var currentAcreage = sizes[i][0] * sizes[i][1]
     if (currentAcreage >= acreage) {
-      acreage = currentAcreage;
-      index = i;
+      acreage = currentAcreage
+      index = i
     }
   }
-  return sizes[index][0] + 'x' + sizes[index][1];
+  return sizes[index][0] + 'x' + sizes[index][1]
 }
 
 /**
@@ -267,7 +267,7 @@ function _getBiggestSize(sizes) {
  */
 function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
   // TODO: does it make sense to fall back to window.location?
-  return bidderRequest?.refererInfo?.page || window.location.href;
+  return bidderRequest?.refererInfo?.page || window.location.href
 }
 
 /**
@@ -278,7 +278,7 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
  */
 function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
   // TODO: does it make sense to fall back to window.document.referrer?
-  return bidderRequest?.refererInfo?.ref || window.document.referrer;
+  return bidderRequest?.refererInfo?.ref || window.document.referrer
 }
 
 /**
@@ -289,18 +289,18 @@ function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
  */
 export function validateGeoObject(geo) {
   if (!isPlainObject(geo)) {
-    return false;
+    return false
   }
   if (!geo.lat) {
-    return false;
+    return false
   }
   if (!geo.lon) {
-    return false;
+    return false
   }
   if (!geo.accuracy) {
-    return false;
+    return false
   }
-  return true;
+  return true
 }
 
 /**
@@ -311,18 +311,18 @@ export function validateGeoObject(geo) {
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return (bid.params.floorPrice) ? bid.params.floorPrice : null;
+    return (bid.params.floorPrice) ? bid.params.floorPrice : null
   }
 
   const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
-  });
+  })
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
+    return floor.floor
   }
-  return null;
+  return null
 }
 
-registerBidder(spec);
+registerBidder(spec)

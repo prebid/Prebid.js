@@ -5,32 +5,32 @@
  * @returns {Array} An array of server requests.
  */
 export function buildBannerRequests(bidRequest, endpointUrl) {
-  const serverRequests = [];
-  const sizes = bidRequest.mediaTypes.banner.sizes;
+  const serverRequests = []
+  const sizes = bidRequest.mediaTypes.banner.sizes
 
   sizes.forEach(([width, height]) => {
-    bidRequest.params.requestedSizes = [width, height];
+    bidRequest.params.requestedSizes = [width, height]
 
     const payload = {
       ctype: 'div',
       pzoneid: bidRequest.params.zoneId,
       width,
       height,
-    };
+    }
 
     const payloadString = Object.keys(payload)
       .map((key) => `${key}=${encodeURIComponent(payload[key])}`)
-      .join('&');
+      .join('&')
 
     serverRequests.push({
       method: 'GET',
       url: endpointUrl,
       data: payloadString,
       bidderRequest: bidRequest,
-    });
-  });
+    })
+  })
 
-  return serverRequests;
+  return serverRequests
 }
 
 /**
@@ -40,12 +40,12 @@ export function buildBannerRequests(bidRequest, endpointUrl) {
  * @returns {Array} An array of bid responses.
  */
 export function interpretBannerResponse(serverResponse, bidderRequest) {
-  const response = serverResponse.body;
-  const bidResponses = [];
+  const response = serverResponse.body
+  const bidResponses = []
 
   if (response && response.template && response.template.html) {
-    const { bidId } = bidderRequest;
-    const [width, height] = bidderRequest.params.requestedSizes;
+    const { bidId } = bidderRequest
+    const [width, height] = bidderRequest.params.requestedSizes
 
     const bidResponse = {
       requestId: bidId,
@@ -61,10 +61,10 @@ export function interpretBannerResponse(serverResponse, bidderRequest) {
       },
       width,
       height,
-    };
+    }
 
-    bidResponses.push(bidResponse);
+    bidResponses.push(bidResponse)
   }
 
-  return bidResponses;
+  return bidResponses
 }

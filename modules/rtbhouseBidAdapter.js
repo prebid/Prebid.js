@@ -1,25 +1,25 @@
-import { deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue } from '../src/utils.js';
-import { getOrigin } from '../libraries/getOrigin/index.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess, deepClone, isArray, logError, mergeDeep, isEmpty, isPlainObject, isNumber, isStr, deepSetValue } from '../src/utils.js'
+import { getOrigin } from '../libraries/getOrigin/index.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { interpretNativeBid, OPENRTB } from '../libraries/precisoUtils/bidNativeUtils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { interpretNativeBid, OPENRTB } from '../libraries/precisoUtils/bidNativeUtils.js'
 
-const BIDDER_CODE = 'rtbhouse';
-const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
-const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
+const BIDDER_CODE = 'rtbhouse'
+const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia']
+const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids'
 
-const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
-const TTL = 55;
-const GVLID = 16;
+const DEFAULT_CURRENCY_ARR = ['USD'] // NOTE - USD is the only supported currency right now; Hardcoded for bids
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE]
+const TTL = 55
+const GVLID = 16
 
 const DSA_ATTRIBUTES = [
   { name: 'dsarequired', 'min': 0, 'max': 3 },
   { name: 'pubrender', 'min': 0, 'max': 2 },
   { name: 'datatopub', 'min': 0, 'max': 2 }
-];
+]
 
 export const spec = {
   code: BIDDER_CODE,
@@ -27,11 +27,11 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
-    return !!(REGIONS.includes(bid.params.region) && bid.params.publisherId);
+    return !!(REGIONS.includes(bid.params.region) && bid.params.publisherId)
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
     const request = {
       id: bidderRequest.bidderRequestId,
@@ -40,43 +40,43 @@ export const spec = {
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
       source: mapSource(validBidRequests[0], bidderRequest),
-    };
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
-        ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
-      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      request.regs = { ext: { gdpr: gdpr } };
-      request.user = { ext: { consent: consentStr } };
+        ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : ''
+      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+      request.regs = { ext: { gdpr: gdpr } }
+      request.user = { ext: { consent: consentStr } }
     }
-    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain
     if (bidSchain) {
-      const schain = mapSchain(bidSchain);
+      const schain = mapSchain(bidSchain)
       if (schain) {
         request.ext = {
           schain: schain,
-        };
+        }
       }
     }
 
     if (validBidRequests[0].userIdAsEids) {
-      const eids = { eids: validBidRequests[0].userIdAsEids };
+      const eids = { eids: validBidRequests[0].userIdAsEids }
       if (request.user && request.user.ext) {
-        request.user.ext = { ...request.user.ext, ...eids };
+        request.user.ext = { ...request.user.ext, ...eids }
       } else {
-        request.user = { ext: eids };
+        request.user = { ext: eids }
       }
     }
 
     const ortb2Params = bidderRequest?.ortb2 || {};
     ['site', 'user', 'device', 'bcat', 'badv'].forEach(entry => {
-      const ortb2Param = ortb2Params[entry];
+      const ortb2Param = ortb2Params[entry]
       if (ortb2Param) {
-        mergeDeep(request, { [entry]: ortb2Param });
+        mergeDeep(request, { [entry]: ortb2Param })
       }
-    });
+    })
 
-    const dsa = deepAccess(ortb2Params, 'regs.ext.dsa');
+    const dsa = deepAccess(ortb2Params, 'regs.ext.dsa')
     if (validateDSA(dsa)) {
       mergeDeep(request, {
         regs: {
@@ -84,62 +84,62 @@ export const spec = {
             dsa
           }
         }
-      });
+      })
     }
 
     if (bidderRequest.gppConsent?.gppString) {
-      deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent.gppString);
-      deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+      deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent.gppString)
+      deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections)
     } else if (ortb2Params.regs?.gpp) {
-      deepSetValue(request, 'regs.gpp', ortb2Params.regs.gpp);
-      deepSetValue(request, 'regs.gpp_sid', ortb2Params.regs.gpp_sid);
+      deepSetValue(request, 'regs.gpp', ortb2Params.regs.gpp)
+      deepSetValue(request, 'regs.gpp_sid', ortb2Params.regs.gpp_sid)
     }
 
-    const computedEndpointUrl = ENDPOINT_URL;
+    const computedEndpointUrl = ENDPOINT_URL
 
     return {
       method: 'POST',
       url: 'https://' + validBidRequests[0].params.region + '.' + computedEndpointUrl,
       data: JSON.stringify(request)
-    };
+    }
   },
   interpretOrtbResponse: function (serverResponse, originalRequest) {
-    const responseBody = serverResponse.body;
+    const responseBody = serverResponse.body
     if (!isArray(responseBody)) {
-      return [];
+      return []
     }
 
-    const bids = [];
+    const bids = []
     responseBody.forEach(serverBid => {
       if (!serverBid.price) { // price may exist and is === 0 or there's no price prop at all (fledge req case)
-        return;
+        return
       }
 
-      let interpretedBid;
+      let interpretedBid
 
       // try...catch would be risky cause JSON.parse throws SyntaxError
       if (serverBid.adm.indexOf('{') === 0) {
-        interpretedBid = interpretNativeBid(serverBid);
+        interpretedBid = interpretNativeBid(serverBid)
       } else {
-        interpretedBid = interpretBannerBid(serverBid);
+        interpretedBid = interpretBannerBid(serverBid)
       }
 
       if (serverBid.ext) {
-        interpretedBid.ext = deepClone(serverBid.ext);
+        interpretedBid.ext = deepClone(serverBid.ext)
         if (serverBid.ext.dsa) {
-          interpretedBid.meta = Object.assign({}, interpretedBid.meta, { dsa: serverBid.ext.dsa });
+          interpretedBid.meta = Object.assign({}, interpretedBid.meta, { dsa: serverBid.ext.dsa })
         }
       }
 
-      bids.push(interpretedBid);
-    });
-    return bids;
+      bids.push(interpretedBid)
+    })
+    return bids
   },
   interpretResponse: function (serverResponse, originalRequest) {
-    return this.interpretOrtbResponse(serverResponse, originalRequest);
+    return this.interpretOrtbResponse(serverResponse, originalRequest)
   }
-};
-registerBidder(spec);
+}
+registerBidder(spec)
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
@@ -153,22 +153,22 @@ function applyFloor(slot) {
         currency: DEFAULT_CURRENCY_ARR[0],
         mediaType: '*',
         size: '*'
-      });
+      })
 
       if (floor && floor.currency === DEFAULT_CURRENCY_ARR[0] && !isNaN(parseFloat(floor.floor))) {
-        return floor.floor;
+        return floor.floor
       }
     } catch (e) {
-      logError('RTB House: Error calling getFloor:', e);
+      logError('RTB House: Error calling getFloor:', e)
     }
   }
 
   // Fallback to bidfloor param if available
   if (slot.params.bidfloor && !isNaN(parseFloat(slot.params.bidfloor))) {
-    return parseFloat(slot.params.bidfloor);
+    return parseFloat(slot.params.bidfloor)
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -181,22 +181,22 @@ function mapImpression(slot, bidderRequest) {
     banner: mapBanner(slot),
     native: mapNative(slot),
     tagid: slot.adUnitCode.toString()
-  };
-
-  const bidfloor = applyFloor(slot);
-  if (bidfloor) {
-    imp.bidfloor = bidfloor;
   }
 
-  const ext = deepAccess(slot, 'ortb2Imp.ext');
+  const bidfloor = applyFloor(slot)
+  if (bidfloor) {
+    imp.bidfloor = bidfloor
+  }
+
+  const ext = deepAccess(slot, 'ortb2Imp.ext')
   if (ext) {
-    imp.ext = deepClone(ext);
+    imp.ext = deepClone(ext)
     if (imp.ext.ae) {
-      delete imp.ext.ae;
+      delete imp.ext.ae
     }
   }
 
-  return imp;
+  return imp
 }
 
 /**
@@ -207,7 +207,7 @@ function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
     deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
-    var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
+    var sizes = slot.sizes || slot.mediaTypes.banner.sizes
     return {
       w: sizes[0][0],
       h: sizes[0][1],
@@ -215,7 +215,7 @@ function mapBanner(slot) {
         w: size[0],
         h: size[1]
       }))
-    };
+    }
   }
 }
 
@@ -225,14 +225,14 @@ function mapBanner(slot) {
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
 function mapSite(slot, bidderRequest) {
-  let pubId = 'unknown';
-  let channel = null;
+  let pubId = 'unknown'
+  let channel = null
   if (slot && slot.length > 0) {
-    pubId = slot[0].params.publisherId;
+    pubId = slot[0].params.publisherId
     channel = slot[0].params.channel &&
     slot[0].params.channel
       .toString()
-      .slice(0, 50);
+      .slice(0, 50)
   }
   const siteData = {
     publisher: {
@@ -240,11 +240,11 @@ function mapSite(slot, bidderRequest) {
     },
     page: bidderRequest.refererInfo.page,
     name: getOrigin()
-  };
-  if (channel) {
-    siteData.channel = channel;
   }
-  return siteData;
+  if (channel) {
+    siteData.channel = channel
+  }
+  return siteData
 }
 
 /**
@@ -254,9 +254,9 @@ function mapSite(slot, bidderRequest) {
 function mapSource(slot, bidderRequest) {
   const source = {
     tid: bidderRequest?.auctionId || '',
-  };
+  }
 
-  return source;
+  return source
 }
 
 /**
@@ -265,13 +265,13 @@ function mapSource(slot, bidderRequest) {
  */
 function mapSchain(schain) {
   if (!schain) {
-    return null;
+    return null
   }
   if (!validateSchain(schain)) {
-    logError('RTB House: required schain params missing');
-    return null;
+    logError('RTB House: required schain params missing')
+    return null
   }
-  return schain;
+  return schain
 }
 
 /**
@@ -280,12 +280,12 @@ function mapSchain(schain) {
  */
 function validateSchain(schain) {
   if (!schain.nodes) {
-    return false;
+    return false
   }
-  const requiredFields = ['asi', 'sid', 'hp'];
+  const requiredFields = ['asi', 'sid', 'hp']
   return schain.nodes.every(node => {
-    return requiredFields.every(field => node[field]);
-  });
+    return requiredFields.every(field => node[field])
+  })
 }
 
 /**
@@ -308,8 +308,8 @@ function mapNative(slot) {
  * @returns {Array} Request Assets by OpenRTB Native Ads 1.1 §4.2
  */
 function mapNativeAssets(slot) {
-  const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native');
-  const assets = [];
+  const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native')
+  const assets = []
   if (params.title) {
     assets.push({
       id: OPENRTB.NATIVE.ASSET_ID.TITLE,
@@ -363,7 +363,7 @@ function mapNativeAssets(slot) {
       }
     })
   }
-  return assets;
+  return assets
 }
 
 /**
@@ -372,17 +372,17 @@ function mapNativeAssets(slot) {
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
 function mapNativeImage(image, type) {
-  const img = { type: type };
+  const img = { type: type }
   if (image.aspect_ratios) {
-    const ratio = image.aspect_ratios[0];
-    const minWidth = ratio.min_width || 100;
-    img.wmin = minWidth;
-    img.hmin = (minWidth / ratio.ratio_width * ratio.ratio_height);
+    const ratio = image.aspect_ratios[0]
+    const minWidth = ratio.min_width || 100
+    img.wmin = minWidth
+    img.hmin = (minWidth / ratio.ratio_width * ratio.ratio_height)
   }
   if (image.sizes) {
-    const size = Array.isArray(image.sizes[0]) ? image.sizes[0] : image.sizes;
-    img.w = size[0];
-    img.h = size[1];
+    const size = Array.isArray(image.sizes[0]) ? image.sizes[0] : image.sizes
+    img.w = size[0]
+    img.h = size[1]
   }
   return img
 }
@@ -416,10 +416,10 @@ function interpretBannerBid(serverBid) {
  * @returns {boolean} whether dsa object contains valid attributes values
  */
 function validateDSA(dsa) {
-  if (isEmpty(dsa) || !isPlainObject(dsa)) return false;
+  if (isEmpty(dsa) || !isPlainObject(dsa)) return false
 
   return DSA_ATTRIBUTES.reduce((prev, attr) => {
-    const dsaEntry = dsa[attr.name];
+    const dsaEntry = dsa[attr.name]
     return prev && (
       !dsa.hasOwnProperty(attr.name) ||
       (isNumber(dsaEntry) && dsaEntry >= attr.min && dsaEntry <= attr.max)

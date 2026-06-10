@@ -1,13 +1,13 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
-import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import * as utils from '../src/utils.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { ajax } from '../src/ajax.js'
+import { Renderer } from '../src/Renderer.js'
 
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
-const BIDDER_CODE = 'djax';
-const DOMAIN = 'https://revphpe.djaxbidder.com/header_bidding_vast/';
-const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO]
+const BIDDER_CODE = 'djax'
+const DOMAIN = 'https://revphpe.djaxbidder.com/header_bidding_vast/'
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js'
 
 function outstreamRender(bidAd) {
   bidAd.renderer.push(() => {
@@ -21,8 +21,8 @@ function outstreamRender(bidAd) {
         showVolume: false,
         allowFullscreen: false
       }
-    });
-  });
+    })
+  })
 }
 
 function createRenderer(bidAd, rendererParams, adUnitCode) {
@@ -32,13 +32,13 @@ function createRenderer(bidAd, rendererParams, adUnitCode) {
     loaded: false,
     config: { 'player_height': bidAd.height, 'player_width': bidAd.width },
     adUnitCode
-  });
+  })
   try {
-    renderer.setRender(outstreamRender);
+    renderer.setRender(outstreamRender)
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
+    utils.logWarn('Prebid Error calling setRender on renderer', err)
   }
-  return renderer;
+  return renderer
 }
 
 function sendResponseToServer(data) {
@@ -46,7 +46,7 @@ function sendResponseToServer(data) {
     withCredentials: false,
     method: 'POST',
     crossOrigin: true
-  });
+  })
 }
 
 export const spec = {
@@ -54,7 +54,7 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   isBidRequestValid: function(bid) {
-    return (typeof bid.params !== 'undefined' && parseInt(utils.getValue(bid.params, 'publisherId')) > 0);
+    return (typeof bid.params !== 'undefined' && parseInt(utils.getValue(bid.params, 'publisherId')) > 0)
   },
 
   buildRequests: function(validBidRequests) {
@@ -66,48 +66,48 @@ export const spec = {
         crossOrigin: true
       },
       data: validBidRequests,
-    };
+    }
   },
 
   interpretResponse: function(serverResponse, request) {
-    const response = serverResponse.body;
-    const bidResponses = [];
-    var bidRequestResponses = [];
+    const response = serverResponse.body
+    const bidResponses = []
+    var bidRequestResponses = []
 
     utils._each(response, function(bidAd) {
       bidAd.adResponse = {
         content: bidAd.vastXml,
         height: bidAd.height,
         width: bidAd.width
-      };
+      }
 
       bidAd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, {
         id: bidAd.adUnitCode,
         url: RENDERER_URL
-      }, bidAd.adUnitCode) : undefined;
-      bidResponses.push(bidAd);
-    });
+      }, bidAd.adUnitCode) : undefined
+      bidResponses.push(bidAd)
+    })
 
     bidRequestResponses.push({
       function: 'saveResponses',
       request: request,
       response: bidResponses
-    });
-    sendResponseToServer(bidRequestResponses);
-    return bidResponses;
+    })
+    sendResponseToServer(bidRequestResponses)
+    return bidResponses
   },
 
   onBidWon: function(bid) {
-    const wonBids = [];
-    wonBids.push(bid);
-    wonBids[0].function = 'onBidWon';
-    sendResponseToServer(wonBids);
+    const wonBids = []
+    wonBids.push(bid)
+    wonBids[0].function = 'onBidWon'
+    sendResponseToServer(wonBids)
   },
 
   onTimeout: function(details) {
-    details.unshift({ 'function': 'onTimeout' });
-    sendResponseToServer(details);
+    details.unshift({ 'function': 'onTimeout' })
+    sendResponseToServer(details)
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

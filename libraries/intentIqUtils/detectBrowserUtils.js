@@ -1,4 +1,4 @@
-import { logError } from '../../src/utils.js';
+import { logError } from '../../src/utils.js'
 
 /**
  * Detects the browser using either userAgent or userAgentData
@@ -7,14 +7,14 @@ import { logError } from '../../src/utils.js';
 export function detectBrowser() {
   try {
     if (navigator.userAgent) {
-      return detectBrowserFromUserAgent(navigator.userAgent);
+      return detectBrowserFromUserAgent(navigator.userAgent)
     } else if (navigator.userAgentData) {
-      return detectBrowserFromUserAgentData(navigator.userAgentData);
+      return detectBrowserFromUserAgentData(navigator.userAgentData)
     }
   } catch (error) {
-    logError('Error detecting browser:', error);
+    logError('Error detecting browser:', error)
   }
-  return 'unknown';
+  return 'unknown'
 }
 
 /**
@@ -30,36 +30,36 @@ export function detectBrowserFromUserAgent(userAgent) {
     safari: /Safari/,
     firefox: /Firefox/,
     ie: /MSIE|Trident/,
-  };
+  }
 
   // Check for Edge first
   if (browserRegexPatterns.edge.test(userAgent)) {
-    return 'edge';
+    return 'edge'
   }
 
   // Check for Opera next
   if (browserRegexPatterns.opera.test(userAgent)) {
-    return 'opera';
+    return 'opera'
   }
 
   // Check for Chrome first to avoid confusion with Safari
   if (browserRegexPatterns.chrome.test(userAgent)) {
-    return 'chrome';
+    return 'chrome'
   }
 
   // Now we can safely check for Safari
   if (browserRegexPatterns.safari.test(userAgent) && !browserRegexPatterns.chrome.test(userAgent)) {
-    return 'safari';
+    return 'safari'
   }
 
   // Check other browsers
   for (const browser in browserRegexPatterns) {
     if (browserRegexPatterns[browser].test(userAgent)) {
-      return browser;
+      return browser
     }
   }
 
-  return 'unknown';
+  return 'unknown'
 }
 
 /**
@@ -68,15 +68,15 @@ export function detectBrowserFromUserAgent(userAgent) {
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
 export function detectBrowserFromUserAgentData(userAgentData) {
-  const brandNames = userAgentData.brands.map(brand => brand.brand);
+  const brandNames = userAgentData.brands.map(brand => brand.brand)
 
   if (brandNames.includes('Microsoft Edge')) {
-    return 'edge';
+    return 'edge'
   } else if (brandNames.includes('Opera')) {
-    return 'opera';
+    return 'opera'
   } else if (brandNames.some(brand => brand === 'Chromium' || brand === 'Google Chrome')) {
-    return 'chrome';
+    return 'chrome'
   }
 
-  return 'unknown';
+  return 'unknown'
 }

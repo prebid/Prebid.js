@@ -1,9 +1,9 @@
-import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js';
-import { server } from 'test/mocks/xhr.js';
-import { config } from 'src/config.js';
-import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js';
+import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js'
+import { server } from 'test/mocks/xhr.js'
+import { config } from 'src/config.js'
+import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js'
 
-const responseHeader = { 'Content-Type': 'application/json' };
+const responseHeader = { 'Content-Type': 'application/json' }
 
 const moduleConfigCommon = {
   'dryrun': true,
@@ -18,7 +18,7 @@ const moduleConfigCommon = {
       { bidder: 'proxistore', },
       { bidder: 'other' }]
   }
-};
+}
 
 const reqBidsCommon = {
   'timeout': 10000,
@@ -42,7 +42,7 @@ const reqBidsCommon = {
     },
     'bidder': {}
   }
-};
+}
 
 const adUnitsCommon = [
   {
@@ -62,48 +62,48 @@ const adUnitsCommon = [
       { bidder: 'proxistore', }
     ]
   }
-];
+]
 
 describe('relevadRtdProvider', function() {
   describe('relevadSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(relevadSubmodule.init()).to.equal(true);
-    });
-  });
+      expect(relevadSubmodule.init()).to.equal(true)
+    })
+  })
 
   describe('Add segments and categories test 1', function() {
     it('adds contextual categories and segments', function() {
-      const moduleConfig = { ...deepClone(moduleConfigCommon) };
+      const moduleConfig = { ...deepClone(moduleConfigCommon) }
       const reqBids = {
         ...deepClone(reqBidsCommon),
         'adUnits': deepClone(adUnitsCommon),
-      };
+      }
 
       const data = {
         segments: ['segment1', 'segment2'],
         cats: { 'category3': 100 },
       };
 
-      (config.getConfig('ix') || {}).firstPartyData = null;
-      addRtdData(reqBids, data, moduleConfig, () => {});
-      expect(reqBids.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
-      expect(reqBids.adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('relevad_rtd', ['category3']);
-      expect(reqBids.adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
-      expect(reqBids.adUnits[0].bids[3].params).to.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3');
-      expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('segments', ['segment1', 'segment2']);
-      expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('contextual_categories', ['category3']);
-      expect(reqBids.ortb2Fragments.bidder.rubicon.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
-      expect(config.getConfig('ix.firstPartyData')).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
-    });
-  });
+      (config.getConfig('ix') || {}).firstPartyData = null
+      addRtdData(reqBids, data, moduleConfig, () => {})
+      expect(reqBids.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3'])
+      expect(reqBids.adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('relevad_rtd', ['category3'])
+      expect(reqBids.adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2'])
+      expect(reqBids.adUnits[0].bids[3].params).to.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3')
+      expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('segments', ['segment1', 'segment2'])
+      expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('contextual_categories', ['category3'])
+      expect(reqBids.ortb2Fragments.bidder.rubicon.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2'])
+      expect(config.getConfig('ix.firstPartyData')).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3'])
+    })
+  })
 
   describe('Add segments and categories test 2 to one bidder out of many', function() {
     it('adds contextual categories and segments', function() {
-      const moduleConfig = { ...deepClone(moduleConfigCommon) };
+      const moduleConfig = { ...deepClone(moduleConfigCommon) }
       const reqBids = {
         ...deepClone(reqBidsCommon),
         'adUnits': deepClone(adUnitsCommon),
-      };
+      }
 
       const data = {
         segments: ['segment1', 'segment2'],
@@ -111,19 +111,19 @@ describe('relevadRtdProvider', function() {
         wl: { 'appnexus': { 'placementId': '13144370' } },
       };
 
-      (config.getConfig('ix') || {}).firstPartyData = null;
-      addRtdData(reqBids, data, moduleConfig, () => { });
-      expect(reqBids.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
-      expect(reqBids.adUnits[0].bids[1].ortb2?.site?.ext?.data || {}).to.not.have.property('relevad_rtd');
-      expect(reqBids.adUnits[0].bids[1].ortb2?.user?.ext?.data || {}).to.not.have.property('relevad_rtd');
-      expect(reqBids.adUnits[0].bids[3].params || {}).to.not.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3');
-      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('segments', ['segment1', 'segment2']);
-      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', ['category3']);
-      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', { '0': 'category3' });
-      expect(reqBids.ortb2Fragments?.bidder?.rubicon?.user?.ext?.data || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
-      expect(config.getConfig('ix.firstPartyData') || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
-    });
-  });
+      (config.getConfig('ix') || {}).firstPartyData = null
+      addRtdData(reqBids, data, moduleConfig, () => { })
+      expect(reqBids.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3'])
+      expect(reqBids.adUnits[0].bids[1].ortb2?.site?.ext?.data || {}).to.not.have.property('relevad_rtd')
+      expect(reqBids.adUnits[0].bids[1].ortb2?.user?.ext?.data || {}).to.not.have.property('relevad_rtd')
+      expect(reqBids.adUnits[0].bids[3].params || {}).to.not.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3')
+      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('segments', ['segment1', 'segment2'])
+      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', ['category3'])
+      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', { '0': 'category3' })
+      expect(reqBids.ortb2Fragments?.bidder?.rubicon?.user?.ext?.data || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2'])
+      expect(config.getConfig('ix.firstPartyData') || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3'])
+    })
+  })
 
   describe('Add segments and categories test 4', function() {
     it('adds contextual categories and segments', function() {
@@ -134,7 +134,7 @@ describe('relevadRtdProvider', function() {
           minscore: 50,
           partnerid: 12345,
         }
-      };
+      }
 
       const reqBids = {
         'timeout': 10000,
@@ -167,11 +167,11 @@ describe('relevadRtdProvider', function() {
         segments: ['segment1', 'segment2'],
         cats: { 'category3': 100 }
       };
-      (config.getConfig('ix') || {}).firstPartyData = null;
-      addRtdData(reqBids, data, moduleConfig, () => {});
-      expect(reqBids.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
-    });
-  });
+      (config.getConfig('ix') || {}).firstPartyData = null
+      addRtdData(reqBids, data, moduleConfig, () => {})
+      expect(reqBids.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3'])
+    })
+  })
 
   describe('Get Segments And Categories', function() {
     it('gets data from async request and adds contextual categories and segments', function() {
@@ -183,7 +183,7 @@ describe('relevadRtdProvider', function() {
           bidders: [{ bidder: 'appnexus' },
             { bidder: 'other' }]
         }
-      };
+      }
 
       const reqBidsConfigObj = {
         adUnits: [{
@@ -196,24 +196,24 @@ describe('relevadRtdProvider', function() {
             bidder: 'other'
           }]
         }]
-      };
+      }
 
       const data = {
         segments: ['segment1', 'segment2'],
         cats: { 'category3': 100 }
-      };
+      }
 
-      getBidRequestData(reqBidsConfigObj, () => {}, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, () => {}, moduleConfig, {})
 
-      const request = server.requests[0];
-      request.respond(200, responseHeader, JSON.stringify(data));
+      const request = server.requests[0]
+      request.respond(200, responseHeader, JSON.stringify(data))
 
-      expect(reqBidsConfigObj.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
-      expect(reqBidsConfigObj.adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('relevad_rtd', ['category3']);
-      expect(reqBidsConfigObj.adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
-    });
-  });
-});
+      expect(reqBidsConfigObj.adUnits[0].bids[0].params.keywords).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3'])
+      expect(reqBidsConfigObj.adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('relevad_rtd', ['category3'])
+      expect(reqBidsConfigObj.adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2'])
+    })
+  })
+})
 
 describe('Process auction end data', function() {
   it('Collects bid data on auction end event', function() {
@@ -373,13 +373,13 @@ describe('Process auction end data', function() {
         }
       },
       'userConsent': { 'gdpr': null, 'usp': null, 'gpp': null, 'coppa': false }
-    };
+    }
 
-    const auctionDetails = auctionEndData['auctionDetails'];
-    const userConsent = auctionEndData['userConsent'];
-    const moduleConfig = auctionEndData['config'];
+    const auctionDetails = auctionEndData['auctionDetails']
+    const userConsent = auctionEndData['userConsent']
+    const moduleConfig = auctionEndData['config']
 
-    relevadSubmodule.onAuctionEndEvent(auctionDetails, moduleConfig, userConsent);
+    relevadSubmodule.onAuctionEndEvent(auctionDetails, moduleConfig, userConsent)
     expect(serverData.clientdata).to.deep.equal(
       {
         'event': 'bids',
@@ -406,6 +406,6 @@ describe('Process auction end data', function() {
         'cid': '12345',
         'pid': '',
       }
-    );
-  });
-});
+    )
+  })
+})

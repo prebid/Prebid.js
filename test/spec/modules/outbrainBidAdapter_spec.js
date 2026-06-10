@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec, storage } from 'modules/outbrainBidAdapter.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr';
+import { expect } from 'chai'
+import { spec, storage } from 'modules/outbrainBidAdapter.js'
+import { config } from 'src/config.js'
+import { server } from 'test/mocks/xhr'
 
 describe('Outbrain Adapter', function () {
   describe('Bid request and response', function () {
@@ -80,7 +80,7 @@ describe('Outbrain Adapter', function () {
           osv: '17.4'
         }
       }
-    };
+    }
 
     describe('isBidRequestValid', function () {
       before(() => {
@@ -231,7 +231,7 @@ describe('Outbrain Adapter', function () {
     })
 
     describe('buildRequests', function () {
-      let getDataFromLocalStorageStub;
+      let getDataFromLocalStorageStub
 
       before(() => {
         getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
@@ -319,7 +319,7 @@ describe('Outbrain Adapter', function () {
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         expect(res.url).to.equal('https://bidder-url.com')
         expect(res.data).to.deep.equal(JSON.stringify(expectedData))
-      });
+      })
 
       it('should build display request', function () {
         const bidRequest = {
@@ -444,7 +444,7 @@ describe('Outbrain Adapter', function () {
         expect(resData.site.publisher.domain).to.equal('test-publisher.com')
         expect(resData.bcat).to.deep.equal(['bad-category'])
         expect(resData.badv).to.deep.equal(['bad-advertiser'])
-      });
+      })
 
       it('should pass first party data', function () {
         const bidRequest = {
@@ -465,7 +465,7 @@ describe('Outbrain Adapter', function () {
         expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
         expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
         expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
-      });
+      })
 
       it('should pass bidder timeout', function () {
         const bidRequest = {
@@ -479,7 +479,7 @@ describe('Outbrain Adapter', function () {
         const res = spec.buildRequests([bidRequest], bidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.tmax).to.equal(500)
-      });
+      })
 
       it('should pass GDPR consent', function () {
         const bidRequest = {
@@ -497,7 +497,7 @@ describe('Outbrain Adapter', function () {
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.consent).to.equal('consentString')
         expect(resData.regs.ext.gdpr).to.equal(1)
-      });
+      })
 
       it('should pass us privacy consent', function () {
         const bidRequest = {
@@ -511,7 +511,7 @@ describe('Outbrain Adapter', function () {
         const res = spec.buildRequests([bidRequest], bidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.regs.ext.us_privacy).to.equal('consentString')
-      });
+      })
 
       it('should pass coppa consent', function () {
         const bidRequest = {
@@ -525,13 +525,13 @@ describe('Outbrain Adapter', function () {
         expect(resData.regs.coppa).to.equal(1)
 
         config.resetConfig()
-      });
+      })
 
       it('should pass gpp information', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        };
+        }
         const bidderRequest = {
           ...commonBidderRequest,
           'gppConsent': {
@@ -540,14 +540,14 @@ describe('Outbrain Adapter', function () {
           }
         }
 
-        const res = spec.buildRequests([bidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
+        const res = spec.buildRequests([bidRequest], bidderRequest)
+        const resData = JSON.parse(res.data)
 
-        expect(resData.regs.ext.gpp).to.exist;
-        expect(resData.regs.ext.gpp_sid).to.exist;
-        expect(resData.regs.ext.gpp).to.equal('abc12345');
-        expect(resData.regs.ext.gpp_sid).to.deep.equal([8]);
-      });
+        expect(resData.regs.ext.gpp).to.exist
+        expect(resData.regs.ext.gpp_sid).to.exist
+        expect(resData.regs.ext.gpp).to.equal('abc12345')
+        expect(resData.regs.ext.gpp_sid).to.deep.equal([8])
+      })
 
       it('should pass extended ids', function () {
         const bidRequest = {
@@ -557,30 +557,30 @@ describe('Outbrain Adapter', function () {
             { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
           ],
           ...commonBidRequest,
-        };
+        }
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.eids).to.deep.equal([
           { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
-        ]);
-      });
+        ])
+      })
 
       it('should pass OB user token', function () {
-        getDataFromLocalStorageStub.returns('12345');
+        getDataFromLocalStorageStub.returns('12345')
 
         const bidRequest = {
           bidId: 'bidId',
           params: {},
           ...commonBidRequest,
-        };
+        }
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.obusertoken).to.equal('12345')
-        expect(getDataFromLocalStorageStub.called).to.be.true;
-        sinon.assert.calledWith(getDataFromLocalStorageStub, 'OB-USER-TOKEN');
-      });
+        expect(getDataFromLocalStorageStub.called).to.be.true
+        sinon.assert.calledWith(getDataFromLocalStorageStub, 'OB-USER-TOKEN')
+      })
 
       it('should pass bidfloor', function () {
         const bidRequest = {
@@ -597,7 +597,7 @@ describe('Outbrain Adapter', function () {
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].bidfloor).to.equal(1.23)
-      });
+      })
 
       it('should transform string sizes to numbers', function () {
         const bidRequest = {
@@ -605,7 +605,7 @@ describe('Outbrain Adapter', function () {
           params: {},
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        };
+        }
         bidRequest.nativeParams.image.sizes = ['120', '100']
 
         const expectedNativeAssets = {
@@ -634,30 +634,30 @@ describe('Outbrain Adapter', function () {
           ]
         }
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
-        expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
-      });
+        expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets))
+      })
 
       it('should pass ortb2 device data', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        };
+        }
 
         const res = spec.buildRequests(
           [bidRequest],
           { ...commonBidderRequest, ...ortb2WithDeviceData },
-        );
-        expect(JSON.parse(res.data).device).to.deep.equal(ortb2WithDeviceData.ortb2.device);
-      });
+        )
+        expect(JSON.parse(res.data).device).to.deep.equal(ortb2WithDeviceData.ortb2.device)
+      })
     })
 
     describe('interpretResponse', function () {
       it('should return empty array if no valid bids', function () {
         const res = spec.interpretResponse({}, [])
         expect(res).to.be.an('array').that.is.empty
-      });
+      })
 
       it('should interpret native response', function () {
         const serverResponse = {
@@ -732,7 +732,7 @@ describe('Outbrain Adapter', function () {
 
         const res = spec.interpretResponse(serverResponse, request)
         expect(res).to.deep.equal(expectedRes)
-      });
+      })
 
       it('should interpret display response', function () {
         const serverResponse = {
@@ -797,7 +797,7 @@ describe('Outbrain Adapter', function () {
 
         const res = spec.interpretResponse(serverResponse, request)
         expect(res).to.deep.equal(expectedRes)
-      });
+      })
 
       it('should interpret video response', function () {
         const serverResponse = {
@@ -858,12 +858,12 @@ describe('Outbrain Adapter', function () {
 
         const res = spec.interpretResponse(serverResponse, request)
         expect(res).to.deep.equal(expectedRes)
-      });
+      })
     })
   })
 
   describe('getUserSyncs', function () {
-    const usersyncUrl = 'https://usersync-url.com';
+    const usersyncUrl = 'https://usersync-url.com'
     beforeEach(() => {
       config.setConfig({
         outbrain: {
@@ -895,32 +895,32 @@ describe('Outbrain Adapter', function () {
     it('should pass GDPR consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo`
-      }]);
+      }])
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=foo`
-      }]);
+      }])
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=`
-      }]);
-    });
+      }])
+    })
 
     it('should pass US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=1NYN`
-      }]);
-    });
+      }])
+    })
 
     it('should pass GDPR and US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
-      }]);
-    });
+      }])
+    })
 
     it('should pass gpp consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '', { gppString: 'abc12345', applicableSections: [1, 2] })).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gpp=abc12345&gpp_sid=1%2C2`
-      }]);
-    });
+      }])
+    })
   })
 
   describe('onBidWon', function () {
@@ -932,6 +932,6 @@ describe('Outbrain Adapter', function () {
       }
       spec.onBidWon(bid)
       expect(server.requests[0].url).to.equals('http://example.com/win/1.1')
-    });
+    })
   })
 })

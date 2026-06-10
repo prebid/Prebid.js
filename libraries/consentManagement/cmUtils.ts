@@ -1,29 +1,29 @@
-import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
-import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../../src/utils.js';
-import { PbPromise } from '../../src/utils/promise.js';
-import { buildActivityParams } from '../../src/activities/params.js';
-import { getHook } from '../../src/hook.js';
-import { type ConsentHandler } from "../../src/consentHandler.ts";
+import { timedAuctionHook } from '../../src/utils/perfMetrics.js'
+import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../../src/utils.js'
+import { PbPromise } from '../../src/utils/promise.js'
+import { buildActivityParams } from '../../src/activities/params.js'
+import { getHook } from '../../src/hook.js'
+import { type ConsentHandler } from "../../src/consentHandler.ts"
 
 export function consentManagementHook(name, loadConsentData) {
-  const SEEN = new WeakSet();
+  const SEEN = new WeakSet()
   return timedAuctionHook(name, function requestBidsHook(fn, reqBidsConfigObj) {
     return loadConsentData().then(({ consentData, error }) => {
       if (error && (!consentData || !SEEN.has(error))) {
-        SEEN.add(error);
-        logWarn(error.message, ...(error.args || []));
+        SEEN.add(error)
+        logWarn(error.message, ...(error.args || []))
       }
-      fn.call(this, reqBidsConfigObj);
+      fn.call(this, reqBidsConfigObj)
     }).catch((error) => {
-      logError(`${error?.message} Canceling auction as per consentManagement config.`, ...(error?.args || []));
-      fn.stopTiming();
+      logError(`${error?.message} Canceling auction as per consentManagement config.`, ...(error?.args || []))
+      fn.stopTiming()
       if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
-        reqBidsConfigObj.bidsBackHandler();
+        reqBidsConfigObj.bidsBackHandler()
       } else {
-        logError('Error executing bidsBackHandler');
+        logError('Error executing bidsBackHandler')
       }
-    });
-  });
+    })
+  })
 }
 
 /**
@@ -61,43 +61,43 @@ export function lookupConsentData(
     getNullConsent
   }
 ) {
-  consentDataHandler.enable();
-  let timeoutHandle;
+  consentDataHandler.enable()
+  let timeoutHandle
 
   return new Promise((resolve, reject) => {
-    let provisionalConsent;
-    let cmpLoaded = false;
+    let provisionalConsent
+    let cmpLoaded = false
 
     function setProvisionalConsent(consentData) {
-      provisionalConsent = consentData;
+      provisionalConsent = consentData
       if (!cmpLoaded) {
-        cmpLoaded = true;
-        actionTimeout != null && resetTimeout(actionTimeout);
+        cmpLoaded = true
+        actionTimeout != null && resetTimeout(actionTimeout)
       }
     }
 
     function resetTimeout(timeout) {
-      if (timeoutHandle != null) clearTimeout(timeoutHandle);
+      if (timeoutHandle != null) clearTimeout(timeoutHandle)
       if (timeout != null) {
         timeoutHandle = setTimeout(() => {
-          const consentData = consentDataHandler.getConsentData() ?? (cmpLoaded ? provisionalConsent : getNullConsent());
-          const message = `timeout waiting for ${cmpLoaded ? 'user action on CMP' : 'CMP to load'}`;
-          consentDataHandler.setConsentData(consentData);
-          resolve({ consentData, error: new Error(`${name} ${message}`) });
-        }, timeout);
+          const consentData = consentDataHandler.getConsentData() ?? (cmpLoaded ? provisionalConsent : getNullConsent())
+          const message = `timeout waiting for ${cmpLoaded ? 'user action on CMP' : 'CMP to load'}`
+          consentDataHandler.setConsentData(consentData)
+          resolve({ consentData, error: new Error(`${name} ${message}`) })
+        }, timeout)
       } else {
-        timeoutHandle = null;
+        timeoutHandle = null
       }
     }
     setupCmp(setProvisionalConsent)
-      .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
-    cmpTimeout != null && resetTimeout(cmpTimeout);
+      .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject)
+    cmpTimeout != null && resetTimeout(cmpTimeout)
   }).finally(() => {
-    timeoutHandle && clearTimeout(timeoutHandle);
+    timeoutHandle && clearTimeout(timeoutHandle)
   }).catch((e) => {
-    consentDataHandler.error(e);
-    throw e;
-  });
+    consentDataHandler.error(e)
+    throw e
+  })
 }
 
 export interface BaseCMConfig {
@@ -132,7 +132,7 @@ export interface StaticCMConfig<T> {
   consentData: T;
 }
 
-export type CMConfig<T> = BaseCMConfig & (IABCMConfig | StaticCMConfig<T>);
+export type CMConfig<T> = BaseCMConfig & (IABCMConfig | StaticCMConfig<T>)
 
 export function configParser(
   {
@@ -148,12 +148,12 @@ export function configParser(
   } = {} as any
 ) {
   function msg(message) {
-    return `consentManagement.${namespace} ${message}`;
+    return `consentManagement.${namespace} ${message}`
   }
-  let requestBidsHook, cdLoader, staticConsentData;
+  let requestBidsHook, cdLoader, staticConsentData
 
   function attachActivityParams(next, params) {
-    return next(Object.assign({ [`${namespace}Consent`]: consentDataHandler.getConsentData() }, params));
+    return next(Object.assign({ [`${namespace}Consent`]: consentDataHandler.getConsentData() }, params))
   }
 
   function loadConsentData() {
@@ -162,79 +162,79 @@ export function configParser(
 
   function activate() {
     if (requestBidsHook == null) {
-      requestBidsHook = consentManagementHook(namespace, () => cdLoader());
-      getHook('requestBids').before(requestBidsHook, 50);
-      buildActivityParams.before(attachActivityParams);
+      requestBidsHook = consentManagementHook(namespace, () => cdLoader())
+      getHook('requestBids').before(requestBidsHook, 50)
+      buildActivityParams.before(attachActivityParams)
       logInfo(`${displayName} consentManagement module has been activated...`)
     }
   }
 
   function reset() {
     if (requestBidsHook != null) {
-      getHook('requestBids').getHooks({ hook: requestBidsHook }).remove();
-      buildActivityParams.getHooks({ hook: attachActivityParams }).remove();
-      requestBidsHook = null;
-      logInfo(`${displayName} consentManagement module has been deactivated...`);
+      getHook('requestBids').getHooks({ hook: requestBidsHook }).remove()
+      buildActivityParams.getHooks({ hook: attachActivityParams }).remove()
+      requestBidsHook = null
+      logInfo(`${displayName} consentManagement module has been deactivated...`)
     }
   }
 
   function resetConsentDataHandler() {
-    reset();
+    reset()
     // Call module-specific CMP event cleanup if provided
     if (typeof cmpEventCleanup === 'function') {
       try {
-        cmpEventCleanup();
+        cmpEventCleanup()
       } catch (e) {
-        logError(`Error during CMP event cleanup for ${displayName}:`, e);
+        logError(`Error during CMP event cleanup for ${displayName}:`, e)
       }
     }
   }
 
   return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {
-    const cmConfig = config?.[namespace];
+    const cmConfig = config?.[namespace]
     if (!cmConfig || typeof cmConfig !== 'object') {
-      logWarn(msg(`config not defined, exiting consent manager module`));
-      reset();
-      return {};
+      logWarn(msg(`config not defined, exiting consent manager module`))
+      reset()
+      return {}
     }
 
     // Check if module is explicitly disabled
     if (cmConfig?.enabled === false) {
-      logWarn(msg(`config enabled is set to false, disabling consent manager module`));
-      resetConsentDataHandler();
-      return {};
+      logWarn(msg(`config enabled is set to false, disabling consent manager module`))
+      resetConsentDataHandler()
+      return {}
     }
 
-    let cmpHandler;
+    let cmpHandler
     if (isStr(cmConfig.cmpApi)) {
-      cmpHandler = cmConfig.cmpApi;
+      cmpHandler = cmConfig.cmpApi
     } else {
-      cmpHandler = DEFAULT_CMP;
-      logInfo(msg(`config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`));
+      cmpHandler = DEFAULT_CMP
+      logInfo(msg(`config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`))
     }
-    let cmpTimeout;
+    let cmpTimeout
     if (isNumber(cmConfig.timeout)) {
-      cmpTimeout = cmConfig.timeout;
+      cmpTimeout = cmConfig.timeout
     } else {
-      cmpTimeout = DEFAULT_CONSENT_TIMEOUT;
-      logInfo(msg(`config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`));
+      cmpTimeout = DEFAULT_CONSENT_TIMEOUT
+      logInfo(msg(`config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`))
     }
-    const actionTimeout = isNumber(cmConfig.actionTimeout) ? cmConfig.actionTimeout : null;
-    let setupCmp;
+    const actionTimeout = isNumber(cmConfig.actionTimeout) ? cmConfig.actionTimeout : null
+    let setupCmp
     if (cmpHandler === 'static') {
       if (isPlainObject(cmConfig.consentData)) {
-        staticConsentData = cmConfig.consentData;
-        cmpTimeout = null;
+        staticConsentData = cmConfig.consentData
+        cmpTimeout = null
         setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))))
       } else {
-        logError(msg(`config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`));
+        logError(msg(`config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`))
       }
     } else if (!cmpHandlers.hasOwnProperty(cmpHandler)) {
-      consentDataHandler.setConsentData(null);
-      logWarn(`${displayName} CMP framework (${cmpHandler}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
-      setupCmp = () => PbPromise.resolve();
+      consentDataHandler.setConsentData(null)
+      logWarn(`${displayName} CMP framework (${cmpHandler}) is not a supported framework.  Aborting consentManagement module and resuming auction.`)
+      setupCmp = () => PbPromise.resolve()
     } else {
-      setupCmp = cmpHandlers[cmpHandler];
+      setupCmp = cmpHandlers[cmpHandler]
     }
 
     const lookup = () => lookupConsentData({
@@ -244,22 +244,22 @@ export function configParser(
       cmpTimeout,
       actionTimeout,
       getNullConsent,
-    });
+    })
 
     cdLoader = (() => {
-      let cd;
+      let cd
       return function () {
         if (cd == null) {
           cd = lookup().catch(err => {
-            cd = null;
-            throw err;
+            cd = null
+            throw err
           })
         }
-        return cd;
+        return cd
       }
-    })();
+    })()
 
-    activate();
+    activate()
     return {
       cmpHandler,
       cmpTimeout,

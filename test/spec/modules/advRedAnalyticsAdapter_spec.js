@@ -1,11 +1,11 @@
-import advRedAnalytics from 'modules/advRedAnalyticsAdapter.js';
-import { expect } from 'chai';
-import { server } from 'test/mocks/xhr.js';
-import { expectEvents } from '../../helpers/analytics.js';
-import { EVENTS } from 'src/constants.js';
-import sinon from 'sinon';
+import advRedAnalytics from 'modules/advRedAnalyticsAdapter.js'
+import { expect } from 'chai'
+import { server } from 'test/mocks/xhr.js'
+import { expectEvents } from '../../helpers/analytics.js'
+import { EVENTS } from 'src/constants.js'
+import sinon from 'sinon'
 
-const events = require('src/events');
+const events = require('src/events')
 
 describe('AdvRed Analytics Adapter', function () {
   const bidWonEvent = {
@@ -32,83 +32,83 @@ describe('AdvRed Analytics Adapter', function () {
     'eventType': 'bidWon',
     'ad': 'some ad',
     'adUrl': 'ad url'
-  };
+  }
 
   describe('AdvRed Analytic tests', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([]);
-    });
+      sinon.stub(events, 'getEvents').returns([])
+    })
 
     afterEach(function () {
-      advRedAnalytics.disableAnalytics();
-      events.getEvents.restore();
-    });
+      advRedAnalytics.disableAnalytics()
+      events.getEvents.restore()
+    })
 
     it('support custom endpoint', function () {
-      const custom_endpoint = 'custom url';
+      const custom_endpoint = 'custom url'
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {
           url: custom_endpoint,
           publisherId: '1234567890'
         }
-      });
+      })
 
-      expect(advRedAnalytics.getOptions().url).to.equal(custom_endpoint);
-    });
+      expect(advRedAnalytics.getOptions().url).to.equal(custom_endpoint)
+    })
 
     it('bid won event', function() {
-      const publisherId = '1234567890';
+      const publisherId = '1234567890'
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {
           publisherId: publisherId
         }
-      });
+      })
 
-      events.emit(EVENTS.BID_WON, bidWonEvent);
-      advRedAnalytics.sendEvents();
+      events.emit(EVENTS.BID_WON, bidWonEvent)
+      advRedAnalytics.sendEvents()
 
-      expect(server.requests.length).to.equal(1);
-      expect(server.requests[0].url).to.equal('https://api.adv.red/api/event');
+      expect(server.requests.length).to.equal(1)
+      expect(server.requests[0].url).to.equal('https://api.adv.red/api/event')
 
-      const message = JSON.parse(server.requests[0].requestBody);
-      expect(message.pwId).to.exist;
-      expect(message.publisherId).to.equal(publisherId);
-      expect(message.events.length).to.equal(1);
-      expect(message.events[0].eventType).to.equal('bidWon');
-      expect(message.events[0].ad).to.be.undefined;
-      expect(message.events[0].adUrl).to.be.undefined;
-    });
+      const message = JSON.parse(server.requests[0].requestBody)
+      expect(message.pwId).to.exist
+      expect(message.publisherId).to.equal(publisherId)
+      expect(message.events.length).to.equal(1)
+      expect(message.events[0].eventType).to.equal('bidWon')
+      expect(message.events[0].ad).to.be.undefined
+      expect(message.events[0].adUrl).to.be.undefined
+    })
 
     it('track event', function () {
-      sinon.spy(advRedAnalytics, 'track');
+      sinon.spy(advRedAnalytics, 'track')
 
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {
           publisherId: '1234567890'
         }
-      });
+      })
 
-      expectEvents().to.beTrackedBy(advRedAnalytics.track);
-    });
-  });
+      expectEvents().to.beTrackedBy(advRedAnalytics.track)
+    })
+  })
 
   describe('pageUrl detection', function () {
     afterEach(function () {
       advRedAnalytics.disableAnalytics()
-    });
+    })
     it('check pageUrl property', function () {
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',
         options: {
           publisherId: '1234567890'
         }
-      });
+      })
 
-      const message = JSON.parse(server.requests[0].requestBody);
-      expect(message.pageUrl).to.equal(window.top.location.href);
-    });
-  });
-});
+      const message = JSON.parse(server.requests[0].requestBody)
+      expect(message.pageUrl).to.equal(window.top.location.href)
+    })
+  })
+})

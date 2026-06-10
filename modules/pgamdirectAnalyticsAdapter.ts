@@ -33,22 +33,22 @@
  * GVL ID: 1353 (same as the bid adapter, PGAM Media LLC).
  */
 
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { EVENTS } from '../src/constants.js';
-import adapterManager from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
-import { logError, logMessage } from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
+import { EVENTS } from '../src/constants.js'
+import adapterManager from '../src/adapterManager.js'
+import { ajax } from '../src/ajax.js'
+import { logError, logMessage } from '../src/utils.js'
 
-const ANALYTICS_CODE = 'pgamdirect';
-const GVLID = 1353;
+const ANALYTICS_CODE = 'pgamdirect'
+const GVLID = 1353
 const DEFAULT_ENDPOINT =
-  'https://app.pgammedia.com/api/analytics-events';
+  'https://app.pgammedia.com/api/analytics-events'
 // Auction-context endpoint. Receives per-(publisher × placement × geo ×
 // device) summaries so the bidder-edge can calibrate per-cell floors
 // against observed market clearing. Separate from the main analytics
 // POST so the bidder-edge consumes it directly.
 const AUCTION_CONTEXT_ENDPOINT =
-  'https://rtb.pgammedia.com/rtb/v1/auction-context';
+  'https://rtb.pgammedia.com/rtb/v1/auction-context'
 
 // Which events we forward. Deliberately narrow: the four that carry
 // reconciliation-grade signal. Adding more here increases the
@@ -58,19 +58,19 @@ const FORWARDED_EVENTS: readonly string[] = [
   EVENTS.BID_WON,
   EVENTS.AD_RENDER_SUCCEEDED,
   EVENTS.AD_RENDER_FAILED,
-];
+]
 
 interface PgamAnalyticsOptions {
   orgId?: string;
   endpoint?: string;
 }
 
-let orgId: string | null = null;
-let endpoint = DEFAULT_ENDPOINT;
+let orgId: string | null = null
+let endpoint = DEFAULT_ENDPOINT
 
 export const dep = {
   ajax
-};
+}
 
 const pgamdirectAnalytics = Object.assign(
   adapter({ url: DEFAULT_ENDPOINT, analyticsType: 'endpoint' }),
@@ -86,11 +86,11 @@ const pgamdirectAnalytics = Object.assign(
      * shouldn't exfiltrate.
      */
     track({ eventType, args }: { eventType: string; args?: unknown }) {
-      if (!orgId) return;
-      if (!FORWARDED_EVENTS.includes(eventType)) return;
+      if (!orgId) return
+      if (!FORWARDED_EVENTS.includes(eventType)) return
       try {
-        const normalised = normalise(eventType, args);
-        const body = JSON.stringify({ org_id: orgId, event: normalised });
+        const normalised = normalise(eventType, args)
+        const body = JSON.stringify({ org_id: orgId, event: normalised })
         // Content-type 'text/plain' keeps the POST CORS-simple (no
         // preflight). Our analytics sink parses text/plain as JSON
         // deliberately.
@@ -105,18 +105,18 @@ const pgamdirectAnalytics = Object.assign(
           withCredentials: false,
           contentType: 'text/plain',
           keepalive: true,
-        });
+        })
         // On AUCTION_END, also POST per-cell context to the bidder-edge
         // (parallel, fire-and-forget). Used for floor calibration.
         if (eventType === EVENTS.AUCTION_END) {
-          maybePostAuctionContext(args);
+          maybePostAuctionContext(args)
         }
       } catch (err) {
-        logError('[pgamdirectAnalytics] track failed', err);
+        logError('[pgamdirectAnalytics] track failed', err)
       }
     },
   },
-);
+)
 
 /**
  * Forward per-cell auction context (publisher × placement × geo ×
@@ -128,43 +128,43 @@ export function maybePostAuctionContext(args: unknown): void {
   try {
     const a = (args ?? {}) as {
       bidsReceived?: Array<Record<string, unknown>>;
-    };
-    const bids = Array.isArray(a.bidsReceived) ? a.bidsReceived : [];
-    if (bids.length < 2) return;
+    }
+    const bids = Array.isArray(a.bidsReceived) ? a.bidsReceived : []
+    if (bids.length < 2) return
 
     // Group bids per ad unit; multi-imp auctions can have several pgam
     // seatbids that we score independently.
-    const byAdUnit = new Map<string, { ours?: Record<string, unknown>; others: Array<Record<string, unknown>> }>();
+    const byAdUnit = new Map<string, { ours?: Record<string, unknown>; others: Array<Record<string, unknown>> }>()
     for (const b of bids) {
-      const adUnit = typeof b.adUnitCode === 'string' ? b.adUnitCode : '';
-      if (!adUnit) continue;
-      let row = byAdUnit.get(adUnit);
+      const adUnit = typeof b.adUnitCode === 'string' ? b.adUnitCode : ''
+      if (!adUnit) continue
+      let row = byAdUnit.get(adUnit)
       if (!row) {
-        row = { others: [] };
-        byAdUnit.set(adUnit, row);
+        row = { others: [] }
+        byAdUnit.set(adUnit, row)
       }
       if (b.bidderCode === 'pgamdirect') {
-        const cpm = typeof b.cpm === 'number' ? b.cpm : 0;
-        const bestCpm = row.ours && typeof row.ours.cpm === 'number' ? row.ours.cpm : -1;
-        if (cpm > bestCpm) row.ours = b;
+        const cpm = typeof b.cpm === 'number' ? b.cpm : 0
+        const bestCpm = row.ours && typeof row.ours.cpm === 'number' ? row.ours.cpm : -1
+        if (cpm > bestCpm) row.ours = b
       } else {
-        row.others.push(b);
+        row.others.push(b)
       }
     }
 
     for (const [, row] of byAdUnit) {
-      if (!row.ours) continue;
+      if (!row.ours) continue
       // Cell signature is set by the bidder-edge on every winning pgam bid.
-      const ours = row.ours as { ext?: { pgam?: { cell?: AuctionCellContext } } };
-      const cell = ours.ext?.pgam?.cell;
-      if (!cell || !cell.publisher_id) continue;
+      const ours = row.ours as { ext?: { pgam?: { cell?: AuctionCellContext } } }
+      const cell = ours.ext?.pgam?.cell
+      if (!cell || !cell.publisher_id) continue
       // Competitive-high CPM = highest CPM among non-pgam bidders.
-      let competitorHigh = 0;
+      let competitorHigh = 0
       for (const o of row.others) {
-        const cpm = typeof o.cpm === 'number' ? o.cpm : 0;
-        if (cpm > competitorHigh) competitorHigh = cpm;
+        const cpm = typeof o.cpm === 'number' ? o.cpm : 0
+        if (cpm > competitorHigh) competitorHigh = cpm
       }
-      if (competitorHigh <= 0) continue;
+      if (competitorHigh <= 0) continue
 
       const body = JSON.stringify({
         publisher_id: cell.publisher_id,
@@ -173,17 +173,17 @@ export function maybePostAuctionContext(args: unknown): void {
         device_type: cell.device_type,
         attention_bucket: cell.attention_bucket,
         competitor_high_cpm_usd: competitorHigh,
-      });
+      })
       // text/plain keeps the POST CORS-simple.
       dep.ajax(AUCTION_CONTEXT_ENDPOINT, undefined, body, {
         method: 'POST',
         withCredentials: false,
         contentType: 'text/plain',
         keepalive: true,
-      });
+      })
     }
   } catch (err) {
-    logMessage('[pgamdirectAnalytics] auction-context post skipped', err);
+    logMessage('[pgamdirectAnalytics] auction-context post skipped', err)
   }
 }
 
@@ -243,12 +243,12 @@ interface NormalisedEvent {
 // Exported for unit testing — keeps the pure transform verifiable
 // without needing the full Prebid events harness.
 export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent {
-  const a = (rawArgs ?? {}) as Record<string, unknown>;
+  const a = (rawArgs ?? {}) as Record<string, unknown>
   const base: NormalisedEvent = {
     t: eventType,
     ts: Date.now(),
     auction_id: typeof a.auctionId === 'string' ? a.auctionId : undefined,
-  };
+  }
 
   switch (eventType) {
     case EVENTS.BID_WON:
@@ -270,12 +270,12 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
         // too so backend discrepancy analysis can key on a single
         // per-bid identifier.
         ad_id: typeof a.adId === 'string' ? a.adId : undefined,
-      };
+      }
 
     case EVENTS.AUCTION_END: {
       const bids = Array.isArray(a.bidsReceived)
         ? (a.bidsReceived as Array<Record<string, unknown>>)
-        : [];
+        : []
       return {
         ...base,
         bidders_seen: bids
@@ -287,7 +287,7 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
             size: typeof b.size === 'string' ? b.size : undefined,
           }))
           .filter((b) => b.bidder),
-      };
+      }
     }
 
     case EVENTS.AD_RENDER_SUCCEEDED: {
@@ -298,30 +298,30 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
       const bid =
         typeof a.bid === 'object' && a.bid
           ? (a.bid as Record<string, unknown>)
-          : null;
+          : null
       return {
         ...base,
         bidder: bid && typeof bid.bidderCode === 'string' ? bid.bidderCode : undefined,
         ad_unit_code: bid && typeof bid.adUnitCode === 'string' ? bid.adUnitCode : undefined,
         ad_id: typeof a.adId === 'string' ? a.adId : undefined,
-      };
+      }
     }
 
     case EVENTS.AD_RENDER_FAILED: {
       const bid =
         typeof a.bid === 'object' && a.bid
           ? (a.bid as Record<string, unknown>)
-          : null;
+          : null
       return {
         ...base,
         render_fail_reason: typeof a.reason === 'string' ? a.reason : 'unknown',
         ad_unit_code: bid && typeof bid.adUnitCode === 'string' ? bid.adUnitCode : undefined,
         ad_id: typeof a.adId === 'string' ? a.adId : undefined,
-      };
+      }
     }
 
     default:
-      return base;
+      return base
   }
 }
 
@@ -329,30 +329,30 @@ export function normalise(eventType: string, rawArgs: unknown): NormalisedEvent 
 // provider config. Pattern copied from
 // modules/AsteriobidPbmAnalyticsAdapter.js and other TS adapters.
 (pgamdirectAnalytics as unknown as Record<string, unknown>)
-  .originEnableAnalytics = pgamdirectAnalytics.enableAnalytics;
+  .originEnableAnalytics = pgamdirectAnalytics.enableAnalytics
 pgamdirectAnalytics.enableAnalytics = function (config: {
   options?: PgamAnalyticsOptions;
 }) {
-  const opts = config?.options ?? {};
+  const opts = config?.options ?? {}
   if (!opts.orgId || typeof opts.orgId !== 'string') {
-    logError('[pgamdirectAnalytics] options.orgId is required');
-    return;
+    logError('[pgamdirectAnalytics] options.orgId is required')
+    return
   }
-  orgId = opts.orgId;
+  orgId = opts.orgId
   if (typeof opts.endpoint === 'string' && opts.endpoint) {
-    endpoint = opts.endpoint;
+    endpoint = opts.endpoint
   }
   logMessage(`[pgamdirectAnalytics] enabled for orgId=${orgId}`);
   (
     (pgamdirectAnalytics as unknown as Record<string, unknown>)
       .originEnableAnalytics as (c: unknown) => void
-  ).call(pgamdirectAnalytics, config);
-};
+  ).call(pgamdirectAnalytics, config)
+}
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pgamdirectAnalytics,
   code: ANALYTICS_CODE,
   gvlid: GVLID,
-});
+})
 
-export default pgamdirectAnalytics;
+export default pgamdirectAnalytics

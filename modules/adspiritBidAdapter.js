@@ -1,10 +1,10 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-const { getWinDimensions } = utils;
-const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
-const SCRIPT_URL = '/adasync.min.js';
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { getGlobal } from '../src/prebidGlobal.js'
+const { getWinDimensions } = utils
+const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid'
+const SCRIPT_URL = '/adasync.min.js'
 
 export const spec = {
 
@@ -13,26 +13,26 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
-    const host = spec.getBidderHost(bid);
+    const host = spec.getBidderHost(bid)
     if (!host || !bid.params.placementId) {
-      return false;
+      return false
     }
-    return true;
+    return true
   },
   getScriptUrl: function () {
-    return SCRIPT_URL;
+    return SCRIPT_URL
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const requests = [];
-    const prebidVersion = getGlobal().version;
-    const win = getWinDimensions();
+    const requests = []
+    const prebidVersion = getGlobal().version
+    const win = getWinDimensions()
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      const bidRequest = validBidRequests[i];
-      bidRequest.adspiritConId = spec.genAdConId(bidRequest);
-      let reqUrl = spec.getBidderHost(bidRequest);
-      const placementId = utils.getBidIdParameter('placementId', bidRequest.params);
-      const eids = spec.getEids(bidRequest);
+      const bidRequest = validBidRequests[i]
+      bidRequest.adspiritConId = spec.genAdConId(bidRequest)
+      let reqUrl = spec.getBidderHost(bidRequest)
+      const placementId = utils.getBidIdParameter('placementId', bidRequest.params)
+      const eids = spec.getEids(bidRequest)
 
       reqUrl = '//' + reqUrl + RTB_URL +
         '&pid=' + placementId +
@@ -42,13 +42,13 @@ export const spec = {
         '&wcx=' + win.innerWidth +
         '&wcy=' + win.innerHeight +
         '&async=' + bidRequest.adspiritConId +
-        '&t=' + Math.round(Math.random() * 100000);
+        '&t=' + Math.round(Math.random() * 100000)
 
-      const gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0;
-      const gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : '';
+      const gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0
+      const gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : ''
 
       if (bidderRequest.gdprConsent) {
-        reqUrl += '&gdpr=' + gdprApplies + '&gdpr_consent=' + gdprConsentString;
+        reqUrl += '&gdpr=' + gdprApplies + '&gdpr_consent=' + gdprConsentString
       }
 
       const openRTBRequest = {
@@ -129,15 +129,15 @@ export const spec = {
             mediaTypes: bidRequest.mediaTypes
           }
         }
-      };
+      }
 
-      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain
       if (schain) {
         openRTBRequest.source = {
           ext: {
             schain: schain
           }
-        };
+        }
       }
       requests.push({
         method: 'POST',
@@ -145,22 +145,22 @@ export const spec = {
         data: JSON.stringify(openRTBRequest),
         headers: { 'Content-Type': 'application/json' },
         bidRequest: bidRequest
-      });
+      })
     }
 
-    return requests;
+    return requests
   },
   getEids: function (bidRequest) {
-    return utils.deepAccess(bidRequest, 'userIdAsEids') || [];
+    return utils.deepAccess(bidRequest, 'userIdAsEids') || []
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
-    const bidObj = bidRequest.bidRequest;
-    const host = spec.getBidderHost(bidObj);
+    const bidResponses = []
+    const bidObj = bidRequest.bidRequest
+    const host = spec.getBidderHost(bidObj)
 
     if (!serverResponse || !serverResponse.body) {
-      utils.logWarn(`adspirit: Empty response from bidder`);
-      return [];
+      utils.logWarn(`adspirit: Empty response from bidder`)
+      return []
     }
 
     if (serverResponse.body.seatbid) {
@@ -178,22 +178,22 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain || []
             }
-          };
+          }
 
-          let adm = bid.adm;
+          let adm = bid.adm
           if (typeof adm === 'string' && adm.trim().startsWith('{')) {
-            adm = JSON.parse(adm || '{}');
-            if (typeof adm !== 'object') adm = null;
+            adm = JSON.parse(adm || '{}')
+            if (typeof adm !== 'object') adm = null
           }
 
           if (adm?.native?.assets) {
             const getAssetValue = (id, type) => {
-              const assetList = adm.native.assets.filter(a => a.id === id);
-              if (assetList.length === 0) return '';
-              return assetList[0][type]?.text || assetList[0][type]?.value || assetList[0][type]?.url || '';
-            };
+              const assetList = adm.native.assets.filter(a => a.id === id)
+              if (assetList.length === 0) return ''
+              return assetList[0][type]?.text || assetList[0][type]?.value || assetList[0][type]?.url || ''
+            }
 
-            const duplicateTracker = {};
+            const duplicateTracker = {}
 
             bidResponse.native = {
               title: getAssetValue(1, 'title'),
@@ -204,50 +204,50 @@ export const spec = {
               sponsoredBy: getAssetValue(6, 'data'),
               clickUrl: adm.native.link?.url || '',
               impressionTrackers: Array.isArray(adm.native.imptrackers) ? adm.native.imptrackers : []
-            };
+            }
 
             const predefinedAssetIds = Object.entries(bidResponse.native)
               .filter(([key, value]) => key !== 'clickUrl' && key !== 'impressionTrackers')
               .map(([key, value]) => adm.native.assets.find(asset =>
                 typeof value === 'object' ? value.url === asset?.img?.url : value === asset?.data?.value
               )?.id)
-              .filter(id => id !== undefined);
+              .filter(id => id !== undefined)
 
             adm.native.assets.forEach(asset => {
-              const type = Object.keys(asset).find(k => k !== 'id');
+              const type = Object.keys(asset).find(k => k !== 'id')
 
               if (!duplicateTracker[asset.id]) {
-                duplicateTracker[asset.id] = 1;
+                duplicateTracker[asset.id] = 1
               } else {
-                duplicateTracker[asset.id]++;
+                duplicateTracker[asset.id]++
               }
 
-              if (predefinedAssetIds.includes(asset.id) && duplicateTracker[asset.id] === 1) return;
+              if (predefinedAssetIds.includes(asset.id) && duplicateTracker[asset.id] === 1) return
 
               if (type && asset[type]) {
-                const value = asset[type].text || asset[type].value || asset[type].url || '';
+                const value = asset[type].text || asset[type].value || asset[type].url || ''
 
                 if (type === 'img') {
                   bidResponse.native[`image_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = {
                     url: value, width: asset.img.w || null, height: asset.img.h || null
-                  };
+                  }
                 } else {
-                  bidResponse.native[`data_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = value;
+                  bidResponse.native[`data_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = value
                 }
               }
-            });
+            })
 
-            bidResponse.mediaType = NATIVE;
+            bidResponse.mediaType = NATIVE
           }
 
-          bidResponses.push(bidResponse);
-        });
-      });
+          bidResponses.push(bidResponse)
+        })
+      })
     } else {
-      const adData = serverResponse.body;
-      const cpm = adData.cpm;
+      const adData = serverResponse.body
+      const cpm = adData.cpm
 
-      if (!cpm) return [];
+      if (!cpm) return []
       const bidResponse = {
         requestId: bidObj.bidId,
         cpm: cpm,
@@ -260,29 +260,29 @@ export const spec = {
         meta: {
           advertiserDomains: adData.adomain || []
         }
-      };
-      const adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
-      bidResponse.ad = adm;
-      bidResponse.mediaType = BANNER;
+      }
+      const adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm
+      bidResponse.ad = adm
+      bidResponse.mediaType = BANNER
 
-      bidResponses.push(bidResponse);
+      bidResponses.push(bidResponse)
     }
 
-    return bidResponses;
+    return bidResponses
   },
   getBidderHost: function (bid) {
     if (bid.bidder === 'adspirit') {
-      return utils.getBidIdParameter('host', bid.params);
+      return utils.getBidIdParameter('host', bid.params)
     }
     if (bid.bidder === 'twiago') {
-      return 'a.twiago.com';
+      return 'a.twiago.com'
     }
-    return null;
+    return null
   },
 
   genAdConId: function (bid) {
-    return bid.bidder + Math.round(Math.random() * 100000);
+    return bid.bidder + Math.round(Math.random() * 100000)
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

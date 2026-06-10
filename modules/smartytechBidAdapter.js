@@ -1,22 +1,22 @@
 import { buildUrl, deepAccess, isArray, generateUUID } from '../src/utils.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { chunk } from '../libraries/chunk/chunk.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { findRootDomain } from '../src/fpd/rootDomain.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { chunk } from '../libraries/chunk/chunk.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { findRootDomain } from '../src/fpd/rootDomain.js'
 
-const BIDDER_CODE = 'smartytech';
-export const ENDPOINT_PROTOCOL = 'https';
-export const ENDPOINT_DOMAIN = 'server.smartytech.io';
-export const ENDPOINT_PATH = '/hb/v2/bidder';
+const BIDDER_CODE = 'smartytech'
+export const ENDPOINT_PROTOCOL = 'https'
+export const ENDPOINT_DOMAIN = 'server.smartytech.io'
+export const ENDPOINT_PATH = '/hb/v2/bidder'
 
 // Alias User ID constants
-const AUID_COOKIE_NAME = '_smartytech_auid';
-const AUID_COOKIE_EXPIRATION_DAYS = 1825; // 5 years
+const AUID_COOKIE_NAME = '_smartytech_auid'
+const AUID_COOKIE_EXPIRATION_DAYS = 1825 // 5 years
 
 // Storage manager for cookies
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 /**
  * Get or generate Alias User ID (auId)
@@ -26,24 +26,24 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
  */
 export function getAliasUserId() {
   if (!storage.cookiesAreEnabled()) {
-    return null;
+    return null
   }
 
-  let auId = storage.getCookie(AUID_COOKIE_NAME);
+  let auId = storage.getCookie(AUID_COOKIE_NAME)
 
   if (auId && auId.length > 0) {
-    return auId;
+    return auId
   }
 
-  auId = generateUUID();
+  auId = generateUUID()
 
-  const expirationDate = new Date();
-  expirationDate.setTime(expirationDate.getTime() + (AUID_COOKIE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000));
-  const expires = expirationDate.toUTCString();
+  const expirationDate = new Date()
+  expirationDate.setTime(expirationDate.getTime() + (AUID_COOKIE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000))
+  const expires = expirationDate.toUTCString()
 
-  storage.setCookie(AUID_COOKIE_NAME, auId, expires, 'Lax', findRootDomain());
+  storage.setCookie(AUID_COOKIE_NAME, auId, expires, 'Lax', findRootDomain())
 
-  return auId;
+  return auId
 }
 
 export const spec = {
@@ -55,140 +55,140 @@ export const spec = {
       !!parseInt(bidRequest.params.endpointId) &&
       spec._validateBanner(bidRequest) &&
       spec._validateVideo(bidRequest)
-    );
+    )
   },
 
   _validateBanner: function(bidRequest) {
-    const bannerAdUnit = deepAccess(bidRequest, 'mediaTypes.banner');
+    const bannerAdUnit = deepAccess(bidRequest, 'mediaTypes.banner')
 
     if (bannerAdUnit === undefined) {
-      return true;
+      return true
     }
 
     if (!Array.isArray(bannerAdUnit.sizes)) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
 
   _validateVideo: function(bidRequest) {
-    const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video');
+    const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video')
 
     if (videoAdUnit === undefined) {
-      return true;
+      return true
     }
 
     if (!Array.isArray(videoAdUnit.playerSize)) {
-      return false;
+      return false
     }
 
     if (!videoAdUnit.context) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const referer = bidderRequest?.refererInfo?.page || window.location.href;
+    const referer = bidderRequest?.refererInfo?.page || window.location.href
 
-    const auId = getAliasUserId();
+    const auId = getAliasUserId()
 
     const bidRequests = validBidRequests.map((validBidRequest) => {
-      const video = deepAccess(validBidRequest, 'mediaTypes.video', false);
-      const banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
-      const sizes = validBidRequest.params.sizes;
+      const video = deepAccess(validBidRequest, 'mediaTypes.video', false)
+      const banner = deepAccess(validBidRequest, 'mediaTypes.banner', false)
+      const sizes = validBidRequest.params.sizes
 
       const oneRequest = {
         endpointId: validBidRequest.params.endpointId,
         adUnitCode: validBidRequest.adUnitCode,
         referer: referer,
         bidId: validBidRequest.bidId
-      };
+      }
 
       if (auId) {
-        oneRequest.auId = auId;
+        oneRequest.auId = auId
       }
 
       if (video) {
-        oneRequest.video = video;
+        oneRequest.video = video
 
         if (sizes) {
-          oneRequest.video.sizes = sizes;
+          oneRequest.video.sizes = sizes
         }
       } else if (banner) {
-        oneRequest.banner = banner;
+        oneRequest.banner = banner
 
         if (sizes) {
-          oneRequest.banner.sizes = sizes;
+          oneRequest.banner.sizes = sizes
         }
       }
 
       // Add user IDs if available
-      const userIds = deepAccess(validBidRequest, 'userIdAsEids');
+      const userIds = deepAccess(validBidRequest, 'userIdAsEids')
       if (userIds && isArray(userIds) && userIds.length > 0) {
-        oneRequest.userIds = userIds;
+        oneRequest.userIds = userIds
       }
 
       // Add GDPR consent if available
       if (bidderRequest && bidderRequest.gdprConsent) {
         oneRequest.gdprConsent = {
           consentString: bidderRequest.gdprConsent.consentString || ''
-        };
+        }
 
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          oneRequest.gdprConsent.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+          oneRequest.gdprConsent.gdprApplies = bidderRequest.gdprConsent.gdprApplies
         }
 
         if (bidderRequest.gdprConsent.addtlConsent) {
-          oneRequest.gdprConsent.addtlConsent = bidderRequest.gdprConsent.addtlConsent;
+          oneRequest.gdprConsent.addtlConsent = bidderRequest.gdprConsent.addtlConsent
         }
       }
 
       // Add CCPA/USP consent if available
       if (bidderRequest && bidderRequest.uspConsent) {
-        oneRequest.uspConsent = bidderRequest.uspConsent;
+        oneRequest.uspConsent = bidderRequest.uspConsent
       }
 
       // Add COPPA flag if configured
-      const coppa = config.getConfig('coppa');
+      const coppa = config.getConfig('coppa')
       if (coppa) {
-        oneRequest.coppa = coppa;
+        oneRequest.coppa = coppa
       }
 
       return oneRequest
-    });
+    })
 
     const smartytechRequestUrl = buildUrl({
       protocol: ENDPOINT_PROTOCOL,
       hostname: ENDPOINT_DOMAIN,
       pathname: ENDPOINT_PATH,
-    });
+    })
 
     // Get chunk size from adapter configuration
-    const adapterSettings = config.getConfig(BIDDER_CODE) || {};
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+    const adapterSettings = config.getConfig(BIDDER_CODE) || {}
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10)
 
     // Split bid requests into chunks
-    const bidChunks = chunk(bidRequests, chunkSize);
+    const bidChunks = chunk(bidRequests, chunkSize)
 
     // Return array of request objects, one for each chunk
     return bidChunks.map(bidChunk => ({
       method: 'POST',
       url: smartytechRequestUrl,
       data: bidChunk
-    }));
+    }))
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     if (typeof serverResponse.body === 'undefined') {
-      return [];
+      return []
     }
 
-    const validBids = bidRequest.data;
+    const validBids = bidRequest.data
     const keys = Object.keys(serverResponse.body)
-    const responseBody = serverResponse.body;
+    const responseBody = serverResponse.body
 
     return keys.filter(key => {
       return responseBody[key].ad
@@ -197,7 +197,7 @@ export const spec = {
         bid: validBids.find(b => b.adUnitCode === key),
         response: responseBody[key]
       }
-    }).map(item => spec._adResponse(item.bid, item.response));
+    }).map(item => spec._adResponse(item.bid, item.response))
   },
 
   _adResponse: function (request, response) {
@@ -214,20 +214,20 @@ export const spec = {
       currency: response.currency,
       mediaType: BANNER,
       meta: {}
-    };
+    }
 
     if (response.mediaType === VIDEO) {
-      bidObject.vastXml = response.ad;
-      bidObject.mediaType = VIDEO;
+      bidObject.vastXml = response.ad
+      bidObject.mediaType = VIDEO
     }
 
     if (response.meta) {
-      bidObject.meta = response.meta;
+      bidObject.meta = response.meta
     }
 
-    return bidObject;
+    return bidObject
   },
 
 }
 
-registerBidder(spec);
+registerBidder(spec)

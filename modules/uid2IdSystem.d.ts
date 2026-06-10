@@ -1,4 +1,4 @@
-export type Uid2IdSystemModuleName = 'uid2';
+export type Uid2IdSystemModuleName = 'uid2'
 
 export interface Uid2Token {
   advertising_token: string;

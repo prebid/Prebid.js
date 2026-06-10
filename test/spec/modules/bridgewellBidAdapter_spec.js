@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { spec } from 'modules/bridgewellBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai'
+import { spec } from 'modules/bridgewellBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const userId = {
   'criteoId': 'vYlICF9oREZlTHBGRVdrJTJCUUJnc3U2ckNVaXhrV1JWVUZVSUxzZmJlcnJZR0ZxbVhFRnU5bDAlMkJaUWwxWTlNcmdEeHFrJTJGajBWVlV4T3lFQ0FyRVcxNyUyQlIxa0lLSlFhcWJpTm9PSkdPVkx0JTJCbzlQRTQlM0Q',
@@ -17,16 +17,16 @@ const userIdAsEids = [{
       third: '01***********'
     }
   }]
-}];
+}]
 
 describe('bridgewellBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
@@ -35,9 +35,9 @@ describe('bridgewellBidAdapter', function () {
         'params': {
           'ChannelID': 'CLJgEAYYvxUiBXBlbm55KgkIrAIQ-gEaATk'
         },
-      };
-      expect(spec.isBidRequestValid(validTag)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(validTag)).to.equal(true)
+    })
 
     it('should return true when required params found', function () {
       const validTag = {
@@ -45,17 +45,17 @@ describe('bridgewellBidAdapter', function () {
         'params': {
           'cid': 1234
         },
-      };
-      expect(spec.isBidRequestValid(validTag)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(validTag)).to.equal(true)
+    })
 
     it('should return false when required params not found', function () {
       const invalidTag = {
         'bidder': 'bridgewell',
         'params': {},
-      };
-      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false)
+    })
 
     it('should return false when required params are empty', function () {
       const invalidTag = {
@@ -63,9 +63,9 @@ describe('bridgewellBidAdapter', function () {
         'params': {
           'ChannelID': '',
         },
-      };
-      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false)
+    })
 
     it('should return false when required params are empty', function () {
       const invalidTag = {
@@ -73,9 +73,9 @@ describe('bridgewellBidAdapter', function () {
         'params': {
           'cid': '',
         },
-      };
-      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false)
+    })
 
     it('should return false when required param cid is not a number', function () {
       const invalidTag = {
@@ -83,10 +83,10 @@ describe('bridgewellBidAdapter', function () {
         'params': {
           'cid': 'bad_cid',
         },
-      };
-      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -148,7 +148,7 @@ describe('bridgewellBidAdapter', function () {
         'userId': userId,
         'userIdAsEids': userIdAsEids,
       }
-    ];
+    ]
 
     it('should attach valid params to the tag', function () {
       const bidderRequest = {
@@ -159,28 +159,28 @@ describe('bridgewellBidAdapter', function () {
           }
         }
       }
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = request.data
 
-      expect(payload).to.be.an('object');
-      expect(payload.adUnits).to.be.an('array');
-      expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
-      expect(payload.userIds).to.deep.equal(userId);
-      expect(payload.userIdAsEids).to.deep.equal(userIdAsEids);
-      expect(payload.auctionId).to.equal('1d1a030790a475');
-      expect(payload.bidderRequestId).to.equal('22edbae2733bf6');
+      expect(payload).to.be.an('object')
+      expect(payload.adUnits).to.be.an('array')
+      expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/')
+      expect(payload.userIds).to.deep.equal(userId)
+      expect(payload.userIdAsEids).to.deep.equal(userIdAsEids)
+      expect(payload.auctionId).to.equal('1d1a030790a475')
+      expect(payload.bidderRequestId).to.equal('22edbae2733bf6')
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
-        const u = payload.adUnits[i];
-        expect(u).to.have.property('ChannelID').that.is.a('string');
-        expect(u).to.not.have.property('cid');
-        expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
-        expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
-        expect(u).to.have.property('transactionId');
-        expect(u).to.have.property('sizes');
-        expect(u).to.have.property('mediaTypes');
-        expect(u).to.have.property('ortb2Imp');
+        const u = payload.adUnits[i]
+        expect(u).to.have.property('ChannelID').that.is.a('string')
+        expect(u).to.not.have.property('cid')
+        expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2')
+        expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321')
+        expect(u).to.have.property('transactionId')
+        expect(u).to.have.property('sizes')
+        expect(u).to.have.property('mediaTypes')
+        expect(u).to.have.property('ortb2Imp')
       }
-    });
+    })
 
     it('should attach valid params to the tag, part2', function() {
       const bidderRequest = {
@@ -209,30 +209,30 @@ describe('bridgewellBidAdapter', function () {
           'userId': userId,
           'userIdAsEids': userIdAsEids,
         },
-      ];
+      ]
 
-      const request = spec.buildRequests(bidRequests2, bidderRequest);
-      const payload = request.data;
+      const request = spec.buildRequests(bidRequests2, bidderRequest)
+      const payload = request.data
 
-      expect(payload).to.be.an('object');
-      expect(payload.adUnits).to.be.an('array');
-      expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/');
-      expect(payload.userIds).to.deep.equal(userId);
-      expect(payload.userIdAsEids).to.deep.equal(userIdAsEids);
-      expect(payload.auctionId).to.equal('1d1a030790a475');
-      expect(payload.bidderRequestId).to.equal('22edbae2733bf6');
+      expect(payload).to.be.an('object')
+      expect(payload.adUnits).to.be.an('array')
+      expect(payload.url).to.exist.and.to.equal('https://www.bridgewell.com/')
+      expect(payload.userIds).to.deep.equal(userId)
+      expect(payload.userIdAsEids).to.deep.equal(userIdAsEids)
+      expect(payload.auctionId).to.equal('1d1a030790a475')
+      expect(payload.bidderRequestId).to.equal('22edbae2733bf6')
       for (let i = 0, max_i = payload.adUnits.length; i < max_i; i++) {
-        const u = payload.adUnits[i];
-        expect(u).to.have.property('cid').that.is.a('number');
-        expect(u).to.not.have.property('ChannelID');
-        expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2');
-        expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321');
-        expect(u).to.have.property('transactionId');
-        expect(u).to.have.property('sizes');
-        expect(u).to.have.property('mediaTypes');
-        expect(u).to.have.property('ortb2Imp');
+        const u = payload.adUnits[i]
+        expect(u).to.have.property('cid').that.is.a('number')
+        expect(u).to.not.have.property('ChannelID')
+        expect(u).to.have.property('adUnitCode').and.to.equal('adunit-code-2')
+        expect(u).to.have.property('requestId').and.to.equal('3150ccb55da321')
+        expect(u).to.have.property('transactionId')
+        expect(u).to.have.property('sizes')
+        expect(u).to.have.property('mediaTypes')
+        expect(u).to.have.property('ortb2Imp')
       }
-    });
+    })
 
     it('should attach validBidRequests to the tag', function () {
       const bidderRequest = {
@@ -244,10 +244,10 @@ describe('bridgewellBidAdapter', function () {
         }
       }
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const validBidRequests = request.validBidRequests;
-      expect(validBidRequests).to.deep.equal(bidRequests);
-    });
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const validBidRequests = request.validBidRequests
+      expect(validBidRequests).to.deep.equal(bidRequests)
+    })
 
     it('should include ortb2Imp fields in adUnit', function () {
       const bidderRequest = {
@@ -300,26 +300,26 @@ describe('bridgewellBidAdapter', function () {
           'userId': userId,
           'userIdAsEids': userIdAsEids,
         }
-      ];
+      ]
 
-      const request = spec.buildRequests(bidRequestsWithOrtb2, bidderRequest);
-      const adUnit = request.data.adUnits[0];
+      const request = spec.buildRequests(bidRequestsWithOrtb2, bidderRequest)
+      const adUnit = request.data.adUnits[0]
 
-      expect(adUnit.transactionId).to.equal('trans-123');
-      expect(adUnit.adUnitId).to.equal('adunit-123');
-      expect(adUnit.sizes).to.deep.equal([[300, 250]]);
-      expect(adUnit.ortb2Imp.ext.data.adserver.name).to.equal('gam');
-      expect(adUnit.ortb2Imp.ext.data.adserver.adslot).to.equal('/1234/test');
-      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('/1234/test-pbadslot');
-      expect(adUnit.ortb2Imp.ext.gpid).to.equal('test-gpid');
-      expect(adUnit.ortb2Imp.banner.pos).to.equal(1);
+      expect(adUnit.transactionId).to.equal('trans-123')
+      expect(adUnit.adUnitId).to.equal('adunit-123')
+      expect(adUnit.sizes).to.deep.equal([[300, 250]])
+      expect(adUnit.ortb2Imp.ext.data.adserver.name).to.equal('gam')
+      expect(adUnit.ortb2Imp.ext.data.adserver.adslot).to.equal('/1234/test')
+      expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('/1234/test-pbadslot')
+      expect(adUnit.ortb2Imp.ext.gpid).to.equal('test-gpid')
+      expect(adUnit.ortb2Imp.banner.pos).to.equal(1)
       expect(adUnit.ortb2Imp.ext.prebid.passthrough).to.deep.equal({
         bucket: 'test-bucket',
         client: 'test-client',
         gamAdCode: 'test-gam'
-      });
-      expect(adUnit.ortb2Imp.ext.prebid.passthrough).to.not.have.property('undefinedField');
-    });
+      })
+      expect(adUnit.ortb2Imp.ext.prebid.passthrough).to.not.have.property('undefinedField')
+    })
 
     it('should include floor information when getFloor is available', function () {
       const bidderRequest = {
@@ -347,19 +347,19 @@ describe('bridgewellBidAdapter', function () {
             return {
               floor: 1.5,
               currency: 'USD'
-            };
+            }
           },
           'userId': userId,
           'userIdAsEids': userIdAsEids,
         }
-      ];
+      ]
 
-      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest);
-      const adUnit = request.data.adUnits[0];
+      const request = spec.buildRequests(bidRequestsWithFloor, bidderRequest)
+      const adUnit = request.data.adUnits[0]
 
-      expect(adUnit.floor).to.equal(1.5);
-      expect(adUnit.currency).to.equal('USD');
-    });
+      expect(adUnit.floor).to.equal(1.5)
+      expect(adUnit.currency).to.equal('USD')
+    })
 
     it('should include additional bid request fields in payload', function () {
       const bidderRequest = {
@@ -403,24 +403,24 @@ describe('bridgewellBidAdapter', function () {
           'userId': userId,
           'userIdAsEids': userIdAsEids,
         }
-      ];
+      ]
 
-      const request = spec.buildRequests(bidRequestsWithMetrics, bidderRequest);
-      const payload = request.data;
+      const request = spec.buildRequests(bidRequestsWithMetrics, bidderRequest)
+      const payload = request.data
 
-      expect(payload.auctionId).to.equal('auction-123');
-      expect(payload.bidderRequestId).to.equal('bidder-req-123');
-      expect(payload.src).to.equal('s2s');
-      expect(payload.auctionsCount).to.equal(5);
-      expect(payload.bidRequestsCount).to.equal(10);
-      expect(payload.bidderRequestsCount).to.equal(3);
-      expect(payload.bidderWinsCount).to.equal(2);
-      expect(payload.deferBilling).to.equal(true);
-      expect(payload.metrics).to.deep.equal({ test: 'metric' });
-      expect(payload.referrer).to.equal('https://www.referrer.com/');
-      expect(payload.ortb2).to.deep.equal({ site: { name: 'test-site' } });
-    });
-  });
+      expect(payload.auctionId).to.equal('auction-123')
+      expect(payload.bidderRequestId).to.equal('bidder-req-123')
+      expect(payload.src).to.equal('s2s')
+      expect(payload.auctionsCount).to.equal(5)
+      expect(payload.bidRequestsCount).to.equal(10)
+      expect(payload.bidderRequestsCount).to.equal(3)
+      expect(payload.bidderWinsCount).to.equal(2)
+      expect(payload.deferBilling).to.equal(true)
+      expect(payload.metrics).to.deep.equal({ test: 'metric' })
+      expect(payload.referrer).to.equal('https://www.referrer.com/')
+      expect(payload.ortb2).to.deep.equal({ site: { name: 'test-site' } })
+    })
+  })
 
   describe('interpretResponse', function () {
     const nativeBidRequests = {
@@ -465,7 +465,7 @@ describe('bridgewellBidAdapter', function () {
           'auctionId': '1d1a030790a475',
         },
       ]
-    };
+    }
 
     const nativeServerResponses = [
       {
@@ -498,7 +498,7 @@ describe('bridgewellBidAdapter', function () {
         'netRevenue': true,
         'currency': 'NTD'
       },
-    ];
+    ]
 
     const bannerBidRequests = {
       validBidRequests: [
@@ -511,7 +511,7 @@ describe('bridgewellBidAdapter', function () {
           'bidId': '3150ccb55da321',
         },
       ]
-    };
+    }
 
     const bannerServerResponses = [
       {
@@ -527,45 +527,45 @@ describe('bridgewellBidAdapter', function () {
         'netRevenue': true,
         'currency': 'NTD'
       },
-    ];
+    ]
 
     it('should return all required parameters', function () {
-      const result = spec.interpretResponse({ 'body': nativeServerResponses }, nativeBidRequests);
+      const result = spec.interpretResponse({ 'body': nativeServerResponses }, nativeBidRequests)
 
-      expect(result[0].requestId).to.equal('3150ccb55da321');
-      expect(result[0].cpm).to.equal(7.0);
-      expect(result[0].width).to.equal(1);
-      expect(result[0].height).to.equal(1);
-      expect(result[0].ttl).to.equal(400);
-      expect(result[0].creativeId).to.equal('0e4048d3-5c74-4380-a21a-00ba35629f7d');
-      expect(result[0].netRevenue).to.equal(true);
-      expect(result[0].currency).to.equal('NTD');
-      expect(result[0].mediaType).to.equal('native');
-      expect(result[0].native.image.url).to.equal('https://img.scupio.com/test/test-image.jpg');
-      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
-    });
+      expect(result[0].requestId).to.equal('3150ccb55da321')
+      expect(result[0].cpm).to.equal(7.0)
+      expect(result[0].width).to.equal(1)
+      expect(result[0].height).to.equal(1)
+      expect(result[0].ttl).to.equal(400)
+      expect(result[0].creativeId).to.equal('0e4048d3-5c74-4380-a21a-00ba35629f7d')
+      expect(result[0].netRevenue).to.equal(true)
+      expect(result[0].currency).to.equal('NTD')
+      expect(result[0].mediaType).to.equal('native')
+      expect(result[0].native.image.url).to.equal('https://img.scupio.com/test/test-image.jpg')
+      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com')
+    })
 
     it('should return all required parameters banner', function () {
-      const result = spec.interpretResponse({ 'body': bannerServerResponses }, bannerBidRequests);
+      const result = spec.interpretResponse({ 'body': bannerServerResponses }, bannerBidRequests)
 
-      expect(result[0].requestId).to.equal('3150ccb55da321');
-      expect(result[0].cpm).to.equal(5.0);
-      expect(result[0].width).to.equal(300);
-      expect(result[0].height).to.equal(250);
-      expect(result[0].ttl).to.equal(360);
-      expect(result[0].creativeId).to.equal('e5b10774-32bf-4931-85ee-05095e8cff21');
-      expect(result[0].netRevenue).to.equal(true);
-      expect(result[0].currency).to.equal('NTD');
-      expect(result[0].mediaType).to.equal('banner');
-      expect(result[0].ad).to.equal('<div>test 300x250</div>');
-      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
-    });
+      expect(result[0].requestId).to.equal('3150ccb55da321')
+      expect(result[0].cpm).to.equal(5.0)
+      expect(result[0].width).to.equal(300)
+      expect(result[0].height).to.equal(250)
+      expect(result[0].ttl).to.equal(360)
+      expect(result[0].creativeId).to.equal('e5b10774-32bf-4931-85ee-05095e8cff21')
+      expect(result[0].netRevenue).to.equal(true)
+      expect(result[0].currency).to.equal('NTD')
+      expect(result[0].mediaType).to.equal('banner')
+      expect(result[0].ad).to.equal('<div>test 300x250</div>')
+      expect(String(result[0].meta.advertiserDomains)).to.equal('response.com')
+    })
 
     it('should give up bid if server response is undefined', function () {
-      let result = spec.interpretResponse({ 'body': undefined }, bannerBidRequests);
+      let result = spec.interpretResponse({ 'body': undefined }, bannerBidRequests)
 
-      expect(result).to.deep.equal([]);
-    });
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if request sizes is missing', function () {
       const request = {
@@ -577,10 +577,10 @@ describe('bridgewellBidAdapter', function () {
             'bidId': '3150ccb55da321',
           },
         ]
-      };
-      const result = spec.interpretResponse({ 'body': bannerServerResponses }, request);
-      expect(result).to.deep.equal([]);
-    });
+      }
+      const result = spec.interpretResponse({ 'body': bannerServerResponses }, request)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if response sizes is invalid', function () {
       const request = {
@@ -594,10 +594,10 @@ describe('bridgewellBidAdapter', function () {
             'bidId': '3150ccb55da321',
           },
         ]
-      };
-      const result = spec.interpretResponse({ 'body': bannerServerResponses }, request);
-      expect(result).to.deep.equal([]);
-    });
+      }
+      const result = spec.interpretResponse({ 'body': bannerServerResponses }, request)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if cpm is missing', function () {
       const response = [
@@ -612,11 +612,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if width or height is missing', function () {
       const response = [
@@ -630,11 +630,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if ad is missing', function () {
       const response = [
@@ -649,11 +649,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if revenue mode is missing', function () {
       const response = [
@@ -668,11 +668,11 @@ describe('bridgewellBidAdapter', function () {
           'ttl': 360,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if currency is missing', function () {
       const response = [
@@ -687,11 +687,11 @@ describe('bridgewellBidAdapter', function () {
           'ttl': 360,
           'netRevenue': true,
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if mediaType is missing', function () {
       const response = [
@@ -706,11 +706,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if mediaType is not support', function () {
       const responses = [
@@ -726,11 +726,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': responses }, bannerBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': responses }, bannerBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if property native of mediaType native is missing', function () {
       const response = [
@@ -745,11 +745,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native title is missing', function () {
       const response = [
@@ -781,11 +781,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native title is too long', function () {
       const response = [
@@ -818,11 +818,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native body is missing', function () {
       const response = [
@@ -854,11 +854,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native image url is missing', function () {
       const response = [
@@ -890,11 +890,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native image is missing', function () {
       const response = [
@@ -922,11 +922,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native image is empty', function () {
       const response = [
@@ -955,11 +955,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native image sizes is missing', function () {
       const response = [
@@ -990,11 +990,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native sponsoredBy is missing', function () {
       const response = [
@@ -1026,11 +1026,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native icon is missing', function () {
       const response = [
@@ -1058,11 +1058,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native icon url is missing', function () {
       const response = [
@@ -1094,11 +1094,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native icon sizes is missing', function () {
       const response = [
@@ -1129,11 +1129,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native clickUrl is missing', function () {
       const response = [
@@ -1165,11 +1165,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native clickTrackers is missing', function () {
       const response = [
@@ -1201,11 +1201,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native clickTrackers is empty', function () {
       const response = [
@@ -1238,11 +1238,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native impressionTrackers is missing', function () {
       const response = [
@@ -1274,11 +1274,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should give up bid if native impressionTrackers is empty', function () {
       const response = [
@@ -1311,11 +1311,11 @@ describe('bridgewellBidAdapter', function () {
           'netRevenue': true,
           'currency': 'NTD'
         },
-      ];
+      ]
 
-      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
-      expect(result).to.deep.equal([]);
-    });
+      const result = spec.interpretResponse({ 'body': response }, nativeBidRequests)
+      expect(result).to.deep.equal([])
+    })
 
     it('should contain every request bid id in responses', function () {
       const request = {
@@ -1337,7 +1337,7 @@ describe('bridgewellBidAdapter', function () {
             'bidId': '3150ccb55da322',
           }
         ],
-      };
+      }
       const response = [{
         'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
         'bidder_code': 'bridgewell',
@@ -1360,13 +1360,13 @@ describe('bridgewellBidAdapter', function () {
         'ttl': 400,
         'netRevenue': true,
         'currency': 'NTD'
-      }];
-      const result = spec.interpretResponse({ 'body': response }, request);
-      const actualBidId = result.map(obj => obj.requestId);
-      const expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+      }]
+      const result = spec.interpretResponse({ 'body': response }, request)
+      const actualBidId = result.map(obj => obj.requestId)
+      const expectedBidId = ['3150ccb55da321', '3150ccb55da322']
 
-      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
-    });
+      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1])
+    })
 
     it('should have 2 consumed responses when two requests with same sizes are given', function () {
       const request = {
@@ -1388,7 +1388,7 @@ describe('bridgewellBidAdapter', function () {
             'bidId': '3150ccb55da322',
           }
         ],
-      };
+      }
       const response = [{
         'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
         'bidder_code': 'bridgewell',
@@ -1411,15 +1411,15 @@ describe('bridgewellBidAdapter', function () {
         'ttl': 400,
         'netRevenue': true,
         'currency': 'NTD'
-      }];
+      }]
       const reducer = function(accumulator, currentValue) {
-        if (currentValue.consumed) accumulator++;
-        return accumulator;
-      };
+        if (currentValue.consumed) accumulator++
+        return accumulator
+      }
 
-      spec.interpretResponse({ 'body': response }, request);
-      expect(response.reduce(reducer, 0)).to.equal(2);
-    });
+      spec.interpretResponse({ 'body': response }, request)
+      expect(response.reduce(reducer, 0)).to.equal(2)
+    })
 
     it('should use adUnitCode to build bidResponses', function () {
       const request = {
@@ -1433,7 +1433,7 @@ describe('bridgewellBidAdapter', function () {
             'bidId': '3150ccb55da322',
           }
         ],
-      };
+      }
       const response = [{
         'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
         'bidder_code': 'bridgewell',
@@ -1458,13 +1458,13 @@ describe('bridgewellBidAdapter', function () {
         'ttl': 400,
         'netRevenue': true,
         'currency': 'NTD'
-      }];
-      const result = spec.interpretResponse({ 'body': response }, request);
-      const actualBidId = result.map(obj => obj.requestId);
-      const expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+      }]
+      const result = spec.interpretResponse({ 'body': response }, request)
+      const actualBidId = result.map(obj => obj.requestId)
+      const expectedBidId = ['3150ccb55da321', '3150ccb55da322']
 
-      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
-    });
+      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1])
+    })
 
     it('should use size to match when adUnitCode is empty string in server response', function () {
       const request = {
@@ -1488,7 +1488,7 @@ describe('bridgewellBidAdapter', function () {
             'bidId': '3150ccb55da322',
           }
         ],
-      };
+      }
       const response = [{
         'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
         'bidder_code': 'bridgewell',
@@ -1513,12 +1513,12 @@ describe('bridgewellBidAdapter', function () {
         'ttl': 400,
         'netRevenue': true,
         'currency': 'NTD'
-      }];
-      const result = spec.interpretResponse({ 'body': response }, request);
-      const actualBidId = result.map(obj => obj.requestId);
-      const expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+      }]
+      const result = spec.interpretResponse({ 'body': response }, request)
+      const actualBidId = result.map(obj => obj.requestId)
+      const expectedBidId = ['3150ccb55da321', '3150ccb55da322']
 
-      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
-    });
-  });
-});
+      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1])
+    })
+  })
+})

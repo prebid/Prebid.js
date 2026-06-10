@@ -1,20 +1,20 @@
 /* globals describe, beforeEach, afterEach, sinon */
-import { expect } from 'chai';
-import { getGptSlotInfoForAdUnitCode } from 'libraries/gptUtils/gptUtils.js';
-import { getDeviceType, getBrowser, getOS } from 'libraries/userAgentUtils';
+import { expect } from 'chai'
+import { getGptSlotInfoForAdUnitCode } from 'libraries/gptUtils/gptUtils.js'
+import { getDeviceType, getBrowser, getOS } from 'libraries/userAgentUtils'
 import pubxaiAnalyticsAdapter, {
   auctionCache,
-} from 'modules/pubxaiAnalyticsAdapter.js';
-import { EVENTS } from 'src/constants.js';
-import adapterManager from 'src/adapterManager.js';
-import { getWindowLocation } from 'src/utils.js';
-import { getGlobal } from 'src/prebidGlobal.js';
+} from 'modules/pubxaiAnalyticsAdapter.js'
+import { EVENTS } from 'src/constants.js'
+import adapterManager from 'src/adapterManager.js'
+import { getWindowLocation } from 'src/utils.js'
+import { getGlobal } from 'src/prebidGlobal.js'
 import * as events from 'src/events.js'
 import 'modules/userId/index.js'
 
 const readBlobSafariCompat = (blob) => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
     reader.onerror = reject
     reader.readAsText(blob)
@@ -23,35 +23,35 @@ const readBlobSafariCompat = (blob) => {
 
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
-    sinon.stub(events, 'getEvents').returns([]);
+    sinon.stub(events, 'getEvents').returns([])
     getGlobal().refreshUserIds?.()
-  });
+  })
 
   afterEach(() => {
-    events.getEvents.restore();
-  });
+    events.getEvents.restore()
+  })
 
   describe('track', () => {
-    const pubxId = '6c415fc0-8b0e-4cf5-be73-01526a4db625';
+    const pubxId = '6c415fc0-8b0e-4cf5-be73-01526a4db625'
     const initOptions = {
       samplingRate: '1',
       pubxId: pubxId,
-    };
+    }
 
-    let originalVS;
+    let originalVS
 
-    const location = getWindowLocation();
+    const location = getWindowLocation()
 
     const replaceProperty = (obj, params) => {
-      let strObj = JSON.stringify(obj);
+      let strObj = JSON.stringify(obj)
       params.forEach(({ field, updated, replaced }) => {
         strObj = strObj.replace(
           new RegExp('"' + field + '":' + replaced, 'g'),
           '"' + field + '":' + updated
-        );
-      });
-      return JSON.parse(strObj);
-    };
+        )
+      })
+      return JSON.parse(strObj)
+    }
 
     const prebidEvent = {
       auctionInit: {
@@ -503,7 +503,7 @@ describe('pubxai analytics adapter', () => {
           },
         ],
       },
-    };
+    }
 
     const expectedAfterBid = {
       bids: [
@@ -588,7 +588,7 @@ describe('pubxai analytics adapter', () => {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
       },
-    };
+    }
 
     const expectedAfterBidWon = {
       winningBid: {
@@ -681,112 +681,112 @@ describe('pubxai analytics adapter', () => {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
       },
-    };
+    }
 
     adapterManager.registerAnalyticsAdapter({
       code: 'pubxai',
       adapter: pubxaiAnalyticsAdapter,
-    });
+    })
 
     beforeEach(() => {
       adapterManager.enableAnalytics({
         provider: 'pubxai',
         options: initOptions,
-      });
-      sinon.stub(navigator, 'sendBeacon').returns(true);
-      originalVS = document.visibilityState;
+      })
+      sinon.stub(navigator, 'sendBeacon').returns(true)
+      originalVS = document.visibilityState
       document['__defineGetter__']('visibilityState', function () {
-        return 'hidden';
-      });
-    });
+        return 'hidden'
+      })
+    })
 
     afterEach(() => {
-      pubxaiAnalyticsAdapter.disableAnalytics();
-      navigator.sendBeacon.restore();
-      delete auctionCache['bc3806e4-873e-453c-8ae5-204f35e923b4'];
-      delete auctionCache['auction2'];
+      pubxaiAnalyticsAdapter.disableAnalytics()
+      navigator.sendBeacon.restore()
+      delete auctionCache['bc3806e4-873e-453c-8ae5-204f35e923b4']
+      delete auctionCache['auction2']
       document['__defineGetter__']('visibilityState', function () {
-        return originalVS;
-      });
-    });
+        return originalVS
+      })
+    })
 
     it('builds and sends auction data', async () => {
       // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit'])
 
       // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested'])
 
       // Step 3: Send bid response event
-      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse'])
 
       // Step 4: Send bid time out event
-      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout'])
 
       // Step 5: Send auction end event
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd'])
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
-      expect(navigator.sendBeacon.callCount).to.equal(0);
+      expect(navigator.sendBeacon.callCount).to.equal(0)
 
       // Step 6: Send auction bid won event
-      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon'])
 
       // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
-      expect(navigator.sendBeacon.callCount).to.equal(2);
+      expect(navigator.sendBeacon.callCount).to.equal(2)
 
       for (const [index, arg] of navigator.sendBeacon.args.entries()) {
-        const [expectedUrl, expectedData] = arg;
-        const parsedUrl = new URL(expectedUrl);
+        const [expectedUrl, expectedData] = arg
+        const parsedUrl = new URL(expectedUrl)
         expect(parsedUrl.pathname).to.equal(
           ['/analytics/bidwon', '/analytics/auction'][index]
-        );
+        )
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
           pubxId: pubxId,
-        });
-        expect(expectedData.type).to.equal('text/json');
+        })
+        expect(expectedData.type).to.equal('text/json')
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
           [expectedAfterBidWon, expectedAfterBid][index],
-        ]);
+        ])
       }
-    });
+    })
 
     it('auction data with only rejected bids', async () => {
       // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit'])
 
       // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested'])
 
       // Step 3: Send bid rejected (afaict the only expected reason would be a bid being too low)
-      events.emit(EVENTS.BID_REJECTED, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_REJECTED, prebidEvent['bidResponse'])
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 4: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
+      expect(navigator.sendBeacon.callCount).to.equal(0)
 
       // Step 5: Send auction end event
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd'])
 
       // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 6: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(1);
+      expect(navigator.sendBeacon.callCount).to.equal(1)
 
       // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
-      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
-      const parsedUrl = new URL(expectedUrl);
-      expect(parsedUrl.pathname).to.equal('/analytics/auction');
+      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0]
+      const parsedUrl = new URL(expectedUrl)
+      expect(parsedUrl.pathname).to.equal('/analytics/auction')
 
       // Step 8: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
@@ -794,10 +794,10 @@ describe('pubxai analytics adapter', () => {
         pubxaiAnalyticsVersion: 'v2.1.0',
         prebidVersion: '$prebid.version$',
         pubxId: pubxId,
-      });
+      })
 
       // Step 9: check that the data sent in the request is correct
-      expect(expectedData.type).to.equal('text/json');
+      expect(expectedData.type).to.equal('text/json')
       expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
         {
           ...expectedAfterBid,
@@ -806,38 +806,38 @@ describe('pubxai analytics adapter', () => {
             bidType: 1
           }]
         }
-      ]);
-    });
+      ])
+    })
 
     it('auction data with only timed out bids', async () => {
       // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit'])
 
       // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested'])
 
       // Step 3: Send bid rejected (afaict the only expected reason would be a bid being too low)
-      events.emit(EVENTS.BID_TIMEOUT, [prebidEvent['bidResponse']]);
+      events.emit(EVENTS.BID_TIMEOUT, [prebidEvent['bidResponse']])
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 4: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
+      expect(navigator.sendBeacon.callCount).to.equal(0)
 
       // Step 5: Send auction end event
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd'])
 
       // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 6: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(1);
+      expect(navigator.sendBeacon.callCount).to.equal(1)
 
       // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
-      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
-      const parsedUrl = new URL(expectedUrl);
-      expect(parsedUrl.pathname).to.equal('/analytics/auction');
+      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0]
+      const parsedUrl = new URL(expectedUrl)
+      expect(parsedUrl.pathname).to.equal('/analytics/auction')
 
       // Step 8: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
@@ -845,10 +845,10 @@ describe('pubxai analytics adapter', () => {
         pubxaiAnalyticsVersion: 'v2.1.0',
         prebidVersion: '$prebid.version$',
         pubxId: pubxId,
-      });
+      })
 
       // Step 9: check that the data sent in the request is correct
-      expect(expectedData.type).to.equal('text/json');
+      expect(expectedData.type).to.equal('text/json')
       expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
         {
           ...expectedAfterBid,
@@ -857,35 +857,35 @@ describe('pubxai analytics adapter', () => {
             bidType: 3
           }]
         }
-      ]);
-    });
+      ])
+    })
 
     it('auction with no bids', async () => {
       // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit'])
 
       // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested'])
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 3: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
+      expect(navigator.sendBeacon.callCount).to.equal(0)
 
       // Step 4: Send auction end event
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd'])
 
       // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 5: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(1);
+      expect(navigator.sendBeacon.callCount).to.equal(1)
 
       // Step 6: check the pathname of the calls is correct (sent only to the auction endpoint)
-      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
-      const parsedUrl = new URL(expectedUrl);
-      expect(parsedUrl.pathname).to.equal('/analytics/auction');
+      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0]
+      const parsedUrl = new URL(expectedUrl)
+      expect(parsedUrl.pathname).to.equal('/analytics/auction')
 
       // Step 7: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
@@ -893,24 +893,24 @@ describe('pubxai analytics adapter', () => {
         pubxaiAnalyticsVersion: 'v2.1.0',
         prebidVersion: '$prebid.version$',
         pubxId: pubxId,
-      });
+      })
 
       // Step 8: check that the data sent in the request is correct
-      expect(expectedData.type).to.equal('text/json');
+      expect(expectedData.type).to.equal('text/json')
       expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
         {
           ...expectedAfterBid,
           bids: [],
         },
-      ]);
-    });
+      ])
+    })
 
     it('2 concurrent auctions', async () => {
       // Step 1: Send auction init event for auction 1
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit'])
 
       // Step 2: Send bid requested event for auction 1
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested'])
 
       // Step 3: Send auction init event for auction 2
       events.emit(
@@ -922,7 +922,7 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 4: Send bid requested event for auction 2
       events.emit(
@@ -934,13 +934,13 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 5: Send bid response event for auction 1
-      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse'])
 
       // Step 6: Send bid time out event for auction 1
-      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout'])
 
       // Step 7: Send bid response event for auction 2
       events.emit(
@@ -952,25 +952,25 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 8: Send auction end event for auction 1
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd'])
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 9: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
+      expect(navigator.sendBeacon.callCount).to.equal(0)
 
       // Step 10: Send auction bid won event for auction 1
-      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon'])
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 11: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(2);
+      expect(navigator.sendBeacon.callCount).to.equal(2)
 
       // Step 12: Send auction end event for auction 2
       events.emit(
@@ -982,13 +982,13 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 13: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(2);
+      expect(navigator.sendBeacon.callCount).to.equal(2)
 
       // Step 14: Send auction bid won event for auction 2
       events.emit(
@@ -1000,27 +1000,27 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 15: check the calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(4);
+      expect(navigator.sendBeacon.callCount).to.equal(4)
       for (const [index, arg] of navigator.sendBeacon.args.entries()) {
-        const [expectedUrl, expectedData] = arg;
-        const parsedUrl = new URL(expectedUrl);
-        const auctionIdMapFn = index < 2 ? (i, _) => i : replaceProperty;
+        const [expectedUrl, expectedData] = arg
+        const parsedUrl = new URL(expectedUrl)
+        const auctionIdMapFn = index < 2 ? (i, _) => i : replaceProperty
         expect(parsedUrl.pathname).to.equal(
           ['/analytics/bidwon', '/analytics/auction'][index % 2]
-        );
+        )
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
           pubxId: pubxId,
-        });
-        expect(expectedData.type).to.equal('text/json');
+        })
+        expect(expectedData.type).to.equal('text/json')
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
           auctionIdMapFn([expectedAfterBidWon, expectedAfterBid][index % 2], [
             {
@@ -1034,16 +1034,16 @@ describe('pubxai analytics adapter', () => {
               replaced: '0',
             },
           ]),
-        ]);
+        ])
       }
-    });
+    })
 
     it('2 concurrent auctions with batch sending', async () => {
       // Step 1: Send auction init event for auction 1
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit'])
 
       // Step 2: Send bid requested event for auction 1
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested'])
 
       // Step 3: Send auction init event for auction 2
       events.emit(
@@ -1055,7 +1055,7 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 4: Send bid requested event for auction 2
       events.emit(
@@ -1067,13 +1067,13 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 5: Send bid response event for auction 1
-      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse'])
 
       // Step 6: Send bid time out event for auction 1
-      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout'])
 
       // Step 7: Send bid response event for auction 2
       events.emit(
@@ -1085,13 +1085,13 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 8: Send auction end event for auction 1
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd'])
 
       // Step 9: Send auction bid won event for auction 1
-      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon'])
 
       // Step 10: Send auction end event for auction 2
       events.emit(
@@ -1103,7 +1103,7 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 11: Send auction bid won event for auction 2
       events.emit(
@@ -1115,29 +1115,29 @@ describe('pubxai analytics adapter', () => {
             replaced: '"bc3806e4-873e-453c-8ae5-204f35e923b4"',
           },
         ])
-      );
+      )
 
       // Step 12: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
+      expect(navigator.sendBeacon.callCount).to.equal(0)
 
       // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
+      document.dispatchEvent(new Event('visibilitychange'))
 
       // Step 13: check the calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(2);
+      expect(navigator.sendBeacon.callCount).to.equal(2)
       for (const [index, arg] of navigator.sendBeacon.args.entries()) {
-        const [expectedUrl, expectedData] = arg;
-        const parsedUrl = new URL(expectedUrl);
+        const [expectedUrl, expectedData] = arg
+        const parsedUrl = new URL(expectedUrl)
         expect(parsedUrl.pathname).to.equal(
           ['/analytics/bidwon', '/analytics/auction'][index]
-        );
+        )
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
           pubxId: pubxId,
-        });
-        expect(expectedData.type).to.equal('text/json');
+        })
+        expect(expectedData.type).to.equal('text/json')
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
           [expectedAfterBidWon, expectedAfterBid][index],
           replaceProperty([expectedAfterBidWon, expectedAfterBid][index], [
@@ -1152,8 +1152,8 @@ describe('pubxai analytics adapter', () => {
               replaced: '0',
             },
           ]),
-        ]);
+        ])
       }
-    });
-  });
-});
+    })
+  })
+})

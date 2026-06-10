@@ -1,13 +1,13 @@
-import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter.js';
-import { expect } from 'chai';
-import * as events from 'src/events.js';
-import { EVENTS } from 'src/constants.js';
-import { server } from 'test/mocks/xhr.js';
+import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter.js'
+import { expect } from 'chai'
+import * as events from 'src/events.js'
+import { EVENTS } from 'src/constants.js'
+import { server } from 'test/mocks/xhr.js'
 
-const BID_TIMEOUT = EVENTS.BID_TIMEOUT;
-const AUCTION_INIT = EVENTS.AUCTION_INIT;
-const BID_WON = EVENTS.BID_WON;
-const AUCTION_END = EVENTS.AUCTION_END;
+const BID_TIMEOUT = EVENTS.BID_TIMEOUT
+const AUCTION_INIT = EVENTS.AUCTION_INIT
+const BID_WON = EVENTS.BID_WON
+const AUCTION_END = EVENTS.AUCTION_END
 
 describe('Scaleable Analytics Adapter', function() {
   const bidsReceivedObj = {
@@ -19,7 +19,7 @@ describe('Scaleable Analytics Adapter', function() {
     mediaType: 'banner',
     timeToRespond: 285,
     size: '300x250'
-  };
+  }
 
   const MOCK_DATA = {
     adUnitCode: '12345',
@@ -51,16 +51,16 @@ describe('Scaleable Analytics Adapter', function() {
         bidder: 'test-code'
       }
     ]
-  };
+  }
 
-  const bidObj = MOCK_DATA.bidderRequests[0].bids[0];
+  const bidObj = MOCK_DATA.bidderRequests[0].bids[0]
 
   const expectedBidRequests = [{ bidder: 'scaleable_adunit_request' }].concat([
     {
       bidder: bidObj.bidder,
       params: bidObj.params
     }
-  ]);
+  ])
 
   MOCK_DATA.expectedRequestResponse = {
     event: 'request',
@@ -76,7 +76,7 @@ describe('Scaleable Analytics Adapter', function() {
       timeouts: 1,
       bidder: MOCK_DATA.bidTimeout[0].bidder
     }]
-  };
+  }
 
   MOCK_DATA.expectedAuctionEndResponse = {
     event: 'bids',
@@ -101,45 +101,45 @@ describe('Scaleable Analytics Adapter', function() {
 
   describe('Event Handling', function() {
     beforeEach(function() {
-      sinon.stub(events, 'getEvents').returns([]);
+      sinon.stub(events, 'getEvents').returns([])
 
       scaleableAnalytics.enableAnalytics({
         provider: 'scaleable',
         options: {
           site: MOCK_DATA.site
         }
-      });
-    });
+      })
+    })
 
     afterEach(function() {
-      events.getEvents.restore();
-      scaleableAnalytics.disableAnalytics();
-    });
+      events.getEvents.restore()
+      scaleableAnalytics.disableAnalytics()
+    })
 
     it('should handle the auction init event', function(done) {
       events.emit(AUCTION_INIT, {
         adUnitCodes: [MOCK_DATA.adUnitCode],
         bidderRequests: MOCK_DATA.bidderRequests
-      });
+      })
 
-      const result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal(MOCK_DATA.expectedRequestResponse);
+      const result = JSON.parse(server.requests[0].requestBody)
+      expect(result).to.deep.equal(MOCK_DATA.expectedRequestResponse)
 
-      done();
-    });
+      done()
+    })
 
     it('should handle the bid timeout event', function() {
-      events.emit(BID_TIMEOUT, MOCK_DATA.bidTimeout);
+      events.emit(BID_TIMEOUT, MOCK_DATA.bidTimeout)
 
-      const actual = scaleableAnalytics.getAuctionData();
+      const actual = scaleableAnalytics.getAuctionData()
 
-      expect(actual).to.deep.equal(MOCK_DATA.expectedBidTimeout);
-    });
+      expect(actual).to.deep.equal(MOCK_DATA.expectedBidTimeout)
+    })
 
     it('should handle the bid won event', function(done) {
-      events.emit(BID_WON, MOCK_DATA.bidResponse);
+      events.emit(BID_WON, MOCK_DATA.bidResponse)
 
-      const result = JSON.parse(server.requests[0].requestBody);
+      const result = JSON.parse(server.requests[0].requestBody)
       expect(result).to.deep.equal({
         adunit: MOCK_DATA.adUnitCode,
         code: MOCK_DATA.bidResponse.bidderCode,
@@ -148,18 +148,18 @@ describe('Scaleable Analytics Adapter', function() {
         params: MOCK_DATA.bidResponse.params,
         event: 'win',
         site: MOCK_DATA.site
-      });
+      })
 
-      done();
-    });
+      done()
+    })
 
     it('should handle the auction end event', function(done) {
-      events.emit(AUCTION_END, MOCK_DATA.auctionEnd);
+      events.emit(AUCTION_END, MOCK_DATA.auctionEnd)
 
-      const result = JSON.parse(server.requests[0].requestBody);
-      expect(result).to.deep.equal(MOCK_DATA.expectedAuctionEndResponse);
+      const result = JSON.parse(server.requests[0].requestBody)
+      expect(result).to.deep.equal(MOCK_DATA.expectedAuctionEndResponse)
 
-      done();
-    });
-  });
-});
+      done()
+    })
+  })
+})

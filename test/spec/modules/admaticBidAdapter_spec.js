@@ -1,12 +1,12 @@
-import { expect } from 'chai';
-import { spec } from 'modules/admaticBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec } from 'modules/admaticBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { config } from 'src/config.js'
 
-const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';
+const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb'
 
 describe('admaticBidAdapter', () => {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
   const validRequest = [{
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
@@ -33,22 +33,22 @@ describe('admaticBidAdapter', () => {
         return {
           currency: 'USD',
           floor: 1.0
-        };
+        }
       } else if (inputParams.mediaType === BANNER && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
         return {
           currency: 'USD',
           floor: 2.0
-        };
+        }
       } else if (inputParams.mediaType === VIDEO) {
         return {
           currency: 'USD',
           floor: 1.0
-        };
+        }
       } else if (inputParams.mediaType === NATIVE) {
         return {
           currency: 'USD',
           floor: 1.0
-        };
+        }
       } else {
         return {}
       }
@@ -241,7 +241,7 @@ describe('admaticBidAdapter', () => {
       'cur': 'USD',
       'bidder': 'admatic'
     }
-  }];
+  }]
   const bidderRequest = {
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
@@ -306,22 +306,22 @@ describe('admaticBidAdapter', () => {
         return {
           currency: 'USD',
           floor: 1.0
-        };
+        }
       } else if (inputParams.mediaType === BANNER && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
         return {
           currency: 'USD',
           floor: 2.0
-        };
+        }
       } else if (inputParams.mediaType === VIDEO) {
         return {
           currency: 'USD',
           floor: 1.0
-        };
+        }
       } else if (inputParams.mediaType === NATIVE) {
         return {
           currency: 'USD',
           floor: 1.0
-        };
+        }
       } else {
         return {}
       }
@@ -547,13 +547,13 @@ describe('admaticBidAdapter', () => {
       'cur': 'USD',
       'bidder': 'admatic'
     }
-  };
+  }
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function() {
     const bid = {
@@ -575,30 +575,30 @@ describe('admaticBidAdapter', () => {
       'creativeId': 'er2ee',
       'ortb2Imp': { 'ext': { 'instl': 1 } },
       'ortb2': { 'badv': ['admatic.com.tr'] }
-    };
+    }
 
     it('should return true when required params found', function() {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function() {
-      const bid2 = {};
+      const bid2 = {}
       bid2.params = {
         'someIncorrectParam': 0
-      };
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(bid2)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(validRequest, bidderRequest);
-      expect(request.url).to.equal(ENDPOINT);
-      expect(request.method).to.equal('POST');
-    });
+      const request = spec.buildRequests(validRequest, bidderRequest)
+      expect(request.url).to.equal(ENDPOINT)
+      expect(request.method).to.equal('POST')
+    })
 
     it('should not populate GDPR if for non-EEA users', function () {
-      const bidRequest = Object.assign([], validRequest);
+      const bidRequest = Object.assign([], validRequest)
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
@@ -607,13 +607,13 @@ describe('admaticBidAdapter', () => {
             consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
           }
         })
-      );
-      expect(request.data.regs.ext.gdpr).to.equal(1);
-      expect(request.data.regs.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A');
-    });
+      )
+      expect(request.data.regs.ext.gdpr).to.equal(1)
+      expect(request.data.regs.ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ-A')
+    })
 
     it('should populate GDPR and empty consent string if available for EEA users without consent string but with consent', function () {
-      const bidRequest = Object.assign([], validRequest);
+      const bidRequest = Object.assign([], validRequest)
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
@@ -621,47 +621,47 @@ describe('admaticBidAdapter', () => {
             gdprApplies: true
           }
         })
-      );
-      expect(request.data.regs.ext.gdpr).to.equal(1);
-      expect(request.data.regs.ext.consent).to.equal('');
-    });
+      )
+      expect(request.data.regs.ext.gdpr).to.equal(1)
+      expect(request.data.regs.ext.consent).to.equal('')
+    })
 
     it('should properly build a request when coppa flag is true', function () {
-      const bidRequest = Object.assign([], validRequest);
+      const bidRequest = Object.assign([], validRequest)
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
           coppa: true
         })
-      );
-      expect(request.data.regs.ext.coppa).to.not.be.undefined;
-      expect(request.data.regs.ext.coppa).to.equal(1);
-    });
+      )
+      expect(request.data.regs.ext.coppa).to.not.be.undefined
+      expect(request.data.regs.ext.coppa).to.equal(1)
+    })
 
     it('should properly build a request with gpp consent field', function () {
-      const bidRequest = Object.assign([], validRequest);
+      const bidRequest = Object.assign([], validRequest)
       const ortb2 = {
         regs: {
           gpp: 'gpp_consent_string',
           gpp_sid: [0, 1, 2]
         }
-      };
-      const request = spec.buildRequests(bidRequest, { ...bidderRequest, ortb2 });
-      expect(request.data.regs.ext.gpp).to.equal('gpp_consent_string');
-      expect(request.data.regs.ext.gpp_sid).to.deep.equal([0, 1, 2]);
-    });
+      }
+      const request = spec.buildRequests(bidRequest, { ...bidderRequest, ortb2 })
+      expect(request.data.regs.ext.gpp).to.equal('gpp_consent_string')
+      expect(request.data.regs.ext.gpp_sid).to.deep.equal([0, 1, 2])
+    })
 
     it('should properly build a request with ccpa consent field', function () {
-      const bidRequest = Object.assign([], validRequest);
+      const bidRequest = Object.assign([], validRequest)
       const request = spec.buildRequests(
         bidRequest,
         Object.assign({}, bidderRequest, {
           uspConsent: '1---'
         })
-      );
-      expect(request.data.regs.ext.uspIab).to.not.be.null;
-      expect(request.data.regs.ext.uspIab).to.equal('1---');
-    });
+      )
+      expect(request.data.regs.ext.uspIab).to.not.be.null
+      expect(request.data.regs.ext.uspIab).to.equal('1---')
+    })
 
     it('should properly forward eids', function () {
       const bidRequests = [
@@ -688,9 +688,9 @@ describe('admaticBidAdapter', () => {
             host: 'layer.rtb.admatic.com.tr'
           }
         },
-      ];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const ortbRequest = request.data;
+      ]
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const ortbRequest = request.data
       expect(ortbRequest.user.ext.eids).to.deep.equal([
         {
           source: 'admatic.com.tr',
@@ -699,18 +699,18 @@ describe('admaticBidAdapter', () => {
             atype: 1
           }]
         }
-      ]);
-    });
+      ])
+    })
 
     it('should properly build a banner request with floors', function () {
-      const request = spec.buildRequests(validRequest, bidderRequest);
+      const request = spec.buildRequests(validRequest, bidderRequest)
       request.data.imp[0].floors = {
         'banner': {
           '300x250': { 'currency': 'USD', 'floor': 1 },
           '728x90': { 'currency': 'USD', 'floor': 2 }
         }
-      };
-    });
+      }
+    })
 
     it('should properly build a video request with several player sizes with floors', function () {
       const bidRequests = [
@@ -734,26 +734,26 @@ describe('admaticBidAdapter', () => {
               return {
                 currency: 'USD',
                 floor: 1.0
-              };
+              }
             } else if (inputParams.mediaType === VIDEO && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
               return {
                 currency: 'USD',
                 floor: 2.0
-              };
+              }
             } else {
               return {}
             }
           }
         },
-      ];
+      ]
       const bidderRequest = {
         'refererInfo': {
           'page': 'https://www.admatic.com.tr',
           'domain': 'https://www.admatic.com.tr',
         }
-      };
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-    });
+      }
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+    })
 
     it('should properly build a native request with floors', function () {
       const bidRequests = [
@@ -776,22 +776,22 @@ describe('admaticBidAdapter', () => {
               return {
                 currency: 'USD',
                 floor: 1.0
-              };
+              }
             } else {
               return {}
             }
           }
         },
-      ];
+      ]
       const bidderRequest = {
         'refererInfo': {
           'page': 'https://www.admatic.com.tr',
           'domain': 'https://www.admatic.com.tr',
         }
-      };
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-    });
-  });
+      }
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should get correct bid responses', function() {
@@ -854,7 +854,7 @@ describe('admaticBidAdapter', () => {
           'queryId': 'cdnbh24rlv0hhkpfpln0',
           'status': true
         }
-      };
+      }
 
       const expectedResponse = [
         {
@@ -934,7 +934,7 @@ describe('admaticBidAdapter', () => {
           ttl: 60,
           bidder: 'admatic'
         }
-      ];
+      ]
       const request = {
         ext: {
           'cur': 'TRY',
@@ -1136,11 +1136,11 @@ describe('admaticBidAdapter', () => {
             }
           }
         ]
-      };
+      }
 
-      const result = spec.interpretResponse(bids, { data: request });
-      expect(result).to.eql(expectedResponse);
-    });
+      const result = spec.interpretResponse(bids, { data: request })
+      expect(result).to.eql(expectedResponse)
+    })
 
     it('handles nobid responses', function () {
       const request = {
@@ -1148,7 +1148,7 @@ describe('admaticBidAdapter', () => {
           'cur': 'TRY',
           'type': 'admatic'
         }
-      };
+      }
       const bids = {
         body: {
           data: [],
@@ -1156,10 +1156,10 @@ describe('admaticBidAdapter', () => {
           'status': true,
           'cur': 'TRY'
         }
-      };
+      }
 
-      const result = spec.interpretResponse(bids, { data: request });
-      expect(result.length).to.equal(0);
-    });
-  });
-});
+      const result = spec.interpretResponse(bids, { data: request })
+      expect(result.length).to.equal(0)
+    })
+  })
+})

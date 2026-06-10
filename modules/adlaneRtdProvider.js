@@ -1,10 +1,10 @@
-import { submodule } from '../src/hook.js';
-import { cleanObj, getWindowTop, isFn, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
-import { getStorageManager } from "../src/storageManager.js";
-import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
+import { submodule } from '../src/hook.js'
+import { cleanObj, getWindowTop, isFn, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js'
+import { getStorageManager } from "../src/storageManager.js"
+import { MODULE_TYPE_RTD } from "../src/activities/modules.js"
 
-const MODULE_NAME = 'adlane';
-const LOCAL_STORAGE_KEY = 'ageVerification';
+const MODULE_NAME = 'adlane'
+const LOCAL_STORAGE_KEY = 'ageVerification'
 
 /**
  * @typedef {Object} AgeVerification
@@ -21,7 +21,7 @@ function createStorage() {
   return getStorageManager({
     moduleType: MODULE_TYPE_RTD,
     moduleName: MODULE_NAME
-  });
+  })
 }
 
 /**
@@ -34,7 +34,7 @@ export function isAdlCmpAvailable(windowTop) {
     typeof windowTop !== 'undefined' &&
     windowTop.AdlCmp &&
     isFn(windowTop.AdlCmp.getAgeVerification)
-  );
+  )
 }
 
 /**
@@ -43,22 +43,22 @@ export function isAdlCmpAvailable(windowTop) {
  * @returns {AgeVerification|null} The age verification data if available, null otherwise.
  */
 export function getAgeVerificationByLocalStorage(storage) {
-  const storedAgeVerification = storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY);
+  const storedAgeVerification = storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY)
 
-  if (!storedAgeVerification) return null;
+  if (!storedAgeVerification) return null
 
   try {
-    const parseAgeVerification = JSON.parse(storedAgeVerification);
+    const parseAgeVerification = JSON.parse(storedAgeVerification)
 
     if (parseAgeVerification?.status) {
-      const { status, id, decisionDate } = parseAgeVerification;
+      const { status, id, decisionDate } = parseAgeVerification
 
-      return { id, status, decisionDate };
+      return { id, status, decisionDate }
     }
   } catch (e) {
-    logError('Error parsing stored age verification:', e);
+    logError('Error parsing stored age verification:', e)
   }
-  return null;
+  return null
 }
 
 /**
@@ -69,20 +69,20 @@ export function getAgeVerificationByLocalStorage(storage) {
  */
 export function getAgeVerification(windowTop, storage) {
   if (isAdlCmpAvailable(windowTop)) {
-    const adlCmpAgeVerification = windowTop.AdlCmp.getAgeVerification();
+    const adlCmpAgeVerification = windowTop.AdlCmp.getAgeVerification()
 
     if (adlCmpAgeVerification?.status) {
-      const { status, id, decisionDate } = adlCmpAgeVerification;
+      const { status, id, decisionDate } = adlCmpAgeVerification
 
-      return cleanObj({ id, status, decisionDate });
+      return cleanObj({ id, status, decisionDate })
     }
   }
 
-  logInfo('Failed to get age verification from AdlCmp, trying localStorage');
+  logInfo('Failed to get age verification from AdlCmp, trying localStorage')
 
-  const ageVerificationFromStorage = getAgeVerificationByLocalStorage(storage);
+  const ageVerificationFromStorage = getAgeVerificationByLocalStorage(storage)
 
-  return ageVerificationFromStorage ? cleanObj(ageVerificationFromStorage) : null;
+  return ageVerificationFromStorage ? cleanObj(ageVerificationFromStorage) : null
 }
 
 /**
@@ -94,11 +94,11 @@ export function setAgeVerificationConfig(config, ageVerification) {
   try {
     const newConfig = {
       regs: { ext: { age_verification: ageVerification } }
-    };
+    }
 
-    mergeDeep(config.ortb2Fragments.global, newConfig);
+    mergeDeep(config.ortb2Fragments.global, newConfig)
   } catch (e) {
-    logError('Failed to merge age verification config', e);
+    logError('Failed to merge age verification config', e)
   }
 }
 
@@ -107,24 +107,24 @@ export function setAgeVerificationConfig(config, ageVerification) {
  * @returns {boolean} True if initialization was successful, false otherwise.
  */
 function init() {
-  const windowTop = getWindowTop();
-  const storage = createStorage();
+  const windowTop = getWindowTop()
+  const storage = createStorage()
 
   if (isAdlCmpAvailable(windowTop)) {
-    logInfo('adlaneSubmodule initialized with AdlCmp');
+    logInfo('adlaneSubmodule initialized with AdlCmp')
 
-    return true;
+    return true
   }
 
   if (storage.hasLocalStorage() && storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY)) {
-    logInfo('adlaneSubmodule initialized with localStorage data');
+    logInfo('adlaneSubmodule initialized with localStorage data')
 
-    return true;
+    return true
   }
 
-  logWarn('adlaneSubmodule initialization failed: Neither AdlCmp nor localStorage data available');
+  logWarn('adlaneSubmodule initialization failed: Neither AdlCmp nor localStorage data available')
 
-  return false;
+  return false
 }
 
 /**
@@ -133,19 +133,19 @@ function init() {
  * @param {Function} callback - The callback function to call after altering the bid requests.
  */
 function alterBidRequests(reqBidsConfigObj, callback) {
-  const windowTop = getWindowTop();
-  const storage = createStorage();
+  const windowTop = getWindowTop()
+  const storage = createStorage()
 
   try {
-    const ageVerification = getAgeVerification(windowTop, storage);
+    const ageVerification = getAgeVerification(windowTop, storage)
 
     if (ageVerification) {
-      setAgeVerificationConfig(reqBidsConfigObj, ageVerification);
+      setAgeVerificationConfig(reqBidsConfigObj, ageVerification)
     }
   } catch (error) {
-    logError('Error in adlaneRtdProvider onAuctionInit', error);
+    logError('Error in adlaneRtdProvider onAuctionInit', error)
   }
-  callback();
+  callback()
 }
 
 /**
@@ -156,6 +156,6 @@ export const adlaneSubmodule = {
   name: MODULE_NAME,
   init,
   getBidRequestData: alterBidRequests
-};
+}
 
-submodule('realTimeData', adlaneSubmodule);
+submodule('realTimeData', adlaneSubmodule)

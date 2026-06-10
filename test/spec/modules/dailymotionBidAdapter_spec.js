@@ -1,12 +1,12 @@
-import { config } from 'src/config.js';
-import { expect } from 'chai';
-import { spec } from 'modules/dailymotionBidAdapter.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from 'src/config.js'
+import { expect } from 'chai'
+import { spec } from 'modules/dailymotionBidAdapter.js'
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js'
 
 describe('dailymotionBidAdapterTests', () => {
   // Validate that isBidRequestValid only validates requests with apiKey
   it('validates isBidRequestValid', () => {
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid())).to.be.false;
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid())).to.be.false
 
     const bidWithEmptyApi = {
       params: {
@@ -17,9 +17,9 @@ describe('dailymotionBidAdapterTests', () => {
           context: 'instream',
         },
       },
-    };
+    }
 
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyApi))).to.be.false;
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyApi))).to.be.false
 
     const bidWithApi = {
       params: {
@@ -30,17 +30,17 @@ describe('dailymotionBidAdapterTests', () => {
           context: 'instream',
         },
       },
-    };
+    }
 
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithApi))).to.be.true;
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithApi))).to.be.true
 
     const bidWithEmptyMediaTypes = {
       params: {
         apiKey: '',
       },
-    };
+    }
 
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyMediaTypes))).to.be.false;
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyMediaTypes))).to.be.false
 
     const bidWithEmptyVideoAdUnit = {
       params: {
@@ -49,9 +49,9 @@ describe('dailymotionBidAdapterTests', () => {
       mediaTypes: {
         [VIDEO]: {},
       },
-    };
+    }
 
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyVideoAdUnit))).to.be.false;
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyVideoAdUnit))).to.be.false
 
     const bidWithBannerMediaType = {
       params: {
@@ -60,9 +60,9 @@ describe('dailymotionBidAdapterTests', () => {
       mediaTypes: {
         [BANNER]: {},
       },
-    };
+    }
 
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithBannerMediaType))).to.be.false;
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithBannerMediaType))).to.be.false
 
     const bidWithOutstreamContext = {
       params: {
@@ -73,10 +73,10 @@ describe('dailymotionBidAdapterTests', () => {
           context: 'outstream',
         },
       },
-    };
+    }
 
-    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithOutstreamContext))).to.be.false;
-  });
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithOutstreamContext))).to.be.false
+  })
 
   // Validate request generation
   it('validates buildRequests', () => {
@@ -125,7 +125,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -157,7 +157,7 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     config.setConfig({
       userSync: {
@@ -169,31 +169,31 @@ describe('dailymotionBidAdapterTests', () => {
           }
         }
       }
-    });
+    })
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    const { data: reqData } = request;
+    const { data: reqData } = request
 
-    expect(request.options.withCredentials).to.eql(false);
-    expect(request.url).to.equal('https://pb.dmxleo.com');
+    expect(request.options.withCredentials).to.eql(false)
+    expect(request.url).to.equal('https://pb.dmxleo.com')
 
-    expect(reqData.pbv).to.eql('$prebid.version$');
-    expect(reqData.userSyncEnabled).to.be.true;
+    expect(reqData.pbv).to.eql('$prebid.version$')
+    expect(reqData.userSyncEnabled).to.be.true
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
       gdprConsent: bidderRequestData.gdprConsent,
       gppConsent: bidderRequestData.gppConsent,
-    });
-    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
-    expect(reqData.config.ts).to.eql(bidRequestData[0].params.dmTs);
-    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
-    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
+    })
+    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey)
+    expect(reqData.config.ts).to.eql(bidRequestData[0].params.dmTs)
+    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId)
+    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId)
+    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video)
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-1'],
@@ -216,8 +216,8 @@ describe('dailymotionBidAdapterTests', () => {
         playerName: bidRequestData[0].params.video.playerName,
         playerVolume: bidRequestData[0].params.video.playerVolume,
       },
-    });
-  });
+    })
+  })
 
   it('validates buildRequests with global consent', () => {
     const bidRequestData = [{
@@ -264,7 +264,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -299,15 +299,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(true);
-  });
+    expect(request.options.withCredentials).to.eql(true)
+  })
 
   it('validates buildRequests without gdpr applying', () => {
     const bidRequestData = [{
@@ -354,7 +354,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -386,15 +386,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(true);
-  });
+    expect(request.options.withCredentials).to.eql(true)
+  })
 
   it('validates buildRequests with detailed consent without legitimate interest', () => {
     const bidRequestData = [{
@@ -441,7 +441,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -492,15 +492,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(false);
-  });
+    expect(request.options.withCredentials).to.eql(false)
+  })
 
   it('validates buildRequests with detailed consent, with legitimate interest', () => {
     const bidRequestData = [{
@@ -547,7 +547,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -600,15 +600,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(true);
-  });
+    expect(request.options.withCredentials).to.eql(true)
+  })
 
   it('validates buildRequests with detailed consent and legitimate interest but publisher forces consent', () => {
     const bidRequestData = [{
@@ -655,7 +655,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -716,15 +716,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(false);
-  });
+    expect(request.options.withCredentials).to.eql(false)
+  })
 
   it('validates buildRequests with detailed consent, no legitimate interest and publisher forces consent', () => {
     const bidRequestData = [{
@@ -771,7 +771,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -830,15 +830,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(true);
-  });
+    expect(request.options.withCredentials).to.eql(true)
+  })
 
   it('validates buildRequests with detailed consent but publisher full restriction on purpose 1', () => {
     const bidRequestData = [{
@@ -885,7 +885,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -943,15 +943,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(false);
-  });
+    expect(request.options.withCredentials).to.eql(false)
+  })
 
   it('validates buildRequests with detailed consent but publisher restriction 2 on consent purpose 1', () => {
     const bidRequestData = [{
@@ -998,7 +998,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -1058,15 +1058,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(false);
-  });
+    expect(request.options.withCredentials).to.eql(false)
+  })
 
   it('validates buildRequests with detailed consent, legitimate interest and publisher restriction on purpose 1', () => {
     const bidRequestData = [{
@@ -1113,7 +1113,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -1173,15 +1173,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(true);
-  });
+    expect(request.options.withCredentials).to.eql(true)
+  })
 
   it('validates buildRequests with detailed consent and legitimate interest but publisher restriction on legitimate interest 2', () => {
     const bidRequestData = [{
@@ -1228,7 +1228,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -1288,15 +1288,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(true);
-  });
+    expect(request.options.withCredentials).to.eql(true)
+  })
 
   it('validates buildRequests with insufficient consent', () => {
     const bidRequestData = [{
@@ -1343,7 +1343,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 8,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -1390,15 +1390,15 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    expect(request.options.withCredentials).to.eql(false);
-  });
+    expect(request.options.withCredentials).to.eql(false)
+  })
 
   it('validates buildRequests with content values from App', () => {
     const bidRequestData = [{
@@ -1445,7 +1445,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 12,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       timeout: 4242,
@@ -1510,7 +1510,7 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     config.setConfig({
       userSync: {
@@ -1522,18 +1522,18 @@ describe('dailymotionBidAdapterTests', () => {
           }
         }
       }
-    });
+    })
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    const { data: reqData } = request;
+    const { data: reqData } = request
 
-    expect(request.url).to.equal('https://pb.dmxleo.com');
+    expect(request.url).to.equal('https://pb.dmxleo.com')
 
-    expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.pbv).to.eql('$prebid.version$')
 
     const expectedOrtb = {
       'app': {
@@ -1642,21 +1642,21 @@ describe('dailymotionBidAdapterTests', () => {
       'tmax': 4242,
     }
 
-    expect(reqData.ortb.id).to.be.not.empty;
-    delete reqData.ortb.id; // ortb id is generated randomly
-    expect(reqData.ortb).to.eql(expectedOrtb);
-    expect(reqData.userSyncEnabled).to.be.true;
+    expect(reqData.ortb.id).to.be.not.empty
+    delete reqData.ortb.id // ortb id is generated randomly
+    expect(reqData.ortb).to.eql(expectedOrtb)
+    expect(reqData.userSyncEnabled).to.be.true
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
       gdprConsent: bidderRequestData.gdprConsent,
       gppConsent: bidderRequestData.gppConsent,
-    });
-    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
-    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
-    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
+    })
+    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey)
+    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId)
+    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId)
 
-    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
+    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video)
 
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
@@ -1681,8 +1681,8 @@ describe('dailymotionBidAdapterTests', () => {
         playerName: 'dailymotion',
         playerVolume: null,
       },
-    });
-  });
+    })
+  })
 
   it('validates buildRequests with fallback values on ortb2 (gpp, iabcat2, id...)', () => {
     const bidRequestData = [{
@@ -1711,7 +1711,7 @@ describe('dailymotionBidAdapterTests', () => {
           playerVolume: 0,
         },
       },
-    }];
+    }]
 
     const bidderRequestData = {
       refererInfo: {
@@ -1784,7 +1784,7 @@ describe('dailymotionBidAdapterTests', () => {
           },
         },
       },
-    };
+    }
 
     config.setConfig({
       userSync: {
@@ -1800,16 +1800,16 @@ describe('dailymotionBidAdapterTests', () => {
           },
         }
       }
-    });
+    })
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
-    );
+    )
 
-    const { data: reqData } = request;
+    const { data: reqData } = request
 
-    expect(request.url).to.equal('https://pb.dmxleo.com');
+    expect(request.url).to.equal('https://pb.dmxleo.com')
 
     const expectedOrtb = {
       'imp': [{
@@ -1933,12 +1933,12 @@ describe('dailymotionBidAdapterTests', () => {
       'tmax': 31416
     }
 
-    expect(reqData.pbv).to.eql('$prebid.version$');
-    expect(reqData.ortb.id).to.be.not.empty;
-    delete reqData.ortb.id; // ortb id is generated randomly
-    expect(reqData.ortb).to.eql(expectedOrtb);
+    expect(reqData.pbv).to.eql('$prebid.version$')
+    expect(reqData.ortb.id).to.be.not.empty
+    delete reqData.ortb.id // ortb id is generated randomly
+    expect(reqData.ortb).to.eql(expectedOrtb)
 
-    expect(reqData.userSyncEnabled).to.be.true;
+    expect(reqData.userSyncEnabled).to.be.true
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -1947,10 +1947,10 @@ describe('dailymotionBidAdapterTests', () => {
         gppString: bidderRequestData.ortb2.regs.gpp,
         applicableSections: bidderRequestData.ortb2.regs.gpp_sid,
       },
-    });
-    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
-    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
-    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
+    })
+    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey)
+    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId)
+    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId)
 
     expect(reqData.request.mediaTypes.video).to.eql({
       ...bidRequestData[0].mediaTypes.video,
@@ -1965,7 +1965,7 @@ describe('dailymotionBidAdapterTests', () => {
       skipmin: 0,
       w: 0,
       h: 0,
-    });
+    })
 
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
@@ -1989,35 +1989,35 @@ describe('dailymotionBidAdapterTests', () => {
         playerName: bidRequestData[0].params.video.playerName,
         playerVolume: bidRequestData[0].params.video.playerVolume,
       },
-    });
-  });
+    })
+  })
 
   it('validates buildRequests - with default values on empty bid & bidder request', () => {
     const bidRequestDataWithApi = [{
       params: {
         apiKey: 'test_api_key',
       },
-    }];
+    }]
 
     config.setConfig({
       userSync: {
         syncEnabled: false,
       }
-    });
+    })
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestDataWithApi, {}),
-    );
+    )
 
-    const { data: reqData } = request;
+    const { data: reqData } = request
 
-    expect(request.url).to.equal('https://pb.dmxleo.com');
-    expect(reqData.config.api_key).to.eql(bidRequestDataWithApi[0].params.apiKey);
-    expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(request.url).to.equal('https://pb.dmxleo.com')
+    expect(reqData.config.api_key).to.eql(bidRequestDataWithApi[0].params.apiKey)
+    expect(reqData.pbv).to.eql('$prebid.version$')
 
-    expect(reqData.ortb.id).to.be.not.empty;
-    delete reqData.ortb.id; // ortb id is generated randomly
+    expect(reqData.ortb.id).to.be.not.empty
+    delete reqData.ortb.id // ortb id is generated randomly
     expect(reqData.ortb).to.eql({
       'imp': [
         {
@@ -2026,8 +2026,8 @@ describe('dailymotionBidAdapterTests', () => {
         },
       ],
       'test': 0
-    });
-    expect(reqData.userSyncEnabled).to.be.false;
+    })
+    expect(reqData.userSyncEnabled).to.be.false
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
         apiVersion: 1,
@@ -2042,7 +2042,7 @@ describe('dailymotionBidAdapterTests', () => {
         gppString: '',
         applicableSections: [],
       },
-    });
+    })
 
     expect(reqData.request).to.eql({
       auctionId: '',
@@ -2066,7 +2066,7 @@ describe('dailymotionBidAdapterTests', () => {
         },
       },
       sizes: [],
-    });
+    })
 
     expect(reqData.video_metadata).to.eql({
       description: '',
@@ -2090,13 +2090,13 @@ describe('dailymotionBidAdapterTests', () => {
         playerName: '',
         playerVolume: null,
       },
-    });
-  });
+    })
+  })
 
   describe('validates buildRequests for video metadata iabcat1 and iabcat2', () => {
-    let bidRequestData;
-    let bidderRequestData;
-    let request;
+    let bidRequestData
+    let bidderRequestData
+    let request
 
     beforeEach(() => {
       bidRequestData = [{
@@ -2117,7 +2117,7 @@ describe('dailymotionBidAdapterTests', () => {
             iabcat2: ['video-params-iabcat2'],
           },
         },
-      }];
+      }]
 
       bidderRequestData = {
         timeout: 4242,
@@ -2147,7 +2147,7 @@ describe('dailymotionBidAdapterTests', () => {
             },
           }
         }
-      };
+      }
 
       config.setConfig({
         userSync: {
@@ -2168,77 +2168,77 @@ describe('dailymotionBidAdapterTests', () => {
       [request] = config.runWithBidder(
         'dailymotion',
         () => spec.buildRequests(bidRequestData, bidderRequestData),
-      );
-    });
+      )
+    })
 
     it('get iabcat1 and iabcat 2 from params video', () => {
-      expect(request.data.video_metadata.iabcat1).to.eql(bidRequestData[0].params.video.iabcat1);
-      expect(request.data.video_metadata.iabcat2).to.eql(bidRequestData[0].params.video.iabcat2);
+      expect(request.data.video_metadata.iabcat1).to.eql(bidRequestData[0].params.video.iabcat1)
+      expect(request.data.video_metadata.iabcat2).to.eql(bidRequestData[0].params.video.iabcat2)
     })
 
     it('get iabcat1 from content.cat and iabcat2 from data.segment', () => {
-      const iabCatTestsCases = [[], null, {}];
+      const iabCatTestsCases = [[], null, {}]
 
       iabCatTestsCases.forEach((iabCat) => {
-        bidRequestData[0].params.video.iabcat1 = iabCat;
-        bidRequestData[0].params.video.iabcat2 = iabCat;
-        bidderRequestData.ortb2.site.content.cat = ['video-content-cat'];
+        bidRequestData[0].params.video.iabcat1 = iabCat
+        bidRequestData[0].params.video.iabcat2 = iabCat
+        bidderRequestData.ortb2.site.content.cat = ['video-content-cat']
         bidderRequestData.ortb2.site.content.cattax = 1;
 
         [request] = config.runWithBidder(
           'dailymotion',
           () => spec.buildRequests(bidRequestData, bidderRequestData),
-        );
+        )
 
-        expect(request.data.video_metadata.iabcat1).to.eql(bidderRequestData.ortb2.site.content.cat);
-        expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20']);
+        expect(request.data.video_metadata.iabcat1).to.eql(bidderRequestData.ortb2.site.content.cat)
+        expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20'])
       })
     })
 
     it('get iabcat2 from content.cat and iabcat1 from data.segment', () => {
-      const iabCatTestsCases = [[], null, {}];
-      const cattaxV2 = [2, 5, 6];
+      const iabCatTestsCases = [[], null, {}]
+      const cattaxV2 = [2, 5, 6]
 
       cattaxV2.forEach((cattax) => {
         iabCatTestsCases.forEach((iabCat) => {
-          bidRequestData[0].params.video.iabcat1 = iabCat;
-          bidRequestData[0].params.video.iabcat2 = iabCat;
-          bidderRequestData.ortb2.site.content.cat = ['video-content-cat'];
+          bidRequestData[0].params.video.iabcat1 = iabCat
+          bidRequestData[0].params.video.iabcat2 = iabCat
+          bidderRequestData.ortb2.site.content.cat = ['video-content-cat']
           bidderRequestData.ortb2.site.content.cattax = cattax;
 
           [request] = config.runWithBidder(
             'dailymotion',
             () => spec.buildRequests(bidRequestData, bidderRequestData),
-          );
+          )
 
-          expect(request.data.video_metadata.iabcat1).to.eql(['1']);
-          expect(request.data.video_metadata.iabcat2).to.eql(bidderRequestData.ortb2.site.content.cat);
+          expect(request.data.video_metadata.iabcat1).to.eql(['1'])
+          expect(request.data.video_metadata.iabcat2).to.eql(bidderRequestData.ortb2.site.content.cat)
         })
       })
     })
 
     it('get iabcat1 and iabcat2 from data.segmnet', () => {
-      const contentCatTestCases = [[], null, {}];
-      const cattaxTestCases = [1, 2, 5, 6];
+      const contentCatTestCases = [[], null, {}]
+      const cattaxTestCases = [1, 2, 5, 6]
 
       cattaxTestCases.forEach((cattax) => {
         contentCatTestCases.forEach((contentCat) => {
-          bidRequestData[0].params.video.iabcat1 = [];
-          bidRequestData[0].params.video.iabcat2 = [];
-          bidderRequestData.ortb2.site.content.cat = contentCat;
+          bidRequestData[0].params.video.iabcat1 = []
+          bidRequestData[0].params.video.iabcat2 = []
+          bidderRequestData.ortb2.site.content.cat = contentCat
           bidderRequestData.ortb2.site.content.cattax = cattax;
 
           [request] = config.runWithBidder(
             'dailymotion',
             () => spec.buildRequests(bidRequestData, bidderRequestData),
-          );
+          )
 
-          expect(request.data.video_metadata.iabcat1).to.eql(['1']);
-          expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20']);
+          expect(request.data.video_metadata.iabcat1).to.eql(['1'])
+          expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20'])
         })
       })
     })
-  });
+  })
 
   it('validates buildRequests - with null floor as object for getFloor function', () => {
     const bidRequest = [{
@@ -2246,23 +2246,23 @@ describe('dailymotionBidAdapterTests', () => {
         apiKey: 'test_api_key',
       },
       getFloor: () => null
-    }];
+    }]
 
     config.setConfig({
       userSync: {
         syncEnabled: false,
       }
-    });
+    })
 
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequest, {}),
-    );
+    )
 
-    const { data: reqData } = request;
+    const { data: reqData } = request
 
-    expect(reqData.ortb.id).to.be.not.empty;
-    delete reqData.ortb.id; // ortb id is generated randomly
+    expect(reqData.ortb.id).to.be.not.empty
+    delete reqData.ortb.id // ortb id is generated randomly
     expect(reqData.ortb).to.eql({
       'imp': [
         {
@@ -2271,14 +2271,14 @@ describe('dailymotionBidAdapterTests', () => {
         },
       ],
       'test': 0
-    });
+    })
   })
 
   it('validates buildRequests - with empty/undefined validBidRequests', () => {
-    expect(spec.buildRequests([], {})).to.have.lengthOf(0);
+    expect(spec.buildRequests([], {})).to.have.lengthOf(0)
 
-    expect(spec.buildRequests(undefined, {})).to.have.lengthOf(0);
-  });
+    expect(spec.buildRequests(undefined, {})).to.have.lengthOf(0)
+  })
 
   it('validates interpretResponse', () => {
     const serverResponse = {
@@ -2293,67 +2293,67 @@ describe('dailymotionBidAdapterTests', () => {
         requestId: 'test_requestid',
         vastUrl: 'https://fakecacheserver/cache?uuid=1234',
       },
-    };
+    }
 
-    const bids = spec.interpretResponse(serverResponse);
-    expect(bids).to.have.lengthOf(1);
+    const bids = spec.interpretResponse(serverResponse)
+    expect(bids).to.have.lengthOf(1)
 
-    const [bid] = bids;
-    expect(bid).to.eql(serverResponse.body);
-  });
+    const [bid] = bids
+    expect(bid).to.eql(serverResponse.body)
+  })
 
   it('validates interpretResponse - without bid (no cpm)', () => {
     const serverResponse = {
       body: {
         requestId: 'test_requestid',
       },
-    };
+    }
 
-    const bids = spec.interpretResponse(serverResponse);
-    expect(bids).to.have.lengthOf(0);
-  });
+    const bids = spec.interpretResponse(serverResponse)
+    expect(bids).to.have.lengthOf(0)
+  })
 
   it('validates interpretResponse - with empty/undefined serverResponse', () => {
-    expect(spec.interpretResponse({})).to.have.lengthOf(0);
+    expect(spec.interpretResponse({})).to.have.lengthOf(0)
 
-    expect(spec.interpretResponse(undefined)).to.have.lengthOf(0);
-  });
+    expect(spec.interpretResponse(undefined)).to.have.lengthOf(0)
+  })
 
   it('validates getUserSyncs', () => {
     // Nothing sent in getUserSyncs
-    expect(config.runWithBidder('dailymotion', () => spec.getUserSyncs())).to.eql([]);
+    expect(config.runWithBidder('dailymotion', () => spec.getUserSyncs())).to.eql([])
 
     // No server response
     {
-      const responses = [];
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const responses = []
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true }
 
       expect(config.runWithBidder(
         'dailymotion',
         () => spec.getUserSyncs(syncOptions, responses),
-      )).to.eql([]);
+      )).to.eql([])
     }
 
     // No permissions
     {
-      const responses = [{ body: { userSyncs: [{ url: 'https://usersyncurl.com', type: 'image' }] } }];
-      const syncOptions = { iframeEnabled: false, pixelEnabled: false };
+      const responses = [{ body: { userSyncs: [{ url: 'https://usersyncurl.com', type: 'image' }] } }]
+      const syncOptions = { iframeEnabled: false, pixelEnabled: false }
 
       expect(config.runWithBidder(
         'dailymotion',
         () => spec.getUserSyncs(syncOptions, responses),
-      )).to.eql([]);
+      )).to.eql([])
     }
 
     // Has permissions but no userSyncs urls
     {
-      const responses = [{}];
-      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+      const responses = [{}]
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true }
 
       expect(config.runWithBidder(
         'dailymotion',
         () => spec.getUserSyncs(syncOptions, responses),
-      )).to.eql([]);
+      )).to.eql([])
     }
 
     // Return userSyncs urls for pixels
@@ -2366,9 +2366,9 @@ describe('dailymotionBidAdapterTests', () => {
             { url: 'https://usersyncurl3.com', type: 'iframe' }
           ],
         }
-      }];
+      }]
 
-      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true }
 
       expect(config.runWithBidder(
         'dailymotion',
@@ -2376,7 +2376,7 @@ describe('dailymotionBidAdapterTests', () => {
       )).to.eql([
         { type: 'image', url: 'https://usersyncurl.com' },
         { type: 'image', url: 'https://usersyncurl2.com' },
-      ]);
+      ])
     }
 
     // Return userSyncs urls for iframes
@@ -2389,16 +2389,16 @@ describe('dailymotionBidAdapterTests', () => {
             { url: 'https://usersyncurl3.com', type: 'iframe' }
           ],
         }
-      }];
+      }]
 
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true }
 
       expect(config.runWithBidder(
         'dailymotion',
         () => spec.getUserSyncs(syncOptions, responses),
       )).to.eql([
         { type: 'iframe', url: 'https://usersyncurl3.com' },
-      ]);
+      ])
     }
-  });
-});
+  })
+})

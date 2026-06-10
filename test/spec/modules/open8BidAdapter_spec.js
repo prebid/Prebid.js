@@ -1,10 +1,10 @@
-import { spec } from 'modules/open8BidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/open8BidAdapter'
+import { newBidder } from 'src/adapters/bidderFactory'
 
-const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
+const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid'
 
 describe('Open8Adapter', function() {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('isBidRequestValid', function() {
     const bid = {
@@ -17,19 +17,19 @@ describe('Open8Adapter', function() {
       'bidId': 'bidid1234',
       'bidderRequestId': 'requestid1234',
       'auctionId': 'auctionid1234',
-    };
+    }
 
     it('should return true when required params found', function() {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function() {
       bid.params = {
         ' slotKey': 0
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function() {
     const bidRequests = [
@@ -44,14 +44,14 @@ describe('Open8Adapter', function() {
         'bidderRequestId': 'requestid1234',
         'auctionId': 'auctionid1234',
       }
-    ];
+    ]
 
     it('sends bid request to ENDPOINT via GET', function() {
-      const requests = spec.buildRequests(bidRequests);
-      expect(requests[0].url).to.equal(ENDPOINT);
-      expect(requests[0].method).to.equal('GET');
-    });
-  });
+      const requests = spec.buildRequests(bidRequests)
+      expect(requests[0].url).to.equal(ENDPOINT)
+      expect(requests[0].method).to.equal('GET')
+    })
+  })
   describe('interpretResponse', function() {
     const adomin = ['example.com']
     const bannerResponse = {
@@ -84,7 +84,7 @@ describe('Open8Adapter', function() {
         },
         adomain: adomin
       }
-    };
+    }
     const videoResponse = {
       slotKey: 'slotkey1234',
       userId: 'userid1234',
@@ -114,7 +114,7 @@ describe('Open8Adapter', function() {
         },
         adomain: adomin
       }
-    };
+    }
 
     it('should get correct banner bid response', function() {
       const expectedResponse = [{
@@ -140,13 +140,13 @@ describe('Open8Adapter', function() {
         'ttl': 360,
         'netRevenue': true,
         'meta': { }
-      }];
+      }]
 
-      let bidderRequest;
-      const result = spec.interpretResponse({ body: bannerResponse }, { bidderRequest });
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
-    });
+      let bidderRequest
+      const result = spec.interpretResponse({ body: bannerResponse }, { bidderRequest })
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
+      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin)
+    })
 
     it('handles video responses', function() {
       const expectedResponse = [{
@@ -174,25 +174,25 @@ describe('Open8Adapter', function() {
         'ttl': 360,
         'netRevenue': true,
         'meta': { }
-      }];
+      }]
 
-      let bidderRequest;
-      const result = spec.interpretResponse({ body: videoResponse }, { bidderRequest });
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
-    });
+      let bidderRequest
+      const result = spec.interpretResponse({ body: videoResponse }, { bidderRequest })
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
+      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin)
+    })
 
     it('handles nobid responses', function() {
       const response = {
         isAdReturn: false,
         'ad': {}
-      };
+      }
 
-      let bidderRequest;
-      const result = spec.interpretResponse({ body: response }, { bidderRequest });
-      expect(result.length).to.equal(0);
-    });
-  });
+      let bidderRequest
+      const result = spec.interpretResponse({ body: response }, { bidderRequest })
+      expect(result.length).to.equal(0)
+    })
+  })
 
   describe('getUserSyncs', function() {
     const imgResponse1 = {
@@ -203,7 +203,7 @@ describe('Open8Adapter', function() {
           'https://example.test/1'
         ]
       }
-    };
+    }
 
     const imgResponse2 = {
       body: {
@@ -213,7 +213,7 @@ describe('Open8Adapter', function() {
           'https://example.test/2'
         ]
       }
-    };
+    }
 
     const ifResponse = {
       body: {
@@ -223,36 +223,36 @@ describe('Open8Adapter', function() {
           'https://example.test/3'
         ]
       }
-    };
+    }
 
     it('should use a sync img url from first response', function() {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imgResponse1, imgResponse2, ifResponse]);
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imgResponse1, imgResponse2, ifResponse])
       expect(syncs).to.deep.equal([
         {
           type: 'image',
           url: 'https://example.test/1'
         }
-      ]);
-    });
+      ])
+    })
 
     it('handle ifs response', function() {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [ifResponse]);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [ifResponse])
       expect(syncs).to.deep.equal([
         {
           type: 'iframe',
           url: 'https://example.test/3'
         }
-      ]);
-    });
+      ])
+    })
 
     it('handle empty response (e.g. timeout)', function() {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, []);
-      expect(syncs).to.deep.equal([]);
-    });
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [])
+      expect(syncs).to.deep.equal([])
+    })
 
     it('returns empty syncs when not enabled', function() {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imgResponse1]);
-      expect(syncs).to.deep.equal([]);
-    });
-  });
-});
+      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imgResponse1])
+      expect(syncs).to.deep.equal([])
+    })
+  })
+})

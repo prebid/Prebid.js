@@ -1,10 +1,10 @@
-import { expect } from 'chai';
-import { spec } from 'modules/bucksenseBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/bucksenseBidAdapter.js'
 
 describe('Bucksense Adapter', function() {
-  const BIDDER_CODE = 'bucksense';
-  const BID_ID = '12345';
-  const PLACE_ID = '1000';
+  const BIDDER_CODE = 'bucksense'
+  const BID_ID = '12345'
+  const PLACE_ID = '1000'
 
   function getValidBidObject() {
     return {
@@ -16,32 +16,32 @@ describe('Bucksense Adapter', function() {
   };
 
   describe('isBidRequestValid', function() {
-    var bid;
+    var bid
 
     beforeEach(function() {
-      bid = getValidBidObject();
-    });
+      bid = getValidBidObject()
+    })
 
     it('returns true when valid bid request is sent', function() {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
 
     it('returns true when valid test bid request is sent', function() {
-      bid.params['test'] = 1;
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      bid.params['test'] = 1
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
 
     it('returns false when params not set', function() {
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-  });
+      delete bid.params
+      expect(spec.isBidRequestValid(bid)).to.be.false
+    })
+  })
 
   describe('buildRequests', function() {
-    var bid, bidRequestObj;
+    var bid, bidRequestObj
 
     beforeEach(function() {
-      bid = getValidBidObject();
+      bid = getValidBidObject()
       bidRequestObj = {
         'bidderCode': 'bucksense',
         'auctionId': '73540558-86cb-4eef-895f-bf99c5353bd7',
@@ -78,23 +78,23 @@ describe('Bucksense Adapter', function() {
           ]
         },
         'start': 1557176022731
-      };
-    });
+      }
+    })
 
     it('should build a very basic request', function() {
-      var request = spec.buildRequests([bid], bidRequestObj);
-      expect(request[0].method).to.equal('POST');
-    });
+      var request = spec.buildRequests([bid], bidRequestObj)
+      expect(request[0].method).to.equal('POST')
+    })
 
     it('bidRequest data', function () {
-      var request = spec.buildRequests([bid], bidRequestObj);
-      expect(request[0].data).to.exist;
-    });
-  });
+      var request = spec.buildRequests([bid], bidRequestObj)
+      expect(request[0].data).to.exist
+    })
+  })
 
   describe('interpretResponse', function() {
-    var serverResponse;
-    var serverRequest;
+    var serverResponse
+    var serverRequest
 
     beforeEach(function() {
       serverRequest = {
@@ -111,7 +111,7 @@ describe('Bucksense Adapter', function() {
           },
           'sizes': [[300, 250], [300, 600]]
         }
-      };
+      }
 
       serverResponse = {
         body: {
@@ -128,18 +128,18 @@ describe('Bucksense Adapter', function() {
             'advertiserDomains': ['http://www.bucksense.com/']
           }
         }
-      };
-    });
+      }
+    })
 
     it('should return an array of bid responses', function() {
-      var responses = spec.interpretResponse(serverResponse, serverRequest);
-      expect(responses).to.be.an('array').with.length(1);
-    });
+      var responses = spec.interpretResponse(serverResponse, serverRequest)
+      expect(responses).to.be.an('array').with.length(1)
+    })
 
     it('should return an array of bid responses', function() {
-      serverResponse = {};
-      var responses = spec.interpretResponse(serverResponse, serverRequest);
-      expect(responses).to.be.an('array').with.length(0);
-    });
-  });
-});
+      serverResponse = {}
+      var responses = spec.interpretResponse(serverResponse, serverRequest)
+      expect(responses).to.be.an('array').with.length(0)
+    })
+  })
+})

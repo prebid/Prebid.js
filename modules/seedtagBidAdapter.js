@@ -1,11 +1,11 @@
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
-import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
-import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js'
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js'
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js'
+import { getAdUnitElement } from '../src/utils/adUnits.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,102 +18,102 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
-const BIDDER_CODE = 'seedtag';
-const SEEDTAG_ALIAS = 'st';
-const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
-const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
+const BIDDER_CODE = 'seedtag'
+const SEEDTAG_ALIAS = 'st'
+const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid'
+const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout'
 
 // Global Vendor List Id
 // https://iabeurope.eu/vendor-list-tcf-v2-0/
-const GVLID = 157;
+const GVLID = 157
 
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video',
-};
+}
 
 const deviceConnection = {
   FIXED: 'fixed',
   MOBILE: 'mobile',
   UNKNOWN: 'unknown',
-};
+}
 
 export const BIDFLOOR_CURRENCY = 'USD'
 
 function getBidFloor(bidRequest) {
-  let floorInfo = {};
+  let floorInfo = {}
 
   if (typeof bidRequest.getFloor === 'function') {
     floorInfo = bidRequest.getFloor({
       currency: BIDFLOOR_CURRENCY,
       mediaType: '*',
       size: '*'
-    });
+    })
   }
 
-  return floorInfo?.floor;
+  return floorInfo?.floor
 }
 
 const getConnectionType = () => {
-  const connection = getConnectionInfo();
-  const connectionType = connection?.type || connection?.effectiveType;
+  const connection = getConnectionInfo()
+  const connectionType = connection?.type || connection?.effectiveType
   switch (connectionType) {
     case 'wifi':
     case 'ethernet':
-      return deviceConnection.FIXED;
+      return deviceConnection.FIXED
     case 'cellular':
     case 'wimax':
-      return deviceConnection.MOBILE;
+      return deviceConnection.MOBILE
     default:
       const isMobile =
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        /android/i.test(navigator.userAgent);
-      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED;
+        /android/i.test(navigator.userAgent)
+      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED
   }
-};
+}
 
 function mapMediaType(seedtagMediaType) {
-  if (seedtagMediaType === 'display') return BANNER;
-  if (seedtagMediaType === 'video') return VIDEO;
-  else return seedtagMediaType;
+  if (seedtagMediaType === 'display') return BANNER
+  if (seedtagMediaType === 'video') return VIDEO
+  else return seedtagMediaType
 }
 
 function hasVideoMediaType(bid) {
-  return !!bid.mediaTypes && !!bid.mediaTypes.video;
+  return !!bid.mediaTypes && !!bid.mediaTypes.video
 }
 
 function hasBannerMediaType(bid) {
-  return !!bid.mediaTypes && !!bid.mediaTypes.banner;
+  return !!bid.mediaTypes && !!bid.mediaTypes.banner
 }
 
 function hasMandatoryDisplayParams(bid) {
-  const p = bid.params;
+  const p = bid.params
   return (
     !!p.publisherId
-  );
+  )
 }
 
 function hasMandatoryVideoParams(bid) {
-  const videoParams = getVideoParams(bid);
+  const videoParams = getVideoParams(bid)
 
   const isValid =
     !!bid.params.publisherId &&
     hasVideoMediaType(bid) &&
     !!videoParams.playerSize &&
     isArray(videoParams.playerSize) &&
-    videoParams.playerSize.length > 0;
+    videoParams.playerSize.length > 0
 
   return isValid
 }
 
 function buildBidRequest(validBidRequest) {
-  const params = validBidRequest.params;
+  const params = validBidRequest.params
   const mediaTypes = _map(
     Object.keys(validBidRequest.mediaTypes),
     function (pbjsType) {
-      return mediaTypesMap[pbjsType];
+      return mediaTypesMap[pbjsType]
     }
-  );
+  )
   const bidRequest = {
     id: validBidRequest.bidId,
     transactionId: validBidRequest.ortb2Imp?.ext?.tid,
@@ -125,39 +125,39 @@ function buildBidRequest(validBidRequest) {
     geom: geom(validBidRequest),
     placement: params.placement,
     requestCount: validBidRequest.bidderRequestsCount || 1,
-  };
+  }
 
   if (hasVideoMediaType(validBidRequest) && hasMandatoryVideoParams(validBidRequest)) {
-    bidRequest.videoParams = getVideoParams(validBidRequest);
+    bidRequest.videoParams = getVideoParams(validBidRequest)
   }
 
   const bidFloor = getBidFloor(validBidRequest)
   if (bidFloor) {
-    bidRequest.bidFloor = bidFloor;
+    bidRequest.bidFloor = bidFloor
   }
 
-  return bidRequest;
+  return bidRequest
 }
 
 /**
  * return video param (global or overrided per bidder)
  */
 function getVideoParams(validBidRequest) {
-  const videoParams = validBidRequest.mediaTypes.video || {};
+  const videoParams = validBidRequest.mediaTypes.video || {}
   if (videoParams.playerSize && isArray(videoParams.playerSize) && videoParams.playerSize.length > 0) {
-    videoParams.w = videoParams.playerSize[0][0];
-    videoParams.h = videoParams.playerSize[0][1];
+    videoParams.w = videoParams.playerSize[0][0]
+    videoParams.h = videoParams.playerSize[0][1]
   }
 
-  return videoParams;
+  return videoParams
 }
 
 function isVideoOutstream(validBidRequest) {
-  return getVideoParams(validBidRequest).context === 'outstream';
+  return getVideoParams(validBidRequest).context === 'outstream'
 }
 
 function buildBidResponse(seedtagBid) {
-  const mediaType = mapMediaType(seedtagBid.mediaType);
+  const mediaType = mapMediaType(seedtagBid.mediaType)
   const bid = {
     requestId: seedtagBid.bidId,
     cpm: seedtagBid.price,
@@ -176,14 +176,14 @@ function buildBidResponse(seedtagBid) {
           : [],
       mediaType: seedtagBid.realMediaType,
     },
-  };
+  }
 
   if (mediaType === VIDEO) {
-    bid.vastXml = seedtagBid.content;
+    bid.vastXml = seedtagBid.content
   } else {
-    bid.ad = seedtagBid.content;
+    bid.ad = seedtagBid.content
   }
-  return bid;
+  return bid
 }
 
 /**
@@ -196,35 +196,35 @@ function ttfb() {
   const ttfb = (() => {
     // Timing API V2
     try {
-      const entry = performance.getEntriesByType('navigation')[0];
-      return Math.round(entry.responseStart - entry.startTime);
+      const entry = performance.getEntriesByType('navigation')[0]
+      return Math.round(entry.responseStart - entry.startTime)
     } catch (e) {
       // Timing API V1
       try {
-        const entry = performance.timing;
-        return Math.round(entry.responseStart - entry.fetchStart);
+        const entry = performance.timing
+        return Math.round(entry.responseStart - entry.fetchStart)
       } catch (e) {
         // Timing API not available
-        return 0;
+        return 0
       }
     }
-  })();
+  })()
 
   // prevent negative or excessive value
   // @see https://github.com/googleChrome/web-vitals/issues/162
   //      https://github.com/googleChrome/web-vitals/issues/137
-  return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
+  return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0
 }
 
 function geom(bidRequest) {
-  const slot = getAdUnitElement(bidRequest);
+  const slot = getAdUnitElement(bidRequest)
   if (slot) {
-    const { top, left, width, height } = getBoundingClientRect(slot);
+    const { top, left, width, height } = getBoundingClientRect(slot)
     const viewport = {
       width: getWinDimensions().innerWidth,
       height: getWinDimensions().innerHeight,
-    };
-    const scrollY = getViewportCoordinates().top || 0;
+    }
+    const scrollY = getViewportCoordinates().top || 0
 
     return {
       scrollY,
@@ -233,31 +233,31 @@ function geom(bidRequest) {
       width,
       height,
       viewport,
-    };
+    }
   }
 }
 
 export function getTimeoutUrl(data) {
-  let queryParams = '';
+  let queryParams = ''
   if (
     isArray(data) &&
     data[0] &&
     isArray(data[0].params) &&
     data[0].params[0]
   ) {
-    const params = data[0].params[0];
-    const timeout = data[0].timeout;
+    const params = data[0].params[0]
+    const timeout = data[0].timeout
 
     const qsParams = [
       'publisherToken=' + params.publisherId,
       'timeout=' + timeout
-    ];
+    ]
     if (params.adUnitId) {
-      qsParams.push('adUnitId=' + params.adUnitId);
+      qsParams.push('adUnitId=' + params.adUnitId)
     }
-    queryParams = '?' + qsParams.join('&');
+    queryParams = '?' + qsParams.join('&')
   }
-  return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
+  return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams
 }
 
 export const spec = {
@@ -272,18 +272,18 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    const hasVideo = hasVideoMediaType(bid);
-    const hasBanner = hasBannerMediaType(bid);
+    const hasVideo = hasVideoMediaType(bid)
+    const hasBanner = hasBannerMediaType(bid)
 
     // when accept both mediatype but it must be outstream
     if (hasVideo && hasBanner) {
-      return hasMandatoryVideoParams(bid) && isVideoOutstream(bid) && hasMandatoryDisplayParams(bid);
+      return hasMandatoryVideoParams(bid) && isVideoOutstream(bid) && hasMandatoryDisplayParams(bid)
     } else if (hasVideo) {
-      return hasMandatoryVideoParams(bid);
+      return hasMandatoryVideoParams(bid)
     } else if (hasBanner) {
-      return hasMandatoryDisplayParams(bid);
+      return hasMandatoryDisplayParams(bid)
     } else {
-      return false;
+      return false
     }
   },
 
@@ -295,8 +295,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
-    const publisherId = validBidRequests[0].params.publisherId;
-    const integrationType = validBidRequests[0].params.integrationType || 'publisherToken';
+    const publisherId = validBidRequests[0].params.publisherId
+    const integrationType = validBidRequests[0].params.integrationType || 'publisherToken'
 
     const payload = {
       url: bidderRequest.refererInfo.page,
@@ -311,25 +311,25 @@ export const spec = {
       user: { topics: [], eids: [] },
       site: {},
       integrationType: integrationType
-    };
+    }
 
     if (payload.cmp) {
-      const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-      if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
-      payload['cd'] = bidderRequest.gdprConsent.consentString;
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies
+      if (gdprApplies !== undefined) payload['ga'] = gdprApplies
+      payload['cd'] = bidderRequest.gdprConsent.consentString
     }
     if (bidderRequest.uspConsent) {
-      payload['uspConsent'] = bidderRequest.uspConsent;
+      payload['uspConsent'] = bidderRequest.uspConsent
     }
 
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain
     if (schain) {
-      payload.schain = schain;
+      payload.schain = schain
     }
 
-    const coppa = config.getConfig('coppa');
+    const coppa = config.getConfig('coppa')
     if (coppa) {
-      payload.coppa = coppa;
+      payload.coppa = coppa
     }
 
     if (bidderRequest.gppConsent) {
@@ -376,16 +376,16 @@ export const spec = {
     }
 
     if (bidderRequest.ortb2) {
-      payload.ortb = bidderRequest.ortb2;
+      payload.ortb = bidderRequest.ortb2
     }
 
-    const payloadString = JSON.stringify(payload);
+    const payloadString = JSON.stringify(payload)
 
     return {
       method: 'POST',
       url: SEEDTAG_SSP_ENDPOINT,
       data: payloadString,
-    };
+    }
   },
 
   /**
@@ -395,13 +395,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse) {
-    const serverBody = serverResponse.body;
+    const serverBody = serverResponse.body
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function (bid) {
-        return buildBidResponse(bid);
-      });
+        return buildBidResponse(bid)
+      })
     } else {
-      return [];
+      return []
     }
   },
 
@@ -413,12 +413,12 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs(syncOptions, serverResponses) {
-    const serverResponse = serverResponses[0];
+    const serverResponse = serverResponses[0]
     if (syncOptions.iframeEnabled && serverResponse) {
-      const cookieSyncUrl = serverResponse.body.cookieSync;
-      return cookieSyncUrl ? [{ type: 'iframe', url: cookieSyncUrl }] : [];
+      const cookieSyncUrl = serverResponse.body.cookieSync
+      return cookieSyncUrl ? [{ type: 'iframe', url: cookieSyncUrl }] : []
     } else {
-      return [];
+      return []
     }
   },
 
@@ -427,8 +427,8 @@ export const spec = {
    * @param {TimedOutBid} data Containing timeout specific data
    */
   onTimeout(data) {
-    const url = getTimeoutUrl(data);
-    triggerPixel(url);
+    const url = getTimeoutUrl(data)
+    triggerPixel(url)
   },
 
   /**
@@ -437,8 +437,8 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
-      triggerPixel(bid.nurl);
+      triggerPixel(bid.nurl)
     }
   },
-};
-registerBidder(spec);
+}
+registerBidder(spec)

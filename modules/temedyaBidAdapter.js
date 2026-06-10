@@ -1,7 +1,7 @@
-import { parseSizesInput, parseQueryStringParameters, logError } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { parseSizesInput, parseQueryStringParameters, logError } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,10 +11,10 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'temedya';
-const ENDPOINT_URL = 'https://adm.vidyome.com/';
-const ENDPOINT_METHOD = 'GET';
-const CURRENCY = 'TRY';
+const BIDDER_CODE = 'temedya'
+const ENDPOINT_URL = 'https://adm.vidyome.com/'
+const ENDPOINT_METHOD = 'GET'
+const CURRENCY = 'TRY'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,7 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.widgetId);
+    return !!(bid.params.widgetId)
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -37,17 +37,17 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
     return validBidRequests.map(req => {
-      const mediaType = this._isBannerRequest(req) ? 'display' : NATIVE;
+      const mediaType = this._isBannerRequest(req) ? 'display' : NATIVE
       const data = {
         wid: req.params.widgetId,
         type: mediaType,
         count: (req.params.count > 6 ? 6 : req.params.count) || 1,
         mediaType: mediaType,
         requestid: req.bidId
-      };
+      }
       if (mediaType === 'display') {
         data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
@@ -59,8 +59,8 @@ export const spec = {
         url: ENDPOINT_URL,
         data: parseQueryStringParameters(data),
         options: { withCredentials: false, requestId: req.bidId, mediaType: mediaType }
-      };
-    });
+      }
+    })
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -70,8 +70,8 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     try {
-      const bidResponse = serverResponse.body;
-      const bidResponses = [];
+      const bidResponse = serverResponse.body
+      const bidResponses = []
       if (bidResponse && bidRequest.options.mediaType === NATIVE) {
         bidResponse.ads.forEach(function(ad) {
           bidResponses.push({
@@ -104,27 +104,27 @@ export const spec = {
               sponsoredBy: ad.assets.sponsor || '',
               impressionTrackers: [bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id],
             },
-          });
-        });
+          })
+        })
       } else if (bidResponse && bidRequest.options.mediaType === 'display') {
         bidResponse.ads.forEach(function(ad) {
-          const w = ad.assets.width || 300;
-          const h = ad.assets.height || 250;
-          let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
-          htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
-          htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>';
-          htmlTag += '<a href="' + ad.assets.click_url + '" target="_blank">';
-          htmlTag += '<div class="image-with-text">';
-          htmlTag += '<div class="tem-img"><img src="' + ad.assets.files[0] + '" style="width:' + w + 'px;height:' + h + 'px;"/></div>';
+          const w = ad.assets.width || 300
+          const h = ad.assets.height || 250
+          let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>'
+          htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">'
+          htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>'
+          htmlTag += '<a href="' + ad.assets.click_url + '" target="_blank">'
+          htmlTag += '<div class="image-with-text">'
+          htmlTag += '<div class="tem-img"><img src="' + ad.assets.files[0] + '" style="width:' + w + 'px;height:' + h + 'px;"/></div>'
           if (ad.assets.title) {
-            htmlTag += '<div class="text-elements">';
-            htmlTag += '<h2>' + ad.assets.title + '</h2>';
-            htmlTag += '<p>' + (ad.assets.sponsor || '') + '</p>';
-            htmlTag += '<em><canvas height="100" width="100"></canvas></em>';
-            htmlTag += '</div>';
+            htmlTag += '<div class="text-elements">'
+            htmlTag += '<h2>' + ad.assets.title + '</h2>'
+            htmlTag += '<p>' + (ad.assets.sponsor || '') + '</p>'
+            htmlTag += '<em><canvas height="100" width="100"></canvas></em>'
+            htmlTag += '</div>'
           };
-          htmlTag += '</div></a><img style="display: none;" src="' + bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id + '">';
-          htmlTag += '</div></body></html>';
+          htmlTag += '</div></a><img style="display: none;" src="' + bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id + '">'
+          htmlTag += '</div></body></html>'
           bidResponses.push({
             requestId: bidRequest.options.requestId,
             cpm: parseFloat(ad.assets.cpm) || 1,
@@ -136,13 +136,13 @@ export const spec = {
             ttl: 360,
             mediaType: BANNER,
             ad: htmlTag
-          });
-        });
+          })
+        })
       }
-      return bidResponses;
+      return bidResponses
     } catch (err) {
-      logError(err);
-      return [];
+      logError(err)
+      return []
     }
   },
   /**
@@ -151,7 +151,7 @@ export const spec = {
    * @private
    */
   _isBannerRequest(req) {
-    return !!(req.mediaTypes && req.mediaTypes.banner);
+    return !!(req.mediaTypes && req.mediaTypes.banner)
   }
 }
-registerBidder(spec);
+registerBidder(spec)

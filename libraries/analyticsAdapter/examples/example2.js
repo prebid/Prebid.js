@@ -1,14 +1,14 @@
 /* eslint-disable no-console */
-import { noCredsAjax as ajax } from '../../../src/ajax.js';
+import { noCredsAjax as ajax } from '../../../src/ajax.js'
 
 /**
  * example2.js - analytics adapter for Example2 Analytics Endpoint example
  */
 
-import adapter from '../AnalyticsAdapter.js';
+import adapter from '../AnalyticsAdapter.js'
 
-const url = 'https://httpbin.org/post';
-const analyticsType = 'endpoint';
+const url = 'https://httpbin.org/post'
+const analyticsType = 'endpoint'
 
 export default Object.assign(adapter(
   {
@@ -19,7 +19,7 @@ export default Object.assign(adapter(
 {
   // Override AnalyticsAdapter functions by supplying custom methods
   track({ eventType, args }) {
-    console.log('track function override for Example2 Analytics');
-    ajax(url, (result) => console.log('Analytics Endpoint Example2: result = ' + result), JSON.stringify({ eventType, args }));
+    console.log('track function override for Example2 Analytics')
+    ajax(url, (result) => console.log('Analytics Endpoint Example2: result = ' + result), JSON.stringify({ eventType, args }))
   }
-});
+})

@@ -1,22 +1,22 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { buildRequests, getUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js';
-import { getTimeZone } from '../libraries/timezone/timezone.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { buildRequests, getUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js'
+import { getTimeZone } from '../libraries/timezone/timezone.js'
 
-const BIDDER_CODE = 'adipolo';
-const GVL_ID = 1456;
+const BIDDER_CODE = 'adipolo'
+const GVL_ID = 1456
 
 function getSubdomain() {
   const regionMap = {
     'Europe': 'prebid-eu',
     'America': 'prebid'
-  };
+  }
 
   try {
-    const region = getTimeZone().split('/')[0];
-    return regionMap[region] || regionMap.America;
+    const region = getTimeZone().split('/')[0]
+    return regionMap[region] || regionMap.America
   } catch (err) {
-    return regionMap.America;
+    return regionMap.America
   }
 }
 
@@ -26,11 +26,11 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: bid => isBidRequestValid(bid, ['pid']),
   buildRequests: (validBidRequests, bidderRequest) => {
-    const endpoint = `https://${getSubdomain()}.adipolo.live`;
+    const endpoint = `https://${getSubdomain()}.adipolo.live`
     return buildRequests(validBidRequests, bidderRequest, endpoint)
   },
   interpretResponse,
   getUserSyncs
 }
 
-registerBidder(spec);
+registerBidder(spec)

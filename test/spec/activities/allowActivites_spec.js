@@ -1,25 +1,25 @@
-import { config } from 'src/config.js';
-import { ruleRegistry } from '../../../src/activities/rules.js';
-import { updateRulesFromConfig } from '../../../modules/allowActivities.js';
-import { activityParams } from '../../../src/activities/activityParams.js';
+import { config } from 'src/config.js'
+import { ruleRegistry } from '../../../src/activities/rules.js'
+import { updateRulesFromConfig } from '../../../modules/allowActivities.js'
+import { activityParams } from '../../../src/activities/activityParams.js'
 
 describe('allowActivities config', () => {
   const MODULE_TYPE = 'test'
-  const MODULE_NAME = 'testMod';
-  const ACTIVITY = 'testActivity';
+  const MODULE_NAME = 'testMod'
+  const ACTIVITY = 'testActivity'
 
-  let isAllowed, params;
+  let isAllowed, params
 
   beforeEach(() => {
     let registerRule;
-    [registerRule, isAllowed] = ruleRegistry();
-    updateRulesFromConfig(registerRule);
+    [registerRule, isAllowed] = ruleRegistry()
+    updateRulesFromConfig(registerRule)
     params = activityParams(MODULE_TYPE, MODULE_NAME)
-  });
+  })
 
   afterEach(() => {
-    config.resetConfig();
-  });
+    config.resetConfig()
+  })
 
   function setupActivityConfig(cfg) {
     config.setConfig({
@@ -34,8 +34,8 @@ describe('allowActivities config', () => {
       setupActivityConfig({
         default: false
       })
-      expect(isAllowed(ACTIVITY, {})).to.be.false;
-    });
+      expect(isAllowed(ACTIVITY, {})).to.be.false
+    })
     it('should not deny activities that are explicitly allowed', () => {
       setupActivityConfig({
         default: false,
@@ -48,16 +48,16 @@ describe('allowActivities config', () => {
           }
         ]
       })
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
-    });
+      expect(isAllowed(ACTIVITY, params)).to.be.true
+    })
     it('should be removable by a config update', () => {
       setupActivityConfig({
         default: false
-      });
-      setupActivityConfig({});
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
+      })
+      setupActivityConfig({})
+      expect(isAllowed(ACTIVITY, params)).to.be.true
     })
-  });
+  })
 
   describe('rules', () => {
     it('are tested for their condition', () => {
@@ -66,18 +66,18 @@ describe('allowActivities config', () => {
           condition({ flag }) { return flag },
           allow: false
         }]
-      });
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
-      params.flag = true;
-      expect(isAllowed(ACTIVITY, params)).to.be.false;
-    });
+      })
+      expect(isAllowed(ACTIVITY, params)).to.be.true
+      params.flag = true
+      expect(isAllowed(ACTIVITY, params)).to.be.false
+    })
 
     it('always apply if they have no condition', () => {
       setupActivityConfig({
         rules: [{ allow: false }]
-      });
-      expect(isAllowed(ACTIVITY, params)).to.be.false;
-    });
+      })
+      expect(isAllowed(ACTIVITY, params)).to.be.false
+    })
 
     it('do not choke when the condition throws', () => {
       setupActivityConfig({
@@ -87,9 +87,9 @@ describe('allowActivities config', () => {
           },
           allow: true
         }]
-      });
-      expect(isAllowed(ACTIVITY, params)).to.be.false;
-    });
+      })
+      expect(isAllowed(ACTIVITY, params)).to.be.false
+    })
 
     it('does not pass private (underscored) parameters to condition', () => {
       setupActivityConfig({
@@ -97,9 +97,9 @@ describe('allowActivities config', () => {
           condition({ _priv }) { return _priv },
           allow: false
         }]
-      });
-      params._priv = true;
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
+      })
+      params._priv = true
+      expect(isAllowed(ACTIVITY, params)).to.be.true
     })
 
     it('are evaluated in order of priority', () => {
@@ -111,9 +111,9 @@ describe('allowActivities config', () => {
           priority: 100,
           allow: true
         }]
-      });
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
-    });
+      })
+      expect(isAllowed(ACTIVITY, params)).to.be.true
+    })
 
     it('can be set with priority 0', () => {
       setupActivityConfig({
@@ -123,16 +123,16 @@ describe('allowActivities config', () => {
           priority: 0,
           allow: true
         }]
-      });
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
+      })
+      expect(isAllowed(ACTIVITY, params)).to.be.true
     })
 
     it('can be reset with a config update', () => {
       setupActivityConfig({
         allow: false
-      });
-      config.setConfig({ allowActivities: {} });
-      expect(isAllowed(ACTIVITY, params)).to.be.true;
-    });
-  });
-});
+      })
+      config.setConfig({ allowActivities: {} })
+      expect(isAllowed(ACTIVITY, params)).to.be.true
+    })
+  })
+})

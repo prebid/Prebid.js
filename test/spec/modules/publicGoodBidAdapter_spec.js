@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/publicGoodBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/publicGoodBidAdapter.js'
 
 describe('Public Good Adapter', function () {
-  let validBidRequests;
+  let validBidRequests
 
   beforeEach(function () {
     validBidRequests = [
@@ -23,8 +23,8 @@ describe('Public Good Adapter', function () {
         bidderRequestId: '1c56ad30b9b8ca8',
         transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
       },
-    ];
-  });
+    ]
+  })
 
   describe('for requests', function () {
     describe('without partner ID', function () {
@@ -34,12 +34,12 @@ describe('Public Good Adapter', function () {
           params: {
             slotId: 'all',
           },
-        };
-        const isValid = spec.isBidRequestValid(invalidBid);
+        }
+        const isValid = spec.isBidRequestValid(invalidBid)
 
-        expect(isValid).to.equal(false);
-      });
-    });
+        expect(isValid).to.equal(false)
+      })
+    })
 
     describe('without slot ID', function () {
       it('rejects the bid', function () {
@@ -48,12 +48,12 @@ describe('Public Good Adapter', function () {
           params: {
             partnerId: 'prebid-test',
           },
-        };
-        const isValid = spec.isBidRequestValid(invalidBid);
+        }
+        const isValid = spec.isBidRequestValid(invalidBid)
 
-        expect(isValid).to.equal(false);
-      });
-    });
+        expect(isValid).to.equal(false)
+      })
+    })
 
     describe('with a valid bid', function () {
       it('accepts the bid', function () {
@@ -63,30 +63,30 @@ describe('Public Good Adapter', function () {
             partnerId: 'prebid-test',
             slotId: 'test'
           },
-        };
-        const isValid = spec.isBidRequestValid(validBid);
+        }
+        const isValid = spec.isBidRequestValid(validBid)
 
-        expect(isValid).to.equal(true);
-      });
-    });
-  });
+        expect(isValid).to.equal(true)
+      })
+    })
+  })
 
   describe('for server responses', function () {
-    let serverResponse;
+    let serverResponse
 
     describe('with no body', function () {
       beforeEach(function() {
         serverResponse = {
           body: null,
-        };
-      });
+        }
+      })
 
       it('does not return any bids', function () {
-        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] })
 
-        expect(bids).to.be.length(0);
-      });
-    });
+        expect(bids).to.be.length(0)
+      })
+    })
 
     describe('with action=hide', function () {
       beforeEach(function() {
@@ -94,15 +94,15 @@ describe('Public Good Adapter', function () {
           body: {
             action: 'Hide',
           },
-        };
-      });
+        }
+      })
 
       it('does not return any bids', function () {
-        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] })
 
-        expect(bids).to.be.length(0);
-      });
-    });
+        expect(bids).to.be.length(0)
+      })
+    })
 
     describe('with a valid campaign', function () {
       beforeEach(function() {
@@ -167,20 +167,20 @@ describe('Public Good Adapter', function () {
               "is_filter": false
             }
           }
-        };
-      });
+        }
+      })
 
       it('returns a complete bid', function () {
-        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] })
 
-        expect(bids).to.be.length(1);
-        expect(bids[0].cpm).to.equal(3);
-        expect(bids[0].width).to.equal(320);
-        expect(bids[0].height).to.equal(470);
-        expect(bids[0].currency).to.equal('USD');
-        expect(bids[0].netRevenue).to.equal(true);
-        expect(bids[0].ad).to.have.string('data-pgs-partner-id="prebid-test"');
-      });
-    });
-  });
-});
+        expect(bids).to.be.length(1)
+        expect(bids[0].cpm).to.equal(3)
+        expect(bids[0].width).to.equal(320)
+        expect(bids[0].height).to.equal(470)
+        expect(bids[0].currency).to.equal('USD')
+        expect(bids[0].netRevenue).to.equal(true)
+        expect(bids[0].ad).to.have.string('data-pgs-partner-id="prebid-test"')
+      })
+    })
+  })
+})

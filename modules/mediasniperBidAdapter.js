@@ -13,79 +13,79 @@ import {
   logMessage,
   logWarn,
   triggerPixel,
-} from '../src/utils.js';
+} from '../src/utils.js'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
-const BIDDER_CODE = 'mediasniper';
-const DEFAULT_BID_TTL = 360;
-const DEFAULT_CURRENCY = 'RUB';
-const DEFAULT_NET_REVENUE = true;
-const ENDPOINT = 'https://sapi.bumlam.com/prebid/';
+const BIDDER_CODE = 'mediasniper'
+const DEFAULT_BID_TTL = 360
+const DEFAULT_CURRENCY = 'RUB'
+const DEFAULT_NET_REVENUE = true
+const ENDPOINT = 'https://sapi.bumlam.com/prebid/'
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    logMessage('Hello!! bid: ', JSON.stringify(bid));
+    logMessage('Hello!! bid: ', JSON.stringify(bid))
 
     if (!bid || isEmpty(bid)) {
-      return false;
+      return false
     }
 
     if (!bid.params || isEmpty(bid.params)) {
-      return false;
+      return false
     }
 
     if (!isStr(bid.params.placementId) && !isNumber(bid.params.placementId)) {
-      return false;
+      return false
     }
 
-    const banner = deepAccess(bid, 'mediaTypes.banner', {});
+    const banner = deepAccess(bid, 'mediaTypes.banner', {})
     if (!banner || isEmpty(banner)) {
-      return false;
+      return false
     }
 
-    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', []);
+    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', [])
     if (!isArray(sizes) || isEmpty(sizes)) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const payload = createOrtbTemplate();
+    const payload = createOrtbTemplate()
 
-    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId)
 
     validBidRequests.forEach((validBid) => {
-      const bid = deepClone(validBid);
+      const bid = deepClone(validBid)
 
-      const imp = createImp(bid);
-      payload.imp.push(imp);
-    });
+      const imp = createImp(bid)
+      payload.imp.push(imp)
+    })
 
     // params
-    const siteId = getBidIdParameter('siteid', validBidRequests[0].params) + '';
-    deepSetValue(payload, 'site.id', siteId);
+    const siteId = getBidIdParameter('siteid', validBidRequests[0].params) + ''
+    deepSetValue(payload, 'site.id', siteId)
 
     // Assign payload.site from refererinfo
     if (bidderRequest.refererInfo) {
       // TODO: reachedTop is probably not the right check - it may be false when page is available or vice-versa
       if (bidderRequest.refererInfo.reachedTop) {
-        const sitePage = bidderRequest.refererInfo.page;
-        deepSetValue(payload, 'site.page', sitePage);
+        const sitePage = bidderRequest.refererInfo.page
+        deepSetValue(payload, 'site.page', sitePage)
         deepSetValue(
           payload,
           'site.domain',
           bidderRequest.refererInfo.domain
-        );
+        )
 
         if (bidderRequest.refererInfo?.ref) {
-          deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref);
+          deepSetValue(payload, 'site.ref', bidderRequest.refererInfo.ref)
         }
       }
     }
@@ -94,13 +94,13 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(payload),
-    };
+    }
 
-    return request;
+    return request
   },
 
   interpretResponse(serverResponse, bidRequest) {
-    const bidResponses = [];
+    const bidResponses = []
 
     try {
       if (
@@ -110,7 +110,7 @@ export const spec = {
       ) {
         serverResponse.body.seatbid.forEach((bidderSeat) => {
           if (!isArray(bidderSeat.bid) || !bidderSeat.bid.length) {
-            return;
+            return
           }
 
           bidderSeat.bid.forEach((bid) => {
@@ -134,32 +134,32 @@ export const spec = {
                     : [],
                 mediaType: BANNER,
               },
-            };
+            }
 
-            logMessage('answer: ', JSON.stringify(newBid));
+            logMessage('answer: ', JSON.stringify(newBid))
 
-            bidResponses.push(newBid);
-          });
-        });
+            bidResponses.push(newBid)
+          })
+        })
       }
     } catch (e) {
-      logError(BIDDER_CODE, e);
+      logError(BIDDER_CODE, e)
     }
 
-    return bidResponses;
+    return bidResponses
   },
 
   onBidWon: function (bid) {
     if (!bid.burl) {
-      return;
+      return
     }
 
-    const url = bid.burl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm);
+    const url = bid.burl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm)
 
-    triggerPixel(url);
+    triggerPixel(url)
   },
-};
-registerBidder(spec);
+}
+registerBidder(spec)
 
 /**
  * Returns an openRTB 2.5 object.
@@ -179,7 +179,7 @@ function createOrtbTemplate() {
       ua: navigator.userAgent,
     },
     user: {},
-  };
+  }
 }
 
 /**
@@ -189,11 +189,11 @@ function createOrtbTemplate() {
  * @returns
  */
 function createImp(bid) {
-  let placementId = '';
+  let placementId = ''
   if (isStr(bid.params.placementId)) {
-    placementId = bid.params.placementId;
+    placementId = bid.params.placementId
   } else if (isNumber(bid.params.placementId)) {
-    placementId = bid.params.placementId.toString();
+    placementId = bid.params.placementId.toString()
   }
 
   const imp = {
@@ -201,26 +201,26 @@ function createImp(bid) {
     tagid: placementId,
     bidfloorcur: DEFAULT_CURRENCY,
     secure: 1,
-  };
+  }
 
   // There is no default floor. bidfloor is set only
   // if the priceFloors module is activated and returns a valid floor.
-  const floor = getMinFloor(bid);
+  const floor = getMinFloor(bid)
   if (isNumber(floor)) {
-    imp.bidfloor = floor;
+    imp.bidfloor = floor
   }
 
   // Only supports proper mediaTypes definition…
   for (const mediaType in bid.mediaTypes) {
     switch (mediaType) {
       case BANNER:
-        imp.banner = createBannerImp(bid);
-        break;
+        imp.banner = createBannerImp(bid)
+        break
     }
   }
 
   // dealid
-  const dealId = getBidIdParameter('dealid', bid.params);
+  const dealId = getBidIdParameter('dealid', bid.params)
   if (dealId) {
     imp.pmp = {
       private_auction: 1,
@@ -231,10 +231,10 @@ function createImp(bid) {
           bidfloorcur: DEFAULT_CURRENCY,
         },
       ],
-    };
+    }
   }
 
-  return imp;
+  return imp
 }
 
 /**
@@ -247,45 +247,45 @@ function createImp(bid) {
  */
 function getFloor(bid, mediaType, size = '*') {
   if (!isFn(bid.getFloor)) {
-    return false;
+    return false
   }
 
   if (spec.supportedMediaTypes.indexOf(mediaType) === -1) {
     logWarn(
       `${BIDDER_CODE}: Unable to detect floor price for unsupported mediaType ${mediaType}. No floor will be used.`
-    );
-    return false;
+    )
+    return false
   }
 
   const floor = bid.getFloor({
     currency: DEFAULT_CURRENCY,
     mediaType,
     size,
-  });
+  })
 
   return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY
     ? floor.floor
-    : false;
+    : false
 }
 
 function getMinFloor(bid) {
-  const floors = [];
+  const floors = []
 
   for (const mediaType in bid.mediaTypes) {
-    const floor = getFloor(bid, mediaType);
+    const floor = getFloor(bid, mediaType)
 
     if (isNumber(floor)) {
-      floors.push(floor);
+      floors.push(floor)
     }
   }
 
   if (!floors.length) {
-    return false;
+    return false
   }
 
   return floors.reduce((a, b) => {
-    return Math.min(a, b);
-  });
+    return Math.min(a, b)
+  })
 }
 
 /**
@@ -295,24 +295,24 @@ function getMinFloor(bid) {
  * @returns {object}
  */
 function createBannerImp(bid) {
-  const sizes = bid.mediaTypes.banner.sizes;
-  const params = deepAccess(bid, 'params', {});
+  const sizes = bid.mediaTypes.banner.sizes
+  const params = deepAccess(bid, 'params', {})
 
-  const banner = {};
+  const banner = {}
 
-  banner.w = parseInt(sizes[0][0], 10);
-  banner.h = parseInt(sizes[0][1], 10);
+  banner.w = parseInt(sizes[0][0], 10)
+  banner.h = parseInt(sizes[0][1], 10)
 
-  const format = [];
+  const format = []
   sizes.forEach(function (size) {
     if (size.length && size.length > 1) {
-      format.push({ w: size[0], h: size[1] });
+      format.push({ w: size[0], h: size[1] })
     }
-  });
-  banner.format = format;
+  })
+  banner.format = format
 
-  banner.topframe = inIframe() ? 0 : 1;
-  banner.pos = params.pos || 0;
+  banner.topframe = inIframe() ? 0 : 1
+  banner.pos = params.pos || 0
 
-  return banner;
+  return banner
 }

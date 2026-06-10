@@ -1,72 +1,72 @@
-import { _each, isStr, isArray, isPlainObject, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _each, isStr, isArray, isPlainObject, parseSizesInput } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 
-const BIDDER_CODE = 'adocean';
-const GVLID = 328;
+const BIDDER_CODE = 'adocean'
+const GVLID = 328
 const URL_SAFE_FIELDS = {
   slaves: true
-};
+}
 
 function buildEndpointUrl(emitter, payloadMap, emitterRequestParams) {
-  const payload = [];
+  const payload = []
   _each(payloadMap, function(v, k) {
-    payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
-  });
+    payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)))
+  })
 
-  const randomizedPart = Math.random().toString().slice(2);
-  let request = 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
+  const randomizedPart = Math.random().toString().slice(2)
+  let request = 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&')
   if (emitterRequestParams.length) {
-    request += '&' + emitterRequestParams.join('&');
+    request += '&' + emitterRequestParams.join('&')
   }
-  return request;
+  return request
 }
 
 function buildRequest(bid, gdprConsent) {
-  const emitter = bid.params.emitter;
-  const masterId = bid.params.masterId;
-  const slaveId = bid.params.slaveId;
+  const emitter = bid.params.emitter
+  const masterId = bid.params.masterId
+  const slaveId = bid.params.slaveId
   const payload = {
     id: masterId,
     slaves: ""
-  };
+  }
   if (gdprConsent) {
-    payload.gdpr_consent = gdprConsent.consentString || undefined;
-    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+    payload.gdpr_consent = gdprConsent.consentString || undefined
+    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0
   }
 
   if (bid.userId && bid.userId.gemiusId) {
-    payload.aouserid = bid.userId.gemiusId;
+    payload.aouserid = bid.userId.gemiusId
   }
 
-  const emitterRequestParams = [];
+  const emitterRequestParams = []
   if (bid.params.emitterRequestParams) {
     _each(bid.params.emitterRequestParams, function(v, k) {
-      emitterRequestParams.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
-    });
+      emitterRequestParams.push(encodeURIComponent(k) + '=' + encodeURIComponent(v))
+    })
   }
 
-  const bidIdMap = {};
-  const uniquePartLength = 10;
+  const bidIdMap = {}
+  const uniquePartLength = 10
 
-  const rawSlaveId = bid.params.slaveId.replace('adocean', '');
-  payload.slaves = rawSlaveId.slice(-uniquePartLength);
+  const rawSlaveId = bid.params.slaveId.replace('adocean', '')
+  payload.slaves = rawSlaveId.slice(-uniquePartLength)
 
-  bidIdMap[slaveId] = bid.bidId;
+  bidIdMap[slaveId] = bid.bidId
 
   if (bid.mediaTypes.video) {
     if (bid.mediaTypes.video.context === 'instream') {
       if (bid.mediaTypes.video.maxduration) {
-        payload.dur = bid.mediaTypes.video.maxduration;
-        payload.maxdur = bid.mediaTypes.video.maxduration;
+        payload.dur = bid.mediaTypes.video.maxduration
+        payload.maxdur = bid.mediaTypes.video.maxduration
       }
       if (bid.mediaTypes.video.minduration) {
-        payload.mindur = bid.mediaTypes.video.minduration;
+        payload.mindur = bid.mediaTypes.video.minduration
       }
-      payload.spots = 1;
+      payload.spots = 1
     }
   } else if (bid.mediaTypes.banner) {
-    payload.aosize = parseSizesInput(bid.mediaTypes.banner.sizes).join(',');
+    payload.aosize = parseSizesInput(bid.mediaTypes.banner.sizes).join(',')
   }
 
   return {
@@ -74,16 +74,16 @@ function buildRequest(bid, gdprConsent) {
     url: buildEndpointUrl(emitter, payload, emitterRequestParams),
     data: '',
     bidIdMap: bidIdMap
-  };
+  }
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
-  const requestId = bidRequest.bidIdMap[placementResponse.id];
+  const requestId = bidRequest.bidIdMap[placementResponse.id]
   if (!placementResponse.error && requestId) {
     if (!placementResponse.code || !placementResponse.height || !placementResponse.width || !placementResponse.price) {
-      return;
+      return
     }
-    let adCode = decodeURIComponent(placementResponse.code);
+    let adCode = decodeURIComponent(placementResponse.code)
 
     const bid = {
       cpm: parseFloat(placementResponse.price),
@@ -97,16 +97,16 @@ function interpretResponse(placementResponse, bidRequest, bids) {
       meta: {
         advertiserDomains: placementResponse.adomain || []
       }
-    };
+    }
     if (placementResponse.isVideo) {
-      bid.meta.mediaType = VIDEO;
-      bid.vastXml = adCode;
+      bid.meta.mediaType = VIDEO
+      bid.vastXml = adCode
     } else {
-      bid.meta.mediaType = BANNER;
-      bid.ad = adCode;
+      bid.meta.mediaType = BANNER
+      bid.ad = adCode
     }
 
-    bids.push(bid);
+    bids.push(bid)
   }
 }
 
@@ -116,46 +116,46 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
-    const requiredParams = ['slaveId', 'masterId', 'emitter'];
+    const requiredParams = ['slaveId', 'masterId', 'emitter']
     if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
-      return false;
+      return false
     }
 
     if (bid.params.emitterRequestParams && !isPlainObject(bid.params.emitterRequestParams)) {
-      return false;
+      return false
     }
 
     if (bid.mediaTypes.banner) {
-      return true;
+      return true
     }
     if (bid.mediaTypes.video) {
       if (bid.mediaTypes.video.context === 'instream') {
-        return true;
+        return true
       }
     }
-    return false;
+    return false
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let requests = [];
+    let requests = []
 
     _each(validBidRequests, function(bidRequest) {
-      requests.push(buildRequest(bidRequest, bidderRequest.gdprConsent));
-    });
+      requests.push(buildRequest(bidRequest, bidderRequest.gdprConsent))
+    })
 
-    return requests;
+    return requests
   },
 
   interpretResponse: function(serverResponse, bidRequest) {
-    let bids = [];
+    let bids = []
 
     if (isArray(serverResponse.body)) {
       _each(serverResponse.body, function(placementResponse) {
-        interpretResponse(placementResponse, bidRequest, bids);
-      });
+        interpretResponse(placementResponse, bidRequest, bids)
+      })
     }
 
-    return bids;
+    return bids
   }
-};
-registerBidder(spec);
+}
+registerBidder(spec)

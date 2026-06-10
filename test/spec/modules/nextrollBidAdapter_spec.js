@@ -1,18 +1,18 @@
-import { expect } from 'chai';
-import { spec } from 'modules/nextrollBidAdapter.js';
-import * as utils from 'src/utils.js';
-import { deepClone } from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec } from 'modules/nextrollBidAdapter.js'
+import * as utils from 'src/utils.js'
+import { deepClone } from '../../../src/utils.js'
 
 describe('nextrollBidAdapter', function() {
-  let utilsMock;
+  let utilsMock
   beforeEach(function () {
-    utilsMock = sinon.mock(utils);
-  });
+    utilsMock = sinon.mock(utils)
+  })
 
   afterEach(function() {
-    global.NextRoll = undefined;
-    utilsMock.restore();
-  });
+    global.NextRoll = undefined
+    utilsMock.restore()
+  })
 
   const validBid = {
     bidder: 'nextroll',
@@ -24,9 +24,9 @@ describe('nextrollBidAdapter', function() {
       zoneId: 'zone1',
       publisherId: 'publisher_id'
     }
-  };
-  const bidWithoutValidId = { id: '' };
-  const bidWithoutId = { params: { zoneId: 'zone1' } };
+  }
+  const bidWithoutValidId = { id: '' }
+  const bidWithoutId = { params: { zoneId: 'zone1' } }
 
   describe('nativeBidRequest', () => {
     it('validates native spec', () => {
@@ -50,7 +50,7 @@ describe('nextrollBidAdapter', function() {
           zoneId: 'zone1',
           publisherId: 'publisher_id'
         }
-      }];
+      }]
 
       const request = spec.buildRequests(nativeAdUnit)
       const assets = request[0].data.imp.native.request.native.assets
@@ -68,92 +68,92 @@ describe('nextrollBidAdapter', function() {
 
   describe('isBidRequestValid', function() {
     it('validates the bids correctly when the bid has an id', function() {
-      expect(spec.isBidRequestValid(validBid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(validBid)).to.be.true
+    })
 
     it('validates the bids correcly when the bid does not have an id', function() {
-      expect(spec.isBidRequestValid(bidWithoutValidId)).to.be.false;
-      expect(spec.isBidRequestValid(bidWithoutId)).to.be.false;
-    });
-  });
+      expect(spec.isBidRequestValid(bidWithoutValidId)).to.be.false
+      expect(spec.isBidRequestValid(bidWithoutId)).to.be.false
+    })
+  })
 
   describe('buildRequests', function() {
     it('builds the same amount of requests as valid requests it takes', function() {
-      expect(spec.buildRequests([validBid, validBid], {})).to.be.lengthOf(2);
-    });
+      expect(spec.buildRequests([validBid, validBid], {})).to.be.lengthOf(2)
+    })
 
     it('doest not build a request when there is no valid requests', function () {
-      expect(spec.buildRequests([], {})).to.be.lengthOf(0);
-    });
+      expect(spec.buildRequests([], {})).to.be.lengthOf(0)
+    })
 
     it('builds a request with POST method', function () {
-      expect(spec.buildRequests([validBid], {})[0].method).to.equal('POST');
-    });
+      expect(spec.buildRequests([validBid], {})[0].method).to.equal('POST')
+    })
 
     it('builds a request with cookies method', function () {
-      expect(spec.buildRequests([validBid], {})[0].options.withCredentials).to.be.true;
-    });
+      expect(spec.buildRequests([validBid], {})[0].options.withCredentials).to.be.true
+    })
 
     it('builds a request with id, url and imp object', function () {
-      const request = spec.buildRequests([validBid], {})[0];
-      expect(request.data.id).to.be.an('string').that.is.not.empty;
-      expect(request.url).to.equal('https://d.adroll.com/bid/prebid/');
-      expect(request.data.imp).to.exist.and.to.be.a('object');
-    });
+      const request = spec.buildRequests([validBid], {})[0]
+      expect(request.data.id).to.be.an('string').that.is.not.empty
+      expect(request.url).to.equal('https://d.adroll.com/bid/prebid/')
+      expect(request.data.imp).to.exist.and.to.be.a('object')
+    })
 
     it('builds a request with site and device information', function () {
-      const request = spec.buildRequests([validBid], {})[0];
+      const request = spec.buildRequests([validBid], {})[0]
 
-      expect(request.data.site).to.exist.and.to.be.a('object');
-      expect(request.data.device).to.exist.and.to.be.a('object');
-    });
+      expect(request.data.site).to.exist.and.to.be.a('object')
+      expect(request.data.device).to.exist.and.to.be.a('object')
+    })
 
     it('builds a request with a complete imp object', function () {
-      const request = spec.buildRequests([validBid], {})[0];
+      const request = spec.buildRequests([validBid], {})[0]
 
-      expect(request.data.imp.id).to.equal('bid_id');
-      expect(request.data.imp.bidfloor).to.be.equal(1);
-      expect(request.data.imp.banner).to.exist.and.to.be.a('object');
-      expect(request.data.imp.ext.zone.id).to.be.equal('zone1');
-    });
+      expect(request.data.imp.id).to.equal('bid_id')
+      expect(request.data.imp.bidfloor).to.be.equal(1)
+      expect(request.data.imp.banner).to.exist.and.to.be.a('object')
+      expect(request.data.imp.ext.zone.id).to.be.equal('zone1')
+    })
 
     it('builds a request with the correct floor object', function () {
       // bidfloor is defined, getFloor isn't
-      let bid = deepClone(validBid);
-      let request = spec.buildRequests([bid], {})[0];
-      expect(request.data.imp.bidfloor).to.be.equal(1);
+      let bid = deepClone(validBid)
+      let request = spec.buildRequests([bid], {})[0]
+      expect(request.data.imp.bidfloor).to.be.equal(1)
 
       // bidfloor not defined, getFloor not defined
-      bid = deepClone(validBid);
-      bid.params.bidfloor = null;
-      request = spec.buildRequests([bid], {})[0];
-      expect(request.data.imp.bidfloor).to.not.exist;
+      bid = deepClone(validBid)
+      bid.params.bidfloor = null
+      request = spec.buildRequests([bid], {})[0]
+      expect(request.data.imp.bidfloor).to.not.exist
 
       // bidfloor defined, getFloor defined, use getFloor
-      const getFloorResponse = { currency: 'USD', floor: 3 };
-      bid = deepClone(validBid);
-      bid.getFloor = () => getFloorResponse;
-      request = spec.buildRequests([bid], {})[0];
+      const getFloorResponse = { currency: 'USD', floor: 3 }
+      bid = deepClone(validBid)
+      bid.getFloor = () => getFloorResponse
+      request = spec.buildRequests([bid], {})[0]
 
-      expect(request.data.imp.bidfloor).to.exist.and.to.equal(3);
-    });
+      expect(request.data.imp.bidfloor).to.exist.and.to.equal(3)
+    })
 
     it('includes the sizes into the request correctly', function () {
-      const bannerObject = spec.buildRequests([validBid], {})[0].data.imp.banner;
+      const bannerObject = spec.buildRequests([validBid], {})[0].data.imp.banner
 
-      expect(bannerObject.format).to.exist;
-      expect(bannerObject.format).to.be.lengthOf(1);
-      expect(bannerObject.format[0].w).to.be.equal(300);
-      expect(bannerObject.format[0].h).to.be.equal(200);
-    });
+      expect(bannerObject.format).to.exist
+      expect(bannerObject.format).to.be.lengthOf(1)
+      expect(bannerObject.format[0].w).to.be.equal(300)
+      expect(bannerObject.format[0].h).to.be.equal(200)
+    })
 
     it('sets the CCPA consent string', function () {
-      const us_privacy = '1YYY';
-      const request = spec.buildRequests([validBid], { 'uspConsent': us_privacy })[0];
+      const us_privacy = '1YYY'
+      const request = spec.buildRequests([validBid], { 'uspConsent': us_privacy })[0]
 
-      expect(request.data.regs.ext.us_privacy).to.be.equal(us_privacy);
-    });
-  });
+      expect(request.data.regs.ext.us_privacy).to.be.equal(us_privacy)
+    })
+  })
 
   describe('interpretResponse', function () {
     const responseBody = {
@@ -183,31 +183,31 @@ describe('nextrollBidAdapter', function() {
           ]
         }
       ]
-    };
+    }
 
     it('returns an empty list when there is no response body', function () {
-      expect(spec.interpretResponse({}, {})).to.be.eql([]);
-    });
+      expect(spec.interpretResponse({}, {})).to.be.eql([])
+    })
 
     it('builds the same amount of responses as server responses it receives', function () {
-      expect(spec.interpretResponse({ body: responseBody }, {})).to.be.lengthOf(2);
-    });
+      expect(spec.interpretResponse({ body: responseBody }, {})).to.be.lengthOf(2)
+    })
 
     it('builds a response with the expected fields', function () {
-      const response = spec.interpretResponse({ body: responseBody }, {})[0];
+      const response = spec.interpretResponse({ body: responseBody }, {})[0]
 
-      expect(response.requestId).to.be.equal('bidresponse_id');
-      expect(response.cpm).to.be.equal(1.2);
-      expect(response.width).to.be.equal(300);
-      expect(response.height).to.be.equal(200);
-      expect(response.creativeId).to.be.equal('crid1');
-      expect(response.dealId).to.be.equal('deal_id');
-      expect(response.currency).to.be.equal('USD');
-      expect(response.netRevenue).to.be.equal(true);
-      expect(response.ttl).to.be.equal(300);
-      expect(response.ad).to.be.equal('adm1');
-    });
-  });
+      expect(response.requestId).to.be.equal('bidresponse_id')
+      expect(response.cpm).to.be.equal(1.2)
+      expect(response.width).to.be.equal(300)
+      expect(response.height).to.be.equal(200)
+      expect(response.creativeId).to.be.equal('crid1')
+      expect(response.dealId).to.be.equal('deal_id')
+      expect(response.currency).to.be.equal('USD')
+      expect(response.netRevenue).to.be.equal(true)
+      expect(response.ttl).to.be.equal(300)
+      expect(response.ad).to.be.equal('adm1')
+    })
+  })
 
   describe('interpret native response', () => {
     const clickUrl = 'https://clickurl.com/with/some/path'
@@ -237,7 +237,7 @@ describe('nextrollBidAdapter', function() {
           }]
         }]
       }
-    };
+    }
 
     it('Should interpret response', () => {
       const response = spec.interpretResponse(utils.deepClone(responseBody))
@@ -287,4 +287,4 @@ describe('nextrollBidAdapter', function() {
       expect(response[0].native).to.be.deep.equal(expectedResponse)
     })
   })
-});
+})

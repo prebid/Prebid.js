@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { bidWinReport, buildBidRequests, buildUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/precisoUtils/bidUtilsCommon.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { bidWinReport, buildBidRequests, buildUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/precisoUtils/bidUtilsCommon.js'
 
-const BIDDER_CODE = 'redtram';
-const AD_URL = 'https://prebid.redtram.com/pbjs';
-const SYNC_URL = 'https://prebid.redtram.com/sync';
+const BIDDER_CODE = 'redtram'
+const AD_URL = 'https://prebid.redtram.com/pbjs'
+const SYNC_URL = 'https://prebid.redtram.com/sync'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,9 +13,9 @@ export const spec = {
   buildRequests: buildBidRequests(AD_URL),
   interpretResponse: interpretResponse,
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_URL);
+    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_URL)
   },
   onBidWon: bidWinReport
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

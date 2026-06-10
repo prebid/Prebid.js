@@ -1,15 +1,15 @@
-import { _each } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { _each } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'clickforce';
-const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
+const BIDDER_CODE = 'clickforce'
+const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,7 +21,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return bid && bid.params && !!bid.params.zone;
+    return bid && bid.params && !!bid.params.zone
   },
 
   /**
@@ -32,21 +32,21 @@ export const spec = {
    */
   buildRequests: function(validBidRequests) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
-    const bidParams = [];
+    const bidParams = []
     _each(validBidRequests, function(bid) {
       bidParams.push({
         z: bid.params.zone,
         bidId: bid.bidId
-      });
-    });
+      })
+    })
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: bidParams,
       validBidRequests: validBidRequests
-    };
+    }
   },
 
   /**
@@ -57,13 +57,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const cfResponses = [];
-    const bidRequestList = [];
+    const cfResponses = []
+    const bidRequestList = []
 
     if (typeof bidRequest !== 'undefined') {
       _each(bidRequest.validBidRequests, function(req) {
-        bidRequestList[req.bidId] = req;
-      });
+        bidRequestList[req.bidId] = req
+      })
     }
 
     _each(serverResponse.body, function(response) {
@@ -101,7 +101,7 @@ export const spec = {
             meta: {
               advertiserDomains: response.adomain || []
             },
-          });
+          })
         } else {
           // display ad
           cfResponses.push({
@@ -118,11 +118,11 @@ export const spec = {
             meta: {
               advertiserDomains: response.adomain || []
             },
-          });
+          })
         }
       }
-    });
-    return cfResponses;
+    })
+    return cfResponses
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
@@ -137,6 +137,6 @@ export const spec = {
       }]
     }
   }
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

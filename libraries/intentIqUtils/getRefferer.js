@@ -1,4 +1,4 @@
-import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../src/utils.js';
+import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../src/utils.js'
 
 /**
  * Determines if the script is running inside an iframe and retrieves the URL.
@@ -6,25 +6,25 @@ import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../
  */
 
 export function getCurrentUrl() {
-  let url = '';
+  let url = ''
   try {
     if (getWindowSelf() === getWindowTop()) {
       // top page
-      url = getWindowLocation().href || '';
+      url = getWindowLocation().href || ''
     } else {
       // iframe
-      url = getWindowTop().location.href || '';
+      url = getWindowTop().location.href || ''
     }
 
     if (url.length >= 50) {
-      return new URL(url).origin;
+      return new URL(url).origin
     };
 
-    return url;
+    return url
   } catch (error) {
     // Handling access errors, such as cross-domain restrictions
-    logError(`Error accessing location: ${error}`);
-    return '';
+    logError(`Error accessing location: ${error}`)
+    return ''
   }
 }
 
@@ -37,13 +37,13 @@ export function getCurrentUrl() {
  * @return {string} The modified URL with appended `vrref` or `fui` parameters.
  */
 export function appendVrrefAndFui(url, domainName) {
-  const fullUrl = getCurrentUrl();
+  const fullUrl = getCurrentUrl()
   if (fullUrl) {
-    return (url += '&vrref=' + getRelevantRefferer(domainName, fullUrl));
+    return (url += '&vrref=' + getRelevantRefferer(domainName, fullUrl))
   }
-  url += '&fui=1'; // Full Url Issue
-  if (domainName) url += '&vrref=' + encodeURIComponent(domainName);
-  return url;
+  url += '&fui=1' // Full Url Issue
+  if (domainName) url += '&vrref=' + encodeURIComponent(domainName)
+  return url
 }
 
 /**
@@ -55,7 +55,7 @@ export function appendVrrefAndFui(url, domainName) {
 export function getRelevantRefferer(domainName, fullUrl) {
   return encodeURIComponent(
     domainName && isDomainIncluded(fullUrl, domainName) ? fullUrl : (domainName || fullUrl)
-  );
+  )
 }
 
 /**
@@ -66,9 +66,9 @@ export function getRelevantRefferer(domainName, fullUrl) {
  */
 export function isDomainIncluded(fullUrl, domainName) {
   try {
-    return new URL(fullUrl).hostname === domainName;
+    return new URL(fullUrl).hostname === domainName
   } catch (error) {
-    logError(`Invalid URL provided: ${error}`);
-    return false;
+    logError(`Invalid URL provided: ${error}`)
+    return false
   }
 }

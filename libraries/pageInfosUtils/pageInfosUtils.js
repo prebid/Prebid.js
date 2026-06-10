@@ -7,11 +7,11 @@
  * @returns {string} The referrer URL if available, otherwise an empty string.
  */
 export function getReferrerInfo(bidderRequest) {
-  let ref = '';
+  let ref = ''
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-    ref = bidderRequest.refererInfo.page;
+    ref = bidderRequest.refererInfo.page
   }
-  return ref;
+  return ref
 }
 
 /**
@@ -25,11 +25,11 @@ export function getReferrerInfo(bidderRequest) {
  */
 export function getPageTitle(win = window) {
   try {
-    const ogTitle = win.top.document.querySelector('meta[property="og:title"]');
-    return win.top.document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]')
+    return win.top.document.title || (ogTitle && ogTitle.content) || ''
   } catch (e) {
-    const ogTitle = win.document.querySelector('meta[property="og:title"]');
-    return win.document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = win.document.querySelector('meta[property="og:title"]')
+    return win.document.title || (ogTitle && ogTitle.content) || ''
   }
 }
 
@@ -45,12 +45,12 @@ export function getPageTitle(win = window) {
 export function getPageDescription(win = window) {
   try {
     const element = win.top.document.querySelector('meta[name="description"]') ||
-        win.top.document.querySelector('meta[property="og:description"]');
-    return (element && element.content) || '';
+        win.top.document.querySelector('meta[property="og:description"]')
+    return (element && element.content) || ''
   } catch (e) {
     const element = win.document.querySelector('meta[name="description"]') ||
-        win.document.querySelector('meta[property="og:description"]');
-    return (element && element.content) || '';
+        win.document.querySelector('meta[property="og:description"]')
+    return (element && element.content) || ''
   }
 }
 
@@ -61,5 +61,5 @@ export function getPageDescription(win = window) {
  * @returns {string} The downlink speed as a string if available, otherwise an empty string.
  */
 export function getConnectionDownLink(nav) {
-  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : ''
 }

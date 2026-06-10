@@ -10,16 +10,16 @@ export const META_DESCRIPTION = 'description'
 
 const VIDEO = 'video'
 const BANNER = 'banner'
-window.bliinkBid = window.bliinkBid || {};
+window.bliinkBid = window.bliinkBid || {}
 const supportedMediaTypes = [BANNER, VIDEO]
 const aliasBidderCode = ['bk']
-const CURRENCY = 'EUR';
+const CURRENCY = 'EUR'
 
 /**
  * @description get coppa value from config
  */
 function getCoppa() {
-  return config.getConfig('coppa') === true ? 1 : 0;
+  return config.getConfig('coppa') === true ? 1 : 0
 }
 
 /**
@@ -31,13 +31,13 @@ export function getEffectiveConnectionType() {
    * The effective connection type obtained from the browser's Navigator API.
    * @type {string|undefined}
    */
-  const navigatorEffectiveType = navigator?.connection?.effectiveType;
+  const navigatorEffectiveType = navigator?.connection?.effectiveType
 
   if (navigatorEffectiveType) {
-    return navigatorEffectiveType;
+    return navigatorEffectiveType
   }
 
-  return 'unsupported';
+  return 'unsupported'
 }
 
 /**
@@ -49,7 +49,7 @@ export function getEffectiveConnectionType() {
 export function getUserIds(validBidRequests) {
   /** @type {Object} */
   if (validBidRequests?.[0]?.userIdAsEids) {
-    return validBidRequests[0].userIdAsEids;
+    return validBidRequests[0].userIdAsEids
   }
 }
 export function getMetaList(name) {
@@ -90,14 +90,14 @@ export function getOneMetaValue(query) {
     return metaEl.content
   }
 
-  return null;
+  return null
 }
 
 export function getMetaValue(name) {
   const metaList = getMetaList(name)
   for (let i = 0; i < metaList.length; i++) {
-    const meta = metaList[i];
-    const metaValue = getOneMetaValue(`meta[${meta.key}=${meta.value}]`);
+    const meta = metaList[i]
+    const metaValue = getOneMetaValue(`meta[${meta.key}=${meta.value}]`)
     if (metaValue) {
       return metaValue
     }
@@ -113,11 +113,11 @@ export function getKeywords() {
     ]
 
     if (keywords && keywords.length > 0) {
-      return keywords.filter((value) => value).map((value) => value.trim());
+      return keywords.filter((value) => value).map((value) => value.trim())
     }
   }
 
-  return [];
+  return []
 }
 
 /**
@@ -125,27 +125,27 @@ export function getKeywords() {
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
 export const buildBid = (bidResponse) => {
-  const mediaType = deepAccess(bidResponse, 'creative.media_type');
-  if (!mediaType) return null;
+  const mediaType = deepAccess(bidResponse, 'creative.media_type')
+  if (!mediaType) return null
 
-  let bid;
+  let bid
   switch (mediaType) {
     case VIDEO:
-      const vastXml = deepAccess(bidResponse, 'creative.video.content');
+      const vastXml = deepAccess(bidResponse, 'creative.video.content')
       bid = {
         vastXml,
         mediaType: 'video',
         vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(vastXml.replace(/\\"/g, '"'))
-      };
-      break;
+      }
+      break
     case BANNER:
       bid = {
         ad: deepAccess(bidResponse, 'creative.banner.adm'),
         mediaType: 'banner',
-      };
-      break;
+      }
+      break
     default:
-      return null;
+      return null
   }
   return Object.assign(bid, {
     cpm: bidResponse.price,
@@ -156,8 +156,8 @@ export const buildBid = (bidResponse) => {
     height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`) || 1,
     ttl: 300,
     netRevenue: true,
-  });
-};
+  })
+}
 
 /**
  * @description Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
@@ -166,8 +166,8 @@ export const buildBid = (bidResponse) => {
  * @return boolean
  */
 export const isBidRequestValid = (bid) => {
-  return !!deepAccess(bid, 'params.tagId');
-};
+  return !!deepAccess(bid, 'params.tagId')
+}
 
 /**
  * @description Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
@@ -178,18 +178,18 @@ export const isBidRequestValid = (bid) => {
  */
 export const buildRequests = (validBidRequests, bidderRequest) => {
   if (!validBidRequests || !bidderRequest || !bidderRequest.bids) return null
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-  const domLoadingDuration = getDomLoadingDuration(w).toString();
+  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf()
+  const domLoadingDuration = getDomLoadingDuration(w).toString()
   const tags = bidderRequest.bids.map((bid) => {
-    let bidFloor;
-    const sizes = bid.sizes.map((size) => ({ w: size[0], h: size[1] }));
+    let bidFloor
+    const sizes = bid.sizes.map((size) => ({ w: size[0], h: size[1] }))
     const mediaTypes = Object.keys(bid.mediaTypes)
     if (typeof bid.getFloor === 'function') {
       bidFloor = bid.getFloor({
         currency: CURRENCY,
         mediaType: mediaTypes[0],
         size: sizes[0]
-      });
+      })
     }
     const id = bid.params.tagId
     const request = {
@@ -205,8 +205,8 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     if (bidFloor) {
       request.bidFloor = bidFloor
     }
-    return request;
-  });
+    return request
+  })
 
   const request = {
     tags,
@@ -215,7 +215,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
     ect: getEffectiveConnectionType(),
-  };
+  }
 
   const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain')
   const eids = getUserIds(validBidRequests)
@@ -232,23 +232,23 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
   if (eids) {
     request.eids = eids
   }
-  const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
+  const gdprConsent = deepAccess(bidderRequest, 'gdprConsent')
   if (!!gdprConsent && gdprConsent.gdprApplies) {
     request.gdpr = true
-    deepSetValue(request, 'gdprConsent', gdprConsent.consentString);
+    deepSetValue(request, 'gdprConsent', gdprConsent.consentString)
   }
   if (config.getConfig('coppa')) {
     request.coppa = 1
   }
   if (bidderRequest.uspConsent) {
-    deepSetValue(request, 'uspConsent', bidderRequest.uspConsent);
+    deepSetValue(request, 'uspConsent', bidderRequest.uspConsent)
   }
   return {
     method: 'POST',
     url: BLIINK_ENDPOINT_ENGINE,
     data: request,
-  };
-};
+  }
+}
 
 /**
  * @description Parse the response (from buildRequests) and generate one or more bid objects.
@@ -259,12 +259,12 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
 const interpretResponse = (serverResponse) => {
   const bodyResponse = deepAccess(serverResponse, 'body.bids')
   if (!serverResponse.body || !bodyResponse) return []
-  const bidResponses = [];
+  const bidResponses = []
   _each(bodyResponse, function (response) {
-    return bidResponses.push(buildBid(response));
-  });
+    return bidResponses.push(buildBid(response))
+  })
   return bidResponses.filter(bid => !!bid)
-};
+}
 
 /**
  * @description  If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs. For more information, see Registering User Syncs below
@@ -274,38 +274,38 @@ const interpretResponse = (serverResponse) => {
  * @return {[{type: string, url: string}]|*[]}
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-  const syncs = [];
+  const syncs = []
   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
     let gdprParams = ''
     let uspConsentStr = ''
     let apiVersion
     let gdpr = false
     if (gdprConsent) {
-      gdprParams = `&gdprConsent=${gdprConsent.consentString}`;
+      gdprParams = `&gdprConsent=${gdprConsent.consentString}`
       apiVersion = `&apiVersion=${gdprConsent.apiVersion}`
       gdpr = Number(
         gdprConsent.gdprApplies)
     }
     if (uspConsent) {
-      uspConsentStr = `&uspConsent=${uspConsent}`;
+      uspConsentStr = `&uspConsent=${uspConsent}`
     }
-    let sync;
+    let sync
     if (syncOptions.iframeEnabled) {
       sync = [
         {
           type: 'iframe',
           url: `${BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME}?gdpr=${gdpr}&coppa=${getCoppa()}${uspConsentStr}${gdprParams}${apiVersion}`,
         },
-      ];
+      ]
     } else {
-      sync = deepAccess(serverResponses[0], 'body.userSyncs');
+      sync = deepAccess(serverResponses[0], 'body.userSyncs')
     }
 
-    return sync;
+    return sync
   }
 
-  return syncs;
-};
+  return syncs
+}
 
 /**
  * @type {{interpretResponse: typeof interpretResponse, code: string, aliases: string[], getUserSyncs: typeof getUserSyncs, buildRequests: typeof buildRequests, isBidRequestValid: typeof isBidRequestValid}}
@@ -318,6 +318,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

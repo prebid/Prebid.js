@@ -4,20 +4,20 @@
  * and make it available for any GPP supported adapters to read/pass this information to
  * their system and for various other features/modules in Prebid.js.
  */
-import { deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { gppDataHandler } from '../src/adapterManager.js';
-import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, MODE_CALLBACK } from '../libraries/cmp/cmpClient.js';
-import { PbPromise, defer } from '../src/utils/promise.js';
-import { type CMConfig, configParser } from '../libraries/consentManagement/cmUtils.js';
-import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
-import { CONSENT_GPP } from "../src/consentHandler.ts";
+import { deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn } from '../src/utils.js'
+import { config } from '../src/config.js'
+import { gppDataHandler } from '../src/adapterManager.js'
+import { enrichFPD } from '../src/fpd/enrichment.js'
+import { cmpClient, MODE_CALLBACK } from '../libraries/cmp/cmpClient.js'
+import { PbPromise, defer } from '../src/utils/promise.js'
+import { type CMConfig, configParser } from '../libraries/consentManagement/cmUtils.js'
+import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js'
+import { CONSENT_GPP } from "../src/consentHandler.ts"
 
-export let consentConfig = {} as any;
+export let consentConfig = {} as any
 
 // CMP event manager instance for GPP
-let gppCmpEventManager: CmpEventManager | null = null;
+let gppCmpEventManager: CmpEventManager | null = null
 
 type RelevantCMPData = {
   applicableSections: number[]
@@ -25,7 +25,7 @@ type RelevantCMPData = {
   parsedSections: Record<string, unknown>
 }
 
-type CMPData = RelevantCMPData & { [key: string]: unknown };
+type CMPData = RelevantCMPData & { [key: string]: unknown }
 
 export type GPPConsentData = RelevantCMPData & {
   gppData: CMPData;
@@ -36,7 +36,7 @@ export interface GPPConfig {
   // this is here to be extended by the control modules
 }
 
-export type GPPCMConfig = GPPConfig & CMConfig<RelevantCMPData>;
+export type GPPCMConfig = GPPConfig & CMConfig<RelevantCMPData>
 
 declare module '../src/consentHandler' {
   interface ConsentData {
@@ -48,18 +48,18 @@ declare module '../src/consentHandler' {
 }
 
 class GPPError {
-  message;
-  args;
+  message
+  args
   constructor(message, arg?) {
-    this.message = message;
-    this.args = arg == null ? [] : [arg];
+    this.message = message
+    this.args = arg == null ? [] : [arg]
   }
 }
 
 export class GPPClient {
-  apiVersion = '1.1';
-  cmp;
-  static INST;
+  apiVersion = '1.1'
+  cmp
+  static INST
 
   static get(mkCmp = cmpClient) {
     if (this.INST == null) {
@@ -67,28 +67,28 @@ export class GPPClient {
         apiName: '__gpp',
         apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use),
         mode: MODE_CALLBACK
-      });
+      })
       if (cmp == null) {
-        throw new GPPError('GPP CMP not found');
+        throw new GPPError('GPP CMP not found')
       }
-      this.INST = new this(cmp);
+      this.INST = new this(cmp)
     }
-    return this.INST;
+    return this.INST
   }
 
-  #resolve;
-  #reject;
-  #pending = [];
+  #resolve
+  #reject
+  #pending = []
 
-  initialized = false;
+  initialized = false
 
   constructor(cmp) {
     this.cmp = cmp;
     [this.#resolve, this.#reject] = ['resolve', 'reject'].map(slot => (result) => {
       while (this.#pending.length) {
-        this.#pending.pop()[slot](result);
+        this.#pending.pop()[slot](result)
       }
-    });
+    })
   }
 
   /**
@@ -99,28 +99,28 @@ export class GPPClient {
    * @returns {Promise<{}>} a promise to GPP consent data
    */
   init(pingData) {
-    const ready = this.updateWhenReady(pingData);
+    const ready = this.updateWhenReady(pingData)
     if (!this.initialized) {
       if (pingData.gppVersion !== this.apiVersion) {
-        logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
+        logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`)
       }
-      this.initialized = true;
+      this.initialized = true
 
       // Initialize CMP event manager and set CMP API
       if (!gppCmpEventManager) {
-        gppCmpEventManager = createCmpEventManager('gpp');
+        gppCmpEventManager = createCmpEventManager('gpp')
       }
-      gppCmpEventManager.setCmpApi(this.cmp);
+      gppCmpEventManager.setCmpApi(this.cmp)
 
       this.cmp({
         command: 'addEventListener',
         callback: (event, success) => {
           if (success != null && !success) {
-            this.#reject(new GPPError('Received error response from CMP', event));
+            this.#reject(new GPPError('Received error response from CMP', event))
           } else if (event?.pingData?.cmpStatus === 'error') {
-            this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event));
+            this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event))
           } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {
-            this.#resolve(this.updateConsent(event.pingData));
+            this.#resolve(this.updateConsent(event.pingData))
           }
           // NOTE: according to https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md,
           // > [signalStatus] Event is called whenever the display status of the CMP changes (e.g. the CMP shows the consent layer).
@@ -129,20 +129,20 @@ export class GPPClient {
           // other CMPs may do something else yet; here we just look for 'signalStatus: not ready' on any event
           // to decide if consent data is likely to change
           if (gppDataHandler.getConsentData() != null && event?.pingData != null && !this.isCMPReady(event.pingData)) {
-            gppDataHandler.setConsentData(null);
+            gppDataHandler.setConsentData(null)
           }
 
           if (event?.listenerId !== null && event?.listenerId !== undefined) {
-            gppCmpEventManager?.setCmpListenerId(event?.listenerId);
+            gppCmpEventManager?.setCmpListenerId(event?.listenerId)
           }
         }
-      });
+      })
     }
-    return ready;
+    return ready
   }
 
   refresh() {
-    return this.cmp({ command: 'ping' }).then(this.init.bind(this));
+    return this.cmp({ command: 'ping' }).then(this.init.bind(this))
   }
 
   /**
@@ -154,13 +154,13 @@ export class GPPClient {
   updateConsent(pingData) {
     return new PbPromise(resolve => {
       if (pingData == null || isEmpty(pingData)) {
-        throw new GPPError('Received empty response from CMP', pingData);
+        throw new GPPError('Received empty response from CMP', pingData)
       }
-      const consentData = parseConsentData(pingData);
-      logInfo('Retrieved GPP consent from CMP:', consentData);
-      gppDataHandler.setConsentData(consentData);
-      resolve(consentData);
-    });
+      const consentData = parseConsentData(pingData)
+      logInfo('Retrieved GPP consent from CMP:', consentData)
+      gppDataHandler.setConsentData(consentData)
+      resolve(consentData)
+    })
   }
 
   /**
@@ -169,9 +169,9 @@ export class GPPClient {
    * @returns {Promise<{}>}
    */
   nextUpdate() {
-    const def = defer();
-    this.#pending.push(def);
-    return def.promise;
+    const def = defer()
+    this.#pending.push(def)
+    return def.promise
   }
 
   /**
@@ -182,11 +182,11 @@ export class GPPClient {
    * @returns {Promise<{}>}
    */
   updateWhenReady(pingData) {
-    return this.isCMPReady(pingData) ? this.updateConsent(pingData) : this.nextUpdate();
+    return this.isCMPReady(pingData) ? this.updateConsent(pingData) : this.nextUpdate()
   }
 
   isCMPReady(pingData) {
-    return pingData.signalStatus === 'ready';
+    return pingData.signalStatus === 'ready'
   }
 }
 
@@ -197,7 +197,7 @@ function lookupIabConsent() {
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
   'iab': lookupIabConsent,
-};
+}
 
 function parseConsentData(cmpData) {
   if (
@@ -205,14 +205,14 @@ function parseConsentData(cmpData) {
     (cmpData?.gppString != null && !isStr(cmpData.gppString)) ||
     (cmpData?.parsedSections != null && !isPlainObject(cmpData.parsedSections))
   ) {
-    throw new GPPError('CMP returned unexpected value during lookup process.', cmpData);
+    throw new GPPError('CMP returned unexpected value during lookup process.', cmpData)
   }
   ['usnatv1', 'uscav1'].forEach(section => {
     if (cmpData?.parsedSections?.[section]) {
-      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, cmpData);
+      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, cmpData)
     }
-  });
-  return toConsentData(cmpData);
+  })
+  return toConsentData(cmpData)
 }
 
 export function toConsentData(gppData = {} as any): GPPConsentData {
@@ -221,25 +221,25 @@ export function toConsentData(gppData = {} as any): GPPConsentData {
     applicableSections: gppData?.applicableSections || [],
     parsedSections: gppData?.parsedSections || {},
     gppData: gppData
-  };
+  }
 }
 
 /**
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
 export function resetConsentData() {
-  consentConfig = {};
-  gppDataHandler.reset();
-  GPPClient.INST = null;
+  consentConfig = {}
+  gppDataHandler.reset()
+  GPPClient.INST = null
 }
 
 export function removeCmpListener() {
   // Clean up CMP event listeners before resetting
   if (gppCmpEventManager) {
-    gppCmpEventManager.removeCmpEventListener();
-    gppCmpEventManager = null;
+    gppCmpEventManager.removeCmpEventListener()
+    gppCmpEventManager = null
   }
-  resetConsentData();
+  resetConsentData()
 }
 
 const parseConfig = configParser({
@@ -250,25 +250,25 @@ const parseConfig = configParser({
   getNullConsent: () => toConsentData(null),
   cmpHandlers: cmpCallMap,
   cmpEventCleanup: removeCmpListener
-});
+})
 
 export function setConsentConfig(config) {
-  consentConfig = parseConfig(config);
-  return consentConfig.loadConsentData?.()?.catch?.(() => null);
+  consentConfig = parseConfig(config)
+  return consentConfig.loadConsentData?.()?.catch?.(() => null)
 }
-config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
+config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement))
 
 export function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
-    const consent = gppDataHandler.getConsentData();
+    const consent = gppDataHandler.getConsentData()
     if (consent) {
       if (Array.isArray(consent.applicableSections)) {
-        deepSetValue(ortb2, 'regs.gpp_sid', consent.applicableSections);
+        deepSetValue(ortb2, 'regs.gpp_sid', consent.applicableSections)
       }
-      deepSetValue(ortb2, 'regs.gpp', consent.gppString);
+      deepSetValue(ortb2, 'regs.gpp', consent.gppString)
     }
-    return ortb2;
-  }));
+    return ortb2
+  }))
 }
 
-enrichFPD.before(enrichFPDHook);
+enrichFPD.before(enrichFPDHook)

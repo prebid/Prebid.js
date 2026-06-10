@@ -1,5 +1,5 @@
-import { deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -8,8 +8,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'welect';
-const WELECT_DOMAIN = 'www.welect.de';
+const BIDDER_CODE = 'welect'
+const WELECT_DOMAIN = 'www.welect.de'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -28,7 +28,7 @@ export const spec = {
     return (
       deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
       !!bid.params.placementId
-    );
+    )
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -47,7 +47,7 @@ export const spec = {
       }
     }
 
-    let refererInfo = null;
+    let refererInfo = null
     if (bidderRequest?.refererInfo) {
       refererInfo = {
         domain: bidderRequest.refererInfo.domain,
@@ -55,23 +55,23 @@ export const spec = {
       }
     }
 
-    let gdprConsent = null;
+    let gdprConsent = null
     if (bidderRequest?.gdprConsent) {
       gdprConsent = {
         gdpr_consent: {
           gdprApplies: bidderRequest.gdprConsent.gdprApplies,
           tcString: bidderRequest.gdprConsent.consentString,
         },
-      };
+      }
     }
 
     return validBidRequests.map((bidRequest) => {
       const rawSizes =
         deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
-        bidRequest.sizes;
-      const size = rawSizes[0];
+        bidRequest.sizes
+      const size = rawSizes[0]
 
-      const url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`;
+      const url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`
 
       const data = {
         width: size[0],
@@ -80,7 +80,7 @@ export const spec = {
         ...catData,
         ...gdprConsent,
         ...refererInfo,
-      };
+      }
 
       return {
         method: 'POST',
@@ -91,8 +91,8 @@ export const spec = {
           withCredentials: false,
           crossOrigin: true,
         },
-      };
-    });
+      }
+    })
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -101,13 +101,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const responseBody = serverResponse.body;
+    const responseBody = serverResponse.body
 
     if (typeof responseBody !== 'object' || responseBody.available !== true) {
-      return [];
+      return []
     }
 
-    const bidResponses = [];
+    const bidResponses = []
     const bidResponse = {
       requestId: responseBody.bidResponse.requestId,
       cpm: responseBody.bidResponse.cpm,
@@ -123,9 +123,9 @@ export const spec = {
       meta: {
         advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
       }
-    };
-    bidResponses.push(bidResponse);
-    return bidResponses;
+    }
+    bidResponses.push(bidResponse)
+    return bidResponses
   },
-};
-registerBidder(spec);
+}
+registerBidder(spec)

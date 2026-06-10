@@ -1,28 +1,28 @@
-import { logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { logWarn } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
-const BIDDER_CODE = 'wipes';
-const ALIAS_BIDDER_CODE = ['wi'];
+const BIDDER_CODE = 'wipes'
+const ALIAS_BIDDER_CODE = ['wi']
 const SUPPORTED_MEDIA_TYPES = [BANNER]
-const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
+const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid'
 
 function isBidRequestValid(bid) {
   switch (true) {
     case !!(bid.params.asid):
-      break;
+      break
     default:
-      logWarn(`isBidRequestValid Error. ${bid.params}, please check your implementation.`);
-      return false;
+      logWarn(`isBidRequestValid Error. ${bid.params}, please check your implementation.`)
+      return false
   }
-  return true;
+  return true
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
   return validBidRequests.map(bidRequest => {
     const bidId = bidRequest.bidId
-    const params = bidRequest.params;
-    const asid = params.asid;
+    const params = bidRequest.params
+    const asid = params.asid
     return {
       method: 'GET',
       url: ENDPOINT_URL,
@@ -31,15 +31,15 @@ function buildRequests(validBidRequests, bidderRequest) {
         bid_id: bidId,
       }
     }
-  });
+  })
 }
 
 function interpretResponse(serverResponse, bidRequest) {
-  const bidResponses = [];
-  const response = serverResponse.body;
-  const cpm = response.cpm || 0;
+  const bidResponses = []
+  const response = serverResponse.body
+  const cpm = response.cpm || 0
   if (cpm !== 0) {
-    const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
+    const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue
     const bidResponse = {
       requestId: response.bid_id,
       cpm: cpm,
@@ -56,10 +56,10 @@ function interpretResponse(serverResponse, bidRequest) {
       meta: {
         advertiserDomains: response.advertiser_domain ? [response.advertiser_domain] : []
       }
-    };
-    bidResponses.push(bidResponse);
+    }
+    bidResponses.push(bidResponse)
   }
-  return bidResponses;
+  return bidResponses
 }
 
 export const spec = {
@@ -70,4 +70,4 @@ export const spec = {
   interpretResponse,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES
 }
-registerBidder(spec);
+registerBidder(spec)

@@ -1,51 +1,51 @@
-import { ortbConverter } from "../ortbConverter/converter.js";
-import { pbsExtensions } from "../pbsExtensions/pbsExtensions.js";
-import { BANNER, NATIVE, VIDEO, type MediaType } from "../../src/mediaTypes.js";
-import { BID_RESPONSE } from "../../src/pbjsORTB.js";
+import { ortbConverter } from "../ortbConverter/converter.js"
+import { pbsExtensions } from "../pbsExtensions/pbsExtensions.js"
+import { BANNER, NATIVE, VIDEO, type MediaType } from "../../src/mediaTypes.js"
+import { BID_RESPONSE } from "../../src/pbjsORTB.js"
 import {
   CONSENT_GDPR,
   CONSENT_GPP,
   CONSENT_USP,
   type ConsentDataForKey,
-} from "../../src/consentHandler.js";
+} from "../../src/consentHandler.js"
 import {
   isPlainObject,
   logError,
   sizesToSizeTuples,
-} from "../../src/utils.js";
+} from "../../src/utils.js"
 import type {
   AdapterRequest,
   AdapterResponse,
   BidderSpec,
   ServerResponse,
-} from "../../src/adapters/bidderFactory.js";
+} from "../../src/adapters/bidderFactory.js"
 import type {
   BidRequest,
   ClientBidderRequest,
-} from "../../src/adapterManager.js";
-import type { BidResponse } from "../../src/bidfactory.js";
-import type { SyncType } from "../../src/userSync.js";
-import type { BidderCode, Currency, Size } from "../../src/types/common.d.ts";
-import type { ORTBRequest } from "../../src/types/ortb/request.d.ts";
-import type { ORTBBid, ORTBResponse } from "../../src/types/ortb/response.d.ts";
-import type { NativeResponse } from "../../src/types/ortb/native.d.ts";
+} from "../../src/adapterManager.js"
+import type { BidResponse } from "../../src/bidfactory.js"
+import type { SyncType } from "../../src/userSync.js"
+import type { BidderCode, Currency, Size } from "../../src/types/common.d.ts"
+import type { ORTBRequest } from "../../src/types/ortb/request.d.ts"
+import type { ORTBBid, ORTBResponse } from "../../src/types/ortb/response.d.ts"
+import type { NativeResponse } from "../../src/types/ortb/native.d.ts"
 
-const DEFAULT_CURRENCY: Currency = "USD";
-const DEFAULT_TTL = 300;
-const DEFAULT_PARAM_BIDDER_CODE = "ferio";
-const ORTB_RESPONSE_MEDIA_TYPES = [1, 2, 4] as const;
+const DEFAULT_CURRENCY: Currency = "USD"
+const DEFAULT_TTL = 300
+const DEFAULT_PARAM_BIDDER_CODE = "ferio"
+const ORTB_RESPONSE_MEDIA_TYPES = [1, 2, 4] as const
 
-const supportedMediaTypes = [BANNER, VIDEO, NATIVE] as const;
+const supportedMediaTypes = [BANNER, VIDEO, NATIVE] as const
 
-type SupportedFerioMediaType = typeof supportedMediaTypes[number];
-type FerioResponseMType = typeof ORTB_RESPONSE_MEDIA_TYPES[number];
-type RequiredParam = string;
+type SupportedFerioMediaType = typeof supportedMediaTypes[number]
+type FerioResponseMType = typeof ORTB_RESPONSE_MEDIA_TYPES[number]
+type RequiredParam = string
 
 type FerioParamsRecord = {
   publisherId?: unknown;
   adUnitId?: unknown;
   [key: string]: unknown;
-};
+}
 
 type FerioAdapterRequest = AdapterRequest & {
   method: "POST";
@@ -55,7 +55,7 @@ type FerioAdapterRequest = AdapterRequest & {
     contentType: "text/plain";
     withCredentials: true;
   };
-};
+}
 
 export type FerioBidderSpecOptions<
   Code extends BidderCode = typeof DEFAULT_PARAM_BIDDER_CODE
@@ -64,116 +64,116 @@ export type FerioBidderSpecOptions<
   endpoint: string;
   paramBidderCode?: BidderCode;
   requiredParams?: readonly RequiredParam[];
-};
+}
 
-type GdprConsent = null | undefined | ConsentDataForKey<typeof CONSENT_GDPR>;
-type UspConsent = null | undefined | ConsentDataForKey<typeof CONSENT_USP>;
-type GppConsent = null | undefined | ConsentDataForKey<typeof CONSENT_GPP>;
+type GdprConsent = null | undefined | ConsentDataForKey<typeof CONSENT_GDPR>
+type UspConsent = null | undefined | ConsentDataForKey<typeof CONSENT_USP>
+type GppConsent = null | undefined | ConsentDataForKey<typeof CONSENT_GPP>
 
-type ConsentParamValue = string | number;
-type ConsentParam = readonly [string, ConsentParamValue];
+type ConsentParamValue = string | number
+type ConsentParam = readonly [string, ConsentParamValue]
 type UserSyncOptions = {
   iframeEnabled?: boolean;
   pixelEnabled?: boolean;
-};
+}
 type FerioUserSync = {
   type: SyncType;
   url: string;
-};
+}
 
 type NativeAdm = Partial<NativeResponse> & {
   assets: NonNullable<NativeResponse["assets"]>;
-};
+}
 type NativeAdmWrapper = {
   native: NativeAdm;
-};
+}
 type BidWithRawAdm = Omit<ORTBBid, "adm"> & {
   adm?: unknown;
-};
+}
 type FerioBidResponseWithAdapterCode = Partial<BidResponse> & {
   adapterCode?: BidderCode;
   bidderCode?: BidderCode;
-};
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return isPlainObject(value);
+  return isPlainObject(value)
 }
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === "string" && value.trim().length > 0
 }
 
 function getNonEmptyString(value: unknown, fallback: string): string {
-  return isNonEmptyString(value) ? value.trim() : fallback;
+  return isNonEmptyString(value) ? value.trim() : fallback
 }
 
 function hasValidSize(sizes: unknown): boolean {
   return (sizesToSizeTuples(sizes) as Size[]).some((size) =>
     size.every((value) => Number.isFinite(Number(value)) && Number(value) > 0)
-  );
+  )
 }
 
 function getFerioParams(params: unknown): FerioParamsRecord {
-  return isRecord(params) ? params : {};
+  return isRecord(params) ? params : {}
 }
 
 function isBidRequestValid<B extends BidderCode>(
   bid: BidRequest<B>,
   requiredParams: readonly RequiredParam[] = []
 ): boolean {
-  const params = getFerioParams(bid.params);
+  const params = getFerioParams(bid.params)
   if (
     !isNonEmptyString(params.publisherId) ||
     !isNonEmptyString(params.adUnitId)
   ) {
-    return false;
+    return false
   }
 
   if (
     requiredParams.some((paramName) => !isNonEmptyString(params[paramName]))
   ) {
-    return false;
+    return false
   }
 
-  const mediaTypes = bid.mediaTypes || {};
-  const hasBanner = !!mediaTypes[BANNER];
-  const hasVideo = !!mediaTypes[VIDEO];
-  const hasNative = !!mediaTypes[NATIVE];
+  const mediaTypes = bid.mediaTypes || {}
+  const hasBanner = !!mediaTypes[BANNER]
+  const hasVideo = !!mediaTypes[VIDEO]
+  const hasNative = !!mediaTypes[NATIVE]
 
   if (!hasBanner && !hasVideo && !hasNative) {
-    return false;
+    return false
   }
 
   if (hasBanner && !hasValidSize(mediaTypes[BANNER].sizes)) {
-    return false;
+    return false
   }
 
   if (hasVideo && !hasValidSize(mediaTypes[VIDEO].playerSize)) {
-    return false;
+    return false
   }
 
   if (hasNative && !bid.nativeOrtbRequest) {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
 function isSupportedMediaType(value: unknown): value is SupportedFerioMediaType {
-  return supportedMediaTypes.includes(value as SupportedFerioMediaType);
+  return supportedMediaTypes.includes(value as SupportedFerioMediaType)
 }
 
 function isFerioResponseMType(value: unknown): value is FerioResponseMType {
-  return ORTB_RESPONSE_MEDIA_TYPES.includes(value as FerioResponseMType);
+  return ORTB_RESPONSE_MEDIA_TYPES.includes(value as FerioResponseMType)
 }
 
 function getBidPrebidMediaType(bid: ORTBBid): SupportedFerioMediaType | undefined {
-  const prebidExt = bid.ext?.prebid;
+  const prebidExt = bid.ext?.prebid
   if (!isRecord(prebidExt)) {
-    return;
+    return
   }
 
-  return isSupportedMediaType(prebidExt.type) ? prebidExt.type : undefined;
+  return isSupportedMediaType(prebidExt.type) ? prebidExt.type : undefined
 }
 
 function getSingleMediaType<B extends BidderCode>(
@@ -181,12 +181,12 @@ function getSingleMediaType<B extends BidderCode>(
 ): SupportedFerioMediaType | undefined {
   const mediaTypes = supportedMediaTypes.filter(
     (mediaType) => bidRequest.mediaTypes?.[mediaType]
-  );
-  return mediaTypes.length === 1 ? mediaTypes[0] : undefined;
+  )
+  return mediaTypes.length === 1 ? mediaTypes[0] : undefined
 }
 
 function hasResponseMediaType(bid: ORTBBid): boolean {
-  return isFerioResponseMType(bid.mtype) || !!getBidPrebidMediaType(bid);
+  return isFerioResponseMType(bid.mtype) || !!getBidPrebidMediaType(bid)
 }
 
 function isNativeResponse(
@@ -197,27 +197,27 @@ function isNativeResponse(
     bid.mtype === 4 ||
     getBidPrebidMediaType(bid) === NATIVE ||
     context.mediaType === NATIVE
-  );
+  )
 }
 
 function parseAdm(adm: unknown): unknown {
   if (typeof adm !== "string") {
-    return adm;
+    return adm
   }
 
   try {
-    return JSON.parse(adm);
+    return JSON.parse(adm)
   } catch (e) {
-    return adm;
+    return adm
   }
 }
 
 function isNativeAdmWrapper(value: unknown): value is NativeAdmWrapper {
   if (!isRecord(value) || Array.isArray(value.assets) || !isRecord(value.native)) {
-    return false;
+    return false
   }
 
-  return Array.isArray(value.native.assets);
+  return Array.isArray(value.native.assets)
 }
 
 function normalizeNativeAdm(
@@ -225,23 +225,23 @@ function normalizeNativeAdm(
   context: { mediaType?: MediaType }
 ): ORTBBid {
   if (!isNativeResponse(bid, context)) {
-    return bid;
+    return bid
   }
 
-  const adm = parseAdm((bid as BidWithRawAdm).adm);
+  const adm = parseAdm((bid as BidWithRawAdm).adm)
   if (isNativeAdmWrapper(adm)) {
-    return { ...bid, adm: JSON.stringify(adm.native) };
+    return { ...bid, adm: JSON.stringify(adm.native) }
   }
 
-  return bid;
+  return bid
 }
 
 function getAdapterResponseBids(response: AdapterResponse): BidResponse[] {
   if (isRecord(response) && Array.isArray(response.bids)) {
-    return response.bids as BidResponse[];
+    return response.bids as BidResponse[]
   }
 
-  return [];
+  return []
 }
 
 function getContextAdapterCode(context: {
@@ -252,12 +252,12 @@ function getContextAdapterCode(context: {
     isRecord(context.bidRequest) &&
     typeof context.bidRequest.bidder === "string"
   ) {
-    return context.bidRequest.bidder;
+    return context.bidRequest.bidder
   }
 
-  const bidderRequest = context.bidderRequest;
+  const bidderRequest = context.bidderRequest
   if (isRecord(bidderRequest) && typeof bidderRequest.bidderCode === "string") {
-    return bidderRequest.bidderCode;
+    return bidderRequest.bidderCode
   }
 }
 
@@ -275,79 +275,79 @@ function createFerioConverter<B extends BidderCode>(
       return buildImp(
         { ...bidRequest, bidder: paramBidderCode } as BidRequest<B>,
         context
-      );
+      )
     },
     bidResponse(buildBidResponse, bid, context) {
-      let responseContext = context;
+      let responseContext = context
       if (!hasResponseMediaType(bid)) {
-        const fallbackMediaType = getSingleMediaType(context.bidRequest);
+        const fallbackMediaType = getSingleMediaType(context.bidRequest)
         if (!fallbackMediaType) {
-          return;
+          return
         }
-        responseContext = { ...context, mediaType: fallbackMediaType };
+        responseContext = { ...context, mediaType: fallbackMediaType }
       }
       return buildBidResponse(
         normalizeNativeAdm(bid, responseContext),
         responseContext
-      );
+      )
     },
     overrides: {
       [BID_RESPONSE]: {
         bidderCode(orig, bidResponse, bid, context) {
-          orig(bidResponse, bid, context);
-          const adapterCode = getContextAdapterCode(context);
+          orig(bidResponse, bid, context)
+          const adapterCode = getContextAdapterCode(context)
           if (adapterCode) {
-            const response = bidResponse as FerioBidResponseWithAdapterCode;
-            response.bidderCode = adapterCode;
-            response.adapterCode = adapterCode;
+            const response = bidResponse as FerioBidResponseWithAdapterCode
+            response.bidderCode = adapterCode
+            response.adapterCode = adapterCode
           }
         },
       },
     },
-  });
+  })
 }
 
 function normalizeEndpoint(endpoint?: string): string | undefined {
   if (!isNonEmptyString(endpoint)) {
-    return;
+    return
   }
 
-  const normalizedEndpoint = endpoint.trim().replace(/\/+$/, "");
+  const normalizedEndpoint = endpoint.trim().replace(/\/+$/, "")
   return /\/bid$/.test(normalizedEndpoint)
     ? normalizedEndpoint
-    : `${normalizedEndpoint}/bid`;
+    : `${normalizedEndpoint}/bid`
 }
 
 function getEndpointBase(endpoint?: string): string | undefined {
-  return endpoint?.replace(/\/bid$/, "");
+  return endpoint?.replace(/\/bid$/, "")
 }
 
 function appendQueryParams(url: string, params: ConsentParam[]): string {
   const query = params
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-    .join("&");
+    .join("&")
   const separator = url.includes("?")
     ? url.endsWith("?") || url.endsWith("&")
       ? ""
       : "&"
-    : "?";
-  return `${url}${separator}${query}`;
+    : "?"
+  return `${url}${separator}${query}`
 }
 
 function isHttpsUrl(value: unknown): value is string {
   if (!isNonEmptyString(value)) {
-    return false;
+    return false
   }
 
-  const url = value.trim();
+  const url = value.trim()
   if (!/^https:\/\//i.test(url)) {
-    return false;
+    return false
   }
 
   try {
-    return new URL(url).protocol === "https:";
+    return new URL(url).protocol === "https:"
   } catch (e) {
-    return false;
+    return false
   }
 }
 
@@ -356,28 +356,28 @@ function getConsentParams(
   uspConsent: UspConsent = null,
   gppConsent: GppConsent = null
 ): ConsentParam[] {
-  const gdpr = isRecord(gdprConsent) && gdprConsent.gdprApplies ? 1 : 0;
+  const gdpr = isRecord(gdprConsent) && gdprConsent.gdprApplies ? 1 : 0
   const gdprConsentString =
     isRecord(gdprConsent) && typeof gdprConsent.consentString === "string"
       ? gdprConsent.consentString
-      : "";
+      : ""
 
   const params: ConsentParam[] = [
     ["us_privacy", typeof uspConsent === "string" ? uspConsent : ""],
     ["gdpr", gdpr],
     ["gdpr_consent", gdprConsentString],
-  ];
+  ]
 
   if (isRecord(gppConsent)) {
     if (typeof gppConsent.gppString === "string" && gppConsent.gppString) {
-      params.push(["gpp", gppConsent.gppString]);
+      params.push(["gpp", gppConsent.gppString])
     }
     if (Array.isArray(gppConsent.applicableSections)) {
-      params.push(["gpp_sid", gppConsent.applicableSections.join(",")]);
+      params.push(["gpp_sid", gppConsent.applicableSections.join(",")])
     }
   }
 
-  return params;
+  return params
 }
 
 function getUserSyncs(
@@ -388,20 +388,20 @@ function getUserSyncs(
   gppConsent: GppConsent = null
 ): FerioUserSync[] {
   if (!(syncOptions.iframeEnabled || syncOptions.pixelEnabled) || !syncBase) {
-    return [];
+    return []
   }
 
-  const consentParams = getConsentParams(gdprConsent, uspConsent, gppConsent);
-  const syncCandidates: FerioUserSync[] = [];
+  const consentParams = getConsentParams(gdprConsent, uspConsent, gppConsent)
+  const syncCandidates: FerioUserSync[] = []
 
   if (syncOptions.pixelEnabled) {
-    syncCandidates.push({ type: "image", url: `${syncBase}/sync` });
+    syncCandidates.push({ type: "image", url: `${syncBase}/sync` })
   }
   if (syncOptions.iframeEnabled) {
     syncCandidates.push({
       type: "iframe",
       url: `${syncBase}/cli/iframe.html`,
-    });
+    })
   }
 
   return syncCandidates.reduce<FerioUserSync[]>((syncs, sync) => {
@@ -409,10 +409,10 @@ function getUserSyncs(
       syncs.push({
         type: sync.type,
         url: appendQueryParams(sync.url, consentParams),
-      });
+      })
     }
-    return syncs;
-  }, []);
+    return syncs
+  }, [])
 }
 
 export function createFerioBidderSpec<
@@ -423,21 +423,21 @@ export function createFerioBidderSpec<
   const code = getNonEmptyString(
     options.code,
     DEFAULT_PARAM_BIDDER_CODE
-  ) as Code;
+  ) as Code
   const requiredParams = Array.isArray(options.requiredParams)
     ? options.requiredParams
-    : [];
-  const endpoint = normalizeEndpoint(options.endpoint);
-  const syncBase = getEndpointBase(endpoint);
+    : []
+  const endpoint = normalizeEndpoint(options.endpoint)
+  const syncBase = getEndpointBase(endpoint)
   const converter = createFerioConverter<Code>(
     getNonEmptyString(options.paramBidderCode, code)
-  );
+  )
 
   return {
     code,
     supportedMediaTypes,
     isBidRequestValid(bid) {
-      return isBidRequestValid(bid, requiredParams);
+      return isBidRequestValid(bid, requiredParams)
     },
     buildRequests(
       validBidRequests: BidRequest<Code>[] = [],
@@ -446,11 +446,11 @@ export function createFerioBidderSpec<
       } as ClientBidderRequest<Code>
     ): FerioAdapterRequest[] {
       if (!validBidRequests.length) {
-        return [];
+        return []
       }
       if (!endpoint) {
-        logError("ferioUtils: missing endpoint option");
-        return [];
+        logError("ferioUtils: missing endpoint option")
+        return []
       }
 
       return [
@@ -463,14 +463,14 @@ export function createFerioBidderSpec<
             withCredentials: true,
           },
         },
-      ];
+      ]
     },
     interpretResponse(
       serverResponse: Partial<ServerResponse>,
       request: Partial<AdapterRequest> = {}
     ): BidResponse[] {
       if (!serverResponse?.body || !request?.data) {
-        return [];
+        return []
       }
 
       try {
@@ -479,10 +479,10 @@ export function createFerioBidderSpec<
             response: serverResponse.body as ORTBResponse,
             request: request.data as ORTBRequest,
           })
-        );
+        )
       } catch (e) {
-        logError("ferioUtils: error while interpreting OpenRTB response", e);
-        return [];
+        logError("ferioUtils: error while interpreting OpenRTB response", e)
+        return []
       }
     },
     getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -492,7 +492,7 @@ export function createFerioBidderSpec<
         gdprConsent,
         uspConsent,
         gppConsent
-      );
+      )
     },
-  };
+  }
 }

@@ -1,16 +1,16 @@
-import { expect } from 'chai';
-import { spec, API_SERVERS_MAP, ADAPTER_VERSION } from 'modules/appierBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec, API_SERVERS_MAP, ADAPTER_VERSION } from 'modules/appierBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { config } from 'src/config.js'
 
 describe('AppierAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -23,33 +23,33 @@ describe('AppierAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-    };
+    }
 
     it('should return true when required params zoneId found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when required param zoneId is missing', function () {
-      const invalidBid = Object.assign({}, bid);
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
+      const invalidBid = Object.assign({}, bid)
+      invalidBid.params = {}
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
 
     it('should return false when required param zoneId has wrong type', function () {
-      const invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid)
       invalidBid.params = {
         'hzid': null
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function() {
     it('should return an empty list when there are no bid requests', function() {
-      const fakeBidRequests = [];
-      const fakeBidderRequest = {};
-      expect(spec.buildRequests(fakeBidRequests, fakeBidderRequest)).to.be.an('array').that.is.empty;
-    });
+      const fakeBidRequests = []
+      const fakeBidderRequest = {}
+      expect(spec.buildRequests(fakeBidRequests, fakeBidderRequest)).to.be.an('array').that.is.empty
+    })
 
     it('should generate a POST bid request with method, url, and data fields', function() {
       const bid = {
@@ -62,8 +62,8 @@ describe('AppierAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      };
-      const fakeBidRequests = [bid];
+      }
+      const fakeBidRequests = [bid]
       const fakeBidderRequest = {
         refererInfo: {
           legacy: {
@@ -73,19 +73,19 @@ describe('AppierAdapter', function () {
             'stack': []
           }
         }
-      };
+      }
 
-      const builtRequests = spec.buildRequests(fakeBidRequests, fakeBidderRequest);
-      expect(builtRequests.length).to.equal(1);
-      expect(builtRequests[0].method).to.equal('POST');
-      expect(builtRequests[0].url).match(/v1\/prebid\/bid/);
+      const builtRequests = spec.buildRequests(fakeBidRequests, fakeBidderRequest)
+      expect(builtRequests.length).to.equal(1)
+      expect(builtRequests[0].method).to.equal('POST')
+      expect(builtRequests[0].url).match(/v1\/prebid\/bid/)
       expect(builtRequests[0].data).deep.equal({
         'bids': fakeBidRequests,
         'refererInfo': fakeBidderRequest.refererInfo.legacy,
         'version': ADAPTER_VERSION
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('interpretResponse', function() {
     const bid = {
@@ -98,16 +98,16 @@ describe('AppierAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-    };
-    const fakeBidRequests = [bid];
+    }
+    const fakeBidRequests = [bid]
 
     it('should return an empty aray to indicate no valid bids', function() {
-      const fakeServerResponse = {};
+      const fakeServerResponse = {}
 
-      const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
+      const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests)
 
-      expect(bidResponses).is.an('array').that.is.empty;
-    });
+      expect(bidResponses).is.an('array').that.is.empty
+    })
 
     it('should generate correct response array for bidder', function() {
       const fakeBidResult = {
@@ -123,56 +123,56 @@ describe('AppierAdapter', function () {
         'appierParams': {
           'hzid': 'test_hzid'
         }
-      };
+      }
       const fakeServerResponse = {
         headers: [],
         body: [fakeBidResult]
-      };
+      }
 
-      const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
-      expect(bidResponses).deep.equal([fakeBidResult]);
-    });
-  });
+      const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests)
+      expect(bidResponses).deep.equal([fakeBidResult])
+    })
+  })
 
   describe('getApiServer', function() {
     it('should use the server specified by setConfig(appier.server)', function() {
       config.setConfig({
         'appier': { 'server': 'fake_server' }
-      });
+      })
 
-      const server = spec.getApiServer();
+      const server = spec.getApiServer()
 
-      expect(server).equals('fake_server');
-    });
+      expect(server).equals('fake_server')
+    })
 
     it('should retrieve a farm specific hostname if server is not specpfied', function() {
       config.setConfig({
         'appier': { 'farm': 'tw' }
-      });
+      })
 
-      const server = spec.getApiServer();
+      const server = spec.getApiServer()
 
-      expect(server).equals(API_SERVERS_MAP['tw']);
-    });
+      expect(server).equals(API_SERVERS_MAP['tw'])
+    })
 
     it('if farm is not recognized, use the default farm', function() {
       config.setConfig({
         'appier': { 'farm': 'no_this_farm' }
-      });
+      })
 
-      const server = spec.getApiServer();
+      const server = spec.getApiServer()
 
-      expect(server).equals(API_SERVERS_MAP['default']);
-    });
+      expect(server).equals(API_SERVERS_MAP['default'])
+    })
 
     it('if farm is not specified, use the default farm', function() {
       config.setConfig({
         'appier': {}
-      });
+      })
 
-      const server = spec.getApiServer();
+      const server = spec.getApiServer()
 
-      expect(server).equals(API_SERVERS_MAP['default']);
-    });
-  });
-});
+      expect(server).equals(API_SERVERS_MAP['default'])
+    })
+  })
+})

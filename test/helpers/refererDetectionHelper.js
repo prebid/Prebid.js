@@ -15,26 +15,26 @@ export function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, a
    * @returns {string|null}
    */
   function getOrigin(url) {
-    const originRegex = new RegExp('^(https?://[^/]+/?)');
+    const originRegex = new RegExp('^(https?://[^/]+/?)')
 
-    const result = originRegex.exec(url);
+    const result = originRegex.exec(url)
 
     if (result && result[0]) {
-      return result[0];
+      return result[0]
     }
 
-    return null;
+    return null
   }
 
-  const inaccessibles = [];
+  const inaccessibles = []
 
-  let previousWindow, topWindow;
-  const topOrigin = getOrigin(urls[0]);
+  let previousWindow, topWindow
+  const topOrigin = getOrigin(urls[0])
 
   const windowList = urls.map((url, index) => {
-    const thisOrigin = getOrigin(url);
-    const sameOriginAsPrevious = index === 0 ? true : (getOrigin(urls[index - 1]) === thisOrigin);
-    const sameOriginAsTop = thisOrigin === topOrigin;
+    const thisOrigin = getOrigin(url)
+    const sameOriginAsPrevious = index === 0 ? true : (getOrigin(urls[index - 1]) === thisOrigin)
+    const sameOriginAsTop = thisOrigin === topOrigin
 
     const win = {
       location: {
@@ -43,46 +43,46 @@ export function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, a
       document: {
         referrer: index === 0 ? topReferrer : urls[index - 1]
       }
-    };
+    }
 
     if (topWindow == null) {
-      topWindow = win;
+      topWindow = win
       win.document.querySelector = function (selector) {
         if (selector === 'link[rel=\'canonical\']') {
           return {
             href: canonicalUrl
-          };
+          }
         }
-        return null;
-      };
+        return null
+      }
     }
 
     if (sameOriginAsPrevious) {
-      win.parent = previousWindow;
+      win.parent = previousWindow
     } else {
-      win.parent = inaccessibles[inaccessibles.length - 1];
+      win.parent = inaccessibles[inaccessibles.length - 1]
     }
     if (ancestorOrigins) {
-      win.location.ancestorOrigins = urls.slice(0, index).reverse().map(getOrigin);
+      win.location.ancestorOrigins = urls.slice(0, index).reverse().map(getOrigin)
     }
-    win.top = sameOriginAsTop ? topWindow : inaccessibles[0];
+    win.top = sameOriginAsTop ? topWindow : inaccessibles[0]
 
-    const inWin = { parent: inaccessibles[inaccessibles.length - 1], top: inaccessibles[0] };
+    const inWin = { parent: inaccessibles[inaccessibles.length - 1], top: inaccessibles[0] }
     if (index === 0) {
-      inWin.top = inWin;
+      inWin.top = inWin
     }
     ['document', 'location'].forEach((prop) => {
       Object.defineProperty(inWin, prop, {
         get: function () {
-          throw new Error('cross-origin access');
+          throw new Error('cross-origin access')
         }
-      });
-    });
-    inaccessibles.push(inWin);
-    previousWindow = win;
+      })
+    })
+    inaccessibles.push(inWin)
+    previousWindow = win
 
-    return win;
-  });
+    return win
+  })
 
-  return windowList[windowList.length - 1];
+  return windowList[windowList.length - 1]
 }

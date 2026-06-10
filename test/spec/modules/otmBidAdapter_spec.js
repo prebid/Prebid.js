@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec } from 'modules/otmBidAdapter';
+import { expect } from 'chai'
+import { spec } from 'modules/otmBidAdapter'
 
 describe('otmBidAdapter', function () {
   it('pub_params', function () {
@@ -9,8 +9,8 @@ describe('otmBidAdapter', function () {
         tid: '123',
         bidfloor: 20
       }
-    })).to.equal(true);
-  });
+    })).to.equal(true)
+  })
 
   it('generated_params common case', function () {
     const bidRequestData = [{
@@ -22,14 +22,14 @@ describe('otmBidAdapter', function () {
         domain: 'github.com'
       },
       sizes: [[240, 400]]
-    }];
+    }]
 
-    const request = spec.buildRequests(bidRequestData);
-    const req_data = request[0].data;
+    const request = spec.buildRequests(bidRequestData)
+    const req_data = request[0].data
 
-    expect(req_data.bidid).to.equal('bid1234');
-    expect(req_data.domain).to.equal('github.com');
-  });
+    expect(req_data.bidid).to.equal('bid1234')
+    expect(req_data.domain).to.equal('github.com')
+  })
 
   it('generated_params should return top level origin as domain if not defined', function () {
     const bidRequestData = [{
@@ -40,22 +40,22 @@ describe('otmBidAdapter', function () {
         bidfloor: 20
       },
       sizes: [[240, 400]]
-    }];
+    }]
 
     const bidderRequest = { refererInfo: { page: `https://github.com:3000/`, domain: 'github.com:3000' } }
 
-    const request = spec.buildRequests(bidRequestData, bidderRequest);
-    const req_data = request[0].data;
+    const request = spec.buildRequests(bidRequestData, bidderRequest)
+    const req_data = request[0].data
 
-    expect(req_data.domain).to.equal(`github.com:3000`);
-  });
+    expect(req_data.domain).to.equal(`github.com:3000`)
+  })
 
   it('response_params common case', function () {
     const bidRequestData = {
       data: {
         bidId: 'bid1234'
       }
-    };
+    }
 
     const serverResponse = {
       body: [
@@ -72,17 +72,17 @@ describe('otmBidAdapter', function () {
           'transactionid': 'transaction_id_1'
         }
       ]
-    };
+    }
 
-    const bids = spec.interpretResponse(serverResponse, bidRequestData);
-    expect(bids).to.have.lengthOf(1);
-    const bid = bids[0];
-    expect(bid.cpm).to.equal(847.097);
-    expect(bid.currency).to.equal('RUB');
-    expect(bid.width).to.equal(240);
-    expect(bid.height).to.equal(400);
-    expect(bid.netRevenue).to.equal(true);
-    expect(bid.requestId).to.equal('101f211def7c99');
-    expect(bid.ad).to.equal('<html><body>test html</body></html>');
-  });
-});
+    const bids = spec.interpretResponse(serverResponse, bidRequestData)
+    expect(bids).to.have.lengthOf(1)
+    const bid = bids[0]
+    expect(bid.cpm).to.equal(847.097)
+    expect(bid.currency).to.equal('RUB')
+    expect(bid.width).to.equal(240)
+    expect(bid.height).to.equal(400)
+    expect(bid.netRevenue).to.equal(true)
+    expect(bid.requestId).to.equal('101f211def7c99')
+    expect(bid.ad).to.equal('<html><body>test html</body></html>')
+  })
+})

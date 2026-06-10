@@ -1,18 +1,18 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 
-import { deepClone, mergeDeep } from 'src/utils';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { createEidsArray } from 'modules/userId/eids.js';
+import { deepClone, mergeDeep } from 'src/utils'
+import { BANNER, VIDEO } from 'src/mediaTypes'
+import { createEidsArray } from 'modules/userId/eids.js'
 
-import { spec as adapter } from 'modules/viouslyBidAdapter';
+import { spec as adapter } from 'modules/viouslyBidAdapter'
 
-import sinon from 'sinon';
-import { config } from 'src/config.js';
+import sinon from 'sinon'
+import { config } from 'src/config.js'
 
-const CURRENCY = 'EUR';
-const TTL = 60;
-const HTTP_METHOD = 'POST';
-const REQUEST_URL = 'https://bidder.viously.com/bid';
+const CURRENCY = 'EUR'
+const TTL = 60
+const HTTP_METHOD = 'POST'
+const REQUEST_URL = 'https://bidder.viously.com/bid'
 
 const VALID_BID_BANNER = {
   bidder: 'viously',
@@ -27,7 +27,7 @@ const VALID_BID_BANNER = {
       pos: 1
     }
   }
-};
+}
 
 const VALID_BID_VIDEO = {
   bidder: 'viously',
@@ -43,7 +43,7 @@ const VALID_BID_VIDEO = {
       playbackmethod: [1, 2, 3, 4]
     }
   }
-};
+}
 
 const VALID_REQUEST_BANNER = {
   method: HTTP_METHOD,
@@ -61,7 +61,7 @@ const VALID_REQUEST_BANNER = {
       }
     ]
   }
-};
+}
 
 const VALID_REQUEST_VIDEO = {
   method: HTTP_METHOD,
@@ -82,7 +82,7 @@ const VALID_REQUEST_VIDEO = {
       }
     ]
   }
-};
+}
 
 const VALID_GDPR = {
   gdprApplies: true,
@@ -96,102 +96,102 @@ const VALID_GDPR = {
       }
     }
   }
-};
-const US_PRIVACY = '1YNN';
+}
+const US_PRIVACY = '1YNN'
 
 describe('ViouslyAdapter', function () {
   describe('isBidRequestValid', function () {
     describe('Check method return', function () {
       it('should return true', function () {
-        expect(adapter.isBidRequestValid(VALID_BID_BANNER)).to.equal(true);
-        expect(adapter.isBidRequestValid(VALID_BID_VIDEO)).to.equal(true);
-      });
+        expect(adapter.isBidRequestValid(VALID_BID_BANNER)).to.equal(true)
+        expect(adapter.isBidRequestValid(VALID_BID_VIDEO)).to.equal(true)
+      })
 
       it('should return true for banner with no pos', function () {
-        const newBid = deepClone(VALID_BID_BANNER);
-        const newRequest = deepClone(VALID_REQUEST_BANNER);
+        const newBid = deepClone(VALID_BID_BANNER)
+        const newRequest = deepClone(VALID_REQUEST_BANNER)
 
-        delete newBid.mediaTypes.banner.pos;
-        newRequest.data.placements[0].position = 0;
+        delete newBid.mediaTypes.banner.pos
+        newRequest.data.placements[0].position = 0
 
-        expect(adapter.buildRequests([newBid])).to.deep.equal(newRequest);
-      });
+        expect(adapter.buildRequests([newBid])).to.deep.equal(newRequest)
+      })
 
       it('should return false because the banner size is missing', function () {
-        const wrongBid = deepClone(VALID_BID_BANNER);
+        const wrongBid = deepClone(VALID_BID_BANNER)
 
-        wrongBid.mediaTypes.banner.sizes = '123456';
-        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
+        wrongBid.mediaTypes.banner.sizes = '123456'
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false)
 
-        delete wrongBid.mediaTypes.banner.sizes;
-        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
-      });
+        delete wrongBid.mediaTypes.banner.sizes
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false)
+      })
 
       it('should return false because the pid is missing', function () {
-        const wrongBid = deepClone(VALID_BID_VIDEO);
-        delete wrongBid.params.pid;
+        const wrongBid = deepClone(VALID_BID_VIDEO)
+        delete wrongBid.params.pid
 
-        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
-      });
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false)
+      })
 
       it('should return false because the video context parameter is missing', function () {
-        const wrongBid = deepClone(VALID_BID_VIDEO);
+        const wrongBid = deepClone(VALID_BID_VIDEO)
 
-        delete wrongBid.mediaTypes.video.context;
-        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
-      });
-    });
-  });
+        delete wrongBid.mediaTypes.video.context
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false)
+      })
+    })
+  })
 
   describe('buildRequests', function () {
     describe('Check method return', function () {
       it('should return the right formatted banner requests', function() {
-        expect(adapter.buildRequests([VALID_BID_BANNER])).to.deep.equal(VALID_REQUEST_BANNER);
-      });
+        expect(adapter.buildRequests([VALID_BID_BANNER])).to.deep.equal(VALID_REQUEST_BANNER)
+      })
 
       it('should return the right formatted video requests', function() {
-        expect(adapter.buildRequests([VALID_BID_VIDEO])).to.deep.equal(VALID_REQUEST_VIDEO);
-      });
+        expect(adapter.buildRequests([VALID_BID_VIDEO])).to.deep.equal(VALID_REQUEST_VIDEO)
+      })
 
       it('should return the right formatted request with the referer info', function() {
         const bidderRequest = {
           refererInfo: {
             page: 'https://www.example.com/test'
           }
-        };
+        }
 
         const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             domain: 'www.example.com',
             page_domain: 'https://www.example.com/test'
           }
-        });
+        })
 
-        expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests);
-      });
+        expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests)
+      })
 
       it('should return the right formatted request with the referer info from config', function() {
         /** Mock the config.getConfig method */
         sinon.stub(config, 'getConfig')
           .withArgs('pageUrl')
-          .returns('https://www.example.com/page');
+          .returns('https://www.example.com/page')
 
         const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             domain: 'www.example.com',
             page_domain: 'https://www.example.com/page'
           }
-        });
+        })
 
-        expect(adapter.buildRequests([VALID_BID_VIDEO])).to.deep.equal(requests);
+        expect(adapter.buildRequests([VALID_BID_VIDEO])).to.deep.equal(requests)
 
-        config.getConfig.restore();
-      });
+        config.getConfig.restore()
+      })
 
       it('should return the right formatted request with GDPR Consent info', function() {
         const bidderRequest = {
           gdprConsent: VALID_GDPR
-        };
+        }
 
         const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
@@ -199,24 +199,24 @@ describe('ViouslyAdapter', function () {
             gdpr_consent: 'abcdefgh',
             addtl_consent: '1~12345678'
           }
-        });
+        })
 
-        expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests);
-      });
+        expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests)
+      })
 
       it('should return the right formatted request with US Privacy info', function() {
         const bidderRequest = {
           uspConsent: US_PRIVACY
-        };
+        }
 
         const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             us_privacy: US_PRIVACY
           }
-        });
+        })
 
-        expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests);
-      });
+        expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests)
+      })
 
       // TODO: Supply chain
       it('should return the right formatted request with Supply Chain info', function() {
@@ -235,7 +235,7 @@ describe('ViouslyAdapter', function () {
               'hp': 2
             }
           ]
-        };
+        }
 
         const bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
           ortb2: {
@@ -245,16 +245,16 @@ describe('ViouslyAdapter', function () {
               }
             }
           }
-        });
+        })
 
         const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             schain: schain
           }
-        });
+        })
 
-        expect(adapter.buildRequests([bid])).to.deep.equal(requests);
-      });
+        expect(adapter.buildRequests([bid])).to.deep.equal(requests)
+      })
 
       it('should return the right formatted request with User Ids info', function() {
         const userIds = {
@@ -263,42 +263,42 @@ describe('ViouslyAdapter', function () {
           IDP: 'userIDP000', // IDP
           fabrickId: 'fabrickId9000', // FabrickId
           uid2: { id: 'testuid2' } // UID 2.0
-        };
+        }
 
         const bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
           userIds: userIds
         }, {
           userIdAsEids: createEidsArray(userIds)
-        });
+        })
 
         const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
           data: {
             users_uid: createEidsArray(userIds)
           }
-        });
+        })
 
-        expect(adapter.buildRequests([bid])).to.deep.equal(requests);
-      });
+        expect(adapter.buildRequests([bid])).to.deep.equal(requests)
+      })
 
       it('should return the right formatted request with endpoint test', function() {
-        const endpoint = 'https://bid-test.viously.com/prebid';
+        const endpoint = 'https://bid-test.viously.com/prebid'
 
         const bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
           params: {
             endpoint: endpoint
           }
-        });
+        })
 
-        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO));
+        const requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO))
 
-        requests.url = endpoint;
+        requests.url = endpoint
 
-        expect(adapter.buildRequests([bid])).to.deep.equal(requests);
-      });
+        expect(adapter.buildRequests([bid])).to.deep.equal(requests)
+      })
 
       // TODO: Floor
-    });
-  });
+    })
+  })
 
   describe('interpretResponse', function() {
     describe('Check method return', function () {
@@ -351,7 +351,7 @@ describe('ViouslyAdapter', function () {
               }
             ]
           }
-        };
+        }
         const requests = {
           data: {
             placements: [
@@ -373,7 +373,7 @@ describe('ViouslyAdapter', function () {
               }
             ]
           }
-        };
+        }
 
         const formattedReponse = [
           {
@@ -426,12 +426,12 @@ describe('ViouslyAdapter', function () {
             vastXml: 'vast xml',
             nurl: []
           }
-        ];
+        ]
 
-        expect(adapter.interpretResponse(response, requests)).to.deep.equal(formattedReponse);
-      });
-    });
-  });
+        expect(adapter.interpretResponse(response, requests)).to.deep.equal(formattedReponse)
+      })
+    })
+  })
 
   describe('onBidWon', function() {
     describe('Check methods succeed', function () {
@@ -469,12 +469,12 @@ describe('ViouslyAdapter', function () {
             vastXml: 'vast xml',
             nurl: []
           }
-        ];
+        ]
 
         bids.forEach(function(bid) {
-          expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw();
-        });
-      });
-    });
-  });
-});
+          expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw()
+        })
+      })
+    })
+  })
+})

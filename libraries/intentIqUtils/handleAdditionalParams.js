@@ -1,4 +1,4 @@
-import { MAX_REQUEST_LENGTH } from "../intentIqConstants/intentIqConstants.js";
+import { MAX_REQUEST_LENGTH } from "../intentIqConstants/intentIqConstants.js"
 
 /**
  * Appends additional parameters to a URL if they are valid and applicable for the given request destination.
@@ -15,12 +15,12 @@ import { MAX_REQUEST_LENGTH } from "../intentIqConstants/intentIqConstants.js";
  * @return {string} The resulting URL with additional parameters appended if valid; otherwise, the original URL.
  */
 export function handleAdditionalParams(browser, url, requestTo, additionalParams) {
-  let queryString = '';
+  let queryString = ''
 
-  if (!Array.isArray(additionalParams)) return url;
+  if (!Array.isArray(additionalParams)) return url
 
   for (let i = 0; i < additionalParams.length; i++) {
-    const param = additionalParams[i];
+    const param = additionalParams[i]
 
     if (
       typeof param !== 'object' ||
@@ -29,16 +29,16 @@ export function handleAdditionalParams(browser, url, requestTo, additionalParams
       !param.destination ||
       !Array.isArray(param.destination)
     ) {
-      continue;
+      continue
     }
 
     if (param.destination[requestTo]) {
-      queryString += `&agp_${encodeURIComponent(param.parameterName)}=${param.parameterValue}`;
+      queryString += `&agp_${encodeURIComponent(param.parameterName)}=${param.parameterValue}`
     }
   }
 
-  const maxLength = MAX_REQUEST_LENGTH[browser] ?? 2048;
-  if ((url.length + queryString.length) > maxLength) return url;
+  const maxLength = MAX_REQUEST_LENGTH[browser] ?? 2048
+  if ((url.length + queryString.length) > maxLength) return url
 
-  return url + queryString;
+  return url + queryString
 }

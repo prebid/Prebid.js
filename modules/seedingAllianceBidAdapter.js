@@ -1,20 +1,20 @@
 // jshint esversion: 6, es3: false, node: true
-'use strict';
+'use strict'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { generateUUID, deepSetValue, isEmpty, replaceAuctionPrice } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { generateUUID, deepSetValue, isEmpty, replaceAuctionPrice } from '../src/utils.js'
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-const GVL_ID = 371;
-const BIDDER_CODE = 'seedingAlliance';
-const DEFAULT_CUR = 'EUR';
-const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
-const NATIVENDO_KEY = 'nativendo_id';
+const GVL_ID = 371
+const BIDDER_CODE = 'seedingAlliance'
+const DEFAULT_CUR = 'EUR'
+const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb'
+const NATIVENDO_KEY = 'nativendo_id'
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
 
 const converter = ortbConverter({
   context: {
@@ -22,25 +22,25 @@ const converter = ortbConverter({
     netRevenue: true
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    const request = buildRequest(imps, bidderRequest, context)
     // set basic page, this might be updated later by adunit param
-    deepSetValue(request, 'site.page', bidderRequest.refererInfo.page);
-    deepSetValue(request, 'regs.ext.pb_ver', '$prebid.version$');
-    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR]);
+    deepSetValue(request, 'site.page', bidderRequest.refererInfo.page)
+    deepSetValue(request, 'regs.ext.pb_ver', '$prebid.version$')
+    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR])
 
     // As this is client side, we get needed info from headers
-    delete request.device;
+    delete request.device
 
-    return request;
+    return request
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context)
     // add tagid from params
-    imp.tagid = bidRequest.params.adUnitId;
+    imp.tagid = bidRequest.params.adUnitId
 
-    return imp;
+    return imp
   }
-});
+})
 
 export const spec = {
   code: BIDDER_CODE,
@@ -48,54 +48,54 @@ export const spec = {
   supportedMediaTypes: [NATIVE, BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!bid.params.adUnitId;
+    return !!bid.params.adUnitId
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const oRtbRequest = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
-    const eids = getEids(validBidRequests[0]);
+    const oRtbRequest = converter.toORTB({ bidRequests: validBidRequests, bidderRequest })
+    const eids = getEids(validBidRequests[0])
 
     // check for url in params and set in site object
     validBidRequests.forEach(bidRequest => {
       if (bidRequest.params.url) {
-        deepSetValue(oRtbRequest, 'site.page', bidRequest.params.url);
+        deepSetValue(oRtbRequest, 'site.page', bidRequest.params.url)
       }
-    });
+    })
 
     if (bidderRequest.gdprConsent) {
-      oRtbRequest.user = {};
+      oRtbRequest.user = {}
 
-      deepSetValue(oRtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(oRtbRequest, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
-      deepSetValue(oRtbRequest, 'user.ext.eids', eids);
+      deepSetValue(oRtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(oRtbRequest, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0)
+      deepSetValue(oRtbRequest, 'user.ext.eids', eids)
     }
 
-    const endpoint = config.getConfig('seedingAlliance.endpoint') || ENDPOINT_URL;
+    const endpoint = config.getConfig('seedingAlliance.endpoint') || ENDPOINT_URL
 
     return {
       method: 'POST',
       url: endpoint,
       data: JSON.stringify(oRtbRequest),
       bidRequests: validBidRequests
-    };
+    }
   },
 
   interpretResponse: function (serverResponse, { bidRequests }) {
     if (isEmpty(serverResponse.body)) {
-      return [];
+      return []
     }
 
-    const { seatbid, cur } = serverResponse.body;
+    const { seatbid, cur } = serverResponse.body
 
     const bidResponses = (typeof seatbid !== 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
-      result[bid.impid] = bid;
-      return result;
-    }, []) : [];
+      result[bid.impid] = bid
+      return result
+    }, []) : []
     return bidRequests
       .map((bidRequest) => {
-        const bidId = bidRequest.bidId;
-        const bidResponse = bidResponses[bidId];
-        const type = bidRequest.nativeParams ? NATIVE : BANNER;
+        const bidId = bidRequest.bidId
+        const bidResponse = bidResponses[bidId]
+        const type = bidRequest.nativeParams ? NATIVE : BANNER
 
         if (bidResponse) {
           const bidObject = {
@@ -109,45 +109,45 @@ export const spec = {
             meta: {
               advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []
             }
-          };
+          }
 
           if (type === NATIVE) {
-            bidObject.native = parseNative(bidResponse, bidRequest.nativeParams);
-            bidObject.mediaType = NATIVE;
+            bidObject.native = parseNative(bidResponse, bidRequest.nativeParams)
+            bidObject.mediaType = NATIVE
           }
 
           if (type === BANNER) {
-            bidObject.ad = replaceAuctionPrice(bidResponse.adm, bidResponse.price);
-            bidObject.width = bidResponse.w;
-            bidObject.height = bidResponse.h;
-            bidObject.mediaType = BANNER;
+            bidObject.ad = replaceAuctionPrice(bidResponse.adm, bidResponse.price)
+            bidObject.width = bidResponse.w
+            bidObject.height = bidResponse.h
+            bidObject.mediaType = BANNER
           }
 
-          return bidObject;
+          return bidObject
         }
-        return null;
+        return null
       })
-      .filter(Boolean);
+      .filter(Boolean)
   }
-};
+}
 
 const getNativendoID = () => {
   let nativendoID = storage.localStorageIsEnabled() &&
-      storage.getDataFromLocalStorage(NATIVENDO_KEY);
+      storage.getDataFromLocalStorage(NATIVENDO_KEY)
 
   if (!nativendoID) {
     if (storage.localStorageIsEnabled()) {
-      nativendoID = generateUUID();
-      storage.setDataInLocalStorage(NATIVENDO_KEY, nativendoID);
+      nativendoID = generateUUID()
+      storage.setDataInLocalStorage(NATIVENDO_KEY, nativendoID)
     }
   }
 
-  return nativendoID;
+  return nativendoID
 }
 
 const getEids = (bidRequest) => {
-  const eids = [];
-  const nativendoID = getNativendoID();
+  const eids = []
+  const nativendoID = getNativendoID()
 
   if (nativendoID) {
     const nativendoUserEid = {
@@ -158,53 +158,53 @@ const getEids = (bidRequest) => {
           atype: 1
         }
       ]
-    };
+    }
 
-    eids.push(nativendoUserEid);
+    eids.push(nativendoUserEid)
   }
 
   if (bidRequest.userIdAsEids) {
-    eids.push(bidRequest.userIdAsEids);
+    eids.push(bidRequest.userIdAsEids)
   }
 
-  return eids;
+  return eids
 }
 
 function flatten(arr) {
-  return [].concat(...arr);
+  return [].concat(...arr)
 }
 
 function parseNative(bid, nativeParams) {
-  let native;
+  let native
   if (typeof bid.adm === 'string') {
     try {
-      native = JSON.parse(bid.adm).native;
+      native = JSON.parse(bid.adm).native
     } catch (e) {
-      return;
+      return
     }
   } else {
-    native = bid.adm.native;
+    native = bid.adm.native
   }
 
   if (native.link.url) {
-    native.link.url = native.link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+    native.link.url = native.link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price)
   }
 
   if (native.link.clicktrackers) {
     native.link.clicktrackers.forEach(function (clicktracker, index) {
-      native.link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
-    });
+      native.link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price)
+    })
   }
 
   if (native.imptrackers) {
     native.imptrackers.forEach(function (imptracker, index) {
-      native.imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
-    });
+      native.imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price)
+    })
   }
 
   if (native.eventtrackers) {
     native.eventtrackers.forEach(function(eventtracker, index) {
-      native.eventtrackers[index].url = eventtracker.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+      native.eventtrackers[index].url = eventtracker.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price)
     })
   }
 
@@ -213,7 +213,7 @@ function parseNative(bid, nativeParams) {
     clickUrl: native.link.url,
     clickTrackers: native.link.clicktrackers || [],
     impressionTrackers: native.imptrackers || []
-  };
+  }
 }
 
-registerBidder(spec);
+registerBidder(spec)

@@ -1,9 +1,9 @@
-import { expect } from 'chai';
-import { spec } from 'modules/realryBidAdapter.js';
-import { BANNER, NATIVE } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec } from 'modules/realryBidAdapter.js'
+import { BANNER, NATIVE } from 'src/mediaTypes.js'
+import { config } from 'src/config.js'
 
-const ENDPOINT = 'https://bid.realry.com/bid/openrtb';
+const ENDPOINT = 'https://bid.realry.com/bid/openrtb'
 
 function bannerBid(params = { placementId: 'home-atf' }) {
   return {
@@ -15,7 +15,7 @@ function bannerBid(params = { placementId: 'home-atf' }) {
     params,
     mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
     ortb2Imp: { ext: { gpid: '/1234/home#div-banner' } },
-  };
+  }
 }
 
 function nativeBid(params = { placementId: 'pdp-rail' }) {
@@ -38,7 +38,7 @@ function nativeBid(params = { placementId: 'pdp-rail' }) {
         },
       },
     },
-  };
+  }
 }
 
 function bidderRequest(bids) {
@@ -50,131 +50,131 @@ function bidderRequest(bids) {
     refererInfo: { page: 'https://publisher.example/articles/handbags', domain: 'publisher.example', ref: '' },
     ortb2: { site: { domain: 'publisher.example', page: 'https://publisher.example/articles/handbags' } },
     bids,
-  };
+  }
 }
 
 describe('realryBidAdapter', function () {
   describe('isBidRequestValid', function () {
     it('accepts a valid banner bid', function () {
-      expect(spec.isBidRequestValid(bannerBid())).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bannerBid())).to.equal(true)
+    })
     it('accepts a valid native bid', function () {
-      expect(spec.isBidRequestValid(nativeBid())).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(nativeBid())).to.equal(true)
+    })
     it('rejects when params missing', function () {
-      const b = bannerBid(); delete b.params;
-      expect(spec.isBidRequestValid(b)).to.equal(false);
-    });
+      const b = bannerBid(); delete b.params
+      expect(spec.isBidRequestValid(b)).to.equal(false)
+    })
     it('rejects when placementId missing', function () {
-      expect(spec.isBidRequestValid(bannerBid({}))).to.equal(false);
-    });
+      expect(spec.isBidRequestValid(bannerBid({}))).to.equal(false)
+    })
     it('rejects when placementId is the empty string', function () {
-      expect(spec.isBidRequestValid(bannerBid({ placementId: '' }))).to.equal(false);
-    });
-  });
+      expect(spec.isBidRequestValid(bannerBid({ placementId: '' }))).to.equal(false)
+    })
+  })
 
   describe('spec metadata', function () {
     it('exposes the right code and media types', function () {
-      expect(spec.code).to.equal('realry');
-      expect(spec.supportedMediaTypes).to.deep.equal([BANNER, NATIVE]);
-    });
-  });
+      expect(spec.code).to.equal('realry')
+      expect(spec.supportedMediaTypes).to.deep.equal([BANNER, NATIVE])
+    })
+  })
 
   describe('buildRequests', function () {
     it('builds a single POST request to the endpoint with credentials', function () {
-      const bids = [bannerBid()];
-      const reqs = spec.buildRequests(bids, bidderRequest(bids));
-      expect(reqs).to.have.lengthOf(1);
-      expect(reqs[0].method).to.equal('POST');
-      expect(reqs[0].url).to.equal(ENDPOINT);
-      expect(reqs[0].options.withCredentials).to.equal(true);
-    });
+      const bids = [bannerBid()]
+      const reqs = spec.buildRequests(bids, bidderRequest(bids))
+      expect(reqs).to.have.lengthOf(1)
+      expect(reqs[0].method).to.equal('POST')
+      expect(reqs[0].url).to.equal(ENDPOINT)
+      expect(reqs[0].options.withCredentials).to.equal(true)
+    })
 
     it('produces a valid oRTB body with imp[]', function () {
-      const bids = [bannerBid()];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data).to.be.an('object');
-      expect(data.imp).to.be.an('array').with.lengthOf(1);
-    });
+      const bids = [bannerBid()]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data).to.be.an('object')
+      expect(data.imp).to.be.an('array').with.lengthOf(1)
+    })
 
     it('uses placementId as tagid', function () {
-      const bids = [bannerBid({ placementId: 'home-atf' })];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.imp[0].tagid).to.equal('home-atf');
-    });
+      const bids = [bannerBid({ placementId: 'home-atf' })]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.imp[0].tagid).to.equal('home-atf')
+    })
 
     it('forwards GPID from ortb2Imp.ext.gpid', function () {
-      const bids = [bannerBid()];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.imp[0].ext.gpid).to.equal('/1234/home#div-banner');
-    });
+      const bids = [bannerBid()]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.imp[0].ext.gpid).to.equal('/1234/home#div-banner')
+    })
 
     it('forwards sellerId param to imp.ext.realry.sellerId when provided', function () {
-      const bids = [bannerBid({ placementId: 'home-atf', sellerId: 'seller-acme' })];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.imp[0].ext.realry.sellerId).to.equal('seller-acme');
-    });
+      const bids = [bannerBid({ placementId: 'home-atf', sellerId: 'seller-acme' })]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.imp[0].ext.realry.sellerId).to.equal('seller-acme')
+    })
 
     it('omits imp.ext.realry.sellerId when sellerId not provided', function () {
-      const bids = [bannerBid()];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.imp[0].ext && data.imp[0].ext.realry).to.equal(undefined);
-    });
+      const bids = [bannerBid()]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.imp[0].ext && data.imp[0].ext.realry).to.equal(undefined)
+    })
 
     it('builds a banner imp with format', function () {
-      const bids = [bannerBid()];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.imp[0].banner).to.exist;
-      expect(data.imp[0].banner.format).to.be.an('array');
-    });
+      const bids = [bannerBid()]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.imp[0].banner).to.exist
+      expect(data.imp[0].banner.format).to.be.an('array')
+    })
 
     it('builds a request for a native bid', function () {
       // Note: imp.native population requires Prebid's native module to be
       // loaded into the test bundle (see test/test_index.js). With this spec
       // run in isolation we only assert the imp count — the converter still
       // wires native correctly under a full Prebid build.
-      const bids = [nativeBid()];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.imp).to.have.lengthOf(1);
-    });
+      const bids = [nativeBid()]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.imp).to.have.lengthOf(1)
+    })
 
     it('sets ext.prebid.channel to pbjs', function () {
-      const bids = [bannerBid()];
-      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0];
-      expect(data.ext.prebid.channel.name).to.equal('pbjs');
-    });
+      const bids = [bannerBid()]
+      const { data } = spec.buildRequests(bids, bidderRequest(bids))[0]
+      expect(data.ext.prebid.channel.name).to.equal('pbjs')
+    })
 
     it('forwards user eids', function () {
-      const bid = bannerBid();
-      const eids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5-1', atype: 1 }] }];
-      bid.userIdAsEids = eids;
-      const bids = [bid];
-      const breq = bidderRequest(bids);
-      breq.ortb2 = { ...breq.ortb2, user: { ext: { eids } } };
-      const { data } = spec.buildRequests(bids, breq)[0];
-      expect(data.user.ext.eids).to.deep.equal(eids);
-    });
-  });
+      const bid = bannerBid()
+      const eids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5-1', atype: 1 }] }]
+      bid.userIdAsEids = eids
+      const bids = [bid]
+      const breq = bidderRequest(bids)
+      breq.ortb2 = { ...breq.ortb2, user: { ext: { eids } } }
+      const { data } = spec.buildRequests(bids, breq)[0]
+      expect(data.user.ext.eids).to.deep.equal(eids)
+    })
+  })
 
   describe('interpretResponse', function () {
     function build(bids) {
-      return spec.buildRequests(bids, bidderRequest(bids))[0];
+      return spec.buildRequests(bids, bidderRequest(bids))[0]
     }
 
     it('returns [] on empty body', function () {
-      expect(spec.interpretResponse({ body: null }, {})).to.deep.equal([]);
-    });
+      expect(spec.interpretResponse({ body: null }, {})).to.deep.equal([])
+    })
 
     it('returns [] when no seatbid', function () {
-      expect(spec.interpretResponse({ body: { id: 'x' } }, {})).to.deep.equal([]);
-    });
+      expect(spec.interpretResponse({ body: { id: 'x' } }, {})).to.deep.equal([])
+    })
 
     it('parses a banner bid (mediaType inferred from imp)', function () {
-      const bids = [bannerBid()];
-      const request = build(bids);
+      const bids = [bannerBid()]
+      const request = build(bids)
       // The converter keys context off the originating bidId — same value
       // flows through to imp.id, so the response must echo it as impid.
-      const impid = bids[0].bidId;
+      const impid = bids[0].bidId
       const response = {
         body: {
           id: 'breq-1',
@@ -193,19 +193,19 @@ describe('realryBidAdapter', function () {
             }],
           }],
         },
-      };
-      const out = spec.interpretResponse(response, request);
-      expect(out).to.have.lengthOf(1);
-      expect(out[0].cpm).to.equal(1.25);
-      expect(out[0].creativeId).to.equal('prod-42');
-      expect(out[0].mediaType).to.equal(BANNER);
-      expect(out[0].meta.advertiserDomains).to.deep.equal(['realry.com']);
-    });
+      }
+      const out = spec.interpretResponse(response, request)
+      expect(out).to.have.lengthOf(1)
+      expect(out[0].cpm).to.equal(1.25)
+      expect(out[0].creativeId).to.equal('prod-42')
+      expect(out[0].mediaType).to.equal(BANNER)
+      expect(out[0].meta.advertiserDomains).to.deep.equal(['realry.com'])
+    })
 
     it('parses a native bid (mediaType inferred from native imp)', function () {
-      const bids = [nativeBid()];
-      const request = build(bids);
-      const impid = bids[0].bidId;
+      const bids = [nativeBid()]
+      const request = build(bids)
+      const impid = bids[0].bidId
       const admObject = {
         ver: '1.2',
         assets: [
@@ -215,7 +215,7 @@ describe('realryBidAdapter', function () {
           { id: 4, data: { type: 6, value: 'USD 0.85' } },
         ],
         link: { url: 'https://bid.realry.com/click?bid_id=bid-abc' },
-      };
+      }
       const response = {
         body: {
           id: 'breq-1',
@@ -231,31 +231,31 @@ describe('realryBidAdapter', function () {
             }],
           }],
         },
-      };
-      const out = spec.interpretResponse(response, request);
-      expect(out).to.have.lengthOf(1);
-      expect(out[0].mediaType).to.equal(NATIVE);
-      expect(out[0].cpm).to.equal(0.85);
-    });
+      }
+      const out = spec.interpretResponse(response, request)
+      expect(out).to.have.lengthOf(1)
+      expect(out[0].mediaType).to.equal(NATIVE)
+      expect(out[0].cpm).to.equal(0.85)
+    })
 
     // Multi-format imp regression: if the imp opts into both banner AND
     // native, the adapter must NOT pre-decide media type at request time
     // — the server picks per bid. mtype is sniffed from the adm shape
     // (`{` = native admObject JSON, anything else = banner HTML).
     function multiFormatBid() {
-      const b = bannerBid();
-      b.bidId = 'bid-mf-1';
-      b.adUnitCode = 'div-mf';
+      const b = bannerBid()
+      b.bidId = 'bid-mf-1'
+      b.adUnitCode = 'div-mf'
       b.mediaTypes = {
         banner: { sizes: [[300, 250]] },
         native: { ortb: { assets: [{ id: 1, required: 1, title: { len: 90 } }] } },
-      };
-      return b;
+      }
+      return b
     }
 
     it('routes a banner adm to BANNER on a multi-format imp', function () {
-      const bids = [multiFormatBid()];
-      const request = build(bids);
+      const bids = [multiFormatBid()]
+      const request = build(bids)
       const response = {
         body: {
           id: 'breq-mf',
@@ -273,20 +273,20 @@ describe('realryBidAdapter', function () {
             }],
           }],
         },
-      };
-      const out = spec.interpretResponse(response, request);
-      expect(out).to.have.lengthOf(1);
-      expect(out[0].mediaType).to.equal(BANNER);
-    });
+      }
+      const out = spec.interpretResponse(response, request)
+      expect(out).to.have.lengthOf(1)
+      expect(out[0].mediaType).to.equal(BANNER)
+    })
 
     it('routes a Native 1.2 admObject to NATIVE on a multi-format imp', function () {
-      const bids = [multiFormatBid()];
-      const request = build(bids);
+      const bids = [multiFormatBid()]
+      const request = build(bids)
       const admObject = {
         ver: '1.2',
         assets: [{ id: 1, title: { text: 'Leather Crossbody Bag' } }],
         link: { url: 'https://bid.realry.com/click?bid_id=bid-mf' },
-      };
+      }
       const response = {
         body: {
           id: 'breq-mf',
@@ -301,12 +301,12 @@ describe('realryBidAdapter', function () {
             }],
           }],
         },
-      };
-      const out = spec.interpretResponse(response, request);
-      expect(out).to.have.lengthOf(1);
-      expect(out[0].mediaType).to.equal(NATIVE);
-    });
-  });
+      }
+      const out = spec.interpretResponse(response, request)
+      expect(out).to.have.lengthOf(1)
+      expect(out[0].mediaType).to.equal(NATIVE)
+    })
+  })
 
-  afterEach(function () { config.resetConfig(); });
-});
+  afterEach(function () { config.resetConfig() })
+})

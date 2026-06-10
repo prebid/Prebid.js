@@ -4,4 +4,4 @@
 // also includes the GPT typedefs, otherwise the ts compiler appears to swap in "any".
 
 // eslint-disable-next-line prebid/validate-imports, import/no-unresolved
-import 'google-publisher-tag';
+import 'google-publisher-tag'

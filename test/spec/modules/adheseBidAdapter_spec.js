@@ -1,10 +1,10 @@
-import { expect } from 'chai';
-import { spec } from 'modules/adheseBidAdapter.js';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec } from 'modules/adheseBidAdapter.js'
+import { config } from 'src/config.js'
 
-const BID_ID = 456;
-const TTL = 360;
-const NET_REVENUE = true;
+const BID_ID = 456
+const TTL = 360
+const NET_REVENUE = true
 
 const minimalBid = function() {
   return {
@@ -16,49 +16,49 @@ const minimalBid = function() {
       format: 'leaderboard'
     }
   }
-};
+}
 
 const bidWithParams = function(data) {
-  const bid = minimalBid();
-  bid.params.data = data;
-  return bid;
-};
+  const bid = minimalBid()
+  bid.params.data = data
+  return bid
+}
 
 describe('AdheseAdapter', function () {
   describe('getUserSyncs', function () {
     const serverResponses = [{
       account: 'demo'
-    }];
+    }]
     const gdprConsent = {
       gdprApplies: true,
       consentString: 'CONSENT_STRING'
-    };
+    }
     it('should return empty when iframe disallowed', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: false }, serverResponses, gdprConsent)).to.be.empty;
-    });
+      expect(spec.getUserSyncs({ iframeEnabled: false }, serverResponses, gdprConsent)).to.be.empty
+    })
     it('should return empty when no serverResponses present', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent)).to.be.empty;
-    });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent)).to.be.empty
+    })
     it('should return empty when no account info present in the response', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [{}], gdprConsent)).to.be.empty;
-    });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [{}], gdprConsent)).to.be.empty
+    })
     it('should return usersync url when iframe allowed', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses, gdprConsent)).to.deep.equal([{ type: 'iframe', url: 'https://user-sync.adhese.com/iframe/user_sync.html?account=demo&gdpr=1&consentString=CONSENT_STRING' }]);
-    });
-  });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses, gdprConsent)).to.deep.equal([{ type: 'iframe', url: 'https://user-sync.adhese.com/iframe/user_sync.html?account=demo&gdpr=1&consentString=CONSENT_STRING' }])
+    })
+  })
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(minimalBid())).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(minimalBid())).to.equal(true)
+    })
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, minimalBid());
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
+      const bid = Object.assign({}, minimalBid())
+      delete bid.params
+      bid.params = {}
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const bidderRequest = {
@@ -69,124 +69,124 @@ describe('AdheseAdapter', function () {
       refererInfo: {
         page: 'http://prebid.org/dev-docs/subjects?_d=1'
       }
-    };
+    }
 
     it('should include requested slots', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).slots[0].slotname).to.equal('_main_page_-leaderboard');
-    });
+      expect(JSON.parse(req.data).slots[0].slotname).to.equal('_main_page_-leaderboard')
+    })
 
     it('should include all extra bid params', function () {
-      const req = spec.buildRequests([bidWithParams({ 'ag': '25' })], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'ag': '25' })], bidderRequest)
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': ['25'] });
-    });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': ['25'] })
+    })
 
     it('should assign bid params per slot', function () {
-      const req = spec.buildRequests([bidWithParams({ 'ag': '25' }), bidWithParams({ 'ag': '25', 'ci': 'gent' })], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'ag': '25' }), bidWithParams({ 'ag': '25', 'ci': 'gent' })], bidderRequest)
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': ['25'] }).and.not.to.deep.include({ 'ci': ['gent'] });
-      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ag': ['25'] }).and.to.deep.include({ 'ci': ['gent'] });
-    });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': ['25'] }).and.not.to.deep.include({ 'ci': ['gent'] })
+      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ag': ['25'] }).and.to.deep.include({ 'ci': ['gent'] })
+    })
 
     it('should split multiple target values', function () {
-      const req = spec.buildRequests([bidWithParams({ 'ci': 'london' }), bidWithParams({ 'ci': 'gent' })], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'ci': 'london' }), bidWithParams({ 'ci': 'gent' })], bidderRequest)
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ci': ['london'] });
-      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ci': ['gent'] });
-    });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ci': ['london'] })
+      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ci': ['gent'] })
+    })
 
     it('should filter out empty params', function () {
-      const req = spec.buildRequests([bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': ['', ''], 'ee': [0, 1, null], 'ff': 0, 'gg': ['x', 'y', ''] })], bidderRequest);
+      const req = spec.buildRequests([bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': ['', ''], 'ee': [0, 1, null], 'ff': 0, 'gg': ['x', 'y', ''] })], bidderRequest)
 
-      const params = JSON.parse(req.data).slots[0].parameters;
-      expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd');
-      expect(params).to.deep.include({ 'ee': [0, 1], 'ff': [0], 'gg': ['x', 'y'] });
-    });
+      const params = JSON.parse(req.data).slots[0].parameters
+      expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd')
+      expect(params).to.deep.include({ 'ee': [0, 1], 'ff': [0], 'gg': ['x', 'y'] })
+    })
 
     it('should include gdpr consent param', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': ['CONSENT_STRING'] });
-    });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': ['CONSENT_STRING'] })
+    })
 
     it('should include referer param in base64url format', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': ['aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ'] });
-    });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': ['aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ'] })
+    })
 
     it('should include eids', function () {
-      const bid = minimalBid();
-      bid.userIdAsEids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5@59sigaS-...' }] }];
+      const bid = minimalBid()
+      bid.userIdAsEids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5@59sigaS-...' }] }]
 
-      const req = spec.buildRequests([bid], bidderRequest);
+      const req = spec.buildRequests([bid], bidderRequest)
 
-      expect(JSON.parse(req.data).user.ext.eids).to.deep.equal(bid.userIdAsEids);
-    });
+      expect(JSON.parse(req.data).user.ext.eids).to.deep.equal(bid.userIdAsEids)
+    })
 
     it('should not include eids field when userid module disabled', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data)).to.not.have.key('eids');
-    });
+      expect(JSON.parse(req.data)).to.not.have.key('eids')
+    })
 
     it('should request vast content as url by default', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).vastContentAsUrl).to.equal(true);
-    });
+      expect(JSON.parse(req.data).vastContentAsUrl).to.equal(true)
+    })
 
     it('should request vast content as markup when configured', function () {
-      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ vastContentAsUrl: false });
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ vastContentAsUrl: false })
 
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).vastContentAsUrl).to.equal(false);
-      config.getConfig.restore();
-    });
+      expect(JSON.parse(req.data).vastContentAsUrl).to.equal(false)
+      config.getConfig.restore()
+    })
 
     it('should include bids', function () {
-      const bid = minimalBid();
-      const req = spec.buildRequests([bid], bidderRequest);
+      const bid = minimalBid()
+      const req = spec.buildRequests([bid], bidderRequest)
 
-      expect(req.bids).to.deep.equal([bid]);
-    });
+      expect(req.bids).to.deep.equal([bid])
+    })
 
     it('should make a POST request', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(req.method).to.equal('POST');
-    });
+      expect(req.method).to.equal('POST')
+    })
 
     it('should request the json endpoint', function () {
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(req.url).to.equal('https://ads-demo.adhese.com/json');
-    });
+      expect(req.url).to.equal('https://ads-demo.adhese.com/json')
+    })
 
     it('should include params specified in the config', function () {
-      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'tl': ['all'] } });
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'tl': ['all'] } })
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'tl': ['all'] });
-      config.getConfig.restore();
-    });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'tl': ['all'] })
+      config.getConfig.restore()
+    })
 
     it('should give priority to bid params over config params', function () {
-      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'xt': ['CONFIG_CONSENT_STRING'] } });
-      const req = spec.buildRequests([minimalBid()], bidderRequest);
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'xt': ['CONFIG_CONSENT_STRING'] } })
+      const req = spec.buildRequests([minimalBid()], bidderRequest)
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': ['CONSENT_STRING'] });
-      config.getConfig.restore();
-    });
-  });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': ['CONSENT_STRING'] })
+      config.getConfig.restore()
+    })
+  })
 
   describe('interpretResponse', () => {
     const bidRequest = {
       bids: [minimalBid()]
-    };
+    }
 
     it('should get correct ssp banner response', () => {
       const sspBannerResponse = {
@@ -218,7 +218,7 @@ describe('AdheseAdapter', function () {
             ]
           }
         ]
-      };
+      }
 
       const expectedResponse = [{
         requestId: BID_ID,
@@ -252,9 +252,9 @@ describe('AdheseAdapter', function () {
             'www.example.com'
           ]
         },
-      }];
-      expect(spec.interpretResponse(sspBannerResponse, bidRequest)).to.deep.equal(expectedResponse);
-    });
+      }]
+      expect(spec.interpretResponse(sspBannerResponse, bidRequest)).to.deep.equal(expectedResponse)
+    })
 
     it('should get correct ssp video response', () => {
       const sspVideoResponse = {
@@ -270,7 +270,7 @@ describe('AdheseAdapter', function () {
             extension: { 'prebid': { 'cpm': { 'amount': '2.1', 'currency': 'USD' } }, mediaType: 'video' }
           }
         ]
-      };
+      }
 
       const expectedResponse = [{
         requestId: BID_ID,
@@ -292,9 +292,9 @@ describe('AdheseAdapter', function () {
         meta: {
           advertiserDomains: []
         },
-      }];
-      expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
-    });
+      }]
+      expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse)
+    })
 
     it('should get correct ssp cache video response', () => {
       const sspCachedVideoResponse = {
@@ -310,7 +310,7 @@ describe('AdheseAdapter', function () {
             extension: { 'prebid': { 'cpm': { 'amount': '2.1', 'currency': 'USD' } }, mediaType: 'video' }
           }
         ]
-      };
+      }
 
       const expectedResponse = [{
         requestId: BID_ID,
@@ -332,9 +332,9 @@ describe('AdheseAdapter', function () {
         meta: {
           advertiserDomains: []
         },
-      }];
-      expect(spec.interpretResponse(sspCachedVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
-    });
+      }]
+      expect(spec.interpretResponse(sspCachedVideoResponse, bidRequest)).to.deep.equal(expectedResponse)
+    })
 
     it('should get correct Adhese banner response', () => {
       const adheseBannerResponse = {
@@ -378,7 +378,7 @@ describe('AdheseAdapter', function () {
             }
           }
         ]
-      };
+      }
 
       const expectedResponse = [{
         requestId: BID_ID,
@@ -412,9 +412,9 @@ describe('AdheseAdapter', function () {
         meta: {
           advertiserDomains: []
         },
-      }];
-      expect(spec.interpretResponse(adheseBannerResponse, bidRequest)).to.deep.equal(expectedResponse);
-    });
+      }]
+      expect(spec.interpretResponse(adheseBannerResponse, bidRequest)).to.deep.equal(expectedResponse)
+    })
 
     it('should get correct Adhese video response', () => {
       const adheseVideoResponse = {
@@ -445,7 +445,7 @@ describe('AdheseAdapter', function () {
             }
           }
         ]
-      };
+      }
 
       const expectedResponse = [{
         requestId: BID_ID,
@@ -479,9 +479,9 @@ describe('AdheseAdapter', function () {
         meta: {
           advertiserDomains: []
         },
-      }];
-      expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
-    });
+      }]
+      expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse)
+    })
 
     it('should get correct Adhese cached video response', () => {
       const adheseVideoResponse = {
@@ -512,7 +512,7 @@ describe('AdheseAdapter', function () {
             auctionable: true
           }
         ]
-      };
+      }
 
       const expectedResponse = [{
         requestId: BID_ID,
@@ -546,13 +546,13 @@ describe('AdheseAdapter', function () {
         meta: {
           advertiserDomains: []
         },
-      }];
-      expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
-    });
+      }]
+      expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse)
+    })
 
     it('should return no bids for empty adserver response', () => {
-      const adserverResponse = { body: [] };
-      expect(spec.interpretResponse(adserverResponse, bidRequest)).to.be.empty;
-    });
-  });
-});
+      const adserverResponse = { body: [] }
+      expect(spec.interpretResponse(adserverResponse, bidRequest)).to.be.empty
+    })
+  })
+})

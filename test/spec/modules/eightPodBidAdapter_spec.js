@@ -3,8 +3,8 @@ import { spec, getPageKeywords, parseUserAgent } from 'modules/eightPodBidAdapte
 import 'modules/priceFloors.js'
 import { config } from 'src/config.js'
 import { newBidder } from 'src/adapters/bidderFactory'
-import * as utils from '../../../src/utils.js';
-import sinon from 'sinon';
+import * as utils from '../../../src/utils.js'
+import sinon from 'sinon'
 
 describe('eightPodBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -105,100 +105,100 @@ describe('eightPodBidAdapter', function () {
 
   describe('onBidWon', function() {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
-    });
+      sinon.stub(utils, 'triggerPixel')
+    })
     afterEach(function() {
-      utils.triggerPixel.restore();
-    });
+      utils.triggerPixel.restore()
+    })
 
     it('Should not trigger pixel if bid does not contain nurl', function() {
-      spec.onBidWon({});
+      spec.onBidWon({})
       expect(utils.triggerPixel.callCount).to.equal(0)
     })
 
     it('Should trigger pixel if bid nurl', function() {
       spec.onBidWon({
         burl: 'https://example.com/some-tracker'
-      });
+      })
       expect(utils.triggerPixel.callCount).to.equal(1)
     })
   })
 
   describe('getPageKeywords function', function() {
-    let sandbox;
+    let sandbox
 
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
-    });
+      sandbox = sinon.createSandbox()
+    })
 
     afterEach(() => {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
 
     it('should return the top document keywords if available', function() {
-      const keywordsContent = 'keyword1,keyword2,keyword3';
+      const keywordsContent = 'keyword1,keyword2,keyword3'
       const fakeTopDocument = {
         querySelector: sandbox.stub()
           .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
-      };
-      const fakeTopWindow = { document: fakeTopDocument };
+      }
+      const fakeTopWindow = { document: fakeTopDocument }
 
-      const result = getPageKeywords({ top: fakeTopWindow });
-      expect(result).to.equal(keywordsContent);
-    });
+      const result = getPageKeywords({ top: fakeTopWindow })
+      expect(result).to.equal(keywordsContent)
+    })
 
     it('should return the current document keywords if top document is not accessible', function() {
-      const keywordsContent = 'keyword1,keyword2,keyword3';
+      const keywordsContent = 'keyword1,keyword2,keyword3'
       sandbox.stub(document, 'querySelector')
-        .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
+        .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
 
       const fakeWindow = {
         get top() {
-          throw new Error('Access denied');
+          throw new Error('Access denied')
         }
-      };
+      }
 
-      const result = getPageKeywords(fakeWindow);
-      expect(result).to.equal(keywordsContent);
-    });
+      const result = getPageKeywords(fakeWindow)
+      expect(result).to.equal(keywordsContent)
+    })
 
     it('should return an empty string if no keywords meta tag is found', function() {
-      sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
+      sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null)
 
-      const result = getPageKeywords();
-      expect(result).to.equal('');
-    });
-  });
+      const result = getPageKeywords()
+      expect(result).to.equal('')
+    })
+  })
 
   describe('parseUserAgent function', function() {
-    let sandbox;
+    let sandbox
 
     beforeEach(() => {
-      sandbox = sinon.createSandbox();
-    });
+      sandbox = sinon.createSandbox()
+    })
 
     afterEach(() => {
-      sandbox.restore();
-    });
+      sandbox.restore()
+    })
 
     it('should return the platform and version IOS', function() {
-      const uaStub = sandbox.stub(window.navigator, 'userAgent');
-      uaStub.value('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1');
+      const uaStub = sandbox.stub(window.navigator, 'userAgent')
+      uaStub.value('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1')
 
-      const result = parseUserAgent();
-      expect(result.platform).to.equal('ios');
-      expect(result.version).to.equal('iphone');
-      expect(result.device).to.equal('16.6');
-    });
+      const result = parseUserAgent()
+      expect(result.platform).to.equal('ios')
+      expect(result.version).to.equal('iphone')
+      expect(result.device).to.equal('16.6')
+    })
 
     it('should return the platform and version android', function() {
-      const uaStub = sandbox.stub(window.navigator, 'userAgent');
-      uaStub.value('Mozilla/5.0 (Linux; Android 5.0.1; SM-G920V Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.137 Mobile Safari/537.36');
+      const uaStub = sandbox.stub(window.navigator, 'userAgent')
+      uaStub.value('Mozilla/5.0 (Linux; Android 5.0.1; SM-G920V Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.137 Mobile Safari/537.36')
 
-      const result = parseUserAgent();
-      expect(result.platform).to.equal('android');
-      expect(result.version).to.equal('5.0');
-      expect(result.device).to.equal('');
+      const result = parseUserAgent()
+      expect(result.platform).to.equal('android')
+      expect(result.version).to.equal('5.0')
+      expect(result.device).to.equal('')
     })
   })
 })

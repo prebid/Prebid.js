@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes.js'
 import * as utils from '../src/utils.js'
 
 export const BIDDER_CODE = 'eightPod'
-const url = 'https://demo.8pod.com/bidder/rtb/eightpod_exchange/bid';
+const url = 'https://demo.8pod.com/bidder/rtb/eightpod_exchange/bid'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -56,17 +56,17 @@ function buildRequests(bids, bidderRequest) {
 }
 
 function bidResponse(buildBidResponse, bid, context) {
-  bid.nurl = replacePriceInUrl(bid.nurl, bid.price);
+  bid.nurl = replacePriceInUrl(bid.nurl, bid.price)
 
-  const bidResponse = buildBidResponse(bid, context);
+  const bidResponse = buildBidResponse(bid, context)
 
-  bidResponse.height = context?.imp?.banner?.format?.[0].h;
-  bidResponse.width = context?.imp?.banner?.format?.[0].w;
-  bidResponse.cid = bid.cid;
+  bidResponse.height = context?.imp?.banner?.format?.[0].h
+  bidResponse.width = context?.imp?.banner?.format?.[0].w
+  bidResponse.cid = bid.cid
 
-  bidResponse.burl = replacePriceInUrl(bid.burl, bidResponse.originalCpm || bidResponse.cpm);
+  bidResponse.burl = replacePriceInUrl(bid.burl, bidResponse.originalCpm || bidResponse.cpm)
 
-  return bidResponse;
+  return bidResponse
 }
 
 function onBidWon(bid) {
@@ -79,46 +79,46 @@ function replacePriceInUrl(url, price) {
 }
 
 export function parseUserAgent() {
-  const ua = navigator.userAgent.toLowerCase();
+  const ua = navigator.userAgent.toLowerCase()
 
   // Check if it's iOS
   if (/iphone|ipad|ipod/.test(ua)) {
     // Extract iOS version and device type
-    const iosInfo = /(iphone|ipad|ipod) os (\d+[._]\d+)|((iphone|ipad|ipod)(\D+cpu) os (\d+(?:[._\s]\d+)?))/.exec(ua);
+    const iosInfo = /(iphone|ipad|ipod) os (\d+[._]\d+)|((iphone|ipad|ipod)(\D+cpu) os (\d+(?:[._\s]\d+)?))/.exec(ua)
     return {
       platform: 'ios',
       version: iosInfo ? iosInfo[1] : '',
       device: iosInfo ? iosInfo[2].replace('_', '.') : ''
-    };
+    }
   } else if (/android/.test(ua)) {
     // Check if it's Android
     // Extract Android version
-    const androidVersion = /android (\d+([._]\d+)?)/.exec(ua);
+    const androidVersion = /android (\d+([._]\d+)?)/.exec(ua)
     return {
       platform: 'android',
       version: androidVersion ? androidVersion[1].replace('_', '.') : '',
       device: ''
-    };
+    }
   } else {
     // If neither iOS nor Android, return unknown
     return {
       platform: 'Unknown',
       version: '',
       device: ''
-    };
+    }
   }
 }
 
 export function getPageKeywords(win = window) {
-  let element;
+  let element
 
   try {
-    element = win.top.document.querySelector('meta[name="keywords"]');
+    element = win.top.document.querySelector('meta[name="keywords"]')
   } catch (e) {
-    element = document.querySelector('meta[name="keywords"]');
+    element = document.querySelector('meta[name="keywords"]')
   }
 
-  return ((element && element.content) || '').replaceAll(' ', '');
+  return ((element && element.content) || '').replaceAll(' ', '')
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
@@ -127,17 +127,17 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
       bidRequests: [bidRequest],
       bidderRequest,
       context: { mediaType },
-    });
+    })
 
-    data.adSlotPositionOnScreen = 'ABOVE_THE_FOLD';
-    data.at = 1;
+    data.adSlotPositionOnScreen = 'ABOVE_THE_FOLD'
+    data.at = 1
 
     const userId =
       utils.deepAccess(bidRequest, 'userId.unifiedId.id') ||
       utils.deepAccess(bidRequest, 'userId.id5id.uid') ||
-      utils.deepAccess(bidRequest, 'userId.idl_env');
+      utils.deepAccess(bidRequest, 'userId.idl_env')
 
-    const params = getBidderParams(bidRequest);
+    const params = getBidderParams(bidRequest)
     data.device = {
       ...data.device,
       devicetype: 4,
@@ -170,7 +170,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
           : data.pmp,
       }
     ]
-    data.adSlotPlacementId = params.placementId;
+    data.adSlotPlacementId = params.placementId
 
     if (userId) {
       data.user = {
@@ -187,11 +187,11 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     return req
   })
 
-  return requests;
+  return requests
 }
 
 function getBidderParams(bid) {
-  return bid?.params ? bid.params : undefined;
+  return bid?.params ? bid.params : undefined
 }
 
 function isVideoBid(bid) {
@@ -203,9 +203,9 @@ function isBannerBid(bid) {
 }
 
 function interpretResponse(resp, req) {
-  const impressionId = resp.body.seatbid[0].bid[0].impid;
-  const bidResponses = converter.fromORTB({ request: req.data, response: resp.body });
-  const ad = bidResponses[0].ad;
+  const impressionId = resp.body.seatbid[0].bid[0].impid
+  const bidResponses = converter.fromORTB({ request: req.data, response: resp.body })
+  const ad = bidResponses[0].ad
   const trackingTag = `<script src="https://cdn.doubleverify.com/dvtp_src.js?ctx=818052&cmp=APAC_Cert_20&sid=se_a551&plc=240411845&adsrv=0&btreg=ad-unit-container&auevent=${impressionId}&btadsrv=&crt=01&tagtype=&dvtagver=6.1.src" type="text/javascript"></script>
         <script type="text/javascript">
             (function() {
@@ -244,6 +244,6 @@ function interpretResponse(resp, req) {
             })();
         </script>`
 
-  bidResponses[0].ad = ad.replace('</head>', trackingTag + '</head>');
-  return bidResponses;
+  bidResponses[0].ad = ad.replace('</head>', trackingTag + '</head>')
+  return bidResponses
 }

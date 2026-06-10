@@ -1,23 +1,23 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
 import {
   isBidRequestValid,
   buildRequestsBase,
   interpretResponse,
   getUserSyncs,
   buildPlacementProcessingFunction
-} from '../libraries/teqblazeUtils/bidderUtils.js';
-import { getTimeZone } from '../libraries/timezone/timezone.js';
+} from '../libraries/teqblazeUtils/bidderUtils.js'
+import { getTimeZone } from '../libraries/timezone/timezone.js'
 
-const BIDDER_CODE = 'screencore';
-const GVLID = 1473;
-const BIDDER_VERSION = '1.0.0';
-const SYNC_URL = 'https://cs.screencore.io';
+const BIDDER_CODE = 'screencore'
+const GVLID = 1473
+const BIDDER_VERSION = '1.0.0'
+const SYNC_URL = 'https://cs.screencore.io'
 const REGION_SUBDOMAIN_SUFFIX = {
   EU: 'taqeu',
   US: 'taqus',
   APAC: 'taqapac',
-};
+}
 
 /**
  * Get subdomain URL suffix by region
@@ -25,8 +25,8 @@ const REGION_SUBDOMAIN_SUFFIX = {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const tz = getTimeZone();
-    const region = tz.split('/')[0];
+    const tz = getTimeZone()
+    const region = tz.split('/')[0]
 
     switch (region) {
       case 'Asia':
@@ -34,36 +34,36 @@ function getRegionSubdomainSuffix() {
       case 'Antarctica':
       case 'Pacific':
       case 'Indian':
-        return REGION_SUBDOMAIN_SUFFIX['APAC'];
+        return REGION_SUBDOMAIN_SUFFIX['APAC']
       case 'Europe':
       case 'Africa':
       case 'Atlantic':
       case 'Arctic':
-        return REGION_SUBDOMAIN_SUFFIX['EU'];
+        return REGION_SUBDOMAIN_SUFFIX['EU']
       case 'America':
       case 'US':
       case 'Canada':
-        return REGION_SUBDOMAIN_SUFFIX['US'];
+        return REGION_SUBDOMAIN_SUFFIX['US']
       default:
-        return REGION_SUBDOMAIN_SUFFIX['EU'];
+        return REGION_SUBDOMAIN_SUFFIX['EU']
     }
   } catch (err) {
-    return REGION_SUBDOMAIN_SUFFIX['EU'];
+    return REGION_SUBDOMAIN_SUFFIX['EU']
   }
 }
 
 export function createDomain() {
-  const subDomain = getRegionSubdomainSuffix();
+  const subDomain = getRegionSubdomainSuffix()
 
-  return `https://${subDomain}.screencore.io`;
+  return `https://${subDomain}.screencore.io`
 }
 
-const placementProcessingFunction = buildPlacementProcessingFunction();
+const placementProcessingFunction = buildPlacementProcessingFunction()
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
-  const AD_URL = `${createDomain()}/pbjs`;
-  return buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction });
-};
+  const AD_URL = `${createDomain()}/pbjs`
+  return buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction })
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -74,6 +74,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL),
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

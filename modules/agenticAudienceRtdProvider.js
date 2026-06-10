@@ -15,32 +15,32 @@
  * @requires module:modules/realTimeData
  */
 
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { logInfo, mergeDeep } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { logInfo, mergeDeep } from '../src/utils.js'
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const REAL_TIME_MODULE = 'realTimeData';
-const MODULE_NAME = 'agenticAudience';
+const REAL_TIME_MODULE = 'realTimeData'
+const MODULE_NAME = 'agenticAudience'
 
 /** @type {string} Default localStorage / cookie key when `params.storageKey` is omitted. */
-export const DEFAULT_STORAGE_KEY = '_agentic_audience_';
+export const DEFAULT_STORAGE_KEY = '_agentic_audience_'
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
-});
+})
 
 function dataFromLocalStorage(key) {
-  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null
 }
 
 function dataFromCookie(key) {
-  return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
+  return storage.cookiesAreEnabled() ? storage.getCookie(key) : null
 }
 
 /**
@@ -50,7 +50,7 @@ function dataFromCookie(key) {
  * @returns {Object|null}
  */
 export function mapEntryToOpenRtbSegment(entry) {
-  if (entry == null || typeof entry !== 'object') return null;
+  if (entry == null || typeof entry !== 'object') return null
 
   return {
     id: entry.id,
@@ -64,11 +64,11 @@ export function mapEntryToOpenRtbSegment(entry) {
         type: entry.type
       }
     }
-  };
+  }
 }
 
 function init(config, userConsent) {
-  return true;
+  return true
 }
 
 /**
@@ -78,15 +78,15 @@ function init(config, userConsent) {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const customKey = config?.params?.storageKey;
+  const customKey = config?.params?.storageKey
   const storageKey =
-    typeof customKey === 'string' && customKey.length > 0 ? customKey : DEFAULT_STORAGE_KEY;
+    typeof customKey === 'string' && customKey.length > 0 ? customKey : DEFAULT_STORAGE_KEY
 
-  const segments = getSegmentsForStorageKey(storageKey);
+  const segments = getSegmentsForStorageKey(storageKey)
 
   if (!segments || segments.length === 0) {
-    callback();
-    return;
+    callback()
+    return
   }
 
   const updated = {
@@ -98,37 +98,37 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
         }
       ]
     }
-  };
+  }
 
-  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, updated);
-  callback();
+  mergeDeep(reqBidsConfigObj.ortb2Fragments.global, updated)
+  callback()
 }
 
 function tryParse(data) {
   try {
-    return JSON.parse(atob(data));
+    return JSON.parse(atob(data))
   } catch (error) {
-    logInfo(error);
-    return null;
+    logInfo(error)
+    return null
   }
 }
 
 function getSegmentsForStorageKey(key) {
-  const storedData = dataFromLocalStorage(key) || dataFromCookie(key);
+  const storedData = dataFromLocalStorage(key) || dataFromCookie(key)
 
   if (!storedData || typeof storedData !== 'string') {
-    return [];
+    return []
   }
 
-  const parsed = tryParse(storedData);
+  const parsed = tryParse(storedData)
 
   if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.entries)) {
-    return [];
+    return []
   }
 
   return parsed.entries
     .map(entry => mapEntryToOpenRtbSegment(entry))
-    .filter(seg => seg != null);
+    .filter(seg => seg != null)
 }
 
 /** @type {RtdSubmodule} */
@@ -136,6 +136,6 @@ export const agenticAudienceRtdProviderSubmodule = {
   name: MODULE_NAME,
   init,
   getBidRequestData
-};
+}
 
-submodule(REAL_TIME_MODULE, agenticAudienceRtdProviderSubmodule);
+submodule(REAL_TIME_MODULE, agenticAudienceRtdProviderSubmodule)

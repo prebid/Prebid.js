@@ -1,17 +1,17 @@
-import { expect } from 'chai';
-import * as utils from 'src/utils.js';
-import { spec } from 'modules/onomagicBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as winDimensions from 'src/utils/winDimensions.js';
-import * as adUnits from 'src/utils/adUnits';
+import { expect } from 'chai'
+import * as utils from 'src/utils.js'
+import { spec } from 'modules/onomagicBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import * as winDimensions from 'src/utils/winDimensions.js'
+import * as adUnits from 'src/utils/adUnits'
 
-const URL = 'https://bidder.onomagic.com/hb';
+const URL = 'https://bidder.onomagic.com/hb'
 
 describe('onomagicBidAdapter', function() {
-  const adapter = newBidder(spec);
-  let element, win;
-  let bidRequests;
-  let sandbox;
+  const adapter = newBidder(spec)
+  let element, win
+  let bidRequests
+  let sandbox
 
   beforeEach(function() {
     element = {
@@ -30,9 +30,9 @@ describe('onomagicBidAdapter', function() {
           top: element.y,
           right: element.x + element.width,
           bottom: element.y + element.height
-        };
+        }
       }
-    };
+    }
     win = {
       document: {
         visibilityState: 'visible',
@@ -43,7 +43,7 @@ describe('onomagicBidAdapter', function() {
       },
       innerWidth: 800,
       innerHeight: 600
-    };
+    }
     bidRequests = [{
       'bidder': 'onomagic',
       'params': {
@@ -58,18 +58,18 @@ describe('onomagicBidAdapter', function() {
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e'
-    }];
+    }]
 
-    sandbox = sinon.createSandbox();
-    sandbox.stub(winDimensions, 'getWinDimensions').returns(win);
-    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
-    sandbox.stub(utils, 'getWindowTop').returns(win);
-    sandbox.stub(utils, 'getWindowSelf').returns(win);
-  });
+    sandbox = sinon.createSandbox()
+    sandbox.stub(winDimensions, 'getWinDimensions').returns(win)
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element)
+    sandbox.stub(utils, 'getWindowTop').returns(win)
+    sandbox.stub(utils, 'getWindowSelf').returns(win)
+  })
 
   afterEach(function() {
-    sandbox.restore();
-  });
+    sandbox.restore()
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -86,136 +86,136 @@ describe('onomagicBidAdapter', function() {
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when publisherId not passed correctly', function () {
-      bid.params.publisherId = undefined;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+      bid.params.publisherId = undefined
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
 
     it('should return false when require params are not passed', function () {
-      const invalidBid = Object.assign({}, bid);
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-  });
+      const invalidBid = Object.assign({}, bid)
+      invalidBid.params = {}
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     it('sends bid request to our endpoint via POST', function () {
-      const request = spec.buildRequests(bidRequests);
-      expect(request.method).to.equal('POST');
-    });
+      const request = spec.buildRequests(bidRequests)
+      expect(request.method).to.equal('POST')
+    })
 
     it('request url should match our endpoint url', function () {
-      const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal(URL);
-    });
+      const request = spec.buildRequests(bidRequests)
+      expect(request.url).to.equal(URL)
+    })
 
     it('sets the proper banner object', function() {
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
-    });
+      const request = spec.buildRequests(bidRequests)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }])
+    })
 
     it('accepts a single array as a size', function() {
-      bidRequests[0].mediaTypes.banner.sizes = [300, 250];
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
-    });
+      bidRequests[0].mediaTypes.banner.sizes = [300, 250]
+      const request = spec.buildRequests(bidRequests)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }])
+    })
 
     it('sends bidfloor param if present', function () {
-      bidRequests[0].params.bidFloor = 0.05;
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].bidfloor).to.equal(0.05);
-    });
+      bidRequests[0].params.bidFloor = 0.05
+      const request = spec.buildRequests(bidRequests)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].bidfloor).to.equal(0.05)
+    })
 
     it('sends tagid', function () {
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].tagid).to.equal('adunit-code');
-    });
+      const request = spec.buildRequests(bidRequests)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].tagid).to.equal('adunit-code')
+    })
 
     it('sends publisher id', function () {
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.site.publisher.id).to.equal(1234567);
-    });
+      const request = spec.buildRequests(bidRequests)
+      const payload = JSON.parse(request.data)
+      expect(payload.site.publisher.id).to.equal(1234567)
+    })
 
     context('when element is fully in view', function() {
       it('returns 100', function() {
-        Object.assign(element, { width: 600, height: 400 });
-        const request = spec.buildRequests(bidRequests);
-        const payload = JSON.parse(request.data);
-        expect(payload.imp[0].banner.ext.viewability).to.equal(100);
-      });
-    });
+        Object.assign(element, { width: 600, height: 400 })
+        const request = spec.buildRequests(bidRequests)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.ext.viewability).to.equal(100)
+      })
+    })
 
     context('when element is out of view', function() {
       it('returns 0', function() {
-        Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
-        const request = spec.buildRequests(bidRequests);
-        const payload = JSON.parse(request.data);
-        expect(payload.imp[0].banner.ext.viewability).to.equal(0);
-      });
-    });
+        Object.assign(element, { x: -300, y: 0, width: 207, height: 320 })
+        const request = spec.buildRequests(bidRequests)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.ext.viewability).to.equal(0)
+      })
+    })
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
-        Object.assign(element, { width: 800, height: 800 });
-        const request = spec.buildRequests(bidRequests);
-        const payload = JSON.parse(request.data);
-        expect(payload.imp[0].banner.ext.viewability).to.equal(75);
-      });
-    });
+        Object.assign(element, { width: 800, height: 800 })
+        const request = spec.buildRequests(bidRequests)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.ext.viewability).to.equal(75)
+      })
+    })
 
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
-        Object.assign(element, { width: 0, height: 0 });
-        bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
-        const request = spec.buildRequests(bidRequests);
-        const payload = JSON.parse(request.data);
-        expect(payload.imp[0].banner.ext.viewability).to.equal(25);
-      });
-    });
+        Object.assign(element, { width: 0, height: 0 })
+        bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]]
+        const request = spec.buildRequests(bidRequests)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.ext.viewability).to.equal(25)
+      })
+    })
 
     context('when nested iframes', function() {
       it('returns \'na\'', function() {
-        Object.assign(element, { width: 600, height: 400 });
+        Object.assign(element, { width: 600, height: 400 })
 
-        utils.getWindowTop.restore();
-        utils.getWindowSelf.restore();
-        sandbox.stub(utils, 'getWindowTop').returns(win);
-        sandbox.stub(utils, 'getWindowSelf').returns({});
+        utils.getWindowTop.restore()
+        utils.getWindowSelf.restore()
+        sandbox.stub(utils, 'getWindowTop').returns(win)
+        sandbox.stub(utils, 'getWindowSelf').returns({})
 
-        const request = spec.buildRequests(bidRequests);
-        const payload = JSON.parse(request.data);
-        expect(payload.imp[0].banner.ext.viewability).to.equal('na');
-      });
-    });
+        const request = spec.buildRequests(bidRequests)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.ext.viewability).to.equal('na')
+      })
+    })
 
     context('when tab is inactive', function() {
       it('returns 0', function() {
-        Object.assign(element, { width: 600, height: 400 });
+        Object.assign(element, { width: 600, height: 400 })
 
-        utils.getWindowTop.restore();
-        win.document.visibilityState = 'hidden';
-        sandbox.stub(utils, 'getWindowTop').returns(win);
+        utils.getWindowTop.restore()
+        win.document.visibilityState = 'hidden'
+        sandbox.stub(utils, 'getWindowTop').returns(win)
 
-        const request = spec.buildRequests(bidRequests);
-        const payload = JSON.parse(request.data);
-        expect(payload.imp[0].banner.ext.viewability).to.equal(0);
-      });
-    });
-  });
+        const request = spec.buildRequests(bidRequests)
+        const payload = JSON.parse(request.data)
+        expect(payload.imp[0].banner.ext.viewability).to.equal(0)
+      })
+    })
+  })
 
   describe('interpretResponse', function () {
-    let response;
+    let response
     beforeEach(function () {
       response = {
         body: {
@@ -233,8 +233,8 @@ describe('onomagicBidAdapter', function() {
             }]
           }]
         }
-      };
-    });
+      }
+    })
 
     it('should get the correct bid response', function () {
       const expectedResponse = [{
@@ -251,11 +251,11 @@ describe('onomagicBidAdapter', function() {
         'meta': {
           'advertiserDomains': ['example.com']
         }
-      }];
+      }]
 
-      const result = spec.interpretResponse(response);
-      expect(result[0]).to.deep.equal(expectedResponse[0]);
-    });
+      const result = spec.interpretResponse(response)
+      expect(result[0]).to.deep.equal(expectedResponse[0])
+    })
 
     it('crid should default to the bid id if not on the response', function () {
       const expectedResponse = [{
@@ -272,27 +272,27 @@ describe('onomagicBidAdapter', function() {
         'meta': {
           'advertiserDomains': ['example.com']
         }
-      }];
+      }]
 
-      const result = spec.interpretResponse(response);
-      expect(result[0]).to.deep.equal(expectedResponse[0]);
-    });
+      const result = spec.interpretResponse(response)
+      expect(result[0]).to.deep.equal(expectedResponse[0])
+    })
 
     it('handles empty bid response', function () {
       const response = {
         body: ''
-      };
-      const result = spec.interpretResponse(response);
-      expect(result.length).to.equal(0);
-    });
-  });
+      }
+      const result = spec.interpretResponse(response)
+      expect(result.length).to.equal(0)
+    })
+  })
 
   describe('getUserSyncs ', () => {
-    const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+    const syncOptions = { iframeEnabled: true, pixelEnabled: true }
 
     it('should not return', () => {
-      const returnStatement = spec.getUserSyncs(syncOptions, []);
-      expect(returnStatement).to.be.empty;
-    });
-  });
-});
+      const returnStatement = spec.getUserSyncs(syncOptions, [])
+      expect(returnStatement).to.be.empty
+    })
+  })
+})

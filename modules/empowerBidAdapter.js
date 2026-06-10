@@ -8,17 +8,17 @@ import {
   isStr,
   isArray,
   getWinDimensions,
-} from "../src/utils.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { config } from "../src/config.js";
-import { VIDEO, BANNER } from "../src/mediaTypes.js";
-import { getConnectionType } from "../libraries/connectionInfo/connectionUtils.js";
-import { getDNT } from "../libraries/dnt/index.js";
+} from "../src/utils.js"
+import { registerBidder } from "../src/adapters/bidderFactory.js"
+import { config } from "../src/config.js"
+import { VIDEO, BANNER } from "../src/mediaTypes.js"
+import { getConnectionType } from "../libraries/connectionInfo/connectionUtils.js"
+import { getDNT } from "../libraries/dnt/index.js"
 
-export const ENDPOINT = "https://bid.virgul.com/prebid";
+export const ENDPOINT = "https://bid.virgul.com/prebid"
 
-const BIDDER_CODE = "empower";
-const GVLID = 1248;
+const BIDDER_CODE = "empower"
+const GVLID = 1248
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,8 +29,8 @@ export const spec = {
     !!(bid && bid.params && bid.params.zone && bid.bidder === BIDDER_CODE),
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const currencyObj = config.getConfig("currency");
-    const currency = (currencyObj && currencyObj.adServerCurrency) || "USD";
+    const currencyObj = config.getConfig("currency")
+    const currency = (currencyObj && currencyObj.adServerCurrency) || "USD"
 
     const request = {
       id: bidRequests[0].bidderRequestId,
@@ -62,14 +62,14 @@ export const spec = {
       user: {},
       regs: {},
       ext: {},
-    };
+    }
 
     if (bidderRequest.gdprConsent) {
       request.user = {
         ext: {
           consent: bidderRequest.gdprConsent.consentString || "",
         },
-      };
+      }
       request.regs = {
         ext: {
           gdpr:
@@ -77,84 +77,84 @@ export const spec = {
               ? bidderRequest.gdprConsent.gdprApplies
               : true,
         },
-      };
+      }
     }
 
     if (bidderRequest.ortb2?.source?.ext?.schain) {
-      request.schain = bidderRequest.ortb2.source.ext.schain;
+      request.schain = bidderRequest.ortb2.source.ext.schain
     }
 
-    let bidUserIdAsEids = deepAccess(bidRequests, "0.userIdAsEids");
+    let bidUserIdAsEids = deepAccess(bidRequests, "0.userIdAsEids")
     if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-      deepSetValue(request, "user.eids", bidUserIdAsEids);
+      deepSetValue(request, "user.eids", bidUserIdAsEids)
     }
 
-    const commonFpd = bidderRequest.ortb2 || {};
-    const { user, device, site, bcat, badv } = commonFpd;
+    const commonFpd = bidderRequest.ortb2 || {}
+    const { user, device, site, bcat, badv } = commonFpd
     if (site) {
-      mergeDeep(request, { site: site });
+      mergeDeep(request, { site: site })
     }
     if (user) {
-      mergeDeep(request, { user: user });
+      mergeDeep(request, { user: user })
     }
     if (badv) {
-      mergeDeep(request, { badv: badv });
+      mergeDeep(request, { badv: badv })
     }
     if (bcat) {
-      mergeDeep(request, { bcat: bcat });
+      mergeDeep(request, { bcat: bcat })
     }
 
     if (user?.geo && device?.geo) {
-      request.device.geo = { ...request.device.geo, ...device.geo };
-      request.user.geo = { ...request.user.geo, ...user.geo };
+      request.device.geo = { ...request.device.geo, ...device.geo }
+      request.user.geo = { ...request.user.geo, ...user.geo }
     } else {
       if (user?.geo || device?.geo) {
         request.user.geo = request.device.geo = user?.geo
           ? { ...request.user.geo, ...user.geo }
-          : { ...request.user.geo, ...device.geo };
+          : { ...request.user.geo, ...device.geo }
       }
     }
 
     if (bidderRequest.ortb2?.device) {
-      mergeDeep(request.device, bidderRequest.ortb2.device);
+      mergeDeep(request.device, bidderRequest.ortb2.device)
     }
 
     return {
       method: "POST",
       url: ENDPOINT,
       data: JSON.stringify(request),
-    };
+    }
   },
 
   interpretResponse: (bidResponse, bidRequest) => {
-    const idToImpMap = {};
-    const idToBidMap = {};
+    const idToImpMap = {}
+    const idToBidMap = {}
 
     if (!bidResponse["body"]) {
-      return [];
+      return []
     }
     if (!bidRequest.data) {
-      return [];
+      return []
     }
-    const requestImps = parse(bidRequest.data);
+    const requestImps = parse(bidRequest.data)
     if (!requestImps) {
-      return [];
+      return []
     }
     requestImps.imp.forEach((imp) => {
-      idToImpMap[imp.id] = imp;
-    });
-    bidResponse = bidResponse.body;
+      idToImpMap[imp.id] = imp
+    })
+    bidResponse = bidResponse.body
     if (bidResponse) {
       bidResponse.seatbid.forEach((seatBid) =>
         seatBid.bid.forEach((bid) => {
-          idToBidMap[bid.impid] = bid;
+          idToBidMap[bid.impid] = bid
         })
-      );
+      )
     }
-    const bids = [];
+    const bids = []
     Object.keys(idToImpMap).forEach((id) => {
-      const imp = idToImpMap[id];
-      const result = idToBidMap[id];
+      const imp = idToImpMap[id]
+      const result = idToBidMap[id]
 
       if (result) {
         const bid = {
@@ -165,25 +165,25 @@ export const spec = {
           netRevenue: true,
           mediaType: imp.video ? VIDEO : BANNER,
           currency: bidResponse.cur,
-        };
-        if (imp.video) {
-          bid.vastXml = result.adm;
-        } else if (imp.banner) {
-          bid.ad = result.adm;
         }
-        bid.width = result.w;
-        bid.height = result.h;
-        if (result.burl) bid.burl = result.burl;
-        if (result.nurl) bid.nurl = result.nurl;
+        if (imp.video) {
+          bid.vastXml = result.adm
+        } else if (imp.banner) {
+          bid.ad = result.adm
+        }
+        bid.width = result.w
+        bid.height = result.h
+        if (result.burl) bid.burl = result.burl
+        if (result.nurl) bid.nurl = result.nurl
         if (result.adomain) {
           bid.meta = {
             advertiserDomains: result.adomain,
-          };
+          }
         }
-        bids.push(bid);
+        bids.push(bid)
       }
-    });
-    return bids;
+    })
+    return bids
   },
 
   onBidWon: (bid) => {
@@ -191,22 +191,22 @@ export const spec = {
       bid.nurl = replaceMacros(bid.nurl, {
         AUCTION_PRICE: bid.cpm,
         AUCTION_CURRENCY: bid.cur,
-      });
-      triggerPixel(bid.nurl);
+      })
+      triggerPixel(bid.nurl)
     }
   },
-};
+}
 
 function impression(slot, currency) {
-  let bidFloorFromModule;
+  let bidFloorFromModule
   if (typeof slot.getFloor === "function") {
     const floorInfo = slot.getFloor({
       currency: "USD",
       mediaType: "*",
       size: "*",
-    });
+    })
     bidFloorFromModule =
-      floorInfo?.currency === "USD" ? floorInfo?.floor : undefined;
+      floorInfo?.currency === "USD" ? floorInfo?.floor : undefined
   }
   const imp = {
     id: slot.bidId,
@@ -217,42 +217,42 @@ function impression(slot, currency) {
       currency ||
       "USD",
     tagid: "" + (slot.params.zone || ""),
-  };
+  }
 
   if (slot.mediaTypes.banner) {
-    imp.banner = bannerImpression(slot);
+    imp.banner = bannerImpression(slot)
   } else if (slot.mediaTypes.video) {
-    imp.video = deepAccess(slot, "mediaTypes.video");
+    imp.video = deepAccess(slot, "mediaTypes.video")
   }
-  imp.ext = slot.params || {};
-  const { innerWidth, innerHeight } = getWinDimensions();
-  imp.ext.ww = innerWidth || "";
-  imp.ext.wh = innerHeight || "";
-  return imp;
+  imp.ext = slot.params || {}
+  const { innerWidth, innerHeight } = getWinDimensions()
+  imp.ext.ww = innerWidth || ""
+  imp.ext.wh = innerHeight || ""
+  return imp
 }
 
 function bannerImpression(slot) {
-  const sizes = slot.mediaTypes.banner.sizes || slot.sizes;
+  const sizes = slot.mediaTypes.banner.sizes || slot.sizes
   return {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
     w: sizes[0][0],
     h: sizes[0][1],
-  };
+  }
 }
 
 function parse(rawResponse) {
   try {
     if (rawResponse) {
       if (typeof rawResponse === "object") {
-        return rawResponse;
+        return rawResponse
       } else {
-        return JSON.parse(rawResponse);
+        return JSON.parse(rawResponse)
       }
     }
   } catch (ex) {
-    logError("empowerBidAdapter", "ERROR", ex);
+    logError("empowerBidAdapter", "ERROR", ex)
   }
-  return null;
+  return null
 }
 
-registerBidder(spec);
+registerBidder(spec)

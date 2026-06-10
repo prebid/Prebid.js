@@ -1,6 +1,6 @@
-import type { EID } from './userId/spec';
+import type { EID } from './userId/spec'
 
-export type PubProvidedIdSystemModuleName = 'pubProvidedId';
+export type PubProvidedIdSystemModuleName = 'pubProvidedId'
 
 export type PubProvidedIdSystemParams = {
   /**

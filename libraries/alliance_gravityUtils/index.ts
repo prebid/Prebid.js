@@ -1,12 +1,12 @@
-import { deepAccess, deepSetValue, logInfo } from '../../src/utils.js';
-import { Renderer } from '../../src/Renderer.js';
-import { INSTREAM, OUTSTREAM } from '../../src/video.js';
-import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
-import { BidRequest, ORTBImp, ORTBResponse } from '../../src/prebid.public.js';
-import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { deepAccess, deepSetValue, logInfo } from '../../src/utils.js'
+import { Renderer } from '../../src/Renderer.js'
+import { INSTREAM, OUTSTREAM } from '../../src/video.js'
+import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js'
+import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js'
+import { BidRequest, ORTBImp, ORTBResponse } from '../../src/prebid.public.js'
+import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js'
 
-const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js'
 
 export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (typeof serverResponses === 'object' &&
@@ -17,9 +17,9 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
   serverResponses[0].body.ext.hasOwnProperty('cookies') &&
   typeof serverResponses[0].body.ext.cookies === 'object' &&
   Array.isArray(serverResponses[0].body.ext.cookies)) {
-    return serverResponses[0].body.ext.cookies.slice(0, 5);
+    return serverResponses[0].body.ext.cookies.slice(0, 5)
   } else {
-    return [];
+    return []
   }
 };
 
@@ -41,9 +41,9 @@ const createOustreamRendererFunction = (
         skippable: false,
         content: bidResponse.vastXml
       }
-    });
-  });
-};
+    })
+  })
+}
 
 export type CreateRenderPayload = {
   requestId: string,
@@ -57,8 +57,8 @@ export const createRenderer = (
   { requestId, vastXml, adUnitCode, width, height }: CreateRenderPayload
 ): Renderer | undefined => {
   if (!vastXml) {
-    logInfo('No VAST in bidResponse');
-    return;
+    logInfo('No VAST in bidResponse')
+    return
   }
   const installPayload = {
     id: requestId,
@@ -66,28 +66,28 @@ export const createRenderer = (
     loaded: false,
     adUnitCode: adUnitCode,
     targetId: adUnitCode,
-  };
-  const renderer = Renderer.install(installPayload);
-  renderer.setRender(createOustreamRendererFunction(adUnitCode, width, height));
-  return renderer;
-};
+  }
+  const renderer = Renderer.install(installPayload)
+  renderer.setRender(createOustreamRendererFunction(adUnitCode, width, height))
+  return renderer
+}
 
 export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp => {
-  deepSetValue(imp, 'tagid', bidRequest.adUnitCode);
-  deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode);
+  deepSetValue(imp, 'tagid', bidRequest.adUnitCode)
+  deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode)
   if (imp.video) {
-    const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-    deepSetValue(imp, 'video.ext.playerSize', playerSize);
-    deepSetValue(imp, 'video.ext.context', videoContext);
+    const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize')
+    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context')
+    deepSetValue(imp, 'video.ext.playerSize', playerSize)
+    deepSetValue(imp, 'video.ext.context', videoContext)
   }
-  return imp;
+  return imp
 }
 
 export function createResponse(bid:any, ortbResponse:any): BidResponse {
-  let mediaType: MediaType = BANNER;
-  if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) mediaType = VIDEO;
-  if (bid.ext.mediaType === NATIVE) mediaType = NATIVE;
+  let mediaType: MediaType = BANNER
+  if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) mediaType = VIDEO
+  if (bid.ext.mediaType === NATIVE) mediaType = NATIVE
   const response:any = {
     requestId: bid.impid,
     cpm: bid.price,
@@ -102,11 +102,11 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
       advertiserDomains: bid.adomain,
       demandSource: bid.ext.ssp,
     },
-  };
-  if (bid.dealid) response.dealid = bid.dealid;
+  }
+  if (bid.dealid) response.dealid = bid.dealid
 
-  if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
-  if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
+  if (bid.ext.mediaType === BANNER) response.ad = bid.adm
+  if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm
   if (bid.ext.mediaType === OUTSTREAM && (bid.ext.adUnitCode)) {
     const renderer = createRenderer({
       requestId: response.requestId,
@@ -114,12 +114,12 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
       adUnitCode: bid.ext.adUnitCode,
       width: response.width,
       height: response.height
-    });
+    })
     if (renderer) {
-      response.renderer = renderer;
-      response.adUnitCode = bid.ext.adUnitCode;
+      response.renderer = renderer
+      response.adUnitCode = bid.ext.adUnitCode
     } else {
-      logInfo('Could not create renderer for outstream bid');
+      logInfo('Could not create renderer for outstream bid')
     }
   };
 
@@ -128,22 +128,22 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
       response.native = { ortb: JSON.parse(bid.adm) }
     } catch (e) {}
   }
-  return response as BidResponse;
+  return response as BidResponse
 }
 
 export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
-  if (!serverResponse.body) return [];
-  const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
+  if (!serverResponse.body) return []
+  const respBody = serverResponse.body as ORTBResponse
+  if (!respBody.seatbid || respBody.seatbid.length === 0) return []
 
-  const responses: BidResponse[] = [];
+  const responses: BidResponse[] = []
   for (let i = 0; i < respBody.seatbid.length; i++) {
-    const seatbid = respBody.seatbid[i];
+    const seatbid = respBody.seatbid[i]
     for (let j = 0; j < seatbid.bid.length; j++) {
-      const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
-      responses.push(response);
+      const bid = seatbid.bid[j]
+      const response:BidResponse = createResponse(bid, respBody)
+      responses.push(response)
     }
   }
-  return responses;
+  return responses
 }

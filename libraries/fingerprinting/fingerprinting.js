@@ -1,4 +1,4 @@
-import { config } from '../../src/config.js';
+import { config } from '../../src/config.js'
 
 /**
  * Returns true if the given fingerprinting API is disabled via setConfig({ disableFingerprintingApis: [...] }).
@@ -7,6 +7,6 @@ import { config } from '../../src/config.js';
  * @returns {boolean}
  */
 export function isFingerprintingApiDisabled(apiName) {
-  const list = config.getConfig('disableFingerprintingApis');
-  return Array.isArray(list) && list.some((item) => String(item).toLowerCase() === apiName.toLowerCase());
+  const list = config.getConfig('disableFingerprintingApis')
+  return Array.isArray(list) && list.some((item) => String(item).toLowerCase() === apiName.toLowerCase())
 }

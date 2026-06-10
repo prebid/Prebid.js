@@ -1,8 +1,8 @@
-import { deepAccess, logInfo } from '../../src/utils.js';
-import { NATIVE } from '../../src/mediaTypes.js';
-import { macroReplace } from '../../libraries/precisoUtils/bidUtils.js';
+import { deepAccess, logInfo } from '../../src/utils.js'
+import { NATIVE } from '../../src/mediaTypes.js'
+import { macroReplace } from '../../libraries/precisoUtils/bidUtils.js'
 
-const TTL = 55;
+const TTL = 55
 // Codes defined by OpenRTB Native Ads 1.1 specification
 export const OPENRTB = {
   NATIVE: {
@@ -24,7 +24,7 @@ export const OPENRTB = {
       CTA_TEXT: 12,
     },
   }
-};
+}
 
 /**
  * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
@@ -56,49 +56,49 @@ export function interpretNativeBid(serverBid) {
 
 export function interpretNativeAd(adm) {
   try {
-    const native = JSON.parse(adm).native;
+    const native = JSON.parse(adm).native
     if (native) {
       const result = {
         clickUrl: encodeURI(native.link.url),
         impressionTrackers: native.imptrackers || native.eventtrackers[0].url,
-      };
+      }
       if (native.link.clicktrackers) {
-        result.clickTrackers = native.link.clicktrackers[0];
+        result.clickTrackers = native.link.clicktrackers[0]
       }
 
       native.assets.forEach(asset => {
         switch (asset.id) {
           case OPENRTB.NATIVE.ASSET_ID.TITLE:
-            result.title = deepAccess(asset, 'title.text');
-            break;
+            result.title = deepAccess(asset, 'title.text')
+            break
           case OPENRTB.NATIVE.ASSET_ID.IMAGE:
             result.image = {
               url: encodeURI(asset.img.url),
               width: deepAccess(asset, 'img.w'),
               height: deepAccess(asset, 'img.h')
-            };
-            break;
+            }
+            break
           case OPENRTB.NATIVE.ASSET_ID.ICON:
             result.icon = {
               url: encodeURI(asset.img.url),
               width: deepAccess(asset, 'img.w'),
               height: deepAccess(asset, 'img.h')
-            };
-            break;
+            }
+            break
           case OPENRTB.NATIVE.ASSET_ID.BODY:
-            result.body = deepAccess(asset, 'data.value');
-            break;
+            result.body = deepAccess(asset, 'data.value')
+            break
           case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-            result.sponsoredBy = deepAccess(asset, 'data.value');
-            break;
+            result.sponsoredBy = deepAccess(asset, 'data.value')
+            break
           case OPENRTB.NATIVE.ASSET_ID.CTA:
-            result.cta = deepAccess(asset, 'data.value');
-            break;
+            result.cta = deepAccess(asset, 'data.value')
+            break
         }
-      });
-      return result;
+      })
+      return result
     }
   } catch (error) {
-    logInfo('Error in bidUtils interpretNativeAd' + error);
+    logInfo('Error in bidUtils interpretNativeAd' + error)
   }
 }

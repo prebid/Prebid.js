@@ -1,28 +1,28 @@
-import { submodule } from '../src/hook.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { ajax } from '../src/ajax.js';
-import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { ajax } from '../src/ajax.js'
+import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js'
 import {
   logMessage, logError,
   deepAccess, deepSetValue, mergeDeep,
   isNumber, isArray,
-} from '../src/utils.js';
+} from '../src/utils.js'
 
 // Constants
-const REAL_TIME_MODULE = 'realTimeData';
-const MODULE_NAME = '1plusX';
+const REAL_TIME_MODULE = 'realTimeData'
+const MODULE_NAME = '1plusX'
 const ORTB2_NAME = '1plusX.com'
-const PAPI_VERSION = 'v1.0';
-const LOG_PREFIX = '[1plusX RTD Module]: ';
+const PAPI_VERSION = 'v1.0'
+const LOG_PREFIX = '[1plusX RTD Module]: '
 const OPE_FPID = 'ope_fpid'
 
-export const fpidStorage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
+export const fpidStorage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME })
 
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
   CONTENT: 527,
-};
+}
 // Functions
 /**
  * Extracts the parameters for 1plusX RTD module from the config object passed at instanciation
@@ -32,30 +32,30 @@ export const segtaxes = {
  */
 export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // CustomerId
-  const customerId = deepAccess(moduleConfig, 'params.customerId');
+  const customerId = deepAccess(moduleConfig, 'params.customerId')
   if (!customerId) {
-    throw new Error('Missing parameter customerId in moduleConfig');
+    throw new Error('Missing parameter customerId in moduleConfig')
   }
   // Timeout
-  const tempTimeout = deepAccess(moduleConfig, 'params.timeout');
-  const timeout = isNumber(tempTimeout) && tempTimeout > 300 ? tempTimeout : 1000;
+  const tempTimeout = deepAccess(moduleConfig, 'params.timeout')
+  const timeout = isNumber(tempTimeout) && tempTimeout > 300 ? tempTimeout : 1000
 
   // Bidders
-  const biddersTemp = deepAccess(moduleConfig, 'params.bidders');
+  const biddersTemp = deepAccess(moduleConfig, 'params.bidders')
   if (!isArray(biddersTemp) || !biddersTemp.length) {
-    throw new Error('Missing parameter bidders in moduleConfig');
+    throw new Error('Missing parameter bidders in moduleConfig')
   }
 
   const adUnitBidders = reqBidsConfigObj.adUnits
     .flatMap(({ bids }) => bids.map(({ bidder }) => bidder))
-    .filter((e, i, a) => a.indexOf(e) === i);
+    .filter((e, i, a) => a.indexOf(e) === i)
   if (!isArray(adUnitBidders) || !adUnitBidders.length) {
-    throw new Error('Missing parameter bidders in bidRequestConfig');
+    throw new Error('Missing parameter bidders in bidRequestConfig')
   }
 
-  const bidders = biddersTemp.filter(bidder => adUnitBidders.includes(bidder));
+  const bidders = biddersTemp.filter(bidder => adUnitBidders.includes(bidder))
   if (!bidders.length) {
-    throw new Error('No bidRequestConfig bidder found in moduleConfig bidders');
+    throw new Error('No bidRequestConfig bidder found in moduleConfig bidders')
   }
 
   const fpidStorageType = deepAccess(moduleConfig, 'params.fpidStorageType',
@@ -70,7 +70,7 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     )
   }
 
-  return { customerId, timeout, bidders, fpidStorageType };
+  return { customerId, timeout, bidders, fpidStorageType }
 }
 
 /**
@@ -118,7 +118,7 @@ export const extractFpid = (fpidStorageType) => {
       }
     }
   } catch (error) {
-    return null;
+    return null
   }
 }
 /**
@@ -130,8 +130,8 @@ export const extractFpid = (fpidStorageType) => {
  */
 export const getPapiUrl = (customerId, consent, fpid) => {
   // https://[yourClientId].profiles.tagger.opecloud.com/[VERSION]/targeting?url=
-  const currentUrl = encodeURIComponent(window.location.href);
-  var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
+  const currentUrl = encodeURIComponent(window.location.href)
+  var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`
   if (consent) {
     Object.entries(consent).forEach(([key, value]) => {
       papiUrl += `&${key}=${value}`
@@ -141,7 +141,7 @@ export const getPapiUrl = (customerId, consent, fpid) => {
     papiUrl += `&fpid=${fpid}`
   }
 
-  return papiUrl;
+  return papiUrl
 }
 
 /**
@@ -158,12 +158,12 @@ const getTargetingDataFromPapi = (papiUrl) => {
     }
     const callbacks = {
       success(responseText, response) {
-        resolve(JSON.parse(response.response));
+        resolve(JSON.parse(response.response))
       },
       error(error) {
-        reject(error);
+        reject(error)
       }
-    };
+    }
     ajax(papiUrl, callbacks, null, requestOptions)
   })
 }
@@ -180,13 +180,13 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
     name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId })),
     ext: { segtax: segtaxes.AUDIENCE }
-  };
+  }
   const siteContentData = {
     name: ORTB2_NAME,
     segment: topics.map((topicId) => ({ id: topicId })),
     ext: { segtax: segtaxes.CONTENT }
   }
-  return { userData, siteContentData };
+  return { userData, siteContentData }
 }
 
 /**
@@ -196,30 +196,30 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
  * @param {Object} biddersOrtb2 All current bidder configs
  */
 export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
-  const { siteContentData, userData } = ortb2Updates;
-  mergeDeep(biddersOrtb2, { [bidder]: {} });
-  const bidderConfig = deepAccess(biddersOrtb2, bidder);
+  const { siteContentData, userData } = ortb2Updates
+  mergeDeep(biddersOrtb2, { [bidder]: {} })
+  const bidderConfig = deepAccess(biddersOrtb2, bidder)
 
   {
-    const siteDataPath = 'site.content.data';
-    const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || [];
+    const siteDataPath = 'site.content.data'
+    const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || []
     const updatedSiteContentData = [
       ...currentSiteContentData.filter(({ name }) => name !== siteContentData.name),
       siteContentData
-    ];
-    deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData);
+    ]
+    deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData)
   }
 
   {
-    const userDataPath = 'user.data';
-    const currentUserData = deepAccess(bidderConfig, userDataPath) || [];
+    const userDataPath = 'user.data'
+    const currentUserData = deepAccess(bidderConfig, userDataPath) || []
     const updatedUserData = [
       ...currentUserData.filter(({ name }) => name !== userData.name),
       userData
-    ];
-    deepSetValue(bidderConfig, userDataPath, updatedUserData);
+    ]
+    deepSetValue(bidderConfig, userDataPath, updatedUserData)
   }
-};
+}
 
 /**
  * Updates bidder configs with the targeting data retrieved from Profile API
@@ -228,11 +228,11 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
  * @param {string[]} config.bidders Bidders specified in module's configuration
  */
 export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }) => {
-  const { s: segments, t: topics } = papiResponse;
+  const { s: segments, t: topics } = papiResponse
 
-  const ortb2Updates = buildOrtb2Updates({ segments, topics });
+  const ortb2Updates = buildOrtb2Updates({ segments, topics })
   for (const bidder of bidders) {
-    updateBidderConfig(bidder, ortb2Updates, biddersOrtb2);
+    updateBidderConfig(bidder, ortb2Updates, biddersOrtb2)
   }
 }
 
@@ -244,7 +244,7 @@ export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }
  * @returns true
  */
 const init = (config, userConsent) => {
-  return true;
+  return true
 }
 
 /**
@@ -257,20 +257,20 @@ const init = (config, userConsent) => {
 const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
-    const { customerId, bidders, fpidStorageType } = extractConfig(moduleConfig, reqBidsConfigObj);
-    const { ortb2Fragments: { bidder: biddersOrtb2 } } = reqBidsConfigObj;
+    const { customerId, bidders, fpidStorageType } = extractConfig(moduleConfig, reqBidsConfigObj)
+    const { ortb2Fragments: { bidder: biddersOrtb2 } } = reqBidsConfigObj
     // Get PAPI URL
     const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid(fpidStorageType))
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
-        logMessage(LOG_PREFIX, 'Get targeting data request successful');
-        setTargetingDataToConfig(papiResponse, { bidders, biddersOrtb2 });
-        callback();
+        logMessage(LOG_PREFIX, 'Get targeting data request successful')
+        setTargetingDataToConfig(papiResponse, { bidders, biddersOrtb2 })
+        callback()
       })
   } catch (error) {
-    logError(LOG_PREFIX, error);
-    callback();
+    logError(LOG_PREFIX, error)
+    callback()
   }
 }
 
@@ -282,4 +282,4 @@ export const onePlusXSubmodule = {
 }
 
 // Register the onePlusXSubmodule as submodule of realTimeData
-submodule(REAL_TIME_MODULE, onePlusXSubmodule);
+submodule(REAL_TIME_MODULE, onePlusXSubmodule)

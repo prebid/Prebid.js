@@ -1,16 +1,16 @@
-import { expect } from 'chai';
-import { describe, it } from 'mocha';
-import { getPurposes, isValidGvlId } from '../../metadata/gvl.mjs';
-import { validatePurposeDeclarations } from '../../libraries/purposeDeclarations/validate.mjs';
+import { expect } from 'chai'
+import { describe, it } from 'mocha'
+import { getPurposes, isValidGvlId } from '../../metadata/gvl.mjs'
+import { validatePurposeDeclarations } from '../../libraries/purposeDeclarations/validate.mjs'
 
 describe('gvl build time checks', () => {
-  let gvl;
+  let gvl
   beforeEach(() => {
-    gvl = null;
-  });
+    gvl = null
+  })
 
   function getGvl() {
-    return Promise.resolve(gvl);
+    return Promise.resolve(gvl)
   }
 
   describe('validateGvlId', async () => {
@@ -26,10 +26,10 @@ describe('gvl build time checks', () => {
             "123": vendor
           }
         }
-        expect(await isValidGvlId(123, getGvl)).to.be.false;
+        expect(await isValidGvlId(123, getGvl)).to.be.false
       })
     })
-  });
+  })
 
   describe('getPurposes', () => {
     it('should return purposes from gvl', async () => {
@@ -38,7 +38,7 @@ describe('gvl build time checks', () => {
         legIntPurposes: [2],
         flexiblePurposes: [3],
         specialFeatures: [4]
-      };
+      }
       gvl = {
         vendors: {
           123: {
@@ -46,7 +46,7 @@ describe('gvl build time checks', () => {
           }
         }
       }
-      expect(await getPurposes(123, getGvl)).to.eql(purposes);
+      expect(await getPurposes(123, getGvl)).to.eql(purposes)
     })
   })
 
@@ -64,7 +64,7 @@ describe('gvl build time checks', () => {
       }
     }).forEach(([t, purposes]) => {
       it(`should fail on ${t}`, () => {
-        expect(validatePurposeDeclarations(purposes)).to.be.a('string');
+        expect(validatePurposeDeclarations(purposes)).to.be.a('string')
       })
     })
   })

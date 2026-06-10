@@ -1,10 +1,10 @@
-import { expect } from 'chai';
-import { setEndPoints, spec } from 'modules/aidemBidAdapter.js';
-import * as utils from '../../../src/utils.js';
-import { deepSetValue } from '../../../src/utils.js';
-import { server } from '../../mocks/xhr.js';
-import { config } from '../../../src/config.js';
-import { NATIVE } from '../../../src/mediaTypes.js';
+import { expect } from 'chai'
+import { setEndPoints, spec } from 'modules/aidemBidAdapter.js'
+import * as utils from '../../../src/utils.js'
+import { deepSetValue } from '../../../src/utils.js'
+import { server } from '../../mocks/xhr.js'
+import { config } from '../../../src/config.js'
+import { NATIVE } from '../../../src/mediaTypes.js'
 
 // Full banner + Full Video + Basic Banner + Basic Video
 const VALID_BIDS = [
@@ -173,7 +173,7 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
     src: 'client',
     transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
   }
-];
+]
 
 const DEFAULT_VALID_VIDEO_REQUESTS = [
   {
@@ -198,7 +198,7 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
     src: 'client',
     transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
   }
-];
+]
 
 const VALID_BIDDER_REQUEST = {
   auctionId: '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
@@ -351,104 +351,104 @@ describe('Aidem adapter', () => {
       VALID_BIDS.forEach((value, index) => {
         expect(spec.isBidRequestValid(value)).to.be.true
       })
-    });
+    })
 
     it('should return false for each invalid bid requests', function () {
       // spec.isBidRequestValid()
       INVALID_BIDS.forEach((value, index) => {
         expect(spec.isBidRequestValid(value)).to.be.false
       })
-    });
+    })
 
     it('should return true if valid banner sizes are specified in params as single array', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[0])
       deepSetValue(validBannerRequest.params, 'banner.size', [300, 250])
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.true
-    });
+    })
 
     it('should return true if valid banner sizes are specified in params as array of array', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[0])
       deepSetValue(validBannerRequest.params, 'banner.size', [[300, 600]])
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.true
-    });
+    })
 
     it('should return true if valid video sizes are specified in params as single array', function () {
       // spec.isBidRequestValid()
       const validVideoRequest = utils.deepClone(VALID_BIDS[1])
       deepSetValue(validVideoRequest.params, 'video.size', [640, 480])
       expect(spec.isBidRequestValid(validVideoRequest)).to.be.true
-    });
+    })
 
     it('BANNER: should return true if rateLimit is 1', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[0])
       deepSetValue(validBannerRequest.params, 'rateLimit', 1)
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.true
-    });
+    })
 
     it('BANNER: should return false if rateLimit is 0', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[0])
       deepSetValue(validBannerRequest.params, 'rateLimit', 0)
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
-    });
+    })
 
     it('BANNER: should return false if rateLimit is not between 0 and 1', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[0])
       deepSetValue(validBannerRequest.params, 'rateLimit', 1.2)
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
-    });
+    })
 
     it('BANNER: should return false if rateLimit is not a number', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[0])
       deepSetValue(validBannerRequest.params, 'rateLimit', '0.5')
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
-    });
+    })
 
     it('VIDEO: should return true if rateLimit is 1', function () {
       // spec.isBidRequestValid()
       const validVideoRequest = utils.deepClone(VALID_BIDS[1])
       deepSetValue(validVideoRequest.params, 'rateLimit', 1)
       expect(spec.isBidRequestValid(validVideoRequest)).to.be.true
-    });
+    })
 
     it('VIDEO: should return false if rateLimit is 0', function () {
       // spec.isBidRequestValid()
       const validVideoRequest = utils.deepClone(VALID_BIDS[1])
       deepSetValue(validVideoRequest.params, 'rateLimit', 0)
       expect(spec.isBidRequestValid(validVideoRequest)).to.be.false
-    });
+    })
 
     it('VIDEO: should return false if rateLimit is not between 0 and 1', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[1])
       deepSetValue(validBannerRequest.params, 'rateLimit', 1.2)
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
-    });
+    })
 
     it('VIDEO: should return false if rateLimit is not a number', function () {
       // spec.isBidRequestValid()
       const validBannerRequest = utils.deepClone(VALID_BIDS[1])
       deepSetValue(validBannerRequest.params, 'rateLimit', '0.5')
       expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
-    });
-  });
+    })
+  })
 
   describe('buildRequests', () => {
     it('should match server requirements', () => {
-      const requests = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      expect(requests).to.be.an('object');
+      const requests = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
+      expect(requests).to.be.an('object')
       expect(requests.method).to.be.a('string')
       expect(requests.data).to.be.a('object')
       expect(requests.options).to.be.an('object').that.have.a.property('withCredentials')
-    });
+    })
 
     it('should have a well formatted banner payload', () => {
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
       expect(data).to.be.a('object').that.has.all.keys(
         'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
       )
@@ -460,11 +460,11 @@ describe('Aidem adapter', () => {
       expect(data.imp[0].banner).to.be.a('object').that.has.all.keys(
         'format', 'topframe'
       )
-    });
+    })
 
     if (FEATURES.VIDEO) {
       it('should have a well formatted video payload', () => {
-        const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+        const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
         expect(data).to.be.a('object').that.has.all.keys(
           'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
         )
@@ -476,15 +476,15 @@ describe('Aidem adapter', () => {
         expect(data.imp[0].video).to.be.a('object').that.has.all.keys(
           'mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h'
         )
-      });
+      })
     }
 
     it('should hav wpar keys in environment object', function () {
-      const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
       expect(data).to.have.property('environment')
       expect(data.environment).to.be.a('object').that.have.property('wpar')
       expect(data.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
-    });
+    })
   })
 
   describe('interpretResponse', () => {
@@ -497,7 +497,7 @@ describe('Aidem adapter', () => {
           'ad', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'burl', 'seatBidId', 'creative_id'
         )
       })
-    });
+    })
 
     if (FEATURES.VIDEO) {
       it('should return a valid bid array with a video bid', () => {
@@ -509,7 +509,7 @@ describe('Aidem adapter', () => {
             'vastUrl', 'vastXml', 'playerHeight', 'playerWidth', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'burl', 'seatBidId', 'creative_id'
           )
         })
-      });
+      })
     }
 
     it('should return a valid bid array with netRevenue', () => {
@@ -517,7 +517,7 @@ describe('Aidem adapter', () => {
       const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data })
       expect(bids).to.be.a('array').that.has.lengthOf(1)
       expect(bids[0].netRevenue).to.be.true
-    });
+    })
 
     // it('should return an empty bid array if one of seatbid entry is missing price property', () => {
     //   const response = utils.deepClone(SERVER_RESPONSE_BANNER)
@@ -537,13 +537,13 @@ describe('Aidem adapter', () => {
   describe('onBidWon', () => {
     it(`should exists and type function`, function () {
       expect(spec.onBidWon).to.exist.and.to.be.a('function')
-    });
+    })
 
     it(`should send a win notice`, function () {
-      spec.onBidWon(WIN_NOTICE);
-      expect(server.requests.length).to.equal(1);
-    });
-  });
+      spec.onBidWon(WIN_NOTICE)
+      expect(server.requests.length).to.equal(1)
+    })
+  })
 
   // describe('onBidderError', () => {
   //   it(`should exists and type function`, function () {
@@ -566,42 +566,42 @@ describe('Aidem adapter', () => {
   describe('setEndPoints', () => {
     it(`should exists and type function`, function () {
       expect(setEndPoints).to.exist.and.to.be.a('function')
-    });
+    })
 
     it(`should not modify default endpoints`, function () {
       const endpoints = setEndPoints()
       const requestURL = new URL(endpoints.request)
       expect(requestURL.host).to.equal('zero.aidemsrv.com')
       expect(decodeURIComponent(requestURL.pathname)).to.equal('/prebidjs/ortb/v2.6/bid/request')
-    });
+    })
 
     it(`should not change request endpoint`, function () {
       const endpoints = setEndPoints('default')
       const requestURL = new URL(endpoints.request)
       expect(decodeURIComponent(requestURL.pathname)).to.equal('/prebidjs/ortb/v2.6/bid/request')
-    });
+    })
 
     it(`should change to local env`, function () {
       const endpoints = setEndPoints('local')
       const requestURL = new URL(endpoints.request)
 
       expect(requestURL.host).to.equal('127.0.0.1:8787')
-    });
+    })
 
     it(`should add a path prefix`, function () {
       const endpoints = setEndPoints('local', '/path')
       const requestURL = new URL(endpoints.request)
 
       expect(decodeURIComponent(requestURL.pathname)).to.equal('/path/prebidjs/ortb/v2.6/bid/request')
-    });
+    })
 
     it(`should add a path prefix and change request endpoint`, function () {
       const endpoints = setEndPoints('local', '/path')
       const requestURL = new URL(endpoints.request)
 
       expect(decodeURIComponent(requestURL.pathname)).to.equal('/path/prebidjs/ortb/v2.6/bid/request')
-    });
-  });
+    })
+  })
 
   describe('config', () => {
     beforeEach(() => {
@@ -609,7 +609,7 @@ describe('Aidem adapter', () => {
         aidem: {
           env: 'main'
         }
-      });
+      })
     })
 
     it(`should not override default endpoints`, function () {
@@ -618,11 +618,11 @@ describe('Aidem adapter', () => {
           env: 'unknown',
           path: '/test'
         }
-      });
-      const { url } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      })
+      const { url } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
       const requestURL = new URL(url)
       expect(requestURL.host).to.equal('zero.aidemsrv.com')
-    });
+    })
 
     it(`should set local endpoints`, function () {
       config.setConfig({
@@ -630,19 +630,19 @@ describe('Aidem adapter', () => {
           env: 'local',
           path: '/test'
         }
-      });
-      const { url } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      })
+      const { url } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
       const requestURL = new URL(url)
       expect(requestURL.host).to.equal('127.0.0.1:8787')
-    });
+    })
 
     it(`should set coppa`, function () {
       config.setConfig({
         coppa: true
-      });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      })
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
       expect(data.regs.coppa_applies).to.equal(true)
-    });
+    })
 
     it(`should set gdpr to true`, function () {
       // config.setConfig({
@@ -656,9 +656,9 @@ describe('Aidem adapter', () => {
       //     },
       //   }
       // });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_GDPR_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_GDPR_BIDDER_REQUEST)
       expect(data.regs.gdpr_applies).to.equal(true)
-    });
+    })
 
     it(`should set usp_consent string`, function () {
       // config.setConfig({
@@ -673,9 +673,9 @@ describe('Aidem adapter', () => {
       //     }
       //   }
       // });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_USP_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_USP_BIDDER_REQUEST)
       expect(data.regs.us_privacy).to.equal('1YYY')
-    });
+    })
 
     it(`should not set usp_consent string`, function () {
       // config.setConfig({
@@ -690,8 +690,8 @@ describe('Aidem adapter', () => {
       //     }
       //   }
       // });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
       expect(data.regs.us_privacy).to.undefined
-    });
-  });
-});
+    })
+  })
+})

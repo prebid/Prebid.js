@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from '../../../modules/precisoBidAdapter.js';
-import { NATIVE } from '../../../src/mediaTypes.js';
-import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
+import { expect } from 'chai'
+import { spec } from '../../../modules/precisoBidAdapter.js'
+import { NATIVE } from '../../../src/mediaTypes.js'
+import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js'
 
 // simport { config } from '../../../src/config.js';
 
@@ -9,7 +9,7 @@ const DEFAULT_PRICE = 1
 const DEFAULT_CURRENCY = 'USD'
 const DEFAULT_BANNER_WIDTH = 300
 const DEFAULT_BANNER_HEIGHT = 250
-const BIDDER_CODE = 'preciso';
+const BIDDER_CODE = 'preciso'
 
 describe('PrecisoAdapter', function () {
   const bid = {
@@ -54,7 +54,7 @@ describe('PrecisoAdapter', function () {
 
     }
 
-  };
+  }
 
   let nativeBid = {
     precisoBid: true,
@@ -121,68 +121,68 @@ describe('PrecisoAdapter', function () {
         ]
       }
     }
-  };
+  }
 
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and sourceid parameters present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bid)).to.be.true
+    })
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.publisherId;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
+      delete bid.params.publisherId
+      expect(spec.isBidRequestValid(bid)).to.be.false
+    })
     it('Should return true if there are bidId, params and sourceid parameters present native Bid', function () {
-      expect(spec.isBidRequestValid(nativeBid)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(nativeBid)).to.be.true
+    })
 
     it('Should return false if at least one of parameters is not present in native bid', function () {
-      delete nativeBid.params.publisherId;
-      expect(spec.isBidRequestValid(nativeBid)).to.be.false;
-    });
-  });
+      delete nativeBid.params.publisherId
+      expect(spec.isBidRequestValid(nativeBid)).to.be.false
+    })
+  })
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid]);
+    let serverRequest = spec.buildRequests([bid])
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist;
-      expect(serverRequest.method).to.exist;
-      expect(serverRequest.url).to.exist;
-      expect(serverRequest.data).to.exist;
-    });
+      expect(serverRequest).to.exist
+      expect(serverRequest.method).to.exist
+      expect(serverRequest.url).to.exist
+      expect(serverRequest.data).to.exist
+    })
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST');
-    });
+      expect(serverRequest.method).to.equal('POST')
+    })
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb');
-    });
+      expect(serverRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb')
+    })
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data.device).to.be.a('object');
-      expect(data.user).to.be.a('object');
-      expect(data.source).to.be.a('object');
-      expect(data.site).to.be.a('object');
-    });
+      const data = serverRequest.data
+      expect(data).to.be.an('object')
+      expect(data.device).to.be.a('object')
+      expect(data.user).to.be.a('object')
+      expect(data.source).to.be.a('object')
+      expect(data.site).to.be.a('object')
+    })
     it('Returns empty data if no valid requests are passed', function () {
-      delete bid.ortb2.device;
-      serverRequest = spec.buildRequests([bid]);
-      const data = serverRequest.data;
-      expect(data.device).to.be.undefined;
-    });
+      delete bid.ortb2.device
+      serverRequest = spec.buildRequests([bid])
+      const data = serverRequest.data
+      expect(data.device).to.be.undefined
+    })
 
-    let ServeNativeRequest = spec.buildRequests([nativeBid]);
+    let ServeNativeRequest = spec.buildRequests([nativeBid])
 
     it('Creates a valid nativeServerRequest object ', function () {
-      expect(ServeNativeRequest).to.exist;
-      expect(ServeNativeRequest.method).to.exist;
-      expect(ServeNativeRequest.url).to.exist;
-      expect(ServeNativeRequest.data).to.exist;
-      expect(ServeNativeRequest.method).to.equal('POST');
-      expect(ServeNativeRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb');
-    });
+      expect(ServeNativeRequest).to.exist
+      expect(ServeNativeRequest.method).to.exist
+      expect(ServeNativeRequest.url).to.exist
+      expect(ServeNativeRequest.data).to.exist
+      expect(ServeNativeRequest.method).to.equal('POST')
+      expect(ServeNativeRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb')
+    })
 
     it('should extract the native params', function () {
-      let nativeData = ServeNativeRequest.data;
+      let nativeData = ServeNativeRequest.data
       const asset = JSON.parse(nativeData.imp[0].native.request).assets[0]
       expect(asset).to.deep.equal({
         id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
@@ -194,8 +194,8 @@ describe('PrecisoAdapter', function () {
         }
       }
       )
-    });
-  });
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
@@ -318,25 +318,25 @@ describe('PrecisoAdapter', function () {
         }
       ]
 
-      let result = spec.interpretResponse({ body: nativeResponse });
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedNativeResponse[0]));
+      let result = spec.interpretResponse({ body: nativeResponse })
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedNativeResponse[0]))
     })
   })
 
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';
+    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4'
     const syncOptions = {
       iframeEnabled: true,
       spec: true
-    };
-    const userSync = spec.getUserSyncs(syncOptions);
+    }
+    const userSync = spec.getUserSyncs(syncOptions)
     it('Returns valid URL and type', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.exist;
-      expect(userSync[0].url).to.exist;
+      expect(userSync).to.be.an('array').with.lengthOf(1)
+      expect(userSync[0].type).to.exist
+      expect(userSync[0].url).to.exist
       expect(userSync).to.deep.equal([
         { type: 'iframe', url: syncUrl }
-      ]);
-    });
-  });
-});
+      ])
+    })
+  })
+})

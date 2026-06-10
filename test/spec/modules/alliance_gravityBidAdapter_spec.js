@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/alliance_gravityBidAdapter.js';
-import sinon from 'sinon';
-const sandbox = sinon.createSandbox();
+import { expect } from 'chai'
+import { spec } from 'modules/alliance_gravityBidAdapter.js'
+import sinon from 'sinon'
+const sandbox = sinon.createSandbox()
 
 describe('Alliance Gravity bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -14,10 +14,10 @@ describe('Alliance Gravity bid adapter tests', () => {
       referer: 'https://www.prebid.org',
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page',
     }
-  };
+  }
 
   describe('isBidRequestValid()', () => {
-    let bannerBid;
+    let bannerBid
     beforeEach(() => {
       bannerBid = {
         bidder: 'alliance_gravity',
@@ -29,37 +29,37 @@ describe('Alliance Gravity bid adapter tests', () => {
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
       }
-    });
+    })
 
     it('No srid', () => {
-      bannerBid.params = {};
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = {}
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('Invalid srid type (number)', () => {
-      bannerBid.params = { srid: 1234 };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { srid: 1234 }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('Invalid srid type (object', () => {
-      bannerBid.params = { srid: {} };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { srid: {} }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('Empty srid', () => {
-      bannerBid.params = { srid: '' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
-    });
+      bannerBid.params = { srid: '' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
+    })
 
     it('Valid srid', () => {
-      bannerBid.params = { srid: '12345' };
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
-    });
-  });
+      bannerBid.params = { srid: '12345' }
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true)
+    })
+  })
 
   describe('buildRequests()', () => {
     before(() => {
-      const documentStub = sandbox.stub(document, 'getElementById');
+      const documentStub = sandbox.stub(document, 'getElementById')
       documentStub.withArgs('div-1').returns({
         offsetWidth: 200,
         offsetHeight: 250,
@@ -67,9 +67,9 @@ describe('Alliance Gravity bid adapter tests', () => {
           maxWidth: '400px',
           maxHeight: '350px',
         },
-        getBoundingClientRect() { return { width: 200, height: 250 }; }
-      });
-    });
+        getBoundingClientRect() { return { width: 200, height: 250 } }
+      })
+    })
     describe('Multiple display bids', () => {
       const sampleBids = [
         {
@@ -102,7 +102,7 @@ describe('Alliance Gravity bid adapter tests', () => {
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         }
-      ];
+      ]
       const bidderRequest = {
         bidderCode: 'alliance_gravity',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
@@ -111,17 +111,17 @@ describe('Alliance Gravity bid adapter tests', () => {
           gdprApplies: true,
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
-      };
+      }
       it('2 display adunits', () => {
-        const displayBids = structuredClone(sampleBids);
+        const displayBids = structuredClone(sampleBids)
         displayBids[0].mediaTypes = {
           banner: {
             sizes: [[300, 250], [300, 600]]
           }
-        };
-        const request = spec.buildRequests(displayBids, bidderRequest);
-        const requestContent = request.data;
-        expect(request).to.have.property('method').and.to.equal('POST');
+        }
+        const request = spec.buildRequests(displayBids, bidderRequest)
+        const requestContent = request.data
+        expect(request).to.have.property('method').and.to.equal('POST')
         const expectedRequest = {
           imp: [
             {
@@ -167,13 +167,13 @@ describe('Alliance Gravity bid adapter tests', () => {
           ],
           id: requestContent.id,
           test: 0
-        };
-        expect(requestContent).to.be.eql(expectedRequest);
-      });
+        }
+        expect(requestContent).to.be.eql(expectedRequest)
+      })
 
       if (FEATURES.VIDEO) {
         it('multiformat adunit', () => {
-          const multiformatBids = structuredClone(sampleBids);
+          const multiformatBids = structuredClone(sampleBids)
           multiformatBids[0].mediaTypes = {
             banner: {
               sizes: [[300, 250], [300, 600]]
@@ -187,9 +187,9 @@ describe('Alliance Gravity bid adapter tests', () => {
               skip: 1,
               playback_method: ['auto_play_sound_off']
             }
-          };
-          const request = spec.buildRequests(multiformatBids, bidderRequest);
-          const video = request.data.imp[0].video;
+          }
+          const request = spec.buildRequests(multiformatBids, bidderRequest)
+          const video = request.data.imp[0].video
           const expectedVideo = {
             mimes: ['video/mp4'],
             protocols: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -201,12 +201,12 @@ describe('Alliance Gravity bid adapter tests', () => {
               playerSize: [640, 480],
               context: 'outstream',
             },
-          };
-          expect(video).to.eql(expectedVideo);
-        });
+          }
+          expect(video).to.eql(expectedVideo)
+        })
 
         it('instream adunit', () => {
-          const videoBids = structuredClone(sampleBids);
+          const videoBids = structuredClone(sampleBids)
           videoBids[0].mediaTypes = {
             video: {
               context: 'instream',
@@ -216,28 +216,28 @@ describe('Alliance Gravity bid adapter tests', () => {
               playbackmethod: [2],
               skip: 1
             }
-          };
-          const request = spec.buildRequests(videoBids, bidderRequest);
-          const requestContent = request.data;
-          expect(request).to.have.property('method').and.to.equal('POST');
-          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
-          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-        });
+          }
+          const request = spec.buildRequests(videoBids, bidderRequest)
+          const requestContent = request.data
+          expect(request).to.have.property('method').and.to.equal('POST')
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream')
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2)
+        })
       }
-    });
+    })
     after(() => {
       sandbox.restore()
-    });
-  });
+    })
+  })
 
   describe('intepretResponse()', () => {
     it('empty response', () => {
       const response = {
         body: ''
-      };
-      const output = spec.interpretResponse(response);
-      expect(output.length).to.be.eql(0);
-    });
+      }
+      const output = spec.interpretResponse(response)
+      expect(output.length).to.be.eql(0)
+    })
     it('banner responses with adm', () => {
       const response = {
         body: {
@@ -277,8 +277,8 @@ describe('Alliance Gravity bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
-      const output = spec.interpretResponse(response);
+      }
+      const output = spec.interpretResponse(response)
       const expectedOutput = [{
         requestId: '226175918ebeda',
         cpm: 1.5,
@@ -296,9 +296,9 @@ describe('Alliance Gravity bid adapter tests', () => {
           demandSource: 'appnexus',
         },
         ad: '<div>TestAd</div>',
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
+      }]
+      expect(output).to.eql(expectedOutput)
+    })
 
     it('instream responses', () => {
       const response = {
@@ -333,9 +333,9 @@ describe('Alliance Gravity bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
+      }
 
-      const output = spec.interpretResponse(response);
+      const output = spec.interpretResponse(response)
       const expectedOutput = [{
         requestId: '263cba3b8bfb72',
         cpm: 5,
@@ -348,9 +348,9 @@ describe('Alliance Gravity bid adapter tests', () => {
         mediaType: 'video',
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
         vastXml: '<VAST>vast</VAST>',
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
+      }]
+      expect(output).to.eql(expectedOutput)
+    })
 
     it('outstream responses', () => {
       const response = {
@@ -385,9 +385,9 @@ describe('Alliance Gravity bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
+      }
 
-      const output = spec.interpretResponse(response);
+      const output = spec.interpretResponse(response)
       const expectedOutput = [{
         requestId: '4ce809b61a3928',
         cpm: 5,
@@ -402,9 +402,9 @@ describe('Alliance Gravity bid adapter tests', () => {
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
         vastXml: '<VAST>vast</VAST>',
         renderer: output[0].renderer,
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
+      }]
+      expect(output).to.eql(expectedOutput)
+    })
 
     it('native responses', () => {
       const response = {
@@ -442,9 +442,9 @@ describe('Alliance Gravity bid adapter tests', () => {
             cookies: [],
           },
         },
-      };
+      }
 
-      const output = spec.interpretResponse(response);
+      const output = spec.interpretResponse(response)
       const expectOutput = [{
         requestId: '23e11d845514bb',
         cpm: 10,
@@ -503,34 +503,34 @@ describe('Alliance Gravity bid adapter tests', () => {
             ],
           },
         },
-      }];
-      expect(output).to.eql(expectOutput);
-    });
-  });
+      }]
+      expect(output).to.eql(expectOutput)
+    })
+  })
 
   describe('getUserSyncs()', () => {
-    const response = { body: { cookies: [] } };
+    const response = { body: { cookies: [] } }
     it('Verifies user sync without cookie in bid response', () => {
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
+      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+    })
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
         cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
-      };
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
-      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];
-      expect(syncs).to.eql(expectedSyncs);
-    });
+      }
+      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent)
+      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }]
+      expect(syncs).to.eql(expectedSyncs)
+    })
     it('Verifies user sync with no bid response', () => {
-      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
+      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+    })
     it('Verifies user sync with no bid body response', () => {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-      expect(syncs).to.eql([]);
-    });
-  });
-});
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
+      expect(syncs).to.eql([])
+    })
+  })
+})

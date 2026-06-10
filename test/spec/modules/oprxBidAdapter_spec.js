@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec, __setTestConverter } from 'modules/oprxBidAdapter.js';
+import { expect } from 'chai'
+import { spec, __setTestConverter } from 'modules/oprxBidAdapter.js'
 
 describe('oprxBidAdapter', function () {
   const bid = {
@@ -19,13 +19,13 @@ describe('oprxBidAdapter', function () {
       npi: '9999999999',
       bid_floor: 1.25
     }
-  };
+  }
 
   const bidderRequest = {
     auctionId: 'auction123',
     bidderCode: 'oprx',
     refererInfo: { referer: 'https://example.com' }
-  };
+  }
 
   // SETUP: Replace real converter with mock
   before(() => {
@@ -53,23 +53,23 @@ describe('oprxBidAdapter', function () {
           ttl: 50
         })) || []
       })
-    });
-  });
+    })
+  })
 
   describe('buildRequests', () => {
     it('should build a valid request object', () => {
-      const request = spec.buildRequests([bid], bidderRequest)[0];
-      expect(request.method).to.equal('POST');
-      expect(request.data).to.be.an('object');
-    });
-  });
+      const request = spec.buildRequests([bid], bidderRequest)[0]
+      expect(request.method).to.equal('POST')
+      expect(request.data).to.be.an('object')
+    })
+  })
 
   describe('interpretResponse', () => {
-    let request;
+    let request
 
     beforeEach(() => {
-      request = spec.buildRequests([bid], bidderRequest)[0];
-    });
+      request = spec.buildRequests([bid], bidderRequest)[0]
+    })
 
     it('should return a valid bid response', () => {
       const serverResponse = {
@@ -87,13 +87,13 @@ describe('oprxBidAdapter', function () {
             }]
           }]
         }
-      };
+      }
 
-      const bids = spec.interpretResponse(serverResponse, request);
-      expect(bids).to.be.an('array').with.lengthOf(1);
-      const b = bids[0];
-      expect(b.cpm).to.equal(2.5);
-      expect(b.ad).to.include('Ad');
-    });
-  });
-});
+      const bids = spec.interpretResponse(serverResponse, request)
+      expect(bids).to.be.an('array').with.lengthOf(1)
+      const b = bids[0]
+      expect(b.cpm).to.equal(2.5)
+      expect(b.ad).to.include('Ad')
+    })
+  })
+})

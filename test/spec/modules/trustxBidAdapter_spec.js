@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/trustxBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import sinon from 'sinon';
-import { config } from 'src/config.js';
+import { expect } from 'chai'
+import { spec } from 'modules/trustxBidAdapter.js'
+import { BANNER, VIDEO } from 'src/mediaTypes.js'
+import sinon from 'sinon'
+import { config } from 'src/config.js'
 
 const getBannerRequest = () => {
   return {
@@ -33,7 +33,7 @@ const getBannerRequest = () => {
     auctionStart: 1615982436069,
     timeout: 2000
   }
-};
+}
 
 const getVideoRequest = () => {
   return {
@@ -120,8 +120,8 @@ const getVideoRequest = () => {
       reachedTop: true,
       referer: 'trustx-test.com'
     }
-  };
-};
+  }
+}
 
 const getBidderResponse = () => {
   return {
@@ -190,11 +190,11 @@ const getBidderResponse = () => {
         }
       }
     }
-  };
+  }
 }
 
 describe('trustxBidAdapter', function() {
-  let videoBidRequest;
+  let videoBidRequest
 
   const VIDEO_REQUEST = {
     'bidderCode': 'trustx',
@@ -210,7 +210,7 @@ describe('trustxBidAdapter', function() {
       'reachedTop': true,
       'referer': 'trustx-test.com'
     }
-  };
+  }
 
   beforeEach(function () {
     videoBidRequest = {
@@ -248,64 +248,64 @@ describe('trustxBidAdapter', function() {
         publisher_id: 'trustx-publisher-id',
         bidfloor: 0
       }
-    };
-  });
+    }
+  })
 
   describe('isValidRequest', function() {
-    let bidderRequest;
+    let bidderRequest
 
     beforeEach(function() {
-      bidderRequest = getBannerRequest();
-    });
+      bidderRequest = getBannerRequest()
+    })
 
     it('should accept request with uid/secid', function () {
       bidderRequest.bids[0].params = {
         uid: '123',
         mediaTypes: { banner: { sizes: [[300, 250]] } }
-      };
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
-    });
+      }
+      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true
+    })
 
     it('should accept request with secid', function () {
       bidderRequest.bids[0].params = {
         secid: '456',
         publisher_id: 'pub-1',
         mediaTypes: { banner: { sizes: [[300, 250]] } }
-      };
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
-    });
+      }
+      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true
+    })
 
     it('reject requests without params', function () {
-      bidderRequest.bids[0].params = {};
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false;
-    });
+      bidderRequest.bids[0].params = {}
+      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false
+    })
 
     it('returns false when banner mediaType does not exist', function () {
       bidderRequest.bids[0].mediaTypes = {}
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false;
-    });
-  });
+      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false
+    })
+  })
 
   describe('buildRequests', function() {
-    let bidderRequest;
+    let bidderRequest
 
     beforeEach(function() {
-      bidderRequest = getBannerRequest();
-    });
+      bidderRequest = getBannerRequest()
+    })
 
     it('should return expected request object', function() {
-      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(bidRequest.url).equal('https://ads.trustx.org/pbhb');
-      expect(bidRequest.method).equal('POST');
-    });
-  });
+      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
+      expect(bidRequest.url).equal('https://ads.trustx.org/pbhb')
+      expect(bidRequest.method).equal('POST')
+    })
+  })
 
   context('banner validation', function () {
-    let bidderRequest;
+    let bidderRequest
 
     beforeEach(function() {
-      bidderRequest = getBannerRequest();
-    });
+      bidderRequest = getBannerRequest()
+    })
 
     it('returns true when banner sizes are defined', function () {
       const bid = {
@@ -318,10 +318,10 @@ describe('trustxBidAdapter', function() {
         params: {
           uid: 'trustx-placement-1',
         }
-      };
+      }
 
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
-    });
+      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true
+    })
 
     it('returns false when banner sizes are invalid', function () {
       const invalidSizes = [
@@ -329,7 +329,7 @@ describe('trustxBidAdapter', function() {
         '3:2',
         456,
         'invalid'
-      ];
+      ]
 
       invalidSizes.forEach((sizes) => {
         const bid = {
@@ -342,12 +342,12 @@ describe('trustxBidAdapter', function() {
           params: {
             uid: 'trustx-placement-1',
           }
-        };
+        }
 
-        expect(spec.isBidRequestValid(bid)).to.be.false;
-      });
-    });
-  });
+        expect(spec.isBidRequestValid(bid)).to.be.false
+      })
+    })
+  })
 
   context('video validation', function () {
     beforeEach(function () {
@@ -365,21 +365,21 @@ describe('trustxBidAdapter', function() {
         params: {
           uid: 'trustx-placement-1',
         }
-      };
-    });
+      }
+    })
 
     it('should return true (skip validations) when test = true', function () {
       this.bid.params = {
         test: true
-      };
-      expect(spec.isBidRequestValid(this.bid)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(this.bid)).to.equal(true)
+    })
 
     it('returns false when video context is not defined', function () {
-      delete this.bid.mediaTypes.video.context;
+      delete this.bid.mediaTypes.video.context
 
-      expect(spec.isBidRequestValid(this.bid)).to.be.false;
-    });
+      expect(spec.isBidRequestValid(this.bid)).to.be.false
+    })
 
     it('returns false when video playserSize is invalid', function () {
       const invalidSizes = [
@@ -387,13 +387,13 @@ describe('trustxBidAdapter', function() {
         '1:1',
         456,
         'invalid'
-      ];
+      ]
 
       invalidSizes.forEach((playerSize) => {
-        this.bid.mediaTypes.video.playerSize = playerSize;
-        expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      });
-    });
+        this.bid.mediaTypes.video.playerSize = playerSize
+        expect(spec.isBidRequestValid(this.bid)).to.be.false
+      })
+    })
 
     it('returns false when video mimes is invalid', function () {
       const invalidMimes = [
@@ -404,10 +404,10 @@ describe('trustxBidAdapter', function() {
       ]
 
       invalidMimes.forEach((mimes) => {
-        this.bid.mediaTypes.video.mimes = mimes;
-        expect(spec.isBidRequestValid(this.bid)).to.be.false;
+        this.bid.mediaTypes.video.mimes = mimes
+        expect(spec.isBidRequestValid(this.bid)).to.be.false
       })
-    });
+    })
 
     it('returns false when video protocols is invalid', function () {
       const invalidProtocols = [
@@ -418,26 +418,26 @@ describe('trustxBidAdapter', function() {
       ]
 
       invalidProtocols.forEach((protocols) => {
-        this.bid.mediaTypes.video.protocols = protocols;
-        expect(spec.isBidRequestValid(this.bid)).to.be.false;
+        this.bid.mediaTypes.video.protocols = protocols
+        expect(spec.isBidRequestValid(this.bid)).to.be.false
       })
-    });
+    })
 
     it('should accept outstream context', function () {
-      this.bid.mediaTypes.video.context = 'outstream';
-      expect(spec.isBidRequestValid(this.bid)).to.be.true;
-    });
-  });
+      this.bid.mediaTypes.video.context = 'outstream'
+      expect(spec.isBidRequestValid(this.bid)).to.be.true
+    })
+  })
 
   describe('buildRequests', function () {
-    let bidderBannerRequest;
-    let bidRequestsWithMediaTypes;
-    let mockBidderRequest;
+    let bidderBannerRequest
+    let bidRequestsWithMediaTypes
+    let mockBidderRequest
 
     beforeEach(function() {
-      bidderBannerRequest = getBannerRequest();
+      bidderBannerRequest = getBannerRequest()
 
-      mockBidderRequest = { refererInfo: {} };
+      mockBidderRequest = { refererInfo: {} }
 
       bidRequestsWithMediaTypes = [{
         bidder: 'trustx',
@@ -476,17 +476,17 @@ describe('trustxBidAdapter', function() {
         bidderRequestId: 'trustx-test-request-2',
         auctionId: 'trustx-test-auction-2',
         transactionId: 'trustx-test-transaction-2'
-      }];
-    });
+      }]
+    })
 
     context('when mediaType is banner', function () {
       it('creates request data', function () {
         let request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
 
-        expect(request).to.exist.and.to.be.a('object');
-        const payload = request.data;
-        expect(payload.imp[0]).to.have.property('id', bidderBannerRequest.bids[0].bidId);
-      });
+        expect(request).to.exist.and.to.be.a('object')
+        const payload = request.data
+        expect(payload.imp[0]).to.have.property('id', bidderBannerRequest.bids[0].bidId)
+      })
 
       it('should combine multiple bid requests into a single request', function () {
         // NOTE: This test verifies that trustx adapter does NOT use multi-request logic.
@@ -522,103 +522,103 @@ describe('trustxBidAdapter', function() {
             bidderRequestId: 'request-1',
             auctionId: 'auction-1'
           }
-        ];
+        ]
 
-        const request = spec.buildRequests(multipleBidRequests, mockBidderRequest);
+        const request = spec.buildRequests(multipleBidRequests, mockBidderRequest)
 
         // Trustx adapter should return a SINGLE request object
-        expect(request).to.be.an('object');
-        expect(request).to.not.be.an('array');
-        expect(request.method).to.equal('POST');
-        expect(request.url).to.equal('https://ads.trustx.org/pbhb'); // No placement_id in URL
+        expect(request).to.be.an('object')
+        expect(request).to.not.be.an('array')
+        expect(request.method).to.equal('POST')
+        expect(request.url).to.equal('https://ads.trustx.org/pbhb') // No placement_id in URL
 
         // All imp objects should be in the same request
-        const payload = request.data;
-        expect(payload.imp).to.be.an('array');
-        expect(payload.imp).to.have.length(3);
-        expect(payload.imp[0].id).to.equal('bid-1');
-        expect(payload.imp[1].id).to.equal('bid-2');
-        expect(payload.imp[2].id).to.equal('bid-3');
-        expect(payload.imp[0].tagid).to.equal('uid-1');
-        expect(payload.imp[1].tagid).to.equal('uid-2');
-        expect(payload.imp[2].tagid).to.equal('uid-3');
-      });
+        const payload = request.data
+        expect(payload.imp).to.be.an('array')
+        expect(payload.imp).to.have.length(3)
+        expect(payload.imp[0].id).to.equal('bid-1')
+        expect(payload.imp[1].id).to.equal('bid-2')
+        expect(payload.imp[2].id).to.equal('bid-3')
+        expect(payload.imp[0].tagid).to.equal('uid-1')
+        expect(payload.imp[1].tagid).to.equal('uid-2')
+        expect(payload.imp[2].tagid).to.equal('uid-3')
+      })
 
       it('should determine media type from mtype field for banner', function () {
-        const customBidderResponse = Object.assign({}, getBidderResponse());
-        customBidderResponse.body = Object.assign({}, getBidderResponse().body);
+        const customBidderResponse = Object.assign({}, getBidderResponse())
+        customBidderResponse.body = Object.assign({}, getBidderResponse().body)
 
         if (customBidderResponse.body.seatbid &&
             customBidderResponse.body.seatbid[0] &&
             customBidderResponse.body.seatbid[0].bid &&
             customBidderResponse.body.seatbid[0].bid[0]) {
           // Add mtype to the bid
-          customBidderResponse.body.seatbid[0].bid[0].mtype = 1; // Banner type
+          customBidderResponse.body.seatbid[0].bid[0].mtype = 1 // Banner type
         }
 
-        const bidRequest = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
-        const bids = spec.interpretResponse(customBidderResponse, bidRequest);
-        expect(bids[0].mediaType).to.equal('banner');
-      });
-    });
+        const bidRequest = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
+        const bids = spec.interpretResponse(customBidderResponse, bidRequest)
+        expect(bids[0].mediaType).to.equal('banner')
+      })
+    })
 
     if (FEATURES.VIDEO) {
       context('video', function () {
         it('should create a POST request for every bid', function () {
-          const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          expect(requests.method).to.equal('POST');
-          expect(requests.url.trim()).to.equal(spec.ENDPOINT);
-        });
+          const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+          expect(requests.method).to.equal('POST')
+          expect(requests.url.trim()).to.equal(spec.ENDPOINT)
+        })
 
         it('should attach request data', function () {
-          const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          const data = requests.data;
-          const [width, height] = videoBidRequest.sizes;
-          const VERSION = '1.0.0';
+          const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+          const data = requests.data
+          const [width, height] = videoBidRequest.sizes
+          const VERSION = '1.0.0'
 
-          expect(data.imp[1].video.w).to.equal(width);
-          expect(data.imp[1].video.h).to.equal(height);
-          expect(data.imp[1].bidfloor).to.equal(videoBidRequest.params.bidfloor);
-          expect(data.imp[1]['video']['placement']).to.equal(videoBidRequest.params.video['placement']);
-          expect(data.imp[1]['video']['plcmt']).to.equal(videoBidRequest.params.video['plcmt']);
-          expect(data.ext.prebidver).to.equal('$prebid.version$');
-          expect(data.ext.adapterver).to.equal(spec.VERSION);
-        });
+          expect(data.imp[1].video.w).to.equal(width)
+          expect(data.imp[1].video.h).to.equal(height)
+          expect(data.imp[1].bidfloor).to.equal(videoBidRequest.params.bidfloor)
+          expect(data.imp[1]['video']['placement']).to.equal(videoBidRequest.params.video['placement'])
+          expect(data.imp[1]['video']['plcmt']).to.equal(videoBidRequest.params.video['plcmt'])
+          expect(data.ext.prebidver).to.equal('$prebid.version$')
+          expect(data.ext.adapterver).to.equal(spec.VERSION)
+        })
 
         it('should attach End 2 End test data', function () {
-          bidRequestsWithMediaTypes[1].params.test = true;
-          const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          const data = requests.data;
-          expect(data.imp[1].bidfloor).to.equal(0);
-          expect(data.imp[1].video.w).to.equal(640);
-          expect(data.imp[1].video.h).to.equal(480);
-        });
-      });
+          bidRequestsWithMediaTypes[1].params.test = true
+          const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+          const data = requests.data
+          expect(data.imp[1].bidfloor).to.equal(0)
+          expect(data.imp[1].video.w).to.equal(640)
+          expect(data.imp[1].video.h).to.equal(480)
+        })
+      })
     }
 
     context('privacy regulations', function() {
       it('should include USP consent data in request', function() {
-        const uspConsent = '1YNN';
-        const bidderRequestWithUsp = Object.assign({}, mockBidderRequest, { uspConsent });
-        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithUsp);
-        const data = requests.data;
+        const uspConsent = '1YNN'
+        const bidderRequestWithUsp = Object.assign({}, mockBidderRequest, { uspConsent })
+        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithUsp)
+        const data = requests.data
 
-        expect(data.regs.ext).to.have.property('us_privacy', '1YNN');
-      });
+        expect(data.regs.ext).to.have.property('us_privacy', '1YNN')
+      })
 
       it('should include GPP consent data from gppConsent in request', function() {
         const gppConsent = {
           gppString: 'GPP_CONSENT_STRING',
           applicableSections: [1, 2, 3]
-        };
+        }
 
-        const bidderRequestWithGpp = Object.assign({}, mockBidderRequest, { gppConsent });
-        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithGpp);
-        const data = requests.data;
+        const bidderRequestWithGpp = Object.assign({}, mockBidderRequest, { gppConsent })
+        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithGpp)
+        const data = requests.data
 
-        expect(data.regs).to.have.property('gpp', 'GPP_CONSENT_STRING');
-        expect(data.regs.gpp_sid).to.deep.equal([1, 2, 3]);
-      });
+        expect(data.regs).to.have.property('gpp', 'GPP_CONSENT_STRING')
+        expect(data.regs.gpp_sid).to.deep.equal([1, 2, 3])
+      })
 
       it('should include GPP consent data from ortb2 in request', function() {
         const ortb2 = {
@@ -626,102 +626,102 @@ describe('trustxBidAdapter', function() {
             gpp: 'GPP_STRING_FROM_ORTB2',
             gpp_sid: [1, 2]
           }
-        };
+        }
 
-        const bidderRequestWithOrtb2Gpp = Object.assign({}, mockBidderRequest, { ortb2 });
-        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithOrtb2Gpp);
-        const data = requests.data;
+        const bidderRequestWithOrtb2Gpp = Object.assign({}, mockBidderRequest, { ortb2 })
+        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithOrtb2Gpp)
+        const data = requests.data
 
-        expect(data.regs).to.have.property('gpp', 'GPP_STRING_FROM_ORTB2');
-        expect(data.regs.gpp_sid).to.deep.equal([1, 2]);
-      });
+        expect(data.regs).to.have.property('gpp', 'GPP_STRING_FROM_ORTB2')
+        expect(data.regs.gpp_sid).to.deep.equal([1, 2])
+      })
 
       it('should prioritize gppConsent over ortb2 for GPP consent data', function() {
         const gppConsent = {
           gppString: 'GPP_CONSENT_STRING',
           applicableSections: [1, 2, 3]
-        };
+        }
 
         const ortb2 = {
           regs: {
             gpp: 'GPP_STRING_FROM_ORTB2',
             gpp_sid: [1, 2]
           }
-        };
+        }
 
-        const bidderRequestWithBothGpp = Object.assign({}, mockBidderRequest, { gppConsent, ortb2 });
-        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithBothGpp);
-        const data = requests.data;
+        const bidderRequestWithBothGpp = Object.assign({}, mockBidderRequest, { gppConsent, ortb2 })
+        const requests = spec.buildRequests(bidRequestsWithMediaTypes, bidderRequestWithBothGpp)
+        const data = requests.data
 
-        expect(data.regs).to.have.property('gpp', 'GPP_CONSENT_STRING');
-        expect(data.regs.gpp_sid).to.deep.equal([1, 2, 3]);
-      });
+        expect(data.regs).to.have.property('gpp', 'GPP_CONSENT_STRING')
+        expect(data.regs.gpp_sid).to.deep.equal([1, 2, 3])
+      })
 
       it('should include COPPA flag in request when set to true', function() {
         // Mock the config.getConfig function to return true for coppa
-        sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+        sinon.stub(config, 'getConfig').withArgs('coppa').returns(true)
 
-        const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        const data = requests.data;
+        const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        const data = requests.data
 
-        expect(data.regs).to.have.property('coppa', 1);
+        expect(data.regs).to.have.property('coppa', 1)
 
         // Restore the stub
-        config.getConfig.restore();
-      });
-    });
-  });
+        config.getConfig.restore()
+      })
+    })
+  })
 
   describe('interpretResponse', function() {
     context('when mediaType is banner', function() {
-      let bidRequest, bidderResponse;
+      let bidRequest, bidderResponse
       beforeEach(function() {
-        const bidderRequest = getBannerRequest();
-        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-        bidderResponse = getBidderResponse();
-      });
+        const bidderRequest = getBannerRequest()
+        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
+        bidderResponse = getBidderResponse()
+      })
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
-        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} })
+        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest)
 
-        expect(bids).to.be.empty;
-      });
+        expect(bids).to.be.empty
+      })
 
       it('have bids', function () {
-        let bids = spec.interpretResponse(bidderResponse, bidRequest);
-        expect(bids).to.be.an('array').that.is.not.empty;
-        validateBidOnIndex(0);
+        let bids = spec.interpretResponse(bidderResponse, bidRequest)
+        expect(bids).to.be.an('array').that.is.not.empty
+        validateBidOnIndex(0)
 
         function validateBidOnIndex(index) {
-          expect(bids[index]).to.have.property('currency', 'USD');
-          expect(bids[index]).to.have.property('requestId', getBidderResponse().body.seatbid[0].bid[index].impid);
-          expect(bids[index]).to.have.property('cpm', getBidderResponse().body.seatbid[0].bid[index].price);
-          expect(bids[index]).to.have.property('width', getBidderResponse().body.seatbid[0].bid[index].w);
-          expect(bids[index]).to.have.property('height', getBidderResponse().body.seatbid[0].bid[index].h);
-          expect(bids[index]).to.have.property('ad', getBidderResponse().body.seatbid[0].bid[index].adm);
-          expect(bids[index]).to.have.property('creativeId', getBidderResponse().body.seatbid[0].bid[index].crid);
-          expect(bids[index].meta).to.have.property('advertiserDomains');
-          expect(bids[index]).to.have.property('ttl', 360);
-          expect(bids[index]).to.have.property('netRevenue', false);
+          expect(bids[index]).to.have.property('currency', 'USD')
+          expect(bids[index]).to.have.property('requestId', getBidderResponse().body.seatbid[0].bid[index].impid)
+          expect(bids[index]).to.have.property('cpm', getBidderResponse().body.seatbid[0].bid[index].price)
+          expect(bids[index]).to.have.property('width', getBidderResponse().body.seatbid[0].bid[index].w)
+          expect(bids[index]).to.have.property('height', getBidderResponse().body.seatbid[0].bid[index].h)
+          expect(bids[index]).to.have.property('ad', getBidderResponse().body.seatbid[0].bid[index].adm)
+          expect(bids[index]).to.have.property('creativeId', getBidderResponse().body.seatbid[0].bid[index].crid)
+          expect(bids[index].meta).to.have.property('advertiserDomains')
+          expect(bids[index]).to.have.property('ttl', 360)
+          expect(bids[index]).to.have.property('netRevenue', false)
         }
-      });
+      })
 
       it('should determine media type from mtype field for banner', function () {
-        const customBidderResponse = Object.assign({}, getBidderResponse());
-        customBidderResponse.body = Object.assign({}, getBidderResponse().body);
+        const customBidderResponse = Object.assign({}, getBidderResponse())
+        customBidderResponse.body = Object.assign({}, getBidderResponse().body)
 
         if (customBidderResponse.body.seatbid &&
             customBidderResponse.body.seatbid[0] &&
             customBidderResponse.body.seatbid[0].bid &&
             customBidderResponse.body.seatbid[0].bid[0]) {
           // Add mtype to the bid
-          customBidderResponse.body.seatbid[0].bid[0].mtype = 1; // Banner type
+          customBidderResponse.body.seatbid[0].bid[0].mtype = 1 // Banner type
         }
 
-        const bids = spec.interpretResponse(customBidderResponse, bidRequest);
-        expect(bids[0].mediaType).to.equal('banner');
-      });
+        const bids = spec.interpretResponse(customBidderResponse, bidRequest)
+        expect(bids[0].mediaType).to.equal('banner')
+      })
 
       it('should support multi-bid (multiple bids for one imp object) - Prebid v10 feature', function () {
         // Multi-bid: Server can return multiple bids for a single imp object
@@ -780,34 +780,34 @@ describe('trustxBidAdapter', function() {
               }
             ]
           }
-        };
+        }
 
-        const bids = spec.interpretResponse(multiBidResponse, bidRequest);
+        const bids = spec.interpretResponse(multiBidResponse, bidRequest)
 
         // Trustx adapter should return all bids (multi-bid support via ortbConverter)
-        expect(bids).to.be.an('array');
-        expect(bids).to.have.length(3); // All 3 bids should be returned
+        expect(bids).to.be.an('array')
+        expect(bids).to.have.length(3) // All 3 bids should be returned
 
         // Verify each bid
-        expect(bids[0].requestId).to.equal('trustx-bid-12345');
-        expect(bids[0].cpm).to.equal(2.50);
-        expect(bids[0].ad).to.equal('<div>Bid 1 Creative</div>');
-        expect(bids[0].creativeId).to.equal('creative-1');
+        expect(bids[0].requestId).to.equal('trustx-bid-12345')
+        expect(bids[0].cpm).to.equal(2.50)
+        expect(bids[0].ad).to.equal('<div>Bid 1 Creative</div>')
+        expect(bids[0].creativeId).to.equal('creative-1')
 
-        expect(bids[1].requestId).to.equal('trustx-bid-12345');
-        expect(bids[1].cpm).to.equal(3.00);
-        expect(bids[1].ad).to.equal('<div>Bid 2 Creative</div>');
-        expect(bids[1].creativeId).to.equal('creative-2');
+        expect(bids[1].requestId).to.equal('trustx-bid-12345')
+        expect(bids[1].cpm).to.equal(3.00)
+        expect(bids[1].ad).to.equal('<div>Bid 2 Creative</div>')
+        expect(bids[1].creativeId).to.equal('creative-2')
 
-        expect(bids[2].requestId).to.equal('trustx-bid-12345');
-        expect(bids[2].cpm).to.equal(2.75);
-        expect(bids[2].ad).to.equal('<div>Bid 3 Creative</div>');
-        expect(bids[2].creativeId).to.equal('creative-3');
-      });
+        expect(bids[2].requestId).to.equal('trustx-bid-12345')
+        expect(bids[2].cpm).to.equal(2.75)
+        expect(bids[2].ad).to.equal('<div>Bid 3 Creative</div>')
+        expect(bids[2].creativeId).to.equal('creative-3')
+      })
 
       it('should handle response with ext.userid (userid is saved to localStorage by adapter)', function () {
-        const userId = '42d55fac-da65-4468-b854-06f40cfe3852';
-        const impId = bidRequest.data.imp[0].id;
+        const userId = '42d55fac-da65-4468-b854-06f40cfe3852'
+        const impId = bidRequest.data.imp[0].id
         const responseWithUserId = {
           headers: null,
           body: {
@@ -828,22 +828,22 @@ describe('trustxBidAdapter', function() {
               userid: userId
             }
           }
-        };
+        }
 
         // Test that interpretResponse handles ext.userid without errors
         // (actual localStorage saving is tested at integration level)
-        const bids = spec.interpretResponse(responseWithUserId, bidRequest);
+        const bids = spec.interpretResponse(responseWithUserId, bidRequest)
 
-        expect(bids).to.be.an('array').that.is.not.empty;
-        expect(bids[0].cpm).to.equal(0.5);
+        expect(bids).to.be.an('array').that.is.not.empty
+        expect(bids[0].cpm).to.equal(0.5)
         // ext.userid is processed internally by adapter and saved to localStorage
         // if localStorageWriteAllowed is true and localStorage is enabled
-      });
+      })
 
       it('should handle response with nurl and burl tracking URLs', function () {
-        const impId = bidRequest.data.imp[0].id;
-        const nurl = 'https://trackers.trustx.org/event?brid=xxx&e=nurl&cpm=${AUCTION_PRICE}';
-        const burl = 'https://trackers.trustx.org/event?brid=xxx&e=burl&cpm=${AUCTION_PRICE}';
+        const impId = bidRequest.data.imp[0].id
+        const nurl = 'https://trackers.trustx.org/event?brid=xxx&e=nurl&cpm=${AUCTION_PRICE}'
+        const burl = 'https://trackers.trustx.org/event?brid=xxx&e=burl&cpm=${AUCTION_PRICE}'
         const responseWithTracking = {
           headers: null,
           body: {
@@ -864,21 +864,21 @@ describe('trustxBidAdapter', function() {
               seat: 'trustx'
             }]
           }
-        };
+        }
 
-        const bids = spec.interpretResponse(responseWithTracking, bidRequest);
+        const bids = spec.interpretResponse(responseWithTracking, bidRequest)
 
-        expect(bids).to.be.an('array').that.is.not.empty;
+        expect(bids).to.be.an('array').that.is.not.empty
         // burl is directly mapped to bidResponse.burl by ortbConverter
-        expect(bids[0].burl).to.equal(burl);
+        expect(bids[0].burl).to.equal(burl)
         // nurl is processed by banner processor: if adm exists, nurl is embedded as tracking pixel in ad
         // if no adm, nurl becomes adUrl. In this case, we have adm, so nurl is in ad as tracking pixel
-        expect(bids[0].ad).to.include(nurl); // nurl should be embedded in ad as tracking pixel
-        expect(bids[0].ad).to.include('<div>Test Ad</div>'); // original adm should still be there
-      });
+        expect(bids[0].ad).to.include(nurl) // nurl should be embedded in ad as tracking pixel
+        expect(bids[0].ad).to.include('<div>Test Ad</div>') // original adm should still be there
+      })
 
       it('should handle response with adomain and cat (categories)', function () {
-        const impId = bidRequest.data.imp[0].id;
+        const impId = bidRequest.data.imp[0].id
         const responseWithCategories = {
           headers: null,
           body: {
@@ -899,31 +899,31 @@ describe('trustxBidAdapter', function() {
               seat: 'trustx'
             }]
           }
-        };
+        }
 
-        const bids = spec.interpretResponse(responseWithCategories, bidRequest);
+        const bids = spec.interpretResponse(responseWithCategories, bidRequest)
 
-        expect(bids).to.be.an('array').that.is.not.empty;
-        expect(bids[0].meta).to.exist;
-        expect(bids[0].meta.advertiserDomains).to.deep.equal(['adl.org']);
-        expect(bids[0].meta.primaryCatId).to.equal('IAB6');
-      });
-    });
+        expect(bids).to.be.an('array').that.is.not.empty
+        expect(bids[0].meta).to.exist
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(['adl.org'])
+        expect(bids[0].meta.primaryCatId).to.equal('IAB6')
+      })
+    })
 
     context('when mediaType is video', function () {
-      let bidRequest, bidderResponse;
+      let bidRequest, bidderResponse
       beforeEach(function() {
-        const bidderRequest = getVideoRequest();
-        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-        bidderResponse = getBidderResponse();
-      });
+        const bidderRequest = getVideoRequest()
+        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
+        bidderResponse = getBidderResponse()
+      })
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
-        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} })
+        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest)
 
-        expect(bids).to.be.empty;
-      });
+        expect(bids).to.be.empty
+      })
 
       it('should return no bids if the response "nurl" and "adm" are missing', function () {
         const SERVER_RESP = Object.assign({}, bidderResponse, {
@@ -934,10 +934,10 @@ describe('trustxBidAdapter', function() {
               }]
             }]
           }
-        });
-        const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
-        expect(bids.length).to.equal(0);
-      });
+        })
+        const bids = spec.interpretResponse(SERVER_RESP, bidRequest)
+        expect(bids.length).to.equal(0)
+      })
 
       it('should return no bids if the response "price" is missing', function () {
         const SERVER_RESP = Object.assign({}, bidderResponse, {
@@ -948,10 +948,10 @@ describe('trustxBidAdapter', function() {
               }]
             }]
           }
-        });
-        const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
-        expect(bids.length).to.equal(0);
-      });
+        })
+        const bids = spec.interpretResponse(SERVER_RESP, bidRequest)
+        expect(bids.length).to.equal(0)
+      })
 
       it('should determine media type from mtype field for video', function () {
         const SERVER_RESP = Object.assign({}, bidderResponse, {
@@ -978,53 +978,53 @@ describe('trustxBidAdapter', function() {
               }]
             }]
           }
-        });
+        })
 
-        const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
-        expect(bids[0].mediaType).to.equal('video');
-      });
-    });
-  });
+        const bids = spec.interpretResponse(SERVER_RESP, bidRequest)
+        expect(bids[0].mediaType).to.equal('video')
+      })
+    })
+  })
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let bidRequest, bidderResponse
     beforeEach(function() {
-      const bidderRequest = getVideoRequest();
-      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      bidderResponse = getBidderResponse();
-    });
+      const bidderRequest = getVideoRequest()
+      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
+      bidderResponse = getBidderResponse()
+    })
 
     it('handles no parameters', function () {
-      let opts = spec.getUserSyncs({});
-      expect(opts).to.be.an('array').that.is.empty;
-    });
+      let opts = spec.getUserSyncs({})
+      expect(opts).to.be.an('array').that.is.empty
+    })
     it('returns non if sync is not allowed', function () {
-      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })
 
-      expect(opts).to.be.an('array').that.is.empty;
-    });
+      expect(opts).to.be.an('array').that.is.empty
+    })
 
     it('iframe sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse])
 
-      expect(opts.length).to.equal(1);
-      expect(opts[0].type).to.equal('iframe');
-      expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['sync1'].syncs[0].url);
-    });
+      expect(opts.length).to.equal(1)
+      expect(opts[0].type).to.equal('iframe')
+      expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['sync1'].syncs[0].url)
+    })
 
     it('pixel sync enabled should return results', function () {
-      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bidderResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bidderResponse])
 
-      expect(opts.length).to.equal(1);
-      expect(opts[0].type).to.equal('image');
-      expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['sync2'].syncs[0].url);
-    });
+      expect(opts.length).to.equal(1)
+      expect(opts[0].type).to.equal('image')
+      expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['sync2'].syncs[0].url)
+    })
 
     it('all sync enabled should prioritize iframe', function () {
-      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse])
 
-      expect(opts.length).to.equal(1);
-    });
+      expect(opts.length).to.equal(1)
+    })
 
     it('should handle real-world usersync with multiple providers (ttd, mediaforce, bidswitch, trustx)', function () {
       const realWorldResponse = {
@@ -1089,28 +1089,28 @@ describe('trustxBidAdapter', function() {
             userid: '42d55fac-da65-4468-b854-06f40cfe3852'
           }
         }
-      };
+      }
 
       // Test with pixel enabled
-      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [realWorldResponse]);
+      let opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [realWorldResponse])
 
       // Should return all pixel syncs from all providers
-      expect(opts).to.be.an('array');
-      expect(opts.length).to.equal(5); // 2 ttd + 1 mediaforce + 1 bidswitch + 1 trustx pixel
-      expect(opts.every(s => s.type === 'image')).to.be.true;
-      expect(opts.some(s => s.url.includes('adsrvr.org'))).to.be.true;
-      expect(opts.some(s => s.url.includes('mfadsrvr.com'))).to.be.true;
-      expect(opts.some(s => s.url.includes('bidswitch.net'))).to.be.true;
-      expect(opts.some(s => s.url.includes('sync.trustx.org'))).to.be.true;
+      expect(opts).to.be.an('array')
+      expect(opts.length).to.equal(5) // 2 ttd + 1 mediaforce + 1 bidswitch + 1 trustx pixel
+      expect(opts.every(s => s.type === 'image')).to.be.true
+      expect(opts.some(s => s.url.includes('adsrvr.org'))).to.be.true
+      expect(opts.some(s => s.url.includes('mfadsrvr.com'))).to.be.true
+      expect(opts.some(s => s.url.includes('bidswitch.net'))).to.be.true
+      expect(opts.some(s => s.url.includes('sync.trustx.org'))).to.be.true
 
       // Test with iframe enabled
-      opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [realWorldResponse]);
+      opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [realWorldResponse])
 
       // Should return only iframe syncs
-      expect(opts).to.be.an('array');
-      expect(opts.length).to.equal(1); // 1 trustx iframe
-      expect(opts[0].type).to.equal('iframe');
-      expect(opts[0].url).to.include('static.cdn.trustx.org');
-    });
-  });
-});
+      expect(opts).to.be.an('array')
+      expect(opts.length).to.equal(1) // 1 trustx iframe
+      expect(opts[0].type).to.equal('iframe')
+      expect(opts[0].url).to.include('static.cdn.trustx.org')
+    })
+  })
+})

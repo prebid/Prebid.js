@@ -1,4 +1,4 @@
-import { logInfo } from '../../src/utils.js';
+import { logInfo } from '../../src/utils.js'
 
 /**
  * Search for Utiq service to be enabled on any other existing frame, then, if found,
@@ -12,29 +12,29 @@ import { logInfo } from '../../src/utils.js';
  * @param moduleName - name of the module that tiggers the function
  */
 export function findUtiqService(storage: any, refreshUserIds: () => void, logPrefix: string, moduleName: string) {
-  let frame = window;
-  let utiqFrame: Window & typeof globalThis;
+  let frame = window
+  let utiqFrame: Window & typeof globalThis
   while (frame) {
     try {
       if (frame.frames['__utiqLocator']) {
-        utiqFrame = frame;
-        break;
+        utiqFrame = frame
+        break
       }
     } catch (ignore) { }
     if (frame === window.top) {
-      break;
+      break
     }
-    frame = frame.parent as Window & typeof globalThis;
+    frame = frame.parent as Window & typeof globalThis
   }
 
-  logInfo(`${logPrefix}: frame found: `, Boolean(utiqFrame));
+  logInfo(`${logPrefix}: frame found: `, Boolean(utiqFrame))
   if (utiqFrame) {
     window.addEventListener('message', (event) => {
-      const { action, idGraphData, description } = event.data;
+      const { action, idGraphData, description } = event.data
       if (action === 'returnIdGraphEntry' && description.moduleName === moduleName) {
         // Use the IDs received from the parent website
         if (event.origin !== window.origin) {
-          logInfo(`${logPrefix}: Setting local storage pass: `, idGraphData);
+          logInfo(`${logPrefix}: Setting local storage pass: `, idGraphData)
           if (idGraphData) {
             storage.setDataInLocalStorage('utiqPass', JSON.stringify({
               "connectId": {
@@ -42,16 +42,16 @@ export function findUtiqService(storage: any, refreshUserIds: () => void, logPre
               },
             }))
           } else {
-            logInfo(`${logPrefix}: removing local storage pass`);
-            storage.removeDataFromLocalStorage('utiqPass');
+            logInfo(`${logPrefix}: removing local storage pass`)
+            storage.removeDataFromLocalStorage('utiqPass')
           }
-          refreshUserIds();
+          refreshUserIds()
         }
       }
-    });
+    })
     utiqFrame.postMessage({
       action: 'getIdGraphEntry',
       description: { moduleName },
-    }, "*");
+    }, "*")
   }
 }

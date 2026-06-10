@@ -1,13 +1,13 @@
-import { isFingerprintingApiDisabled } from '../fingerprinting/fingerprinting.js';
-import { getFallbackWindow } from '../../src/utils.js';
+import { isFingerprintingApiDisabled } from '../fingerprinting/fingerprinting.js'
+import { getFallbackWindow } from '../../src/utils.js'
 
 export function getDevicePixelRatio(win) {
   if (isFingerprintingApiDisabled('devicepixelratio')) {
-    return 1;
+    return 1
   }
   try {
-    return getFallbackWindow(win).devicePixelRatio;
+    return getFallbackWindow(win).devicePixelRatio
   } catch (e) {
   }
-  return 1;
+  return 1
 }

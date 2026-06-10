@@ -1,13 +1,13 @@
-import { deepClone, logError, logInfo } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
-import { EVENTS } from '../src/constants.js';
+import { deepClone, logError, logInfo } from '../src/utils.js'
+import { ajax } from '../src/ajax.js'
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
+import adapterManager from '../src/adapterManager.js'
+import { EVENTS } from '../src/constants.js'
 
-const analyticsType = 'endpoint';
-const defaultUrl = 'https://adxpremium.services/graphql';
+const analyticsType = 'endpoint'
+const defaultUrl = 'https://adxpremium.services/graphql'
 
-const reqCountry = window.reqCountry || null;
+const reqCountry = window.reqCountry || null
 
 // Events needed
 const {
@@ -17,12 +17,12 @@ const {
   BID_RESPONSE,
   BID_WON,
   AUCTION_END
-} = EVENTS;
+} = EVENTS
 
-const timeoutBased = false;
-let requestSent = false;
-let requestDelivered = false;
-let elementIds = [];
+const timeoutBased = false
+let requestSent = false
+let requestDelivered = false
+let elementIds = []
 
 // Memory objects
 const completeObject = {
@@ -33,71 +33,71 @@ const completeObject = {
   device_type: null,
   geo: reqCountry,
   events: []
-};
+}
 
 // Upgraded object
-let upgradedObject = null;
+let upgradedObject = null
 
 const adxpremiumAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
-        auctionInit(args);
-        break;
+        auctionInit(args)
+        break
       case BID_REQUESTED:
-        bidRequested(args);
-        break;
+        bidRequested(args)
+        break
       case BID_RESPONSE:
-        bidResponse(args);
-        break;
+        bidResponse(args)
+        break
       case BID_WON:
-        bidWon(args);
-        break;
+        bidWon(args)
+        break
       case BID_TIMEOUT:
-        bidTimeout(args);
-        break;
+        bidTimeout(args)
+        break
       case AUCTION_END:
-        auctionEnd(args);
-        break;
+        auctionEnd(args)
+        break
       default:
-        break;
+        break
     }
   }
-});
+})
 
 // DFP support
-const googletag = window.googletag || {};
-googletag.cmd = googletag.cmd || [];
+const googletag = window.googletag || {}
+googletag.cmd = googletag.cmd || []
 googletag.cmd.push(function() {
   googletag.pubads().addEventListener('slotRenderEnded', args => {
-    clearSlot(args.slot.getSlotElementId());
-  });
-});
+    clearSlot(args.slot.getSlotElementId())
+  })
+})
 
 // Event handlers
-let bidResponsesMapper = {};
-let bidRequestsMapper = {};
-let bidMapper = {};
+let bidResponsesMapper = {}
+let bidRequestsMapper = {}
+let bidMapper = {}
 
 function auctionInit(args) {
   // Clear events
-  completeObject.events = [];
+  completeObject.events = []
   // Allow new requests
-  requestSent = false;
-  requestDelivered = false;
+  requestSent = false
+  requestDelivered = false
   // Reset mappers
-  bidResponsesMapper = {};
-  bidRequestsMapper = {};
-  bidMapper = {};
+  bidResponsesMapper = {}
+  bidRequestsMapper = {}
+  bidMapper = {}
 
-  completeObject.auction_id = args.auctionId;
-  completeObject.publisher_id = adxpremiumAnalyticsAdapter.initOptions.pubId;
+  completeObject.auction_id = args.auctionId
+  completeObject.publisher_id = adxpremiumAnalyticsAdapter.initOptions.pubId
   // TODO: is 'page' the right value here?
-  try { completeObject.referer = encodeURI(args.bidderRequests[0].refererInfo.page.split('?')[0]); } catch (e) { logError('AdxPremium Analytics - ' + e.message); }
+  try { completeObject.referer = encodeURI(args.bidderRequests[0].refererInfo.page.split('?')[0]) } catch (e) { logError('AdxPremium Analytics - ' + e.message) }
   if (args.adUnitCodes && args.adUnitCodes.length > 0) {
-    elementIds = args.adUnitCodes;
+    elementIds = args.adUnitCodes
   }
-  completeObject.device_type = deviceType();
+  completeObject.device_type = deviceType()
 }
 function bidRequested(args) {
   const tmpObject = {
@@ -105,14 +105,14 @@ function bidRequested(args) {
     bidder_code: args.bidderCode,
     event_timestamp: args.start,
     bid_gpt_codes: {}
-  };
+  }
 
   args.bids.forEach(bid => {
-    tmpObject.bid_gpt_codes[bid.adUnitCode] = bid.sizes;
-    bidMapper[bid.bidId] = bid.bidderRequestId;
-  });
+    tmpObject.bid_gpt_codes[bid.adUnitCode] = bid.sizes
+    bidMapper[bid.bidId] = bid.bidderRequestId
+  })
 
-  bidRequestsMapper[args.bidderRequestId] = completeObject.events.push(tmpObject) - 1;
+  bidRequestsMapper[args.bidderRequestId] = completeObject.events.push(tmpObject) - 1
 }
 
 function bidResponse(args) {
@@ -127,31 +127,31 @@ function bidResponse(args) {
     time_to_respond: args.timeToRespond,
     cpm: args.cpm,
     is_winning: false
-  };
+  }
 
-  bidResponsesMapper[args.requestId] = completeObject.events.push(tmpObject) - 1;
+  bidResponsesMapper[args.requestId] = completeObject.events.push(tmpObject) - 1
 }
 
 function bidWon(args) {
-  const eventIndex = bidResponsesMapper[args.requestId];
+  const eventIndex = bidResponsesMapper[args.requestId]
   if (eventIndex !== undefined) {
     if (requestDelivered) {
       if (completeObject.events[eventIndex]) {
         // do the upgrade
-        logInfo('AdxPremium Analytics - Upgrading request');
-        completeObject.events[eventIndex].is_winning = true;
-        completeObject.events[eventIndex].is_upgrade = true;
-        upgradedObject = deepClone(completeObject);
-        upgradedObject.events = [completeObject.events[eventIndex]];
-        sendEvent(upgradedObject); // send upgrade
+        logInfo('AdxPremium Analytics - Upgrading request')
+        completeObject.events[eventIndex].is_winning = true
+        completeObject.events[eventIndex].is_upgrade = true
+        upgradedObject = deepClone(completeObject)
+        upgradedObject.events = [completeObject.events[eventIndex]]
+        sendEvent(upgradedObject) // send upgrade
       } else {
-        logInfo('AdxPremium Analytics - CANNOT FIND INDEX FOR REQUEST ' + args.requestId);
+        logInfo('AdxPremium Analytics - CANNOT FIND INDEX FOR REQUEST ' + args.requestId)
       }
     } else {
-      completeObject.events[eventIndex].is_winning = true;
+      completeObject.events[eventIndex].is_winning = true
     }
   } else {
-    logInfo('AdxPremium Analytics - Response not found, creating new one.');
+    logInfo('AdxPremium Analytics - Response not found, creating new one.')
     const tmpObject = {
       type: 'RESPONSE',
       bidder_code: args.bidderCode,
@@ -164,107 +164,107 @@ function bidWon(args) {
       cpm: args.cpm,
       is_winning: true,
       is_lost: true
-    };
-    const lostObject = deepClone(completeObject);
-    lostObject.events = [tmpObject];
-    sendEvent(lostObject); // send lost object
+    }
+    const lostObject = deepClone(completeObject)
+    lostObject.events = [tmpObject]
+    sendEvent(lostObject) // send lost object
   }
 }
 
 function bidTimeout(args) {
-  const timeoutObject = deepClone(completeObject);
-  timeoutObject.events = [];
-  const usedRequestIds = [];
+  const timeoutObject = deepClone(completeObject)
+  timeoutObject.events = []
+  const usedRequestIds = []
 
   args.forEach(bid => {
-    const pulledRequestId = bidMapper[bid.bidId];
-    const eventIndex = bidRequestsMapper[pulledRequestId];
+    const pulledRequestId = bidMapper[bid.bidId]
+    const eventIndex = bidRequestsMapper[pulledRequestId]
     if (eventIndex !== undefined && completeObject.events[eventIndex] && usedRequestIds.indexOf(pulledRequestId) === -1) {
       // mark as timeouted
-      const tempEventIndex = timeoutObject.events.push(completeObject.events[eventIndex]) - 1;
-      timeoutObject.events[tempEventIndex]['type'] = 'TIMEOUT';
-      usedRequestIds.push(pulledRequestId); // mark as used
+      const tempEventIndex = timeoutObject.events.push(completeObject.events[eventIndex]) - 1
+      timeoutObject.events[tempEventIndex]['type'] = 'TIMEOUT'
+      usedRequestIds.push(pulledRequestId) // mark as used
     }
-  });
+  })
 
   if (timeoutObject.events.length > 0) {
-    sendEvent(timeoutObject); // send timeouted
-    logInfo('AdxPremium Analytics - Sending timeouted requests');
+    sendEvent(timeoutObject) // send timeouted
+    logInfo('AdxPremium Analytics - Sending timeouted requests')
   }
 }
 
 function auctionEnd(args) {
-  logInfo('AdxPremium Analytics - Auction Ended at ' + Date.now());
-  if (timeoutBased) { setTimeout(function () { requestSent = true; sendEvent(completeObject); }, 3500); } else { sendEventFallback(); }
+  logInfo('AdxPremium Analytics - Auction Ended at ' + Date.now())
+  if (timeoutBased) { setTimeout(function () { requestSent = true; sendEvent(completeObject) }, 3500) } else { sendEventFallback() }
 }
 
 // Methods
 function deviceType() {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
-    return 'tablet';
+    return 'tablet'
   }
   if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
-    return 'mobile';
+    return 'mobile'
   }
-  return 'desktop';
+  return 'desktop'
 }
 
 function clearSlot(elementId) {
-  if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
+  if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId) }
   if (elementIds.length === 0 && !requestSent && !timeoutBased) {
-    requestSent = true;
-    sendEvent(completeObject);
-    logInfo('AdxPremium Analytics - Everything ready');
+    requestSent = true
+    sendEvent(completeObject)
+    logInfo('AdxPremium Analytics - Everything ready')
   }
 }
 
 export function testSend() {
-  sendEvent(completeObject);
-  logInfo('AdxPremium Analytics - Sending without any conditions, used for testing');
+  sendEvent(completeObject)
+  logInfo('AdxPremium Analytics - Sending without any conditions, used for testing')
 }
 
 function sendEventFallback() {
   setTimeout(function () {
-    if (!requestSent) { requestSent = true; sendEvent(completeObject); logInfo('AdxPremium Analytics - Sending event using fallback method.'); }
-  }, 2000);
+    if (!requestSent) { requestSent = true; sendEvent(completeObject); logInfo('AdxPremium Analytics - Sending event using fallback method.') }
+  }, 2000)
 }
 
 function sendEvent(completeObject) {
-  if (!adxpremiumAnalyticsAdapter.enabled) return;
-  requestDelivered = true;
+  if (!adxpremiumAnalyticsAdapter.enabled) return
+  requestDelivered = true
   try {
-    const responseEvents = btoa(JSON.stringify(completeObject));
-    const mutation = `mutation {createEvent(input: {event: {eventData: "${responseEvents}"}}) {event {createTime } } }`;
-    const dataToSend = JSON.stringify({ query: mutation });
-    let ajaxEndpoint = defaultUrl;
+    const responseEvents = btoa(JSON.stringify(completeObject))
+    const mutation = `mutation {createEvent(input: {event: {eventData: "${responseEvents}"}}) {event {createTime } } }`
+    const dataToSend = JSON.stringify({ query: mutation })
+    let ajaxEndpoint = defaultUrl
     if (adxpremiumAnalyticsAdapter.initOptions.sid) {
       ajaxEndpoint = 'https://' + adxpremiumAnalyticsAdapter.initOptions.sid + '.adxpremium.services/graphql'
     }
     ajax(ajaxEndpoint, function () { logInfo('AdxPremium Analytics - Sending complete events at ' + Date.now()) }, dataToSend, {
       contentType: 'application/json',
       method: 'POST'
-    });
-  } catch (err) { logError('AdxPremium Analytics - Sending event error: ' + err); }
+    })
+  } catch (err) { logError('AdxPremium Analytics - Sending event error: ' + err) }
 }
 
 // save the base class function
-adxpremiumAnalyticsAdapter.originEnableAnalytics = adxpremiumAnalyticsAdapter.enableAnalytics;
+adxpremiumAnalyticsAdapter.originEnableAnalytics = adxpremiumAnalyticsAdapter.enableAnalytics
 
 // override enableAnalytics so we can get access to the config passed in from the page
 adxpremiumAnalyticsAdapter.enableAnalytics = function (config) {
-  adxpremiumAnalyticsAdapter.initOptions = config.options;
+  adxpremiumAnalyticsAdapter.initOptions = config.options
 
   if (!config.options.pubId) {
-    logError('AdxPremium Analytics - Publisher ID (pubId) option is not defined. Analytics won\'t work');
-    return;
+    logError('AdxPremium Analytics - Publisher ID (pubId) option is not defined. Analytics won\'t work')
+    return
   }
 
-  adxpremiumAnalyticsAdapter.originEnableAnalytics(config); // call the base class function
-};
+  adxpremiumAnalyticsAdapter.originEnableAnalytics(config) // call the base class function
+}
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adxpremiumAnalyticsAdapter,
   code: 'adxpremium'
-});
+})
 
-export default adxpremiumAnalyticsAdapter;
+export default adxpremiumAnalyticsAdapter

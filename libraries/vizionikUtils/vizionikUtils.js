@@ -1,76 +1,76 @@
-import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
-import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isArray, parseSizesInput } from '../../src/utils.js';
+import { hasPurpose1Consent } from '../../src/utils/gdpr.js'
+import { BANNER, VIDEO } from '../../src/mediaTypes.js'
+import { deepAccess, isArray, parseSizesInput } from '../../src/utils.js'
 
 export function getUserSyncs(syncEndpoint, paramNames) {
   return function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
+    const syncs = []
 
     if (!hasPurpose1Consent(gdprConsent)) {
-      return syncs;
+      return syncs
     }
 
-    let params = `${paramNames?.usp ?? 'us_privacy'}=${uspConsent ?? ''}&${paramNames?.consent ?? 'gdpr_consent'}=${gdprConsent?.consentString ?? ''}`;
+    let params = `${paramNames?.usp ?? 'us_privacy'}=${uspConsent ?? ''}&${paramNames?.consent ?? 'gdpr_consent'}=${gdprConsent?.consentString ?? ''}`
 
     if (typeof gdprConsent?.gdprApplies === 'boolean') {
-      params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+      params += `&gdpr=${Number(gdprConsent.gdprApplies)}`
     }
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
         url: `//${syncEndpoint}/match/sp.ifr?${params}`,
-      });
+      })
     }
 
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
         url: `//${syncEndpoint}/match/sp?${params}`,
-      });
+      })
     }
 
-    return syncs;
+    return syncs
   }
 }
 
 export function sspInterpretResponse(ttl, adomain) {
   return function(serverResponse, request) {
     if (!serverResponse?.body?.content?.data) {
-      return [];
+      return []
     }
 
-    const bidResponses = [];
-    const body = serverResponse.body;
+    const bidResponses = []
+    const body = serverResponse.body
 
-    let mediaType = BANNER;
-    let ad, vastXml;
-    let width;
-    let height;
+    let mediaType = BANNER
+    let ad, vastXml
+    let width
+    let height
 
-    const sizes = getSize(body.size);
+    const sizes = getSize(body.size)
     if (isArray(sizes)) {
-      [width, height] = sizes;
+      [width, height] = sizes
     }
 
     if (body.type.format !== '') {
       // banner
-      ad = body.content.data;
+      ad = body.content.data
       if (body.content.imps?.length) {
         for (const imp of body.content.imps) {
-          ad += `<script src="${imp}"></script>`;
+          ad += `<script src="${imp}"></script>`
         }
       }
     } else {
       // video
-      vastXml = body.content.data;
-      mediaType = VIDEO;
+      vastXml = body.content.data
+      mediaType = VIDEO
 
       if (!width || !height) {
-        const pSize = deepAccess(request.bidRequest, 'mediaTypes.video.playerSize');
-        const reqSize = getSize(pSize);
+        const pSize = deepAccess(request.bidRequest, 'mediaTypes.video.playerSize')
+        const reqSize = getSize(pSize)
         if (isArray(reqSize)) {
-          [width, height] = reqSize;
+          [width, height] = reqSize
         }
       }
     }
@@ -90,21 +90,21 @@ export function sspInterpretResponse(ttl, adomain) {
       meta: {
         advertiserDomains: [adomain],
       }
-    };
-
-    if ((mediaType === VIDEO && request.bidRequest.mediaTypes?.video) || (mediaType === BANNER && request.bidRequest.mediaTypes?.banner)) {
-      bidResponses.push(bidResponse);
     }
 
-    return bidResponses;
+    if ((mediaType === VIDEO && request.bidRequest.mediaTypes?.video) || (mediaType === BANNER && request.bidRequest.mediaTypes?.banner)) {
+      bidResponses.push(bidResponse)
+    }
+
+    return bidResponses
   }
 }
 
 export function sspBuildRequests(defaultEndpoint) {
   return function(validBidRequests, bidderRequest) {
-    const requests = [];
+    const requests = []
     for (const bid of validBidRequests) {
-      const endpoint = bid.params.endpoint || defaultEndpoint;
+      const endpoint = bid.params.endpoint || defaultEndpoint
 
       requests.push({
         method: 'GET',
@@ -115,27 +115,27 @@ export function sspBuildRequests(defaultEndpoint) {
           prebid: true,
         },
         bidRequest: bid,
-      });
+      })
     }
 
-    return requests;
+    return requests
   }
 }
 
 export function sspValidRequest(bid) {
-  const valid = bid.params.siteId && bid.params.placementId;
+  const valid = bid.params.siteId && bid.params.placementId
 
-  return !!valid;
+  return !!valid
 }
 
 function getSize(paramSizes) {
-  const parsedSizes = parseSizesInput(paramSizes);
+  const parsedSizes = parseSizesInput(paramSizes)
   const sizes = parsedSizes.map(size => {
-    const [width, height] = size.split('x');
-    const w = parseInt(width, 10);
-    const h = parseInt(height, 10);
-    return [w, h];
-  });
+    const [width, height] = size.split('x')
+    const w = parseInt(width, 10)
+    const h = parseInt(height, 10)
+    return [w, h]
+  })
 
-  return sizes[0] || null;
+  return sizes[0] || null
 }

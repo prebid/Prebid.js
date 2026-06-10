@@ -1,17 +1,17 @@
-import { expect } from 'chai';
-import { spec } from 'modules/craftBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
+import { expect } from 'chai'
+import { spec } from 'modules/craftBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { config } from 'src/config.js'
+import { getGlobal } from '../../../src/prebidGlobal.js'
 
 describe('craftAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     before(function() {
@@ -19,52 +19,52 @@ describe('craftAdapter', function () {
         craft: {
           storageAllowed: true
         }
-      };
-      this.windowContext = window.context;
-      window.context = null;
-    });
+      }
+      this.windowContext = window.context
+      window.context = null
+    })
 
     after(function() {
-      getGlobal().bidderSettings = {};
-      window.context = this.windowContext;
-    });
+      getGlobal().bidderSettings = {}
+      window.context = this.windowContext
+    })
     const bid = {
       bidder: 'craft',
       params: {
         sitekey: 'craft-prebid-example',
         placementId: '1234abcd'
       },
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when params.sitekey not found', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
       invalidBid.params = {
         placementId: '1234abcd'
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
 
     it('should return false when params.placementId not found', function () {
-      const invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      const invalidBid = Object.assign({}, bid)
+      delete invalidBid.params
       invalidBid.params = {
         sitekey: 'craft-prebid-example'
-      };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
+    })
 
     it('should return false when AMP cotext found', function () {
       window.context = {
         pageViewId: 'xxx'
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     before(function () {
@@ -72,11 +72,11 @@ describe('craftAdapter', function () {
         craft: {
           storageAllowed: true
         }
-      };
-    });
+      }
+    })
     after(function () {
-      getGlobal().bidderSettings = {};
-    });
+      getGlobal().bidderSettings = {}
+    })
     const bidRequests = [{
       bidder: 'craft',
       params: {
@@ -104,18 +104,18 @@ describe('craftAdapter', function () {
         { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
         { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
       ],
-    }];
+    }]
     const bidderRequest = {
       refererInfo: {
         topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
       }
-    };
+    }
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://gacraft.jp/prebid-v3/craft-prebid-example');
-      const data = JSON.parse(request.data);
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.method).to.equal('POST')
+      expect(request.url).to.equal('https://gacraft.jp/prebid-v3/craft-prebid-example')
+      const data = JSON.parse(request.data)
       expect(data.tags).to.deep.equals([{
         sitekey: 'craft-prebid-example',
         placementId: '1234abcd',
@@ -123,23 +123,23 @@ describe('craftAdapter', function () {
         sizes: [[300, 250]],
         primary_size: [300, 250],
         uuid: '0396fae4eb5f47'
-      }]);
+      }])
       expect(data.referrer_detection).to.deep.equals({
         rd_ref: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
-      });
+      })
       expect(data.schain).to.deep.equals({
         complete: 1,
         nodes: [],
         ver: '1.0',
-      });
+      })
       expect(data.user).to.deep.equals({
         eids: [
           { source: 'foobar1.com', uids: [{ id: 'xxxxxxx', atype: 1 }] },
           { source: 'foobar2.com', uids: [{ id: 'yyyyyyy', atype: 1 }] },
         ]
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('interpretResponse', function() {
     const serverResponse = {
@@ -164,16 +164,16 @@ describe('craftAdapter', function () {
           }]
         }],
       }
-    };
+    }
     const bidderRequest = {
       bids: [{
         bidId: '0396fae4eb5f47',
         adUnitCode: 'craft-prebid-example'
       }]
-    };
+    }
     it('should get correct bid response', function() {
-      const bids = spec.interpretResponse(serverResponse, { bidderRequest: bidderRequest });
-      expect(bids).to.have.lengthOf(1);
+      const bids = spec.interpretResponse(serverResponse, { bidderRequest: bidderRequest })
+      expect(bids).to.have.lengthOf(1)
       expect(bids[0]).to.deep.equals({
         _adUnitCode: 'craft-prebid-example',
         _bidKey: '72038482-c4c3-4055-9e7e-0579585bb421',
@@ -190,7 +190,7 @@ describe('craftAdapter', function () {
         requestId: '0396fae4eb5f47',
         ttl: 360,
         width: 300,
-      });
-    });
-  });
-});
+      })
+    })
+  })
+})

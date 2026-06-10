@@ -1,65 +1,65 @@
-import { timestamp, deepAccess, isStr, deepClone, isPlainObject } from '../src/utils.js';
-import { getOrigin } from '../libraries/getOrigin/index.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { timestamp, deepAccess, isStr, deepClone, isPlainObject } from '../src/utils.js'
+import { getOrigin } from '../libraries/getOrigin/index.js'
+import { config } from '../src/config.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
-const BIDDER_CODE = 'resetdigital';
-const GVLID = 1162;
-const CURRENCY = 'USD';
+const BIDDER_CODE = 'resetdigital'
+const GVLID = 1162
+const CURRENCY = 'USD'
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
-    return !!(bid.params.pubId || bid.params.zoneId);
+    return !!(bid.params.pubId || bid.params.zoneId)
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const stack =
       bidderRequest.refererInfo && bidderRequest.refererInfo.stack
         ? bidderRequest.refererInfo.stack
-        : [];
+        : []
 
     const spb =
       config.getConfig('userSync') &&
       config.getConfig('userSync').syncsPerBidder
         ? config.getConfig('userSync').syncsPerBidder
-        : 5;
+        : 5
 
     function extractUserIdsFromEids(eids) {
-      const result = {};
+      const result = {}
 
-      if (!Array.isArray(eids)) return result;
+      if (!Array.isArray(eids)) return result
 
       eids.forEach(eid => {
-        const source = eid.source;
-        if (!source || !Array.isArray(eid.uids)) return;
+        const source = eid.source
+        if (!source || !Array.isArray(eid.uids)) return
 
         if (eid.uids.length === 1) {
-          const uid = eid.uids[0];
-          result[source] = { id: uid.id };
+          const uid = eid.uids[0]
+          result[source] = { id: uid.id }
           if (uid.ext) {
-            result[source].ext = uid.ext;
+            result[source].ext = uid.ext
           }
         } else {
-          const subObj = {};
+          const subObj = {}
           eid.uids.forEach(uid => {
             if (uid.ext && uid.ext.rtiPartner) {
-              subObj[uid.ext.rtiPartner] = uid.id;
+              subObj[uid.ext.rtiPartner] = uid.id
             }
-          });
+          })
           if (Object.keys(subObj).length > 0) {
-            result[source] = subObj;
+            result[source] = subObj
           }
         }
-      });
+      })
 
-      return result;
+      return result
     }
 
-    const userEids = validBidRequests[0]?.userIdAsEids || [];
-    const userIds = extractUserIdsFromEids(userEids);
+    const userEids = validBidRequests[0]?.userIdAsEids || []
+    const userIds = extractUserIdsFromEids(userEids)
 
     const payload = {
       start_time: timestamp(),
@@ -74,23 +74,23 @@ export const spec = {
       imps: [],
       user_ids: userIds,
       sync_limit: spb,
-    };
+    }
 
     if (userEids.length) {
       payload.user = {
         eids: deepClone(userEids),
-      };
+      }
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {
         applies: bidderRequest.gdprConsent.gdprApplies,
         consent: bidderRequest.gdprConsent.consentString,
-      };
+      }
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.ccpa = bidderRequest.uspConsent;
+      payload.ccpa = bidderRequest.uspConsent
     }
 
     function getOrtb2Keywords(ortb2Obj) {
@@ -100,57 +100,57 @@ export const spec = {
         'user.keywords',
         'app.keywords',
         'app.content.keywords',
-      ];
-      const result = [];
+      ]
+      const result = []
 
       fields.forEach((path) => {
-        const keyStr = deepAccess(ortb2Obj, path);
-        if (isStr(keyStr)) result.push(keyStr);
-      });
-      return result;
+        const keyStr = deepAccess(ortb2Obj, path)
+        if (isStr(keyStr)) result.push(keyStr)
+      })
+      return result
     }
 
-    const ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
-    const ortb2KeywordsList = getOrtb2Keywords(ortb2);
-    let metaKeywords = document.getElementsByTagName('meta')['keywords'];
+    const ortb2 = deepClone(bidderRequest && bidderRequest.ortb2)
+    const ortb2KeywordsList = getOrtb2Keywords(ortb2)
+    let metaKeywords = document.getElementsByTagName('meta')['keywords']
     if (metaKeywords && metaKeywords.content) {
-      metaKeywords = metaKeywords.content.split(',');
+      metaKeywords = metaKeywords.content.split(',')
     }
 
     for (let x = 0; x < validBidRequests.length; x++) {
-      const req = validBidRequests[x];
+      const req = validBidRequests[x]
 
-      let bidFloor = req.params.bidFloor ? req.params.bidFloor : null;
-      let bidFloorCur = req.params.bidFloor ? req.params.bidFloorCur : null;
+      let bidFloor = req.params.bidFloor ? req.params.bidFloor : null
+      let bidFloorCur = req.params.bidFloor ? req.params.bidFloorCur : null
 
       if (typeof req.getFloor === 'function') {
         const floorInfo = req.getFloor({
           currency: CURRENCY,
           mediaType: BANNER,
           size: '*',
-        });
+        })
         if (
           isPlainObject(floorInfo) &&
           floorInfo.currency === CURRENCY &&
           !isNaN(parseFloat(floorInfo.floor))
         ) {
-          bidFloor = parseFloat(floorInfo.floor);
-          bidFloorCur = CURRENCY;
+          bidFloor = parseFloat(floorInfo.floor)
+          bidFloorCur = CURRENCY
         }
       }
 
-      let paramsKeywords = req.params.keywords;
+      let paramsKeywords = req.params.keywords
       if (typeof req.params.keywords === 'string') {
-        paramsKeywords = req.params.keywords.split(',');
+        paramsKeywords = req.params.keywords.split(',')
       } else if (Array.isArray(req.params.keywords)) {
-        paramsKeywords = req.params.keywords;
+        paramsKeywords = req.params.keywords
       } else {
-        paramsKeywords = [];
+        paramsKeywords = []
       }
 
       const keywords = ortb2KeywordsList
         .concat(paramsKeywords)
-        .concat(metaKeywords);
+        .concat(metaKeywords)
 
       payload.imps.push({
         pub_id: req.params.pubId,
@@ -170,35 +170,35 @@ export const spec = {
         force_bid: req.params.forceBid,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
         media_types: deepAccess(req, 'mediaTypes'),
-      });
+      })
     }
 
     if (bidderRequest?.ortb2?.source?.ext?.schain) {
-      payload.schain = bidderRequest.ortb2.source.ext.schain;
+      payload.schain = bidderRequest.ortb2.source.ext.schain
     }
 
-    const params = validBidRequests[0].params;
-    const url = params.endpoint ? params.endpoint : '//ads.resetsrv.com';
+    const params = validBidRequests[0].params
+    const url = params.endpoint ? params.endpoint : '//ads.resetsrv.com'
     return {
       method: 'POST',
       url: url,
       data: JSON.stringify(payload),
       bids: validBidRequests,
-    };
+    }
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
+    const bidResponses = []
     if (!serverResponse || !serverResponse.body) {
-      return bidResponses;
+      return bidResponses
     }
 
-    const res = serverResponse.body;
+    const res = serverResponse.body
     if (!res.bids || !res.bids.length) {
-      return [];
+      return []
     }
 
     for (let x = 0; x < serverResponse.body.bids.length; x++) {
-      const bid = serverResponse.body.bids[x];
+      const bid = serverResponse.body.bids[x]
 
       bidResponses.push({
         requestId: bid.bid_id,
@@ -217,25 +217,25 @@ export const spec = {
         meta: {
           advertiserDomains: bid.adomain,
         },
-      });
+      })
     }
 
-    return bidResponses;
+    return bidResponses
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
+    const syncs = []
     if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
+      return syncs
     }
 
-    let gdprParams = '';
+    let gdprParams = ''
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
           gdprConsent.consentString
-        }`;
+        }`
       } else {
-        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`
       }
     }
 
@@ -243,17 +243,17 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: `https://async.resetdigital.co/async_usersync.html?${gdprParams}`,
-      });
+      })
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
         url: `https://meta.resetdigital.co/pchain${
           gdprParams ? `?${gdprParams}` : ''
         }`,
-      });
+      })
     }
-    return syncs;
+    return syncs
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

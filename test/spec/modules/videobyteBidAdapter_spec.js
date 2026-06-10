@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/videobyteBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/videobyteBidAdapter.js'
 
 describe('VideoByteBidAdapter', function () {
-  let bidRequest;
+  let bidRequest
   let bidderRequest = {
     'bidderCode': 'videobyte',
     'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
@@ -17,8 +17,8 @@ describe('VideoByteBidAdapter', function () {
       'reachedTop': true,
       'referer': 'test.com'
     }
-  };
-  let mockConfig;
+  }
+  let mockConfig
 
   beforeEach(function () {
     bidRequest = {
@@ -54,21 +54,21 @@ describe('VideoByteBidAdapter', function () {
         },
         pubId: 'vb12345'
       }
-    };
-  });
+    }
+  })
 
   describe('spec.isBidRequestValid', function () {
     it('should return false when mediaTypes is empty', function () {
-      bidRequest.mediaTypes = {};
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
+      bidRequest.mediaTypes = {}
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
 
     it('should return true (skip validations) when e2etest = true', function () {
       bidRequest.params.video = {
         e2etest: true
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return true when mediaTypes.video has all mandatory params', function () {
       bidRequest.mediaTypes.video = {
@@ -76,51 +76,51 @@ describe('VideoByteBidAdapter', function () {
         playerSize: [[640, 480]],
         mimes: ['video/mp4', 'application/javascript'],
       }
-      bidRequest.params.video = {};
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      bidRequest.params.video = {}
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return true when params.video has all override params instead of mediaTypes.video', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream'
-      };
+      }
       bidRequest.params.video = {
         playerSize: [[640, 480]],
         mimes: ['video/mp4', 'application/javascript']
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return true when mimes is passed in params.video', function () {
       bidRequest.mediaTypes.video = {
         context: 'instream',
         playerSize: [[640, 480]]
-      };
+      }
       bidRequest.video = {
         mimes: ['video/mp4', 'application/javascript']
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+    })
 
     it('should return false when both mediaTypes.video and params.video Objects are missing', function () {
-      bidRequest.mediaTypes = {};
+      bidRequest.mediaTypes = {}
       bidRequest.params = {
         pubId: 'brxd'
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
 
     it('should return false when both mediaTypes.video and params.video are missing mimes and player size', function () {
       bidRequest.mediaTypes = {
         video: {
           context: 'instream'
         }
-      };
+      }
       bidRequest.params = {
         pubId: 'brxd'
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
 
     it('should return false when the "pubId" param is missing', function () {
       bidRequest.params = {
@@ -129,9 +129,9 @@ describe('VideoByteBidAdapter', function () {
           playerHeight: 640,
           mimes: ['video/mp4', 'application/javascript'],
         }
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
     it('should return false when the "pubId" param is missing', function () {
       bidRequest.params = {
         video: {
@@ -139,53 +139,53 @@ describe('VideoByteBidAdapter', function () {
           playerHeight: 640,
           mimes: ['video/mp4', 'application/javascript'],
         }
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
 
     it('should return false when no bid params are passed', function () {
-      bidRequest.params = {};
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
-  });
+      bidRequest.params = {}
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
+    })
+  })
 
   describe('spec.buildRequests', function () {
     it('should create a POST request for every bid', function () {
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(spec.ENDPOINT + '?pid=' + bidRequest.params.pubId);
-    });
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      expect(requests[0].method).to.equal('POST')
+      expect(requests[0].url).to.equal(spec.ENDPOINT + '?pid=' + bidRequest.params.pubId)
+    })
 
     it('should attach request data', function () {
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      const [width, height] = bidRequest.sizes;
-      const VERSION = '1.0.0';
-      expect(data.imp[0].video.w).to.equal(width);
-      expect(data.imp[0].video.h).to.equal(height);
-      expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
-      expect(data.ext.prebidver).to.equal('$prebid.version$');
-      expect(data.ext.adapterver).to.equal(spec.VERSION);
-    });
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      const [width, height] = bidRequest.sizes
+      const VERSION = '1.0.0'
+      expect(data.imp[0].video.w).to.equal(width)
+      expect(data.imp[0].video.h).to.equal(height)
+      expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor)
+      expect(data.ext.prebidver).to.equal('$prebid.version$')
+      expect(data.ext.adapterver).to.equal(spec.VERSION)
+    })
 
     it('should set pubId to e2etest when bid.params.video.e2etest = true', function () {
-      bidRequest.params.video.e2etest = true;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(spec.ENDPOINT + '?pid=e2etest');
-    });
+      bidRequest.params.video.e2etest = true
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      expect(requests[0].method).to.equal('POST')
+      expect(requests[0].url).to.equal(spec.ENDPOINT + '?pid=e2etest')
+    })
 
     it('should attach End 2 End test data', function () {
-      bidRequest.params.video.e2etest = true;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      expect(data.imp[0].bidfloor).to.not.exist;
-      expect(data.imp[0].video.w).to.equal(640);
-      expect(data.imp[0].video.h).to.equal(480);
-    });
+      bidRequest.params.video.e2etest = true
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      expect(data.imp[0].bidfloor).to.not.exist
+      expect(data.imp[0].video.w).to.equal(640)
+      expect(data.imp[0].video.h).to.equal(480)
+    })
 
     it('should send Global schain', function () {
-      bidRequest.params.video.sid = null;
+      bidRequest.params.video.sid = null
       const globalSchain = {
         ver: '1.0',
         complete: 1,
@@ -195,66 +195,66 @@ describe('VideoByteBidAdapter', function () {
           rid: bidRequest.id,
           hp: 1
         }]
-      };
-      bidRequest.ortb2 = bidRequest.ortb2 || {};
-      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
-      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
-      bidRequest.ortb2.source.ext.schain = globalSchain;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      const schain = data.source.ext.schain;
-      expect(schain.nodes.length).to.equal(1);
-      expect(schain).to.deep.equal(globalSchain);
-    });
+      }
+      bidRequest.ortb2 = bidRequest.ortb2 || {}
+      bidRequest.ortb2.source = bidRequest.ortb2.source || {}
+      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {}
+      bidRequest.ortb2.source.ext.schain = globalSchain
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      const schain = data.source.ext.schain
+      expect(schain.nodes.length).to.equal(1)
+      expect(schain).to.deep.equal(globalSchain)
+    })
 
     describe('content object validations', function () {
       it('should not accept content object if value is Undefined ', function () {
-        bidRequest.params.video.content = null;
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.undefined;
-      });
+        bidRequest.params.video.content = null
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.undefined
+      })
       it('should not accept content object if value is is Array ', function () {
-        bidRequest.params.video.content = [];
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.undefined;
-      });
+        bidRequest.params.video.content = []
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.undefined
+      })
       it('should not accept content object if value is Number ', function () {
-        bidRequest.params.video.content = 123456;
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.undefined;
-      });
+        bidRequest.params.video.content = 123456
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.undefined
+      })
       it('should not accept content object if value is String ', function () {
-        bidRequest.params.video.content = 'keyValuePairs';
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.undefined;
-      });
+        bidRequest.params.video.content = 'keyValuePairs'
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.undefined
+      })
       it('should not accept content object if value is Boolean ', function () {
-        bidRequest.params.video.content = true;
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.undefined;
-      });
+        bidRequest.params.video.content = true
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.undefined
+      })
       it('should accept content object if value is Object ', function () {
-        bidRequest.params.video.content = {};
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.a('object');
-      });
+        bidRequest.params.video.content = {}
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.a('object')
+      })
 
       it('should not append unsupported content object keys', function () {
         bidRequest.params.video.content = {
           fake: 'news',
           unreal: 'param',
           counterfit: 'data'
-        };
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.empty;
-      });
+        }
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.empty
+      })
 
       it('should not append content string parameters if value is not string ', function () {
         bidRequest.params.video.content = {
@@ -265,12 +265,12 @@ describe('VideoByteBidAdapter', function () {
           genre: ['Genre'],
           contentrating: { 1: 'C-Rating' },
           language: { 1: 'EN' }
-        };
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.a('object');
+        }
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.a('object')
         expect(data.site.content).to.be.empty
-      });
+      })
       it('should not append content Number parameters if value is not Number ', function () {
         bidRequest.params.video.content = {
           episode: '1',
@@ -278,30 +278,30 @@ describe('VideoByteBidAdapter', function () {
           livestream: { 0: 'stream' },
           len: [360],
           prodq: [1],
-        };
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.a('object');
+        }
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.a('object')
         expect(data.site.content).to.be.empty
-      });
+      })
       it('should not append content Array parameters if value is not Array ', function () {
         bidRequest.params.video.content = {
           cat: 'categories',
-        };
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.a('object');
+        }
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.a('object')
         expect(data.site.content).to.be.empty
-      });
+      })
       it('should not append content ext if value is not Object ', function () {
         bidRequest.params.video.content = {
           ext: 'content.ext',
-        };
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.be.a('object');
+        }
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.be.a('object')
         expect(data.site.content).to.be.empty
-      });
+      })
       it('should append supported parameters if value match validations ', function () {
         bidRequest.params.video.content = {
           id: '1234',
@@ -320,13 +320,13 @@ describe('VideoByteBidAdapter', function () {
           livestream: 0,
           len: 360,
           ext: {}
-        };
-        const requests = spec.buildRequests([bidRequest], bidderRequest);
-        const data = JSON.parse(requests[0].data);
-        expect(data.site.content).to.deep.equal(bidRequest.params.video.content);
-      });
-    });
-  });
+        }
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const data = JSON.parse(requests[0].data)
+        expect(data.site.content).to.deep.equal(bidRequest.params.video.content)
+      })
+    })
+  })
   describe('price floor module validations', function () {
     beforeEach(function () {
       bidRequest.getFloor = (floorObj) => {
@@ -336,65 +336,65 @@ describe('VideoByteBidAdapter', function () {
           mediaType: floorObj.mediaType
         }
       }
-    });
+    })
 
     it('should get bidfloor from getFloor method', function () {
-      bidRequest.params.cur = 'EUR';
+      bidRequest.params.cur = 'EUR'
       bidRequest.floors = {
         currency: 'EUR',
         values: {
           'video|640x480': 5.55
         }
-      };
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      expect(data.imp[0].bidfloor).is.a('number');
-      expect(data.imp[0].bidfloor).to.equal(5.55);
-    });
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      expect(data.imp[0].bidfloor).is.a('number')
+      expect(data.imp[0].bidfloor).to.equal(5.55)
+    })
     it('should get bidfloor from params method', function () {
-      bidRequest.params.bidfloor = 4.0;
-      bidRequest.params.currency = 'EUR';
-      bidRequest.getFloor = null;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      expect(data.imp[0].bidfloor).is.a('number');
-      expect(data.imp[0].bidfloor).to.equal(4.0);
-      expect(data.imp[0].bidfloorcur).to.equal('EUR');
-    });
+      bidRequest.params.bidfloor = 4.0
+      bidRequest.params.currency = 'EUR'
+      bidRequest.getFloor = null
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      expect(data.imp[0].bidfloor).is.a('number')
+      expect(data.imp[0].bidfloor).to.equal(4.0)
+      expect(data.imp[0].bidfloorcur).to.equal('EUR')
+    })
 
     it('should use adUnit/module currency & floor instead of bid.params.bidfloor', function () {
-      bidRequest.params.cur = 'EUR';
-      bidRequest.params.bidfloor = 3.33;
+      bidRequest.params.cur = 'EUR'
+      bidRequest.params.bidfloor = 3.33
       bidRequest.floors = {
         currency: 'EUR',
         values: {
           'video|640x480': 5.55
         }
-      };
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      expect(data.imp[0].bidfloor).is.a('number');
-      expect(data.imp[0].bidfloor).to.equal(5.55);
-    });
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      expect(data.imp[0].bidfloor).is.a('number')
+      expect(data.imp[0].bidfloor).to.equal(5.55)
+    })
 
     it('should load video floor when multi-format adUnit is present', function () {
-      bidRequest.params.cur = 'EUR';
+      bidRequest.params.cur = 'EUR'
       bidRequest.mediaTypes.banner = {
         sizes: [
           [640, 480]
         ]
-      };
+      }
       bidRequest.floors = {
         currency: 'EUR',
         values: {
           'banner|640x480': 2.22,
           'video|640x480': 9.99
         }
-      };
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(requests[0].data);
-      expect(data.imp[0].bidfloor).is.a('number');
-      expect(data.imp[0].bidfloor).to.equal(9.99);
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(requests[0].data)
+      expect(data.imp[0].bidfloor).is.a('number')
+      expect(data.imp[0].bidfloor).to.equal(9.99)
     })
   })
 
@@ -404,9 +404,9 @@ describe('VideoByteBidAdapter', function () {
         body: null
       }, {
         bidRequest
-      });
-      expect(bidResponse.length).to.equal(0);
-    });
+      })
+      expect(bidResponse.length).to.equal(0)
+    })
 
     it('should return no bids if the response "nurl" and "adm" are missing', function () {
       const serverResponse = {
@@ -415,14 +415,14 @@ describe('VideoByteBidAdapter', function () {
             price: 6.01
           }]
         }]
-      };
+      }
       const bidResponse = spec.interpretResponse({
         body: serverResponse
       }, {
         bidRequest
-      });
-      expect(bidResponse.length).to.equal(0);
-    });
+      })
+      expect(bidResponse.length).to.equal(0)
+    })
 
     it('should return no bids if the response "price" is missing', function () {
       const serverResponse = {
@@ -431,14 +431,14 @@ describe('VideoByteBidAdapter', function () {
             adm: '<VAST></VAST>'
           }]
         }]
-      };
+      }
       const bidResponse = spec.interpretResponse({
         body: serverResponse
       }, {
         bidRequest
-      });
-      expect(bidResponse.length).to.equal(0);
-    });
+      })
+      expect(bidResponse.length).to.equal(0)
+    })
 
     it('should return a valid video bid response with just "adm"', function () {
       const serverResponse = {
@@ -458,12 +458,12 @@ describe('VideoByteBidAdapter', function () {
           }]
         }],
         cur: 'USD'
-      };
+      }
       const bidResponse = spec.interpretResponse({
         body: serverResponse
       }, {
         bidRequest
-      });
+      })
       const o = {
         requestId: serverResponse.id,
         cpm: serverResponse.seatbid[0].bid[0].price,
@@ -478,28 +478,28 @@ describe('VideoByteBidAdapter', function () {
         meta: {
           advertiserDomains: ['videobyte.com']
         }
-      };
-      expect(bidResponse[0]).to.deep.equal(o);
-    });
+      }
+      expect(bidResponse[0]).to.deep.equal(o)
+    })
 
     it('should default ttl to 300', function () {
-      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
-      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-      expect(bidResponse[0].ttl).to.equal(300);
-    });
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' }
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest })
+      expect(bidResponse[0].ttl).to.equal(300)
+    })
     it('should not allow ttl above 3601, default to 300', function () {
-      bidRequest.params.video.ttl = 3601;
-      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
-      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-      expect(bidResponse[0].ttl).to.equal(300);
-    });
+      bidRequest.params.video.ttl = 3601
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' }
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest })
+      expect(bidResponse[0].ttl).to.equal(300)
+    })
     it('should not allow ttl below 1, default to 300', function () {
-      bidRequest.params.video.ttl = 0;
-      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
-      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
-      expect(bidResponse[0].ttl).to.equal(300);
-    });
-  });
+      bidRequest.params.video.ttl = 0
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' }
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest })
+      expect(bidResponse[0].ttl).to.equal(300)
+    })
+  })
 
   describe('when GDPR and uspConsent applies', function () {
     beforeEach(function () {
@@ -522,7 +522,7 @@ describe('VideoByteBidAdapter', function () {
           'reachedTop': true,
           'referer': 'test.com'
         }
-      };
+      }
 
       mockConfig = {
         consentManagement: {
@@ -537,34 +537,34 @@ describe('VideoByteBidAdapter', function () {
             allowAuctionWithoutConsent: 'cancel'
           }
         }
-      };
-    });
+      }
+    })
 
     it('should send a signal to specify that GDPR applies to this request', function () {
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(request[0].data);
-      expect(data.regs.ext.gdpr).to.equal(1);
-    });
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(request[0].data)
+      expect(data.regs.ext.gdpr).to.equal(1)
+    })
 
     it('should send the consent string', function () {
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(request[0].data);
-      expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
-    });
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(request[0].data)
+      expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString)
+    })
 
     it('should send the uspConsent string', function () {
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(request[0].data);
-      expect(data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
-    });
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(request[0].data)
+      expect(data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent)
+    })
 
     it('should send the uspConsent and GDPR ', function () {
-      const request = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(request[0].data);
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
-    });
-  });
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+      const data = JSON.parse(request[0].data)
+      expect(data.regs.ext.gdpr).to.equal(1)
+      expect(data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent)
+    })
+  })
 
   describe('getUserSyncs', function () {
     const ortbResponse = {
@@ -592,37 +592,37 @@ describe('VideoByteBidAdapter', function () {
           }
         }
       }
-    };
+    }
     it('handles no parameters', function () {
-      const opts = spec.getUserSyncs({});
-      expect(opts).to.be.an('array').that.is.empty;
-    });
+      const opts = spec.getUserSyncs({})
+      expect(opts).to.be.an('array').that.is.empty
+    })
     it('returns non if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })
 
-      expect(opts).to.be.an('array').that.is.empty;
-    });
+      expect(opts).to.be.an('array').that.is.empty
+    })
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [ortbResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [ortbResponse])
 
-      expect(opts.length).to.equal(1);
-      expect(opts[0].type).to.equal('iframe');
-      expect(opts[0].url).to.equal(ortbResponse.body.ext.usersync['sovrn'].syncs[0].url);
-    });
+      expect(opts.length).to.equal(1)
+      expect(opts[0].type).to.equal('iframe')
+      expect(opts[0].url).to.equal(ortbResponse.body.ext.usersync['sovrn'].syncs[0].url)
+    })
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [ortbResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [ortbResponse])
 
-      expect(opts.length).to.equal(1);
-      expect(opts[0].type).to.equal('image');
-      expect(opts[0].url).to.equal(ortbResponse.body.ext.usersync['appnexus'].syncs[0].url);
-    });
+      expect(opts.length).to.equal(1)
+      expect(opts[0].type).to.equal('image')
+      expect(opts[0].url).to.equal(ortbResponse.body.ext.usersync['appnexus'].syncs[0].url)
+    })
 
     it('all sync enabled should return only iframe result', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [ortbResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [ortbResponse])
 
-      expect(opts.length).to.equal(1);
-    });
-  });
-});
+      expect(opts.length).to.equal(1)
+    })
+  })
+})

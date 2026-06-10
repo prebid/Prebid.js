@@ -1,8 +1,8 @@
-'use strict';
+'use strict'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { config } from '../src/config.js'
 import {
   deepSetValue,
   getWinDimensions,
@@ -10,30 +10,30 @@ import {
   isPlainObject,
   replaceAuctionPrice,
   safeJSONParse
-} from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
-import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getAdUnitElement } from '../src/utils/adUnits.js';
+} from '../src/utils.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { ajax } from '../src/ajax.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js'
+import { percentInView } from '../libraries/percentInView/percentInView.js'
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js'
+import { getAdUnitElement } from '../src/utils/adUnits.js'
 
-const BIDDER_CODE = 'taboola';
-const GVLID = 42;
-const CURRENCY = 'USD';
-export const BANNER_ENDPOINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
-export const NATIVE_ENDPOINT_URL = 'https://native.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
-export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
-export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
-const USER_ID = 'user-id';
-const STORAGE_KEY = `taboola global:${USER_ID}`;
-const COOKIE_KEY = 'trc_cookie_storage';
-const TGID_COOKIE_KEY = 't_gid';
-const TGID_PT_COOKIE_KEY = 't_pt_gid';
-const TBLA_ID_COOKIE_KEY = 'tbla_id';
-export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
+const BIDDER_CODE = 'taboola'
+const GVLID = 42
+const CURRENCY = 'USD'
+export const BANNER_ENDPOINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction'
+export const NATIVE_ENDPOINT_URL = 'https://native.bidder.taboola.com/OpenRTB/TaboolaHB/auction'
+export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm'
+export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html'
+const USER_ID = 'user-id'
+const STORAGE_KEY = `taboola global:${USER_ID}`
+const COOKIE_KEY = 'trc_cookie_storage'
+const TGID_COOKIE_KEY = 't_gid'
+const TGID_PT_COOKIE_KEY = 't_pt_gid'
+const TBLA_ID_COOKIE_KEY = 'tbla_id'
+export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com'
 
 /**
  *  extract User Id by that order:
@@ -45,66 +45,66 @@ export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
 export const userData = {
   storageManager: getStorageManager({ bidderCode: BIDDER_CODE }),
   getUserId: () => {
-    const { getFromLocalStorage, getFromCookie, getFromTRC } = userData;
+    const { getFromLocalStorage, getFromCookie, getFromTRC } = userData
 
     try {
-      return getFromLocalStorage() || getFromCookie() || getFromTRC();
+      return getFromLocalStorage() || getFromCookie() || getFromTRC()
     } catch (ex) {
-      return 0;
+      return 0
     }
   },
   getFromCookie() {
-    const { cookiesAreEnabled, getCookie } = userData.storageManager;
+    const { cookiesAreEnabled, getCookie } = userData.storageManager
     if (cookiesAreEnabled()) {
-      const cookieData = getCookie(COOKIE_KEY);
-      let userId;
+      const cookieData = getCookie(COOKIE_KEY)
+      let userId
       if (cookieData) {
-        userId = userData.getCookieDataByKey(cookieData, USER_ID);
+        userId = userData.getCookieDataByKey(cookieData, USER_ID)
       }
       if (userId) {
-        return userId;
+        return userId
       }
-      userId = getCookie(TGID_COOKIE_KEY);
+      userId = getCookie(TGID_COOKIE_KEY)
       if (userId) {
-        return userId;
+        return userId
       }
-      userId = getCookie(TGID_PT_COOKIE_KEY);
+      userId = getCookie(TGID_PT_COOKIE_KEY)
       if (userId) {
-        return userId;
+        return userId
       }
-      const tblaId = getCookie(TBLA_ID_COOKIE_KEY);
+      const tblaId = getCookie(TBLA_ID_COOKIE_KEY)
       if (tblaId) {
-        return tblaId;
+        return tblaId
       }
     }
-    return undefined;
+    return undefined
   },
   getCookieDataByKey(cookieData, key) {
     if (!cookieData) {
-      return undefined;
+      return undefined
     }
     const [, value = ''] = cookieData.split(`${key}=`)
-    return value;
+    return value
   },
   getFromLocalStorage() {
-    const { hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage } = userData.storageManager;
+    const { hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage } = userData.storageManager
 
     if (hasLocalStorage() && localStorageIsEnabled()) {
-      return getDataFromLocalStorage(STORAGE_KEY);
+      return getDataFromLocalStorage(STORAGE_KEY)
     }
-    return undefined;
+    return undefined
   },
   getFromTRC() {
-    return window.TRC ? window.TRC.user_id : 0;
+    return window.TRC ? window.TRC.user_id : 0
   }
 }
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
-    return refererInfo?.page || getWindowSelf().location.href;
+    return refererInfo?.page || getWindowSelf().location.href
   },
   getReferrer: (refererInfo = {}) => {
-    return refererInfo?.ref || getWindowSelf().document.referrer;
+    return refererInfo?.ref || getWindowSelf().document.referrer
   }
 }
 
@@ -117,9 +117,9 @@ export function detectBot() {
         window._phantom ||
         /HeadlessChrome/.test(navigator.userAgent)
       )
-    };
+    }
   } catch (e) {
-    return { detected: false };
+    return { detected: false }
   }
 }
 
@@ -129,14 +129,14 @@ export function getPageVisibility() {
       hidden: document.hidden,
       state: document.visibilityState,
       hasFocus: document.hasFocus()
-    };
+    }
   } catch (e) {
-    return { hidden: false, state: 'visible', hasFocus: true };
+    return { hidden: false, state: 'visible', hasFocus: true }
   }
 }
 
 export function getDeviceExtSignals(existingExt = {}) {
-  const viewport = getViewportCoordinates();
+  const viewport = getViewportCoordinates()
   return {
     ...existingExt,
     bot: detectBot(),
@@ -145,17 +145,17 @@ export function getDeviceExtSignals(existingExt = {}) {
       top: Math.round(viewport.top),
       left: Math.round(viewport.left)
     }
-  };
+  }
 }
 
 export function getElementSignals(bidRequest) {
   try {
-    const element = getAdUnitElement(bidRequest);
-    if (!element) return null;
+    const element = getAdUnitElement(bidRequest)
+    if (!element) return null
 
-    const rect = getBoundingClientRect(element);
-    const winDimensions = getWinDimensions();
-    const rawViewability = percentInView(element);
+    const rect = getBoundingClientRect(element)
+    const winDimensions = getWinDimensions()
+    const rawViewability = percentInView(element)
 
     const signals = {
       placement: {
@@ -163,15 +163,15 @@ export function getElementSignals(bidRequest) {
         left: Math.round(rect.left)
       },
       fold: rect.top < winDimensions.innerHeight ? 'above' : 'below'
-    };
-
-    if (rawViewability !== null && !isNaN(rawViewability)) {
-      signals.viewability = Math.round(rawViewability);
     }
 
-    return signals;
+    if (rawViewability !== null && !isNaN(rawViewability)) {
+      signals.viewability = Math.round(rawViewability)
+    }
+
+    return signals
   } catch (e) {
-    return null;
+    return null
   }
 }
 
@@ -181,37 +181,37 @@ const converter = ortbConverter({
     ttl: 300
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    fillTaboolaImpData(bidRequest, imp, context);
-    return imp;
+    const imp = buildImp(bidRequest, context)
+    fillTaboolaImpData(bidRequest, imp, context)
+    return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const reqData = buildRequest(imps, bidderRequest, context);
-    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData, context);
-    return reqData;
+    const reqData = buildRequest(imps, bidderRequest, context)
+    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData, context)
+    return reqData
   },
   bidResponse(buildBidResponse, bid, context) {
     if (context.mediaType === NATIVE) {
-      const admObj = safeJSONParse(bid.adm);
+      const admObj = safeJSONParse(bid.adm)
       if (admObj?.native) {
-        bid.adm = JSON.stringify(admObj.native);
+        bid.adm = JSON.stringify(admObj.native)
       }
     }
 
-    const bidResponse = buildBidResponse(bid, context);
-    bidResponse.nurl = bid.nurl;
+    const bidResponse = buildBidResponse(bid, context)
+    bidResponse.nurl = bid.nurl
     if (bid.burl) {
-      bidResponse.burl = bid.burl;
+      bidResponse.burl = bid.burl
     }
     if (bidResponse.mediaType !== NATIVE) {
-      bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+      bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price)
     }
     if (bid.ext && bid.ext.dchain) {
-      deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
+      deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain)
     }
     return bidResponse
   }
-});
+})
 
 export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
@@ -220,114 +220,114 @@ export const spec = {
   isBidRequestValid: (bidRequest) => {
     const hasPublisherAndTag = !!(bidRequest.params &&
               bidRequest.params.publisherId &&
-              bidRequest.params.tagId);
+              bidRequest.params.tagId)
     if (!hasPublisherAndTag) {
-      return false;
+      return false
     }
-    const { hasBanner, hasNative } = getMediaType(bidRequest);
-    return hasBanner || hasNative;
+    const { hasBanner, hasNative } = getMediaType(bidRequest)
+    return hasBanner || hasNative
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const bannerBids = [];
-    const nativeBids = [];
+    const bannerBids = []
+    const nativeBids = []
 
     validBidRequests.forEach(bid => {
-      const { hasBanner, hasNative } = getMediaType(bid);
-      if (hasBanner) bannerBids.push(bid);
-      if (hasNative) nativeBids.push(bid);
-    });
+      const { hasBanner, hasNative } = getMediaType(bid)
+      if (hasBanner) bannerBids.push(bid)
+      if (hasNative) nativeBids.push(bid)
+    })
 
-    const requests = [];
+    const requests = []
     if (bannerBids.length) {
-      requests.push(createTaboolaRequest(bannerBids, bidderRequest, BANNER_ENDPOINT_URL, BANNER));
+      requests.push(createTaboolaRequest(bannerBids, bidderRequest, BANNER_ENDPOINT_URL, BANNER))
     }
     if (nativeBids.length) {
-      requests.push(createTaboolaRequest(nativeBids, bidderRequest, NATIVE_ENDPOINT_URL, NATIVE));
+      requests.push(createTaboolaRequest(nativeBids, bidderRequest, NATIVE_ENDPOINT_URL, NATIVE))
     }
-    return requests;
+    return requests
   },
   interpretResponse: (serverResponse, request) => {
     if (!request || !request.bids || !request.data) {
-      return [];
+      return []
     }
 
     if (!serverResponse || !serverResponse.body) {
-      return [];
+      return []
     }
-    const bids = [];
+    const bids = []
     if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
-      return [];
+      return []
     } else {
-      bids.push(...converter.fromORTB({ response: serverResponse.body, request: request.data }).bids);
+      bids.push(...converter.fromORTB({ response: serverResponse.body, request: request.data }).bids)
     }
-    return bids;
+    return bids
   },
   onBidWon: (bid) => {
     if (bid.nurl && !bid.deferBilling) {
-      const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
-      ajax(resolvedNurl);
-      bid.taboolaBillingFired = true;
+      const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm)
+      ajax(resolvedNurl)
+      bid.taboolaBillingFired = true
     }
   },
   onBidBillable: (bid) => {
     if (bid.taboolaBillingFired) {
-      return;
+      return
     }
-    const billingUrl = bid.burl || bid.nurl;
+    const billingUrl = bid.burl || bid.nurl
     if (billingUrl) {
-      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm);
-      ajax(resolvedBillingUrl);
+      const resolvedBillingUrl = replaceAuctionPrice(billingUrl, bid.originalCpm)
+      ajax(resolvedBillingUrl)
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = []
-    const queryParams = [];
+    const queryParams = []
     if (gdprConsent) {
-      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`)
     }
 
     if (uspConsent) {
-      queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
+      queryParams.push('us_privacy=' + encodeURIComponent(uspConsent))
     }
 
     if (gppConsent) {
-      queryParams.push('gpp=' + encodeURIComponent(gppConsent.gppString || '') + '&gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')));
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent.gppString || '') + '&gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')))
     }
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
         url: USER_SYNC_IFRAME_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
-      });
+      })
     }
 
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
         url: USER_SYNC_IMG_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
-      });
+      })
     }
-    return syncs;
+    return syncs
   },
   onTimeout: (timeoutData) => {
-    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), { method: 'POST' });
+    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), { method: 'POST' })
   },
 
   onBidderError: ({ error, bidderRequest }) => {
-    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({ error, bidderRequest }), { method: 'POST' });
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({ error, bidderRequest }), { method: 'POST' })
   },
-};
+}
 
 function createTaboolaRequest(bidRequests, bidderRequest, endpointUrl, mediaType) {
-  const [bidRequest] = bidRequests;
-  const auctionId = bidderRequest.auctionId || bidRequests[0]?.auctionId;
+  const [bidRequest] = bidRequests
+  const auctionId = bidderRequest.auctionId || bidRequests[0]?.auctionId
   const data = converter.toORTB({
     bidderRequest: bidderRequest,
     bidRequests: bidRequests,
     context: { auctionId, mediaType }
-  });
-  const { publisherId } = bidRequest.params;
-  const url = endpointUrl + '?publisher=' + publisherId;
+  })
+  const { publisherId } = bidRequest.params
+  const url = endpointUrl + '?publisher=' + publisherId
 
   return {
     url,
@@ -337,11 +337,11 @@ function createTaboolaRequest(bidRequests, bidderRequest, endpointUrl, mediaType
     options: {
       withCredentials: false
     },
-  };
+  }
 }
 
 function getSiteProperties({ publisherId }, refererInfo, ortb2) {
-  const { getPageUrl, getReferrer } = internal;
+  const { getPageUrl, getReferrer } = internal
   return {
     id: publisherId,
     name: publisherId,
@@ -358,19 +358,19 @@ function getSiteProperties({ publisherId }, refererInfo, ortb2) {
 }
 
 function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
-  const { refererInfo, gdprConsent = {}, uspConsent } = bidderRequest;
-  const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
+  const { refererInfo, gdprConsent = {}, uspConsent } = bidderRequest
+  const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2)
 
-  const ortb2Device = bidderRequest?.ortb2?.device || {};
-  const connectionType = getConnectionType();
+  const ortb2Device = bidderRequest?.ortb2?.device || {}
+  const connectionType = getConnectionType()
   const device = {
     ...ortb2Device,
     js: 1,
     ...(connectionType && { connectiontype: connectionType }),
     ext: getDeviceExtSignals(ortb2Device.ext)
-  };
-  deepSetValue(data, 'device', device);
-  const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
+  }
+  deepSetValue(data, 'device', device)
+  const extractedUserId = userData.getUserId(gdprConsent, uspConsent)
   if (data.user === undefined || data.user === null) {
     data.user = {
       buyeruid: 0,
@@ -378,108 +378,108 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     }
   }
   if (extractedUserId && extractedUserId !== 0) {
-    deepSetValue(data, 'user.buyeruid', extractedUserId);
+    deepSetValue(data, 'user.buyeruid', extractedUserId)
   }
   if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
     }
   }
-  deepSetValue(data, 'regs.coppa', 0);
+  deepSetValue(data, 'regs.coppa', 0)
   if (gdprConsent.gdprApplies) {
-    deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-    deepSetValue(data, 'regs.ext.gdpr', 1);
+    deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+    deepSetValue(data, 'regs.ext.gdpr', 1)
   }
   if (uspConsent) {
-    deepSetValue(data, 'regs.ext.us_privacy', uspConsent);
+    deepSetValue(data, 'regs.ext.us_privacy', uspConsent)
   }
 
   if (bidderRequest.ortb2?.regs?.gpp) {
-    deepSetValue(data, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp);
-    deepSetValue(data, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    deepSetValue(data, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp)
+    deepSetValue(data, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid)
   }
 
   if (config.getConfig('coppa')) {
-    deepSetValue(data, 'regs.coppa', 1);
+    deepSetValue(data, 'regs.coppa', 1)
   }
 
   const ortb2 = bidderRequest.ortb2 || {
     bcat: [],
     badv: [],
     wlang: []
-  };
+  }
 
-  deepSetValue(data, 'source.fd', 1);
+  deepSetValue(data, 'source.fd', 1)
 
-  data.id = bidderRequest.bidderRequestId;
-  data.site = site;
-  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout);
-  data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
-  data.badv = ortb2.badv || bidRequest.params.badv || [];
-  data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
-  deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
-  deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
-  const auctionId = context?.auctionId;
+  data.id = bidderRequest.bidderRequestId
+  data.site = site
+  data.tmax = (bidderRequest.timeout === null || bidderRequest.timeout === undefined) ? undefined : parseInt(bidderRequest.timeout)
+  data.bcat = ortb2.bcat || bidRequest.params.bcat || []
+  data.badv = ortb2.badv || bidRequest.params.badv || []
+  data.wlang = ortb2.wlang || bidRequest.params.wlang || []
+  deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType)
+  deepSetValue(data, 'ext.prebid.version', '$prebid.version$')
+  const auctionId = context?.auctionId
   if (auctionId) {
-    deepSetValue(data, 'ext.prebid.auctionId', auctionId);
+    deepSetValue(data, 'ext.prebid.auctionId', auctionId)
   }
 }
 
 function fillTaboolaImpData(bid, imp, context) {
-  const { tagId, position } = bid.params;
+  const { tagId, position } = bid.params
   if (imp.banner && position) {
-    imp.banner.pos = position;
+    imp.banner.pos = position
   }
-  imp.tagid = tagId;
+  imp.tagid = tagId
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: CURRENCY,
       mediaType: context.mediaType,
       size: '*'
-    });
+    })
     if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
-      imp.bidfloor = parseFloat(floorInfo.floor);
-      imp.bidfloorcur = CURRENCY;
+      imp.bidfloor = parseFloat(floorInfo.floor)
+      imp.bidfloorcur = CURRENCY
     }
   } else {
-    const { bidfloor = null, bidfloorcur = CURRENCY } = bid.params;
-    imp.bidfloor = bidfloor;
-    imp.bidfloorcur = bidfloorcur;
+    const { bidfloor = null, bidfloorcur = CURRENCY } = bid.params
+    imp.bidfloor = bidfloor
+    imp.bidfloorcur = bidfloorcur
   }
-  deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid);
+  deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid)
 
   if (bid.bidId) {
-    deepSetValue(imp, 'ext.prebid.bidId', bid.bidId);
+    deepSetValue(imp, 'ext.prebid.bidId', bid.bidId)
   }
   if (bid.adUnitCode) {
-    deepSetValue(imp, 'ext.prebid.adUnitCode', bid.adUnitCode);
+    deepSetValue(imp, 'ext.prebid.adUnitCode', bid.adUnitCode)
   }
   if (bid.adUnitId) {
-    deepSetValue(imp, 'ext.prebid.adUnitId', bid.adUnitId);
+    deepSetValue(imp, 'ext.prebid.adUnitId', bid.adUnitId)
   }
 
-  deepSetValue(imp, 'ext.prebid.bidRequestsCount', bid.bidRequestsCount);
-  deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount);
-  deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount);
+  deepSetValue(imp, 'ext.prebid.bidRequestsCount', bid.bidRequestsCount)
+  deepSetValue(imp, 'ext.prebid.bidderRequestsCount', bid.bidderRequestsCount)
+  deepSetValue(imp, 'ext.prebid.bidderWinsCount', bid.bidderWinsCount)
 
-  const elementSignals = getElementSignals(bid);
+  const elementSignals = getElementSignals(bid)
   if (elementSignals) {
     if (elementSignals.viewability !== undefined) {
-      deepSetValue(imp, 'ext.viewability', elementSignals.viewability);
+      deepSetValue(imp, 'ext.viewability', elementSignals.viewability)
     }
-    deepSetValue(imp, 'ext.placement', elementSignals.placement);
-    deepSetValue(imp, 'ext.fold', elementSignals.fold);
+    deepSetValue(imp, 'ext.placement', elementSignals.placement)
+    deepSetValue(imp, 'ext.fold', elementSignals.fold)
   }
 }
 
 function getMediaType(bidRequest) {
-  const hasBanner = !!bidRequest?.mediaTypes?.banner?.sizes;
-  const hasNative = !!bidRequest?.mediaTypes?.native;
+  const hasBanner = !!bidRequest?.mediaTypes?.banner?.sizes
+  const hasNative = !!bidRequest?.mediaTypes?.native
   return {
     hasBanner,
     hasNative,
     mediaType: hasNative && !hasBanner ? NATIVE : BANNER
-  };
+  }
 }
 
-registerBidder(spec);
+registerBidder(spec)

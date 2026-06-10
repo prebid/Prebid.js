@@ -1,11 +1,11 @@
-import { expect } from 'chai';
-import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import { config } from '../../../src/config.js';
-import sinon from 'sinon';
+import { expect } from 'chai'
+import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter'
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js'
+import { config } from '../../../src/config.js'
+import sinon from 'sinon'
 
 describe('ExcoBidAdapter', function () {
-  const helpers = new AdapterHelpers();
+  const helpers = new AdapterHelpers()
 
   const BID = {
     bidId: '1731e91fa1236fd',
@@ -28,7 +28,7 @@ describe('ExcoBidAdapter', function () {
     bidRequestsCount: 1,
     bidderRequestsCount: 1,
     bidderWinsCount: 0,
-  };
+  }
 
   const BIDDER_REQUEST = {
     bidderCode: BIDDER_CODE,
@@ -70,7 +70,7 @@ describe('ExcoBidAdapter', function () {
         },
       }
     },
-  };
+  }
 
   const BID_SERVER_RESPONSE = {
     body: {
@@ -92,62 +92,62 @@ describe('ExcoBidAdapter', function () {
         }
       }
     }
-  };
+  }
 
-  let BUILT_REQ = null;
+  let BUILT_REQ = null
 
   describe('isBidRequestValid', function () {
     it('should return false if accountId is missing', function () {
-      const bid = { ...BID, params: { publisherId: 'publisherId', tagId: 'tagId' } };
-      expect(adapter.isBidRequestValid(bid)).to.be.false;
-    });
+      const bid = { ...BID, params: { publisherId: 'publisherId', tagId: 'tagId' } }
+      expect(adapter.isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return false if publisherId is missing', function () {
-      const bid = { ...BID, params: { accountId: 'accountId', tagId: 'tagId' } };
-      expect(adapter.isBidRequestValid(bid)).to.be.false;
-    });
+      const bid = { ...BID, params: { accountId: 'accountId', tagId: 'tagId' } }
+      expect(adapter.isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return false if tagId is missing', function () {
-      const bid = { ...BID, params: { accountId: 'accountId', publisherId: 'publisherId' } };
-      expect(adapter.isBidRequestValid(bid)).to.be.false;
-    });
+      const bid = { ...BID, params: { accountId: 'accountId', publisherId: 'publisherId' } }
+      expect(adapter.isBidRequestValid(bid)).to.be.false
+    })
 
     it('should return true if all required params are present', function () {
-      expect(adapter.isBidRequestValid(BID)).to.be.true;
-    });
-  });
+      expect(adapter.isBidRequestValid(BID)).to.be.true
+    })
+  })
 
   describe('buildRequests', function () {
-    let sandbox;
+    let sandbox
     before(function () {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(Date, 'now').returns(1000);
-    });
+      sandbox = sinon.createSandbox()
+      sandbox.stub(Date, 'now').returns(1000)
+    })
 
     it('should build request', function () {
       config.setConfig({
         bidderTimeout: 3000,
         enableTIDs: true,
-      });
+      })
 
-      const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
-      expect(requests).to.have.length(1);
+      const requests = adapter.buildRequests([BID], BIDDER_REQUEST)
+      expect(requests).to.have.length(1)
 
-      const req = requests[0];
-      expect(req.method).to.equal('POST');
-      expect(req.url).to.equal(ENDPOINT);
+      const req = requests[0]
+      expect(req.method).to.equal('POST')
+      expect(req.url).to.equal(ENDPOINT)
 
-      const ext = req.data.ext[BIDDER_CODE] || {};
-      expect(ext.pbversion).to.equal('$prebid.version$');
-      expect(ext.sid).to.equal(SID);
+      const ext = req.data.ext[BIDDER_CODE] || {}
+      expect(ext.pbversion).to.equal('$prebid.version$')
+      expect(ext.sid).to.equal(SID)
 
-      BUILT_REQ = req;
-    });
+      BUILT_REQ = req
+    })
 
     after(function () {
-      sandbox.restore();
-    });
-  });
+      sandbox.restore()
+    })
+  })
 
   describe('interpretResponse', function () {
     const SERVER_RESPONSE = {
@@ -186,11 +186,11 @@ describe('ExcoBidAdapter', function () {
           },
         ],
       }
-    };
+    }
 
     it('should return an array of interpreted banner responses', function () {
-      const responses = adapter.interpretResponse(SERVER_RESPONSE, BUILT_REQ);
-      expect(responses).to.have.length(1);
+      const responses = adapter.interpretResponse(SERVER_RESPONSE, BUILT_REQ)
+      expect(responses).to.have.length(1)
       expect(responses[0]).to.deep.equal({
         seatBidId: 'b7b6eddb-9924-425e-aa52-5eba56689abe',
         mediaType: BANNER,
@@ -215,53 +215,53 @@ describe('ExcoBidAdapter', function () {
         nurl: 'http://example.com/win/1234',
         currency: 'USD',
         adUrl: undefined,
-      });
-    });
+      })
+    })
 
     it('should return empty array when there is no response', function () {
-      const responses = adapter.interpretResponse(null, BUILT_REQ);
-      expect(responses).to.have.length(0);
-    });
+      const responses = adapter.interpretResponse(null, BUILT_REQ)
+      expect(responses).to.have.length(0)
+    })
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({ price: 1, ad: '' }, BUILT_REQ);
-      expect(responses).to.have.length(0);
-    });
+      const responses = adapter.interpretResponse({ price: 1, ad: '' }, BUILT_REQ)
+      expect(responses).to.have.length(0)
+    })
 
     it('should return empty array when there is no price', function () {
       const responses = adapter.interpretResponse({
         price: null,
         ad: 'great ad',
-      }, BUILT_REQ);
-      expect(responses).to.have.length(0);
-    });
-  });
+      }, BUILT_REQ)
+      expect(responses).to.have.length(0)
+    })
+  })
 
   describe('getUserSyncs', function () {
-    const serverResponses = [BID_SERVER_RESPONSE];
+    const serverResponses = [BID_SERVER_RESPONSE]
 
     it('should return empty if no server responses', function () {
-      const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
-      expect(syncs).to.deep.equal([]);
-    });
+      const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])
+      expect(syncs).to.deep.equal([])
+    })
 
     it('should return iframe only user syncs', function () {
-      const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses);
+      const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses)
       expect(syncs).to.deep.equal([
         { type: 'iframe', url: 'https://example.com/sync.html' },
-      ]);
-    });
+      ])
+    })
 
     it('should return pixels only user syncs', function () {
-      const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses);
+      const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses)
       expect(syncs).to.deep.equal([
         { type: 'image', url: 'https://example.com/sync.gif' },
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   describe('onTimeout', function () {
-    let stubbedFetch;
+    let stubbedFetch
     const bid = {
       bidder: adapter.code,
       adUnitCode: 'adunit-code',
@@ -275,44 +275,44 @@ describe('ExcoBidAdapter', function () {
         timeSince: () => 500,
       },
       ortb2: {}
-    };
+    }
 
     beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
+      stubbedFetch = sinon.stub(window, 'fetch')
+    })
     afterEach(function() {
-      stubbedFetch.restore();
-    });
+      stubbedFetch.restore()
+    })
 
     it('should exists and be a function', () => {
-      expect(adapter.onTimeout).to.exist.and.to.be.a('function');
-    });
+      expect(adapter.onTimeout).to.exist.and.to.be.a('function')
+    })
 
     it('Should create event url', function() {
-      const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout');
-      adapter.onTimeout([bid]);
-      expect(stubbedFetch.calledWith(pixelUrl)).to.be.true;
-    });
+      const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout')
+      adapter.onTimeout([bid])
+      expect(stubbedFetch.calledWith(pixelUrl)).to.be.true
+    })
 
     it('Should trigger event url', function() {
-      adapter.onTimeout([bid]);
-      expect(stubbedFetch.callCount).to.equal(1);
-    });
-  });
+      adapter.onTimeout([bid])
+      expect(stubbedFetch.callCount).to.equal(1)
+    })
+  })
 
   describe('onBidWon', function() {
-    let stubbedFetch;
+    let stubbedFetch
 
     beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
+      stubbedFetch = sinon.stub(window, 'fetch')
+    })
     afterEach(function() {
-      stubbedFetch.restore();
-    });
+      stubbedFetch.restore()
+    })
 
     it('should exists and be a function', () => {
-      expect(adapter.onBidWon).to.exist.and.to.be.a('function');
-    });
+      expect(adapter.onBidWon).to.exist.and.to.be.a('function')
+    })
 
     it('Should trigger nurl pixel', function() {
       const bid = {
@@ -326,11 +326,11 @@ describe('ExcoBidAdapter', function () {
           publisherId: 'publisherId',
           tagId: 'tagId',
         }
-      };
+      }
 
-      adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(1);
-    });
+      adapter.onBidWon(bid)
+      expect(stubbedFetch.callCount).to.equal(1)
+    })
 
     it('Should trigger nurl pixel with correct parameters', function() {
       const bid = {
@@ -344,13 +344,13 @@ describe('ExcoBidAdapter', function () {
           publisherId: 'publisherId',
           tagId: 'tagId',
         }
-      };
+      }
 
-      adapter.onBidWon(bid);
+      adapter.onBidWon(bid)
 
-      expect(stubbedFetch.callCount).to.equal(1);
-      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won');
-    });
+      expect(stubbedFetch.callCount).to.equal(1)
+      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won')
+    })
 
     it('Should not trigger pixel if no bid nurl', function() {
       const bid = {
@@ -362,40 +362,40 @@ describe('ExcoBidAdapter', function () {
           publisherId: 'publisherId',
           tagId: 'tagId',
         }
-      };
+      }
 
-      adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(0);
-    });
-  });
+      adapter.onBidWon(bid)
+      expect(stubbedFetch.callCount).to.equal(0)
+    })
+  })
 
   describe('isDebugEnabled', function () {
-    let originalConfig;
+    let originalConfig
 
     beforeEach(function () {
-      originalConfig = config.getConfig('debug');
-    });
+      originalConfig = config.getConfig('debug')
+    })
 
     afterEach(function () {
-      config.setConfig({ debug: originalConfig });
-    });
+      config.setConfig({ debug: originalConfig })
+    })
 
     it('should return true if debug is enabled in config', function () {
-      config.setConfig({ debug: true });
-      expect(helpers.isDebugEnabled()).to.be.true;
-    });
+      config.setConfig({ debug: true })
+      expect(helpers.isDebugEnabled()).to.be.true
+    })
 
     it('should return false if debug is disabled in config', function () {
-      config.setConfig({ debug: false });
-      expect(helpers.isDebugEnabled()).to.be.false;
-    });
+      config.setConfig({ debug: false })
+      expect(helpers.isDebugEnabled()).to.be.false
+    })
 
     it('should return true if URL contains exco_debug=true', function () {
-      expect(helpers.isDebugEnabled('https://example.com?exco_debug=true')).to.be.true;
-    });
+      expect(helpers.isDebugEnabled('https://example.com?exco_debug=true')).to.be.true
+    })
 
     it('should return false if URL does not contain exco_debug=true', function () {
-      expect(helpers.isDebugEnabled('https://example.com')).to.be.false;
-    });
-  });
-});
+      expect(helpers.isDebugEnabled('https://example.com')).to.be.false
+    })
+  })
+})

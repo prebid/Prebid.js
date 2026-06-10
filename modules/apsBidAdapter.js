@@ -1,9 +1,9 @@
-import { isStr, isNumber, logWarn, logError } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { isStr, isNumber, logWarn, logError } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { hasPurpose1Consent } from '../src/utils/gdpr.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,12 +13,12 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
  * @typedef {import('./apsBidAdapter.d.ts').ApsAdapterConfig} ApsAdapterConfig
  */
 
-const GVLID = 793;
-export const ADAPTER_VERSION = '2.1.0';
-const BIDDER_CODE = 'aps';
-const AAX_ENDPOINT = 'https://web.ads.aps.amazon-adsystem.com/e/pb/bid';
+const GVLID = 793
+export const ADAPTER_VERSION = '2.1.0'
+const BIDDER_CODE = 'aps'
+const AAX_ENDPOINT = 'https://web.ads.aps.amazon-adsystem.com/e/pb/bid'
 const DEFAULT_PREBID_CREATIVE_JS_URL =
-  'https://client.aps.amazon-adsystem.com/prebid-creative.js';
+  'https://client.aps.amazon-adsystem.com/prebid-creative.js'
 
 /**
  * Records an event by pushing a CustomEvent onto a global queue.
@@ -32,37 +32,37 @@ const DEFAULT_PREBID_CREATIVE_JS_URL =
 function record(eventName, data) {
   // Check if telemetry is enabled
   if (config.readConfig('aps.telemetry') === false) {
-    return;
+    return
   }
 
   // Automatically prefix eventName with 'prebidAdapter/' if not already prefixed
   const prefixedEventName = eventName.startsWith('prebidAdapter/')
     ? eventName
-    : `prebidAdapter/${eventName}`;
+    : `prebidAdapter/${eventName}`
 
   // Automatically append 'didTrigger' if there is no third part provided in the event name
-  const parts = prefixedEventName.split('/');
+  const parts = prefixedEventName.split('/')
   const finalEventName =
-    parts.length < 3 ? `${prefixedEventName}/didTrigger` : prefixedEventName;
+    parts.length < 3 ? `${prefixedEventName}/didTrigger` : prefixedEventName
 
   /** @type {ApsAdapterConfig['accountID']|undefined} */
-  const accountID = config.readConfig('aps.accountID');
+  const accountID = config.readConfig('aps.accountID')
   if (!accountID) {
-    return;
+    return
   }
 
-  window._aps = window._aps || new Map();
+  window._aps = window._aps || new Map()
   if (!window._aps.has(accountID)) {
     window._aps.set(accountID, {
       queue: [],
       store: new Map(),
-    });
+    })
   }
 
   // Ensure analytics key exists unless error key is present
-  const detailData = { ...data };
+  const detailData = { ...data }
   if (!detailData.error) {
-    detailData.analytics = detailData.analytics || {};
+    detailData.analytics = detailData.analytics || {}
   }
 
   window._aps.get(accountID).queue.push(
@@ -73,7 +73,7 @@ function record(eventName, data) {
         libraryVersion: ADAPTER_VERSION,
       },
     })
-  );
+  )
 }
 
 /**
@@ -84,8 +84,8 @@ function record(eventName, data) {
  * @param {any} data - Event data object
  */
 function recordAndLogError(eventName, err, data) {
-  record(eventName, { ...data, error: err });
-  logError(err.message);
+  record(eventName, { ...data, error: err })
+  logError(err.message)
 }
 
 /**
@@ -97,21 +97,21 @@ function recordAndLogError(eventName, err, data) {
 function isValidAccountID(accountID) {
   // null/undefined are not acceptable
   if (accountID == null) {
-    return false;
+    return false
   }
 
   // Numbers are valid (including 0)
   if (isNumber(accountID)) {
-    return true;
+    return true
   }
 
   // Strings must have content after trimming
   if (isStr(accountID)) {
-    return accountID.trim().length > 0;
+    return accountID.trim().length > 0
   }
 
   // Other types are invalid
-  return false;
+  return false
 }
 
 export const converter = ortbConverter({
@@ -120,99 +120,99 @@ export const converter = ortbConverter({
   },
 
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
+    const request = buildRequest(imps, bidderRequest, context)
 
     // Remove precise geo locations for privacy.
     if (request?.device?.geo) {
-      delete request.device.geo.lat;
-      delete request.device.geo.lon;
+      delete request.device.geo.lat
+      delete request.device.geo.lon
     }
 
     if (request.user) {
       // Remove sensitive user data.
-      delete request.user.gender;
-      delete request.user.yob;
+      delete request.user.gender
+      delete request.user.yob
       // Remove both 'keywords' and alternate 'kwarry' if present.
-      delete request.user.keywords;
-      delete request.user.kwarry;
-      delete request.user.customdata;
-      delete request.user.geo;
-      delete request.user.data;
+      delete request.user.keywords
+      delete request.user.kwarry
+      delete request.user.customdata
+      delete request.user.geo
+      delete request.user.data
     }
 
-    request.ext = request.ext ?? {};
-    request.ext.account = config.readConfig('aps.accountID');
+    request.ext = request.ext ?? {}
+    request.ext.account = config.readConfig('aps.accountID')
     request.ext.sdk = {
       version: ADAPTER_VERSION,
       source: 'prebid',
-    };
-    request.cur = request.cur ?? ['USD'];
+    }
+    request.cur = request.cur ?? ['USD']
 
-    const agerange = bidderRequest?.ortb2?.regs?.ext?.agerange;
+    const agerange = bidderRequest?.ortb2?.regs?.ext?.agerange
     if (typeof agerange === 'number') {
-      request.regs = request.regs ?? {};
-      request.regs.ext = request.regs?.ext ?? {};
-      request.regs.ext.agerange = agerange;
+      request.regs = request.regs ?? {}
+      request.regs.ext = request.regs?.ext ?? {}
+      request.regs.ext.agerange = agerange
     }
 
     // Validate and process impressions - fail fast on structural issues
     if (!request.imp || !Array.isArray(request.imp)) {
-      return request;
+      return request
     }
 
     request.imp.forEach((imp, index) => {
       if (!imp) {
-        return; // continue to next iteration
+        return // continue to next iteration
       }
 
       if (!imp.banner) {
-        return; // continue to next iteration
+        return // continue to next iteration
       }
 
-      const doesHWExist = imp.banner.w >= 0 && imp.banner.h >= 0;
+      const doesHWExist = imp.banner.w >= 0 && imp.banner.h >= 0
       const doesFormatExist =
-        Array.isArray(imp.banner.format) && imp.banner.format.length > 0;
+        Array.isArray(imp.banner.format) && imp.banner.format.length > 0
 
       if (doesHWExist || !doesFormatExist) {
-        return; // continue to next iteration
+        return // continue to next iteration
       }
 
-      const { w, h } = imp.banner.format[0];
+      const { w, h } = imp.banner.format[0]
 
       if (typeof w !== 'number' || typeof h !== 'number') {
-        return; // continue to next iteration
+        return // continue to next iteration
       }
 
-      imp.banner.w = w;
-      imp.banner.h = h;
-    });
+      imp.banner.w = w
+      imp.banner.h = h
+    })
 
-    return request;
+    return request
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    let vastUrl;
+    let vastUrl
     if (bid.mtype === 2) {
-      vastUrl = bid.adm;
+      vastUrl = bid.adm
       // Making sure no adm value is passed down to prevent issues with some renderers
-      delete bid.adm;
+      delete bid.adm
     }
 
-    const bidResponse = buildBidResponse(bid, context);
-    bidResponse.meta = bidResponse.meta || {};
+    const bidResponse = buildBidResponse(bid, context)
+    bidResponse.meta = bidResponse.meta || {}
     if (bid.ext?.bidder) {
-      bidResponse.meta.networkId = bid.ext.bidder;
+      bidResponse.meta.networkId = bid.ext.bidder
     }
     if (context.seatbid?.seat) {
-      bidResponse.meta.seat = context.seatbid.seat;
+      bidResponse.meta.seat = context.seatbid.seat
     }
     if (bidResponse.mediaType === VIDEO) {
-      bidResponse.vastUrl = vastUrl;
+      bidResponse.vastUrl = vastUrl
     }
 
-    return bidResponse;
+    return bidResponse
   },
-});
+})
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -227,17 +227,17 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    record('isBidRequestValid');
+    record('isBidRequestValid')
     try {
-      const accountID = config.readConfig('aps.accountID');
+      const accountID = config.readConfig('aps.accountID')
       if (!isValidAccountID(accountID)) {
-        logWarn(`Invalid accountID: ${accountID}`);
-        return false;
+        logWarn(`Invalid accountID: ${accountID}`)
+        return false
       }
-      return true;
+      return true
     } catch (err) {
-      err.message = `Error while validating bid request: ${err?.message}`;
-      recordAndLogError('isBidRequestValid/didError', err);
+      err.message = `Error while validating bid request: ${err?.message}`
+      recordAndLogError('isBidRequestValid/didError', err)
     }
   },
 
@@ -248,27 +248,27 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    record('buildRequests');
+    record('buildRequests')
     try {
-      let endpoint = config.readConfig('aps.debugURL') ?? AAX_ENDPOINT;
+      let endpoint = config.readConfig('aps.debugURL') ?? AAX_ENDPOINT
       // Append debug parameters to the URL if debug mode is enabled.
       if (config.readConfig('aps.debug')) {
-        const debugQueryChar = endpoint.includes('?') ? '&' : '?';
-        const renderMethod = config.readConfig('aps.renderMethod');
+        const debugQueryChar = endpoint.includes('?') ? '&' : '?'
+        const renderMethod = config.readConfig('aps.renderMethod')
         if (renderMethod === 'fif') {
-          endpoint += debugQueryChar + 'amzn_debug_mode=fif&amzn_debug_mode=1';
+          endpoint += debugQueryChar + 'amzn_debug_mode=fif&amzn_debug_mode=1'
         } else {
-          endpoint += debugQueryChar + 'amzn_debug_mode=1';
+          endpoint += debugQueryChar + 'amzn_debug_mode=1'
         }
       }
       return {
         method: 'POST',
         url: endpoint,
         data: converter.toORTB({ bidRequests, bidderRequest }),
-      };
+      }
     } catch (err) {
-      err.message = `Error while building bid request: ${err?.message}`;
-      recordAndLogError('buildRequests/didError', err);
+      err.message = `Error while building bid request: ${err?.message}`
+      recordAndLogError('buildRequests/didError', err)
     }
   },
 
@@ -280,20 +280,20 @@ export const spec = {
    * @return {Bid[] | {bids: Bid[]}}
    */
   interpretResponse: (response, request) => {
-    record('interpretResponse');
+    record('interpretResponse')
     try {
       const interpretedResponse = converter.fromORTB({
         response: response.body,
         request: request.data,
-      });
-      const accountID = config.readConfig('aps.accountID');
+      })
+      const accountID = config.readConfig('aps.accountID')
 
       const creativeUrl =
-        config.readConfig('aps.creativeURL') || DEFAULT_PREBID_CREATIVE_JS_URL;
+        config.readConfig('aps.creativeURL') || DEFAULT_PREBID_CREATIVE_JS_URL
 
       interpretedResponse.bids.forEach((bid) => {
         if (bid.mediaType !== VIDEO) {
-          delete bid.ad;
+          delete bid.ad
           bid.ad = `<script src="${creativeUrl}"></script>
 <script>
   const accountID = '${accountID}';
@@ -309,14 +309,14 @@ export const spec = {
       }
     })
   );
-</script>`.trim();
+</script>`.trim()
         }
-      });
+      })
 
-      return interpretedResponse.bids;
+      return interpretedResponse.bids
     } catch (err) {
-      err.message = `Error while interpreting bid response: ${err?.message}`;
-      recordAndLogError('interpretResponse/didError', err);
+      err.message = `Error while interpreting bid response: ${err?.message}`
+      recordAndLogError('interpretResponse/didError', err)
     }
   },
 
@@ -335,7 +335,7 @@ export const spec = {
     gdprConsent,
     uspConsent
   ) {
-    record('getUserSyncs');
+    record('getUserSyncs')
     try {
       if (hasPurpose1Consent(gdprConsent)) {
         return serverResponses
@@ -344,41 +344,41 @@ export const spec = {
             (s) =>
               (s.type === 'iframe' && syncOptions.iframeEnabled) ||
               (s.type === 'image' && syncOptions.pixelEnabled)
-          );
+          )
       }
     } catch (err) {
-      err.message = `Error while getting user syncs: ${err?.message}`;
-      recordAndLogError('getUserSyncs/didError', err);
+      err.message = `Error while getting user syncs: ${err?.message}`
+      recordAndLogError('getUserSyncs/didError', err)
     }
   },
 
   onTimeout: (timeoutData) => {
-    record('onTimeout', { error: timeoutData });
+    record('onTimeout', { error: timeoutData })
   },
 
   onSetTargeting: (bid) => {
-    record('onSetTargeting');
+    record('onSetTargeting')
   },
 
   onAdRenderSucceeded: (bid) => {
-    record('onAdRenderSucceeded');
+    record('onAdRenderSucceeded')
   },
 
   onBidderError: (error) => {
-    record('onBidderError', { error });
+    record('onBidderError', { error })
   },
 
   onBidWon: (bid) => {
-    record('onBidWon');
+    record('onBidWon')
   },
 
   onBidAttribute: (bid) => {
-    record('onBidAttribute');
+    record('onBidAttribute')
   },
 
   onBidBillable: (bid) => {
-    record('onBidBillable');
+    record('onBidBillable')
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

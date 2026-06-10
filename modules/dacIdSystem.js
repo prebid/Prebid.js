@@ -9,25 +9,25 @@ import {
   logError,
   logInfo,
   logWarn
-} from '../src/utils.js';
+} from '../src/utils.js'
 import {
   ajax
 } from '../src/ajax.js'
 import {
   submodule
-} from '../src/hook.js';
+} from '../src/hook.js'
 import {
   getStorageManager
-} from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-const MODULE_NAME = 'dacId';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+} from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+const MODULE_NAME = 'dacId'
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
-export const FUUID_COOKIE_NAME = '_a1_f';
-export const AONEID_COOKIE_NAME = '_a1_d';
-export const API_URL = 'https://penta.a.one.impact-ad.jp/aud';
-const COOKIES_EXPIRES = 60 * 60 * 24 * 1000; // 24h
-const LOG_PREFIX = 'User ID - dacId submodule: ';
+export const FUUID_COOKIE_NAME = '_a1_f'
+export const AONEID_COOKIE_NAME = '_a1_d'
+export const API_URL = 'https://penta.a.one.impact-ad.jp/aud'
+const COOKIES_EXPIRES = 60 * 60 * 24 * 1000 // 24h
+const LOG_PREFIX = 'User ID - dacId submodule: '
 
 /**
  * @returns {{fuuid: string, uid: string}} -
@@ -36,7 +36,7 @@ function getCookieId() {
   return {
     fuuid: storage.getCookie(FUUID_COOKIE_NAME),
     uid: storage.getCookie(AONEID_COOKIE_NAME)
-  };
+  }
 }
 
 /**
@@ -46,13 +46,13 @@ function getCookieId() {
  */
 function setAoneidToCookie(uid) {
   if (uid) {
-    const expires = new Date(Date.now() + COOKIES_EXPIRES).toUTCString();
+    const expires = new Date(Date.now() + COOKIES_EXPIRES).toUTCString()
     storage.setCookie(
       AONEID_COOKIE_NAME,
       uid,
       expires,
       'none'
-    );
+    )
   }
 }
 
@@ -62,7 +62,7 @@ function setAoneidToCookie(uid) {
  * @returns {string} -
  */
 function getApiUrl(oid, fuuid) {
-  return `${API_URL}?oid=${oid}&fu=${fuuid}`;
+  return `${API_URL}?oid=${oid}&fu=${fuuid}`
 }
 
 /**
@@ -76,40 +76,40 @@ function fetchAoneId(oid, fuuid) {
       const ret = {
         fuuid,
         uid: undefined
-      };
+      }
       const callbacks = {
         success: (response) => {
           if (response) {
             try {
-              const responseObj = JSON.parse(response);
+              const responseObj = JSON.parse(response)
               if (responseObj.error) {
-                logWarn(LOG_PREFIX + 'There is no permission to use API: ' + responseObj.error);
-                return callback(ret);
+                logWarn(LOG_PREFIX + 'There is no permission to use API: ' + responseObj.error)
+                return callback(ret)
               }
               if (!responseObj.uid) {
-                logWarn(LOG_PREFIX + 'AoneId is null');
-                return callback(ret);
+                logWarn(LOG_PREFIX + 'AoneId is null')
+                return callback(ret)
               }
-              ret.uid = responseObj.uid;
-              setAoneidToCookie(ret.uid);
+              ret.uid = responseObj.uid
+              setAoneidToCookie(ret.uid)
             } catch (error) {
-              logError(LOG_PREFIX + error);
+              logError(LOG_PREFIX + error)
             }
           }
-          callback(ret);
+          callback(ret)
         },
         error: (error) => {
-          logError(LOG_PREFIX + error);
-          callback(ret);
+          logError(LOG_PREFIX + error)
+          callback(ret)
         }
-      };
-      const apiUrl = getApiUrl(oid, fuuid);
+      }
+      const apiUrl = getApiUrl(oid, fuuid)
       ajax(apiUrl, callbacks, undefined, {
         method: 'GET',
         withCredentials: true
-      });
+      })
     },
-  };
+  }
 }
 
 export const dacIdSystemSubmodule = {
@@ -141,11 +141,11 @@ export const dacIdSystemSubmodule = {
    * @returns { {id: {fuuid: string, uid: string}} | undefined }
    */
   getId(config) {
-    const cookie = getCookieId();
+    const cookie = getCookieId()
 
     if (!cookie.fuuid) {
       logInfo(LOG_PREFIX + 'There is no fuuid in cookie')
-      return undefined;
+      return undefined
     }
 
     if (cookie.fuuid && cookie.uid) {
@@ -155,21 +155,21 @@ export const dacIdSystemSubmodule = {
           fuuid: cookie.fuuid,
           uid: cookie.uid
         }
-      };
+      }
     }
 
-    const configParams = (config && config.params) || {};
+    const configParams = (config && config.params) || {}
     if (!configParams || typeof configParams.oid !== 'string') {
-      logWarn(LOG_PREFIX + 'oid is not defined');
+      logWarn(LOG_PREFIX + 'oid is not defined')
       return {
         id: {
           fuuid: cookie.fuuid,
           uid: undefined
         }
-      };
+      }
     }
 
-    return fetchAoneId(configParams.oid, cookie.fuuid);
+    return fetchAoneId(configParams.oid, cookie.fuuid)
   },
   eids: {
     'dacId': {
@@ -177,6 +177,6 @@ export const dacIdSystemSubmodule = {
       atype: 1
     },
   }
-};
+}
 
-submodule('userId', dacIdSystemSubmodule);
+submodule('userId', dacIdSystemSubmodule)

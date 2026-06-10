@@ -1,13 +1,13 @@
-import * as previousAuctionInfo from '../../../modules/previousAuctionInfo/index.js';
-import sinon from 'sinon';
-import { expect } from 'chai';
-import { config } from 'src/config.js';
-import * as events from 'src/events.js';
-import { CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook } from '../../../modules/previousAuctionInfo/index.js';
-import { REJECTION_REASON } from '../../../src/constants.js';
+import * as previousAuctionInfo from '../../../modules/previousAuctionInfo/index.js'
+import sinon from 'sinon'
+import { expect } from 'chai'
+import { config } from 'src/config.js'
+import * as events from 'src/events.js'
+import { CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook } from '../../../modules/previousAuctionInfo/index.js'
+import { REJECTION_REASON } from '../../../src/constants.js'
 
 describe('previous auction info', () => {
-  let sandbox;
+  let sandbox
 
   const auctionDetails = {
     auctionId: 'auction123',
@@ -44,45 +44,45 @@ describe('previous auction info', () => {
       }
     ],
     timestamp: Date.now(),
-  };
+  }
 
   before(() => {
-    config.resetConfig();
+    config.resetConfig()
   })
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
-  });
+    sandbox = sinon.createSandbox()
+  })
 
   afterEach(() => {
-    config.resetConfig();
-    resetPreviousAuctionInfo();
-    sandbox.restore();
-  });
+    config.resetConfig()
+    resetPreviousAuctionInfo()
+    sandbox.restore()
+  })
 
   describe('config', () => {
     it('should initialize the module if publisher enabled', () => {
-      sandbox.spy(events, 'on');
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1', 'testBidder2'] } });
-      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.true;
-      sinon.assert.called(events.on);
-    });
+      sandbox.spy(events, 'on')
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1', 'testBidder2'] } })
+      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.true
+      sinon.assert.called(events.on)
+    })
 
     it('should not enable previous auction info if config.previousAuctionInfo is not set', () => {
-      config.setConfig({});
-      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false;
-    });
-  });
+      config.setConfig({})
+      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false
+    })
+  })
 
   describe('onAuctionEndHandler', () => {
     it('should store auction data for enabled bidders in auctionState', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder2'] } });
-      previousAuctionInfo.onAuctionEndHandler(auctionDetails);
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder2'] } })
+      previousAuctionInfo.onAuctionEndHandler(auctionDetails)
 
-      expect(previousAuctionInfo.auctionState).to.have.property('testBidder2');
-      expect(previousAuctionInfo.auctionState['testBidder2']).to.be.an('array').with.lengthOf(1);
+      expect(previousAuctionInfo.auctionState).to.have.property('testBidder2')
+      expect(previousAuctionInfo.auctionState['testBidder2']).to.be.an('array').with.lengthOf(1)
 
-      const storedData = previousAuctionInfo.auctionState['testBidder2'][0];
+      const storedData = previousAuctionInfo.auctionState['testBidder2'][0]
 
       expect(storedData).to.include({
         bidderRequestId: 'req2',
@@ -98,15 +98,15 @@ describe('previous auction info', () => {
         bidderOriginalCurrency: 'EUR',
         rejectionReason: null,
         timestamp: auctionDetails.timestamp
-      });
-    });
+      })
+    })
 
     it('should store auction data for multiple bidders correctly', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1', 'testBidder3'] } });
-      previousAuctionInfo.onAuctionEndHandler(auctionDetails);
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1', 'testBidder3'] } })
+      previousAuctionInfo.onAuctionEndHandler(auctionDetails)
 
-      expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
-      expect(previousAuctionInfo.auctionState).to.have.property('testBidder3');
+      expect(previousAuctionInfo.auctionState).to.have.property('testBidder1')
+      expect(previousAuctionInfo.auctionState).to.have.property('testBidder3')
 
       expect(previousAuctionInfo.auctionState['testBidder1'][0]).to.include({
         bidId: 'bid123',
@@ -116,7 +116,7 @@ describe('previous auction info', () => {
         bidderCpm: 1,
         bidderCurrency: 'USD',
         rejectionReason: null,
-      });
+      })
 
       expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({
         bidId: 'bidxyz',
@@ -126,16 +126,16 @@ describe('previous auction info', () => {
         bidderCpm: 3,
         bidderCurrency: 'USD',
         rejectionReason: null,
-      });
-    });
+      })
+    })
 
     it('should not store auction data for disabled bidders', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(auctionDetails);
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } })
+      previousAuctionInfo.onAuctionEndHandler(auctionDetails)
 
-      expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
-      expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder2');
-    });
+      expect(previousAuctionInfo.auctionState).to.have.property('testBidder1')
+      expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder2')
+    })
 
     it('should include rejectionReason string if the bid was rejected', () => {
       const auctionDetailsWithRejectedBid = {
@@ -154,39 +154,39 @@ describe('previous auction info', () => {
           }
         ],
         timestamp: Date.now(),
-      };
+      }
 
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(auctionDetailsWithRejectedBid);
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } })
+      previousAuctionInfo.onAuctionEndHandler(auctionDetailsWithRejectedBid)
 
-      const stored = previousAuctionInfo.auctionState['testBidder1'][0];
+      const stored = previousAuctionInfo.auctionState['testBidder1'][0]
       expect(stored).to.include({
         bidId: 'bid456',
         rejectionReason: REJECTION_REASON.FLOOR_NOT_MET,
         bidderCpm: null,
         highestBidCpm: null
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('startAuctionHook', () => {
-    let global, bidder, next;
+    let global, bidder, next
     beforeEach(() => {
-      global = {};
-      bidder = {};
-      next = sinon.spy();
-    });
+      global = {}
+      bidder = {}
+      next = sinon.spy()
+    })
     function runHook() {
-      startAuctionHook(next, { ortb2Fragments: { global, bidder } });
+      startAuctionHook(next, { ortb2Fragments: { global, bidder } })
     }
     it('should not add info when none is available', () => {
-      runHook();
-      expect(global).to.eql({});
-      expect(bidder).to.eql({});
+      runHook()
+      expect(global).to.eql({})
+      expect(bidder).to.eql({})
     })
     it('should call next', () => {
-      runHook();
-      sinon.assert.called(next);
+      runHook()
+      sinon.assert.called(next)
     })
     describe('when info is available', () => {
       beforeEach(() => {
@@ -204,16 +204,16 @@ describe('previous auction info', () => {
       }
 
       it('should set info for enabled bidders, when only some are enabled', () => {
-        config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['bidder1'] } });
-        runHook();
+        config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['bidder1'] } })
+        runHook()
         expect(extractInfo()).to.eql({
           bidder1: [{ auction: '1' }]
         })
-      });
+      })
 
       it('should set info for all bidders, when none is specified', () => {
-        config.setConfig({ [CONFIG_NS]: { enabled: true } });
-        runHook();
+        config.setConfig({ [CONFIG_NS]: { enabled: true } })
+        runHook()
         expect(extractInfo()).to.eql({
           bidder1: [{ auction: '1' }],
           bidder2: [{ auction: '2' }]
@@ -224,35 +224,35 @@ describe('previous auction info', () => {
 
   describe('onBidWonHandler', () => {
     it('should update the rendered field in auctionState when a pbjs bid wins', () => {
-      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } });
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } })
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'trans789', rendered: 0 }
-      ];
+      ]
 
       const winningBid = {
         transactionId: 'trans789'
-      };
+      }
 
-      previousAuctionInfo.onBidWonHandler(winningBid);
+      previousAuctionInfo.onBidWonHandler(winningBid)
 
-      expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({ rendered: 1 });
-    });
+      expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({ rendered: 1 })
+    })
 
     it('should not update the rendered field if no matching transactionId is found', () => {
-      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } });
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } })
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'someOtherTid', rendered: 0 }
-      ];
+      ]
 
       const winningBid = {
         transactionId: 'trans789'
-      };
+      }
 
-      previousAuctionInfo.onBidWonHandler(winningBid);
+      previousAuctionInfo.onBidWonHandler(winningBid)
 
-      expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({ rendered: 0 });
-    });
-  });
-});
+      expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({ rendered: 0 })
+    })
+  })
+})

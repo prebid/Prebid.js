@@ -5,10 +5,10 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { isPlainObject } from '../src/utils.js';
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { isPlainObject } from '../src/utils.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -16,8 +16,8 @@ import { isPlainObject } from '../src/utils.js';
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  */
 
-const MODULE_NAME = 'deepintentId';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+const MODULE_NAME = 'deepintentId'
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 /** @type {Submodule} */
 export const deepintentDpesSubmodule = {
@@ -33,7 +33,7 @@ export const deepintentDpesSubmodule = {
    * @returns {{deepintentId:Object}}
    */
   decode(value, config) {
-    return value ? { 'deepintentId': value } : undefined;
+    return value ? { 'deepintentId': value } : undefined
   },
 
   /**
@@ -45,7 +45,7 @@ export const deepintentDpesSubmodule = {
    * @return {{id: string | undefined} | undefined}
    */
   getId(config, consentData, cacheIdObj) {
-    return cacheIdObj;
+    return cacheIdObj
   },
   eids: {
     'deepintentId': {
@@ -53,12 +53,12 @@ export const deepintentDpesSubmodule = {
       atype: 3,
       getValue: (userIdData) => {
         if (isPlainObject(userIdData) && userIdData?.id) {
-          return userIdData.id;
+          return userIdData.id
         }
-        return userIdData;
+        return userIdData
       }
     },
   },
-};
+}
 
-submodule('userId', deepintentDpesSubmodule);
+submodule('userId', deepintentDpesSubmodule)

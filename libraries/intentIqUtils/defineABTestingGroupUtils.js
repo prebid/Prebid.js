@@ -3,7 +3,7 @@ import {
   WITHOUT_IIQ,
   DEFAULT_PERCENTAGE,
   AB_CONFIG_SOURCE,
-} from "../intentIqConstants/intentIqConstants.js";
+} from "../intentIqConstants/intentIqConstants.js"
 
 /**
  * Fix percentage if provided some incorrect data
@@ -12,9 +12,9 @@ import {
  * clampPct('abc') => DEFAULT_PERCENTAGE
  */
 function clampPct(val) {
-  const n = Number(val);
-  if (!Number.isFinite(n)) return DEFAULT_PERCENTAGE; // fallback = 95
-  return Math.max(0, Math.min(100, n));
+  const n = Number(val)
+  if (!Number.isFinite(n)) return DEFAULT_PERCENTAGE // fallback = 95
+  return Math.max(0, Math.min(100, n))
 }
 
 /**
@@ -26,14 +26,14 @@ function clampPct(val) {
  */
 function pickABByPercentage(pct) {
   const percentageToUse =
-  typeof pct === "number" ? pct : DEFAULT_PERCENTAGE;
-  const percentage = clampPct(percentageToUse);
-  const roll = Math.floor(Math.random() * 100) + 1;
-  return roll <= percentage ? WITH_IIQ : WITHOUT_IIQ; // A : B
+  typeof pct === "number" ? pct : DEFAULT_PERCENTAGE
+  const percentage = clampPct(percentageToUse)
+  const roll = Math.floor(Math.random() * 100) + 1
+  return roll <= percentage ? WITH_IIQ : WITHOUT_IIQ // A : B
 }
 
 function configurationSourceGroupInitialization(group) {
-  return typeof group === 'string' && group.toUpperCase() === WITHOUT_IIQ ? WITHOUT_IIQ : WITH_IIQ;
+  return typeof group === 'string' && group.toUpperCase() === WITHOUT_IIQ ? WITHOUT_IIQ : WITH_IIQ
 }
 
 /**
@@ -50,10 +50,10 @@ function configurationSourceGroupInitialization(group) {
 
 function IIQServerConfigurationSource(tc, abPercentage) {
   if (typeof tc === "number" && Number.isFinite(tc)) {
-    return tc === 41 ? WITHOUT_IIQ : WITH_IIQ;
+    return tc === 41 ? WITHOUT_IIQ : WITH_IIQ
   }
 
-  return pickABByPercentage(abPercentage);
+  return pickABByPercentage(abPercentage)
 }
 
 export function defineABTestingGroup(configObject, tc) {
@@ -61,14 +61,14 @@ export function defineABTestingGroup(configObject, tc) {
     case AB_CONFIG_SOURCE.GROUP:
       return configurationSourceGroupInitialization(
         configObject.group
-      );
+      )
     case AB_CONFIG_SOURCE.PERCENTAGE:
-      return pickABByPercentage(configObject.abPercentage);
+      return pickABByPercentage(configObject.abPercentage)
     default: {
       if (!configObject.ABTestingConfigurationSource) {
-        configObject.ABTestingConfigurationSource = AB_CONFIG_SOURCE.IIQ_SERVER;
+        configObject.ABTestingConfigurationSource = AB_CONFIG_SOURCE.IIQ_SERVER
       }
-      return IIQServerConfigurationSource(tc, configObject.abPercentage);
+      return IIQServerConfigurationSource(tc, configObject.abPercentage)
     }
   }
 }

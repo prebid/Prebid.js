@@ -1,11 +1,11 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js'
 
-const adpterVersion = '1.0';
-export const REQUEST_URL = 'https://spicyrtb.com/auction/prebid';
-export const DEFAULT_CURRENCY = 'USD';
+const adpterVersion = '1.0'
+export const REQUEST_URL = 'https://spicyrtb.com/auction/prebid'
+export const DEFAULT_CURRENCY = 'USD'
 
 export const spec = {
   code: 'adfusion',
@@ -16,9 +16,9 @@ export const spec = {
   interpretResponse,
   isBannerBid,
   isVideoBid,
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
 
 const converter = ortbConverter({
   context: {
@@ -27,18 +27,18 @@ const converter = ortbConverter({
     currency: DEFAULT_CURRENCY,
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    const floor = getBidFloor(bidRequest);
+    const imp = buildImp(bidRequest, context)
+    const floor = getBidFloor(bidRequest)
     if (floor) {
-      imp.bidfloor = floor;
-      imp.bidfloorcur = DEFAULT_CURRENCY;
+      imp.bidfloor = floor
+      imp.bidfloorcur = DEFAULT_CURRENCY
     }
 
-    return imp;
+    return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context);
-    const bid = context.bidRequests[0];
+    const req = buildRequest(imps, bidderRequest, context)
+    const bid = context.bidRequests[0]
     utils.mergeDeep(req, {
       at: 1,
       ext: {
@@ -47,34 +47,34 @@ const converter = ortbConverter({
           adapterVersion: `${adpterVersion}`,
         },
       },
-    });
-    return req;
+    })
+    return req
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
-    const response = buildResponse(bidResponses, ortbResponse, context);
-    return response.bids;
+    const response = buildResponse(bidResponses, ortbResponse, context)
+    return response.bids
   },
-});
+})
 
 function isBidRequestValid(bidRequest) {
-  const isValid = bidRequest.params.accountId;
+  const isValid = bidRequest.params.accountId
   if (!isValid) {
-    utils.logError('AdFusion adapter bidRequest has no accountId');
-    return false;
+    utils.logError('AdFusion adapter bidRequest has no accountId')
+    return false
   }
-  return true;
+  return true
 }
 
 function buildRequests(bids, bidderRequest) {
-  const videoBids = bids.filter((bid) => isVideoBid(bid));
-  const bannerBids = bids.filter((bid) => isBannerBid(bid));
+  const videoBids = bids.filter((bid) => isVideoBid(bid))
+  const bannerBids = bids.filter((bid) => isBannerBid(bid))
   const requests = bannerBids.length
     ? [createRequest(bannerBids, bidderRequest, BANNER)]
-    : [];
+    : []
   videoBids.forEach((bid) => {
-    requests.push(createRequest([bid], bidderRequest, VIDEO));
-  });
-  return requests;
+    requests.push(createRequest([bid], bidderRequest, VIDEO))
+  })
+  return requests
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
@@ -86,19 +86,19 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
       bidderRequest,
       context: { mediaType },
     }),
-  };
+  }
 }
 
 function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video');
+  return utils.deepAccess(bid, 'mediaTypes.video')
 }
 
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner');
+  return utils.deepAccess(bid, 'mediaTypes.banner')
 }
 
 function interpretResponse(resp, req) {
-  return converter.fromORTB({ request: req.data, response: resp.body });
+  return converter.fromORTB({ request: req.data, response: resp.body })
 }
 
 function getBidFloor(bid) {
@@ -107,14 +107,14 @@ function getBidFloor(bid) {
       currency: DEFAULT_CURRENCY,
       mediaType: '*',
       size: '*',
-    });
+    })
     if (
       utils.isPlainObject(floor) &&
       !isNaN(floor.floor) &&
       floor.currency === DEFAULT_CURRENCY
     ) {
-      return floor.floor;
+      return floor.floor
     }
   }
-  return null;
+  return null
 }

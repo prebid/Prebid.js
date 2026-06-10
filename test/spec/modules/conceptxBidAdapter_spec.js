@@ -1,12 +1,12 @@
-import { expect } from 'chai';
-import { spec } from 'modules/conceptxBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai'
+import { spec } from 'modules/conceptxBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 describe('conceptxBidAdapter', function () {
-  const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction';
+  const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction'
   const ENDPOINT_URL_CONSENT =
-    ENDPOINT_URL + '?gdpr_applies=1&gdpr_consent=ihaveconsented';
-  const adapter = newBidder(spec);
+    ENDPOINT_URL + '?gdpr_applies=1&gdpr_consent=ihaveconsented'
+  const adapter = newBidder(spec)
 
   const bidderRequests = [
     {
@@ -30,7 +30,7 @@ describe('conceptxBidAdapter', function () {
         },
       },
     },
-  ];
+  ]
 
   const serverResponse = {
     body: {
@@ -53,7 +53,7 @@ describe('conceptxBidAdapter', function () {
         },
       ],
     },
-  };
+  }
 
   const requestPayload = {
     data: JSON.stringify({
@@ -75,18 +75,18 @@ describe('conceptxBidAdapter', function () {
         },
       },
     }),
-  };
+  }
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     it('should return true when bidId and params.adunit are present', function () {
-      expect(spec.isBidRequestValid(bidderRequests[0])).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bidderRequests[0])).to.equal(true)
+    })
 
     it('should return false when params.adunit is missing', function () {
       expect(
@@ -95,8 +95,8 @@ describe('conceptxBidAdapter', function () {
           bidder: 'conceptx',
           params: { site: 'example' },
         })
-      ).to.equal(false);
-    });
+      ).to.equal(false)
+    })
 
     it('should return false when bidId is missing', function () {
       expect(
@@ -104,38 +104,38 @@ describe('conceptxBidAdapter', function () {
           bidder: 'conceptx',
           params: { site: 'example', adunit: 'id-1' },
         })
-      ).to.equal(false);
-    });
-  });
+      ).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     it('should build OpenRTB request with stored requests', function () {
-      const requests = spec.buildRequests(bidderRequests, {});
-      expect(requests).to.have.lengthOf(1);
-      expect(requests[0]).to.have.property('method', 'POST');
-      expect(requests[0]).to.have.property('url', ENDPOINT_URL);
-      expect(requests[0]).to.have.property('data');
+      const requests = spec.buildRequests(bidderRequests, {})
+      expect(requests).to.have.lengthOf(1)
+      expect(requests[0]).to.have.property('method', 'POST')
+      expect(requests[0]).to.have.property('url', ENDPOINT_URL)
+      expect(requests[0]).to.have.property('data')
 
-      const payload = JSON.parse(requests[0].data);
-      expect(payload).to.have.property('site');
-      expect(payload.site).to.have.property('id', 'cxba_example.com');
-      expect(payload.site).to.have.property('domain', 'example.com');
-      expect(payload.site).to.have.property('page', 'https://example.com/article/1');
-      expect(payload).to.have.property('imp');
-      expect(payload.imp).to.have.lengthOf(1);
+      const payload = JSON.parse(requests[0].data)
+      expect(payload).to.have.property('site')
+      expect(payload.site).to.have.property('id', 'cxba_example.com')
+      expect(payload.site).to.have.property('domain', 'example.com')
+      expect(payload.site).to.have.property('page', 'https://example.com/article/1')
+      expect(payload).to.have.property('imp')
+      expect(payload.imp).to.have.lengthOf(1)
       expect(payload.imp[0].ext.prebid.storedrequest).to.deep.equal({
         id: 'some-id-3',
-      });
+      })
       expect(payload.ext.prebid.storedrequest).to.deep.equal({
         id: 'cx_global',
-      });
-      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 930, h: 180 }]);
-    });
+      })
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 930, h: 180 }])
+    })
 
     it('should include withCredentials in options', function () {
-      const requests = spec.buildRequests(bidderRequests, {});
-      expect(requests[0].options).to.deep.include({ withCredentials: true });
-    });
+      const requests = spec.buildRequests(bidderRequests, {})
+      expect(requests[0].options).to.deep.include({ withCredentials: true })
+    })
 
     it('should use params.site only for site.id, not for domain or page', function () {
       const bids = [
@@ -156,14 +156,14 @@ describe('conceptxBidAdapter', function () {
           },
           mediaTypes: { banner: { sizes: [[300, 250]] } },
         },
-      ];
-      const requests = spec.buildRequests(bids, {});
-      const payload = JSON.parse(requests[0].data);
+      ]
+      const requests = spec.buildRequests(bids, {})
+      const payload = JSON.parse(requests[0].data)
 
-      expect(payload.site.id).to.equal('cxba_soundvenue.com');
-      expect(payload.site.domain).to.equal('soundvenue.com');
-      expect(payload.site.page).to.equal('https://soundvenue.com/musik/2025/article');
-    });
+      expect(payload.site.id).to.equal('cxba_soundvenue.com')
+      expect(payload.site.domain).to.equal('soundvenue.com')
+      expect(payload.site.page).to.equal('https://soundvenue.com/musik/2025/article')
+    })
 
     it('should fall back to refererInfo when ortb2.site is absent', function () {
       const bids = [
@@ -179,20 +179,20 @@ describe('conceptxBidAdapter', function () {
           ortb2: {},
           mediaTypes: { banner: { sizes: [[728, 90]] } },
         },
-      ];
+      ]
       const bidderReq = {
         refererInfo: {
           page: 'https://mysite.dk/page',
           domain: 'mysite.dk',
         },
-      };
-      const requests = spec.buildRequests(bids, bidderReq);
-      const payload = JSON.parse(requests[0].data);
+      }
+      const requests = spec.buildRequests(bids, bidderReq)
+      const payload = JSON.parse(requests[0].data)
 
-      expect(payload.site.id).to.equal('cxba_mysite.dk');
-      expect(payload.site.domain).to.equal('mysite.dk');
-      expect(payload.site.page).to.equal('https://mysite.dk/page');
-    });
+      expect(payload.site.id).to.equal('cxba_mysite.dk')
+      expect(payload.site.domain).to.equal('mysite.dk')
+      expect(payload.site.page).to.equal('https://mysite.dk/page')
+    })
 
     it('should use adUnitCode as site.id when params.site is absent', function () {
       const bids = [
@@ -212,63 +212,63 @@ describe('conceptxBidAdapter', function () {
           },
           mediaTypes: { banner: { sizes: [[300, 250]] } },
         },
-      ];
-      const requests = spec.buildRequests(bids, {});
-      const payload = JSON.parse(requests[0].data);
+      ]
+      const requests = spec.buildRequests(bids, {})
+      const payload = JSON.parse(requests[0].data)
 
-      expect(payload.site.id).to.equal('fallback.com');
-      expect(payload.site.domain).to.equal('fallback.com');
-      expect(payload.site.page).to.equal('https://fallback.com/page');
-    });
-  });
+      expect(payload.site.id).to.equal('fallback.com')
+      expect(payload.site.domain).to.equal('fallback.com')
+      expect(payload.site.page).to.equal('https://fallback.com/page')
+    })
+  })
 
   describe('user privacy', function () {
     it('should NOT add GDPR params to URL when gdprApplies is undefined', function () {
       const requests = spec.buildRequests(bidderRequests, {
         gdprConsent: { gdprApplies: undefined, consentString: 'iDoNotConsent' },
-      });
-      expect(requests[0].url).to.equal(ENDPOINT_URL);
-    });
+      })
+      expect(requests[0].url).to.equal(ENDPOINT_URL)
+    })
 
     it('should add gdpr_applies and gdpr_consent to URL when GDPR applies', function () {
       const requests = spec.buildRequests(bidderRequests, {
         gdprConsent: { gdprApplies: true, consentString: 'ihaveconsented' },
-      });
-      expect(requests[0].url).to.include('gdpr_applies=1');
-      expect(requests[0].url).to.include('gdpr_consent=ihaveconsented');
-    });
-  });
+      })
+      expect(requests[0].url).to.include('gdpr_applies=1')
+      expect(requests[0].url).to.include('gdpr_consent=ihaveconsented')
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should return valid bids from PBS seatbid format', function () {
-      const interpreted = spec.interpretResponse(serverResponse, requestPayload);
-      expect(interpreted).to.have.lengthOf(1);
-      expect(interpreted[0].requestId).to.equal('123');
-      expect(interpreted[0].cpm).to.equal(46);
-      expect(interpreted[0].width).to.equal(930);
-      expect(interpreted[0].height).to.equal(180);
-      expect(interpreted[0].creativeId).to.equal('FAKE-ID');
-      expect(interpreted[0].currency).to.equal('DKK');
-      expect(interpreted[0].netRevenue).to.equal(true);
-      expect(interpreted[0].ad).to.equal('<h1>DUMMY</h1>');
-      expect(interpreted[0].ttl).to.equal(300);
-    });
+      const interpreted = spec.interpretResponse(serverResponse, requestPayload)
+      expect(interpreted).to.have.lengthOf(1)
+      expect(interpreted[0].requestId).to.equal('123')
+      expect(interpreted[0].cpm).to.equal(46)
+      expect(interpreted[0].width).to.equal(930)
+      expect(interpreted[0].height).to.equal(180)
+      expect(interpreted[0].creativeId).to.equal('FAKE-ID')
+      expect(interpreted[0].currency).to.equal('DKK')
+      expect(interpreted[0].netRevenue).to.equal(true)
+      expect(interpreted[0].ad).to.equal('<h1>DUMMY</h1>')
+      expect(interpreted[0].ttl).to.equal(300)
+    })
 
     it('should return empty array when no seatbid', function () {
-      const emptyResponse = { body: { seatbid: [] } };
-      expect(spec.interpretResponse(emptyResponse, {})).to.deep.equal([]);
-    });
+      const emptyResponse = { body: { seatbid: [] } }
+      expect(spec.interpretResponse(emptyResponse, {})).to.deep.equal([])
+    })
 
     it('should return empty array when seatbid is missing', function () {
-      const noSeatbid = { body: {} };
-      expect(spec.interpretResponse(noSeatbid, {})).to.deep.equal([]);
-    });
-  });
+      const noSeatbid = { body: {} }
+      expect(spec.interpretResponse(noSeatbid, {})).to.deep.equal([])
+    })
+  })
 
   describe('getUserSyncs', function () {
     it('should return empty array (sync handled by runPbsCookieSync)', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], {}, '', {});
-      expect(syncs).to.deep.equal([]);
-    });
-  });
-});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], {}, '', {})
+      expect(syncs).to.deep.equal([])
+    })
+  })
+})

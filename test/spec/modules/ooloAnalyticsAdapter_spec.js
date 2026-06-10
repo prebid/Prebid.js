@@ -1,15 +1,15 @@
-import ooloAnalytics, { PAGEVIEW_ID, buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter.js';
-import { expect } from 'chai';
-import { server } from 'test/mocks/xhr.js';
+import ooloAnalytics, { PAGEVIEW_ID, buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter.js'
+import { expect } from 'chai'
+import { server } from 'test/mocks/xhr.js'
 import { EVENTS } from 'src/constants.js'
 import * as events from 'src/events'
-import { config } from 'src/config';
+import { config } from 'src/config'
 
-const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
+const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56'
 const auctionStart = 1598513385415
 const timeout = 3000
-const adUnit1 = 'top_1';
-const adUnit2 = 'top_2';
+const adUnit1 = 'top_1'
+const adUnit2 = 'top_2'
 const bidId1 = '392b5a6b05d648'
 const bidId2 = '392b5a6b05d649'
 const bidId3 = '392b5a6b05d650'
@@ -26,7 +26,7 @@ const auctionInit = {
     code: adUnit2,
     transactionId: 'abalksdkjfh-12sadf'
   }]
-};
+}
 
 const bidRequested = {
   auctionId,
@@ -129,7 +129,7 @@ const bidResponse = {
 
 const auctionEnd = {
   auctionId: auctionId
-};
+}
 
 const bidTimeout = [
   {
@@ -139,7 +139,7 @@ const bidTimeout = [
     bidder: 'ix',
     timeout: timeout
   }
-];
+]
 
 const bidWon = {
   auctionId,
@@ -149,26 +149,26 @@ const bidWon = {
 }
 
 function simulateAuction () {
-  events.emit(EVENTS.AUCTION_INIT, auctionInit);
-  events.emit(EVENTS.BID_REQUESTED, bidRequested);
-  events.emit(EVENTS.BID_RESPONSE, bidResponse);
-  events.emit(EVENTS.NO_BID, noBid);
-  events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
-  events.emit(EVENTS.AUCTION_END, auctionEnd);
+  events.emit(EVENTS.AUCTION_INIT, auctionInit)
+  events.emit(EVENTS.BID_REQUESTED, bidRequested)
+  events.emit(EVENTS.BID_RESPONSE, bidResponse)
+  events.emit(EVENTS.NO_BID, noBid)
+  events.emit(EVENTS.BID_TIMEOUT, bidTimeout)
+  events.emit(EVENTS.AUCTION_END, auctionEnd)
 }
 
 describe('oolo Prebid Analytic', () => {
   let clock
 
   beforeEach(() => {
-    sinon.stub(events, 'getEvents').returns([]);
+    sinon.stub(events, 'getEvents').returns([])
     clock = sinon.useFakeTimers()
-  });
+  })
 
   afterEach(() => {
-    ooloAnalytics.disableAnalytics();
+    ooloAnalytics.disableAnalytics()
     events.getEvents.restore()
-    clock.restore();
+    clock.restore()
   })
 
   describe('enableAnalytics init options', () => {
@@ -251,7 +251,7 @@ describe('oolo Prebid Analytic', () => {
       clock.tick(2000)
       expect(server.requests.length).to.equal(4)
 
-      const request = JSON.parse(server.requests[3].requestBody);
+      const request = JSON.parse(server.requests[3].requestBody)
 
       expect(request).to.include({
         eventType: 'auction',
@@ -319,20 +319,20 @@ describe('oolo Prebid Analytic', () => {
         }
       })
 
-      events.emit(EVENTS.AUCTION_INIT, auctionInit);
-      events.emit(EVENTS.BID_REQUESTED, bidRequested);
-      events.emit(EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.AUCTION_INIT, auctionInit)
+      events.emit(EVENTS.BID_REQUESTED, bidRequested)
+      events.emit(EVENTS.BID_RESPONSE, bidResponse)
 
       // configuration returned in an arbitrary moment
       server.requests[0].respond(500)
 
-      events.emit(EVENTS.NO_BID, noBid);
-      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.NO_BID, noBid)
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout)
+      events.emit(EVENTS.AUCTION_END, auctionEnd)
 
       clock.tick(1500)
 
-      const request = JSON.parse(server.requests[3].requestBody);
+      const request = JSON.parse(server.requests[3].requestBody)
 
       expect(request).to.include({
         eventType: 'auction',
@@ -405,7 +405,7 @@ describe('oolo Prebid Analytic', () => {
       simulateAuction()
       clock.tick(1500)
 
-      const request = JSON.parse(server.requests[3].requestBody);
+      const request = JSON.parse(server.requests[3].requestBody)
 
       const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
       const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
@@ -440,13 +440,13 @@ describe('oolo Prebid Analytic', () => {
 
       server.requests[0].respond(500)
       simulateAuction()
-      events.emit(EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon)
       clock.tick(1500)
 
       // no bidWon
       expect(server.requests).to.have.length(4)
 
-      const request = JSON.parse(server.requests[3].requestBody);
+      const request = JSON.parse(server.requests[3].requestBody)
       expect(request.adUnits[0].bids[0].isW).to.equal(true)
     })
 
@@ -464,7 +464,7 @@ describe('oolo Prebid Analytic', () => {
       }))
 
       simulateAuction()
-      events.emit(EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon)
       clock.tick(499)
 
       // no auction data
@@ -474,7 +474,7 @@ describe('oolo Prebid Analytic', () => {
 
       // auction data
       expect(server.requests).to.have.length(4)
-      const request = JSON.parse(server.requests[3].requestBody);
+      const request = JSON.parse(server.requests[3].requestBody)
       expect(request.adUnits[0].bids[0].isW).to.equal(true)
     })
 
@@ -489,11 +489,11 @@ describe('oolo Prebid Analytic', () => {
       server.requests[0].respond(500)
       simulateAuction()
       clock.tick(1500)
-      events.emit(EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon)
 
       expect(server.requests).to.have.length(5)
 
-      const request = JSON.parse(server.requests[4].requestBody);
+      const request = JSON.parse(server.requests[4].requestBody)
 
       expect(request.eventType).to.equal('bidWon')
       expect(request.auctionId).to.equal(auctionId)
@@ -514,11 +514,11 @@ describe('oolo Prebid Analytic', () => {
       server.requests[0].respond(500)
       simulateAuction()
       clock.tick(1500)
-      events.emit(EVENTS.AD_RENDER_FAILED, { bidId: 'abcdef', reason: 'exception' });
+      events.emit(EVENTS.AD_RENDER_FAILED, { bidId: 'abcdef', reason: 'exception' })
 
       expect(server.requests).to.have.length(5)
 
-      const request = JSON.parse(server.requests[4].requestBody);
+      const request = JSON.parse(server.requests[4].requestBody)
 
       expect(request.eventType).to.equal('adRenderFailed')
       expect(request.pvid).to.equal(PAGEVIEW_ID)
@@ -555,12 +555,12 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit });
-      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.transactionId = '123'; return b }) });
-      events.emit(EVENTS.NO_BID, { ...noBid, src: 'client' });
-      events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, adUrl: '...' });
-      events.emit(EVENTS.AUCTION_END, { ...auctionEnd, winningBids: [] });
-      events.emit(EVENTS.BID_WON, { ...bidWon });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit })
+      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.transactionId = '123'; return b }) })
+      events.emit(EVENTS.NO_BID, { ...noBid, src: 'client' })
+      events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, adUrl: '...' })
+      events.emit(EVENTS.AUCTION_END, { ...auctionEnd, winningBids: [] })
+      events.emit(EVENTS.BID_WON, { ...bidWon })
 
       clock.tick(1500)
 
@@ -593,12 +593,12 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
-      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.custom_2 = true; return b }) });
-      events.emit(EVENTS.NO_BID, { ...noBid, custom_3: true });
-      events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, custom_4: true });
-      events.emit(EVENTS.AUCTION_END, { ...auctionEnd });
-      events.emit(EVENTS.BID_WON, { ...bidWon, custom_5: true });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true })
+      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.custom_2 = true; return b }) })
+      events.emit(EVENTS.NO_BID, { ...noBid, custom_3: true })
+      events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, custom_4: true })
+      events.emit(EVENTS.AUCTION_END, { ...auctionEnd })
+      events.emit(EVENTS.BID_WON, { ...bidWon, custom_5: true })
 
       clock.tick(1500)
 
@@ -630,7 +630,7 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true })
 
       clock.tick(1500)
 
@@ -658,7 +658,7 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit })
 
       expect(server.requests[3].url).to.equal('https://pbjs.com/')
     })
@@ -684,7 +684,7 @@ describe('oolo Prebid Analytic', () => {
       }))
 
       events.emit(EVENTS.AUCTION_INIT, auctionInit)
-      events.emit(EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.BID_REQUESTED, bidRequested)
 
       const request = JSON.parse(server.requests[3].requestBody)
 
@@ -725,7 +725,7 @@ describe('oolo Prebid Analytic', () => {
       expect(JSON.parse(server.requests[3].requestBody).eventType).to.equal('auctionInit')
       expect(JSON.parse(server.requests[4].requestBody).eventType).to.equal('bidRequested')
     })
-  });
+  })
 
   describe('buildAuctionData', () => {
     const auction = {
@@ -787,4 +787,4 @@ describe('oolo Prebid Analytic', () => {
       expect(generatePageViewId()).length(19)
     })
   })
-});
+})

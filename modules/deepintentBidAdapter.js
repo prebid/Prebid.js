@@ -1,22 +1,22 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
-import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
-import { getDNT } from '../libraries/dnt/index.js';
+import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js'
+import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js'
+import { getDNT } from '../libraries/dnt/index.js'
 
-const LOG_WARN_PREFIX = 'DeepIntent: ';
-const BIDDER_CODE = 'deepintent';
-const GVL_ID = 541;
-const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
-const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
-const DI_M_V = '1.0.0';
+const LOG_WARN_PREFIX = 'DeepIntent: '
+const BIDDER_CODE = 'deepintent'
+const GVL_ID = 541
+const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid'
+const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html'
+const DI_M_V = '1.0.0'
 export const ORTB_VIDEO_PARAMS = {
   ...COMMON_ORTB_VIDEO_PARAMS,
   'plcmt': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
   'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
   'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-};
+}
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
@@ -25,47 +25,47 @@ export const spec = {
 
   // tagId is mandatory param
   isBidRequestValid: bid => {
-    let valid = false;
+    let valid = false
     if (bid && bid.params && bid.params.tagId) {
       if (typeof bid.params.tagId === 'string' || bid.params.tagId instanceof String) {
         if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
           if (bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
-            valid = true;
+            valid = true
           }
         } else {
-          valid = true;
+          valid = true
         }
       }
     }
-    return valid;
+    return valid
   },
   interpretResponse: function(bidResponse, bidRequest) {
-    const responses = [];
+    const responses = []
     if (bidResponse && bidResponse.body) {
       try {
-        const bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
+        const bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : []
         if (bids) {
           bids.forEach(bidObj => {
-            const newBid = formatResponse(bidObj);
-            const mediaType = _checkMediaType(bidObj);
+            const newBid = formatResponse(bidObj)
+            const mediaType = _checkMediaType(bidObj)
             if (mediaType === BANNER) {
-              newBid.mediaType = BANNER;
+              newBid.mediaType = BANNER
             } else if (mediaType === VIDEO) {
-              newBid.mediaType = VIDEO;
-              newBid.vastXml = bidObj.adm;
+              newBid.mediaType = VIDEO
+              newBid.vastXml = bidObj.adm
             }
-            responses.push(newBid);
-          });
+            responses.push(newBid)
+          })
         }
       } catch (err) {
-        logError(err);
+        logError(err)
       }
     }
-    return responses;
+    return responses
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var user = validBidRequests.map(bid => buildUser(bid));
-    clean(user);
+    var user = validBidRequests.map(bid => buildUser(bid))
+    clean(user)
     const openRtbBidRequest = {
       id: generateUUID(),
       at: 1,
@@ -73,42 +73,42 @@ export const spec = {
       site: buildSite(bidderRequest),
       device: buildDevice(),
       user: user && user.length === 1 ? user[0] : {}
-    };
+    }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0))
     }
 
     // GPP Consent
     if (bidderRequest?.gppConsent?.gppString) {
-      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString);
-      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString)
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections)
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp)
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid)
     }
 
     // coppa compliance
     if (bidderRequest?.ortb2?.regs?.coppa) {
-      deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
+      deepSetValue(openRtbBidRequest, 'regs.coppa', 1)
     }
 
     // ortb2 blocking: bcat, badv (with optional params fallback)
-    const bcat = bidderRequest?.ortb2?.bcat || deepAccess(validBidRequests, '0.params.bcat');
-    const badv = bidderRequest?.ortb2?.badv || deepAccess(validBidRequests, '0.params.badv');
+    const bcat = bidderRequest?.ortb2?.bcat || deepAccess(validBidRequests, '0.params.bcat')
+    const badv = bidderRequest?.ortb2?.badv || deepAccess(validBidRequests, '0.params.badv')
     if (isArray(bcat) && bcat.length > 0) {
-      openRtbBidRequest.bcat = bcat;
+      openRtbBidRequest.bcat = bcat
     }
     if (isArray(badv) && badv.length > 0) {
-      openRtbBidRequest.badv = badv;
+      openRtbBidRequest.badv = badv
     }
 
-    injectEids(openRtbBidRequest, validBidRequests);
+    injectEids(openRtbBidRequest, validBidRequests)
 
     return {
       method: 'POST',
@@ -117,7 +117,7 @@ export const spec = {
       options: {
         contentType: 'application/json'
       }
-    };
+    }
   },
   /**
    * Register User Sync.
@@ -127,33 +127,33 @@ export const spec = {
       return [{
         type: 'iframe',
         url: USER_SYNC_URL
-      }];
+      }]
     }
   }
 
-};
+}
 function _checkMediaType(bid) {
-  const videoRegex = new RegExp(/VAST\s+version/);
-  let mediaType;
+  const videoRegex = new RegExp(/VAST\s+version/)
+  let mediaType
   if (bid.adm && bid.adm.indexOf('deepintent_wrapper') >= 0) {
-    mediaType = BANNER;
+    mediaType = BANNER
   } else if (videoRegex.test(bid.adm)) {
-    mediaType = VIDEO;
+    mediaType = VIDEO
   }
-  return mediaType;
+  return mediaType
 }
 
 function clean(obj) {
   for (const propName in obj) {
     if (obj[propName] === null || obj[propName] === undefined) {
-      delete obj[propName];
+      delete obj[propName]
     }
   }
 }
 
 function buildImpression(bid) {
-  let impression = {};
-  const floor = getFloor(bid);
+  let impression = {}
+  const floor = getFloor(bid)
   impression = {
     id: bid.bidId,
     tagid: bid.params.tagId || '',
@@ -162,68 +162,68 @@ function buildImpression(bid) {
     displaymanager: 'di_prebid',
     displaymanagerver: DI_M_V,
     ext: buildCustomParams(bid)
-  };
+  }
   if (deepAccess(bid, 'mediaTypes.banner')) {
-    impression['banner'] = buildBanner(bid);
+    impression['banner'] = buildBanner(bid)
   }
   if (deepAccess(bid, 'mediaTypes.video')) {
-    impression['video'] = _buildVideo(bid);
+    impression['video'] = _buildVideo(bid)
   }
   if (deepAccess(bid, 'params.deals')) {
-    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX);
+    addPMPDeals(impression, deepAccess(bid, 'params.deals'), LOG_WARN_PREFIX)
   }
   if (deepAccess(bid, 'params.dctr')) {
-    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX);
+    addDealCustomTargetings(impression, deepAccess(bid, 'params.dctr'), LOG_WARN_PREFIX)
   }
-  return impression;
+  return impression
 }
 
 function getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
-    return bidRequest.params?.bidfloor;
+    return bidRequest.params?.bidfloor
   }
 
   const floor = bidRequest.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
-  });
+  })
 
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
+    return floor.floor
   }
-  return null;
+  return null
 }
 
 function _buildVideo(bid) {
-  const videoObj = {};
-  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bid, 'params.video', {});
-  const computedParams = {};
+  const videoObj = {}
+  const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
+  const videoBidderParams = deepAccess(bid, 'params.video', {})
+  const computedParams = {}
 
   if (Array.isArray(videoAdUnitParams.playerSize)) {
-    const tempSize = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize;
-    computedParams.w = tempSize[0];
-    computedParams.h = tempSize[1];
+    const tempSize = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize
+    computedParams.w = tempSize[0]
+    computedParams.h = tempSize[1]
   }
 
   const videoParams = {
     ...computedParams,
     ...videoAdUnitParams,
     ...videoBidderParams
-  };
+  }
 
   Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
     if (videoParams.hasOwnProperty(paramName)) {
       if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
-        videoObj[paramName] = videoParams[paramName];
+        videoObj[paramName] = videoParams[paramName]
       } else {
-        logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
+        logWarn(`The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`)
       }
     }
-  });
+  })
 
-  return videoObj;
+  return videoObj
 };
 
 function buildCustomParams(bid) {
@@ -250,10 +250,10 @@ function buildUser(bid) {
 }
 
 function injectEids(openRtbBidRequest, validBidRequests) {
-  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids')
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-    deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
-    deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids);
+    deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids)
+    deepSetValue(openRtbBidRequest, 'user.ext.eids', bidUserIdAsEids)
   }
 }
 
@@ -261,7 +261,7 @@ function buildBanner(bid) {
   if (deepAccess(bid, 'mediaTypes.banner')) {
     // Get Sizes from MediaTypes Object, Will always take first size, will be overrided by params for exact w,h
     if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
-      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes')
       if (isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
@@ -280,12 +280,12 @@ function buildBanner(bid) {
 }
 
 function buildSite(bidderRequest) {
-  const site = {};
+  const site = {}
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-    site.page = bidderRequest.refererInfo.page;
-    site.domain = bidderRequest.refererInfo.domain;
+    site.page = bidderRequest.refererInfo.page
+    site.domain = bidderRequest.refererInfo.domain
   }
-  return site;
+  return site
 }
 
 function buildDevice() {
@@ -299,4 +299,4 @@ function buildDevice() {
   }
 }
 
-registerBidder(spec);
+registerBidder(spec)

@@ -5,13 +5,13 @@
  * @requires module:modules/userId
  */
 
-import { logInfo, logWarn } from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { logInfo, logWarn } from '../src/utils.js'
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
-import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js'
+import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -26,28 +26,28 @@ import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js';
 /**
  * @type {Uid2IdSystemModuleName}
  */
-const MODULE_NAME = 'uid2';
-const MODULE_REVISION = Uid2CodeVersion;
-const PREBID_VERSION = '$prebid.version$';
-const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}`;
-const LOG_PRE_FIX = 'UID2: ';
-const ADVERTISING_COOKIE = '__uid2_advertising_token';
+const MODULE_NAME = 'uid2'
+const MODULE_REVISION = Uid2CodeVersion
+const PREBID_VERSION = '$prebid.version$'
+const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}`
+const LOG_PRE_FIX = 'UID2: '
+const ADVERTISING_COOKIE = '__uid2_advertising_token'
 
 // eslint-disable-next-line no-unused-vars
-const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
-const UID2_PROD_URL = 'https://prod.uidapi.com';
-const UID2_BASE_URL = UID2_PROD_URL;
+const UID2_TEST_URL = 'https://operator-integ.uidapi.com'
+const UID2_PROD_URL = 'https://prod.uidapi.com'
+const UID2_BASE_URL = UID2_PROD_URL
 
 function createLogger(logger, prefix) {
   return function (...strings) {
-    logger(prefix + ' ', ...strings);
+    logger(prefix + ' ', ...strings)
   }
 }
 
-const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
-const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
+const _logInfo = createLogger(logInfo, LOG_PRE_FIX)
+const _logWarn = createLogger(logWarn, LOG_PRE_FIX)
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 /** @type {IdProviderSpec<Uid2IdSystemModuleName>} */
 export const uid2IdSubmodule = {
@@ -64,9 +64,9 @@ export const uid2IdSubmodule = {
    * @returns {{uid2:{ id: string } }} or undefined if value doesn't exists
    */
   decode(value) {
-    const result = decodeImpl(value);
-    _logInfo('UID2 decode returned', result);
-    return result;
+    const result = decodeImpl(value)
+    _logInfo('UID2 decode returned', result)
+    return result
   },
 
   /**
@@ -78,8 +78,8 @@ export const uid2IdSubmodule = {
    */
   getId(config, consentData) {
     if (consentData?.gdpr?.gdprApplies === true) {
-      _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.');
-      return;
+      _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.')
+      return
     }
 
     const mappedConfig = {
@@ -98,29 +98,29 @@ export const uid2IdSubmodule = {
         ...extractIdentityFromParams(config?.params ?? {})
       }
     }
-    _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
-    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
-    _logInfo(`UID2 getId returned`, result);
-    return result;
+    _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig)
+    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn)
+    _logInfo(`UID2 getId returned`, result)
+    return result
   },
   eids: UID2_EIDS
-};
+}
 
 function decodeImpl(value) {
   if (typeof value === 'string') {
-    _logInfo('Found server-only token. Refresh is unavailable for this token.');
-    const result = { uid2: { id: value } };
-    return result;
+    _logInfo('Found server-only token. Refresh is unavailable for this token.')
+    const result = { uid2: { id: value } }
+    return result
   }
   if (value.latestToken === 'optout') {
-    _logInfo('Found optout token.  Refresh is unavailable for this token.');
-    return { uid2: { optout: true } };
+    _logInfo('Found optout token.  Refresh is unavailable for this token.')
+    return { uid2: { optout: true } }
   }
   if (Date.now() < value.latestToken.identity_expires) {
-    return { uid2: { id: value.latestToken.advertising_token } };
+    return { uid2: { id: value.latestToken.advertising_token } }
   }
-  return null;
+  return null
 }
 
 // Register submodule for userId
-submodule('userId', uid2IdSubmodule);
+submodule('userId', uid2IdSubmodule)

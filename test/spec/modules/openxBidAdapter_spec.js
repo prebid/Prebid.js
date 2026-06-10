@@ -1,23 +1,23 @@
-import { expect } from 'chai';
-import { spec, REQUEST_URL, SYNC_URL, DEFAULT_PH } from 'modules/openxBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+import { expect } from 'chai'
+import { spec, REQUEST_URL, SYNC_URL, DEFAULT_PH } from 'modules/openxBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js'
+import { config } from 'src/config.js'
+import * as utils from 'src/utils.js'
 // load modules that register ORTB processors
 import 'src/prebid.js'
-import 'modules/currency.js';
-import 'modules/userId/index.js';
-import 'modules/multibid/index.js';
-import 'modules/priceFloors.js';
-import 'modules/consentManagementTcf.js';
-import 'modules/consentManagementUsp.js';
+import 'modules/currency.js'
+import 'modules/userId/index.js'
+import 'modules/multibid/index.js'
+import 'modules/priceFloors.js'
+import 'modules/consentManagementTcf.js'
+import 'modules/consentManagementUsp.js'
 
-import { deepClone } from 'src/utils.js';
-import { version } from 'package.json';
-import { addFPDToBidderRequest } from '../../helpers/fpd.js';
-import { hook } from '../../../src/hook.js';
-const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
+import { deepClone } from 'src/utils.js'
+import { version } from 'package.json'
+import { addFPDToBidderRequest } from '../../helpers/fpd.js'
+import { hook } from '../../../src/hook.js'
+const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -31,23 +31,23 @@ const BidRequestBuilder = function BidRequestBuilder(options) {
       delDomain: 'test-del-domain'
     },
     sizes: [[300, 250], [300, 600]],
-  };
+  }
 
   const request = {
     ...defaults.request,
     ...options
-  };
+  }
 
   this.withParams = (options) => {
     request.params = {
       ...defaults.params,
       ...options
-    };
-    return this;
-  };
+    }
+    return this
+  }
 
-  this.build = () => request;
-};
+  this.build = () => request
+}
 
 const BidderRequestBuilder = function BidderRequestBuilder(options) {
   const defaults = {
@@ -60,32 +60,32 @@ const BidderRequestBuilder = function BidderRequestBuilder(options) {
       reachedTop: true,
       referer: 'http://test.io/index.html?pbjs_debug=true'
     }
-  };
+  }
 
   const request = {
     ...defaults,
     ...options
-  };
+  }
 
-  this.build = () => request;
-};
+  this.build = () => request
+}
 
 describe('OpenxRtbAdapter', function () {
   before(() => {
-    hook.ready();
-  });
+    hook.ready()
+  })
 
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid()', function () {
     describe('when request is for a banner ad', function () {
-      let bannerBid;
+      let bannerBid
       beforeEach(function () {
         bannerBid = {
           bidder: 'openx',
@@ -96,43 +96,43 @@ describe('OpenxRtbAdapter', function () {
           bidId: '30b31c1838de1e',
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475'
-        };
-      });
+        }
+      })
 
       it('should return false when there is no delivery domain', function () {
-        bannerBid.params = { 'unit': '12345678' };
-        expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
-      });
+        bannerBid.params = { 'unit': '12345678' }
+        expect(spec.isBidRequestValid(bannerBid)).to.equal(false)
+      })
 
       describe('when there is a delivery domain', function () {
         beforeEach(function () {
           bannerBid.params = { delDomain: 'test-delivery-domain' }
-        });
+        })
 
         it('should return false when there is no ad unit id and size', function () {
-          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
-        });
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false)
+        })
 
         it('should return true if there is an adunit id ', function () {
-          bannerBid.params.unit = '12345678';
-          expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
-        });
+          bannerBid.params.unit = '12345678'
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(true)
+        })
 
         it('should return true if there is no adunit id and sizes are defined', function () {
-          bannerBid.mediaTypes.banner.sizes = [720, 90];
-          expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
-        });
+          bannerBid.mediaTypes.banner.sizes = [720, 90]
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(true)
+        })
 
         it('should return false if no sizes are defined ', function () {
-          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
-        });
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false)
+        })
 
         it('should return false if sizes empty ', function () {
-          bannerBid.mediaTypes.banner.sizes = [];
-          expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
-        });
-      });
-    });
+          bannerBid.mediaTypes.banner.sizes = []
+          expect(spec.isBidRequestValid(bannerBid)).to.equal(false)
+        })
+      })
+    })
 
     describe('when request is for a multiformat ad', function () {
       describe('and request config uses mediaTypes video and banner', () => {
@@ -155,12 +155,12 @@ describe('OpenxRtbAdapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
+        }
         it('should return true multisize when required params found', function () {
-          expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
-        });
-      });
-    });
+          expect(spec.isBidRequestValid(multiformatBid)).to.equal(true)
+        })
+      })
+    })
 
     describe('when request is for a video ad', function () {
       describe('and request config uses mediaTypes', () => {
@@ -180,17 +180,17 @@ describe('OpenxRtbAdapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
+        }
         it('should return true when required params found', function () {
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(true);
-        });
+          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(true)
+        })
 
         it('should return false when required params are not passed', function () {
-          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
-          invalidVideoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
-        });
-      });
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes)
+          invalidVideoBidWithMediaTypes.params = {}
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false)
+        })
+      })
       describe('and request config uses both delDomain and platform', () => {
         const videoBidWithDelDomainAndPlatform = {
           bidder: 'openx',
@@ -209,17 +209,17 @@ describe('OpenxRtbAdapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
+        }
         it('should return true when required params found', function () {
-          expect(spec.isBidRequestValid(videoBidWithDelDomainAndPlatform)).to.equal(true);
-        });
+          expect(spec.isBidRequestValid(videoBidWithDelDomainAndPlatform)).to.equal(true)
+        })
 
         it('should return false when required params are not passed', function () {
-          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
-          invalidVideoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
-        });
-      });
+          const invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform)
+          invalidVideoBidWithMediaTypes.params = {}
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false)
+        })
+      })
       describe('and request config uses mediaType', () => {
         const videoBidWithMediaType = {
           'bidder': 'openx',
@@ -234,19 +234,19 @@ describe('OpenxRtbAdapter', function () {
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
           'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
+        }
         it('should return true when required params found', function () {
-          expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(true);
-        });
+          expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(true)
+        })
 
         it('should return false when required params are not passed', function () {
-          const invalidVideoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
-          delete invalidVideoBidWithMediaType.params;
-          invalidVideoBidWithMediaType.params = {};
-          expect(spec.isBidRequestValid(invalidVideoBidWithMediaType)).to.equal(false);
-        });
-      });
-    });
+          const invalidVideoBidWithMediaType = Object.assign({}, videoBidWithMediaType)
+          delete invalidVideoBidWithMediaType.params
+          invalidVideoBidWithMediaType.params = {}
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaType)).to.equal(false)
+        })
+      })
+    })
 
     describe('when request is for a native ad', function () {
       const nativeOrtbRequest = {
@@ -278,18 +278,18 @@ describe('OpenxRtbAdapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
+        }
 
         it('should return true when required params found', function () {
-          expect(spec.isBidRequestValid(nativeBidWithMediaTypes)).to.equal(true);
-        });
+          expect(spec.isBidRequestValid(nativeBidWithMediaTypes)).to.equal(true)
+        })
 
         it('should return false when required params are not passed', function () {
-          const invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithMediaTypes);
-          invalidNativeBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false);
-        });
-      });
+          const invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithMediaTypes)
+          invalidNativeBidWithMediaTypes.params = {}
+          expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false)
+        })
+      })
 
       describe('and request config uses both delDomain and platform', () => {
         const nativeBidWithDelDomainAndPlatform = {
@@ -312,24 +312,24 @@ describe('OpenxRtbAdapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        };
+        }
 
         it('should return true when required params found', function () {
-          expect(spec.isBidRequestValid(nativeBidWithDelDomainAndPlatform)).to.equal(true);
-        });
+          expect(spec.isBidRequestValid(nativeBidWithDelDomainAndPlatform)).to.equal(true)
+        })
 
         it('should return false when required params are not passed', function () {
-          const invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithDelDomainAndPlatform);
-          invalidNativeBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false);
-        });
-      });
-    });
-  });
+          const invalidNativeBidWithMediaTypes = Object.assign({}, nativeBidWithDelDomainAndPlatform)
+          invalidNativeBidWithMediaTypes.params = {}
+          expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false)
+        })
+      })
+    })
+  })
 
   describe('buildRequests()', function () {
-    let bidRequestsWithMediaTypes;
-    let mockBidderRequest;
+    let bidRequestsWithMediaTypes
+    let mockBidderRequest
     const nativeOrtbRequest = {
       assets: [{
         id: 1,
@@ -338,7 +338,7 @@ describe('OpenxRtbAdapter', function () {
           len: 80
         }
       }]
-    };
+    }
     const nativeBidRequest = {
       bidder: 'openx',
       params: {
@@ -359,10 +359,10 @@ describe('OpenxRtbAdapter', function () {
       bidderRequestId: 'test-bid-request-3',
       auctionId: 'test-auction-3',
       transactionId: 'test-transactionId-3'
-    };
+    }
 
     beforeEach(function () {
-      mockBidderRequest = { refererInfo: {} };
+      mockBidderRequest = { refererInfo: {} }
 
       bidRequestsWithMediaTypes = [{
         bidder: 'openx',
@@ -403,117 +403,117 @@ describe('OpenxRtbAdapter', function () {
         bidderRequestId: 'test-bid-request-2',
         auctionId: 'test-auction-2',
         transactionId: 'test-transactionId-2'
-      }];
-    });
+      }]
+    })
 
     context('common requests checks', function() {
       it('should be able to handle multiformat request - banner + video', () => {
-        const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0]);
+        const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0])
         multiformat.mediaTypes.video = {
           context: 'outstream',
           playerSize: [640, 480]
-        };
-        const requests = spec.buildRequests([multiformat], mockBidderRequest);
-        expect(requests).to.have.length(1);
-        expect(requests[0].data.imp).to.have.length(1);
-        expect(requests[0].data.imp[0].banner).to.exist;
-        expect(requests[0].data.imp[0].native).to.not.exist;
+        }
+        const requests = spec.buildRequests([multiformat], mockBidderRequest)
+        expect(requests).to.have.length(1)
+        expect(requests[0].data.imp).to.have.length(1)
+        expect(requests[0].data.imp[0].banner).to.exist
+        expect(requests[0].data.imp[0].native).to.not.exist
         if (FEATURES.VIDEO) {
-          expect(requests[0].data.imp[0].video).to.exist;
+          expect(requests[0].data.imp[0].video).to.exist
         }
       })
 
       it('should be able to handle multiformat request - banner + native', () => {
-        const multiformat = utils.deepClone(nativeBidRequest);
+        const multiformat = utils.deepClone(nativeBidRequest)
         multiformat.mediaTypes.banner = {
           sizes: [[300, 250], [300, 600]]
         }
-        const requests = spec.buildRequests([multiformat], mockBidderRequest);
-        expect(requests).to.have.length(1);
-        expect(requests[0].data.imp).to.have.length(1);
-        expect(requests[0].data.imp[0].banner).to.exist;
-        expect(requests[0].data.imp[0].video).to.not.exist;
+        const requests = spec.buildRequests([multiformat], mockBidderRequest)
+        expect(requests).to.have.length(1)
+        expect(requests[0].data.imp).to.have.length(1)
+        expect(requests[0].data.imp[0].banner).to.exist
+        expect(requests[0].data.imp[0].video).to.not.exist
         if (FEATURES.NATIVE) {
-          expect(requests[0].data.imp[0].native).to.exist;
+          expect(requests[0].data.imp[0].native).to.exist
         }
       })
 
       it('should be able to handle multiformat request - banner + video + native', () => {
-        const multiformat = utils.deepClone(nativeBidRequest);
+        const multiformat = utils.deepClone(nativeBidRequest)
         multiformat.mediaTypes.video = {
           context: 'outstream',
           playerSize: [640, 480]
-        };
+        }
         multiformat.mediaTypes.banner = {
           sizes: [[300, 250]]
         }
-        const requests = spec.buildRequests([multiformat], mockBidderRequest);
-        expect(requests).to.have.length(1);
-        expect(requests[0].data.imp).to.have.length(1);
-        expect(requests[0].data.imp[0].banner).to.exist;
+        const requests = spec.buildRequests([multiformat], mockBidderRequest)
+        expect(requests).to.have.length(1)
+        expect(requests[0].data.imp).to.have.length(1)
+        expect(requests[0].data.imp[0].banner).to.exist
         if (FEATURES.NATIVE) {
-          expect(requests[0].data.imp[0].native).to.exist;
+          expect(requests[0].data.imp[0].native).to.exist
         }
         if (FEATURES.VIDEO) {
-          expect(requests[0].data.imp[0].video).to.exist;
+          expect(requests[0].data.imp[0].video).to.exist
         }
       })
 
       it('should send banner, video and native bids in a single HTTP request', function () {
-        const allBids = [...bidRequestsWithMediaTypes, nativeBidRequest];
-        const request = spec.buildRequests(allBids, mockBidderRequest);
+        const allBids = [...bidRequestsWithMediaTypes, nativeBidRequest]
+        const request = spec.buildRequests(allBids, mockBidderRequest)
 
-        expect(request).to.have.length(1);
-        expect(request[0].data.imp).to.have.length(3);
+        expect(request).to.have.length(1)
+        expect(request[0].data.imp).to.have.length(3)
 
-        const bannerImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[0].bidId);
-        expect(bannerImp.banner).to.exist;
+        const bannerImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[0].bidId)
+        expect(bannerImp.banner).to.exist
 
         if (FEATURES.VIDEO) {
-          const videoImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[1].bidId);
-          expect(videoImp.video).to.exist;
+          const videoImp = request[0].data.imp.find(imp => imp.id === bidRequestsWithMediaTypes[1].bidId)
+          expect(videoImp.video).to.exist
         }
 
         if (FEATURES.NATIVE) {
-          const nativeImp = request[0].data.imp.find(imp => imp.id === nativeBidRequest.bidId);
-          expect(nativeImp.native).to.exist;
+          const nativeImp = request[0].data.imp.find(imp => imp.id === nativeBidRequest.bidId)
+          expect(nativeImp.native).to.exist
         }
-      });
+      })
 
       it('should send bid request to openx url via POST', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request[0].url).to.equal(REQUEST_URL);
-        expect(request[0].method).to.equal('POST');
-        expect(request[0].data.ext.pv).to.equal(version);
-      });
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        expect(request[0].url).to.equal(REQUEST_URL)
+        expect(request[0].method).to.equal('POST')
+        expect(request[0].data.ext.pv).to.equal(version)
+      })
 
       it('should send delivery domain, if available', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request[0].data.ext.delDomain).to.equal(bidRequestsWithMediaTypes[0].params.delDomain);
-        expect(request[0].data.ext.platformId).to.be.undefined;
-      });
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        expect(request[0].data.ext.delDomain).to.equal(bidRequestsWithMediaTypes[0].params.delDomain)
+        expect(request[0].data.ext.platformId).to.be.undefined
+      })
 
       it('should send platform id from first bid, if available', function () {
-        bidRequestsWithMediaTypes[0].params.platform = '1cabba9e-cafe-3665-beef-f00f00f00f00';
-        bidRequestsWithMediaTypes[1].params.platform = '51ca3159-abc2-4035-8e00-fe26eaa09397';
+        bidRequestsWithMediaTypes[0].params.platform = '1cabba9e-cafe-3665-beef-f00f00f00f00'
+        bidRequestsWithMediaTypes[1].params.platform = '51ca3159-abc2-4035-8e00-fe26eaa09397'
 
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request.length).to.equal(1);
-        expect(request[0].data.ext.platform).to.equal(bidRequestsWithMediaTypes[0].params.platform);
-      });
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        expect(request.length).to.equal(1)
+        expect(request[0].data.ext.platform).to.equal(bidRequestsWithMediaTypes[0].params.platform)
+      })
 
       it('should send delDomain from first bid when bids have different delDomains', function () {
-        bidRequestsWithMediaTypes[0].params.delDomain = 'domain-a.test';
-        bidRequestsWithMediaTypes[1].params.delDomain = 'domain-b.test';
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request[0].data.ext.delDomain).to.equal('domain-a.test');
-      });
+        bidRequestsWithMediaTypes[0].params.delDomain = 'domain-a.test'
+        bidRequestsWithMediaTypes[1].params.delDomain = 'domain-b.test'
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        expect(request[0].data.ext.delDomain).to.equal('domain-a.test')
+      })
 
       it('should send openx adunit codes', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request[0].data.imp[0].tagid).to.equal(bidRequestsWithMediaTypes[0].params.unit);
-        expect(request[0].data.imp[1].tagid).to.equal(bidRequestsWithMediaTypes[1].params.unit);
-      });
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        expect(request[0].data.imp[0].tagid).to.equal(bidRequestsWithMediaTypes[0].params.unit)
+        expect(request[0].data.imp[1].tagid).to.equal(bidRequestsWithMediaTypes[1].params.unit)
+      })
 
       it('should send out custom params on bids that have customParams specified', function () {
         const bidRequest = Object.assign({},
@@ -525,11 +525,11 @@ describe('OpenxRtbAdapter', function () {
               customParams: { 'Test1': 'testval1+', 'test2': ['testval2/', 'testval3'] }
             }
           }
-        );
+        )
 
-        mockBidderRequest.bids = [bidRequest];
-        const request = spec.buildRequests([bidRequest], mockBidderRequest);
-        expect(request[0].data.imp[0].ext.customParams).to.equal(bidRequest.params.customParams);
+        mockBidderRequest.bids = [bidRequest]
+        const request = spec.buildRequests([bidRequest], mockBidderRequest)
+        expect(request[0].data.imp[0].ext.customParams).to.equal(bidRequest.params.customParams)
       })
 
       describe('floors', function () {
@@ -543,25 +543,25 @@ describe('OpenxRtbAdapter', function () {
                 customFloor: 1.500
               }
             }
-          );
+          )
 
-          const request = spec.buildRequests([bidRequest], mockBidderRequest);
-          expect(request[0].data.imp[0].bidfloor).to.equal(bidRequest.params.customFloor);
-          expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined);
-        });
+          const request = spec.buildRequests([bidRequest], mockBidderRequest)
+          expect(request[0].data.imp[0].bidfloor).to.equal(bidRequest.params.customFloor)
+          expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined)
+        })
 
         context('with floors module', function () {
-          let adServerCurrencyStub;
+          let adServerCurrencyStub
 
           beforeEach(function () {
             adServerCurrencyStub = sinon
               .stub(config, 'getConfig')
               .withArgs('currency.adServerCurrency')
-          });
+          })
 
           afterEach(function () {
-            config.getConfig.restore();
-          });
+            config.getConfig.restore()
+          })
 
           it('should send out floors on bids in USD', function () {
             const bidRequest = Object.assign({},
@@ -574,15 +574,15 @@ describe('OpenxRtbAdapter', function () {
                   }
                 }
               }
-            );
+            )
 
-            const request = spec.buildRequests([bidRequest], mockBidderRequest);
-            expect(request[0].data.imp[0].bidfloor).to.equal(9.99);
-            expect(request[0].data.imp[0].bidfloorcur).to.equal('USD');
-          });
+            const request = spec.buildRequests([bidRequest], mockBidderRequest)
+            expect(request[0].data.imp[0].bidfloor).to.equal(9.99)
+            expect(request[0].data.imp[0].bidfloorcur).to.equal('USD')
+          })
 
           it('should not send floors', function () {
-            adServerCurrencyStub.returns('EUR');
+            adServerCurrencyStub.returns('EUR')
             const bidRequest = Object.assign({},
               bidRequestsWithMediaTypes[0],
               {
@@ -593,18 +593,18 @@ describe('OpenxRtbAdapter', function () {
                   }
                 }
               }
-            );
+            )
 
-            const request = spec.buildRequests([bidRequest], mockBidderRequest);
+            const request = spec.buildRequests([bidRequest], mockBidderRequest)
             expect(request[0].data.imp[0].bidfloor).to.equal(undefined)
             expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined)
-          });
+          })
         })
       })
 
       describe('FPD', function() {
-        let bidRequests;
-        const mockBidderRequest = { refererInfo: {} };
+        let bidRequests
+        const mockBidderRequest = { refererInfo: {} }
 
         beforeEach(function () {
           bidRequests = [{
@@ -640,8 +640,8 @@ describe('OpenxRtbAdapter', function () {
             bidderRequestId: 'test-bidder-request-id',
             auctionId: 'test-auction-id',
             transactionId: 'test-transaction-id-2'
-          }];
-        });
+          }]
+        })
 
         it('ortb2.site should be merged in the request', function() {
           const request = spec.buildRequests(bidRequests, {
@@ -653,12 +653,12 @@ describe('OpenxRtbAdapter', function () {
                 sectioncat: ['IAB2-2']
               }
             }
-          });
-          const data = request[0].data;
-          expect(data.site.domain).to.equal('page.example.com');
-          expect(data.site.cat).to.deep.equal(['IAB2']);
-          expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
-        });
+          })
+          const data = request[0].data
+          expect(data.site.domain).to.equal('page.example.com')
+          expect(data.site.cat).to.deep.equal(['IAB2'])
+          expect(data.site.sectioncat).to.deep.equal(['IAB2-2'])
+        })
 
         it('ortb2.user should be merged in the request', function() {
           const request = spec.buildRequests(bidRequests, {
@@ -668,27 +668,27 @@ describe('OpenxRtbAdapter', function () {
                 yob: 1985
               }
             }
-          });
-          const data = request[0].data;
-          expect(data.user.yob).to.equal(1985);
-        });
+          })
+          const data = request[0].data
+          expect(data.user.yob).to.equal(1985)
+        })
 
         describe('ortb2Imp', function() {
           describe('ortb2Imp.ext.data.pbadslot', function() {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
-                delete bidRequests[0].ortb2Imp;
+                delete bidRequests[0].ortb2Imp
               }
-            });
+            })
 
             it('should not send if imp[].ext.data object is invalid', function() {
               bidRequests[0].ortb2Imp = {
                 ext: {}
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              expect(data.imp[0].ext).to.not.have.property('data');
-            });
+              }
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              expect(data.imp[0].ext).to.not.have.property('data')
+            })
 
             it('should not send if imp[].ext.data.pbadslot is undefined', function() {
               bidRequests[0].ortb2Imp = {
@@ -696,15 +696,15 @@ describe('OpenxRtbAdapter', function () {
                   data: {
                   }
                 }
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              if (data.imp[0].ext.data) {
-                expect(data.imp[0].ext.data).to.not.have.property('pbadslot');
-              } else {
-                expect(data.imp[0].ext).to.not.have.property('data');
               }
-            });
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('pbadslot')
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data')
+              }
+            })
 
             it('should send if imp[].ext.data.pbadslot is string', function() {
               bidRequests[0].ortb2Imp = {
@@ -713,29 +713,29 @@ describe('OpenxRtbAdapter', function () {
                     pbadslot: 'abcd'
                   }
                 }
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              expect(data.imp[0].ext.data).to.have.property('pbadslot');
-              expect(data.imp[0].ext.data.pbadslot).to.equal('abcd');
-            });
-          });
+              }
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              expect(data.imp[0].ext.data).to.have.property('pbadslot')
+              expect(data.imp[0].ext.data.pbadslot).to.equal('abcd')
+            })
+          })
 
           describe('ortb2Imp.ext.data.adserver', function() {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
-                delete bidRequests[0].ortb2Imp;
+                delete bidRequests[0].ortb2Imp
               }
-            });
+            })
 
             it('should not send if imp[].ext.data object is invalid', function() {
               bidRequests[0].ortb2Imp = {
                 ext: {}
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              expect(data.imp[0].ext).to.not.have.property('data');
-            });
+              }
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              expect(data.imp[0].ext).to.not.have.property('data')
+            })
 
             it('should not send if imp[].ext.data.adserver is undefined', function() {
               bidRequests[0].ortb2Imp = {
@@ -743,18 +743,18 @@ describe('OpenxRtbAdapter', function () {
                   data: {
                   }
                 }
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              if (data.imp[0].ext.data) {
-                expect(data.imp[0].ext.data).to.not.have.property('adserver');
-              } else {
-                expect(data.imp[0].ext).to.not.have.property('data');
               }
-            });
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('adserver')
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data')
+              }
+            })
 
             it('should send', function() {
-              const adSlotValue = 'abc';
+              const adSlotValue = 'abc'
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -764,29 +764,29 @@ describe('OpenxRtbAdapter', function () {
                     }
                   }
                 }
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              expect(data.imp[0].ext.data.adserver.name).to.equal('GAM');
-              expect(data.imp[0].ext.data.adserver.adslot).to.equal(adSlotValue);
-            });
-          });
+              }
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              expect(data.imp[0].ext.data.adserver.name).to.equal('GAM')
+              expect(data.imp[0].ext.data.adserver.adslot).to.equal(adSlotValue)
+            })
+          })
 
           describe('ortb2Imp.ext.data.other', function() {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
-                delete bidRequests[0].ortb2Imp;
+                delete bidRequests[0].ortb2Imp
               }
-            });
+            })
 
             it('should not send if imp[].ext.data object is invalid', function() {
               bidRequests[0].ortb2Imp = {
                 ext: {}
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              expect(data.imp[0].ext).to.not.have.property('data');
-            });
+              }
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              expect(data.imp[0].ext).to.not.have.property('data')
+            })
 
             it('should not send if imp[].ext.data.other is undefined', function() {
               bidRequests[0].ortb2Imp = {
@@ -794,15 +794,15 @@ describe('OpenxRtbAdapter', function () {
                   data: {
                   }
                 }
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              if (data.imp[0].ext.data) {
-                expect(data.imp[0].ext.data).to.not.have.property('other');
-              } else {
-                expect(data.imp[0].ext).to.not.have.property('data');
               }
-            });
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              if (data.imp[0].ext.data) {
+                expect(data.imp[0].ext.data).to.not.have.property('other')
+              } else {
+                expect(data.imp[0].ext).to.not.have.property('data')
+              }
+            })
 
             it('ortb2Imp.ext.data.other', function() {
               bidRequests[0].ortb2Imp = {
@@ -811,13 +811,13 @@ describe('OpenxRtbAdapter', function () {
                     other: 1234
                   }
                 }
-              };
-              const request = spec.buildRequests(bidRequests, mockBidderRequest);
-              const data = request[0].data;
-              expect(data.imp[0].ext.data.other).to.equal(1234);
-            });
-          });
-        });
+              }
+              const request = spec.buildRequests(bidRequests, mockBidderRequest)
+              const data = request[0].data
+              expect(data.imp[0].ext.data.other).to.equal(1234)
+            })
+          })
+        })
 
         describe('with user agent client hints', function () {
           it('should add device.sua if available', function () {
@@ -851,22 +851,22 @@ describe('OpenxRtbAdapter', function () {
                   }
                 }
               }
-            };
+            }
 
-            let request = spec.buildRequests(bidRequests, bidderRequestWithUserAgentClientHints);
-            expect(request[0].data.device.sua).to.exist;
-            expect(request[0].data.device.sua).to.deep.equal(bidderRequestWithUserAgentClientHints.ortb2.device.sua);
-            const bidderRequestWithoutUserAgentClientHints = { refererInfo: {}, ortb2: {} };
-            request = spec.buildRequests(bidRequests, bidderRequestWithoutUserAgentClientHints);
-            expect(request[0].data.device?.sua).to.not.exist;
-          });
-        });
-      });
+            let request = spec.buildRequests(bidRequests, bidderRequestWithUserAgentClientHints)
+            expect(request[0].data.device.sua).to.exist
+            expect(request[0].data.device.sua).to.deep.equal(bidderRequestWithUserAgentClientHints.ortb2.device.sua)
+            const bidderRequestWithoutUserAgentClientHints = { refererInfo: {}, ortb2: {} }
+            request = spec.buildRequests(bidRequests, bidderRequestWithoutUserAgentClientHints)
+            expect(request[0].data.device?.sua).to.not.exist
+          })
+        })
+      })
 
       context('when there is a consent management framework', function () {
-        let bidRequests;
-        let mockConfig;
-        let bidderRequest;
+        let bidRequests
+        let mockConfig
+        let bidderRequest
 
         beforeEach(function () {
           bidRequests = [{
@@ -902,36 +902,36 @@ describe('OpenxRtbAdapter', function () {
             bidderRequestId: 'test-bidder-request-id',
             auctionId: 'test-auction-id',
             transactionId: 'test-transaction-id-2'
-          }];
-        });
+          }]
+        })
 
         describe('us_privacy', function () {
           beforeEach(function () {
             bidderRequest = {
               uspConsent: '1YYN',
               refererInfo: {}
-            };
+            }
 
             sinon.stub(config, 'getConfig').callsFake((key) => {
-              return utils.deepAccess(mockConfig, key);
-            });
-          });
+              return utils.deepAccess(mockConfig, key)
+            })
+          })
 
           afterEach(function () {
-            config.getConfig.restore();
-          });
+            config.getConfig.restore()
+          })
 
           it('should send a signal to specify that US Privacy applies to this request', async function () {
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.regs.ext.us_privacy).to.equal('1YYN');
-          });
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.regs.ext.us_privacy).to.equal('1YYN')
+          })
 
           it('should not send the regs object, when consent string is undefined', async function () {
-            delete bidderRequest.uspConsent;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.regs?.us_privacy).to.not.exist;
-          });
-        });
+            delete bidderRequest.uspConsent
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.regs?.us_privacy).to.not.exist
+          })
+        })
 
         describe('GDPR', function () {
           beforeEach(function () {
@@ -942,7 +942,7 @@ describe('OpenxRtbAdapter', function () {
                 gdprApplies: true
               },
               refererInfo: {}
-            };
+            }
 
             mockConfig = {
               consentManagement: {
@@ -950,127 +950,127 @@ describe('OpenxRtbAdapter', function () {
                 timeout: 1111,
                 allowAuctionWithoutConsent: 'cancel'
               }
-            };
+            }
 
             sinon.stub(config, 'getConfig').callsFake((key) => {
-              return utils.deepAccess(mockConfig, key);
-            });
-          });
+              return utils.deepAccess(mockConfig, key)
+            })
+          })
 
           afterEach(function () {
-            config.getConfig.restore();
-          });
+            config.getConfig.restore()
+          })
 
           it('should send a signal to specify that GDPR applies to this request', async function () {
-            bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.regs.ext.gdpr).to.equal(1);
-          });
+            bidderRequest.bids = bidRequests
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.regs.ext.gdpr).to.equal(1)
+          })
 
           it('should send the consent string', async function () {
-            bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
-          });
+            bidderRequest.bids = bidRequests
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString)
+          })
 
           it('should send the addtlConsent string', async function () {
-            bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.user.ext.ConsentedProvidersSettings.consented_providers).to.equal(bidderRequest.gdprConsent.addtlConsent);
-          });
+            bidderRequest.bids = bidRequests
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.user.ext.ConsentedProvidersSettings.consented_providers).to.equal(bidderRequest.gdprConsent.addtlConsent)
+          })
 
           it('should send a signal to specify that GDPR does not apply to this request', async function () {
-            bidderRequest.gdprConsent.gdprApplies = false;
-            bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.regs.ext.gdpr).to.equal(0);
-          });
+            bidderRequest.gdprConsent.gdprApplies = false
+            bidderRequest.bids = bidRequests
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.regs.ext.gdpr).to.equal(0)
+          })
 
           it('when GDPR application is undefined, should not send a signal to specify whether GDPR applies to this request, ' +
             'but can send consent data, ', async function () {
-            delete bidderRequest.gdprConsent.gdprApplies;
-            bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.regs?.ext?.gdpr).to.not.be.ok;
-            expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
-          });
+            delete bidderRequest.gdprConsent.gdprApplies
+            bidderRequest.bids = bidRequests
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.regs?.ext?.gdpr).to.not.be.ok
+            expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString)
+          })
 
           it('when consent string is undefined, should not send the consent string, ', async function () {
-            delete bidderRequest.gdprConsent.consentString;
-            bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-            expect(request[0].data.imp[0].ext.consent).to.equal(undefined);
-            expect(request[0].data.imp[1].ext.consent).to.equal(undefined);
-          });
-        });
+            delete bidderRequest.gdprConsent.consentString
+            bidderRequest.bids = bidRequests
+            const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest))
+            expect(request[0].data.imp[0].ext.consent).to.equal(undefined)
+            expect(request[0].data.imp[1].ext.consent).to.equal(undefined)
+          })
+        })
 
         describe('GPP', function () {
           it('should send GPP string and GPP section IDs in bid request when available', async function () {
-            bidderRequest.bids = bidRequests;
+            bidderRequest.bids = bidRequests
             bidderRequest.ortb2 = {
               regs: {
                 gpp: 'test-gpp-string',
                 gpp_sid: [6]
               }
-            };
-            const request = spec.buildRequests(bidRequests, bidderRequest);
-            expect(request[0].data.regs.gpp).to.equal('test-gpp-string');
-            expect(request[0].data.regs.gpp_sid).to.deep.equal([6]);
-          });
+            }
+            const request = spec.buildRequests(bidRequests, bidderRequest)
+            expect(request[0].data.regs.gpp).to.equal('test-gpp-string')
+            expect(request[0].data.regs.gpp_sid).to.deep.equal([6])
+          })
 
           it('should not send GPP string and GPP section IDs in bid request when not available', async function () {
-            bidderRequest.bids = bidRequests;
+            bidderRequest.bids = bidRequests
             bidderRequest.ortb2 = {
               regs: {}
-            };
-            const request = spec.buildRequests(bidRequests, bidderRequest);
-            expect(request[0].data.regs.gpp).to.not.exist;
-            expect(request[0].data.regs.gpp_sid).to.not.exist;
-          });
-        });
-      });
+            }
+            const request = spec.buildRequests(bidRequests, bidderRequest)
+            expect(request[0].data.regs.gpp).to.not.exist
+            expect(request[0].data.regs.gpp_sid).to.not.exist
+          })
+        })
+      })
 
       context('coppa', function() {
         it('when there are no coppa param settings, should not send a coppa flag', async function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
-          expect(request[0].data.regs?.coppa).to.be.not.ok;
-        });
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest))
+          expect(request[0].data.regs?.coppa).to.be.not.ok
+        })
 
         it('should send a coppa flag there is when there is coppa param settings in the bid requests', async function () {
           const mockConfig = {
             coppa: true
-          };
+          }
 
           sinon.stub(config, 'getConfig').callsFake((key) => {
-            return utils.deepAccess(mockConfig, key);
-          });
+            return utils.deepAccess(mockConfig, key)
+          })
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
-          expect(request[0].data.regs.coppa).to.equal(1);
-        });
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest))
+          expect(request[0].data.regs.coppa).to.equal(1)
+        })
 
         it('should send a coppa flag there is when there is coppa param settings in the bid params', async function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
-          request.params = { coppa: true };
-          expect(request[0].data.regs.coppa).to.equal(1);
-        });
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest))
+          request.params = { coppa: true }
+          expect(request[0].data.regs.coppa).to.equal(1)
+        })
 
         after(function () {
           config.getConfig.restore()
-        });
-      });
+        })
+      })
 
       context('do not track (DNT)', function() {
         it('always sends dnt as 0', async function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
-          expect(request[0].data.device.dnt).to.equal(0);
-        });
-      });
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest))
+          expect(request[0].data.device.dnt).to.equal(0)
+        })
+      })
 
       context('supply chain (schain)', function () {
-        let bidRequests;
-        let schainConfig;
-        const supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+        let bidRequests
+        let schainConfig
+        const supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
 
         beforeEach(function () {
           schainConfig = {
@@ -1103,7 +1103,7 @@ describe('OpenxRtbAdapter', function () {
                 domain: 'intermediary-2.com'
               }
             ]
-          };
+          }
 
           bidRequests = [{
             bidder: 'openx',
@@ -1126,7 +1126,7 @@ describe('OpenxRtbAdapter', function () {
                 ext: { schain: schainConfig }
               }
             }
-          }];
+          }]
 
           // Add schain to mockBidderRequest as well
           mockBidderRequest.ortb2 = {
@@ -1134,24 +1134,24 @@ describe('OpenxRtbAdapter', function () {
               schain: schainConfig,
               ext: { schain: schainConfig }
             }
-          };
-        });
+          }
+        })
 
         it('should send a supply chain object', function () {
-          const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain).to.deep.equal(schainConfig);
-        });
+          const request = spec.buildRequests(bidRequests, mockBidderRequest)
+          expect(request[0].data.source.ext.schain).to.deep.equal(schainConfig)
+        })
 
         it('should send the supply chain object with the right version', function () {
-          const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain.ver).to.equal(schainConfig.ver);
-        });
+          const request = spec.buildRequests(bidRequests, mockBidderRequest)
+          expect(request[0].data.source.ext.schain.ver).to.equal(schainConfig.ver)
+        })
 
         it('should send the supply chain object with the right complete value', function () {
-          const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain.complete).to.equal(schainConfig.complete);
-        });
-      });
+          const request = spec.buildRequests(bidRequests, mockBidderRequest)
+          expect(request[0].data.source.ext.schain.complete).to.equal(schainConfig.complete)
+        })
+      })
 
       context('when there are userid providers', function () {
         const eids = [
@@ -1182,7 +1182,7 @@ describe('OpenxRtbAdapter', function () {
               }
             }]
           }
-        ];
+        ]
 
         it(`should send the user id under the extended ids`, function () {
           const bidRequests = [{
@@ -1200,34 +1200,34 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-          }];
+          }]
           // enrich bid request with userId key/value
 
           mockBidderRequest.ortb2 = { user: { ext: { eids } } }
-          const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.user.ext.eids).to.eql(eids);
-        });
+          const request = spec.buildRequests(bidRequests, mockBidderRequest)
+          expect(request[0].data.user.ext.eids).to.eql(eids)
+        })
 
         it(`when no user ids are available, it should not send any extended ids`, function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          expect(request[0].data).to.not.have.any.keys('user');
-        });
-      });
-    });
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+          expect(request[0].data).to.not.have.any.keys('user')
+        })
+      })
+    })
 
     context('banner', function () {
       it('should send bid request with a mediaTypes specified with banner type', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request[0].data.imp[0]).to.have.any.keys(BANNER);
-      });
-    });
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+        expect(request[0].data.imp[0]).to.have.any.keys(BANNER)
+      })
+    })
 
     if (FEATURES.VIDEO) {
       context('video', function () {
         it('should send bid request with a mediaTypes specified with video type', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          expect(request[0].data.imp[1]).to.have.any.keys(VIDEO);
-        });
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest)
+          expect(request[0].data.imp[1]).to.have.any.keys(VIDEO)
+        })
 
         it('Update imp.video with OpenRTB options from mimeTypes and params', function() {
           const bid01 = new BidRequestBuilder({
@@ -1249,9 +1249,9 @@ describe('OpenxRtbAdapter', function () {
               minduration: 10,
               maxduration: 30
             }
-          }).build();
+          }).build()
 
-          const bidderRequest = new BidderRequestBuilder().build();
+          const bidderRequest = new BidderRequestBuilder().build()
           const expected = {
             mimes: ['video/mp4'],
             skip: 1,
@@ -1261,23 +1261,23 @@ describe('OpenxRtbAdapter', function () {
             protocols: [8],
             w: 300,
             h: 250
-          };
-          const requests = spec.buildRequests([bid01], bidderRequest);
-          expect(requests).to.have.lengthOf(1);
-          expect(requests[0].data.imp[0].video).to.deep.equal(expected);
-        });
-      });
+          }
+          const requests = spec.buildRequests([bid01], bidderRequest)
+          expect(requests).to.have.lengthOf(1)
+          expect(requests[0].data.imp[0].video).to.deep.equal(expected)
+        })
+      })
     }
-  });
+  })
 
   describe('interpretResponse()', function () {
-    let bidRequestConfigs;
-    let bidRequest;
-    let bidResponse;
-    let bid;
+    let bidRequestConfigs
+    let bidRequest
+    let bidResponse
+    let bid
 
     context('when there is an nbr response', function () {
-      let response;
+      let response
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'openx',
@@ -1294,21 +1294,21 @@ describe('OpenxRtbAdapter', function () {
           bidId: 'test-bid-id',
           bidderRequestId: 'test-bidder-request-id',
           auctionId: 'test-auction-id'
-        }];
+        }]
 
-        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
-        bidResponse = { nbr: 0 }; // Unknown error
-        response = spec.interpretResponse({ body: bidResponse }, bidRequest);
-      });
+        bidResponse = { nbr: 0 } // Unknown error
+        response = spec.interpretResponse({ body: bidResponse }, bidRequest)
+      })
 
       it('should not return any bids', function () {
-        expect(response.bids.length).to.equal(0);
-      });
-    });
+        expect(response.bids.length).to.equal(0)
+      })
+    })
 
     context('when no seatbid in response', function () {
-      let response;
+      let response
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'openx',
@@ -1325,21 +1325,21 @@ describe('OpenxRtbAdapter', function () {
           bidId: 'test-bid-id',
           bidderRequestId: 'test-bidder-request-id',
           auctionId: 'test-auction-id'
-        }];
+        }]
 
-        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
-        bidResponse = { ext: {}, id: 'test-bid-id' };
-        response = spec.interpretResponse({ body: bidResponse }, bidRequest);
-      });
+        bidResponse = { ext: {}, id: 'test-bid-id' }
+        response = spec.interpretResponse({ body: bidResponse }, bidRequest)
+      })
 
       it('should not return any bids', function () {
-        expect(response.bids.length).to.equal(0);
-      });
-    });
+        expect(response.bids.length).to.equal(0)
+      })
+    })
 
     context('when there is no response', function () {
-      let response;
+      let response
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'openx',
@@ -1356,18 +1356,18 @@ describe('OpenxRtbAdapter', function () {
           bidId: 'test-bid-id',
           bidderRequestId: 'test-bidder-request-id',
           auctionId: 'test-auction-id'
-        }];
+        }]
 
-        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
-        bidResponse = ''; // Unknown error
-        response = spec.interpretResponse({ body: bidResponse }, bidRequest);
-      });
+        bidResponse = '' // Unknown error
+        response = spec.interpretResponse({ body: bidResponse }, bidRequest)
+      })
 
       it('should not return any bids', function () {
-        expect(response.bids.length).to.equal(0);
-      });
-    });
+        expect(response.bids.length).to.equal(0)
+      })
+    })
 
     const SAMPLE_BID_REQUESTS = [{
       bidder: 'openx',
@@ -1384,7 +1384,7 @@ describe('OpenxRtbAdapter', function () {
       bidId: 'test-bid-id',
       bidderRequestId: 'test-bidder-request-id',
       auctionId: 'test-auction-id'
-    }];
+    }]
 
     const SAMPLE_BID_RESPONSE = {
       seatbid: [{
@@ -1406,70 +1406,70 @@ describe('OpenxRtbAdapter', function () {
         }]
       }],
       cur: 'AUS'
-    };
+    }
 
     context('when there is a response, the common response properties', function () {
       beforeEach(function () {
-        bidRequestConfigs = deepClone(SAMPLE_BID_REQUESTS);
-        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
-        bidResponse = deepClone(SAMPLE_BID_RESPONSE);
+        bidRequestConfigs = deepClone(SAMPLE_BID_REQUESTS)
+        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
+        bidResponse = deepClone(SAMPLE_BID_RESPONSE)
 
-        bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-      });
+        bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+      })
 
       it('should return a price', function () {
-        expect(bid.cpm).to.equal(bidResponse.seatbid[0].bid[0].price);
-      });
+        expect(bid.cpm).to.equal(bidResponse.seatbid[0].bid[0].price)
+      })
 
       it('should return a request id', function () {
-        expect(bid.requestId).to.equal(bidResponse.seatbid[0].bid[0].impid);
-      });
+        expect(bid.requestId).to.equal(bidResponse.seatbid[0].bid[0].impid)
+      })
 
       it('should return width and height for the creative', function () {
-        expect(bid.width).to.equal(bidResponse.seatbid[0].bid[0].w);
-        expect(bid.height).to.equal(bidResponse.seatbid[0].bid[0].h);
-      });
+        expect(bid.width).to.equal(bidResponse.seatbid[0].bid[0].w)
+        expect(bid.height).to.equal(bidResponse.seatbid[0].bid[0].h)
+      })
 
       it('should return a creativeId', function () {
-        expect(bid.creativeId).to.equal(bidResponse.seatbid[0].bid[0].crid);
-      });
+        expect(bid.creativeId).to.equal(bidResponse.seatbid[0].bid[0].crid)
+      })
 
       it('should return an ad', function () {
-        expect(bid.ad).to.equal(bidResponse.seatbid[0].bid[0].adm);
-      });
+        expect(bid.ad).to.equal(bidResponse.seatbid[0].bid[0].adm)
+      })
 
       it('should return a deal id if it exists', function () {
-        expect(bid.dealId).to.equal(bidResponse.seatbid[0].bid[0].dealid);
-      });
+        expect(bid.dealId).to.equal(bidResponse.seatbid[0].bid[0].dealid)
+      })
 
       it('should have a time-to-live of 5 minutes', function () {
-        expect(bid.ttl).to.equal(300);
-      });
+        expect(bid.ttl).to.equal(300)
+      })
 
       it('should always return net revenue', function () {
-        expect(bid.netRevenue).to.equal(true);
-      });
+        expect(bid.netRevenue).to.equal(true)
+      })
 
       it('should return a currency', function () {
-        expect(bid.currency).to.equal(bidResponse.cur);
-      });
+        expect(bid.currency).to.equal(bidResponse.cur)
+      })
 
       it('should return a brand ID', function () {
-        expect(bid.meta.brandId).to.equal(bidResponse.seatbid[0].bid[0].ext.brand_id);
-      });
+        expect(bid.meta.brandId).to.equal(bidResponse.seatbid[0].bid[0].ext.brand_id)
+      })
 
       it('should return a dsp ID', function () {
-        expect(bid.meta.networkId).to.equal(bidResponse.seatbid[0].bid[0].ext.dsp_id);
-      });
+        expect(bid.meta.networkId).to.equal(bidResponse.seatbid[0].bid[0].ext.dsp_id)
+      })
 
       it('should return a buyer ID', function () {
-        expect(bid.meta.advertiserId).to.equal(bidResponse.seatbid[0].bid[0].ext.buyer_id);
-      });
+        expect(bid.meta.advertiserId).to.equal(bidResponse.seatbid[0].bid[0].ext.buyer_id)
+      })
 
       it('should return adomain', function () {
-        expect(bid.meta.advertiserDomains).to.equal(bidResponse.seatbid[0].bid[0].adomain);
-      });
-    });
+        expect(bid.meta.advertiserDomains).to.equal(bidResponse.seatbid[0].bid[0].adomain)
+      })
+    })
 
     context('when banner request and the response is a banner', function() {
       beforeEach(function () {
@@ -1488,9 +1488,9 @@ describe('OpenxRtbAdapter', function () {
           bidId: 'test-bid-id',
           bidderRequestId: 'test-bidder-request-id',
           auctionId: 'test-auction-id'
-        }];
+        }]
 
-        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+        bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
         bidResponse = {
           seatbid: [{
@@ -1506,15 +1506,15 @@ describe('OpenxRtbAdapter', function () {
             }]
           }],
           cur: 'AUS'
-        };
+        }
 
-        bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-      });
+        bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+      })
 
       it('should return the proper mediaType', function () {
-        expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-      });
-    });
+        expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0])
+      })
+    })
 
     if (FEATURES.VIDEO) {
       context('when video request and the response is a video', function() {
@@ -1534,9 +1534,9 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id',
             bidderRequestId: 'test-bidder-request-id',
             auctionId: 'test-auction-id'
-          }];
+          }]
 
-          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
           bidResponse = {
             seatbid: [{
@@ -1552,22 +1552,22 @@ describe('OpenxRtbAdapter', function () {
               }]
             }],
             cur: 'AUS'
-          };
-        });
+          }
+        })
 
         it('should return the proper mediaType', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-        });
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0])
+        })
 
         it('should return the proper vastUrl', function () {
-          const winUrl = 'https//my.win.url';
+          const winUrl = 'https//my.win.url'
           bidResponse.seatbid[0].bid[0].nurl = winUrl
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
 
-          expect(bid.vastUrl).to.equal(winUrl);
-        });
-      });
+          expect(bid.vastUrl).to.equal(winUrl)
+        })
+      })
 
       context('when multi-format request (banner + video) and the response is a video', function() {
         beforeEach(function () {
@@ -1589,9 +1589,9 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id',
             bidderRequestId: 'test-bidder-request-id',
             auctionId: 'test-auction-id'
-          }];
+          }]
 
-          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
           bidResponse = {
             seatbid: [{
@@ -1603,14 +1603,14 @@ describe('OpenxRtbAdapter', function () {
               }]
             }],
             cur: 'USD'
-          };
-        });
+          }
+        })
 
         it('should return video mediaType', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(VIDEO);
-        });
-      });
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+          expect(bid.mediaType).to.equal(VIDEO)
+        })
+      })
 
       context('when multiple bid requests (banner + video) and the response is a banner', function() {
         beforeEach(function () {
@@ -1645,9 +1645,9 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id-2',
             bidderRequestId: 'test-bidder-request-id-2',
             auctionId: 'test-auction-id-2'
-          }];
+          }]
 
-          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
           bidResponse = {
             seatbid: [{
@@ -1659,14 +1659,14 @@ describe('OpenxRtbAdapter', function () {
               }]
             }],
             cur: 'USD'
-          };
-        });
+          }
+        })
 
         it('should return banner mediaType', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(BANNER);
-        });
-      });
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+          expect(bid.mediaType).to.equal(BANNER)
+        })
+      })
     }
 
     context('when multiple bid requests (banner + video) are in one request and both bids are returned', function() {
@@ -1704,8 +1704,8 @@ describe('OpenxRtbAdapter', function () {
             bidderRequestId: 'br-1',
             auctionId: 'a-1'
           }
-        ];
-        const bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+        ]
+        const bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
         const bidResponse = {
           seatbid: [{
             bid: [
@@ -1724,15 +1724,15 @@ describe('OpenxRtbAdapter', function () {
             ]
           }],
           cur: 'USD'
-        };
-        const result = spec.interpretResponse({ body: bidResponse }, bidRequest);
-        expect(result.bids).to.have.length(2);
-        expect(result.bids[0].mediaType).to.equal(BANNER);
-        expect(result.bids[1].mediaType).to.equal(VIDEO);
-        expect(result.bids[0].requestId).to.equal('bid-id-banner');
-        expect(result.bids[1].requestId).to.equal('bid-id-video');
-      });
-    });
+        }
+        const result = spec.interpretResponse({ body: bidResponse }, bidRequest)
+        expect(result.bids).to.have.length(2)
+        expect(result.bids[0].mediaType).to.equal(BANNER)
+        expect(result.bids[1].mediaType).to.equal(VIDEO)
+        expect(result.bids[0].requestId).to.equal('bid-id-banner')
+        expect(result.bids[1].requestId).to.equal('bid-id-video')
+      })
+    })
 
     if (FEATURES.NATIVE) {
       context('when native request and the response is a native', function() {
@@ -1746,7 +1746,7 @@ describe('OpenxRtbAdapter', function () {
                 len: 80
               }
             }]
-          };
+          }
           bidRequestConfigs = [{
             bidder: 'openx',
             params: {
@@ -1763,9 +1763,9 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id',
             bidderRequestId: 'test-bidder-request-id',
             auctionId: 'test-auction-id'
-          }];
+          }]
 
-          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
           bidResponse = {
             seatbid: [{
@@ -1777,16 +1777,16 @@ describe('OpenxRtbAdapter', function () {
               }]
             }],
             cur: 'AUS'
-          };
-        });
+          }
+        })
 
         it('should return the proper mediaType', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-        });
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0])
+        })
 
         it('should return parsed adm JSON in native.ortb response field', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
 
           expect(bid.native.ortb).to.deep.equal({
             ver: '1.2',
@@ -1801,9 +1801,9 @@ describe('OpenxRtbAdapter', function () {
               method: 1,
               url: 'http://example.com/impression'
             }]
-          });
-        });
-      });
+          })
+        })
+      })
 
       context('when multi-format request (banner + native) and the response is a banner', function() {
         beforeEach(function () {
@@ -1816,7 +1816,7 @@ describe('OpenxRtbAdapter', function () {
                 len: 80
               }
             }]
-          };
+          }
           bidRequestConfigs = [{
             bidder: 'openx',
             params: {
@@ -1836,9 +1836,9 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id',
             bidderRequestId: 'test-bidder-request-id',
             auctionId: 'test-auction-id'
-          }];
+          }]
 
-          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
           bidResponse = {
             seatbid: [{
@@ -1850,14 +1850,14 @@ describe('OpenxRtbAdapter', function () {
               }]
             }],
             cur: 'AUS'
-          };
-        });
+          }
+        })
 
         it('should return banner mediaType', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(BANNER);
-        });
-      });
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+          expect(bid.mediaType).to.equal(BANNER)
+        })
+      })
 
       context('when multiple bid requests (banner + native) and the response is a native', function() {
         beforeEach(function () {
@@ -1870,7 +1870,7 @@ describe('OpenxRtbAdapter', function () {
                 len: 80
               }
             }]
-          };
+          }
           bidRequestConfigs = [{
             bidder: 'openx',
             params: {
@@ -1903,9 +1903,9 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id-2',
             bidderRequestId: 'test-bidder-request-id-2',
             auctionId: 'test-auction-id-2'
-          }];
+          }]
 
-          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, { refererInfo: {} })[0]
 
           bidResponse = {
             seatbid: [{
@@ -1917,92 +1917,92 @@ describe('OpenxRtbAdapter', function () {
               }]
             }],
             cur: 'USD'
-          };
-        });
+          }
+        })
 
         it('should return native mediaType', function () {
-          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(NATIVE);
-        });
-      });
+          bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0]
+          expect(bid.mediaType).to.equal(NATIVE)
+        })
+      })
     }
-  });
+  })
 
   describe('user sync', function () {
     it('should register the default image pixel if no pixels available', function () {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true },
         []
-      );
-      expect(syncs).to.deep.equal([{ type: 'image', url: DEFAULT_SYNC }]);
-    });
+      )
+      expect(syncs).to.deep.equal([{ type: 'image', url: DEFAULT_SYNC }])
+    })
 
     it('should register custom syncUrl when exists', function () {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true },
         [{ body: { ext: { delDomain: 'www.url.com' } } }]
-      );
-      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://www.url.com/w/1.0/pd' }]);
-    });
+      )
+      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://www.url.com/w/1.0/pd' }])
+    })
 
     it('should register custom syncUrl when exists', function () {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true },
         [{ body: { ext: { platform: 'abc' } } }]
-      );
-      expect(syncs).to.deep.equal([{ type: 'image', url: SYNC_URL + '?ph=abc' }]);
-    });
+      )
+      expect(syncs).to.deep.equal([{ type: 'image', url: SYNC_URL + '?ph=abc' }])
+    })
 
     it('when iframe sync is allowed, it should register an iframe sync', function () {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
         []
-      );
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: DEFAULT_SYNC }]);
-    });
+      )
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: DEFAULT_SYNC }])
+    })
 
     it('should prioritize iframe over image for user sync', function () {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true, pixelEnabled: true },
         []
-      );
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: DEFAULT_SYNC }]);
-    });
+      )
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: DEFAULT_SYNC }])
+    })
 
     describe('when gdpr applies', function () {
-      let gdprConsent;
-      let gdprPixelUrl;
-      const consentString = 'gdpr-pixel-consent';
-      const gdprApplies = '1';
+      let gdprConsent
+      let gdprPixelUrl
+      const consentString = 'gdpr-pixel-consent'
+      const gdprApplies = '1'
       beforeEach(() => {
         gdprConsent = {
           consentString,
           gdprApplies: true
-        };
+        }
 
-        gdprPixelUrl = `${SYNC_URL}&gdpr=${gdprApplies}&gdpr_consent=${consentString}`;
-      });
+        gdprPixelUrl = `${SYNC_URL}&gdpr=${gdprApplies}&gdpr_consent=${consentString}`
+      })
 
       it('when there is a response, it should have the gdpr query params', () => {
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
           gdprConsent
-        );
+        )
 
-        expect(url).to.have.string(`gdpr_consent=${consentString}`);
-        expect(url).to.have.string(`gdpr=${gdprApplies}`);
-      });
+        expect(url).to.have.string(`gdpr_consent=${consentString}`)
+        expect(url).to.have.string(`gdpr=${gdprApplies}`)
+      })
 
       it('should not send signals if no consent object is available', function () {
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
-        );
-        expect(url).to.not.have.string('gdpr_consent=');
-        expect(url).to.not.have.string('gdpr=');
-      });
-    });
+        )
+        expect(url).to.not.have.string('gdpr_consent=')
+        expect(url).to.not.have.string('gdpr=')
+      })
+    })
 
     describe('when gpp applies', function () {
       it('should send GPP query params when GPP consent object available', () => {
@@ -2016,11 +2016,11 @@ describe('OpenxRtbAdapter', function () {
           undefined,
           undefined,
           gppConsent
-        );
+        )
 
-        expect(url).to.have.string(`gpp=gpp-pixel-consent`);
-        expect(url).to.have.string(`gpp_sid=6,7`);
-      });
+        expect(url).to.have.string(`gpp=gpp-pixel-consent`)
+        expect(url).to.have.string(`gpp_sid=6,7`)
+      })
 
       it('should send GDPR and GPP query params when both consent objects available', () => {
         const gdprConsent = {
@@ -2037,13 +2037,13 @@ describe('OpenxRtbAdapter', function () {
           gdprConsent,
           undefined,
           gppConsent
-        );
+        )
 
-        expect(url).to.have.string(`gdpr_consent=gdpr-pixel-consent`);
-        expect(url).to.have.string(`gdpr=1`);
-        expect(url).to.have.string(`gpp=gpp-pixel-consent`);
-        expect(url).to.have.string(`gpp_sid=6,7`);
-      });
+        expect(url).to.have.string(`gdpr_consent=gdpr-pixel-consent`)
+        expect(url).to.have.string(`gdpr=1`)
+        expect(url).to.have.string(`gpp=gpp-pixel-consent`)
+        expect(url).to.have.string(`gpp_sid=6,7`)
+      })
 
       it('should not send GPP query params when GPP string not available', function () {
         const gppConsent = {
@@ -2055,11 +2055,11 @@ describe('OpenxRtbAdapter', function () {
           undefined,
           undefined,
           gppConsent
-        );
+        )
 
-        expect(url).to.not.have.string('gpp=');
-        expect(url).to.not.have.string('gpp_sid=');
-      });
+        expect(url).to.not.have.string('gpp=')
+        expect(url).to.not.have.string('gpp_sid=')
+      })
 
       it('should not send GPP query params when GPP section IDs not available', function () {
         const gppConsent = {
@@ -2071,11 +2071,11 @@ describe('OpenxRtbAdapter', function () {
           undefined,
           undefined,
           gppConsent
-        );
+        )
 
-        expect(url).to.not.have.string('gpp=');
-        expect(url).to.not.have.string('gpp_sid=');
-      });
+        expect(url).to.not.have.string('gpp=')
+        expect(url).to.not.have.string('gpp_sid=')
+      })
 
       it('should not send GPP query params when GPP section IDs empty', function () {
         const gppConsent = {
@@ -2088,47 +2088,47 @@ describe('OpenxRtbAdapter', function () {
           undefined,
           undefined,
           gppConsent
-        );
+        )
 
-        expect(url).to.not.have.string('gpp=');
-        expect(url).to.not.have.string('gpp_sid=');
-      });
+        expect(url).to.not.have.string('gpp=')
+        expect(url).to.not.have.string('gpp_sid=')
+      })
 
       it('should not send GPP query params when GPP consent object not available', function () {
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [], undefined, undefined, undefined
-        );
-        expect(url).to.not.have.string('gpp=');
-        expect(url).to.not.have.string('gpp_sid=');
-      });
-    });
+        )
+        expect(url).to.not.have.string('gpp=')
+        expect(url).to.not.have.string('gpp_sid=')
+      })
+    })
 
     describe('when ccpa applies', function () {
-      let usPrivacyConsent;
-      let uspPixelUrl;
-      const privacyString = 'TEST';
+      let usPrivacyConsent
+      let uspPixelUrl
+      const privacyString = 'TEST'
       beforeEach(() => {
-        usPrivacyConsent = 'TEST';
+        usPrivacyConsent = 'TEST'
         uspPixelUrl = `${DEFAULT_SYNC}&us_privacy=${privacyString}`
-      });
+      })
       it('should send the us privacy string, ', () => {
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
           undefined,
           usPrivacyConsent
-        );
-        expect(url).to.have.string(`us_privacy=${privacyString}`);
-      });
+        )
+        expect(url).to.have.string(`us_privacy=${privacyString}`)
+      })
 
       it('should not send signals if no consent string is available', function () {
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
-        );
-        expect(url).to.not.have.string('us_privacy=');
-      });
-    });
-  });
-});
+        )
+        expect(url).to.not.have.string('us_privacy=')
+      })
+    })
+  })
+})

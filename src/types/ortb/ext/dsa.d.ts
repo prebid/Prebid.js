@@ -9,7 +9,7 @@ export type DSATransparency = Partial<{
    * Array for platform or sell-side use of any user parameters (using the list provided by DSA Transparency Taskforce).
    */
   dsaparams: number[];
-}>;
+}>
 
 export type DSARequest = Partial<{
   /**
@@ -35,7 +35,7 @@ export type DSARequest = Partial<{
    * Array of objects of the entities that applied user parameters and the parameters they applied.
    */
   transparency: DSATransparency[];
-}>;
+}>
 
 export type DSAResponse = Partial<{
   /**

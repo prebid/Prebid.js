@@ -1,19 +1,19 @@
-import { expect } from 'chai';
+import { expect } from 'chai'
 import {
   spec,
   API_ENDPOINT,
   API_VERSION_NUMBER,
-} from 'modules/ad2ictionBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+} from 'modules/ad2ictionBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 describe('ad2ictionBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -34,30 +34,30 @@ describe('ad2ictionBidAdapter', function () {
       ],
       bidId: '2a7a3b48778a1b',
       bidderRequestId: '1e6509293abe6b',
-    };
+    }
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('should return false when params id is not valid (letters)', function () {
       const mockBid = {
         ...bid,
         params: { id: 1234 },
-      };
+      }
 
-      expect(spec.isBidRequestValid(mockBid)).to.equal(false);
-    });
+      expect(spec.isBidRequestValid(mockBid)).to.equal(false)
+    })
 
     it('should return false when params id is not exist', function () {
       const mockBid = {
         ...bid,
-      };
-      delete mockBid.params.id;
+      }
+      delete mockBid.params.id
 
-      expect(spec.isBidRequestValid(mockBid)).to.equal(false);
-    });
-  });
+      expect(spec.isBidRequestValid(mockBid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     const mockValidBidRequests = [
@@ -72,7 +72,7 @@ describe('ad2ictionBidAdapter', function () {
         bidId: '57ffc0667379e1',
         bidderRequestId: '4ddea14478a651',
       },
-    ];
+    ]
 
     const mockBidderRequest = {
       bidderCode: 'ad2iction',
@@ -107,47 +107,47 @@ describe('ad2ictionBidAdapter', function () {
         },
       },
       start: 1702526505498,
-    };
+    }
 
     it('should send bid request to API_ENDPOINT via POST', function () {
       const request = spec.buildRequests(
         mockValidBidRequests,
         mockBidderRequest
-      );
+      )
 
-      expect(request.url).to.equal(API_ENDPOINT);
-      expect(request.method).to.equal('POST');
-    });
+      expect(request.url).to.equal(API_ENDPOINT)
+      expect(request.method).to.equal('POST')
+    })
 
     it('should send bid request with API version', function () {
       const request = spec.buildRequests(
         mockValidBidRequests,
         mockBidderRequest
-      );
+      )
 
-      expect(request.data.v).to.equal(API_VERSION_NUMBER);
-    });
+      expect(request.data.v).to.equal(API_VERSION_NUMBER)
+    })
 
     it('should send bid request with dada fields', function () {
       const request = spec.buildRequests(
         mockValidBidRequests,
         mockBidderRequest
-      );
+      )
 
-      expect(request.data).to.include.all.keys('udid', '_');
-      expect(request.data).to.have.property('refererInfo');
-      expect(request.data).to.have.property('ortb2');
-    });
-  });
+      expect(request.data).to.include.all.keys('udid', '_')
+      expect(request.data).to.have.property('refererInfo')
+      expect(request.data).to.have.property('ortb2')
+    })
+  })
 
   describe('interpretResponse', function () {
     it('should return an empty array to indicate no valid bids', function () {
-      const mockServerResponse = {};
+      const mockServerResponse = {}
 
-      const bidResponses = spec.interpretResponse(mockServerResponse);
+      const bidResponses = spec.interpretResponse(mockServerResponse)
 
-      expect(bidResponses).is.an('array').that.is.empty;
-    });
+      expect(bidResponses).is.an('array').that.is.empty
+    })
 
     it('should return a valid bid response', function () {
       const MOCK_AD_DOM = "<div id='AD2M-BOX'>"
@@ -182,7 +182,7 @@ describe('ad2ictionBidAdapter', function () {
             ttl: 360,
           },
         ],
-      };
+      }
 
       const exceptServerResponse = [
         {
@@ -215,9 +215,9 @@ describe('ad2ictionBidAdapter', function () {
         },
       ]
 
-      const bidResponses = spec.interpretResponse(mockServerResponse);
+      const bidResponses = spec.interpretResponse(mockServerResponse)
 
-      expect(bidResponses).to.eql(exceptServerResponse);
-    });
-  });
-});
+      expect(bidResponses).to.eql(exceptServerResponse)
+    })
+  })
+})

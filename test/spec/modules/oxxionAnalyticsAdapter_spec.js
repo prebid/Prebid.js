@@ -1,15 +1,15 @@
-import oxxionAnalytics, { dereferenceWithoutRenderer } from 'modules/oxxionAnalyticsAdapter.js';
+import oxxionAnalytics, { dereferenceWithoutRenderer } from 'modules/oxxionAnalyticsAdapter.js'
 
-import { expect } from 'chai';
-import { server } from 'test/mocks/xhr.js';
-import { EVENTS } from 'src/constants.js';
+import { expect } from 'chai'
+import { server } from 'test/mocks/xhr.js'
+import { EVENTS } from 'src/constants.js'
 
-const adapterManager = require('src/adapterManager').default;
-const events = require('src/events');
+const adapterManager = require('src/adapterManager').default
+const events = require('src/events')
 describe('Oxxion Analytics', function () {
-  const timestamp = new Date() - 256;
-  const auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
-  const timeout = 1500;
+  const timestamp = new Date() - 256
+  const auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f'
+  const timeout = 1500
 
   const bidTimeout = [
     {
@@ -18,7 +18,7 @@ describe('Oxxion Analytics', function () {
       'adUnitCode': 'tag_200124_banner',
       'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b'
     }
-  ];
+  ]
 
   const auctionEnd = {
     'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
@@ -200,7 +200,7 @@ describe('Oxxion Analytics', function () {
 
     ],
     'timeout': 1000
-  };
+  }
 
   const bidWon = {
     'bidderCode': 'appnexus',
@@ -254,94 +254,94 @@ describe('Oxxion Analytics', function () {
         'placementId': 123456
       }
     ]
-  };
+  }
 
   after(function () {
-    oxxionAnalytics.disableAnalytics();
-  });
+    oxxionAnalytics.disableAnalytics()
+  })
 
   describe('main test flow', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([]);
-      sinon.spy(oxxionAnalytics, 'track');
-    });
+      sinon.stub(events, 'getEvents').returns([])
+      sinon.spy(oxxionAnalytics, 'track')
+    })
     afterEach(function () {
-      events.getEvents.restore();
-      oxxionAnalytics.disableAnalytics();
-      oxxionAnalytics.track.restore();
-    });
+      events.getEvents.restore()
+      oxxionAnalytics.disableAnalytics()
+      oxxionAnalytics.track.restore()
+    })
     it('test dereferenceWithoutRenderer', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics
-      });
+      })
 
       adapterManager.enableAnalytics({
         provider: 'oxxion',
         options: {
           domain: 'test'
         }
-      });
-      const resultBidWon = JSON.parse(dereferenceWithoutRenderer(bidWon));
-      expect(resultBidWon).not.to.have.property('renderer');
-      const resultBid = JSON.parse(dereferenceWithoutRenderer(auctionEnd));
-      expect(resultBid).to.have.property('bidsReceived').and.to.have.lengthOf(1);
-      expect(resultBid.bidsReceived[0]).not.to.have.property('renderer');
-    });
+      })
+      const resultBidWon = JSON.parse(dereferenceWithoutRenderer(bidWon))
+      expect(resultBidWon).not.to.have.property('renderer')
+      const resultBid = JSON.parse(dereferenceWithoutRenderer(auctionEnd))
+      expect(resultBid).to.have.property('bidsReceived').and.to.have.lengthOf(1)
+      expect(resultBid.bidsReceived[0]).not.to.have.property('renderer')
+    })
     it('test auctionEnd', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics
-      });
+      })
 
       adapterManager.enableAnalytics({
         provider: 'oxxion',
         options: {
           domain: 'test'
         }
-      });
+      })
 
-      events.emit(EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0]);
-      events.emit(EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
-      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(EVENTS.AUCTION_END, auctionEnd);
-      expect(server.requests.length).to.equal(1);
-      const message = JSON.parse(server.requests[0].requestBody);
-      expect(message).to.have.property('auctionEnd').exist;
-      expect(message.auctionEnd).to.have.lengthOf(1);
-      expect(message.auctionEnd[0]).to.have.property('bidsReceived').and.to.have.lengthOf(1);
-      expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad');
-      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta');
-      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains');
-      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('demandSource');
-      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('adId');
-      expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
-      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
-      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
-      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('oxxionMode');
-    });
+      events.emit(EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0])
+      events.emit(EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0])
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout)
+      events.emit(EVENTS.AUCTION_END, auctionEnd)
+      expect(server.requests.length).to.equal(1)
+      const message = JSON.parse(server.requests[0].requestBody)
+      expect(message).to.have.property('auctionEnd').exist
+      expect(message.auctionEnd).to.have.lengthOf(1)
+      expect(message.auctionEnd[0]).to.have.property('bidsReceived').and.to.have.lengthOf(1)
+      expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad')
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta')
+      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains')
+      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('demandSource')
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('adId')
+      expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1)
+      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent')
+      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData')
+      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('oxxionMode')
+    })
 
     it('test bidWon', function() {
-      window.OXXION_MODE = { 'abtest': true };
+      window.OXXION_MODE = { 'abtest': true }
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics
-      });
+      })
 
       adapterManager.enableAnalytics({
         provider: 'oxxion',
         options: {
           domain: 'test'
         }
-      });
-      events.emit(EVENTS.BID_WON, bidWon);
-      expect(server.requests.length).to.equal(1);
-      const message = JSON.parse(server.requests[0].requestBody);
-      expect(message).not.to.have.property('ad');
+      })
+      events.emit(EVENTS.BID_WON, bidWon)
+      expect(server.requests.length).to.equal(1)
+      const message = JSON.parse(server.requests[0].requestBody)
+      expect(message).not.to.have.property('ad')
       expect(message).to.have.property('adId')
-      expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
-      expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true);
-      expect(message).to.have.property('ova').and.to.equal('cleared');
-    });
-  });
-});
+      expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276)
+      expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true)
+      expect(message).to.have.property('ova').and.to.equal('cleared')
+    })
+  })
+})

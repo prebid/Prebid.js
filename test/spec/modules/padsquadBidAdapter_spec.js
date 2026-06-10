@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec } from 'modules/padsquadBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/padsquadBidAdapter.js'
 
 const REQUEST = {
   'bidderCode': 'padsquad',
@@ -34,7 +34,7 @@ const REQUEST = {
   'start': 1487883186070,
   'auctionStart': 1487883186069,
   'timeout': 3000
-};
+}
 
 const RESPONSE = {
   'headers': null,
@@ -131,7 +131,7 @@ const RESPONSE = {
       }
     }
   }
-};
+}
 
 describe('Padsquad bid adapter', function () {
   describe('isBidRequestValid', function () {
@@ -141,46 +141,46 @@ describe('Padsquad bid adapter', function () {
         params: {
           unitId: 'unitId',
         }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
     it('should accept request if only networkId is passed', function () {
       const bid = {
         bidder: 'padsquad',
         params: {
           networkId: 'networkId',
         }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
     it('should accept request if only publisherId is passed', function () {
       const bid = {
         bidder: 'padsquad',
         params: {
           publisherId: 'publisherId',
         }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(true)
+    })
 
     it('reject requests without params', function () {
       const bid = {
         bidder: 'padsquad',
         params: {}
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
+      }
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
+    })
+  })
 
   describe('buildRequests', function () {
     it('creates request data', function () {
-      const request = spec.buildRequests(REQUEST.bidRequest, REQUEST);
+      const request = spec.buildRequests(REQUEST.bidRequest, REQUEST)
 
-      expect(request).to.exist.and.to.be.a('object');
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0]).to.have.property('id', REQUEST.bidRequest[0].bidId);
-      expect(payload.imp[1]).to.have.property('id', REQUEST.bidRequest[1].bidId);
-    });
+      expect(request).to.exist.and.to.be.a('object')
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0]).to.have.property('id', REQUEST.bidRequest[0].bidId)
+      expect(payload.imp[1]).to.have.property('id', REQUEST.bidRequest[1].bidId)
+    })
 
     it('has gdpr data if applicable', function () {
       const req = Object.assign({}, REQUEST, {
@@ -188,75 +188,75 @@ describe('Padsquad bid adapter', function () {
           consentString: 'consentString',
           gdprApplies: true,
         }
-      });
-      const request = spec.buildRequests(REQUEST.bidRequest, req);
+      })
+      const request = spec.buildRequests(REQUEST.bidRequest, req)
 
-      const payload = JSON.parse(request.data);
-      expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
-      expect(payload.regs.ext).to.have.property('gdpr', 1);
-    });
-  });
+      const payload = JSON.parse(request.data)
+      expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString)
+      expect(payload.regs.ext).to.have.property('gdpr', 1)
+    })
+  })
 
   describe('interpretResponse', function () {
     it('have bids', function () {
-      const bids = spec.interpretResponse(RESPONSE, REQUEST);
-      expect(bids).to.be.an('array').that.is.not.empty;
-      validateBidOnIndex(0);
-      validateBidOnIndex(1);
+      const bids = spec.interpretResponse(RESPONSE, REQUEST)
+      expect(bids).to.be.an('array').that.is.not.empty
+      validateBidOnIndex(0)
+      validateBidOnIndex(1)
 
       function validateBidOnIndex(index) {
-        expect(bids[index]).to.have.property('currency', 'USD');
-        expect(bids[index]).to.have.property('requestId', RESPONSE.body.seatbid[0].bid[index].impid);
-        expect(bids[index]).to.have.property('cpm', RESPONSE.body.seatbid[0].bid[index].price);
-        expect(bids[index]).to.have.property('width', RESPONSE.body.seatbid[0].bid[index].w);
-        expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h);
-        expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm);
-        expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid);
-        expect(bids[index].meta.advertiserDomains).to.deep.equal(RESPONSE.body.seatbid[0].bid[index].adomain);
-        expect(bids[index]).to.have.property('ttl', 30);
-        expect(bids[index]).to.have.property('netRevenue', true);
+        expect(bids[index]).to.have.property('currency', 'USD')
+        expect(bids[index]).to.have.property('requestId', RESPONSE.body.seatbid[0].bid[index].impid)
+        expect(bids[index]).to.have.property('cpm', RESPONSE.body.seatbid[0].bid[index].price)
+        expect(bids[index]).to.have.property('width', RESPONSE.body.seatbid[0].bid[index].w)
+        expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h)
+        expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm)
+        expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid)
+        expect(bids[index].meta.advertiserDomains).to.deep.equal(RESPONSE.body.seatbid[0].bid[index].adomain)
+        expect(bids[index]).to.have.property('ttl', 30)
+        expect(bids[index]).to.have.property('netRevenue', true)
       }
-    });
+    })
 
     it('handles empty response', function () {
-      const EMPTY_RESP = Object.assign({}, RESPONSE, { 'body': {} });
-      const bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
+      const EMPTY_RESP = Object.assign({}, RESPONSE, { 'body': {} })
+      const bids = spec.interpretResponse(EMPTY_RESP, REQUEST)
 
-      expect(bids).to.be.empty;
-    });
-  });
+      expect(bids).to.be.empty
+    })
+  })
 
   describe('getUserSyncs', function () {
     it('handles no parameters', function () {
-      const opts = spec.getUserSyncs({});
-      expect(opts).to.be.an('array').that.is.empty;
-    });
+      const opts = spec.getUserSyncs({})
+      expect(opts).to.be.an('array').that.is.empty
+    })
     it('returns non if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })
 
-      expect(opts).to.be.an('array').that.is.empty;
-    });
+      expect(opts).to.be.an('array').that.is.empty
+    })
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [RESPONSE])
 
-      expect(opts.length).to.equal(1);
-      expect(opts[0].type).to.equal('iframe');
-      expect(opts[0].url).to.equal(RESPONSE.body.ext.usersync['sovrn'].syncs[0].url);
-    });
+      expect(opts.length).to.equal(1)
+      expect(opts[0].type).to.equal('iframe')
+      expect(opts[0].url).to.equal(RESPONSE.body.ext.usersync['sovrn'].syncs[0].url)
+    })
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [RESPONSE])
 
-      expect(opts.length).to.equal(1);
-      expect(opts[0].type).to.equal('image');
-      expect(opts[0].url).to.equal(RESPONSE.body.ext.usersync['appnexus'].syncs[0].url);
-    });
+      expect(opts.length).to.equal(1)
+      expect(opts[0].type).to.equal('image')
+      expect(opts[0].url).to.equal(RESPONSE.body.ext.usersync['appnexus'].syncs[0].url)
+    })
 
     it('all sync enabled should return all results', function () {
-      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [RESPONSE]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [RESPONSE])
 
-      expect(opts.length).to.equal(2);
-    });
-  });
-});
+      expect(opts.length).to.equal(2)
+    })
+  })
+})

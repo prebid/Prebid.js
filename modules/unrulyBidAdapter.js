@@ -1,75 +1,75 @@
-import { deepAccess, logError } from '../src/utils.js';
+import { deepAccess, logError } from '../src/utils.js'
 import { Renderer } from '../src/Renderer.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
 function configureUniversalTag(exchangeRenderer, requestId) {
-  if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
-  if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.');
+  if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.')
+  if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.')
 
-  parent.window.unruly = parent.window.unruly || {};
-  parent.window.unruly['native'] = parent.window.unruly['native'] || {};
-  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
-  parent.window.unruly['native'].adSlotId = requestId;
-  parent.window.unruly['native'].supplyMode = 'prebid';
+  parent.window.unruly = parent.window.unruly || {}
+  parent.window.unruly['native'] = parent.window.unruly['native'] || {}
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId
+  parent.window.unruly['native'].adSlotId = requestId
+  parent.window.unruly['native'].supplyMode = 'prebid'
 }
 
 function configureRendererQueue() {
-  parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {};
-  parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || [];
+  parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {}
+  parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || []
 }
 
 function notifyRenderer(bidResponseBid) {
-  parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
+  parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid])
 }
 
 const addBidFloorInfo = (validBid) => {
   Object.keys(validBid.mediaTypes).forEach((key) => {
-    let floor;
+    let floor
     if (typeof validBid.getFloor === 'function') {
       floor = validBid.getFloor({
         currency: 'USD',
         mediaType: key,
         size: '*'
-      })?.floor || 0;
+      })?.floor || 0
     } else {
-      floor = validBid.params.floor || 0;
+      floor = validBid.params.floor || 0
     }
 
-    validBid.mediaTypes[key].floor = floor;
-  });
-};
+    validBid.mediaTypes[key].floor = floor
+  })
+}
 
 const RemoveDuplicateSizes = (validBid) => {
-  const bannerMediaType = deepAccess(validBid, 'mediaTypes.banner');
+  const bannerMediaType = deepAccess(validBid, 'mediaTypes.banner')
   if (bannerMediaType) {
-    const seenSizes = {};
-    const newSizesArray = [];
+    const seenSizes = {}
+    const newSizesArray = []
     bannerMediaType.sizes.forEach((size) => {
       if (!seenSizes[size.toString()]) {
-        seenSizes[size.toString()] = true;
-        newSizesArray.push(size);
+        seenSizes[size.toString()] = true
+        newSizesArray.push(size)
       }
-    });
+    })
 
-    bannerMediaType.sizes = newSizesArray;
+    bannerMediaType.sizes = newSizesArray
   }
-};
+}
 
 const getRequests = (conf, validBidRequests, bidderRequest) => {
-  const { bids, bidderRequestId, bidderCode, ...bidderRequestData } = bidderRequest;
-  const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
-  const requestBySiteId = {};
+  const { bids, bidderRequestId, bidderCode, ...bidderRequestData } = bidderRequest
+  const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length
+  const requestBySiteId = {}
 
   validBidRequests.forEach((validBid) => {
-    const currSiteId = validBid.params.siteId;
-    addBidFloorInfo(validBid);
-    RemoveDuplicateSizes(validBid);
-    requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || [];
-    requestBySiteId[currSiteId].push(validBid);
-  });
+    const currSiteId = validBid.params.siteId
+    addBidFloorInfo(validBid)
+    RemoveDuplicateSizes(validBid)
+    requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || []
+    requestBySiteId[currSiteId].push(validBid)
+  })
 
-  const request = [];
+  const request = []
 
   Object.keys(requestBySiteId).forEach((key) => {
     const data = {
@@ -81,78 +81,78 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
           ...bidderRequestData
         }
       )
-    };
+    }
 
-    request.push(Object.assign({}, { data, ...conf }));
-  });
+    request.push(Object.assign({}, { data, ...conf }))
+  })
 
-  return request;
-};
+  return request
+}
 
 const handleBidResponseByMediaType = (bids) => {
-  const bidResponses = [];
+  const bidResponses = []
 
   bids.forEach((bid) => {
-    let parsedBidResponse;
-    const bidMediaType = deepAccess(bid, 'meta.mediaType');
+    let parsedBidResponse
+    const bidMediaType = deepAccess(bid, 'meta.mediaType')
     if (bidMediaType && bidMediaType.toLowerCase() === 'banner') {
-      bid.mediaType = BANNER;
-      parsedBidResponse = handleBannerBid(bid);
+      bid.mediaType = BANNER
+      parsedBidResponse = handleBannerBid(bid)
     } else if (bidMediaType && bidMediaType.toLowerCase() === 'video') {
-      const context = deepAccess(bid, 'meta.videoContext');
-      bid.mediaType = VIDEO;
+      const context = deepAccess(bid, 'meta.videoContext')
+      bid.mediaType = VIDEO
       if (context === 'instream') {
-        parsedBidResponse = handleInStreamBid(bid);
+        parsedBidResponse = handleInStreamBid(bid)
       } else if (context === 'outstream') {
-        parsedBidResponse = handleOutStreamBid(bid);
+        parsedBidResponse = handleOutStreamBid(bid)
       }
     }
 
     if (parsedBidResponse) {
-      bidResponses.push(parsedBidResponse);
+      bidResponses.push(parsedBidResponse)
     }
-  });
+  })
 
-  return bidResponses;
-};
+  return bidResponses
+}
 
 const handleBannerBid = (bid) => {
   if (!bid.ad) {
-    logError(new Error('UnrulyBidAdapter: Missing ad config.'));
-    return;
+    logError(new Error('UnrulyBidAdapter: Missing ad config.'))
+    return
   }
 
-  return bid;
-};
+  return bid
+}
 
 const handleInStreamBid = (bid) => {
   if (!(bid.vastUrl || bid.vastXml)) {
-    logError(new Error('UnrulyBidAdapter: Missing vastUrl or vastXml config.'));
-    return;
+    logError(new Error('UnrulyBidAdapter: Missing vastUrl or vastXml config.'))
+    return
   }
 
-  return bid;
-};
+  return bid
+}
 
 const handleOutStreamBid = (bid) => {
-  const hasConfig = !!deepAccess(bid, 'ext.renderer.config');
-  const hasSiteId = !!deepAccess(bid, 'ext.renderer.config.siteId');
+  const hasConfig = !!deepAccess(bid, 'ext.renderer.config')
+  const hasSiteId = !!deepAccess(bid, 'ext.renderer.config.siteId')
 
   if (!hasConfig) {
-    logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
-    return;
+    logError(new Error('UnrulyBidAdapter: Missing renderer config.'))
+    return
   }
   if (!hasSiteId) {
-    logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
-    return;
+    logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'))
+    return
   }
 
-  const exchangeRenderer = deepAccess(bid, 'ext.renderer');
+  const exchangeRenderer = deepAccess(bid, 'ext.renderer')
 
-  configureUniversalTag(exchangeRenderer, bid.requestId);
-  configureRendererQueue();
+  configureUniversalTag(exchangeRenderer, bid.requestId)
+  configureRendererQueue()
 
-  const rendererInstance = Renderer.install(Object.assign({}, exchangeRenderer));
+  const rendererInstance = Renderer.install(Object.assign({}, exchangeRenderer))
 
   const rendererConfig = Object.assign(
     {},
@@ -161,56 +161,56 @@ const handleOutStreamBid = (bid) => {
       renderer: rendererInstance,
       adUnitCode: deepAccess(bid, 'ext.adUnitCode')
     }
-  );
+  )
 
   rendererInstance.setRender(() => {
     notifyRenderer(rendererConfig)
-  });
+  })
 
-  bid.renderer = bid.renderer || rendererInstance;
-  return bid;
-};
+  bid.renderer = bid.renderer || rendererInstance
+  return bid
+}
 
 const isMediaTypesValid = (bid) => {
-  const mediaTypeVideoData = deepAccess(bid, 'mediaTypes.video');
-  const mediaTypeBannerData = deepAccess(bid, 'mediaTypes.banner');
-  let isValid = !!(mediaTypeVideoData || mediaTypeBannerData);
+  const mediaTypeVideoData = deepAccess(bid, 'mediaTypes.video')
+  const mediaTypeBannerData = deepAccess(bid, 'mediaTypes.banner')
+  let isValid = !!(mediaTypeVideoData || mediaTypeBannerData)
   if (isValid && mediaTypeVideoData) {
-    isValid = isVideoMediaTypeValid(mediaTypeVideoData);
+    isValid = isVideoMediaTypeValid(mediaTypeVideoData)
   }
   if (isValid && mediaTypeBannerData) {
-    isValid = isBannerMediaTypeValid(mediaTypeBannerData);
+    isValid = isBannerMediaTypeValid(mediaTypeBannerData)
   }
-  return isValid;
-};
+  return isValid
+}
 
 const isVideoMediaTypeValid = (mediaTypeVideoData) => {
   if (!mediaTypeVideoData.context) {
-    return false;
+    return false
   }
 
-  const supportedContexts = ['outstream', 'instream'];
-  return supportedContexts.indexOf(mediaTypeVideoData.context) !== -1;
-};
+  const supportedContexts = ['outstream', 'instream']
+  return supportedContexts.indexOf(mediaTypeVideoData.context) !== -1
+}
 
 const isBannerMediaTypeValid = (mediaTypeBannerData) => {
-  return mediaTypeBannerData.sizes;
-};
+  return mediaTypeBannerData.sizes
+}
 
 export const adapter = {
   code: 'unruly',
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 36,
   isBidRequestValid: function (bid) {
-    const siteId = deepAccess(bid, 'params.siteId');
-    const isBidValid = siteId && isMediaTypesValid(bid);
-    return !!isBidValid;
+    const siteId = deepAccess(bid, 'params.siteId')
+    const isBidValid = siteId && isMediaTypesValid(bid)
+    return !!isBidValid
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let endPoint = 'https://targeting.unrulymedia.com/unruly_prebid';
+    let endPoint = 'https://targeting.unrulymedia.com/unruly_prebid'
     if (validBidRequests[0]) {
-      endPoint = deepAccess(validBidRequests[0], 'params.endpoint') || endPoint;
+      endPoint = deepAccess(validBidRequests[0], 'params.endpoint') || endPoint
     }
 
     return getRequests({
@@ -219,19 +219,19 @@ export const adapter = {
       'options': {
         'contentType': 'application/json'
       },
-    }, validBidRequests, bidderRequest);
+    }, validBidRequests, bidderRequest)
   },
 
   interpretResponse: function (serverResponse) {
     if (!(serverResponse && serverResponse.body && serverResponse.body.bids)) {
-      return [];
+      return []
     }
 
-    const serverResponseBody = serverResponse.body;
-    const bids = handleBidResponseByMediaType(serverResponseBody.bids);
+    const serverResponseBody = serverResponse.body
+    const bids = handleBidResponseByMediaType(serverResponseBody.bids)
 
-    return bids;
+    return bids
   }
-};
+}
 
-registerBidder(adapter);
+registerBidder(adapter)

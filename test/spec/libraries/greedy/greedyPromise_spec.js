@@ -1,9 +1,9 @@
-import { GreedyPromise, greedySetTimeout } from '../../../../libraries/greedy/greedyPromise.js';
-import { delay } from '../../../../src/utils/promise.js';
+import { GreedyPromise, greedySetTimeout } from '../../../../libraries/greedy/greedyPromise.js'
+import { delay } from '../../../../src/utils/promise.js'
 
 describe('GreedyPromise', () => {
   it('throws when resolver is not a function', () => {
-    expect(() => new GreedyPromise()).to.throw();
+    expect(() => new GreedyPromise()).to.throw()
   })
 
   Object.entries({
@@ -11,22 +11,22 @@ describe('GreedyPromise', () => {
     'rejected': (use) => new GreedyPromise((_, reject) => use(reject))
   }).forEach(([t, makePromise]) => {
     it(`runs callbacks immediately when ${t}`, () => {
-      let cbRan = false;
-      const cb = () => { cbRan = true };
-      let resolver;
-      makePromise((fn) => { resolver = fn }).then(cb, cb);
-      resolver();
-      expect(cbRan).to.be.true;
+      let cbRan = false
+      const cb = () => { cbRan = true }
+      let resolver
+      makePromise((fn) => { resolver = fn }).then(cb, cb)
+      resolver()
+      expect(cbRan).to.be.true
     })
-  });
+  })
 
   describe('idioms', () => {
-    let makePromise, pendingFailure, pendingSuccess;
+    let makePromise, pendingFailure, pendingSuccess
 
     Object.entries({
 
       'resolver that throws': (P) => new P(() => { throw new Error('error') }),
-      'resolver that resolves multiple times': (P) => new P((resolve) => { resolve('first'); resolve('second'); }),
+      'resolver that resolves multiple times': (P) => new P((resolve) => { resolve('first'); resolve('second') }),
       'resolver that rejects multiple times': (P) => new P((resolve, reject) => { reject('first'); reject('second') }),
       'resolver that resolves and rejects': (P) => new P((resolve, reject) => { reject('first'); resolve('second') }),
       'resolver that resolves with multiple arguments': (P) => new P((resolve) => resolve('one', 'two')),
@@ -51,25 +51,25 @@ describe('GreedyPromise', () => {
       'chained .catch': (P) => makePromise(P, 'err', true).catch((err) => makePromise(P, err)),
       'chained .catch that rejects': (P) => makePromise(P, 'err', true).catch((err) => P.reject(`reject with ${err}`)),
       'simple .finally': (P) => {
-        let fval;
+        let fval
         return makePromise(P, 'value')
           .finally(() => fval = 'finally ran')
           .then((val) => `${val} ${fval}`)
       },
       'chained .finally': (P) => {
-        let fval;
+        let fval
         return makePromise(P, 'value')
           .finally(() => pendingSuccess.then(() => { fval = 'finally ran' }))
           .then((val) => `${val} ${fval}`)
       },
       '.finally on a rejection': (P) => {
-        let fval;
+        let fval
         return makePromise(P, 'error', true)
           .finally(() => { fval = 'finally' })
           .catch((err) => `${err} ${fval}`)
       },
       'chained .finally on a rejection': (P) => {
-        let fval;
+        let fval
         return makePromise(P, 'error', true)
           .finally(() => pendingSuccess.then(() => { fval = 'finally' }))
           .catch((err) => `${err} ${fval}`)
@@ -103,111 +103,111 @@ describe('GreedyPromise', () => {
               return new ctor((resolve, reject) => {
                 setTimeout(() => fail ? reject(value) : resolve(value), delay)
               })
-            };
-            pendingSuccess = makePromise(Promise, 'pending result', false, 10);
-            pendingFailure = makePromise(Promise, 'pending failure', true, 10);
-          });
+            }
+            pendingSuccess = makePromise(Promise, 'pending result', false, 10)
+            pendingFailure = makePromise(Promise, 'pending failure', true, 10)
+          })
 
           it(`behaves like vanilla promises`, () => {
-            const vanilla = op(Promise);
-            const greedy = op(GreedyPromise);
+            const vanilla = op(Promise)
+            const greedy = op(GreedyPromise)
             // note that we are not using `allSettled` & co to resolve our promises,
             // to avoid transformations those methods do under the hood
-            const { actual = {}, expected = {} } = {};
+            const { actual = {}, expected = {} } = {}
             return new Promise((resolve) => {
-              let pending = 2;
+              let pending = 2
               function collect(dest, slot) {
                 return function (value) {
-                  dest[slot] = value;
-                  pending--;
+                  dest[slot] = value
+                  pending--
                   if (pending === 0) {
                     resolve()
                   }
                 }
               }
-              vanilla.then(collect(expected, 'success'), collect(expected, 'failure'));
-              greedy.then(collect(actual, 'success'), collect(actual, 'failure'));
+              vanilla.then(collect(expected, 'success'), collect(expected, 'failure'))
+              greedy.then(collect(actual, 'success'), collect(actual, 'failure'))
             }).then(() => {
-              expect(actual).to.eql(expected);
-            });
-          });
+              expect(actual).to.eql(expected)
+            })
+          })
 
           it(`once resolved, runs callbacks immediately`, () => {
-            const promise = op(GreedyPromise).catch(() => null);
+            const promise = op(GreedyPromise).catch(() => null)
             return promise.then(() => {
-              let cbRan = false;
-              promise.then(() => { cbRan = true });
-              expect(cbRan).to.be.true;
-            });
-          });
-        });
+              let cbRan = false
+              promise.then(() => { cbRan = true })
+              expect(cbRan).to.be.true
+            })
+          })
+        })
 
         describe('when all promises involved are greedy', () => {
           beforeEach(() => {
             makePromise = function(ctor, value, fail = false, delay = 0) {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
-                const run = () => fail ? reject(value) : resolve(value);
+                const run = () => fail ? reject(value) : resolve(value)
                 if (delay === 0) {
-                  run();
+                  run()
                 } else {
-                  setTimeout(run, delay);
+                  setTimeout(run, delay)
                 }
               })
-            };
-            pendingSuccess = makePromise(GreedyPromise, 'pending result');
-            pendingFailure = makePromise(GreedyPromise, 'pending failure', true);
-          });
+            }
+            pendingSuccess = makePromise(GreedyPromise, 'pending result')
+            pendingFailure = makePromise(GreedyPromise, 'pending failure', true)
+          })
 
           it('resolves immediately', () => {
-            let cbRan = false;
-            op(GreedyPromise).catch(() => null).then(() => { cbRan = true });
-            expect(cbRan).to.be.true;
-          });
-        });
-      });
-    });
-  });
-});
+            let cbRan = false
+            op(GreedyPromise).catch(() => null).then(() => { cbRan = true })
+            expect(cbRan).to.be.true
+          })
+        })
+      })
+    })
+  })
+})
 
 describe('greedySetTimeout', () => {
   describe('delay = 0', () => {
     it('should resolve immediately', () => {
-      let cbRan = false;
-      greedySetTimeout(() => { cbRan = true }, 0);
-      expect(cbRan).to.be.true;
-    });
+      let cbRan = false
+      greedySetTimeout(() => { cbRan = true }, 0)
+      expect(cbRan).to.be.true
+    })
 
     it('should not choke when cleared', () => {
-      clearTimeout(greedySetTimeout(() => {}, 0));
-    });
+      clearTimeout(greedySetTimeout(() => {}, 0))
+    })
   })
 
   describe('delay > 0', () => {
     it('should schedule timeout', (done) => {
-      let cbRan = false;
+      let cbRan = false
       greedySetTimeout(() => {
-        cbRan = true;
-      }, 5);
-      expect(cbRan).to.be.false;
+        cbRan = true
+      }, 5)
+      expect(cbRan).to.be.false
       setTimeout(() => {
-        expect(cbRan).to.be.true;
-        done();
+        expect(cbRan).to.be.true
+        done()
       }, 10)
-    });
+    })
 
     it('can be cleared', (done) => {
-      let cbRan = false;
+      let cbRan = false
       const handle = greedySetTimeout(() => {
-        cbRan = true;
-      }, 5);
+        cbRan = true
+      }, 5)
       setTimeout(() => {
-        clearTimeout(handle);
+        clearTimeout(handle)
         setTimeout(() => {
-          expect(cbRan).to.be.false;
+          expect(cbRan).to.be.false
           done()
         }, 10)
       }, 0)
     })
   })
-});
+})

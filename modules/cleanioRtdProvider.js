@@ -6,14 +6,14 @@
  * @requires module:modules/realTimeData
  */
 
-import { createRtdSubmodule } from './humansecurityMalvDefenseRtdProvider.js'; /* eslint prebid/validate-imports: "off" */
+import { createRtdSubmodule } from './humansecurityMalvDefenseRtdProvider.js' /* eslint prebid/validate-imports: "off" */
 
-const internals = createRtdSubmodule('clean.io');
+const internals = createRtdSubmodule('clean.io')
 
 /**
  * Exporting encapsulated to this module functions
  * for testing purposes
  */
-export const __CLEANIO_TEST__ = internals;
+export const __CLEANIO_TEST__ = internals
 
-internals.beforeInit();
+internals.beforeInit()

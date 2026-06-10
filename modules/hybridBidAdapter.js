@@ -1,7 +1,7 @@
-import { _map, isArray } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js';
+import { _map, isArray } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,25 +10,25 @@ import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '..
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'hybrid';
-const GVLID = 206;
-const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
-const TRAFFIC_TYPE_WEB = 1;
-const PLACEMENT_TYPE_BANNER = 1;
-const PLACEMENT_TYPE_VIDEO = 2;
-const PLACEMENT_TYPE_IN_IMAGE = 3;
-const TTL = 60;
-const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const BIDDER_CODE = 'hybrid'
+const GVLID = 206
+const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb'
+const TRAFFIC_TYPE_WEB = 1
+const PLACEMENT_TYPE_BANNER = 1
+const PLACEMENT_TYPE_VIDEO = 2
+const PLACEMENT_TYPE_IN_IMAGE = 3
+const TTL = 60
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js'
 
 const placementTypes = {
   'banner': PLACEMENT_TYPE_BANNER,
   'video': PLACEMENT_TYPE_VIDEO,
   'inImage': PLACEMENT_TYPE_IN_IMAGE
-};
+}
 
 function buildBidRequests(validBidRequests) {
   return _map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
+    const params = validBidRequest.params
     const bidRequest = {
       bidId: validBidRequest.bidId,
       transactionId: validBidRequest.ortb2Imp?.ext?.tid,
@@ -36,9 +36,9 @@ function buildBidRequests(validBidRequests) {
       placement: placementTypes[params.placement],
       placeId: params.placeId,
       imageUrl: params.imageUrl || ''
-    };
+    }
 
-    return bidRequest;
+    return bidRequest
   })
 }
 
@@ -53,55 +53,55 @@ function buildBid(bidData) {
     netRevenue: true,
     ttl: TTL,
     meta: { advertiserDomains: bidData.advertiserDomains || [] }
-  };
+  }
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {
-    bid.vastXml = bidData.content;
-    bid.mediaType = VIDEO;
+    bid.vastXml = bidData.content
+    bid.mediaType = VIDEO
 
-    const video = bidData.mediaTypes?.video;
+    const video = bidData.mediaTypes?.video
 
     if (video) {
-      bid.width = video.playerSize[0][0];
-      bid.height = video.playerSize[0][1];
+      bid.width = video.playerSize[0][0]
+      bid.height = video.playerSize[0][1]
 
       if (video.context === 'outstream') {
-        bid.renderer = createRenderer(bid, RENDERER_URL);
+        bid.renderer = createRenderer(bid, RENDERER_URL)
       }
     }
   } else if (bidData.placement === PLACEMENT_TYPE_IN_IMAGE) {
-    bid.mediaType = BANNER;
+    bid.mediaType = BANNER
     bid.inImageContent = {
       content: {
         content: bidData.content,
         actionUrls: {}
       }
-    };
-    const actionUrls = bid.inImageContent.content.actionUrls;
-    actionUrls.loadUrls = bidData.inImage.loadtrackers || [];
-    actionUrls.impressionUrls = bidData.inImage.imptrackers || [];
-    actionUrls.scrollActUrls = bidData.inImage.startvisibilitytrackers || [];
-    actionUrls.viewUrls = bidData.inImage.viewtrackers || [];
-    actionUrls.stopAnimationUrls = bidData.inImage.stopanimationtrackers || [];
-    actionUrls.closeBannerUrls = bidData.inImage.closebannertrackers || [];
+    }
+    const actionUrls = bid.inImageContent.content.actionUrls
+    actionUrls.loadUrls = bidData.inImage.loadtrackers || []
+    actionUrls.impressionUrls = bidData.inImage.imptrackers || []
+    actionUrls.scrollActUrls = bidData.inImage.startvisibilitytrackers || []
+    actionUrls.viewUrls = bidData.inImage.viewtrackers || []
+    actionUrls.stopAnimationUrls = bidData.inImage.stopanimationtrackers || []
+    actionUrls.closeBannerUrls = bidData.inImage.closebannertrackers || []
 
     if (bidData.inImage.but) {
-      const inImageOptions = bid.inImageContent.content.inImageOptions = {};
-      inImageOptions.hasButton = true;
-      inImageOptions.buttonLogoUrl = bidData.inImage.but_logo;
-      inImageOptions.buttonProductUrl = bidData.inImage.but_prod;
-      inImageOptions.buttonHead = bidData.inImage.but_head;
-      inImageOptions.buttonHeadColor = bidData.inImage.but_head_colour;
-      inImageOptions.dynparams = bidData.inImage.dynparams || {};
+      const inImageOptions = bid.inImageContent.content.inImageOptions = {}
+      inImageOptions.hasButton = true
+      inImageOptions.buttonLogoUrl = bidData.inImage.but_logo
+      inImageOptions.buttonProductUrl = bidData.inImage.but_prod
+      inImageOptions.buttonHead = bidData.inImage.but_head
+      inImageOptions.buttonHeadColor = bidData.inImage.but_head_colour
+      inImageOptions.dynparams = bidData.inImage.dynparams || {}
     }
 
-    bid.ad = wrapAd(bid, bidData);
+    bid.ad = wrapAd(bid, bidData)
   } else {
-    bid.ad = bidData.content;
-    bid.mediaType = BANNER;
+    bid.ad = bidData.content
+    bid.mediaType = BANNER
   }
 
-  return bid;
+  return bid
 }
 
 function wrapAd(bid, bidData) {
@@ -125,7 +125,7 @@ function wrapAd(bid, bidData) {
             window._hyb_prebid_ssp.registerInImage(JSON.parse(decodeURIComponent(_content)));
         </script>
     </body>
-  </html>`;
+  </html>`
 }
 
 export const spec = {
@@ -149,7 +149,7 @@ export const spec = {
         (getMediaTypeFromBid(bid) === BANNER && bid.params.placement === 'inImage' && !!bid.params.imageUrl) ||
         (getMediaTypeFromBid(bid) === VIDEO && bid.params.placement === 'video' && hasVideoMandatoryParams(bid.mediaTypes))
       )
-    );
+    )
   },
 
   /**
@@ -166,15 +166,15 @@ export const spec = {
       cmp: !!bidderRequest.gdprConsent,
       trafficType: TRAFFIC_TYPE_WEB,
       bidRequests: buildBidRequests(validBidRequests)
-    };
-
-    if (payload.cmp) {
-      const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-      if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
-      payload['cs'] = bidderRequest.gdprConsent.consentString;
     }
 
-    const payloadString = JSON.stringify(payload);
+    if (payload.cmp) {
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies
+      if (gdprApplies !== undefined) payload['ga'] = gdprApplies
+      payload['cs'] = bidderRequest.gdprConsent.consentString
+    }
+
+    const payloadString = JSON.stringify(payload)
     return {
       method: 'POST',
       url: DSP_ENDPOINT,
@@ -192,22 +192,22 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidRequests = JSON.parse(bidRequest.data).bidRequests;
-    const serverBody = serverResponse.body;
+    const bidRequests = JSON.parse(bidRequest.data).bidRequests
+    const serverBody = serverResponse.body
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
         const rawBid = ((bidRequests) || []).find(function (item) {
-          return item.bidId === bid.bidId;
-        });
-        bid.placement = rawBid.placement;
-        bid.placeId = rawBid.placeId;
-        return buildBid(bid);
-      });
+          return item.bidId === bid.bidId
+        })
+        bid.placement = rawBid.placement
+        bid.placeId = rawBid.placeId
+        return buildBid(bid)
+      })
     } else {
-      return [];
+      return []
     }
   }
 
 }
-registerBidder(spec);
+registerBidder(spec)

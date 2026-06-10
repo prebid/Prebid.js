@@ -1,8 +1,8 @@
-import { VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, isFn } from '../../src/utils.js';
-import { tryAppendQueryString } from '../urlUtils/urlUtils.js';
+import { VIDEO } from '../../src/mediaTypes.js'
+import { deepAccess, isFn } from '../../src/utils.js'
+import { tryAppendQueryString } from '../urlUtils/urlUtils.js'
 
-const DEFAULT_FLOOR = 0.0;
+const DEFAULT_FLOOR = 0.0
 
 /**
  * Assigns values to new properties, removes temporary ones from an object
@@ -13,21 +13,21 @@ const DEFAULT_FLOOR = 0.0;
  * @returns {*} An updated object
  */
 function cleanObject(obj, key, tempKey) {
-  const newObj = {};
+  const newObj = {}
 
   for (const prop in obj) {
     if (prop === key) {
       if (Object.prototype.hasOwnProperty.call(obj, tempKey)) {
-        newObj[key] = obj[tempKey];
+        newObj[key] = obj[tempKey]
       }
     } else if (prop !== tempKey) {
-      newObj[prop] = obj[prop];
+      newObj[prop] = obj[prop]
     }
   }
 
-  newObj.bidfloor === -1 && delete newObj.bidfloor;
+  newObj.bidfloor === -1 && delete newObj.bidfloor
 
-  return newObj;
+  return newObj
 }
 
 /**
@@ -39,7 +39,7 @@ function cleanObject(obj, key, tempKey) {
  * @return {number} Floor price
  */
 export function getBidFloor(bid, currency, mediaType) {
-  const floors = [];
+  const floors = []
 
   if (isFn(bid.getFloor)) {
     (deepAccess(bid, `mediaTypes.${mediaType}.${mediaType === VIDEO ? 'playerSize' : 'sizes'}`) || []).forEach(size => {
@@ -47,13 +47,13 @@ export function getBidFloor(bid, currency, mediaType) {
         currency: currency || 'USD',
         mediaType,
         size
-      }).floor;
+      }).floor
 
-      floors.push(!isNaN(floor) ? floor : DEFAULT_FLOOR);
-    });
+      floors.push(!isNaN(floor) ? floor : DEFAULT_FLOOR)
+    })
   }
 
-  return floors.length ? Math.min(...floors) : DEFAULT_FLOOR;
+  return floors.length ? Math.min(...floors) : DEFAULT_FLOOR
 }
 
 /**
@@ -67,7 +67,7 @@ export function getBidFloor(bid, currency, mediaType) {
  */
 function getFloor(bid, mediaType, width, height, currency) {
   return bid.getFloor?.({ currency, mediaType, size: [width, height] })
-    .floor || bid.params.bidfloor || -1;
+    .floor || bid.params.bidfloor || -1
 }
 
 /**
@@ -75,16 +75,16 @@ function getFloor(bid, mediaType, width, height, currency) {
  * @returns {string}
  */
 function makeId() {
-  const length = 14;
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let counter = 0;
-  let str = '';
+  const length = 14
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let counter = 0
+  let str = ''
 
   while (counter++ < length) {
-    str += characters.charAt(Math.floor(Math.random() * characters.length));
+    str += characters.charAt(Math.floor(Math.random() * characters.length))
   }
 
-  return str;
+  return str
 }
 
 /**
@@ -98,36 +98,36 @@ function makeId() {
  * @return {*}
  */
 export function prepareSplitImps(imps, bid, currency, impIdMap, adapter) {
-  const splitImps = [];
+  const splitImps = []
 
   imps.forEach(item => {
-    const floorMap = {};
+    const floorMap = {}
 
     const updateFloorMap = (type, name, width = 0, height = 0) => {
-      const floor = getFloor(bid, type, width, height, currency);
+      const floor = getFloor(bid, type, width, height, currency)
 
       if (!floorMap[floor]) {
         floorMap[floor] = {
           ...item,
           bidfloor: floor
-        };
+        }
       }
 
       if (!floorMap[floor][name]) {
-        floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
+        floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type]
       }
 
       if (type === 'banner') {
-        floorMap[floor][name].format.push({ w: width, h: height });
+        floorMap[floor][name].format.push({ w: width, h: height })
       }
-    };
-
-    if (item.banner?.format?.length) {
-      item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
     }
 
-    updateFloorMap('native', 'nativeTemp');
-    updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
+    if (item.banner?.format?.length) {
+      item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h))
+    }
+
+    updateFloorMap('native', 'nativeTemp')
+    updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h)
 
     Object.values(floorMap).forEach(obj => {
       [
@@ -135,30 +135,30 @@ export function prepareSplitImps(imps, bid, currency, impIdMap, adapter) {
         ['native', 'nativeTemp'],
         ['video', 'videoTemp']
       ].forEach(([name, tempName]) => {
-        obj = cleanObject(obj, name, tempName);
-      });
+        obj = cleanObject(obj, name, tempName)
+      })
 
       if (obj.banner || obj.video || obj.native) {
-        const id = makeId();
-        impIdMap[id] = obj.id;
-        obj.id = id;
+        const id = makeId()
+        impIdMap[id] = obj.id
+        obj.id = id
 
         if (obj.banner && adapter === 'stx') {
-          obj.banner.pos = item.banner.pos;
-          obj.banner.topframe = item.banner.topframe;
+          obj.banner.pos = item.banner.pos
+          obj.banner.topframe = item.banner.topframe
         }
 
-        splitImps.push(obj);
+        splitImps.push(obj)
       }
-    });
-  });
+    })
+  })
 
-  return splitImps;
+  return splitImps
 }
 
-export const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
-export const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
-export const PID_STORAGE_NAME = 'eqt_pid';
+export const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com'
+export const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`
+export const PID_STORAGE_NAME = 'eqt_pid'
 
 /**
  * Handles cookie sync logic
@@ -179,22 +179,22 @@ export function handleCookieSync(syncOptions, serverResponses, gdprConsent, netw
             action: 'consentResponse',
             id: event.data.id,
             consents: gdprConsent.vendorData.vendor.consents
-          }, event.origin);
+          }, event.origin)
         }
 
         if (event.data.pid) {
-          storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid);
+          storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid)
         }
 
-        this.removeEventListener('message', handler);
+        this.removeEventListener('message', handler)
       }
-    });
+    })
 
-    let url = tryAppendQueryString(COOKIE_SYNC_URL + '?', 'nwid', networkId);
-    url = tryAppendQueryString(url, 'gdpr', (gdprConsent?.gdprApplies ? '1' : '0'));
+    let url = tryAppendQueryString(COOKIE_SYNC_URL + '?', 'nwid', networkId)
+    url = tryAppendQueryString(url, 'gdpr', (gdprConsent?.gdprApplies ? '1' : '0'))
 
-    return [{ type: 'iframe', url }];
+    return [{ type: 'iframe', url }]
   }
 
-  return [];
+  return []
 }

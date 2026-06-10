@@ -1,12 +1,12 @@
-import type { BidderCode, StorageDisclosure } from "../../src/types/common";
-import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
-import type { AllConsentData } from "../../src/consentHandler.ts";
-import type { Ext } from '../../src/types/ortb/common';
-import type { ORTBRequest } from "../../src/types/ortb/request";
+import type { BidderCode, StorageDisclosure } from "../../src/types/common"
+import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts"
+import type { AllConsentData } from "../../src/consentHandler.ts"
+import type { Ext } from '../../src/types/ortb/common'
+import type { ORTBRequest } from "../../src/types/ortb/request"
 
-export type UserIdProvider = string;
+export type UserIdProvider = string
 
-export type EID = NonNullable<NonNullable<ORTBRequest['user']>['eids']>[number];
+export type EID = NonNullable<NonNullable<ORTBRequest['user']>['eids']>[number]
 
 export interface UserId {
   [idName: string]: unknown;
@@ -19,8 +19,8 @@ export interface ProvidersToId {
    */
 }
 
-export type UserIdKeyFor<P extends UserIdProvider> = P extends keyof ProvidersToId ? ProvidersToId[P] : unknown;
-export type UserIdFor<P extends UserIdProvider> = P extends keyof ProvidersToId ? UserId[UserIdKeyFor<P>] : unknown;
+export type UserIdKeyFor<P extends UserIdProvider> = P extends keyof ProvidersToId ? ProvidersToId[P] : unknown
+export type UserIdFor<P extends UserIdProvider> = P extends keyof ProvidersToId ? UserId[UserIdKeyFor<P>] : unknown
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ProviderParams {
@@ -74,7 +74,7 @@ export interface UserIdConfig<P extends UserIdProvider> {
   value?: DecodedId<P>;
 }
 
-type SerializableId = string | Record<string, unknown>;
+type SerializableId = string | Record<string, unknown>
 
 /**
  * If your module can provide ID data synchronously it should set id directly; otherwise it should provide a callback that calls its first argument setId passing it ID data.
@@ -93,9 +93,9 @@ export type ProviderResponse = {
   callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
 }
 
-type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
+type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>
 
-type IdValue<K extends keyof UserId> = UserId[K] extends any[] ? UserId[K][number] : UserId[K];
+type IdValue<K extends keyof UserId> = UserId[K] extends any[] ? UserId[K][number] : UserId[K]
 
 type EIDConfig<K extends keyof UserId> = {
   /**
@@ -127,7 +127,7 @@ type EIDConfig<K extends keyof UserId> = {
   getUidExt?: (id: IdValue<K>) => Ext;
 }
 
-type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
+type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[]
 
 export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**

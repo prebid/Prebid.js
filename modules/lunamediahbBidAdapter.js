@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js'
 
-const BIDDER_CODE = 'lunamediahb';
-const AD_URL = 'https://balancer.lmgssp.com/?c=o&m=multi';
-const SYNC_URL = 'https://cookie.lmgssp.com';
+const BIDDER_CODE = 'lunamediahb'
+const AD_URL = 'https://balancer.lmgssp.com/?c=o&m=multi'
+const SYNC_URL = 'https://cookie.lmgssp.com'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -14,6 +14,6 @@ export const spec = {
   buildRequests: buildRequests(AD_URL),
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

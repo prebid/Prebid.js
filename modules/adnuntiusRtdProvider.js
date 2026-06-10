@@ -1,19 +1,19 @@
 import { submodule } from '../src/hook.js'
 import { logError, logInfo } from '../src/utils.js'
-import { ajax } from '../src/ajax.js';
+import { ajax } from '../src/ajax.js'
 
-import { config as sourceConfig } from '../src/config.js';
+import { config as sourceConfig } from '../src/config.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const GVLID = 855;
+const GVLID = 855
 
 function init(config, userConsent) {
   if (!config.params || !config.params.providers) return false
   logInfo(userConsent)
-  return true;
+  return true
 }
 
 // Make sure that ajax has a function as callback
@@ -26,7 +26,7 @@ function prepProvider(provider) {
     folderId: 'folderId'
   }
 
-  const tzo = new Date().getTimezoneOffset();
+  const tzo = new Date().getTimezoneOffset()
   const URL = ['https://data.adnuntius.com/usr?tzo=' + tzo]
   Object.keys(provider).forEach(key => {
     URL.push(`${mappedParameters[key]}=${provider[key]}`)
@@ -39,8 +39,8 @@ function prepProvider(provider) {
         resolve(response)
       },
       error: function (err) { reject(err) }
-    });
-  });
+    })
+  })
 }
 
 function setGlobalConfig(config, segments) {
@@ -65,11 +65,11 @@ function setGlobalConfig(config, segments) {
 }
 
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
-  const gdpr = userConsent && userConsent.gdpr;
+  const gdpr = userConsent && userConsent.gdpr
   let allowedToRun = true
   if (gdpr) {
     if (userConsent.gdpr.gdprApplies) {
-      if (gdpr.gdprApplies && !gdpr.vendorData.vendorConsents[GVLID]) allowedToRun = false;
+      if (gdpr.gdprApplies && !gdpr.vendorData.vendorConsents[GVLID]) allowedToRun = false
     }
   }
   if (allowedToRun) {
@@ -78,10 +78,10 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
     Promise.allSettled(providerRequests).then((values) => {
       const segments = values.reduce((segments, array) => (array.status === 'fulfilled') ? segments.concat(array.value.segments) : [], []).map(segmentId => ({ id: segmentId }))
       setGlobalConfig(config, segments)
-      callback();
+      callback()
     })
-      .catch(err => logError('ADN: err', err));
-  } else callback();
+      .catch(err => logError('ADN: err', err))
+  } else callback()
 }
 
 /** @type {RtdSubmodule} */
@@ -91,10 +91,10 @@ export const adnuntiusSubmodule = {
   init: init,
   getBidRequestData: alterBidRequests,
   setGlobalConfig: setGlobalConfig,
-};
-
-export function beforeInit() {
-  submodule('realTimeData', adnuntiusSubmodule);
 }
 
-beforeInit();
+export function beforeInit() {
+  submodule('realTimeData', adnuntiusSubmodule)
+}
+
+beforeInit()

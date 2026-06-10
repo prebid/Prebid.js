@@ -7,27 +7,27 @@ import {
   receiveMessage,
   reset,
   topicStorageName
-} from '../../../modules/topicsFpdModule.js';
-import { config } from 'src/config.js';
-import { deepClone, safeJSONParse } from '../../../src/utils.js';
-import { getCoreStorageManager } from 'src/storageManager.js';
-import * as activities from '../../../src/activities/rules.js';
-import { registerActivityControl } from '../../../src/activities/rules.js';
-import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
+} from '../../../modules/topicsFpdModule.js'
+import { config } from 'src/config.js'
+import { deepClone, safeJSONParse } from '../../../src/utils.js'
+import { getCoreStorageManager } from 'src/storageManager.js'
+import * as activities from '../../../src/activities/rules.js'
+import { registerActivityControl } from '../../../src/activities/rules.js'
+import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js'
 
 describe('topics', () => {
-  let unregister, enrichUfpdRule;
+  let unregister, enrichUfpdRule
   before(() => {
     unregister = registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => enrichUfpdRule(params), 0)
-  });
+  })
   after(() => {
     unregister()
-  });
+  })
 
   beforeEach(() => {
-    enrichUfpdRule = () => ({ allow: true });
-    reset();
-  });
+    enrichUfpdRule = () => ({ allow: true })
+    reset()
+  })
 
   describe('getTopicsData', () => {
     function makeTopic(topic, modelv, taxv = '1') {
@@ -35,14 +35,14 @@ describe('topics', () => {
         topic,
         taxonomyVersion: taxv,
         modelVersion: modelv
-      };
+      }
     }
 
     function byTaxClass(segments) {
       return segments.reduce((memo, segment) => {
-        memo[`${segment.ext.segtax}:${segment.ext.segclass}`] = segment;
-        return memo;
-      }, {});
+        memo[`${segment.ext.segtax}:${segment.ext.segclass}`] = segment
+        return memo
+      }, {})
     }
 
     [
@@ -166,23 +166,23 @@ describe('topics', () => {
     ].forEach(({ t, topics, expected, taxonomies }) => {
       describe(`on ${t}`, () => {
         it('should convert topics to user.data segments correctly', () => {
-          const actual = getTopicsData('mockName', topics, taxonomies);
-          expect(actual.length).to.eql(expected.length);
-          expected = byTaxClass(expected);
+          const actual = getTopicsData('mockName', topics, taxonomies)
+          expect(actual.length).to.eql(expected.length)
+          expected = byTaxClass(expected)
           Object.entries(byTaxClass(actual)).forEach(([key, datum]) => {
-            sinon.assert.match(datum, expected[key]);
-            expect(datum.name).to.equal('mockName');
-          });
-        });
+            sinon.assert.match(datum, expected[key])
+            expect(datum.name).to.equal('mockName')
+          })
+        })
 
         it('should not set name if null', () => {
           getTopicsData(null, topics).forEach((data) => {
-            expect(data.hasOwnProperty('name')).to.be.false;
-          });
-        });
-      });
-    });
-  });
+            expect(data.hasOwnProperty('name')).to.be.false
+          })
+        })
+      })
+    })
+  })
 
   describe('getTopics', () => {
     Object.entries({
@@ -195,12 +195,12 @@ describe('topics', () => {
       'document that throws on featurePolicy': {
         browsingTopics: sinon.stub(),
         get featurePolicy() {
-          throw new Error();
+          throw new Error()
         }
       },
       'document that throws on browsingTopics': {
         browsingTopics: sinon.stub().callsFake(() => {
-          throw new Error();
+          throw new Error()
         }),
         featurePolicy: {
           allowsFeature: sinon.stub().returns(true)
@@ -209,23 +209,23 @@ describe('topics', () => {
     }).forEach(([t, doc]) => {
       it(`should resolve to an empty list on ${t}`, () => {
         return getTopics(doc).then((topics) => {
-          expect(topics).to.eql([]);
-        });
-      });
-    });
+          expect(topics).to.eql([])
+        })
+      })
+    })
 
     it('should call `document.browsingTopics` when allowed', () => {
-      const topics = ['t1', 't2'];
+      const topics = ['t1', 't2']
       return getTopics({
         browsingTopics: sinon.stub().returns(Promise.resolve(topics)),
         featurePolicy: {
           allowsFeature: sinon.stub().returns(true)
         }
       }).then((actual) => {
-        expect(actual).to.eql(topics);
-      });
-    });
-  });
+        expect(actual).to.eql(topics)
+      })
+    })
+  })
 
   describe('processFpd', () => {
     const mockData = [
@@ -237,14 +237,14 @@ describe('topics', () => {
         name: 'domain',
         segment: [{ id: 321 }]
       }
-    ];
+    ]
 
     it('should add topics data', () => {
       return processFpd({}, { global: {} }, { data: Promise.resolve(mockData) })
         .then(({ global }) => {
-          expect(global.user.data).to.eql(mockData);
-        });
-    });
+          expect(global.user.data).to.eql(mockData)
+        })
+    })
 
     it('should apppend to existing user.data', () => {
       const global = {
@@ -253,20 +253,20 @@ describe('topics', () => {
             { name: 'preexisting' },
           ]
         }
-      };
+      }
       return processFpd({}, { global: deepClone(global) }, { data: Promise.resolve(mockData) })
         .then((data) => {
-          expect(data.global.user.data).to.eql(global.user.data.concat(mockData));
-        });
-    });
+          expect(data.global.user.data).to.eql(global.user.data.concat(mockData))
+        })
+    })
 
     it('should not modify fpd when there is no data', () => {
       return processFpd({}, { global: {} }, { data: Promise.resolve([]) })
         .then((data) => {
-          expect(data.global).to.eql({});
-        });
-    });
-  });
+          expect(data.global).to.eql({})
+        })
+    })
+  })
 
   describe('loadTopicsForBidders', () => {
     beforeEach(() => {
@@ -280,9 +280,9 @@ describe('topics', () => {
           }
         }
       })
-    });
+    })
     afterEach(() => {
-      config.resetConfig();
+      config.resetConfig()
     })
 
     Object.entries({
@@ -291,17 +291,17 @@ describe('topics', () => {
         browsingTopics: true,
         featurePolicy: {
           allowsFeature(feature) {
-            return feature !== 'browsing-topics';
+            return feature !== 'browsing-topics'
           }
         }
       },
     }).forEach(([t, doc]) => {
       it(`does not attempt to load frames if browser does not ${t} topics`, () => {
-        doc.createElement = sinon.stub();
-        loadTopicsForBidders(doc);
-        sinon.assert.notCalled(doc.createElement);
-      });
-    });
+        doc.createElement = sinon.stub()
+        loadTopicsForBidders(doc)
+        sinon.assert.notCalled(doc.createElement)
+      })
+    })
 
     it('does not load frames when accessDevice is not allowed', () => {
       enrichUfpdRule = ({ component }) => {
@@ -316,14 +316,14 @@ describe('topics', () => {
           allowsFeature: () => true
         }
       }
-      doc.createElement = sinon.stub();
-      loadTopicsForBidders(doc);
-      sinon.assert.notCalled(doc.createElement);
+      doc.createElement = sinon.stub()
+      loadTopicsForBidders(doc)
+      sinon.assert.notCalled(doc.createElement)
     })
-  });
+  })
 
   describe('getCachedTopics()', () => {
-    const storage = getCoreStorageManager('topicsFpd');
+    const storage = getCoreStorageManager('topicsFpd')
     const expected = [{
       ext: {
         segtax: 600,
@@ -335,31 +335,31 @@ describe('topics', () => {
         'id': '265'
       }],
       name: 'ads.pubmatic.com'
-    }];
+    }]
 
     const evt = {
       data: '{"segment":{"domain":"ads.pubmatic.com","topics":[{"configVersion":"chrome.1","modelVersion":"2206021246","taxonomyVersion":"1","topic":165,"version":"chrome.1:1:2206021246"}],"bidder":"pubmatic"},"date":1669743901858}',
       origin: 'https://ads.pubmatic.com'
-    };
+    }
 
     afterEach(() => {
-      storage.removeDataFromLocalStorage(topicStorageName);
-    });
+      storage.removeDataFromLocalStorage(topicStorageName)
+    })
 
     describe('caching', () => {
-      let sandbox;
+      let sandbox
       beforeEach(() => {
-        sandbox = sinon.createSandbox();
+        sandbox = sinon.createSandbox()
       })
 
       afterEach(() => {
-        sandbox.restore();
-        config.resetConfig();
-      });
+        sandbox.restore()
+        config.resetConfig()
+      })
 
       it('should return no segments when not configured', () => {
-        config.setConfig({ userSync: {} });
-        expect(getCachedTopics()).to.eql([]);
+        config.setConfig({ userSync: {} })
+        expect(getCachedTopics()).to.eql([])
       })
 
       describe('when cached data is available and not expired', () => {
@@ -373,8 +373,8 @@ describe('topics', () => {
               },
               'lastUpdated': new Date().getTime()
             }]]
-          );
-          storage.setDataInLocalStorage(topicStorageName, storedSegments);
+          )
+          storage.setDataInLocalStorage(topicStorageName, storedSegments)
           config.setConfig({
             userSync: {
               topics: {
@@ -386,24 +386,24 @@ describe('topics', () => {
               }
             }
           })
-        });
+        })
 
         it('should return segments for bidder if transmitUfpd is allowed', () => {
-          assert.deepEqual(getCachedTopics(), expected);
-        });
+          assert.deepEqual(getCachedTopics(), expected)
+        })
 
         it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
           enrichUfpdRule = (params) => ({ allow: params.component !== 'bidder.pubmatic' })
-          expect(getCachedTopics()).to.eql([]);
-        });
-      });
-    });
+          expect(getCachedTopics()).to.eql([])
+        })
+      })
+    })
 
     it('should return empty segments for bidder if there is cached segments stored which is expired', () => {
-      const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
-      storage.setDataInLocalStorage(topicStorageName, storedSegments);
-      assert.deepEqual(getCachedTopics(), []);
-    });
+      const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]'
+      storage.setDataInLocalStorage(topicStorageName, storedSegments)
+      assert.deepEqual(getCachedTopics(), [])
+    })
 
     describe('cross-frame messages', () => {
       before(() => {
@@ -419,8 +419,8 @@ describe('topics', () => {
               ],
             },
           }
-        });
-      });
+        })
+      })
 
       beforeEach(() => {
         // init iframe logic so  that the receiveMessage origin check passes
@@ -433,42 +433,42 @@ describe('topics', () => {
           documentElement: {
             appendChild() {}
           }
-        });
-      });
+        })
+      })
 
       after(() => {
-        config.resetConfig();
+        config.resetConfig()
       })
 
       it('should store segments if receiveMessage event is triggered with segment data', () => {
-        receiveMessage(evt);
-        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
-        expect(segments.has('pubmatic')).to.equal(true);
-      });
+        receiveMessage(evt)
+        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)))
+        expect(segments.has('pubmatic')).to.equal(true)
+      })
 
       it('should update stored segments if receiveMessage event is triggerred with segment data', () => {
-        const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
-        storage.setDataInLocalStorage(topicStorageName, storedSegments);
-        receiveMessage(evt);
-        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
-        expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1);
-      });
-    });
-  });
+        const storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]'
+        storage.setDataInLocalStorage(topicStorageName, storedSegments)
+        receiveMessage(evt)
+        const segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)))
+        expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1)
+      })
+    })
+  })
   describe('handles fetch request for topics api headers', () => {
-    let stubbedFetch;
-    const storage = getCoreStorageManager('topicsFpd');
+    let stubbedFetch
+    const storage = getCoreStorageManager('topicsFpd')
 
     beforeEach(() => {
-      stubbedFetch = sinon.stub(window, 'fetch');
-      reset();
-    });
+      stubbedFetch = sinon.stub(window, 'fetch')
+      reset()
+    })
 
     afterEach(() => {
-      stubbedFetch.restore();
-      storage.removeDataFromLocalStorage(topicStorageName);
-      config.resetConfig();
-    });
+      stubbedFetch.restore()
+      storage.removeDataFromLocalStorage(topicStorageName)
+      config.resetConfig()
+    })
 
     it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
       config.setConfig({
@@ -483,19 +483,19 @@ describe('topics', () => {
             ],
           },
         }
-      });
+      })
 
-      stubbedFetch.returns(Promise.resolve(true));
+      stubbedFetch.returns(Promise.resolve(true))
 
       loadTopicsForBidders({
         browsingTopics: true,
         featurePolicy: {
           allowsFeature() { return true }
         }
-      });
-      sinon.assert.calledOnce(stubbedFetch);
-      stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
-    });
+      })
+      sinon.assert.calledOnce(stubbedFetch)
+      stubbedFetch.calledWith('http://localhost:3000/topics-server.js')
+    })
 
     it('should not make a fetch call when a fetchUrl is not present for a selected bidder', () => {
       config.setConfig({
@@ -509,16 +509,16 @@ describe('topics', () => {
             ],
           },
         }
-      });
+      })
 
       loadTopicsForBidders({
         browsingTopics: true,
         featurePolicy: {
           allowsFeature() { return true }
         }
-      });
-      sinon.assert.notCalled(stubbedFetch);
-    });
+      })
+      sinon.assert.notCalled(stubbedFetch)
+    })
 
     it('a fetch request should not be made if the configured fetch rate duration has not yet passed', () => {
       const storedSegments = JSON.stringify(
@@ -530,9 +530,9 @@ describe('topics', () => {
           },
           'lastUpdated': new Date().getTime()
         }]]
-      );
+      )
 
-      storage.setDataInLocalStorage(topicStorageName, storedSegments);
+      storage.setDataInLocalStorage(topicStorageName, storedSegments)
 
       config.setConfig({
         userSync: {
@@ -547,15 +547,15 @@ describe('topics', () => {
             ],
           },
         }
-      });
+      })
 
       loadTopicsForBidders({
         browsingTopics: true,
         featurePolicy: {
           allowsFeature() { return true }
         }
-      });
-      sinon.assert.notCalled(stubbedFetch);
-    });
-  });
-});
+      })
+      sinon.assert.notCalled(stubbedFetch)
+    })
+  })
+})

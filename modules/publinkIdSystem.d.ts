@@ -1,4 +1,4 @@
-export type PublinkIdSystemModuleName = 'publinkId';
+export type PublinkIdSystemModuleName = 'publinkId'
 
 export type PublinkIdSystemParams = {
   /**

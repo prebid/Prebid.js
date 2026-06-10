@@ -4,26 +4,26 @@
  * @module modules/naveggId
  * @requires module:modules/userId
  */
-import { isStr, isPlainObject, logError } from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { isStr, isPlainObject, logError } from '../src/utils.js'
+import { submodule } from '../src/hook.js'
+import { ajaxBuilder } from '../src/ajax.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
-const MODULE_NAME = 'naveggId';
-const OLD_NAVEGG_ID = 'nid';
-const NAVEGG_ID = 'nvggid';
-const BASE_URL = 'https://id.navegg.com/uid/';
+const MODULE_NAME = 'naveggId'
+const OLD_NAVEGG_ID = 'nid'
+const NAVEGG_ID = 'nvggid'
+const BASE_URL = 'https://id.navegg.com/uid/'
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 export const dep = {
   ajaxBuilder
-};
+}
 
 function getIdFromAPI() {
   const resp = function (callback) {
@@ -31,63 +31,63 @@ function getIdFromAPI() {
       BASE_URL,
       response => {
         if (response) {
-          let responseObj;
+          let responseObj
           try {
-            responseObj = JSON.parse(response);
+            responseObj = JSON.parse(response)
           } catch (error) {
-            logError(error);
-            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-            callback(fallbackValue);
+            logError(error)
+            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie()
+            callback(fallbackValue)
           }
 
           if (responseObj && responseObj[NAVEGG_ID]) {
-            callback(responseObj[NAVEGG_ID]);
+            callback(responseObj[NAVEGG_ID])
           } else {
-            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-            callback(fallbackValue);
+            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie()
+            callback(fallbackValue)
           }
         }
       },
       error => {
-        logError('Navegg ID fetch encountered an error', error);
-        const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-        callback(fallbackValue);
+        logError('Navegg ID fetch encountered an error', error)
+        const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie()
+        callback(fallbackValue)
       },
-      { method: 'GET', withCredentials: false });
-  };
-  return resp;
+      { method: 'GET', withCredentials: false })
+  }
+  return resp
 }
 
 /**
  * @returns {string | null}
  */
 function readNvgIdFromCookie() {
-  return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nvg') ? storage.findSimilarCookies('nvg')[0] : null) : null;
+  return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nvg') ? storage.findSimilarCookies('nvg')[0] : null) : null
 }
 /**
  * @returns {string | null}
  */
 function readNavIdFromCookie() {
-  return storage.cookiesAreEnabled() ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
+  return storage.cookiesAreEnabled() ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null
 }
 /**
  * @returns {string | null}
  */
 function readOldNaveggIdFromCookie() {
-  return storage.cookiesAreEnabled() ? storage.getCookie(OLD_NAVEGG_ID) : null;
+  return storage.cookiesAreEnabled() ? storage.getCookie(OLD_NAVEGG_ID) : null
 }
 /**
  * @returns {string | null}
  */
 function getOldCookie() {
-  const oldCookie = readOldNaveggIdFromCookie() || readNvgIdFromCookie() || readNavIdFromCookie();
-  return oldCookie;
+  const oldCookie = readOldNaveggIdFromCookie() || readNvgIdFromCookie() || readNavIdFromCookie()
+  return oldCookie
 }
 /**
  * @returns {string | null}
  */
 function getNaveggIdFromLocalStorage() {
-  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(NAVEGG_ID) : null;
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(NAVEGG_ID) : null
 }
 
 /** @type {Submodule} */
@@ -104,10 +104,10 @@ export const naveggIdSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
+    const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined
     return naveggIdVal ? {
       'naveggId': naveggIdVal.split('|')[0]
-    } : undefined;
+    } : undefined
   },
 
   /**
@@ -126,5 +126,5 @@ export const naveggIdSubmodule = {
       atype: 1
     },
   }
-};
-submodule('userId', naveggIdSubmodule);
+}
+submodule('userId', naveggIdSubmodule)

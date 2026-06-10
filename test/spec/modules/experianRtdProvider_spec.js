@@ -5,27 +5,27 @@ import {
   SUBMODULE_NAME,
   experianRtdObj,
   experianRtdSubmodule, EXPERIAN_RTID_NO_TRACK_KEY
-} from '../../../modules/experianRtdProvider.js';
-import { getStorageManager } from '../../../src/storageManager.js';
-import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
-import { safeJSONParse, timestamp } from '../../../src/utils.js';
-import { server } from '../../mocks/xhr.js';
+} from '../../../modules/experianRtdProvider.js'
+import { getStorageManager } from '../../../src/storageManager.js'
+import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js'
+import { safeJSONParse, timestamp } from '../../../src/utils.js'
+import { server } from '../../mocks/xhr.js'
 
-const SAMPLE_ENCRYPTED_DATA = 'sample-encrypted-data';
+const SAMPLE_ENCRYPTED_DATA = 'sample-encrypted-data'
 describe('Experian realtime module', () => {
-  const sandbox = sinon.createSandbox();
-  let requests;
+  const sandbox = sinon.createSandbox()
+  let requests
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME })
   beforeEach(() => {
-    requests = server.requests;
+    requests = server.requests
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null)
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null)
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null)
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null)
   })
   afterEach(() => {
-    sandbox.restore();
+    sandbox.restore()
   })
   // Bid request config
   const reqBidsConfigObj = {
@@ -34,16 +34,16 @@ describe('Experian realtime module', () => {
         { bidder: 'appnexus' }
       ]
     }]
-  };
+  }
   describe('init', () => {
     it('succeeds when params have accountId', () => {
       const initResult = experianRtdSubmodule.init({ params: { accountId: 'ZylatYg' } })
-      expect(initResult).to.be.true;
+      expect(initResult).to.be.true
     })
 
     it('fails when params don\'t have accountId', () => {
       const initResult = experianRtdSubmodule.init({ })
-      expect(initResult).to.be.false;
+      expect(initResult).to.be.false
     })
   })
 
@@ -82,7 +82,7 @@ describe('Experian realtime module', () => {
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
         experianRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig)
         sandbox.assert.calledWithExactly(alterBidsSpy, bidsConfig, moduleConfig)
-        expect(dataEnvelopeSpy.called).to.be.false;
+        expect(dataEnvelopeSpy.called).to.be.false
       })
     })
 
@@ -159,7 +159,7 @@ describe('Experian realtime module', () => {
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
         experianRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
         sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
-        expect(alterBidsSpy.called).to.be.false;
+        expect(alterBidsSpy.called).to.be.false
       })
     })
     describe('when local storage has no data envelope', () => {
@@ -175,7 +175,7 @@ describe('Experian realtime module', () => {
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
         experianRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
         sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
-        expect(alterBidsSpy.called).to.be.false;
+        expect(alterBidsSpy.called).to.be.false
       })
     })
     describe('when local storage has no track and is expired', () => {
@@ -198,7 +198,7 @@ describe('Experian realtime module', () => {
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
         experianRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
         sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
-        expect(alterBidsSpy.called).to.be.false;
+        expect(alterBidsSpy.called).to.be.false
       })
     })
 
@@ -222,7 +222,7 @@ describe('Experian realtime module', () => {
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
         experianRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
         sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
-        expect(alterBidsSpy.called).to.be.false;
+        expect(alterBidsSpy.called).to.be.false
       })
     })
 
@@ -245,8 +245,8 @@ describe('Experian realtime module', () => {
         const dataEnvelopeSpy = sandbox.spy(experianRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(experianRtdObj, 'alterBids')
         experianRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
-        expect(alterBidsSpy.called).to.be.false;
-        expect(dataEnvelopeSpy.called).to.be.false;
+        expect(alterBidsSpy.called).to.be.false
+        expect(dataEnvelopeSpy.called).to.be.false
       })
     })
   })
@@ -283,7 +283,7 @@ describe('Experian realtime module', () => {
           }
         }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic'] } }
-        experianRtdObj.alterBids(bidsConfig, moduleConfig);
+        experianRtdObj.alterBids(bidsConfig, moduleConfig)
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
           pubmatic: {
             experianRtidKey: 'pubmatic-encryption-key-1',
@@ -316,7 +316,7 @@ describe('Experian realtime module', () => {
           }
         }
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
-        experianRtdObj.alterBids(bidsConfig, moduleConfig);
+        experianRtdObj.alterBids(bidsConfig, moduleConfig)
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
           sovrn: {
             experianRtidKey: 'sovrn-encryption-key-1',

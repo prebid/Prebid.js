@@ -1,10 +1,10 @@
-import { isEmptyStr, isStr, isEmpty } from '../utils.js';
-import { PbPromise } from '../utils/promise.js';
+import { isEmptyStr, isStr, isEmpty } from '../utils.js'
+import { PbPromise } from '../utils/promise.js'
 
-export const SUA_SOURCE_UNKNOWN = 0;
-export const SUA_SOURCE_LOW_ENTROPY = 1;
-export const SUA_SOURCE_HIGH_ENTROPY = 2;
-export const SUA_SOURCE_UA_HEADER = 3;
+export const SUA_SOURCE_UNKNOWN = 0
+export const SUA_SOURCE_LOW_ENTROPY = 1
+export const SUA_SOURCE_HIGH_ENTROPY = 2
+export const SUA_SOURCE_UA_HEADER = 3
 
 // "high entropy" (i.e. privacy-sensitive) fields that can be requested from the navigator.
 export const HIGH_ENTROPY_HINTS = [
@@ -24,7 +24,7 @@ export const LOW_ENTROPY_HINTS = [
 /**
  * Returns low entropy UA client hints encoded as an ortb2.6 device.sua object; or null if no UA client hints are available.
  */
-export const getLowEntropySUA = lowEntropySUAAccessor();
+export const getLowEntropySUA = lowEntropySUAAccessor()
 
 /**
  * Returns a promise to high entropy UA client hints encoded as an ortb2.6 device.sua object, or null if no UA client hints are available.
@@ -35,35 +35,35 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
  *
  * @param {Array[String]} hints hints to request, defaults to all (HIGH_ENTROPY_HINTS).
  */
-export const getHighEntropySUA = highEntropySUAAccessor();
+export const getHighEntropySUA = highEntropySUAAccessor()
 
 export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
-  const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null;
+  const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null
   return function () {
-    return sua;
+    return sua
   }
 }
 
 export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
-  const cache = {};
-  const keys = new WeakMap();
+  const cache = {}
+  const keys = new WeakMap()
   return function (hints = HIGH_ENTROPY_HINTS) {
     if (!keys.has(hints)) {
-      const sorted = Array.from(hints);
-      sorted.sort();
-      keys.set(hints, sorted.join('|'));
+      const sorted = Array.from(hints)
+      sorted.sort()
+      keys.set(hints, sorted.join('|'))
     }
-    const key = keys.get(hints);
+    const key = keys.get(hints)
     if (!cache.hasOwnProperty(key)) {
       try {
         cache[key] = uaData.getHighEntropyValues(hints).then(result => {
           return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result))
-        }).catch(() => null);
+        }).catch(() => null)
       } catch (e) {
-        cache[key] = PbPromise.resolve(null);
+        cache[key] = PbPromise.resolve(null)
       }
     }
-    return cache[key];
+    return cache[key]
   }
 }
 
@@ -77,28 +77,28 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
  */
 export function uaDataToSUA(source, uaData) {
   function toBrandVersion(brand, version) {
-    const bv = { brand };
+    const bv = { brand }
     if (isStr(version) && !isEmptyStr(version)) {
-      bv.version = version.split('.');
+      bv.version = version.split('.')
     }
-    return bv;
+    return bv
   }
 
-  const sua = { source };
+  const sua = { source }
   if (uaData.platform) {
-    sua.platform = toBrandVersion(uaData.platform, uaData.platformVersion);
+    sua.platform = toBrandVersion(uaData.platform, uaData.platformVersion)
   }
   if (uaData.fullVersionList || uaData.brands) {
-    sua.browsers = (uaData.fullVersionList || uaData.brands).map(({ brand, version }) => toBrandVersion(brand, version));
+    sua.browsers = (uaData.fullVersionList || uaData.brands).map(({ brand, version }) => toBrandVersion(brand, version))
   }
   if (typeof uaData['mobile'] !== 'undefined') {
-    sua.mobile = uaData.mobile ? 1 : 0;
+    sua.mobile = uaData.mobile ? 1 : 0
   }
   ['model', 'bitness', 'architecture'].forEach(prop => {
-    const value = uaData[prop];
+    const value = uaData[prop]
     if (isStr(value)) {
-      sua[prop] = value;
+      sua[prop] = value
     }
   })
-  return sua;
+  return sua
 }

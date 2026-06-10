@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
-import { parseUrl, buildUrl, isPlainObject, timestamp } from '../src/utils.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js'
+import { getStorageManager } from '../src/storageManager.js'
+import { ajax } from '../src/ajax.js'
+import { parseUrl, buildUrl, isPlainObject, timestamp } from '../src/utils.js'
+import { MODULE_TYPE_UID } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -18,15 +18,15 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'jixieId';
-const STD_JXID_KEY = '_jxx';
-const PBJS_JXID_KEY = 'pbjx_jxx';
-const PBJS_IDLOGSTR_KEY = 'pbjx_idlog';
+const MODULE_NAME = 'jixieId'
+const STD_JXID_KEY = '_jxx'
+const PBJS_JXID_KEY = 'pbjx_jxx'
+const PBJS_IDLOGSTR_KEY = 'pbjx_idlog'
 const TRACKER_EP_FROM_IDMODULE = 'https://traid.jixie.io/api/usersyncpbjs'
-const CK_LIFE_DAYS = 365;
-const ONE_YEAR_IN_MS = 365 * 24 * 60 * 60 * 1000;
+const CK_LIFE_DAYS = 365
+const ONE_YEAR_IN_MS = 365 * 24 * 60 * 60 * 1000
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
 /**
  * remove any property in obj that is null or undefined
@@ -35,7 +35,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 function removeNullProp(obj) {
   for (const key in obj) {
     if (obj[key] === null || obj[key] === undefined) {
-      delete obj[key];
+      delete obj[key]
     }
   }
 }
@@ -45,15 +45,15 @@ function removeNullProp(obj) {
  * @param {object} response
  */
 function persistExtInfo(response) {
-  const o = response;
+  const o = response
   if (o) {
-    const ageMS = (CK_LIFE_DAYS) * 24 * 60 * 60 * 1000;
-    const expireDT = new Date(timestamp() + ageMS).toUTCString();
+    const ageMS = (CK_LIFE_DAYS) * 24 * 60 * 60 * 1000
+    const expireDT = new Date(timestamp() + ageMS).toUTCString()
     if (o.client_id) {
-      storage.setCookie(PBJS_JXID_KEY, o.client_id, expireDT);
+      storage.setCookie(PBJS_JXID_KEY, o.client_id, expireDT)
     }
     if (o.idlog) {
-      storage.setCookie(PBJS_IDLOGSTR_KEY, o.idlog, expireDT);
+      storage.setCookie(PBJS_IDLOGSTR_KEY, o.idlog, expireDT)
     }
   }
 }
@@ -65,27 +65,27 @@ function persistExtInfo(response) {
  * @returns {string} a full url to call by ajax
  */
 function buildIdCallUrl(params, gdprConsent) {
-  const url = parseUrl(params.idendpoint || TRACKER_EP_FROM_IDMODULE);
+  const url = parseUrl(params.idendpoint || TRACKER_EP_FROM_IDMODULE)
 
   if (gdprConsent) {
-    url.search.gdpr_consent = gdprConsent && gdprConsent.gdprApplies ? gdprConsent.consentString : '';
+    url.search.gdpr_consent = gdprConsent && gdprConsent.gdprApplies ? gdprConsent.consentString : ''
   }
   if (params) {
-    if (params.accountid) { url.search.accountid = params.accountid; }
-    url.search.client_id = storage.getCookie(PBJS_JXID_KEY);
-    url.search.idlog = storage.getCookie(PBJS_IDLOGSTR_KEY);
+    if (params.accountid) { url.search.accountid = params.accountid }
+    url.search.client_id = storage.getCookie(PBJS_JXID_KEY)
+    url.search.idlog = storage.getCookie(PBJS_IDLOGSTR_KEY)
     if (Array.isArray(params.pubExtIds)) {
       params.pubExtIds.forEach((extId) => {
         if (extId.ckname) {
-          url.search[extId.pname] = storage.getCookie(extId.ckname);
+          url.search[extId.pname] = storage.getCookie(extId.ckname)
         } else if (extId.lsname) {
-          url.search[extId.pname] = storage.getDataFromLocalStorage(extId.lsname);
+          url.search[extId.pname] = storage.getDataFromLocalStorage(extId.lsname)
         }
-      });
+      })
     }
   }
-  removeNullProp(url.search);
-  return buildUrl(url);
+  removeNullProp(url.search)
+  return buildUrl(url)
 }
 
 /**
@@ -93,7 +93,7 @@ function buildIdCallUrl(params, gdprConsent) {
  * @returns {boolean}
  */
 function pgHasJxEvtScript() {
-  return ((window && window.jixie_o));
+  return ((window && window.jixie_o))
 }
 
 /**
@@ -103,14 +103,14 @@ function pgHasJxEvtScript() {
  * @return {boolean}
  */
 function shouldCallSrv(logstr) {
-  if (!logstr) return true;
-  const now = Date.now();
-  const tsStr = logstr.split('_')[0];
-  let ts = parseInt(tsStr, 10);
+  if (!logstr) return true
+  const now = Date.now()
+  const tsStr = logstr.split('_')[0]
+  let ts = parseInt(tsStr, 10)
   if (!(tsStr.length === 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
-    ts = undefined;
+    ts = undefined
   }
-  return (ts === undefined || (ts && now > ts));
+  return (ts === undefined || (ts && now > ts))
 }
 
 /** @type {Submodule} */
@@ -130,7 +130,7 @@ export const jixieIdSubmodule = {
    * @returns {{jixieId: string} | undefined}
    */
   decode(value) {
-    return (value != null && value.length > 0 ? { jixieId: value } : undefined);
+    return (value != null && value.length > 0 ? { jixieId: value } : undefined)
   },
   /**
    * performs action to obtain id
@@ -142,42 +142,42 @@ export const jixieIdSubmodule = {
    */
   getId(config, gdprConsent) {
     if (!isPlainObject(config.params)) {
-      config.params = {};
+      config.params = {}
     }
-    const options = { method: 'GET', withCredentials: true };
+    const options = { method: 'GET', withCredentials: true }
     const resp = function(callback) {
-      let jxId;
+      let jxId
       // If page has jixie script we use the standard jixie id cookie
       if (pgHasJxEvtScript()) {
-        jxId = storage.getCookie(config.params.stdjxidckname || STD_JXID_KEY);
-        callback(jxId || null);
-        return;
+        jxId = storage.getCookie(config.params.stdjxidckname || STD_JXID_KEY)
+        callback(jxId || null)
+        return
       }
       // Case of no jixie script runs on this site:
-      jxId = storage.getCookie(PBJS_JXID_KEY);
-      const idLogStr = storage.getCookie(PBJS_IDLOGSTR_KEY);
+      jxId = storage.getCookie(PBJS_JXID_KEY)
+      const idLogStr = storage.getCookie(PBJS_IDLOGSTR_KEY)
       if (jxId && !shouldCallSrv(idLogStr)) {
-        callback(jxId);
+        callback(jxId)
       } else {
         const handleResponse = function(responseText, xhr) {
           if (xhr.status === 200) {
-            let response = JSON.parse(responseText);
+            let response = JSON.parse(responseText)
             if (response && response.data && response.data.success) {
               response = response.data
-              persistExtInfo(response);
-              callback(response.client_id);
+              persistExtInfo(response)
+              callback(response.client_id)
               if (response.telcoep) {
-                ajax(response.telcoep, undefined, undefined, options);
+                ajax(response.telcoep, undefined, undefined, options)
               }
             }
           }
-        };
+        }
         ajax(
           buildIdCallUrl(config.params, gdprConsent && gdprConsent.gdpr ? gdprConsent.gdpr : null), handleResponse, undefined, options
-        );
+        )
       }
-    };
-    return { callback: resp };
+    }
+    return { callback: resp }
   },
   eids: {
     'jixieId': {
@@ -185,5 +185,5 @@ export const jixieIdSubmodule = {
       atype: 3
     },
   },
-};
-submodule('userId', jixieIdSubmodule);
+}
+submodule('userId', jixieIdSubmodule)

@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js';
-import { VENDORLESS_GVLID } from '../src/consentHandler.js';
-import { cyrb53Hash, generateUUID, isPlainObject, isStr } from '../src/utils.js';
+import { submodule } from '../src/hook.js'
+import { VENDORLESS_GVLID } from '../src/consentHandler.js'
+import { cyrb53Hash, generateUUID, isPlainObject, isStr } from '../src/utils.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -16,22 +16,22 @@ import { cyrb53Hash, generateUUID, isPlainObject, isStr } from '../src/utils.js'
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'rediadsId';
-const DEFAULT_SOURCE = 'rediads.com';
-const DEFAULT_ATYPE = 1;
-const DEFAULT_EXPIRES_DAYS = 30;
-const DEFAULT_REFRESH_SECONDS = 3600;
+const MODULE_NAME = 'rediadsId'
+const DEFAULT_SOURCE = 'rediads.com'
+const DEFAULT_ATYPE = 1
+const DEFAULT_EXPIRES_DAYS = 30
+const DEFAULT_REFRESH_SECONDS = 3600
 
 function normalizeStoredId(storedId) {
   if (isPlainObject(storedId)) {
-    return storedId;
+    return storedId
   }
 
   if (isStr(storedId)) {
     try {
-      const parsed = JSON.parse(storedId);
+      const parsed = JSON.parse(storedId)
       if (isPlainObject(parsed)) {
-        return parsed;
+        return parsed
       }
     } catch (e) {}
   }
@@ -43,58 +43,58 @@ function getConsentHash(consentData = {}) {
     gpp: consentData.gpp?.gppString || null,
     usp: consentData.usp || null,
     coppa: consentData.coppa === true
-  }))}`;
+  }))}`
 }
 
 function hasTcfPurpose1Consent(gdprConsent) {
   return gdprConsent?.vendorData?.purpose?.consents?.[1] === true ||
-    gdprConsent?.vendorData?.purposeConsents?.[1] === true;
+    gdprConsent?.vendorData?.purposeConsents?.[1] === true
 }
 
 function canWriteStorage(consentData = {}) {
   if (consentData.coppa === true) {
-    return false;
+    return false
   }
 
-  const gdprConsent = consentData.gdpr;
+  const gdprConsent = consentData.gdpr
   if (gdprConsent?.gdprApplies === true) {
     return isStr(gdprConsent?.consentString) &&
       gdprConsent.consentString.length > 0 &&
-      hasTcfPurpose1Consent(gdprConsent);
+      hasTcfPurpose1Consent(gdprConsent)
   }
 
-  return true;
+  return true
 }
 
 function canShareId(consentData = {}) {
   if (consentData.coppa === true) {
-    return false;
+    return false
   }
 
   if (isStr(consentData.usp) && consentData.usp.charAt(2) === 'Y') {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
 function ensureStorageDefaults(config) {
   if (isPlainObject(config?.storage)) {
     if (config.storage.expires == null) {
-      config.storage.expires = DEFAULT_EXPIRES_DAYS;
+      config.storage.expires = DEFAULT_EXPIRES_DAYS
     }
     if (config.storage.refreshInSeconds == null) {
-      config.storage.refreshInSeconds = DEFAULT_REFRESH_SECONDS;
+      config.storage.refreshInSeconds = DEFAULT_REFRESH_SECONDS
     }
   }
 }
 
 function buildStoredId(config, consentData, existingId) {
-  const params = config?.params || {};
-  const source = params.source || DEFAULT_SOURCE;
-  const expiresDays = config?.storage?.expires ?? DEFAULT_EXPIRES_DAYS;
-  const refreshInSeconds = config?.storage?.refreshInSeconds ?? DEFAULT_REFRESH_SECONDS;
-  const now = Date.now();
+  const params = config?.params || {}
+  const source = params.source || DEFAULT_SOURCE
+  const expiresDays = config?.storage?.expires ?? DEFAULT_EXPIRES_DAYS
+  const refreshInSeconds = config?.storage?.refreshInSeconds ?? DEFAULT_REFRESH_SECONDS
+  const now = Date.now()
 
   return {
     id: existingId || `ruid_${generateUUID()}`,
@@ -104,7 +104,7 @@ function buildStoredId(config, consentData, existingId) {
     consentHash: getConsentHash(consentData),
     refreshAfter: now + (refreshInSeconds * 1000),
     expiresAt: now + (expiresDays * 24 * 60 * 60 * 1000)
-  };
+  }
 }
 
 /** @type {Submodule} */
@@ -113,9 +113,9 @@ export const rediadsIdSubmodule = {
   gvlid: VENDORLESS_GVLID,
 
   decode(value) {
-    const storedId = normalizeStoredId(value);
+    const storedId = normalizeStoredId(value)
     if (!isStr(storedId?.id) || storedId.id.length === 0) {
-      return undefined;
+      return undefined
     }
 
     return {
@@ -129,37 +129,37 @@ export const rediadsIdSubmodule = {
           refreshAfter: storedId.refreshAfter
         }
       }
-    };
+    }
   },
 
   getId(config, consentData, storedId) {
-    ensureStorageDefaults(config);
+    ensureStorageDefaults(config)
 
     if (!canWriteStorage(consentData)) {
-      return undefined;
+      return undefined
     }
 
-    const normalized = normalizeStoredId(storedId);
+    const normalized = normalizeStoredId(storedId)
     return {
       id: buildStoredId(config, consentData, normalized?.id)
-    };
+    }
   },
 
   extendId(config, consentData, storedId) {
-    ensureStorageDefaults(config);
+    ensureStorageDefaults(config)
 
     if (!canWriteStorage(consentData)) {
-      return undefined;
+      return undefined
     }
 
-    const normalized = normalizeStoredId(storedId);
+    const normalized = normalizeStoredId(storedId)
     if (!isStr(normalized?.id) || normalized.id.length === 0) {
-      return this.getId(config, consentData, storedId);
+      return this.getId(config, consentData, storedId)
     }
 
     return {
       id: buildStoredId(config, consentData, normalized.id)
-    };
+    }
   },
 
   eids: {
@@ -172,9 +172,9 @@ export const rediadsIdSubmodule = {
             id: value.uid,
             atype: value.atype || DEFAULT_ATYPE
           }]
-        }));
+        }))
     }
   }
-};
+}
 
-submodule('userId', rediadsIdSubmodule);
+submodule('userId', rediadsIdSubmodule)

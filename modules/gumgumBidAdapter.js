@@ -1,13 +1,13 @@
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js'
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js'
 
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js'
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
-import { getDNT } from '../libraries/dnt/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js'
+import { getDNT } from '../libraries/dnt/index.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,70 +18,70 @@ import { getDNT } from '../libraries/dnt/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'gumgum';
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-const ALIAS_BIDDER_CODE = ['gg'];
-const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
+const BIDDER_CODE = 'gumgum'
+const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+const ALIAS_BIDDER_CODE = ['gg']
+const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
-const TIME_TO_LIVE = 60;
-const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO]
+const TIME_TO_LIVE = 60
+const DELAY_REQUEST_TIME = 1800000 // setting to 30 mins
 const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
 
-const invalidRequestIds = {};
-let pageViewId = null;
+const invalidRequestIds = {}
+let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams(topWindowUrl, mosttopLocation) {
-  const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i');
+  const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i')
 
-  let browserParams = {};
-  let topWindow;
-  let topScreen;
-  let topUrl;
+  let browserParams = {}
+  let topWindow
+  let topScreen
+  let topUrl
   let mosttopURL
-  let ggad;
-  let ggdeal;
-  let ns;
+  let ggad
+  let ggdeal
+  let ns
 
   function getNetworkSpeed () {
-    const connection = getConnectionInfo();
-    const Mbps = connection?.downlink ?? connection?.bandwidth;
-    return Mbps ? Math.round(Mbps * 1024) : null;
+    const connection = getConnectionInfo()
+    const Mbps = connection?.downlink ?? connection?.bandwidth
+    return Mbps ? Math.round(Mbps * 1024) : null
   }
 
   function getOgURL () {
-    let ogURL = '';
-    const ogURLSelector = "meta[property='og:url']";
-    const head = document && document.getElementsByTagName('head')[0];
-    const ogURLElement = head.querySelector(ogURLSelector);
-    ogURL = ogURLElement ? ogURLElement.content : null;
-    return ogURL;
+    let ogURL = ''
+    const ogURLSelector = "meta[property='og:url']"
+    const head = document && document.getElementsByTagName('head')[0]
+    const ogURLElement = head.querySelector(ogURLSelector)
+    ogURL = ogURLElement ? ogURLElement.content : null
+    return ogURL
   }
 
   function stripGGParams (url) {
     const params = [
       'ggad',
       'ggdeal'
-    ];
+    ]
 
     return params.reduce((result, param) => {
-      const matches = url.match(paramRegex(param));
-      if (!matches) return result;
-      matches[1] && (result = result.replace(matches[1], ''));
-      matches[3] && (result = result.replace(matches[3], ''));
-      return result;
-    }, url);
+      const matches = url.match(paramRegex(param))
+      if (!matches) return result
+      matches[1] && (result = result.replace(matches[1], ''))
+      matches[3] && (result = result.replace(matches[3], ''))
+      return result
+    }, url)
   }
 
   try {
-    topWindow = global.top;
-    topScreen = topWindow.screen;
-    topUrl = topWindowUrl || '';
-    mosttopURL = mosttopLocation || '';
+    topWindow = global.top
+    topScreen = topWindow.screen
+    topUrl = topWindowUrl || ''
+    mosttopURL = mosttopLocation || ''
   } catch (error) {
-    logError(error);
-    return browserParams;
+    logError(error)
+    return browserParams
   }
 
   browserParams = {
@@ -95,20 +95,20 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
     dpr: getDevicePixelRatio(topWindow),
     jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
-  };
-
-  ns = getNetworkSpeed();
-  if (ns) {
-    browserParams.ns = ns;
   }
 
-  ggad = (topUrl.match(paramRegex('ggad')) || [0, 0, 0])[2];
-  if (ggad) browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad;
+  ns = getNetworkSpeed()
+  if (ns) {
+    browserParams.ns = ns
+  }
 
-  ggdeal = (topUrl.match(paramRegex('ggdeal')) || [0, 0, 0])[2];
-  if (ggdeal) browserParams.ggdeal = ggdeal;
+  ggad = (topUrl.match(paramRegex('ggad')) || [0, 0, 0])[2]
+  if (ggad) browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
 
-  return browserParams;
+  ggdeal = (topUrl.match(paramRegex('ggdeal')) || [0, 0, 0])[2]
+  if (ggdeal) browserParams.ggdeal = ggdeal
+
+  return browserParams
 }
 
 function getWrapperCode(wrapper, data) {
@@ -122,19 +122,19 @@ function getWrapperCode(wrapper, data) {
  * @returns {string}
  */
 function _serializeSupplyChainObj(schainObj) {
-  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`
 
   // order of properties: asi,sid,hp,rid,name,domain
   schainObj.nodes.forEach(node => {
-    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
-    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
-    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
-    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
-    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
-    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`
   })
 
-  return serializedSchain;
+  return serializedSchain
 }
 
 /**
@@ -147,36 +147,36 @@ function isBidRequestValid(bid) {
   const {
     params,
     adUnitCode
-  } = bid;
-  const legacyParamID = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
-  const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
+  } = bid
+  const legacyParamID = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo
+  const id = legacyParamID || params.slot || params.native || params.zone || params.pubID
 
   if (invalidRequestIds[id]) {
-    logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
-    return false;
+    logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`)
+    return false
   }
 
   switch (true) {
-    case !!(params.zone): break;
-    case !!(params.pubId): break;
-    case !!(params.inScreen): break;
-    case !!(params.inScreenPubID): break;
-    case !!(params.inSlot): break;
-    case !!(params.ICV): break;
-    case !!(params.video): break;
-    case !!(params.inVideo): break;
-    case !!(params.videoPubID): break;
+    case !!(params.zone): break
+    case !!(params.pubId): break
+    case !!(params.inScreen): break
+    case !!(params.inScreenPubID): break
+    case !!(params.inSlot): break
+    case !!(params.ICV): break
+    case !!(params.video): break
+    case !!(params.inVideo): break
+    case !!(params.videoPubID): break
     default:
-      logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
-      return false;
+      logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`)
+      return false
   }
 
   if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
-    logWarn('[GumGum] bidfloor must be a Number');
-    return false;
+    logWarn('[GumGum] bidfloor must be a Number')
+    return false
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -200,13 +200,13 @@ function _getVidParams(attributes) {
     playbackmethod,
     playbackend: pbe,
     pos
-  } = attributes;
-  const sizes = parseSizesInput(playerSize);
-  const [viw, vih] = sizes[0] && sizes[0].split('x');
-  let pr = '';
+  } = attributes
+  const sizes = parseSizesInput(playerSize)
+  const [viw, vih] = sizes[0] && sizes[0].split('x')
+  let pr = ''
 
   if (protocols.length) {
-    pr = protocols.join(',');
+    pr = protocols.join(',')
   }
 
   const result = {
@@ -220,25 +220,25 @@ function _getVidParams(attributes) {
     vih,
     skip,
     pbe
-  };
+  }
 
   if (pos !== undefined && pos !== null) {
-    result.vpos = pos;
+    result.vpos = pos
   }
   if (plcmt !== undefined && plcmt !== null) {
-    result.vplcmt = plcmt;
+    result.vplcmt = plcmt
   }
   if (api && api.length) {
-    result.api = api.join(',');
+    result.api = api.join(',')
   }
   if (mimes && mimes.length) {
-    result.mimes = mimes.join(',');
+    result.mimes = mimes.join(',')
   }
   if (playbackmethod && playbackmethod.length) {
-    result.pbm = playbackmethod.join(',');
+    result.pbm = playbackmethod.join(',')
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -250,25 +250,25 @@ function _getVidParams(attributes) {
  * @returns {Object} An object containing the calculated bid floor and its currency.
  */
 function _getFloor(mediaTypes, staticBidFloor, bid) {
-  const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
-  const bidFloor = { floor: 0, currency: 'USD' };
+  const curMediaType = Object.keys(mediaTypes)[0] || 'banner'
+  const bidFloor = { floor: 0, currency: 'USD' }
 
   if (typeof bid.getFloor === 'function') {
     const { currency, floor } = bid.getFloor({
       mediaType: curMediaType,
       size: '*'
-    }) || {};
-    floor && (bidFloor.floor = floor);
-    currency && (bidFloor.currency = currency);
+    }) || {}
+    floor && (bidFloor.floor = floor)
+    currency && (bidFloor.currency = currency)
 
     if (staticBidFloor && floor && currency === 'USD') {
-      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
+      bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor))
     }
   } else if (staticBidFloor) {
     bidFloor.floor = staticBidFloor
   }
 
-  return bidFloor;
+  return bidFloor
 }
 
 /**
@@ -277,7 +277,7 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
  * @returns {Object} Device data
  */
 function _getDeviceData(ortb2Data) {
-  const _device = deepAccess(ortb2Data, 'device') || {};
+  const _device = deepAccess(ortb2Data, 'device') || {}
 
   // set device data params from ortb2
   const _deviceRequestParams = {
@@ -298,16 +298,16 @@ function _getDeviceData(ortb2Data) {
     lmt: _device.lmt,
     ifa: _device.lmt !== 1 ? _device.ifa : undefined,
     foddid: _device?.ext?.fod?.deviceId,
-  };
+  }
 
   // return device data params with only non-empty values
   return Object.keys(_deviceRequestParams)
     .reduce((r, key) => {
       if (_deviceRequestParams[key] !== undefined) {
-        r[key] = _deviceRequestParams[key];
+        r[key] = _deviceRequestParams[key]
       }
-      return r;
-    }, {});
+      return r
+    }, {})
 }
 
 /**
@@ -318,68 +318,68 @@ function _getDeviceData(ortb2Data) {
  */
 function _getContentParams(ortb2Data) {
   // Check site.content first, then app.content
-  const siteContent = deepAccess(ortb2Data, 'site.content');
-  const appContent = deepAccess(ortb2Data, 'app.content');
-  const content = siteContent || appContent;
+  const siteContent = deepAccess(ortb2Data, 'site.content')
+  const appContent = deepAccess(ortb2Data, 'app.content')
+  const content = siteContent || appContent
 
   if (!content) {
-    return {};
+    return {}
   }
 
-  const contentParams = {};
-  contentParams.itype = siteContent ? 'site' : 'app';
+  const contentParams = {}
+  contentParams.itype = siteContent ? 'site' : 'app'
 
   // Basic content fields
-  if (content.id) contentParams.cid = content.id;
-  if (content.episode !== undefined && content.episode !== null) contentParams.cepisode = content.episode;
-  if (content.title) contentParams.ctitle = content.title;
-  if (content.series) contentParams.cseries = content.series;
-  if (content.season) contentParams.cseason = content.season;
-  if (content.genre) contentParams.cgenre = content.genre;
-  if (content.contentrating) contentParams.crating = content.contentrating;
-  if (content.userrating) contentParams.cur = content.userrating;
-  if (content.context !== undefined && content.context !== null) contentParams.cctx = content.context;
-  if (content.livestream !== undefined && content.livestream !== null) contentParams.clive = content.livestream;
-  if (content.len !== undefined && content.len !== null) contentParams.clen = content.len;
-  if (content.language) contentParams.clang = content.language;
-  if (content.url) contentParams.curl = content.url;
-  if (content.cattax !== undefined && content.cattax !== null) contentParams.cattax = content.cattax;
-  if (content.prodq !== undefined && content.prodq !== null) contentParams.cprodq = content.prodq;
-  if (content.qagmediarating !== undefined && content.qagmediarating !== null) contentParams.cqag = content.qagmediarating;
+  if (content.id) contentParams.cid = content.id
+  if (content.episode !== undefined && content.episode !== null) contentParams.cepisode = content.episode
+  if (content.title) contentParams.ctitle = content.title
+  if (content.series) contentParams.cseries = content.series
+  if (content.season) contentParams.cseason = content.season
+  if (content.genre) contentParams.cgenre = content.genre
+  if (content.contentrating) contentParams.crating = content.contentrating
+  if (content.userrating) contentParams.cur = content.userrating
+  if (content.context !== undefined && content.context !== null) contentParams.cctx = content.context
+  if (content.livestream !== undefined && content.livestream !== null) contentParams.clive = content.livestream
+  if (content.len !== undefined && content.len !== null) contentParams.clen = content.len
+  if (content.language) contentParams.clang = content.language
+  if (content.url) contentParams.curl = content.url
+  if (content.cattax !== undefined && content.cattax !== null) contentParams.cattax = content.cattax
+  if (content.prodq !== undefined && content.prodq !== null) contentParams.cprodq = content.prodq
+  if (content.qagmediarating !== undefined && content.qagmediarating !== null) contentParams.cqag = content.qagmediarating
 
   // Handle keywords - can be string or array
   if (content.keywords) {
     if (Array.isArray(content.keywords)) {
-      contentParams.ckw = content.keywords.join(',');
+      contentParams.ckw = content.keywords.join(',')
     } else if (typeof content.keywords === 'string') {
-      contentParams.ckw = content.keywords;
+      contentParams.ckw = content.keywords
     }
   }
 
   // Handle cat array
   if (content.cat && Array.isArray(content.cat) && content.cat.length > 0) {
-    contentParams.ccat = content.cat.join(',');
+    contentParams.ccat = content.cat.join(',')
   }
 
   // Handle producer fields
   if (content.producer) {
-    if (content.producer.id) contentParams.cpid = content.producer.id;
-    if (content.producer.name) contentParams.cpname = content.producer.name;
+    if (content.producer.id) contentParams.cpid = content.producer.id
+    if (content.producer.name) contentParams.cpname = content.producer.name
   }
 
   // Channel fields
   if (content.channel) {
-    if (content.channel.id) contentParams.cchannelid = content.channel.id;
-    if (content.channel.name) contentParams.cchannel = content.channel.name;
-    if (content.channel.domain) contentParams.cchanneldomain = content.channel.domain;
+    if (content.channel.id) contentParams.cchannelid = content.channel.id
+    if (content.channel.name) contentParams.cchannel = content.channel.name
+    if (content.channel.domain) contentParams.cchanneldomain = content.channel.domain
   }
 
   // Network fields
   if (content.network) {
-    if (content.network.name) contentParams.cnetwork = content.network.name;
+    if (content.network.name) contentParams.cnetwork = content.network.name
   }
 
-  return contentParams;
+  return contentParams
 }
 
 /**
@@ -388,70 +388,70 @@ function _getContentParams(ortb2Data) {
  * @returns {number[]}
  */
 function getGreatestDimensions(sizes) {
-  let maxw = 0;
-  let maxh = 0;
-  let greatestVal = 0;
+  let maxw = 0
+  let maxh = 0
+  let greatestVal = 0
   sizes.forEach(bannerSize => {
-    const [width, height] = bannerSize;
-    const greaterSide = width > height ? width : height;
+    const [width, height] = bannerSize
+    const greaterSide = width > height ? width : height
     if ((greaterSide > greatestVal) || (greaterSide === greatestVal && width >= maxw && height >= maxh)) {
-      greatestVal = greaterSide;
-      maxw = width;
-      maxh = height;
+      greatestVal = greaterSide
+      maxw = width
+      maxh = height
     }
-  });
+  })
 
-  return [maxw, maxh];
+  return [maxw, maxh]
 }
 
 function getFirstUid(eid) {
-  if (!eid || !Array.isArray(eid.uids)) return null;
-  return eid.uids.find(uid => uid && uid.id);
+  if (!eid || !Array.isArray(eid.uids)) return null
+  return eid.uids.find(uid => uid && uid.id)
 }
 
 function getUserEids(bidRequest, bidderRequest) {
-  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids');
+  const bidderRequestEids = deepAccess(bidderRequest, 'ortb2.user.ext.eids')
   if (Array.isArray(bidderRequestEids) && bidderRequestEids.length) {
-    return bidderRequestEids;
+    return bidderRequestEids
   }
-  const bidEids = deepAccess(bidRequest, 'userIdAsEids');
+  const bidEids = deepAccess(bidRequest, 'userIdAsEids')
   if (Array.isArray(bidEids) && bidEids.length) {
-    return bidEids;
+    return bidEids
   }
-  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids');
+  const bidUserEids = deepAccess(bidRequest, 'user.ext.eids')
   if (Array.isArray(bidUserEids) && bidUserEids.length) {
-    return bidUserEids;
+    return bidUserEids
   }
-  return [];
+  return []
 }
 
 function isPubProvidedIdEid(eid) {
-  const source = (eid && eid.source) ? eid.source.toLowerCase() : '';
-  if (!source || !pubProvidedIdSources.includes(source) || !Array.isArray(eid.uids)) return false;
-  return eid.uids.some(uid => uid && uid.ext && uid.ext.stype);
+  const source = (eid && eid.source) ? eid.source.toLowerCase() : ''
+  if (!source || !pubProvidedIdSources.includes(source) || !Array.isArray(eid.uids)) return false
+  return eid.uids.some(uid => uid && uid.ext && uid.ext.stype)
 }
 
 function getEidsFromEidsArray(eids) {
   return (Array.isArray(eids) ? eids : []).reduce((ids, eid) => {
-    const source = (eid.source || '').toLowerCase();
+    const source = (eid.source || '').toLowerCase()
     if (source === 'uidapi.com') {
-      const uid = getFirstUid(eid);
+      const uid = getFirstUid(eid)
       if (uid) {
-        ids.uid2 = uid.id;
+        ids.uid2 = uid.id
       }
     } else if (source === 'liveramp.com') {
-      const uid = getFirstUid(eid);
+      const uid = getFirstUid(eid)
       if (uid) {
-        ids.idl_env = uid.id;
+        ids.idl_env = uid.id
       }
     } else if (source === 'adserver.org' && Array.isArray(eid.uids)) {
-      const tdidUid = eid.uids.find(uid => uid && uid.id && uid.ext && uid.ext.rtiPartner === 'TDID');
+      const tdidUid = eid.uids.find(uid => uid && uid.id && uid.ext && uid.ext.rtiPartner === 'TDID')
       if (tdidUid) {
-        ids.tdid = tdidUid.id;
+        ids.tdid = tdidUid.id
       }
     }
-    return ids;
-  }, {});
+    return ids
+  }, {})
 }
 
 /**
@@ -461,13 +461,13 @@ function getEidsFromEidsArray(eids) {
  * @returns {Object[]} An array of server requests.
  */
 function buildRequests(validBidRequests, bidderRequest) {
-  const bids = [];
-  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
-  const uspConsent = bidderRequest && bidderRequest.uspConsent;
-  const gppConsent = bidderRequest && bidderRequest.gppConsent;
+  const bids = []
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent
+  const uspConsent = bidderRequest && bidderRequest.uspConsent
+  const gppConsent = bidderRequest && bidderRequest.gppConsent
   const timeout = bidderRequest && bidderRequest.timeout
-  const coppa = config.getConfig('coppa') === true ? 1 : 0;
-  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
+  const coppa = config.getConfig('coppa') === true ? 1 : 0
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page
   const mosttopLocation = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.topmostLocation
   _each(validBidRequests, bidRequest => {
     const {
@@ -476,120 +476,120 @@ function buildRequests(validBidRequests, bidderRequest) {
       params = {},
       ortb2Imp,
       adUnitCode = ''
-    } = bidRequest;
-    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
-    const userEids = getUserEids(bidRequest, bidderRequest);
-    const eids = getEidsFromEidsArray(userEids);
-    const gpid = deepAccess(ortb2Imp, 'ext.gpid');
-    let sizes = [1, 1];
-    let data = {};
-    data.displaymanager = 'Prebid.js - gumgum';
-    data.displaymanagerver = '$prebid.version$';
-    const date = new Date();
-    const lt = date.getTime();
-    const to = date.getTimezoneOffset();
+    } = bidRequest
+    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest)
+    const userEids = getUserEids(bidRequest, bidderRequest)
+    const eids = getEidsFromEidsArray(userEids)
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid')
+    let sizes = [1, 1]
+    let data = {}
+    data.displaymanager = 'Prebid.js - gumgum'
+    data.displaymanagerver = '$prebid.version$'
+    const date = new Date()
+    const lt = date.getTime()
+    const to = date.getTimezoneOffset()
 
     // ADTS-174 Removed unnecessary checks to fix failing test
-    data.lt = lt;
-    data.to = to;
+    data.lt = lt
+    data.to = to
     function jsoStringifynWithMaxLength(data, maxLength) {
-      let jsonString = JSON.stringify(data);
+      let jsonString = JSON.stringify(data)
       if (jsonString.length <= maxLength) {
-        return jsonString;
+        return jsonString
       } else {
-        const truncatedData = data.slice(0, Math.floor(data.length * (maxLength / jsonString.length)));
-        jsonString = JSON.stringify(truncatedData);
-        return jsonString;
+        const truncatedData = data.slice(0, Math.floor(data.length * (maxLength / jsonString.length)))
+        jsonString = JSON.stringify(truncatedData)
+        return jsonString
       }
     }
     // Send filtered pubProvidedId's
     if (userEids.length) {
-      const filteredData = userEids.filter(isPubProvidedIdEid);
-      const maxLength = 1800; // replace this with your desired maximum length
-      const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
+      const filteredData = userEids.filter(isPubProvidedIdEid)
+      const maxLength = 1800 // replace this with your desired maximum length
+      const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength)
       if (filteredData.length) {
         data.pubProvidedId = truncatedJsonString
       }
     }
     // ADJS-1286 Read id5 id linktype field
-    const id5Eid = userEids.find(eid => (eid.source || '').toLowerCase() === 'id5-sync.com');
-    const id5Uid = getFirstUid(id5Eid);
+    const id5Eid = userEids.find(eid => (eid.source || '').toLowerCase() === 'id5-sync.com')
+    const id5Uid = getFirstUid(id5Eid)
     if (id5Uid && id5Uid.ext) {
       data.id5Id = id5Uid.id || null
       data.id5IdLinkType = id5Uid.ext.linkType || null
     }
     // ADTS-169 add adUnitCode to requests
-    if (adUnitCode) data.aun = adUnitCode;
+    if (adUnitCode) data.aun = adUnitCode
 
     // ADTS-134 Retrieve ID envelopes
-    for (const eid in eids) data[eid] = eids[eid];
+    for (const eid in eids) data[eid] = eids[eid]
 
     if (mediaTypes.native) {
-      sizes = [1, 1];
+      sizes = [1, 1]
     } else if (mediaTypes.banner) {
-      sizes = mediaTypes.banner.sizes;
+      sizes = mediaTypes.banner.sizes
     } else if (mediaTypes.video) {
-      sizes = mediaTypes.video.playerSize;
-      data = _getVidParams(mediaTypes.video);
+      sizes = mediaTypes.video.playerSize
+      data = _getVidParams(mediaTypes.video)
     }
 
     // ADJS-1024 & ADSS-1297 & ADTS-175
-    gpid && (data.gpid = gpid);
+    gpid && (data.gpid = gpid)
 
     if (pageViewId) {
-      data.pv = pageViewId;
+      data.pv = pageViewId
     }
 
     if (floor) {
-      data.fp = floor;
-      data.fpc = currency;
+      data.fp = floor
+      data.fpc = currency
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
-      setIrisId(data, bidderRequest.ortb2.site, params);
+      setIrisId(data, bidderRequest.ortb2.site, params)
     }
     // Extract content metadata from ortb2
-    const contentParams = _getContentParams(bidderRequest?.ortb2);
-    Object.assign(data, contentParams);
+    const contentParams = _getContentParams(bidderRequest?.ortb2)
+    Object.assign(data, contentParams)
     if (params.iriscat && typeof params.iriscat === 'string') {
-      data.iriscat = params.iriscat;
+      data.iriscat = params.iriscat
     }
     if (params.zone || params.pubId) {
-      params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
+      params.zone ? (data.t = params.zone) : (data.pubId = params.pubId)
 
-      data.pi = 2; // inscreen
+      data.pi = 2 // inscreen
       // override pi if the following is found
       if (params.slot) {
-        const [maxw, maxh] = getGreatestDimensions(sizes);
-        data.maxw = maxw;
-        data.maxh = maxh;
-        data.si = params.slot;
-        data.pi = 3;
-        data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+        const [maxw, maxh] = getGreatestDimensions(sizes)
+        data.maxw = maxw
+        data.maxh = maxh
+        data.si = params.slot
+        data.pi = 3
+        data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '')
       } else if (mediaTypes.native) {
-        data.pi = 5;
+        data.pi = 5
         if (mediaTypes.native.ortb) {
-          data.nat = JSON.stringify(mediaTypes.native.ortb);
+          data.nat = JSON.stringify(mediaTypes.native.ortb)
         }
-        if (params.native) { data.ni = params.native; }
+        if (params.native) { data.ni = params.native }
       } else if (params.native) {
-        data.ni = params.native;
-        data.pi = 5;
+        data.ni = params.native
+        data.pi = 5
       } else if (mediaTypes.video) {
-        data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+        data.pi = mediaTypes.video.linearity === 2 ? 6 : 7 // invideo : video
       } else if (params.product && params.product.toLowerCase() === 'skins') {
-        data.pi = 8;
+        data.pi = 8
       }
     } else { // legacy params
-      data = { ...data, ...handleLegacyParams(params, sizes) };
+      data = { ...data, ...handleLegacyParams(params, sizes) }
     }
     if (gdprConsent) {
-      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0
     }
     if (data.gdprApplies) {
-      data.gdprConsent = gdprConsent.consentString;
+      data.gdprConsent = gdprConsent.consentString
     }
     if (uspConsent) {
-      data.uspConsent = uspConsent;
+      data.uspConsent = uspConsent
     }
     if (gppConsent) {
       data.gppString = bidderRequest.gppConsent.gppString ? bidderRequest.gppConsent.gppString : ''
@@ -598,24 +598,24 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.gppString = bidderRequest.ortb2.regs.gpp
       data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
     }
-    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa')
     if (dsa) {
       data.dsa = JSON.stringify(dsa)
     }
     if (coppa) {
-      data.coppa = coppa;
+      data.coppa = coppa
     }
-    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    const schain = bidRequest?.ortb2?.source?.ext?.schain
     if (schain && schain.nodes) {
-      data.schain = _serializeSupplyChainObj(schain);
+      data.schain = _serializeSupplyChainObj(schain)
     }
-    const tId = deepAccess(ortb2Imp, 'ext.tid') || deepAccess(bidderRequest, 'ortb2.source.tid') || '';
+    const tId = deepAccess(ortb2Imp, 'ext.tid') || deepAccess(bidderRequest, 'ortb2.source.tid') || ''
     data.tId = tId
     Object.assign(
       data,
       _getBrowserParams(topWindowUrl, mosttopLocation),
       _getDeviceData(bidderRequest?.ortb2),
-    );
+    )
 
     bids.push({
       id: bidId,
@@ -627,67 +627,67 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: BID_ENDPOINT,
       method: 'GET',
       data
-    });
-  });
-  return bids;
+    })
+  })
+  return bids
 }
 export function getCids(site) {
   if (site.content && Array.isArray(site.content.data)) {
     for (const dataItem of site.content.data) {
       if (typeof dataItem?.name === 'string' && (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv'))) {
-        return Array.isArray(dataItem.ext?.cids) ? dataItem.ext.cids.join(',') : '';
+        return Array.isArray(dataItem.ext?.cids) ? dataItem.ext.cids.join(',') : ''
       }
     }
   }
-  return null;
+  return null
 }
 export function setIrisId(data, site, params) {
-  const irisID = getCids(site);
+  const irisID = getCids(site)
   if (irisID) {
-    data.irisid = irisID;
+    data.irisid = irisID
   } else {
     // Just adding this chechk for safty and if needed  we can remove
     if (params.irisid && typeof params.irisid === 'string') {
-      data.irisid = params.irisid;
+      data.irisid = params.irisid
     }
   }
 }
 
 function handleLegacyParams(params, sizes) {
-  const data = {};
+  const data = {}
   if (params.inScreenPubID) {
-    data.pubId = params.inScreenPubID;
-    data.pi = 2;
+    data.pubId = params.inScreenPubID
+    data.pi = 2
   }
   if (params.inScreen) {
-    data.t = params.inScreen;
-    data.pi = 2;
+    data.t = params.inScreen
+    data.pi = 2
   }
   if (params.inSlot) {
-    const [maxw, maxh] = getGreatestDimensions(sizes);
-    data.maxw = maxw;
-    data.maxh = maxh;
-    data.si = params.inSlot;
-    data.pi = 3;
-    data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '');
+    const [maxw, maxh] = getGreatestDimensions(sizes)
+    data.maxw = maxw
+    data.maxh = maxh
+    data.si = params.inSlot
+    data.pi = 3
+    data.bf = sizes.reduce((acc, curSlotDim) => `${acc}${acc && ','}${curSlotDim[0]}x${curSlotDim[1]}`, '')
   }
   if (params.ICV) {
-    data.ni = params.ICV;
-    data.pi = 5;
+    data.ni = params.ICV
+    data.pi = 5
   }
   if (params.videoPubID) {
-    data.pubId = params.videoPubID;
-    data.pi = 7;
+    data.pubId = params.videoPubID
+    data.pi = 7
   }
   if (params.video) {
-    data.t = params.video;
-    data.pi = 7;
+    data.t = params.video
+    data.pi = 7
   }
   if (params.inVideo) {
-    data.t = params.inVideo;
-    data.pi = 6;
+    data.t = params.inVideo
+    data.pi = 6
   }
-  return data;
+  return data
 }
 
 /**
@@ -701,15 +701,15 @@ function interpretResponse(serverResponse, bidRequest) {
   const serverResponseBody = serverResponse.body
 
   if (!serverResponseBody || serverResponseBody.err) {
-    const data = bidRequest.data || {};
-    const id = data.si || data.ni || data.t || data.pubId;
-    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
-    invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
+    const data = bidRequest.data || {}
+    const id = data.si || data.ni || data.t || data.pubId
+    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME
+    invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() }
 
     setTimeout(() => {
-      !!invalidRequestIds[id] && delete invalidRequestIds[id];
-    }, delayTime);
-    logWarn(`[GumGum] Please check the implementation for ${id}`);
+      !!invalidRequestIds[id] && delete invalidRequestIds[id]
+    }, delayTime)
+    logWarn(`[GumGum] Please check the implementation for ${id}`)
   }
 
   const defaultResponse = {
@@ -748,32 +748,32 @@ function interpretResponse(serverResponse, bidRequest) {
       adomain: advertiserDomains,
       mediaType: type
     }
-  } = Object.assign(defaultResponse, serverResponseBody);
-  const data = bidRequest.data || {};
-  const product = data.pi;
+  } = Object.assign(defaultResponse, serverResponseBody)
+  const data = bidRequest.data || {}
+  const product = data.pi
   const mediaType = (product === 6 || product === 7) ? VIDEO
-    : (product === 5) ? NATIVE : BANNER;
-  const isTestUnit = (product === 3 && data.si === 9);
+    : (product === 5) ? NATIVE : BANNER
+  const isTestUnit = (product === 3 && data.si === 9)
   const metaData = {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
-  };
-  let sizes = parseSizesInput(bidRequest.sizes);
+  }
+  let sizes = parseSizesInput(bidRequest.sizes)
   if (maxw && maxh) {
-    sizes = [`${maxw}x${maxh}`];
+    sizes = [`${maxw}x${maxh}`]
   } else if (product === 5 && sizes.includes('1x1')) {
-    sizes = ['1x1'];
+    sizes = ['1x1']
   // added logic for in-slot multi-szie
   } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [width, height] = current;
-      if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
+      const [width, height] = current
+      if (responseWidth === width && responseHeight === height) result.push(current.join('x'))
       return result
-    }, [])) || [];
+    }, [])) || []
     sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
-  const [width, height] = sizes[0].split('x');
+  const [width, height] = sizes[0].split('x')
 
   if (jcsi) {
     serverResponseBody.jcsi = JCSI
@@ -796,18 +796,18 @@ function interpretResponse(serverResponse, bidRequest) {
       ttl: TIME_TO_LIVE,
       width,
       meta: metaData
-    };
+    }
 
     if (mediaType === NATIVE && markup) {
       try {
-        const nativeResponse = JSON.parse(markup);
-        bid.native = { ortb: nativeResponse.native || nativeResponse };
+        const nativeResponse = JSON.parse(markup)
+        bid.native = { ortb: nativeResponse.native || nativeResponse }
       } catch (e) {
-        logError('[GumGum] Error parsing native ADM:', e);
+        logError('[GumGum] Error parsing native ADM:', e)
       }
     }
 
-    bidResponses.push(bid);
+    bidResponses.push(bid)
   }
   return bidResponses
 }
@@ -832,7 +832,7 @@ function getUserSyncs(syncOptions, serverResponses) {
       url: sync.u
     }
   })
-  return syncs;
+  return syncs
 }
 
 export const spec = {

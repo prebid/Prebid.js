@@ -1,7 +1,7 @@
-import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -9,39 +9,39 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
-const BIDDER_CODE = 'sublime';
-const BIDDER_GVLID = 114;
-const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
-const DEFAULT_CURRENCY = 'EUR';
-const DEFAULT_PROTOCOL = 'https';
-const DEFAULT_TTL = 600;
-const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.8.0';
+const BIDDER_CODE = 'sublime'
+const BIDDER_GVLID = 114
+const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com'
+const DEFAULT_CURRENCY = 'EUR'
+const DEFAULT_PROTOCOL = 'https'
+const DEFAULT_TTL = 600
+const SUBLIME_ANTENNA = 'antenna.ayads.co'
+const SUBLIME_VERSION = '0.8.0'
 
 /**
  * Identify the current device type
  * @returns {string}
  */
 function detectDevice() {
-  const isMobile = /(?:phone|windows\s+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windows\s+ce|opera mini|avantgo|docomo)/i;
+  const isMobile = /(?:phone|windows\s+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windows\s+ce|opera mini|avantgo|docomo)/i
 
-  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\d+|meego|silk)(?! .+? mobile))/i;
+  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\d+|meego|silk)(?! .+? mobile))/i
 
   return (
     (isMobile.test(navigator.userAgent) && 'm') || // mobile
     (isTablet.test(navigator.userAgent) && 't') || // tablet
     'd' // desktop
-  );
+  )
 }
 
-const UUID_V4_RE = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
+const UUID_V4_RE = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
 /**
  * Checks whether a notifyId is well-formed
  * @param {*} value
  * @returns {boolean}
  */
 function isValidNotifyId(value) {
-  return UUID_V4_RE.test(value);
+  return UUID_V4_RE.test(value)
 }
 
 /**
@@ -50,7 +50,7 @@ function isValidNotifyId(value) {
  * @param {Object=} obj
  */
 export function log(msg, obj) {
-  logInfo('SublimeBidAdapter - ' + msg, obj);
+  logInfo('SublimeBidAdapter - ' + msg, obj)
 }
 
 // Default state
@@ -59,15 +59,15 @@ export const state = {
   transactionId: '',
   notifyId: '',
   timeout: config.getConfig('bidderTimeout'),
-};
+}
 
 /**
  * Set a new state
  * @param {Object} value
  */
 export function setState(value) {
-  Object.assign(state, value);
-  log('State has been updated :', state);
+  Object.assign(state, value)
+  log('State has been updated :', state)
 }
 
 /**
@@ -76,18 +76,18 @@ export function setState(value) {
  * @return {string}
  */
 function getNotifyId(params) {
-  const sublime = window.sublime = window.sublime || {};
+  const sublime = window.sublime = window.sublime || {}
 
-  let notifyId = params.notifyId || sublime.notifyId;
+  let notifyId = params.notifyId || sublime.notifyId
   if (!notifyId) {
-    notifyId = generateUUID();
-    log('generating a notifyId', notifyId);
+    notifyId = generateUUID()
+    log('generating a notifyId', notifyId)
   }
   if (!sublime.notifyId) {
-    sublime.notifyId = notifyId;
+    sublime.notifyId = notifyId
   }
 
-  return notifyId;
+  return notifyId
 }
 
 /**
@@ -96,7 +96,7 @@ function getNotifyId(params) {
  * @param {string} [sspName] - The optionnal name of the AD provider
  */
 export function sendEvent(eventName, sspName) {
-  const ts = Date.now();
+  const ts = Date.now()
   const eventObject = {
     t: ts,
     tse: ts,
@@ -109,16 +109,16 @@ export function sendEvent(eventName, sspName) {
     pubtimeout: state.timeout,
     pubpbv: '$prebid.version$',
     device: detectDevice(),
-  };
-
-  if (eventName === 'bidwon') {
-    eventObject.sspname = sspName || '';
   }
 
-  log('Sending pixel for event: ' + eventName, eventObject);
+  if (eventName === 'bidwon') {
+    eventObject.sspname = sspName || ''
+  }
 
-  const queryString = formatQS(eventObject);
-  triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
+  log('Sending pixel for event: ' + eventName, eventObject)
+
+  const queryString = formatQS(eventObject)
+  triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString)
 }
 
 /**
@@ -128,17 +128,17 @@ export function sendEvent(eventName, sspName) {
  * @return {Boolean} True if this is a valid bid, and false otherwise.
  */
 function isBidRequestValid(bid) {
-  const notifyId = getNotifyId(bid.params);
+  const notifyId = getNotifyId(bid.params)
   if (!isValidNotifyId(notifyId)) {
-    log(`invalid notifyId format, got "${notifyId}"`);
-    return false;
+    log(`invalid notifyId format, got "${notifyId}"`)
+    return false
   }
   if (notifyId !== window.sublime.notifyId) {
-    log(`notifyId mismatch: params [${bid.params.notifyId}] / sublime [${window.sublime.notifyId}]`);
-    return false;
+    log(`notifyId mismatch: params [${bid.params.notifyId}] / sublime [${window.sublime.notifyId}]`)
+    return false
   }
 
-  return !!Number(bid.params.zoneId);
+  return !!Number(bid.params.zoneId)
 }
 
 /**
@@ -155,34 +155,34 @@ function buildRequests(validBidRequests, bidderRequest) {
     prebidVersion: '$prebid.version$',
     currencyCode: getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY,
     timeout: (typeof bidderRequest === 'object' && !!bidderRequest) ? bidderRequest.timeout : config.getConfig('bidderTimeout'),
-  };
+  }
 
-  setState({ timeout: commonPayload.timeout });
+  setState({ timeout: commonPayload.timeout })
 
   // RefererInfo
   if (bidderRequest && bidderRequest.refererInfo) {
     // TODO: is 'topmostLocation' the right value here?
-    commonPayload.referer = bidderRequest.refererInfo.topmostLocation;
-    commonPayload.numIframes = bidderRequest.refererInfo.numIframes;
+    commonPayload.referer = bidderRequest.refererInfo.topmostLocation
+    commonPayload.numIframes = bidderRequest.refererInfo.numIframes
   }
   // GDPR handling
   if (bidderRequest && bidderRequest.gdprConsent) {
-    commonPayload.gdprConsent = bidderRequest.gdprConsent.consentString;
-    commonPayload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+    commonPayload.gdprConsent = bidderRequest.gdprConsent.consentString
+    commonPayload.gdpr = bidderRequest.gdprConsent.gdprApplies // we're handling the undefined case server side
   }
 
   return validBidRequests.map(bid => {
-    const bidHost = bid.params.bidHost || DEFAULT_BID_HOST;
-    const protocol = bid.params.protocol || DEFAULT_PROTOCOL;
+    const bidHost = bid.params.bidHost || DEFAULT_BID_HOST
+    const protocol = bid.params.protocol || DEFAULT_PROTOCOL
 
-    const notifyId = getNotifyId(bid.params);
+    const notifyId = getNotifyId(bid.params)
 
     setState({
       transactionId: bid.transactionId,
       notifyId,
       zoneId: bid.params.zoneId,
       debug: bid.params.debug || false,
-    });
+    })
 
     const bidPayload = {
       adUnitCode: bid.adUnitCode,
@@ -199,9 +199,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       transactionId: bid.transactionId,
       notifyId,
       zoneId: bid.params.zoneId,
-    };
+    }
 
-    const payload = Object.assign({}, commonPayload, bidPayload);
+    const payload = Object.assign({}, commonPayload, bidPayload)
 
     return {
       method: 'POST',
@@ -212,7 +212,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         withCredentials: false
       },
     }
-  });
+  })
 }
 
 /**
@@ -223,19 +223,19 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 function interpretResponse(serverResponse, bidRequest) {
-  const bidResponses = [];
-  const response = serverResponse.body;
+  const bidResponses = []
+  const response = serverResponse.body
 
   if (response) {
     if (response.timeout || !response.ad || /<!--\s+No\s+ad\s+-->/gmi.test(response.ad)) {
-      return bidResponses;
+      return bidResponses
     }
 
     // Setting our returned sizes object to default values
     let returnedSizes = {
       width: 1800,
       height: 1000
-    };
+    }
 
     // Verifying Banner sizes
     if (bidRequest && bidRequest.data && bidRequest.data.w === 1 && bidRequest.data.h === 1) {
@@ -243,7 +243,7 @@ function interpretResponse(serverResponse, bidRequest) {
       returnedSizes = {
         width: 1,
         height: 1
-      };
+      }
     }
 
     const bidResponse = {
@@ -259,18 +259,18 @@ function interpretResponse(serverResponse, bidRequest) {
       ad: response.ad,
       pbav: SUBLIME_VERSION,
       sspname: response.sspname || null
-    };
+    }
 
     // We don't support advertiserDomains atm
     if (response.advertiserDomains) {
       // Creating a stub for Prebid.js 5.0 compliance
-      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] });
+      bidResponse.meta = Object.assign({}, bidResponse.meta, { advertiserDomains: [] })
     }
 
-    bidResponses.push(bidResponse);
+    bidResponses.push(bidResponse)
   }
 
-  return bidResponses;
+  return bidResponses
 }
 
 /**
@@ -278,8 +278,8 @@ function interpretResponse(serverResponse, bidRequest) {
  * @param {Object} bid
  */
 function onBidWon(bid) {
-  log('Bid won', bid);
-  sendEvent('bidwon', bid.sspname);
+  log('Bid won', bid)
+  sendEvent('bidwon', bid.sspname)
 }
 
 /**
@@ -287,14 +287,14 @@ function onBidWon(bid) {
  * @param {Array<Object>} timeoutData
  */
 function onTimeout(timeoutData) {
-  log('Timeout from adapter', timeoutData);
+  log('Timeout from adapter', timeoutData)
 
-  const timeout = deepAccess(timeoutData, '0.timeout');
+  const timeout = deepAccess(timeoutData, '0.timeout')
   if (timeout) {
     // Set timeout to the one we got from the bid
-    setState({ timeout });
+    setState({ timeout })
   }
-  sendEvent('bidtimeout');
+  sendEvent('bidtimeout')
 }
 
 export const spec = {
@@ -313,6 +313,6 @@ export const spec = {
   detectDevice,
   getNotifyId,
   isValidNotifyId,
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)

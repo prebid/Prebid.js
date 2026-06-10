@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
   _map,
   cleanObj,
@@ -8,11 +8,11 @@ import {
   isNumber,
   logWarn,
   parseSizesInput
-} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { chunk } from '../libraries/chunk/chunk.js';
-import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js";
+} from '../src/utils.js'
+import { config } from '../src/config.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { chunk } from '../libraries/chunk/chunk.js'
+import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js"
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -20,10 +20,10 @@ import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/pl
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  */
 
-const ADAPTER_VERSION = 'v1.0.0';
-const URL = 'https://adapter.bidmatic.io/bdm/auction';
-const BIDDER_CODE = 'bidmatic';
-const SYNCS_DONE = new Set();
+const ADAPTER_VERSION = 'v1.0.0'
+const URL = 'https://adapter.bidmatic.io/bdm/auction'
+const BIDDER_CODE = 'bidmatic'
+const SYNCS_DONE = new Set()
 
 const { getPlacementEnv, getPlacementInfo } = getPlacementPositionUtils()
 
@@ -33,9 +33,9 @@ export const spec = {
   gvlid: 1134,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
-    if (!bid.params) return false;
+    if (!bid.params) return false
     if (bid.params.bidfloor && !isNumber(bid.params.bidfloor)) {
-      logWarn('incorrect floor value, should be a number');
+      logWarn('incorrect floor value, should be a number')
     }
     return isNumber(deepAccess(bid, 'params.source'))
   },
@@ -47,9 +47,9 @@ export const spec = {
    */
   buildRequests: function (bidRequests, adapterRequest) {
     const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 5);
-    const { tag, bids } = bidToTag(bidRequests, adapterRequest);
-    const bidChunks = chunk(bids, chunkSize);
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 5)
+    const { tag, bids } = bidToTag(bidRequests, adapterRequest)
+    const bidChunks = chunk(bids, chunkSize)
 
     return _map(bidChunks, (bids) => {
       return {
@@ -57,7 +57,7 @@ export const spec = {
         adapterRequest,
         method: 'POST',
         url: URL
-      };
+      }
     })
   },
 
@@ -69,79 +69,79 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, { adapterRequest }) {
-    serverResponse = serverResponse.body;
-    let bids = [];
+    serverResponse = serverResponse.body
+    let bids = []
 
     if (isArray(serverResponse)) {
       serverResponse.forEach(serverBidResponse => {
-        bids = flatten(bids, parseResponseBody(serverBidResponse, adapterRequest));
-      });
-      return bids;
+        bids = flatten(bids, parseResponseBody(serverBidResponse, adapterRequest))
+      })
+      return bids
     }
-    return parseResponseBody(serverResponse, adapterRequest);
+    return parseResponseBody(serverResponse, adapterRequest)
   },
 
-};
+}
 
 export function getResponseSyncs(syncOptions, bid) {
-  const types = bid.cookieURLSTypes || [];
-  const uris = bid.cookieURLs;
-  if (!Array.isArray(uris)) return [];
+  const types = bid.cookieURLSTypes || []
+  const uris = bid.cookieURLs
+  if (!Array.isArray(uris)) return []
   return uris.reduce((acc, uri, i) => {
-    const type = types[i] || 'image';
+    const type = types[i] || 'image'
 
     if ((!syncOptions.pixelEnabled && type === 'image') ||
       (!syncOptions.iframeEnabled && type === 'iframe') ||
       SYNCS_DONE.has(uri)) {
-      return acc;
+      return acc
     }
 
-    SYNCS_DONE.add(uri);
+    SYNCS_DONE.add(uri)
     acc.push({
       type: type,
       url: uri
-    });
-    return acc;
+    })
+    return acc
   }, [])
 }
 
 export function getUserSyncsFn(syncOptions, serverResponses) {
-  let newSyncs = [];
-  if (!isArray(serverResponses)) return newSyncs;
-  if (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled) return;
+  let newSyncs = []
+  if (!isArray(serverResponses)) return newSyncs
+  if (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled) return
   serverResponses.forEach((response) => {
     if (!response.body) return
     if (isArray(response.body)) {
       response.body.forEach(b => {
-        newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, b));
+        newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, b))
       })
     } else {
-      newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, response.body));
+      newSyncs = newSyncs.concat(getResponseSyncs(syncOptions, response.body))
     }
   })
 
-  return newSyncs;
+  return newSyncs
 }
 
 export function parseResponseBody(serverResponse, adapterRequest) {
-  const responseBids = [];
+  const responseBids = []
 
   if (!isArray(deepAccess((serverResponse), 'bids'))) {
-    return responseBids;
+    return responseBids
   }
 
   serverResponse.bids.forEach(serverBid => {
     // avoid errors with id mismatch
     const bidRequestMatch = ((adapterRequest.bids) || []).find((bidRequest) => {
-      return bidRequest.bidId === serverBid.requestId;
-    });
+      return bidRequest.bidId === serverBid.requestId
+    })
 
     if (bidRequestMatch) {
-      responseBids.push(createBid(serverBid));
+      responseBids.push(createBid(serverBid))
     }
-  });
+  })
 
-  return responseBids;
+  return responseBids
 }
 
 export function remapBidRequest(bidRequests, adapterRequest) {
@@ -149,37 +149,37 @@ export function remapBidRequest(bidRequests, adapterRequest) {
     AdapterVersion: ADAPTER_VERSION,
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),
     ...getPlacementEnv()
-  };
-
-  bidRequestBody.USP = deepAccess(adapterRequest, 'uspConsent');
-  bidRequestBody.Coppa = deepAccess(adapterRequest, 'ortb2.regs.coppa') ? 1 : 0;
-  bidRequestBody.AgeVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
-  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp
-  bidRequestBody.GPPSid = adapterRequest.gppConsent ? adapterRequest.gppConsent.applicableSections?.toString() : adapterRequest.ortb2?.regs?.gpp_sid;
-  bidRequestBody.Schain = deepAccess(bidRequests[0], 'schain');
-  bidRequestBody.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
-  bidRequestBody.UserIds = deepAccess(bidRequests[0], 'userId');
-  bidRequestBody.Tmax = adapterRequest.timeout;
-  if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
-    bidRequestBody.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
-    bidRequestBody.GDPR = 1;
   }
 
-  return cleanObj(bidRequestBody);
+  bidRequestBody.USP = deepAccess(adapterRequest, 'uspConsent')
+  bidRequestBody.Coppa = deepAccess(adapterRequest, 'ortb2.regs.coppa') ? 1 : 0
+  bidRequestBody.AgeVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification')
+  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp
+  bidRequestBody.GPPSid = adapterRequest.gppConsent ? adapterRequest.gppConsent.applicableSections?.toString() : adapterRequest.ortb2?.regs?.gpp_sid
+  bidRequestBody.Schain = deepAccess(bidRequests[0], 'schain')
+  bidRequestBody.UserEids = deepAccess(bidRequests[0], 'userIdAsEids')
+  bidRequestBody.UserIds = deepAccess(bidRequests[0], 'userId')
+  bidRequestBody.Tmax = adapterRequest.timeout
+  if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
+    bidRequestBody.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString')
+    bidRequestBody.GDPR = 1
+  }
+
+  return cleanObj(bidRequestBody)
 }
 
 export function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
-  const tag = remapBidRequest(bidRequests, adapterRequest);
+  const tag = remapBidRequest(bidRequests, adapterRequest)
   // end publisher env
-  const bids = [];
+  const bids = []
   for (let i = 0, length = bidRequests.length; i < length; i++) {
-    const bid = prepareBidRequests(bidRequests[i]);
+    const bid = prepareBidRequests(bidRequests[i])
 
-    bids.push(bid);
+    bids.push(bid)
   }
 
-  return { tag, bids };
+  return { tag, bids }
 }
 
 const getBidFloor = (bid) => {
@@ -188,13 +188,13 @@ const getBidFloor = (bid) => {
       currency: 'USD',
       mediaType: '*',
       size: '*',
-    });
+    })
 
-    return bidFloor?.floor;
+    return bidFloor?.floor
   } catch (err) {
-    return isNumber(bid.params.bidfloor) ? bid.params.bidfloor : undefined;
+    return isNumber(bid.params.bidfloor) ? bid.params.bidfloor : undefined
   }
-};
+}
 
 /**
  * @param bidReq {object}
@@ -202,7 +202,7 @@ const getBidFloor = (bid) => {
  */
 export function prepareBidRequests(bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : 'display'
-  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes')
   return cleanObj({
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.source,
@@ -212,7 +212,7 @@ export function prepareBidRequests(bidReq) {
     'BidFloor': getBidFloor(bidReq),
     'GPID': deepAccess(bidReq, 'ortb2Imp.ext.gpid'),
     ...getPlacementInfo(bidReq)
-  });
+  })
 }
 
 /**
@@ -237,7 +237,7 @@ export function createBid(bidResponse) {
     meta: {
       advertiserDomains: bidResponse.adomain || []
     }
-  };
+  }
 }
 
-registerBidder(spec);
+registerBidder(spec)

@@ -1,13 +1,13 @@
-import { deepAccess } from '../utils.js';
-import { config } from '../config.js';
-import { isActivityAllowed, registerActivityControl } from './rules.js';
+import { deepAccess } from '../utils.js'
+import { config } from '../config.js'
+import { isActivityAllowed, registerActivityControl } from './rules.js'
 import {
   ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_TID,
   ACTIVITY_TRANSMIT_UFPD
-} from './activities.js';
-import { scrubIPv4, scrubIPv6 } from '../utils/ipUtils.js';
+} from './activities.js'
+import { scrubIPv4, scrubIPv6 } from '../utils/ipUtils.js'
 
 export const ORTB_UFPD_PATHS = [
   'data',
@@ -19,9 +19,9 @@ export const ORTB_UFPD_PATHS = [
   'id',
   'buyeruid',
   'customdata'
-].map(f => `user.${f}`).concat('device.ifa');
-export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
-export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
+].map(f => `user.${f}`).concat('device.ifa')
+export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids']
+export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon']
 export const ORTB_IPV4_PATHS = ['device.ip']
 export const ORTB_IPV6_PATHS = ['device.ipv6']
 
@@ -52,13 +52,13 @@ export function redactRule(ruleDef) {
   return Object.assign({
     get() {},
     run(root, path, object, property, applies) {
-      const val = object && object[property];
+      const val = object && object[property]
       if (isData(val) && applies()) {
-        const repl = this.get(val);
+        const repl = this.get(val)
         if (repl === undefined) {
-          delete object[property];
+          delete object[property]
         } else {
-          object[property] = repl;
+          object[property] = repl
         }
       }
     }
@@ -86,32 +86,32 @@ export function redactRule(ruleDef) {
 export function objectTransformer(rules) {
   rules.forEach(rule => {
     rule.paths = rule.paths.map((path) => {
-      const parts = path.split('.');
-      const tail = parts.pop();
+      const parts = path.split('.')
+      const tail = parts.pop()
       return [parts.length > 0 ? parts.join('.') : null, tail]
     })
   })
   return function applyTransform(session, obj, ...args) {
-    const result = [];
-    const applies = sessionedApplies(session, ...args);
+    const result = []
+    const applies = sessionedApplies(session, ...args)
     rules.forEach(rule => {
-      if (session[rule.name] === false) return;
+      if (session[rule.name] === false) return
       for (const [head, tail] of rule.paths) {
-        const parent = head == null ? obj : deepAccess(obj, head);
-        result.push(rule.run(obj, head, parent, tail, applies.bind(null, rule)));
-        if (session[rule.name] === false) return;
+        const parent = head == null ? obj : deepAccess(obj, head)
+        result.push(rule.run(obj, head, parent, tail, applies.bind(null, rule)))
+        if (session[rule.name] === false) return
       }
     })
-    return result.filter(el => el != null);
+    return result.filter(el => el != null)
   }
 }
 
 export function sessionedApplies(session, ...args) {
   return function applies(rule) {
     if (!session.hasOwnProperty(rule.name)) {
-      session[rule.name] = !!rule.applies(...args);
+      session[rule.name] = !!rule.applies(...args)
     }
-    return session[rule.name];
+    return session[rule.name]
   }
 }
 
@@ -121,8 +121,8 @@ export function isData(val) {
 
 export function appliesWhenActivityDenied(activity, isAllowed = isActivityAllowed) {
   return function applies(params) {
-    return !isAllowed(activity, params);
-  };
+    return !isAllowed(activity, params)
+  }
 }
 
 function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
@@ -157,7 +157,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       paths: ORTB_GEO_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
       get(val) {
-        return Math.round((val + Number.EPSILON) * 100) / 100;
+        return Math.round((val + Number.EPSILON) * 100) / 100
       }
     },
     {
@@ -165,7 +165,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       paths: ORTB_IPV4_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
       get(val) {
-        return scrubIPv4(val);
+        return scrubIPv4(val)
       }
     },
     {
@@ -173,7 +173,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       paths: ORTB_IPV6_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
       get(val) {
-        return scrubIPv6(val);
+        return scrubIPv6(val)
       }
     },
     {
@@ -181,14 +181,14 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       paths: ['source.tid', 'source.ext.tidSource'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed),
     }
-  ].map(redactRule);
+  ].map(redactRule)
 }
 
 export function redactorFactory(isAllowed = isActivityAllowed) {
-  const redactOrtb2 = objectTransformer(ortb2TransmitRules(isAllowed));
-  const redactBidRequest = objectTransformer(bidRequestTransmitRules(isAllowed));
+  const redactOrtb2 = objectTransformer(ortb2TransmitRules(isAllowed))
+  const redactBidRequest = objectTransformer(bidRequestTransmitRules(isAllowed))
   return function redactor(params) {
-    const session = {};
+    const session = {}
     return {
       ortb2(obj) { redactOrtb2(session, obj, params); return obj },
       bidRequest(obj) { redactBidRequest(session, obj, params); return obj }
@@ -204,7 +204,7 @@ export function redactorFactory(isAllowed = isActivityAllowed) {
  * @return {{ortb2: function({}): {}, bidRequest: function({}): {}}} methods
  *  that can redact disallowed data from ORTB2 and/or bid request objects.
  */
-export const redactor = redactorFactory();
+export const redactor = redactorFactory()
 
 declare module '../config' {
   interface Config {
@@ -226,4 +226,4 @@ registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {
   if (!config.getConfig('enableTIDs')) {
     return { allow: false, reason: 'TIDs are disabled' }
   }
-});
+})

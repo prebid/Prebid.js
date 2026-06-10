@@ -1,8 +1,8 @@
 import { expect } from 'chai'
 import { baseUrl, spec } from 'modules/mabidderBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import { BANNER } from '../../../src/mediaTypes.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
+import { BANNER } from '../../../src/mediaTypes.js'
+import { getGlobal } from '../../../src/prebidGlobal.js'
 
 describe('mabidderBidAdapter', () => {
   const adapter = newBidder(spec)

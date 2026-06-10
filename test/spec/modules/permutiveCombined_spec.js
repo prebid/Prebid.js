@@ -270,7 +270,7 @@ describe('permutiveRtdProvider', function () {
 
     it('should add ortb2 config', function () {
       const moduleConfig = getConfig()
-      const bidderConfig = {};
+      const bidderConfig = {}
       const acBidders = moduleConfig.params.acBidders
       const segmentsData = transformedTargeting()
       const expectedTargetingData = segmentsData.ac.map(seg => {
@@ -558,7 +558,7 @@ describe('permutiveRtdProvider', function () {
           maxSegs: 30
         }
       }
-      const bidderConfig = {};
+      const bidderConfig = {}
 
       setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 

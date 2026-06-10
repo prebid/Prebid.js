@@ -1,5 +1,5 @@
-import { module } from '../../src/hook.js';
-import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/parentModule.js';
+import { module } from '../../src/hook.js'
+import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/parentModule.js'
 
 // define, ortb object,  events
 
@@ -105,7 +105,7 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
 /**
  * @summary Maps a Video Provider factory to the video player's vendor code.
  */
-const videoVendorDirectory = {};
+const videoVendorDirectory = {}
 
 /**
  * @class
@@ -113,7 +113,7 @@ const videoVendorDirectory = {};
  * @returns {VideoCore}
  */
 export function VideoCore(parentModule_) {
-  const parentModule = parentModule_;
+  const parentModule = parentModule_
 
   /**
    * requests that a submodule be instantiated for the specific player instance described by the @providerConfig
@@ -122,13 +122,13 @@ export function VideoCore(parentModule_) {
    */
   function registerProvider(providerConfig) {
     try {
-      parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig);
+      parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig)
     } catch (e) {}
   }
 
   function initProvider(divId) {
-    const submodule = parentModule.getSubmodule(divId);
-    submodule && submodule.init && submodule.init();
+    const submodule = parentModule.getSubmodule(divId)
+    submodule && submodule.init && submodule.init()
   }
 
   /**
@@ -138,8 +138,8 @@ export function VideoCore(parentModule_) {
    * @returns {Object} oRTB Video params
    */
   function getOrtbVideo(divId) {
-    const submodule = parentModule.getSubmodule(divId);
-    return submodule && submodule.getOrtbVideo();
+    const submodule = parentModule.getSubmodule(divId)
+    return submodule && submodule.getOrtbVideo()
   }
 
   /**
@@ -149,8 +149,8 @@ export function VideoCore(parentModule_) {
    * @returns {Object} oRTB Content params
    */
   function getOrtbContent(divId) {
-    const submodule = parentModule.getSubmodule(divId);
-    return submodule && submodule.getOrtbContent();
+    const submodule = parentModule.getSubmodule(divId)
+    return submodule && submodule.getOrtbContent()
   }
 
   /**
@@ -161,8 +161,8 @@ export function VideoCore(parentModule_) {
    * @param {Object} options - additional params
    */
   function setAdTagUrl(adTagUrl, divId, options) {
-    const submodule = parentModule.getSubmodule(divId);
-    submodule && submodule.setAdTagUrl(adTagUrl, options);
+    const submodule = parentModule.getSubmodule(divId)
+    submodule && submodule.setAdTagUrl(adTagUrl, options)
   }
 
   /**
@@ -173,8 +173,8 @@ export function VideoCore(parentModule_) {
    * @param {Object} options - additional params
    */
   function setAdXml(vastXml, divId, options) {
-    const submodule = parentModule.getSubmodule(divId);
-    submodule && submodule.setAdXml(vastXml, options);
+    const submodule = parentModule.getSubmodule(divId)
+    submodule && submodule.setAdXml(vastXml, options)
   }
 
   /**
@@ -186,21 +186,21 @@ export function VideoCore(parentModule_) {
    */
   function onEvents(events, callback, divId) {
     if (!callback) {
-      return;
+      return
     }
 
-    const submodule = parentModule.getSubmodule(divId);
+    const submodule = parentModule.getSubmodule(divId)
     if (!submodule) {
-      return;
+      return
     }
 
     for (let i = 0; i < events.length; i++) {
-      const type = events[i];
+      const type = events[i]
       const basePayload = {
         divId,
         type
-      };
-      submodule.onEvent(type, callback, basePayload);
+      }
+      submodule.onEvent(type, callback, basePayload)
     }
   }
 
@@ -212,14 +212,14 @@ export function VideoCore(parentModule_) {
    * @param {string} divId - unique identifier of the player instance
    */
   function offEvents(events, callback, divId) {
-    const submodule = parentModule.getSubmodule(divId);
+    const submodule = parentModule.getSubmodule(divId)
     if (!submodule) {
-      return;
+      return
     }
 
     events.forEach(event => {
-      submodule.offEvent(event, callback);
-    });
+      submodule.offEvent(event, callback)
+    })
   }
 
   return {
@@ -232,9 +232,9 @@ export function VideoCore(parentModule_) {
     onEvents,
     offEvents,
     hasProviderFor(divId) {
-      return !!parentModule.getSubmodule(divId);
+      return !!parentModule.getSubmodule(divId)
     }
-  };
+  }
 }
 
 /**
@@ -243,13 +243,13 @@ export function VideoCore(parentModule_) {
  * @returns {VideoCore}
  */
 export function videoCoreFactory() {
-  const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory);
-  const parentModule = ParentModule(videoSubmoduleBuilder);
-  return VideoCore(parentModule);
+  const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory)
+  const parentModule = ParentModule(videoSubmoduleBuilder)
+  return VideoCore(parentModule)
 }
 
 function attachVideoProvider(submoduleFactory) {
-  videoVendorDirectory[submoduleFactory.vendorCode] = submoduleFactory;
+  videoVendorDirectory[submoduleFactory.vendorCode] = submoduleFactory
 }
 
-module('video', attachVideoProvider);
+module('video', attachVideoProvider)

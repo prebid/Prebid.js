@@ -6,10 +6,10 @@ import {
   deepAccess,
   deepSetValue,
   mergeDeep
-} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
+} from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 /**
@@ -17,11 +17,11 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js'
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'dxkulture';
-const DEFAULT_BID_TTL = 300;
-const DEFAULT_NET_REVENUE = true;
-const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_OUTSTREAM_RENDERER_URL = 'https://cdn.dxkulture.com/players/dxOutstreamPlayer.js';
+const BIDDER_CODE = 'dxkulture'
+const DEFAULT_BID_TTL = 300
+const DEFAULT_NET_REVENUE = true
+const DEFAULT_CURRENCY = 'USD'
+const DEFAULT_OUTSTREAM_RENDERER_URL = 'https://cdn.dxkulture.com/players/dxOutstreamPlayer.js'
 
 const converter = ortbConverter({
   context: {
@@ -29,16 +29,16 @@ const converter = ortbConverter({
     ttl: DEFAULT_BID_TTL
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
+    const imp = buildImp(bidRequest, context)
 
     if (!imp.bidfloor) {
-      imp.bidfloor = bidRequest.params.bidfloor || 0;
-      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
+      imp.bidfloor = bidRequest.params.bidfloor || 0
+      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY
     }
-    return imp;
+    return imp
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context);
+    const req = buildRequest(imps, bidderRequest, context)
     mergeDeep(req, {
       ext: {
         hb: 1,
@@ -49,43 +49,43 @@ const converter = ortbConverter({
 
     // Attaching GDPR Consent Params
     if (bidderRequest.gdprConsent) {
-      deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(req, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(req, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0))
     }
 
     // CCPA
     if (bidderRequest.uspConsent) {
-      deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
 
-    return req;
+    return req
   },
   bidResponse(buildBidResponse, bid, context) {
-    let resMediaType;
-    const { bidRequest } = context;
+    let resMediaType
+    const { bidRequest } = context
 
     if (bid.adm?.trim().startsWith('<VAST')) {
-      resMediaType = VIDEO;
+      resMediaType = VIDEO
     } else {
-      resMediaType = BANNER;
+      resMediaType = BANNER
     }
 
-    context.mediaType = resMediaType;
-    context.currency = DEFAULT_CURRENCY;
+    context.mediaType = resMediaType
+    context.currency = DEFAULT_CURRENCY
 
     if (resMediaType === VIDEO) {
-      context.vastXml = bid.adm;
+      context.vastXml = bid.adm
     }
 
-    const bidResponse = buildBidResponse(bid, context);
+    const bidResponse = buildBidResponse(bid, context)
 
     if (resMediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = outstreamRenderer(bidResponse);
+      bidResponse.renderer = outstreamRenderer(bidResponse)
     }
 
-    return bidResponse;
+    return bidResponse
   }
-});
+})
 
 export const spec = {
   code: BIDDER_CODE,
@@ -104,26 +104,26 @@ export const spec = {
       _validateParams(bid) &&
       _validateBanner(bid) &&
       _validateVideo(bid)
-    );
+    )
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let contextMediaType = BANNER;
+    let contextMediaType = BANNER
 
     if (hasVideoMediaType(validBidRequests)) {
-      contextMediaType = VIDEO;
+      contextMediaType = VIDEO
     }
 
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: { contextMediaType } });
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: { contextMediaType } })
 
-    let publisherId = validBidRequests[0].params.publisherId;
-    const placementId = validBidRequests[0].params.placementId;
+    let publisherId = validBidRequests[0].params.publisherId
+    const placementId = validBidRequests[0].params.placementId
 
     if (validBidRequests[0].params.e2etest) {
-      logMessage('dxkulture: E2E test mode enabled');
+      logMessage('dxkulture: E2E test mode enabled')
       publisherId = 'e2etest'
     }
-    let baseEndpoint = spec.ENDPOINT + '?pid=' + publisherId;
+    let baseEndpoint = spec.ENDPOINT + '?pid=' + publisherId
 
     if (placementId) {
       baseEndpoint += '&placementId=' + placementId
@@ -133,43 +133,43 @@ export const spec = {
       method: 'POST',
       url: baseEndpoint,
       data: data
-    };
+    }
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
-    return bids;
+    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids
+    return bids
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    logInfo('dxkulture.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
-    let syncs = [];
+    logInfo('dxkulture.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
+    let syncs = []
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return syncs;
+      return syncs
     }
 
     serverResponses.forEach(resp => {
-      const userSync = deepAccess(resp, 'body.ext.usersync');
+      const userSync = deepAccess(resp, 'body.ext.usersync')
       if (userSync) {
-        let syncDetails = [];
+        let syncDetails = []
         Object.keys(userSync).forEach(key => {
-          const value = userSync[key];
+          const value = userSync[key]
           if (value.syncs && value.syncs.length) {
-            syncDetails = syncDetails.concat(value.syncs);
+            syncDetails = syncDetails.concat(value.syncs)
           }
-        });
+        })
         syncDetails.forEach(syncDetails => {
-          const queryParamStrings = [];
-          let syncUrl = syncDetails.url;
+          const queryParamStrings = []
+          let syncUrl = syncDetails.url
 
           if (syncDetails.type === 'iframe') {
             if (gdprConsent) {
-              queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-              queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+              queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0))
+              queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''))
             }
             if (uspConsent) {
-              queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+              queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent))
             }
             syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
           }
@@ -177,21 +177,21 @@ export const spec = {
           syncs.push({
             type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
             url: syncUrl
-          });
-        });
+          })
+        })
 
         if (syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type === 'iframe');
+          syncs = syncs.filter(s => s.type === 'iframe')
         } else if (syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type === 'image');
+          syncs = syncs.filter(s => s.type === 'image')
         }
       }
-    });
-    logInfo('dxkulture.getUserSyncs result=%o', syncs);
-    return syncs;
+    })
+    logInfo('dxkulture.getUserSyncs result=%o', syncs)
+    return syncs
   },
 
-};
+}
 
 function outstreamRenderer(bid) {
   const rendererConfig = {
@@ -212,20 +212,20 @@ function outstreamRenderer(bid) {
     loaded: false,
     targetId: bid.adUnitCode,
     adUnitCode: bid.adUnitCode
-  });
+  })
 
   try {
     renderer.setRender(function (bid) {
       bid.renderer.push(() => {
-        const { id, config } = bid.renderer;
-        window.dxOutstreamPlayer(bid, id, config);
-      });
-    });
+        const { id, config } = bid.renderer
+        window.dxOutstreamPlayer(bid, id, config)
+      })
+    })
   } catch (err) {
-    logWarn('dxkulture: Prebid Error calling setRender on renderer', err);
+    logWarn('dxkulture: Prebid Error calling setRender on renderer', err)
   }
 
-  return renderer;
+  return renderer
 }
 
 /* =======================================
@@ -233,38 +233,38 @@ function outstreamRenderer(bid) {
  *======================================= */
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+  return !!deepAccess(bidRequest, 'mediaTypes.banner')
 }
 
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video');
+  return !!deepAccess(bidRequest, 'mediaTypes.video')
 }
 
 function _validateParams(bidRequest) {
   if (!bidRequest.params) {
-    return false;
+    return false
   }
 
   if (bidRequest.params.e2etest) {
-    return true;
+    return true
   }
 
   if (!bidRequest.params.publisherId) {
-    logError('dxkulture: Validation failed: publisherId not declared');
-    return false;
+    logError('dxkulture: Validation failed: publisherId not declared')
+    return false
   }
 
   if (!bidRequest.params.placementId) {
-    logError('dxkulture: Validation failed: placementId not declared');
-    return false;
+    logError('dxkulture: Validation failed: placementId not declared')
+    return false
   }
 
-  const mediaTypesExists = hasVideoMediaType(bidRequest) || hasBannerMediaType(bidRequest);
+  const mediaTypesExists = hasVideoMediaType(bidRequest) || hasBannerMediaType(bidRequest)
   if (!mediaTypesExists) {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -275,14 +275,14 @@ function _validateParams(bidRequest) {
 function _validateBanner(bidRequest) {
   // If there's no banner no need to validate
   if (!hasBannerMediaType(bidRequest)) {
-    return true;
+    return true
   }
-  const banner = deepAccess(bidRequest, 'mediaTypes.banner');
+  const banner = deepAccess(bidRequest, 'mediaTypes.banner')
   if (!Array.isArray(banner.sizes)) {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -293,48 +293,48 @@ function _validateBanner(bidRequest) {
 function _validateVideo(bidRequest) {
   // If there's no video no need to validate
   if (!hasVideoMediaType(bidRequest)) {
-    return true;
+    return true
   }
 
-  const videoPlacement = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-  const params = deepAccess(bidRequest, 'params', {});
+  const videoPlacement = deepAccess(bidRequest, 'mediaTypes.video', {})
+  const videoBidderParams = deepAccess(bidRequest, 'params.video', {})
+  const params = deepAccess(bidRequest, 'params', {})
 
   if (params && params.e2etest) {
-    return true;
+    return true
   }
 
   const videoParams = {
     ...videoPlacement,
     ...videoBidderParams // Bidder Specific overrides
-  };
+  }
 
   if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    logError('dxkulture: Validation failed: mimes are invalid');
-    return false;
+    logError('dxkulture: Validation failed: mimes are invalid')
+    return false
   }
 
   if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    logError('dxkulture: Validation failed: protocols are invalid');
-    return false;
+    logError('dxkulture: Validation failed: protocols are invalid')
+    return false
   }
 
   if (!videoParams.context) {
-    logError('dxkulture: Validation failed: context id not declared');
-    return false;
+    logError('dxkulture: Validation failed: context id not declared')
+    return false
   }
 
   if (videoParams.context !== 'instream') {
-    logError('dxkulture: Validation failed: only context instream is supported ');
-    return false;
+    logError('dxkulture: Validation failed: only context instream is supported ')
+    return false
   }
 
   if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
-    logError('dxkulture: Validation failed: player size not declared or is not in format [[w,h]]');
-    return false;
+    logError('dxkulture: Validation failed: player size not declared or is not in format [[w,h]]')
+    return false
   }
 
-  return true;
+  return true
 }
 
-registerBidder(spec);
+registerBidder(spec)

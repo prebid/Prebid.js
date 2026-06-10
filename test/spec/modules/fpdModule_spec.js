@@ -1,13 +1,13 @@
-import { expect } from 'chai';
-import { config } from 'src/config.js';
-import { registerSubmodules, reset, startAuctionHook } from 'modules/fpdModule/index.js';
+import { expect } from 'chai'
+import { config } from 'src/config.js'
+import { registerSubmodules, reset, startAuctionHook } from 'modules/fpdModule/index.js'
 
 describe('the first party data module', function () {
   afterEach(function () {
-    config.resetConfig();
-  });
+    config.resetConfig()
+  })
   after(() => {
-    reset();
+    reset()
   })
 
   describe('startAuctionHook', () => {
@@ -16,36 +16,36 @@ describe('the first party data module', function () {
       bidder: { A: { bkey: 'bvalue' } }
     }
     beforeEach(() => {
-      reset();
-    });
+      reset()
+    })
 
     it('should run ortb2Fragments through fpd submodules', () => {
       registerSubmodules({
         name: 'test',
         processFpd: function () {
-          return mockFpd;
+          return mockFpd
         }
-      });
-      const req = { ortb2Fragments: {} };
+      })
+      const req = { ortb2Fragments: {} }
       return new Promise((resolve) => startAuctionHook(resolve, req))
         .then(() => {
-          expect(req.ortb2Fragments).to.eql(mockFpd);
+          expect(req.ortb2Fragments).to.eql(mockFpd)
         })
-    });
+    })
 
     it('should work with fpd submodules that return promises', () => {
       registerSubmodules({
         name: 'test',
         processFpd: function () {
-          return Promise.resolve(mockFpd);
+          return Promise.resolve(mockFpd)
         }
-      });
-      const req = { ortb2Fragments: {} };
+      })
+      const req = { ortb2Fragments: {} }
       return new Promise((resolve) => {
-        startAuctionHook(resolve, req);
+        startAuctionHook(resolve, req)
       }).then(() => {
-        expect(req.ortb2Fragments).to.eql(mockFpd);
-      });
-    });
-  });
-});
+        expect(req.ortb2Fragments).to.eql(mockFpd)
+      })
+    })
+  })
+})

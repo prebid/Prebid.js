@@ -6,8 +6,8 @@
  * @class
  */
 export function ParentModule(submoduleBuilder_) {
-  const submoduleBuilder = submoduleBuilder_;
-  const submodules = {};
+  const submoduleBuilder = submoduleBuilder_
+  const submodules = {}
 
   /**
    * @function ParentModule#registerSubmodule
@@ -18,12 +18,12 @@ export function ParentModule(submoduleBuilder_) {
    */
   function registerSubmodule(id, vendorCode, config) {
     if (submodules[id]) {
-      return;
+      return
     }
 
-    let submodule;
-    submodule = submoduleBuilder.build(vendorCode, config);
-    submodules[id] = submodule;
+    let submodule
+    submodule = submoduleBuilder.build(vendorCode, config)
+    submodules[id] = submodule
   }
 
   /**
@@ -33,7 +33,7 @@ export function ParentModule(submoduleBuilder_) {
    * @returns {Object} - a submodule instance
    */
   function getSubmodule(id) {
-    return submodules[id];
+    return submodules[id]
   }
 
   return {
@@ -52,8 +52,8 @@ export function ParentModule(submoduleBuilder_) {
  * @class
  */
 export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
-  const submoduleDirectory = submoduleDirectory_;
-  const sharedUtils = sharedUtils_;
+  const submoduleDirectory = submoduleDirectory_
+  const sharedUtils = sharedUtils_
 
   /**
    * @function SubmoduleBuilder#build
@@ -63,16 +63,16 @@ export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
    * @returns {{init}|*} - a submodule instance
    */
   function build(vendorCode, config) {
-    const submoduleFactory = submoduleDirectory[vendorCode];
+    const submoduleFactory = submoduleDirectory[vendorCode]
     if (!submoduleFactory) {
-      throw new Error('Unrecognized submodule vendor code: ' + vendorCode);
+      throw new Error('Unrecognized submodule vendor code: ' + vendorCode)
     }
 
-    const submodule = submoduleFactory(config, sharedUtils);
-    return submodule;
+    const submodule = submoduleFactory(config, sharedUtils)
+    return submodule
   }
 
   return {
     build
-  };
+  }
 }

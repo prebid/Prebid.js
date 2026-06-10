@@ -1,5 +1,5 @@
-import { canSetCookie } from '../../src/storageManager.ts';
+import { canSetCookie } from '../../src/storageManager.ts'
 
 beforeEach(() => {
-  canSetCookie.clear();
-});
+  canSetCookie.clear()
+})

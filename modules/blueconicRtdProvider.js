@@ -6,21 +6,21 @@
  * @requires module:modules/realTimeData
  */
 
-import { getStorageManager } from '../src/storageManager.js';
-import { submodule } from '../src/hook.js';
-import { mergeDeep, isPlainObject, logMessage, logError } from '../src/utils.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js'
+import { submodule } from '../src/hook.js'
+import { mergeDeep, isPlainObject, logMessage, logError } from '../src/utils.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const MODULE_NAME = 'realTimeData';
-const SUBMODULE_NAME = 'blueconic';
+const MODULE_NAME = 'realTimeData'
+const SUBMODULE_NAME = 'blueconic'
 
-export const RTD_LOCAL_NAME = 'bcPrebidData';
+export const RTD_LOCAL_NAME = 'bcPrebidData'
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME })
 
 /**
  * Try parsing stringified array of data.
@@ -28,10 +28,10 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleNa
  */
 function parseJson(data) {
   try {
-    return JSON.parse(data);
+    return JSON.parse(data)
   } catch (err) {
-    logError(`blueconicRtdProvider: failed to parse json:`, data);
-    return null;
+    logError(`blueconicRtdProvider: failed to parse json:`, data)
+    return null
   }
 }
 
@@ -42,7 +42,7 @@ function parseJson(data) {
  */
 export function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
-    mergeDeep(ortb2, rtd.ortb2);
+    mergeDeep(ortb2, rtd.ortb2)
   }
 }
 
@@ -55,14 +55,14 @@ export function addRealTimeData(ortb2, rtd) {
  */
 export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
   if (rtdConfig && isPlainObject(rtdConfig.params)) {
-    const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
+    const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME)
     if (jsonData) {
-      const parsedData = parseJson(jsonData);
+      const parsedData = parseJson(jsonData)
       if (!parsedData) {
-        return;
+        return
       }
       const userData = { name: 'blueconic', ...parsedData }
-      logMessage('blueconicRtdProvider: userData: ', userData);
+      logMessage('blueconicRtdProvider: userData: ', userData)
       const data = {
         ortb2: {
           user: {
@@ -72,8 +72,8 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
           }
         }
       }
-      addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data);
-      onDone();
+      addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data)
+      onDone()
     }
   }
 }
@@ -85,7 +85,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
  * @return {boolean}
  */
 function init(provider, userConsent) {
-  return true;
+  return true
 }
 
 /** @type {RtdSubmodule} */
@@ -93,6 +93,6 @@ export const blueconicSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: getRealTimeData,
   init: init
-};
+}
 
-submodule(MODULE_NAME, blueconicSubmodule);
+submodule(MODULE_NAME, blueconicSubmodule)

@@ -1,12 +1,12 @@
-import { expect } from 'chai';
-import { spec } from 'modules/buzzoolaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import '../../../src/prebid.js';
-import { executeRenderer, Renderer } from '../../../src/Renderer.js';
-import { deepClone } from '../../../src/utils.js';
+import { expect } from 'chai'
+import { spec } from 'modules/buzzoolaBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import '../../../src/prebid.js'
+import { executeRenderer, Renderer } from '../../../src/Renderer.js'
+import { deepClone } from '../../../src/utils.js'
 
-const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
-const RENDERER_SRC = 'https://tube.buzzoola.com/new/build/buzzlibrary.js';
+const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs'
+const RENDERER_SRC = 'https://tube.buzzoola.com/new/build/buzzlibrary.js'
 
 const INVALID_BIDS = [{
   'bidder': 'buzzoola',
@@ -29,7 +29,7 @@ const INVALID_BIDS = [{
 }, {
   'bidder': 'buzzoola',
   'params': { 'placementId': 417845 }
-}];
+}]
 
 const BANNER_BID = {
   'bidder': 'buzzoola',
@@ -37,12 +37,12 @@ const BANNER_BID = {
   'mediaTypes': { 'banner': { 'sizes': [[240, 400], [300, 600]] } },
   'sizes': [[240, 400], [300, 600]],
   'bidId': '2a11641ada3c6a'
-};
+}
 
 const BANNER_BID_REQUEST = {
   bidderCode: 'buzzoola',
   bids: [BANNER_BID]
-};
+}
 
 const BANNER_RESPONSE = [{
   'requestId': '2a11641ada3c6a',
@@ -61,7 +61,7 @@ const BANNER_RESPONSE = [{
       'buzzoola.com'
     ]
   }
-}];
+}]
 
 const REQUIRED_BANNER_FIELDS = [
   'requestId',
@@ -75,7 +75,7 @@ const REQUIRED_BANNER_FIELDS = [
   'currency',
   'mediaType',
   'meta'
-];
+]
 
 const VIDEO_BID = {
   'bidder': 'buzzoola',
@@ -90,12 +90,12 @@ const VIDEO_BID = {
     }
   },
   'bidId': '325a54271dc40a'
-};
+}
 
 const VIDEO_BID_REQUEST = {
   bidderCode: 'buzzoola',
   bids: [VIDEO_BID]
-};
+}
 
 const VIDEO_RESPONSE = [{
   'requestId': '325a54271dc40a',
@@ -115,13 +115,13 @@ const VIDEO_RESPONSE = [{
       'buzzoola.com'
     ]
   }
-}];
+}]
 
 const RENDERER_DATA = {
   data: JSON.parse(VIDEO_RESPONSE[0].ad)
-};
-RENDERER_DATA.data.placement.unit_settings.width = '' + VIDEO_RESPONSE[0].width;
-RENDERER_DATA.data.placement.unit_settings.height = RENDERER_DATA.data.placement.unit_settings.container_height = '' + VIDEO_RESPONSE[0].height;
+}
+RENDERER_DATA.data.placement.unit_settings.width = '' + VIDEO_RESPONSE[0].width
+RENDERER_DATA.data.placement.unit_settings.height = RENDERER_DATA.data.placement.unit_settings.container_height = '' + VIDEO_RESPONSE[0].height
 
 const REQUIRED_VIDEO_FIELDS = [
   'requestId',
@@ -136,7 +136,7 @@ const REQUIRED_VIDEO_FIELDS = [
   'vastUrl',
   'mediaType',
   'meta'
-];
+]
 
 const NATIVE_BID = {
   'bidder': 'buzzoola',
@@ -170,12 +170,12 @@ const NATIVE_BID = {
     }
   },
   'bidId': '22a42cd3522c6f'
-};
+}
 
 const NATIVE_BID_REQUEST = {
   bidderCode: 'buzzoola',
   bids: [NATIVE_BID]
-};
+}
 
 const NATIVE_RESPONSE = [{
   'requestId': '22a42cd3522c6f',
@@ -219,7 +219,7 @@ const NATIVE_RESPONSE = [{
       'buzzoola.com'
     ]
   }
-}];
+}]
 
 const REQUIRED_NATIVE_FIELDS = [
   'requestId',
@@ -234,180 +234,180 @@ const REQUIRED_NATIVE_FIELDS = [
   'currency',
   'mediaType',
   'meta'
-];
+]
 
 describe('buzzoolaBidAdapter', () => {
-  const adapter = newBidder(spec);
+  const adapter = newBidder(spec)
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
+      expect(adapter.callBids).to.exist.and.to.be.a('function')
+    })
+  })
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(VIDEO_BID)).to.be.true;
-    });
+      expect(spec.isBidRequestValid(VIDEO_BID)).to.be.true
+    })
 
     it('should return false when required params are not passed', () => {
       INVALID_BIDS.forEach(bid => {
-        expect(spec.isBidRequestValid(bid)).to.be.false;
-      });
-    });
-  });
+        expect(spec.isBidRequestValid(bid)).to.be.false
+      })
+    })
+  })
 
   describe('buildRequests', () => {
-    const videoBidRequests = [VIDEO_BID];
-    const bannerBidRequests = [BANNER_BID];
-    const nativeBidRequests = [NATIVE_BID];
+    const videoBidRequests = [VIDEO_BID]
+    const bannerBidRequests = [BANNER_BID]
+    const nativeBidRequests = [NATIVE_BID]
 
-    const bannerRequest = spec.buildRequests(bannerBidRequests, BANNER_BID_REQUEST);
-    const nativeRequest = spec.buildRequests(nativeBidRequests, NATIVE_BID_REQUEST);
-    const videoRequest = spec.buildRequests(videoBidRequests, VIDEO_BID_REQUEST);
+    const bannerRequest = spec.buildRequests(bannerBidRequests, BANNER_BID_REQUEST)
+    const nativeRequest = spec.buildRequests(nativeBidRequests, NATIVE_BID_REQUEST)
+    const videoRequest = spec.buildRequests(videoBidRequests, VIDEO_BID_REQUEST)
 
     it('sends bid request to ENDPOINT via POST', () => {
-      expect(videoRequest.method).to.equal('POST');
-      expect(bannerRequest.method).to.equal('POST');
-      expect(nativeRequest.method).to.equal('POST');
-    });
+      expect(videoRequest.method).to.equal('POST')
+      expect(bannerRequest.method).to.equal('POST')
+      expect(nativeRequest.method).to.equal('POST')
+    })
 
     it('sends bid request to correct ENDPOINT', () => {
-      expect(videoRequest.url).to.equal(ENDPOINT);
-      expect(bannerRequest.url).to.equal(ENDPOINT);
-      expect(nativeRequest.url).to.equal(ENDPOINT);
-    });
+      expect(videoRequest.url).to.equal(ENDPOINT)
+      expect(bannerRequest.url).to.equal(ENDPOINT)
+      expect(nativeRequest.url).to.equal(ENDPOINT)
+    })
 
     it('sends correct video bid parameters', () => {
-      expect(videoRequest.data).to.deep.equal(VIDEO_BID_REQUEST);
-    });
+      expect(videoRequest.data).to.deep.equal(VIDEO_BID_REQUEST)
+    })
 
     it('sends correct banner bid parameters', () => {
-      expect(bannerRequest.data).to.deep.equal(BANNER_BID_REQUEST);
-    });
+      expect(bannerRequest.data).to.deep.equal(BANNER_BID_REQUEST)
+    })
 
     it('sends correct native bid parameters', () => {
-      expect(nativeRequest.data).to.deep.equal(NATIVE_BID_REQUEST);
-    });
-  });
+      expect(nativeRequest.data).to.deep.equal(NATIVE_BID_REQUEST)
+    })
+  })
 
   describe('interpretResponse', () => {
-    const noBidServerResponse = [];
-    const emptyResponse = '';
+    const noBidServerResponse = []
+    const emptyResponse = ''
 
     function nobidServerResponseCheck(request, response = noBidServerResponse) {
-      const noBidResult = spec.interpretResponse({ body: response }, { data: request });
+      const noBidResult = spec.interpretResponse({ body: response }, { data: request })
 
-      expect(noBidResult.length).to.equal(0);
+      expect(noBidResult.length).to.equal(0)
     }
 
     function bidServerResponseCheck(response, request, fields) {
-      const result = spec.interpretResponse({ body: response }, { data: request });
+      const result = spec.interpretResponse({ body: response }, { data: request })
 
-      expect(result).to.deep.equal(response);
+      expect(result).to.deep.equal(response)
       result.forEach(bid => {
         fields.forEach(field => {
-          expect(bid).to.have.own.property(field);
+          expect(bid).to.have.own.property(field)
         })
-      });
+      })
     }
 
     it('handles video nobid responses', () => {
-      nobidServerResponseCheck(VIDEO_BID_REQUEST);
-    });
+      nobidServerResponseCheck(VIDEO_BID_REQUEST)
+    })
 
     it('handles banner nobid responses', () => {
-      nobidServerResponseCheck(BANNER_BID_REQUEST);
-    });
+      nobidServerResponseCheck(BANNER_BID_REQUEST)
+    })
 
     it('handles native nobid responses', () => {
-      nobidServerResponseCheck(NATIVE_BID_REQUEST);
-    });
+      nobidServerResponseCheck(NATIVE_BID_REQUEST)
+    })
 
     it('handles video empty responses', () => {
-      nobidServerResponseCheck(VIDEO_BID_REQUEST, emptyResponse);
-    });
+      nobidServerResponseCheck(VIDEO_BID_REQUEST, emptyResponse)
+    })
 
     it('handles banner empty responses', () => {
-      nobidServerResponseCheck(BANNER_BID_REQUEST, emptyResponse);
-    });
+      nobidServerResponseCheck(BANNER_BID_REQUEST, emptyResponse)
+    })
 
     it('handles native empty responses', () => {
-      nobidServerResponseCheck(NATIVE_BID_REQUEST, emptyResponse);
-    });
+      nobidServerResponseCheck(NATIVE_BID_REQUEST, emptyResponse)
+    })
 
     it('should get correct video bid response', () => {
-      bidServerResponseCheck(VIDEO_RESPONSE, VIDEO_BID_REQUEST, REQUIRED_VIDEO_FIELDS);
-    });
+      bidServerResponseCheck(VIDEO_RESPONSE, VIDEO_BID_REQUEST, REQUIRED_VIDEO_FIELDS)
+    })
 
     it('should get correct banner bid response', () => {
-      bidServerResponseCheck(BANNER_RESPONSE, BANNER_BID_REQUEST, REQUIRED_BANNER_FIELDS);
-    });
+      bidServerResponseCheck(BANNER_RESPONSE, BANNER_BID_REQUEST, REQUIRED_BANNER_FIELDS)
+    })
 
     it('should get correct native bid response', () => {
-      bidServerResponseCheck(NATIVE_RESPONSE, NATIVE_BID_REQUEST, REQUIRED_NATIVE_FIELDS);
-    });
-  });
+      bidServerResponseCheck(NATIVE_RESPONSE, NATIVE_BID_REQUEST, REQUIRED_NATIVE_FIELDS)
+    })
+  })
 
   describe('outstream renderer', () => {
-    let result;
-    let renderer;
+    let result
+    let renderer
 
     before(() => {
-      const adContainer = document.createElement('div');
-      adContainer.id = 'adUnitCode';
-      document.body.appendChild(adContainer);
+      const adContainer = document.createElement('div')
+      adContainer.id = 'adUnitCode'
+      document.body.appendChild(adContainer)
 
-      const outstreamVideoBid = deepClone(VIDEO_BID);
-      outstreamVideoBid.mediaTypes.video.context = 'outstream';
+      const outstreamVideoBid = deepClone(VIDEO_BID)
+      outstreamVideoBid.mediaTypes.video.context = 'outstream'
 
-      const outstreamVideoRequest = deepClone(VIDEO_BID_REQUEST);
-      outstreamVideoRequest.bids = [outstreamVideoBid];
+      const outstreamVideoRequest = deepClone(VIDEO_BID_REQUEST)
+      outstreamVideoRequest.bids = [outstreamVideoBid]
 
-      const scriptElement = document.createElement('div');
+      const scriptElement = document.createElement('div')
 
-      const scriptStub = sinon.stub(document, 'createElement');
-      scriptStub.withArgs('script').returns(scriptElement);
+      const scriptStub = sinon.stub(document, 'createElement')
+      scriptStub.withArgs('script').returns(scriptElement)
 
-      result = spec.interpretResponse({ body: VIDEO_RESPONSE }, { data: outstreamVideoRequest })[0];
-      renderer = result.renderer;
+      result = spec.interpretResponse({ body: VIDEO_RESPONSE }, { data: outstreamVideoRequest })[0]
+      renderer = result.renderer
 
-      result.adUnitCode = 'adUnitCode';
+      result.adUnitCode = 'adUnitCode'
 
       if (scriptElement.onload) {
-        scriptElement.onload();
+        scriptElement.onload()
       }
 
-      scriptStub.restore();
-    });
+      scriptStub.restore()
+    })
 
     it('should add renderer for outstream video', () => {
-      expect(result).to.have.own.property('renderer');
-    });
+      expect(result).to.have.own.property('renderer')
+    })
 
     it('should be instance of Renderer', () => {
-      expect(renderer).to.be.instanceof(Renderer);
-    });
+      expect(renderer).to.be.instanceof(Renderer)
+    })
 
     it('should have valid src', () => {
-      expect(renderer.url).to.equal(RENDERER_SRC);
-    });
+      expect(renderer.url).to.equal(RENDERER_SRC)
+    })
 
     it('should create player instance', () => {
       window.Buzzoola = {
         Core: {
           install: () => {}
         }
-      };
-      const spy = sinon.spy(window.Buzzoola.Core, 'install');
-      executeRenderer(renderer, result);
-      renderer.callback();
-      expect(spy.called).to.be.true;
+      }
+      const spy = sinon.spy(window.Buzzoola.Core, 'install')
+      executeRenderer(renderer, result)
+      renderer.callback()
+      expect(spy.called).to.be.true
 
-      const spyCall = spy.getCall(0);
+      const spyCall = spy.getCall(0)
 
-      expect(spyCall.args[0]).to.be.instanceof(Element);
-      expect(spyCall.args[1]).to.deep.equal(RENDERER_DATA);
-    });
-  });
-});
+      expect(spyCall.args[0]).to.be.instanceof(Element)
+      expect(spyCall.args[1]).to.deep.equal(RENDERER_DATA)
+    })
+  })
+})

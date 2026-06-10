@@ -1,9 +1,9 @@
-import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
-import { getDNT } from '../libraries/dnt/index.js';
+import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js'
+import { getDNT } from '../libraries/dnt/index.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -24,11 +24,11 @@ import { getDNT } from '../libraries/dnt/index.js';
  * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
  */
 
-const BIDDER_CODE = 'mediaforce';
-const GVLID = 671;
-const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
-const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop';
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+const BIDDER_CODE = 'mediaforce'
+const GVLID = 671
+const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid'
+const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop'
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO]
 const DEFAULT_CURRENCY = 'USD'
 
 export const spec = {
@@ -43,7 +43,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!((typeof bid.params === 'object') && bid.params.placement_id && bid.params.publisher_id);
+    return !!((typeof bid.params === 'object') && bid.params.placement_id && bid.params.publisher_id)
   },
 
   /**
@@ -55,25 +55,25 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
 
     if (validBidRequests.length === 0) {
-      return;
+      return
     }
 
     // TODO: is 'ref' the right value here?
-    const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.ref) : '';
-    const auctionId = bidderRequest && bidderRequest.auctionId;
-    const timeout = bidderRequest && bidderRequest.timeout;
-    const dnt = getDNT() ? 1 : 0;
-    const requestsMap = {};
-    const requests = [];
-    let isTest = false;
+    const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.ref) : ''
+    const auctionId = bidderRequest && bidderRequest.auctionId
+    const timeout = bidderRequest && bidderRequest.timeout
+    const dnt = getDNT() ? 1 : 0
+    const requestsMap = {}
+    const requests = []
+    let isTest = false
     validBidRequests.forEach(bid => {
-      isTest = isTest || bid.params.is_test;
-      const tagid = bid.params.placement_id;
-      const bidfloor = resolveFloor(bid);
-      let validImp = false;
+      isTest = isTest || bid.params.is_test
+      const tagid = bid.params.placement_id
+      const bidfloor = resolveFloor(bid)
+      let validImp = false
       const impObj = {
         id: bid.bidId,
         tagid: tagid,
@@ -85,26 +85,26 @@ export const spec = {
           }
         }
 
-      };
+      }
 
       Object.keys(bid.mediaTypes).forEach(mediaType => {
         switch (mediaType) {
           case BANNER:
-            impObj.banner = createBannerRequest(bid);
-            validImp = true;
-            break;
+            impObj.banner = createBannerRequest(bid)
+            validImp = true
+            break
           case NATIVE:
-            impObj.native = buildNativeRequest(bid.nativeParams);
-            validImp = true;
-            break;
+            impObj.native = buildNativeRequest(bid.nativeParams)
+            validImp = true
+            break
           case VIDEO:
-            impObj.video = createVideoRequest(bid);
-            validImp = true;
-            break;
+            impObj.video = createVideoRequest(bid)
+            validImp = true
+            break
         }
       })
 
-      let request = requestsMap[bid.params.publisher_id];
+      let request = requestsMap[bid.params.publisher_id]
       if (!request) {
         request = {
           id: Math.round(Math.random() * 1e16).toString(16),
@@ -131,23 +131,23 @@ export const spec = {
           },
           tmax: timeout,
           imp: []
-        };
-        requestsMap[bid.params.publisher_id] = request;
+        }
+        requestsMap[bid.params.publisher_id] = request
         requests.push({
           method: 'POST',
           url: ENDPOINT_URL,
           data: request
-        });
+        })
       }
-      if (validImp && impObj) request.imp.push(impObj);
-    });
+      if (validImp && impObj) request.imp.push(impObj)
+    })
     requests.forEach((req) => {
       if (isTest) {
-        req.url = TEST_ENDPOINT_URL;
+        req.url = TEST_ENDPOINT_URL
       }
-      req.data = JSON.stringify(req.data);
-    });
-    return requests;
+      req.data = JSON.stringify(req.data)
+    })
+    return requests
   },
 
   /**
@@ -159,12 +159,12 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     if (!serverResponse || !serverResponse.body) {
-      return [];
+      return []
     }
 
-    const responseBody = serverResponse.body;
-    const bidResponses = [];
-    const cur = responseBody.cur;
+    const responseBody = serverResponse.body
+    const bidResponses = []
+    const cur = responseBody.cur
     responseBody.seatbid.forEach((bids) => {
       bids.bid.forEach((serverBid) => {
         const bid = {
@@ -178,40 +178,40 @@ export const spec = {
             advertiserDomains: serverBid.adomain ? serverBid.adomain : []
           },
           burl: serverBid.burl,
-        };
-        if (serverBid.dealid) {
-          bid.dealId = serverBid.dealid;
         }
-        let jsonAdm;
-        let adm = serverBid.adm;
-        let ext = serverBid.ext;
+        if (serverBid.dealid) {
+          bid.dealId = serverBid.dealid
+        }
+        let jsonAdm
+        let adm = serverBid.adm
+        let ext = serverBid.ext
         try {
-          jsonAdm = JSON.parse(adm);
+          jsonAdm = JSON.parse(adm)
         } catch (err) {}
         if (jsonAdm && jsonAdm.native) {
-          ext = ext || {};
-          ext.native = jsonAdm.native;
-          adm = null;
+          ext = ext || {}
+          ext.native = jsonAdm.native
+          adm = null
         }
         if (ext?.native) {
-          bid.native = parseNativeResponse(ext.native);
-          bid.mediaType = NATIVE;
+          bid.native = parseNativeResponse(ext.native)
+          bid.mediaType = NATIVE
         } else if (adm?.trim().startsWith('<?xml') || adm?.includes('<VAST')) {
-          bid.vastXml = adm;
-          bid.mediaType = VIDEO;
+          bid.vastXml = adm
+          bid.mediaType = VIDEO
         } else if (adm) {
-          bid.ad = adm;
-          bid.width = serverBid.w;
-          bid.height = serverBid.h;
-          bid.mediaType = BANNER;
+          bid.ad = adm
+          bid.width = serverBid.w
+          bid.height = serverBid.h
+          bid.mediaType = BANNER
         }
         if (bid.mediaType) {
-          bidResponses.push(bid);
+          bidResponses.push(bid)
         }
       })
-    });
+    })
 
-    return bidResponses;
+    return bidResponses
   },
 
   /**
@@ -219,29 +219,29 @@ export const spec = {
    * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function(bid) {
-    const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+    const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || ''
     if (isStr(bid.burl) && bid.burl !== '') {
-      bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || cpm);
-      triggerPixel(bid.burl);
+      bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || cpm)
+      triggerPixel(bid.burl)
     }
   },
-};
+}
 
-registerBidder(spec);
+registerBidder(spec)
 
 function getLanguage() {
-  const language = navigator.language ? 'language' : 'userLanguage';
-  return navigator[language].split('-')[0];
+  const language = navigator.language ? 'language' : 'userLanguage'
+  return navigator[language].split('-')[0]
 }
 
 function createBannerRequest(bid) {
-  const sizes = bid.mediaTypes.banner.sizes;
-  if (!sizes.length) return;
+  const sizes = bid.mediaTypes.banner.sizes
+  if (!sizes.length) return
 
-  const format = [];
-  const r = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  const format = []
+  const r = parseGPTSingleSizeArrayToRtbSize(sizes[0])
   for (let f = 1; f < sizes.length; f++) {
-    format.push(parseGPTSingleSizeArrayToRtbSize(sizes[f]));
+    format.push(parseGPTSingleSizeArrayToRtbSize(sizes[f]))
   }
   if (format.length) {
     r.format = format
@@ -250,12 +250,12 @@ function createBannerRequest(bid) {
 }
 
 function createVideoRequest(bid) {
-  const video = bid.mediaTypes.video;
-  if (!video || !video.playerSize) return;
+  const video = bid.mediaTypes.video
+  if (!video || !video.playerSize) return
 
   const playerSize = Array.isArray(video.playerSize[0])
     ? video.playerSize[0] // [[640, 480], [300, 250]] -> use first size
-    : video.playerSize;   // [640, 480]
+    : video.playerSize   // [640, 480]
 
   const videoRequest = {
     mimes: video.mimes || ['video/mp4'],
@@ -271,13 +271,13 @@ function createVideoRequest(bid) {
     skipafter: video.skipafter || 10,
     playbackmethod: video.playbackmethod || [1],
     api: video.api || [1, 2],
-  };
-
-  if (video.placement) {
-    videoRequest.placement = video.placement;
   }
 
-  return videoRequest;
+  if (video.placement) {
+    videoRequest.placement = video.placement
+  }
+
+  return videoRequest
 }
 
 /**
@@ -292,17 +292,17 @@ function createVideoRequest(bid) {
  * @returns {number} - Highest bid floor found
  */
 export function resolveFloor(bid) {
-  const floors = [0];
+  const floors = [0]
 
   if (typeof bid.getFloor === 'function') {
     for (const mediaType of SUPPORTED_MEDIA_TYPES) {
       const mediaTypeDef = bid.mediaTypes?.[mediaType]
       if (mediaTypeDef) {
-        const sizes = getMediaTypeSizes(mediaType, mediaTypeDef) || ['*'];
+        const sizes = getMediaTypeSizes(mediaType, mediaTypeDef) || ['*']
         for (const size of sizes) {
-          const floorInfo = bid.getFloor({ currency: DEFAULT_CURRENCY, mediaType, size });
+          const floorInfo = bid.getFloor({ currency: DEFAULT_CURRENCY, mediaType, size })
           if (typeof floorInfo?.floor === 'number') {
-            floors.push(floorInfo.floor);
+            floors.push(floorInfo.floor)
           }
         }
       }
@@ -310,10 +310,10 @@ export function resolveFloor(bid) {
   }
 
   if (typeof bid.params?.bidfloor === 'number') {
-    floors.push(bid.params.bidfloor);
+    floors.push(bid.params.bidfloor)
   }
 
-  return Math.max(...floors);
+  return Math.max(...floors)
 }
 
 /**
@@ -324,18 +324,18 @@ export function resolveFloor(bid) {
  * @returns {(number[]|string)[]} An array of sizes or undefined
  */
 function getMediaTypeSizes(mediaType, mediaTypeDef) {
-  let sizes;
+  let sizes
   switch (mediaType) {
     case BANNER:
-      sizes = mediaTypeDef.sizes;
-      break;
+      sizes = mediaTypeDef.sizes
+      break
     case VIDEO:
-      sizes = mediaTypeDef.playerSize;
-      break;
+      sizes = mediaTypeDef.playerSize
+      break
     case NATIVE:
-      break; // native usually doesn't define sizes
+      break // native usually doesn't define sizes
   }
 
-  if (!sizes) return undefined;
-  return Array.isArray(sizes[0]) ? sizes : [sizes];
+  if (!sizes) return undefined
+  return Array.isArray(sizes[0]) ? sizes : [sizes]
 }

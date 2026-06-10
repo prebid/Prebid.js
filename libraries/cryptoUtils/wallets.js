@@ -33,6 +33,6 @@ export const detectWalletsPresence = function () {
     "solflareWalletStandardInitialized",
     "sender",
     "rainbow",
-  ];
-  return _wallets.some((prop) => typeof window[prop] !== "undefined") ? 1 : 0;
-};
+  ]
+  return _wallets.some((prop) => typeof window[prop] !== "undefined") ? 1 : 0
+}

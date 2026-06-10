@@ -1,4 +1,4 @@
-export type Id5IdSystemModuleName = 'id5Id';
+export type Id5IdSystemModuleName = 'id5Id'
 
 export interface Id5AbTestingConfig {
   /**
@@ -72,4 +72,4 @@ declare module './userId/spec' {
   }
 }
 
-export {};
+export {}

@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { _each, getBidIdParameter, getValue, logError, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { _each, getBidIdParameter, getValue, logError, logInfo } from '../src/utils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -8,7 +8,7 @@ import { _each, getBidIdParameter, getValue, logError, logInfo } from '../src/ut
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'videonow';
+const BIDDER_CODE = 'videonow'
 const RTB_URL = 'https://adx.videonow.ru/yhb'
 const DEFAULT_CURRENCY = 'RUB'
 const DEFAULT_CODE_TYPE = 'combo'
@@ -28,11 +28,11 @@ export const spec = {
    */
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params) {
-      return false;
+      return false
     }
 
     if (!bidRequest.params.pId) {
-      logError('failed validation: pId not declared');
+      logError('failed validation: pId not declared')
       return false
     }
 
@@ -47,9 +47,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    logInfo('validBidRequests', validBidRequests);
+    logInfo('validBidRequests', validBidRequests)
 
-    const bidRequests = [];
+    const bidRequests = []
 
     _each(validBidRequests, (bid) => {
       const bidId = getBidIdParameter('bidId', bid)
@@ -78,7 +78,7 @@ export const spec = {
       })
     })
 
-    return bidRequests;
+    return bidRequests
   },
 
   /**
@@ -89,13 +89,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    logInfo('serverResponse', serverResponse.body);
+    logInfo('serverResponse', serverResponse.body)
 
-    const responsesBody = serverResponse ? serverResponse.body : {};
-    const bidResponses = [];
+    const responsesBody = serverResponse ? serverResponse.body : {}
+    const bidResponses = []
     try {
       if (!responsesBody?.bids?.length) {
-        return [];
+        return []
       }
 
       _each(responsesBody.bids, (bid) => {
@@ -113,16 +113,16 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adDomain ? [bid.adDomain] : []
             }
-          };
+          }
           bidResponses.push(bidResponse)
         }
       })
     } catch (error) {
-      logError(error);
+      logError(error)
     }
 
     return bidResponses
   },
 }
 
-registerBidder(spec);
+registerBidder(spec)
