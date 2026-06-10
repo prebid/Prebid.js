@@ -847,6 +847,15 @@ describe('Utils', function () {
         });
       });
     });
+      
+    describe('createTrackPixelIframeHtml', () => {
+      it('escapes unsafe characters when encodeUri is false', () => {
+        const url = 'https://sync.example/" onload="alert(1)<svg>';
+        const html = utils.createTrackPixelIframeHtml(url, false);
+        expect(html).to.include('src="https://sync.example/&quot; onload=&quot;alert(1)&lt;svg&gt;"');
+        expect(html).to.not.include('src="https://sync.example/" onload=');
+      });
+    });
   });
 
   describe('insertElement', function () {
