@@ -98,7 +98,7 @@ export const operaIdSubmodule = {
       callback: (cb) => {
         asyncRequest(url, cb);
       }
-    }
+    };
   },
 
   eids: {

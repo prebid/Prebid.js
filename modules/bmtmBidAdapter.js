@@ -61,7 +61,7 @@ export const spec = {
         oRTBRequest.imp[0].banner = {
           h: size[0],
           w: size[1],
-        }
+        };
       } else {
         if (bid.mediaTypes.video.playerSize) {
           size = bid.mediaTypes.video.playerSize[0];
@@ -77,20 +77,20 @@ export const spec = {
           api: bid.mediaTypes.video.api ? bid.mediaTypes.video.api : [],
           minduration: bid.mediaTypes.video.minduration ? bid.mediaTypes.video.minduration : 1,
           maxduration: bid.mediaTypes.video.maxduration ? bid.mediaTypes.video.maxduration : 999,
-        }
+        };
       }
 
       oRTBRequest.imp[0].bidfloor = getFloor(bid, size);
-      oRTBRequest.user = getUserIdAsEids(bid.userIdAsEids)
+      oRTBRequest.user = getUserIdAsEids(bid.userIdAsEids);
       const schain = bid?.ortb2?.source?.ext?.schain;
-      oRTBRequest.source = getSchain(schain)
+      oRTBRequest.source = getSchain(schain);
 
       requestData.push({
         method: 'POST',
         url: `${AD_URL}${bid.params.placement_id}`,
         data: JSON.stringify(oRTBRequest),
         bidRequest: bid,
-      })
+      });
     });
     return requestData;
   },
@@ -182,7 +182,7 @@ function buildDevice() {
     js: 1,
     language: navigator.language,
     dnt: getDNT() ? 1 : 0,
-  }
+  };
 }
 
 function buildRegs(bidderRequest) {
@@ -238,7 +238,7 @@ function getUserIdAsEids(userIds) {
       ext: {
         eids: userIds,
       }
-    }
+    };
   };
   return {};
 }
@@ -249,7 +249,7 @@ function getSchain(schain) {
       ext: {
         schain: schain,
       }
-    }
+    };
   }
   return {};
 }

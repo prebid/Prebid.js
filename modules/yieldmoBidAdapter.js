@@ -762,7 +762,7 @@ function shortcutProperty(extraCharacters, target, propertyName) {
   if (target[propertyName].length > extraCharacters) {
     target[propertyName] = target[propertyName].substring(0, target[propertyName].length - extraCharacters);
 
-    return 0
+    return 0;
   }
 
   const charactersLeft = extraCharacters - target[propertyName].length;

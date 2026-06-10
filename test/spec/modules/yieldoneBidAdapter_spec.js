@@ -572,7 +572,7 @@ describe('yieldoneBidAdapter', function () {
 
         bidRequests.forEach((bidRequest, ind) => {
           expect(request[ind].data).to.not.have.property('instl');
-        })
+        });
       });
 
       it('should send instl if available', function () {
@@ -591,7 +591,7 @@ describe('yieldoneBidAdapter', function () {
         bidRequests.forEach((bidRequest, ind) => {
           expect(request[ind].data).to.have.property('instl');
           expect(request[ind].data.instl).to.equal(1);
-        })
+        });
       });
     });
   });

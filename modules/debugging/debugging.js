@@ -123,7 +123,7 @@ export function makeBidderBidInterceptor({ utils }) {
     } else {
       next(spec, bids, bidRequest, ajax, wrapCallback, { ...cbs, onCompletion: done });
     }
-  }
+  };
 }
 
 export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer }) {

@@ -38,7 +38,7 @@ describe('wurflRtdProvider', function () {
           cap_indices: [12, 13, 14, 19, 20, 21, 22]
         }
       }
-    }
+    };
     const WURFL = {
       advertised_browser: 'Chrome Mobile',
       advertised_browser_version: '130.0.0.0',
@@ -84,8 +84,8 @@ describe('wurflRtdProvider', function () {
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       window.WURFLPromises = {
-        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
-        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
+        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
+        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
       };
       // Initialize module with clean state for each test
       wurflSubmodule.init({ params: {} });

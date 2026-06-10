@@ -185,7 +185,7 @@ export const spec = {
 
     return syncList;
   }
-}
+};
 
 function hasUserId(bid) {
   return !!bid.params.userId;
@@ -274,7 +274,7 @@ function sizeToFormat(size) {
   return {
     width: size[0],
     height: size[1]
-  }
+  };
 }
 
 function getBidFloor(bid, currency) {

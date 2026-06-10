@@ -11,7 +11,7 @@ const utils = require('src/utils');
 const refererDetection = require('src/refererDetection');
 const instanceId = '77abbc81-c1f1-41cd-8f25-f7149244c800';
 const iid = encodeURIComponent(getGlobalVarName());
-const url = 'https://www.test.com'
+const url = 'https://www.test.com';
 let sandbox;
 let clock;
 const now = new Date();
@@ -35,7 +35,7 @@ const configWithSamplingAll = {
     sampling: 1,
     sendAuctionInitEvents: true
   }
-}
+};
 
 const configWithSamplingNone = {
   provider: 'liveintent',
@@ -43,7 +43,7 @@ const configWithSamplingNone = {
     sampling: 0,
     sendAuctionInitEvents: true
   }
-}
+};
 
 const configWithNoAuctionInit = {
   provider: 'liveintent',
@@ -51,7 +51,7 @@ const configWithNoAuctionInit = {
     sampling: 1,
     sendAuctionInitEvents: false
   }
-}
+};
 
 describe('LiveIntent Analytics Adapter ', () => {
   beforeEach(function () {
@@ -70,8 +70,8 @@ describe('LiveIntent Analytics Adapter ', () => {
     liAnalytics.disableAnalytics();
     sandbox?.restore();
     clock?.restore();
-    window.liTreatmentRate = undefined
-    window.liModuleEnabled = undefined
+    window.liTreatmentRate = undefined;
+    window.liModuleEnabled = undefined;
   });
 
   it('request is computed and sent correctly when sampling is 1', () => {
@@ -87,12 +87,12 @@ describe('LiveIntent Analytics Adapter ', () => {
   });
 
   it('request is computed and sent correctly when sampling is 1 and liModule is enabled', () => {
-    window.liModuleEnabled = true
+    window.liModuleEnabled = true;
     liAnalytics.enableAnalytics(configWithSamplingAll);
 
     events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
     expect(server.requests.length).to.equal(1);
-    expect(server.requests[0].url).to.equal(`https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=${iid}&me=y&liip=y&aun=2&asz=300x250%2C728x90%2C300x250`)
+    expect(server.requests[0].url).to.equal(`https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=${iid}&me=y&liip=y&aun=2&asz=300x250%2C728x90%2C300x250`);
 
     events.emit(EVENTS.BID_WON, BID_WON_EVENT);
     expect(server.requests.length).to.equal(2);
@@ -100,12 +100,12 @@ describe('LiveIntent Analytics Adapter ', () => {
   });
 
   it('request is computed and sent correctly when sampling is 1 and liModule is disabled', () => {
-    window.liModuleEnabled = false
+    window.liModuleEnabled = false;
     liAnalytics.enableAnalytics(configWithSamplingAll);
 
     events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
     expect(server.requests.length).to.equal(1);
-    expect(server.requests[0].url).to.equal(`https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=${iid}&me=n&liip=y&aun=2&asz=300x250%2C728x90%2C300x250`)
+    expect(server.requests[0].url).to.equal(`https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=${iid}&me=n&liip=y&aun=2&asz=300x250%2C728x90%2C300x250`);
 
     events.emit(EVENTS.BID_WON, BID_WON_EVENT);
     expect(server.requests.length).to.equal(2);
@@ -113,12 +113,12 @@ describe('LiveIntent Analytics Adapter ', () => {
   });
 
   it('request is computed and sent correctly when sampling is 1 and should forward the correct liTreatmentRate', () => {
-    window.liTreatmentRate = 0.95
+    window.liTreatmentRate = 0.95;
     liAnalytics.enableAnalytics(configWithSamplingAll);
 
     events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
     expect(server.requests.length).to.equal(1);
-    expect(server.requests[0].url).to.equal(`https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=${iid}&tr=0.95&liip=y&aun=2&asz=300x250%2C728x90%2C300x250`)
+    expect(server.requests[0].url).to.equal(`https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=${iid}&tr=0.95&liip=y&aun=2&asz=300x250%2C728x90%2C300x250`);
 
     events.emit(EVENTS.BID_WON, BID_WON_EVENT);
     expect(server.requests.length).to.equal(2);

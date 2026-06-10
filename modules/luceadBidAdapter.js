@@ -16,7 +16,7 @@ const defaultCurrency = 'EUR';
 const defaultTtl = 500;
 const aliases = ['adliveplus'];
 const defaultRegion = 'eu';
-const domain = 'lucead.com'
+const domain = 'lucead.com';
 let baseUrl = `https://${domain}`;
 let staticUrl = `https://s.${domain}`;
 let endpointUrl = baseUrl;
@@ -141,8 +141,8 @@ function onBidWon(bid) {
     if (parts[0] === 'ssp') {
       data.ssp = parts[1];
     } else {
-      data.ad_id = parts[0]
-      data.ig_id = parts[1]
+      data.ad_id = parts[0];
+      data.ig_id = parts[1];
     }
   }
 

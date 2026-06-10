@@ -41,7 +41,7 @@ export type SharedIdParams = {
    * The value to use for `inserter` in EIDs.
    */
   inserter?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -74,7 +74,7 @@ function readValue(name, type) {
       if (!expValue) {
         return storage.getDataFromLocalStorage(name);
       } else if ((new Date(expValue)).getTime() - Date.now() > 0) {
-        return storage.getDataFromLocalStorage(name)
+        return storage.getDataFromLocalStorage(name);
       }
     }
   }
@@ -89,7 +89,7 @@ function getIdCallback(pubcid, pixelUrl) {
     } else {
       callback(pubcid);
     }
-  }
+  };
 }
 
 function queuePixelCallback(pixelUrl, id = '', callback?) {
@@ -198,7 +198,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       const eid: any = {
         source: 'pubcid.org',
         uids: values.map(id => ({ id, atype: 1 }))
-      }
+      };
       if (config?.params?.inserter != null) {
         eid.inserter = config.params.inserter;
       }

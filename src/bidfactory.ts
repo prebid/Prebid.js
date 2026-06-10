@@ -215,7 +215,7 @@ function Bid({ src = 'client', bidder = '', bidId, transactionId, adUnitId, auct
     auctionId,
     mediaType: 'banner',
     source: _bidSrc
-  })
+  });
 
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {

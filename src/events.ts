@@ -1,7 +1,7 @@
 /**
  * events.js
  */
-import * as utils from './utils.js'
+import * as utils from './utils.js';
 import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import { ttlCollection } from './utils/ttlCollection.js';
 import { config } from './config.js';
@@ -16,7 +16,7 @@ export interface EventNames {
 }
 type AllEvents = {
   [K in EventNames[keyof EventNames]]: unknown[];
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Events extends AllEvents {
@@ -42,7 +42,7 @@ export type EventRecord<E extends Event> = {
   args: EventPayload<E>;
   id: EventIDs[E];
   elapsedTime: number;
-}
+};
 
 declare module './config' {
   interface Config {
@@ -62,7 +62,7 @@ let eventTTL = null;
 const eventsFired = ttlCollection<EventRecord<Event>>({
   monotonic: true,
   ttl: () => eventTTL,
-})
+});
 
 config.getConfig(TTL_CONFIG, (cfg) => {
   const previous = eventTTL;
@@ -190,9 +190,9 @@ const _public = (function () {
      * Return a copy of all events fired
      */
     getEvents: function (): EventRecord<Event>[] {
-      return eventsFired.toArray().map(val => Object.assign({}, val))
+      return eventsFired.toArray().map(val => Object.assign({}, val));
     }
-  }
+  };
 }());
 
 _setEventEmitter(_public.emit.bind(_public));

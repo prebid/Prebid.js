@@ -35,14 +35,14 @@ let _userConsent;
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
-  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
   return function detach() {
-    const idx = registeredSubModules.indexOf(submodule)
+    const idx = registeredSubModules.indexOf(submodule);
     if (idx >= 0) {
       registeredSubModules.splice(idx, 1);
       initSubModules();
     }
-  }
+  };
 }
 
 /**
@@ -63,16 +63,16 @@ const setEventsListeners = (function () {
           preprocess && (preprocess as any)(args);
           subModules.forEach(sm => {
             try {
-              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent)
+              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent);
             } catch (e) {
               logError(`RTD provider '${sm.name}': error in '${handler}':`, e);
             }
           });
-        })
+        });
       });
       registered = true;
     }
-  }
+  };
 })();
 
 type RealTimeDataConfig = {
@@ -81,7 +81,7 @@ type RealTimeDataConfig = {
    * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
    */
   auctionDelay?: number;
-}
+};
 
 declare module '../../src/config' {
   interface Config {
@@ -111,7 +111,7 @@ function getConsentData() {
     usp: uspDataHandler.getConsentData(),
     gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
-  }
+  };
 }
 
 /**
@@ -187,9 +187,9 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
       },
       deleteProperty(target, prop) {
         if (prop === fpdKey) return true;
-        return Reflect.deleteProperty(target, prop)
+        return Reflect.deleteProperty(target, prop);
       }
-    })
+    });
     sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
@@ -247,7 +247,7 @@ export function getAdUnitTargeting(auction) {
   auction.adUnits.forEach(adUnit => {
     const kv = adUnit.code && mergedTargeting[adUnit.code];
     if (!kv) {
-      return
+      return;
     }
     logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
     adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
@@ -261,7 +261,7 @@ export function onDataDeletionRequest(next, ...args) {
       try {
         sm.onDataDeletionRequest(sm.config);
       } catch (e) {
-        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e)
+        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e);
       }
     }
   });

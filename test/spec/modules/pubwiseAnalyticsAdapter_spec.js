@@ -82,33 +82,33 @@ describe('PubWise Prebid Analytics', function () {
 
       // console.log(data.metaData);
       expect(data.metaData, 'metaData property').to.exist;
-      expect(data.metaData.pbjs_version, 'pbjs version').to.equal('$prebid.version$')
-      expect(data.metaData.session_id, 'session id').not.to.be.empty
-      expect(data.metaData.activation_id, 'activation id').not.to.be.empty
+      expect(data.metaData.pbjs_version, 'pbjs version').to.equal('$prebid.version$');
+      expect(data.metaData.session_id, 'session id').not.to.be.empty;
+      expect(data.metaData.activation_id, 'activation id').not.to.be.empty;
 
       // check custom metadata slots
       expect(data.metaData.c_script_type, 'c_script_type property').to.exist;
-      expect(data.metaData.c_script_type, 'c_script_type').not.to.be.empty
+      expect(data.metaData.c_script_type, 'c_script_type').not.to.be.empty;
       expect(data.metaData.c_script_type).to.equal('test-script-type');
 
       expect(data.metaData.c_host, 'c_host property').to.exist;
-      expect(data.metaData.c_host, 'c_host').not.to.be.empty
+      expect(data.metaData.c_host, 'c_host').not.to.be.empty;
       expect(data.metaData.c_host).to.equal('test-host');
 
       expect(data.metaData.c_slot1, 'c_slot1 property').to.exist;
-      expect(data.metaData.c_slot1, 'c_slot1').not.to.be.empty
+      expect(data.metaData.c_slot1, 'c_slot1').not.to.be.empty;
       expect(data.metaData.c_slot1).to.equal('test-slot1');
 
       expect(data.metaData.c_slot2, 'c_slot1 property').to.exist;
-      expect(data.metaData.c_slot2, 'c_slot1').not.to.be.empty
+      expect(data.metaData.c_slot2, 'c_slot1').not.to.be.empty;
       expect(data.metaData.c_slot2).to.equal('test-slot2');
 
       expect(data.metaData.c_slot3, 'c_slot1 property').to.exist;
-      expect(data.metaData.c_slot3, 'c_slot1').not.to.be.empty
+      expect(data.metaData.c_slot3, 'c_slot1').not.to.be.empty;
       expect(data.metaData.c_slot3).to.equal('test-slot3');
 
       expect(data.metaData.c_slot4, 'c_slot1 property').to.exist;
-      expect(data.metaData.c_slot4, 'c_slot1').not.to.be.empty
+      expect(data.metaData.c_slot4, 'c_slot1').not.to.be.empty;
       expect(data.metaData.c_slot4).to.equal('test-slot4');
 
       // check for version info too

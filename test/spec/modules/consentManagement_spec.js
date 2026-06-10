@@ -10,7 +10,7 @@ describe('consentManagement', function () {
   function mockCMP(cmpResponse) {
     return function(...args) {
       args[2](Object.assign({ eventStatus: 'tcloaded' }, cmpResponse), true);
-    }
+    };
   }
 
   describe('setConsentConfig tests:', function () {
@@ -53,16 +53,16 @@ describe('consentManagement', function () {
       });
 
       it('should not produce any consent metadata', async function () {
-        await setConsentConfig(undefined)
+        await setConsentConfig(undefined);
         const consentMetadata = gdprDataHandler.getConsentMeta();
         expect(consentMetadata).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
-      })
+      });
 
       it('should immediately look up consent data', async () => {
         await setConsentConfig({ gdpr: { cmpApi: 'invalid' } });
         expect(gdprDataHandler.ready).to.be.true;
-      })
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -325,15 +325,15 @@ describe('consentManagement', function () {
       cmpApi: 'static',
       timeout: 7500,
       consentData: {}
-    }
+    };
 
     beforeEach(resetConsentData);
-    after(resetConsentData)
+    after(resetConsentData);
 
     async function runHook(request = {}) {
       let hookRan = false;
       consentConfig.requestBidsHook(() => {
-        hookRan = true
+        hookRan = true;
       }, request);
       try {
         await consentConfig.loadConsentData();
@@ -370,7 +370,7 @@ describe('consentManagement', function () {
         await setConsentConfig({ gdpr: { cmpApi: 'invalid' } });
         expect(await runHook()).to.be.true;
         expect(gdprDataHandler.ready).to.be.true;
-      })
+      });
 
       it('should throw proper errors when CMP is not found', async function () {
         await setConsentConfig(goodConfig);
@@ -394,11 +394,11 @@ describe('consentManagement', function () {
             tcString: 'xyz',
           });
           expect(await runHook()).to.be.true;
-          expect(gdprDataHandler.getConsentData().consentString).to.eql('xyz')
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('xyz');
         } finally {
-          delete window.__tcfapi
+          delete window.__tcfapi;
         }
-      })
+      });
 
       it('should not trip when adUnits have no size', async () => {
         await setConsentConfig(staticConfig);
@@ -421,7 +421,7 @@ describe('consentManagement', function () {
         } finally {
           delete window.__tcfapi;
         }
-      })
+      });
     });
 
     describe('already known consentData:', function () {
@@ -505,7 +505,7 @@ describe('consentManagement', function () {
               event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
             }
           }
-        }
+        };
       }
 
       function testIFramedPage(testName, messageFormatString, tarConsentString, ver) {
@@ -625,7 +625,7 @@ describe('consentManagement', function () {
           expect(await runHook()).to.be.true;
           const consentMeta = gdprDataHandler.getConsentMeta();
           sinon.assert.notCalled(utils.logError);
-          expect(consentMeta.consentStringSize).to.be.above(0)
+          expect(consentMeta.consentStringSize).to.be.above(0);
           expect(consentMeta.gdprApplies).to.be.true;
           expect(consentMeta.apiVersion).to.equal(2);
           expect(consentMeta.generatedAt).to.be.above(1644367751709);
@@ -693,13 +693,13 @@ describe('consentManagement', function () {
                 hookRan = true;
               }, {});
               setTimeout(() => hookRan ? resolve() : reject(new Error('Auction did not run')), 20);
-            })
+            });
           }
 
           function mockTcfEvent(tcdata) {
             tcfStub.callsFake((api, version, cb) => {
               if (api === 'addEventListener' && version === 2) {
-                cb(tcdata, true)
+                cb(tcdata, true);
               }
             });
           }
@@ -710,7 +710,7 @@ describe('consentManagement', function () {
 
           afterEach(() => {
             tcfStub.restore();
-          })
+          });
 
           it('should continue auction with null consent when CMP is unresponsive', () => {
             return runAuction().then(() => {
@@ -755,7 +755,7 @@ describe('consentManagement', function () {
             return new Promise((resolve) => setTimeout(resolve, 200))
               .then(() => {
                 expect(hookRan).to.be.true;
-              })
+              });
           });
 
           it('should still pick up consent data when actionTimeout is 0', async () => {
@@ -772,7 +772,7 @@ describe('consentManagement', function () {
             });
             expect(await runHook()).to.be.true;
             expect(gdprDataHandler.getConsentData().consentString).to.eql('mock-consent-string');
-          })
+          });
 
           Object.entries({
             'null': null,
@@ -792,7 +792,7 @@ describe('consentManagement', function () {
                 expect(consent.consentString).to.be.undefined;
                 expect(consent.vendorData).to.be.undefined;
               });
-            })
+            });
           });
         });
 

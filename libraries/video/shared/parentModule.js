@@ -39,7 +39,7 @@ export function ParentModule(submoduleBuilder_) {
   return {
     registerSubmodule,
     getSubmodule
-  }
+  };
 }
 
 /**

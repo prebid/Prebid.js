@@ -1135,7 +1135,7 @@ type SubmoduleContainer<P extends UserIdProvider> = {
   idObj;
   storageMgr: StorageManager;
   refreshIds?: boolean;
-}
+};
 
 /**
  * update submodules by validating against existing configs and storage types

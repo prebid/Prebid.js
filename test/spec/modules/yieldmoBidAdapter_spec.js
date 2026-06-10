@@ -113,7 +113,7 @@ describe('YieldmoAdapter', function () {
         const bid = mockVideoBid();
         delete utils.deepAccess(bid, key)[paramToRemove];
         return bid;
-      }
+      };
 
       it('should return true when necessary information is found', function () {
         expect(spec.isBidRequestValid(mockVideoBid())).to.be.true;
@@ -1028,11 +1028,11 @@ describe('YieldmoAdapter', function () {
     const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
     it('should use type iframe when iframeEnabled', function() {
       const syncs = spec.getUserSyncs({ iframeEnabled: true });
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe' }])
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe' }]);
     });
     it('should use type image when pixelEnabled', function() {
       const syncs = spec.getUserSyncs({ pixelEnabled: true });
-      expect(syncs).to.deep.equal([{ type: 'image', url: pbCookieAssistSyncUrl + '&type=image' }])
+      expect(syncs).to.deep.equal([{ type: 'image', url: pbCookieAssistSyncUrl + '&type=image' }]);
     });
     it('should register no syncs', function () {
       expect(spec.getUserSyncs({})).to.deep.equal([]);

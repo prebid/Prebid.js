@@ -139,7 +139,7 @@ const getPlacementReqData = buildPlacementProcessingFunction({
       region: normalizeRegion(region)
     });
   }
-})
+});
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const bidsByKey = {};

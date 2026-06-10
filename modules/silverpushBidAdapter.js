@@ -82,7 +82,7 @@ export const CONVERTER = ortbConverter({
       ext: {
         bc: `${bidderConfig}_${bidderVersion}`
       }
-    })
+    });
 
     const userAgent = navigator.userAgent;
     utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
@@ -111,13 +111,13 @@ export const CONVERTER = ortbConverter({
     }
 
     bidResponse = buildVideoVastResponse(bidResponse);
-    bidResponse = buildVideoOutstreamResponse(bidResponse, context)
+    bidResponse = buildVideoOutstreamResponse(bidResponse, context);
 
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    return response.bids
+    return response.bids;
   }
 });
 
@@ -203,7 +203,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     url: REQUEST_URL,
     data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } }),
     bidderRequest
-  }
+  };
 }
 
 function buildVideoVastResponse(bidResponse) {
@@ -211,7 +211,7 @@ function buildVideoVastResponse(bidResponse) {
     bidResponse.vastUrl = bidResponse.vastXml;
   }
 
-  return { ...bidResponse }
+  return { ...bidResponse };
 }
 
 function buildVideoOutstreamResponse(bidResponse, context) {

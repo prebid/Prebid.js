@@ -85,7 +85,7 @@ const bannerReponse = {
   ],
   'bidid': 'ARUYoUZx',
   'cur': 'USD'
-}
+};
 
 const videoResponse = {
   'id': 'brid00000000',
@@ -112,7 +112,7 @@ const videoResponse = {
   ],
   'bidid': 'soCWeklh',
   'cur': 'USD'
-}
+};
 
 describe('Silverpush Adapter', function () {
   describe('isBidRequestValid()', () => {
@@ -365,18 +365,18 @@ describe('Silverpush Adapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'getRequest')
-    })
+      ajaxStub = sinon.stub(spec, 'getRequest');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('Should not trigger pixel if bid does not contain burl', function() {
       const result = spec.onBidWon({});
 
       expect(ajaxStub.calledOnce).to.equal(false);
-    })
+    });
 
     it('Should trigger pixel with correct macros if bid burl is present', function() {
       const result = spec.onBidWon({
@@ -389,6 +389,6 @@ describe('Silverpush Adapter', function () {
       });
 
       expect(ajaxStub.calledOnceWith('http://won.foo.bar/trk?ap=1.5&aid=auc123&imp=req123&adid=ad1234&sid=sea123')).to.equal(true);
-    })
-  })
+    });
+  });
 });
