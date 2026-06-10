@@ -31,7 +31,7 @@ const TAXONOMIES = {
   '2': 601,
   '3': 602,
   '4': 603
-}
+};
 
 function partitionBy(field, items) {
   return items.reduce((partitions, item) => {

@@ -43,7 +43,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 var hostDomain;
 
@@ -330,7 +330,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     banner.api = api;
 
-    const formatArr = bannerMediaType.sizes.map(size => ({ w: size[0], h: size[1] }))
+    const formatArr = bannerMediaType.sizes.map(size => ({ w: size[0], h: size[1] }));
     banner.format = Object.assign({}, formatArr);
 
     imp.banner = banner;

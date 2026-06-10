@@ -44,7 +44,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -195,7 +195,7 @@ export const spec = {
         ext: {
           schain: schain
         }
-      }
+      };
     }
 
     if (bidderRequest?.timeout) {
@@ -324,12 +324,12 @@ function buildBanner(request) {
       w: sizes[0][0],
       h: sizes[0][1],
       format: format
-    }
+    };
   } else {
     return {
       w: sizes[0][0],
       h: sizes[0][1]
-    }
+    };
   }
 }
 

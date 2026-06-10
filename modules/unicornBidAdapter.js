@@ -117,7 +117,7 @@ const initializeEids = (bidRequest) => {
   }
 
   return eids;
-}
+};
 
 const interpretResponse = (serverResponse, request) => {
   logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);

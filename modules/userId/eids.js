@@ -73,7 +73,7 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
           eids = [eids];
         }
         eids.forEach(eid => {
-          eid.uids = eid.uids.filter(({ id }) => isStr(id))
+          eid.uids = eid.uids.filter(({ id }) => isStr(id));
         })
         eids = eids.filter(({ uids }) => uids?.length > 0);
       } catch (e) {

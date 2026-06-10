@@ -114,7 +114,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: ENDPOINT,
     data: data
-  }
+  };
 }
 
 function isVideoBid(bid) {

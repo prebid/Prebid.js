@@ -455,7 +455,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {

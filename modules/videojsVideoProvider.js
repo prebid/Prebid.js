@@ -64,7 +64,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
   function init() {
     if (!vjs) {
-      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present')
+      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present');
       return;
     }
 
@@ -114,7 +114,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
       type => player.canPlayType(type) !== ''
-    )
+    );
 
     // IMA supports vpaid unless its expliclty turned off
     // TODO: needs a reference to the imaOptions used at setup to determine if vpaid can be used
@@ -636,13 +636,13 @@ export const utils = {
       case AD_REQUEST:
         return 'ads-request';
       case AD_LOADED:
-        return 'loaded'
+        return 'loaded';
       case AD_STARTED:
         return 'start';
       case AD_IMPRESSION:
         return 'impression';
       case AD_PLAY:
-        return 'resume'
+        return 'resume';
       case AD_PAUSE:
         return PAUSE;
       case AD_TIME:

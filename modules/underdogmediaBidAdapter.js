@@ -23,7 +23,7 @@ const NON_MEASURABLE = -1;
 const PRODUCT = {
   standard: 1,
   sticky: 2
-}
+};
 
 let USER_SYNCED = false;
 

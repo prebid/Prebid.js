@@ -40,7 +40,7 @@ export const spec = {
       utils.triggerPixel(bid.burl);
     }
   }
-}
+};
 
 function isBidRequestValid(bid) {
   return (isValidInventoryId(bid) && (isValidBannerRequest(bid) || isValidVideoRequest(bid)));

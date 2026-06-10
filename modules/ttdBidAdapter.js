@@ -170,10 +170,10 @@ function getImpression(bidRequest) {
   }
 
   const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
-  impression.secure = isNumber(secure) ? secure : 1
+  impression.secure = isNumber(secure) ? secure : 1;
 
   const { video: _, ...ortb2ImpWithoutVideo } = bidRequest.ortb2Imp; // if enabled, video is already assigned above
-  utils.mergeDeep(impression, ortb2ImpWithoutVideo)
+  utils.mergeDeep(impression, ortb2ImpWithoutVideo);
 
   return impression;
 }
@@ -395,7 +395,7 @@ export const spec = {
       regs: getRegs(bidderRequest),
       source: getSource(validBidRequests, bidderRequest),
       ext: getExt(firstPartyData)
-    }
+    };
 
     if (firstPartyData && firstPartyData.bcat) {
       topLevel.bcat = firstPartyData.bcat;

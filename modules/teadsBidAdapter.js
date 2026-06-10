@@ -101,7 +101,7 @@ export const spec = {
       const isValidConsentString = typeof gpp.gppString === 'string';
       const validateApplicableSections =
         Array.isArray(gpp.applicableSections) &&
-        gpp.applicableSections.every((section) => typeof (section) === 'number')
+        gpp.applicableSections.every((section) => typeof (section) === 'number');
       payload.gpp = {
         consentString: isValidConsentString ? gpp.gppString : '',
         applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],

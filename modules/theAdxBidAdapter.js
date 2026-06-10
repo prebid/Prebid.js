@@ -532,7 +532,7 @@ const generatePayload = (bidRequest, bidderRequest) => {
 };
 
 function getEids(bidRequest) {
-  const eids = {}
+  const eids = {};
 
   const uId2 = deepAccess(bidRequest, 'userId.uid2.id');
   if (uId2) {
