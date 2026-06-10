@@ -324,6 +324,17 @@ describe('MagicBid Bid Adapter', function() {
     });
   });
 
+  describe('onTimeout', function() {
+    it('should not throw when timeout data is provided', function() {
+      const timeoutData = [{ bidder: 'magicbid', timeout: 1000, adUnitCode: 'ad-unit-1' }];
+      expect(function() { spec.onTimeout(timeoutData); }).to.not.throw();
+    });
+
+    it('should not throw when timeout data is empty', function() {
+      expect(function() { spec.onTimeout([]); }).to.not.throw();
+    });
+  });
+
   describe('onBidWon', function() {
     it('should fire win notification when nurl is present', function() {
       const bid = { nurl: 'https://win.rtb-magicbid.ai/win?id=123' };
