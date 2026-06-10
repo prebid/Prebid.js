@@ -51,7 +51,7 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
 }
 
 export function createTag(bidRequests, adapterRequest) {
-  const placementEnv = getPlacementPositionUtils().getPlacementEnv()
+  const placementEnv = getPlacementPositionUtils().getPlacementEnv();
   const tag = {
     // TODO: is 'page' the right value here?
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),

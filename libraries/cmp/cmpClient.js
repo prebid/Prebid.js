@@ -165,5 +165,5 @@ export function cmpClient(
     close() {
       !isDirect && win.removeEventListener('message', handleMessage);
     }
-  })
+  });
 }

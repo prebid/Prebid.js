@@ -210,7 +210,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
             events.on(ev, handler);
             return [ev, handler];
           })
-      )
+      );
     } else {
       logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }

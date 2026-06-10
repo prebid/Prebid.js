@@ -125,7 +125,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === NATIVE) {
     try {
-      response.native = { ortb: JSON.parse(bid.adm) }
+      response.native = { ortb: JSON.parse(bid.adm) };
     } catch (e) {}
   }
   return response as BidResponse;

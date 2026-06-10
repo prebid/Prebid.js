@@ -137,7 +137,7 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
 
   if (isCk2trk) {
     syncUrl += uspConsent ? `&us_privacy=${uspConsent}` : `&us_privacy=`;
-    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`
+    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`;
   } else {
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;

@@ -225,7 +225,7 @@ export function configParser(
       if (isPlainObject(cmConfig.consentData)) {
         staticConsentData = cmConfig.consentData;
         cmpTimeout = null;
-        setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))))
+        setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))));
       } else {
         logError(msg(`config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`));
       }
@@ -253,10 +253,10 @@ export function configParser(
           cd = lookup().catch(err => {
             cd = null;
             throw err;
-          })
+          });
         }
         return cd;
-      }
+      };
     })();
 
     activate();
@@ -267,6 +267,6 @@ export function configParser(
       staticConsentData,
       loadConsentData,
       requestBidsHook
-    }
+    };
   }
 }
