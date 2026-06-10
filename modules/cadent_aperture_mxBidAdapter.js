@@ -281,7 +281,7 @@ export const spec = {
       // adding gpid support
       const gpid =
         deepAccess(bid, 'ortb2Imp.ext.gpid') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot')
+        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
 
       if (gpid) {
         data.ext = { gpid: gpid.toString() };

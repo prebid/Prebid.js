@@ -112,6 +112,6 @@ export const spec = {
   onSetTargeting: function(bid) {},
   // onBidderError: function({ error, bidderRequest }) {},
   onAdRenderSucceeded: function(bid) {}
-}
+};
 
 registerBidder(spec);

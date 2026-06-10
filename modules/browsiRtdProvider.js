@@ -145,7 +145,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data);
   script.brwRandom = RANDOM;
   Object.assign(script.prebidData, { pvid: PVID || data.pvid, t: TIMESTAMP, apik: API_KEY });
   if (_moduleParams.keyName) {
@@ -279,7 +279,7 @@ function getPredictionsFromServer(url) {
             addBrowsiTag(data);
           } catch (err) {
             logError('unable to parse data');
-            setBrowsiData({})
+            setBrowsiData({});
           }
         } else if (req.status === 204) {
           // unrecognized site key

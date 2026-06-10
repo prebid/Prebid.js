@@ -53,7 +53,7 @@ function parseNativeResponse(ad) {
     nativeResponse.privacyLink = dsaurl;
   }
 
-  return nativeResponse
+  return nativeResponse;
 }
 
 function getGdeScriptUrl(adDataFields) {

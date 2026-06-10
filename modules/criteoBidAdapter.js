@@ -28,7 +28,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 const TRANSLATOR = ortb25Translator();
 
-const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js'
+const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js';
 const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months

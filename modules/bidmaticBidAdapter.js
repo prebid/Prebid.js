@@ -154,7 +154,7 @@ export function remapBidRequest(bidRequests, adapterRequest) {
   bidRequestBody.USP = deepAccess(adapterRequest, 'uspConsent');
   bidRequestBody.Coppa = deepAccess(adapterRequest, 'ortb2.regs.coppa') ? 1 : 0;
   bidRequestBody.AgeVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
-  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp
+  bidRequestBody.GPP = adapterRequest.gppConsent ? adapterRequest.gppConsent.gppString : adapterRequest.ortb2?.regs?.gpp;
   bidRequestBody.GPPSid = adapterRequest.gppConsent ? adapterRequest.gppConsent.applicableSections?.toString() : adapterRequest.ortb2?.regs?.gpp_sid;
   bidRequestBody.Schain = deepAccess(bidRequests[0], 'schain');
   bidRequestBody.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');

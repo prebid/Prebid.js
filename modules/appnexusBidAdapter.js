@@ -278,7 +278,7 @@ export const spec = {
     const ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
 
     const anAuctionKeywords = deepClone(config.getConfig('appnexusAuctionKeywords')) || {};
-    const auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords)
+    const auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords);
     if (auctionKeywords.length > 0) {
       payload.keywords = auctionKeywords;
     }
@@ -323,12 +323,12 @@ export const spec = {
       payload.privacy = {
         gpp: bidderRequest.gppConsent.gppString,
         gpp_sid: bidderRequest.gppConsent.applicableSections
-      }
+      };
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
       payload.privacy = {
         gpp: bidderRequest.ortb2.regs.gpp,
         gpp_sid: bidderRequest.ortb2.regs.gpp_sid
-      }
+      };
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {

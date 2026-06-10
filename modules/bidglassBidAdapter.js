@@ -140,7 +140,7 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: false
       }
-    }
+    };
   },
 
   /**

@@ -313,13 +313,13 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const queryParamsAndValues = [];
-    queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset())
-    queryParamsAndValues.push('format=prebid')
+    queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset());
+    queryParamsAndValues.push('format=prebid');
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
     queryParamsAndValues.push('pbv=' + getGlobal().version);
     if (gdprApplies !== undefined) {
-      const flag = gdprApplies ? '1' : '0'
+      const flag = gdprApplies ? '1' : '0';
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
@@ -415,7 +415,7 @@ export const spec = {
                 'methods': [1]
               }
             ];
-            adUnit.nativeRequest = { ortb: nativeOrtb }
+            adUnit.nativeRequest = { ortb: nativeOrtb };
           } else {
             adUnit.nativeRequest = { ortb: mediaTypeData.ortb };
           }
@@ -477,7 +477,7 @@ export const spec = {
       if (advertiserDomains.length === 0) {
         const destinationUrls = ad.destinationUrls || {};
         for (const value of Object.values(destinationUrls)) {
-          advertiserDomains.push(value.split('/')[2])
+          advertiserDomains.push(value.split('/')[2]);
         }
       }
       const adResponse = {

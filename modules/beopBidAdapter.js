@@ -130,7 +130,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString
-    }
+    };
   },
   interpretResponse: function(serverResponse, request) {
     if (serverResponse && serverResponse.body && isArray(serverResponse.body.bids) && serverResponse.body.bids.length > 0) {

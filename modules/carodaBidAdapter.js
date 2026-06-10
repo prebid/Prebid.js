@@ -157,7 +157,7 @@ function getORTBCommon (bidderRequest) {
   const commonFpd = bidderRequest.ortb2 || {};
   const { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
-    app = getConfig('app') || {}
+    app = getConfig('app') || {};
     if (commonFpd.app) {
       mergeDeep(app, commonFpd.app);
     }
