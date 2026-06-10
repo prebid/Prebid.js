@@ -59,7 +59,7 @@ describe('YieldmoAdapter', function () {
         startdelay: 10,
         protocols: [2, 3],
         api: [2, 3],
-        skipppable: true,
+        skippable: true,
         playbackmethod: [1, 2],
         ...videoParams,
       },
@@ -364,7 +364,7 @@ describe('YieldmoAdapter', function () {
 
       it('should not write 0 bidfloor value by default', function() {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
-        expect(placementsData[0].bidfloor).to.undefined;
+        expect(placementsData[0].bidfloor).to.be.undefined;
       });
 
       it('should not exceed max url length', () => {
@@ -552,7 +552,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
 
         it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
@@ -584,7 +584,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if params.video.skippable is false', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
       });
 
