@@ -1,5 +1,5 @@
 import { config } from 'src/config.js';
-import { emit, clearEvents, getEvents, on, off } from '../../../../src/events.js';
+import { listen, emit, clearEvents, getEvents, on, off } from '../../../../src/events.js';
 import * as utils from '../../../../src/utils.js';
 
 describe('events', () => {
@@ -43,4 +43,22 @@ describe('events', () => {
     off(eventString, fn);
     logErrorStub.restore();
   });
+
+  it('can use off on handlers passed to on', () => {
+    const handler = sinon.stub();
+    on('bidWon', handler);
+    off('bidWon', handler);
+    emit('bidWon', {});
+    sinon.assert.notCalled(handler);
+  });
+
+  it('can get event record using listen', () => {
+    const handler = sinon.stub();
+    listen('bidWon', handler);
+    emit('bidWon', {});
+    sinon.assert.calledWith(handler, sinon.match({
+      eventType: 'bidWon',
+      args: {}
+    }), {});
+  })
 });
