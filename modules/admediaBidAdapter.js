@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -7,8 +7,8 @@ import { BANNER } from '../src/mediaTypes.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'admedia'
-const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/'
+const BIDDER_CODE = 'admedia';
+const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,7 +21,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placementId)
+    return !!(bid.params.placementId);
   },
 
   /**
@@ -33,22 +33,22 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
-      return []
+      return [];
     }
     return validBidRequests.map(bidRequest => {
-      let sizes = []
+      let sizes = [];
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
-        sizes = bidRequest.mediaTypes[BANNER].sizes
+        sizes = bidRequest.mediaTypes[BANNER].sizes;
       }
 
-      var tagData = []
+      var tagData = [];
       for (var i = 0, j = sizes.length; i < j; i++) {
-        const tag = {}
-        tag.sizes = []
-        tag.id = bidRequest.params.placementId
-        tag.aid = bidRequest.params.aid
-        tag.sizes.push(sizes[i].toString().replace(',', 'x'))
-        tagData.push(tag)
+        const tag = {};
+        tag.sizes = [];
+        tag.id = bidRequest.params.placementId;
+        tag.aid = bidRequest.params.aid;
+        tag.sizes.push(sizes[i].toString().replace(',', 'x'));
+        tagData.push(tag);
       }
 
       const payload = {
@@ -57,14 +57,14 @@ export const spec = {
         tags: tagData,
         bidId: bidRequest.bidId,
         referer: encodeURIComponent(bidderRequest.refererInfo.page)
-      }
+      };
 
       return {
         method: 'POST',
         url: ENDPOINT_URL,
         data: payload
-      }
-    })
+      };
+    });
   },
 
   /**
@@ -75,30 +75,30 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta']
-    const validBidResponses = []
-    serverResponse = serverResponse.body.tags
+    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta'];
+    const validBidResponses = [];
+    serverResponse = serverResponse.body.tags;
 
     if (serverResponse && (serverResponse.length > 0)) {
       serverResponse.forEach((bid) => {
-        const bidResponse = {}
+        const bidResponse = {};
         for (const requiredKey of requiredKeys) {
           if (!bid.hasOwnProperty(requiredKey)) {
-            return []
+            return [];
           }
-          bidResponse[requiredKey] = bid[requiredKey]
+          bidResponse[requiredKey] = bid[requiredKey];
         }
         if (!(typeof bid.meta.advertiserDomains !== 'undefined' && bid.meta.advertiserDomains.length > 0)) {
-          return []
+          return [];
         }
-        validBidResponses.push(bidResponse)
-      })
+        validBidResponses.push(bidResponse);
+      });
     }
-    return validBidResponses
+    return validBidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
   onTimeout: function(timeoutData) {},
   onBidWon: function (bid) {}
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

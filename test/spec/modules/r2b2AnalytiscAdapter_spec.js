@@ -1,28 +1,28 @@
-import r2b2Analytics, { dep, resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js'
+import r2b2Analytics, { dep, resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js';
 
-import { expect } from 'chai'
-import { AD_RENDER_FAILED_REASON, EVENTS, REJECTION_REASON } from 'src/constants.js'
-import * as pbEvents from 'src/events.js'
-import * as utils from 'src/utils'
-import * as prebidGlobal from 'src/prebidGlobal'
+import { expect } from 'chai';
+import { AD_RENDER_FAILED_REASON, EVENTS, REJECTION_REASON } from 'src/constants.js';
+import * as pbEvents from 'src/events.js';
+import * as utils from 'src/utils';
+import * as prebidGlobal from 'src/prebidGlobal';
 
-const adapterManager = require('src/adapterManager').default
+const adapterManager = require('src/adapterManager').default;
 
 const {
   NO_BID, AUCTION_INIT, BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_REJECTED, BIDDER_DONE,
   AUCTION_END, BID_WON, SET_TARGETING, STALE_RENDER, AD_RENDER_SUCCEEDED, AD_RENDER_FAILED, BID_VIEWABLE
-} = EVENTS
+} = EVENTS;
 
-const BANNER_SETTING_1 = { 'sizes': [[300, 300], [300, 250]] }
-const BANNER_SETTING_2 = { 'sizes': [[320, 150], [320, 50]] }
+const BANNER_SETTING_1 = { 'sizes': [[300, 300], [300, 250]] };
+const BANNER_SETTING_2 = { 'sizes': [[320, 150], [320, 50]] };
 
-const AD_UNIT_1_CODE = 'prebid_300x300'
-const AD_UNIT_2_CODE = 'prebid_320x150'
-const R2B2_PID_1 = 'test.cz/s2s/300x300/mobile'
-const R2B2_PID_2 = 'test.cz/s2s/320x150/mobile'
-const AD_UNIT_1_TID = '0b3464bb-d80a-490e-8367-a65201a37ba3'
-const AD_UNIT_2_TID = 'c8c3643c-9de0-43ea-bcd6-cc0072ec9b45'
-const AD_UNIT_2_AD_ID = '22c828c62d44da5'
+const AD_UNIT_1_CODE = 'prebid_300x300';
+const AD_UNIT_2_CODE = 'prebid_320x150';
+const R2B2_PID_1 = 'test.cz/s2s/300x300/mobile';
+const R2B2_PID_2 = 'test.cz/s2s/320x150/mobile';
+const AD_UNIT_1_TID = '0b3464bb-d80a-490e-8367-a65201a37ba3';
+const AD_UNIT_2_TID = 'c8c3643c-9de0-43ea-bcd6-cc0072ec9b45';
+const AD_UNIT_2_AD_ID = '22c828c62d44da5';
 const AD_UNIT_1 = {
   'code': AD_UNIT_1_CODE,
   'mediaTypes': {
@@ -42,7 +42,7 @@ const AD_UNIT_1 = {
       'tid': AD_UNIT_1_TID
     }
   }
-}
+};
 const AD_UNIT_2 = {
   'code': AD_UNIT_2_CODE,
   'mediaTypes': {
@@ -62,8 +62,8 @@ const AD_UNIT_2 = {
       'tid': AD_UNIT_2_TID
     }
   }
-}
-const AUCTION_ID = '5b912b08-ce23-463c-a6cf-1792f7344430'
+};
+const AUCTION_ID = '5b912b08-ce23-463c-a6cf-1792f7344430';
 const R2B2_BIDDER_REQUEST = {
   'bidderCode': 'r2b2',
   'auctionId': AUCTION_ID,
@@ -95,7 +95,7 @@ const R2B2_BIDDER_REQUEST = {
   'auctionStart': 1727160493004,
   'timeout': 10000,
   'start': 1727160493009
-}
+};
 const ADFORM_BIDDER_REQUEST = {
   'bidderCode': 'adf',
   'auctionId': AUCTION_ID,
@@ -116,7 +116,7 @@ const ADFORM_BIDDER_REQUEST = {
   'auctionStart': 1727160493004,
   'timeout': 10000,
   'start': 1727160493016
-}
+};
 const STROEER_BIDDER_REQUEST = {
   'bidderCode': 'stroeerCore',
   'auctionId': AUCTION_ID,
@@ -139,7 +139,7 @@ const STROEER_BIDDER_REQUEST = {
   'auctionStart': 1727160493004,
   'timeout': 10000,
   'start': 1727160493023
-}
+};
 const R2B2_AD_UNIT_2_BID = {
   'bidderCode': 'r2b2',
   'width': 300,
@@ -178,7 +178,7 @@ const R2B2_AD_UNIT_2_BID = {
   },
   'latestTargetedAuctionId': AUCTION_ID,
   'status': 1
-}
+};
 
 const MOCK = {
   AUCTION_INIT: {
@@ -270,139 +270,139 @@ const MOCK = {
   },
   STALE_RENDER: R2B2_AD_UNIT_2_BID,
   BID_VIEWABLE: R2B2_AD_UNIT_2_BID
-}
+};
 function fireEvents(events) {
   return events.map((ev, i) => {
-    ev = Array.isArray(ev) ? ev : [ev, { i: i }]
-    pbEvents.emit.apply(null, ev)
-    return ev
-  })
+    ev = Array.isArray(ev) ? ev : [ev, { i: i }];
+    pbEvents.emit.apply(null, ev);
+    return ev;
+  });
 }
 
 function expectEvents(events, sandbox) {
-  events = fireEvents(events)
+  events = fireEvents(events);
   return {
     to: {
       beTrackedBy(trackFn) {
         events.forEach(([eventType, args]) => {
-          sandbox.assert.calledWithMatch(trackFn, sandbox.match({ eventType, args }))
-        })
+          sandbox.assert.calledWithMatch(trackFn, sandbox.match({ eventType, args }));
+        });
       },
       beBundledTo(bundleFn) {
         events.forEach(([eventType, args]) => {
-          sandbox.assert.calledWithMatch(bundleFn, sandbox.match.any, eventType, sandbox.match(args))
-        })
+          sandbox.assert.calledWithMatch(bundleFn, sandbox.match.any, eventType, sandbox.match(args));
+        });
       },
     },
-  }
+  };
 }
 
 function validateAndExtractEvents(ajaxStub) {
-  expect(ajaxStub.calledOnce).to.equal(true)
-  const eventArgs = ajaxStub.firstCall.args[2]
-  expect(typeof eventArgs).to.be.equal('string')
-  expect(eventArgs.indexOf('events=')).to.be.equal(0)
-  const eventsString = eventArgs.substring(7)
-  const events = tryParseJSON(eventsString)
-  expect(events).to.not.be.undefined
+  expect(ajaxStub.calledOnce).to.equal(true);
+  const eventArgs = ajaxStub.firstCall.args[2];
+  expect(typeof eventArgs).to.be.equal('string');
+  expect(eventArgs.indexOf('events=')).to.be.equal(0);
+  const eventsString = eventArgs.substring(7);
+  const events = tryParseJSON(eventsString);
+  expect(events).to.not.be.undefined;
 
-  return events
+  return events;
 }
 
 function getQueryData(url, decode = false) {
-  const queryArgs = url.split('?')[1].split('&')
+  const queryArgs = url.split('?')[1].split('&');
   return queryArgs.reduce((data, arg) => {
-    let [key, val] = arg.split('=')
+    let [key, val] = arg.split('=');
     if (decode) {
-      val = decodeURIComponent(val)
+      val = decodeURIComponent(val);
     }
     if (data[key] !== undefined) {
       if (!Array.isArray(data[key])) {
-        data[key] = [data[key]]
+        data[key] = [data[key]];
       }
-      data[key].push(val)
+      data[key].push(val);
     } else {
-      data[key] = val
+      data[key] = val;
     }
-    return data
-  }, {})
+    return data;
+  }, {});
 }
 
 function getPrebidEvents(events) {
-  return events && events.prebid && events.prebid.e
+  return events && events.prebid && events.prebid.e;
 }
 function getPrebidEventsByName(events, name) {
-  const prebidEvents = getPrebidEvents(events)
-  if (!prebidEvents) return []
+  const prebidEvents = getPrebidEvents(events);
+  if (!prebidEvents) return [];
 
-  const result = []
+  const result = [];
   for (let i = 0; i < prebidEvents.length; i++) {
-    const event = prebidEvents[i]
+    const event = prebidEvents[i];
     if (event.e === name) {
-      result.push(event)
+      result.push(event);
     }
   }
 
-  return result
+  return result;
 }
 
 function tryParseJSON(value) {
   try {
-    return JSON.parse(value)
+    return JSON.parse(value);
   } catch (e) {
   }
 }
 describe('r2b2 Analytics', function () {
-  let sandbox
-  let clock
-  let ajaxStub
-  let getGlobalStub
-  let enableAnalytics
+  let sandbox;
+  let clock;
+  let ajaxStub;
+  let getGlobalStub;
+  let enableAnalytics;
 
   before(() => {
-    enableAnalytics = r2b2Analytics.enableAnalytics
-  })
+    enableAnalytics = r2b2Analytics.enableAnalytics;
+  });
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    clock = sandbox.useFakeTimers()
-    sandbox.stub(pbEvents, 'getEvents').returns([])
+    sandbox = sinon.createSandbox();
+    clock = sandbox.useFakeTimers();
+    sandbox.stub(pbEvents, 'getEvents').returns([]);
     getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns({
       getHighestCpmBids: () => [R2B2_AD_UNIT_2_BID]
-    })
-    ajaxStub = sandbox.stub(dep, 'ajax')
+    });
+    ajaxStub = sandbox.stub(dep, 'ajax');
 
     adapterManager.registerAnalyticsAdapter({
       code: 'r2b2',
       adapter: r2b2Analytics
-    })
+    });
 
-    r2b2Analytics.enableAnalytics = enableAnalytics
-  })
+    r2b2Analytics.enableAnalytics = enableAnalytics;
+  });
 
   afterEach(() => {
-    resetAnalyticAdapter()
-    sandbox.restore()
-    getGlobalStub.restore()
-    ajaxStub.restore()
-    r2b2Analytics.disableAnalytics()
-    clock.runAll()
-    clock.restore()
-  })
+    resetAnalyticAdapter();
+    sandbox.restore();
+    getGlobalStub.restore();
+    ajaxStub.restore();
+    r2b2Analytics.disableAnalytics();
+    clock.runAll();
+    clock.restore();
+  });
 
   describe('config', () => {
     it('missing domain', () => {
-      const logWarnStub = sandbox.stub(utils, 'logWarn')
+      const logWarnStub = sandbox.stub(utils, 'logWarn');
 
       adapterManager.enableAnalytics({
         provider: 'r2b2',
         options: {}
-      })
+      });
 
-      expect(logWarnStub.calledOnce).to.be.true
-      expect(logWarnStub.firstCall.args[0]).to.be.equal('R2B2 Analytics: Mandatory parameter \'domain\' not configured, analytics disabled')
-      logWarnStub.restore()
-    })
+      expect(logWarnStub.calledOnce).to.be.true;
+      expect(logWarnStub.firstCall.args[0]).to.be.equal('R2B2 Analytics: Mandatory parameter \'domain\' not configured, analytics disabled');
+      logWarnStub.restore();
+    });
 
     it('all params error reporting', () => {
       adapterManager.enableAnalytics({
@@ -413,19 +413,19 @@ describe('r2b2 Analytics', function () {
           configVer: 7,
           server: 'delivery.local',
         }
-      })
+      });
 
       fireEvents([
         [BID_RESPONSE, MOCK.BID_RESPONSE],
-      ])
+      ]);
 
-      expect(ajaxStub.calledOnce).to.be.true
-      expect(typeof ajaxStub.firstCall.args[0]).to.be.equal('string')
-      const query = getQueryData(ajaxStub.firstCall.args[0], true)
-      expect(query['d']).to.be.equal('test.cz')
-      expect(query['conf']).to.be.equal('11')
-      expect(query['conf_ver']).to.be.equal('7')
-    })
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(typeof ajaxStub.firstCall.args[0]).to.be.equal('string');
+      const query = getQueryData(ajaxStub.firstCall.args[0], true);
+      expect(query['d']).to.be.equal('test.cz');
+      expect(query['conf']).to.be.equal('11');
+      expect(query['conf_ver']).to.be.equal('7');
+    });
 
     it('all params events reporting', (done) => {
       adapterManager.enableAnalytics({
@@ -436,26 +436,26 @@ describe('r2b2 Analytics', function () {
           configVer: 7,
           server: 'delivery.local',
         }
-      })
+      });
 
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_RESPONSE, MOCK.BID_RESPONSE],
-      ])
+      ]);
 
       setTimeout(() => {
-        expect(ajaxStub.calledOnce).to.be.true
-        expect(typeof ajaxStub.firstCall.args[0]).to.be.equal('string')
-        const query = getQueryData(ajaxStub.firstCall.args[0], true)
-        expect(query['hbDomain']).to.be.equal('test.cz')
-        expect(query['conf']).to.be.equal('11')
-        expect(query['conf_ver']).to.be.equal('7')
-        done()
-      }, 500)
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(typeof ajaxStub.firstCall.args[0]).to.be.equal('string');
+        const query = getQueryData(ajaxStub.firstCall.args[0], true);
+        expect(query['hbDomain']).to.be.equal('test.cz');
+        expect(query['conf']).to.be.equal('11');
+        expect(query['conf_ver']).to.be.equal('7');
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
-  })
+      clock.tick(500);
+    });
+  });
 
   describe('events', () => {
     beforeEach(() => {
@@ -464,11 +464,11 @@ describe('r2b2 Analytics', function () {
         options: {
           domain: 'test.com',
         }
-      })
-    })
+      });
+    });
 
     it('should catch all events', function () {
-      sandbox.spy(r2b2Analytics, 'track')
+      sandbox.spy(r2b2Analytics, 'track');
 
       expectEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
@@ -477,26 +477,26 @@ describe('r2b2 Analytics', function () {
         [AUCTION_END, MOCK.AUCTION_END],
         [SET_TARGETING, MOCK.SET_TARGETING],
         [BID_WON, MOCK.BID_WON],
-      ], sandbox).to.beTrackedBy(r2b2Analytics.track)
-    })
+      ], sandbox).to.beTrackedBy(r2b2Analytics.track);
+    });
 
     it('should send ajax after delay', (done) => {
-      fireEvents([[AUCTION_INIT, MOCK.AUCTION_INIT]])
+      fireEvents([[AUCTION_INIT, MOCK.AUCTION_INIT]]);
       setTimeout(() => {
-        expect(ajaxStub.calledOnce).to.equal(true)
-        done()
-      }, 500)
+        expect(ajaxStub.calledOnce).to.equal(true);
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('auction init content', (done) => {
-      fireEvents([[AUCTION_INIT, MOCK.AUCTION_INIT]])
+      fireEvents([[AUCTION_INIT, MOCK.AUCTION_INIT]]);
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const initEvents = getPrebidEventsByName(events, 'init')
-        expect(initEvents.length).to.be.equal(1)
-        const initEvent = initEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const initEvents = getPrebidEventsByName(events, 'init');
+        expect(initEvents.length).to.be.equal(1);
+        const initEvent = initEvents[0];
         expect(initEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           u: {
@@ -504,43 +504,43 @@ describe('r2b2 Analytics', function () {
             [AD_UNIT_2_CODE]: ['r2b2', 'stroeerCore']
           },
           o: 1
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('auction multiple init', (done) => {
-      const auction_init = MOCK.AUCTION_INIT
-      const auction_init_2 = utils.deepClone(MOCK.AUCTION_INIT)
-      auction_init_2.auctionId = 'different_auction_id'
+      const auction_init = MOCK.AUCTION_INIT;
+      const auction_init_2 = utils.deepClone(MOCK.AUCTION_INIT);
+      auction_init_2.auctionId = 'different_auction_id';
 
-      fireEvents([[AUCTION_INIT, auction_init], [AUCTION_INIT, auction_init_2]])
+      fireEvents([[AUCTION_INIT, auction_init], [AUCTION_INIT, auction_init_2]]);
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const initEvents = getPrebidEventsByName(events, 'init')
-        expect(initEvents.length).to.be.equal(2)
-        done()
-      }, 500)
+        const events = validateAndExtractEvents(ajaxStub);
+        const initEvents = getPrebidEventsByName(events, 'init');
+        expect(initEvents.length).to.be.equal(2);
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid requested content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_REQUESTED, MOCK.BID_REQUESTED],
         [BID_REQUESTED, ADFORM_BIDDER_REQUEST],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const bidRequestedEvents = getPrebidEventsByName(events, 'request')
-        expect(bidRequestedEvents.length).to.be.equal(2)
-        const r2b2BidRequest = bidRequestedEvents[0]
-        const adformBidRequest = bidRequestedEvents[1]
+        const events = validateAndExtractEvents(ajaxStub);
+        const bidRequestedEvents = getPrebidEventsByName(events, 'request');
+        expect(bidRequestedEvents.length).to.be.equal(2);
+        const r2b2BidRequest = bidRequestedEvents[0];
+        const adformBidRequest = bidRequestedEvents[1];
         expect(r2b2BidRequest.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -548,96 +548,96 @@ describe('r2b2 Analytics', function () {
             [AD_UNIT_1_CODE]: 1,
             [AD_UNIT_2_CODE]: 1
           }
-        })
+        });
         expect(adformBidRequest.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'adf',
           u: { [AD_UNIT_1_CODE]: 1 }
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('no bid content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [NO_BID, MOCK.NO_BID]
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const noBidEvents = getPrebidEventsByName(events, 'noBid')
-        expect(noBidEvents.length).to.be.equal(1)
-        const noBidEvent = noBidEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const noBidEvents = getPrebidEventsByName(events, 'noBid');
+        expect(noBidEvents.length).to.be.equal(1);
+        const noBidEvent = noBidEvents[0];
         expect(noBidEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
           u: AD_UNIT_1_CODE
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid timeout content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_TIMEOUT, MOCK.BID_TIMEOUT]
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const timeoutEvents = getPrebidEventsByName(events, 'timeout')
-        expect(timeoutEvents.length).to.be.equal(1)
-        const timeoutEvent = timeoutEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const timeoutEvents = getPrebidEventsByName(events, 'timeout');
+        expect(timeoutEvents.length).to.be.equal(1);
+        const timeoutEvent = timeoutEvents[0];
         expect(timeoutEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: {
             r2b2: { [AD_UNIT_1_CODE]: 2 }
           }
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bidder done content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BIDDER_DONE, MOCK.BIDDER_DONE]
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const bidderDoneEvents = getPrebidEventsByName(events, 'bidderDone')
-        expect(bidderDoneEvents.length).to.be.equal(1)
-        const bidderDoneEvent = bidderDoneEvents[0]
-        expect(bidderDoneEvent.d).to.be.deep.equal({ ai: AUCTION_ID, b: 'r2b2' })
+        const events = validateAndExtractEvents(ajaxStub);
+        const bidderDoneEvents = getPrebidEventsByName(events, 'bidderDone');
+        expect(bidderDoneEvents.length).to.be.equal(1);
+        const bidderDoneEvent = bidderDoneEvents[0];
+        expect(bidderDoneEvent.d).to.be.deep.equal({ ai: AUCTION_ID, b: 'r2b2' });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('auction end content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [AUCTION_END, MOCK.AUCTION_END]
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const auctionEndEvents = getPrebidEventsByName(events, 'auction')
-        expect(auctionEndEvents.length).to.be.equal(1)
-        const auctionEnd = auctionEndEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const auctionEndEvents = getPrebidEventsByName(events, 'auction');
+        expect(auctionEndEvents.length).to.be.equal(1);
+        const auctionEnd = auctionEndEvents[0];
         expect(auctionEnd.d).to.be.deep.equal({
           ai: AUCTION_ID,
           wins: [{
@@ -654,42 +654,42 @@ describe('r2b2 Analytics', function () {
           nbc: 0,
           rjc: 0,
           brc: 4
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('auction end empty auction', (done) => {
-      const noBidderRequestsEnd = utils.deepClone(MOCK.AUCTION_END)
-      noBidderRequestsEnd.bidderRequests = []
+      const noBidderRequestsEnd = utils.deepClone(MOCK.AUCTION_END);
+      noBidderRequestsEnd.bidderRequests = [];
 
       fireEvents([
         [AUCTION_END, noBidderRequestsEnd]
-      ])
+      ]);
 
       setTimeout(() => {
-        expect(ajaxStub.calledOnce).to.be.false
+        expect(ajaxStub.calledOnce).to.be.false;
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid response content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_RESPONSE, MOCK.BID_RESPONSE],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const bidResponseEvents = getPrebidEventsByName(events, 'response')
-        expect(bidResponseEvents.length).to.be.equal(1)
-        const bidResponseEvent = bidResponseEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const bidResponseEvents = getPrebidEventsByName(events, 'response');
+        expect(bidResponseEvents.length).to.be.equal(1);
+        const bidResponseEvent = bidResponseEvents[0];
         expect(bidResponseEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -702,28 +702,28 @@ describe('r2b2 Analytics', function () {
           st: 1,
           rt: 854,
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid rejected content', (done) => {
-      const rejectedBid = utils.deepClone(R2B2_AD_UNIT_2_BID)
-      rejectedBid.rejectionReason = REJECTION_REASON.FLOOR_NOT_MET
+      const rejectedBid = utils.deepClone(R2B2_AD_UNIT_2_BID);
+      rejectedBid.rejectionReason = REJECTION_REASON.FLOOR_NOT_MET;
 
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_REJECTED, rejectedBid],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const rejectedBidsEvents = getPrebidEventsByName(events, 'reject')
-        expect(rejectedBidsEvents.length).to.be.equal(1)
-        const rejectedBidEvent = rejectedBidsEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const rejectedBidsEvents = getPrebidEventsByName(events, 'reject');
+        expect(rejectedBidsEvents.length).to.be.equal(1);
+        const rejectedBidEvent = rejectedBidsEvents[0];
         expect(rejectedBidEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -732,25 +732,25 @@ describe('r2b2 Analytics', function () {
           c: 'USD',
           r: REJECTION_REASON.FLOOR_NOT_MET,
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid won content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_WON, MOCK.BID_WON],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const bidWonEvents = getPrebidEventsByName(events, 'bidWon')
-        expect(bidWonEvents.length).to.be.equal(1)
-        const bidWonEvent = bidWonEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const bidWonEvents = getPrebidEventsByName(events, 'bidWon');
+        expect(bidWonEvents.length).to.be.equal(1);
+        const bidWonEvent = bidWonEvents[0];
         expect(bidWonEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -769,28 +769,28 @@ describe('r2b2 Analytics', function () {
           },
           o: 1,
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid won content no targeting', (done) => {
-      const bidWonWithoutTargeting = utils.deepClone(MOCK.BID_WON)
-      bidWonWithoutTargeting.adserverTargeting = {}
+      const bidWonWithoutTargeting = utils.deepClone(MOCK.BID_WON);
+      bidWonWithoutTargeting.adserverTargeting = {};
 
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_WON, bidWonWithoutTargeting],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const bidWonEvents = getPrebidEventsByName(events, 'bidWon')
-        expect(bidWonEvents.length).to.be.equal(1)
-        const bidWonEvent = bidWonEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const bidWonEvents = getPrebidEventsByName(events, 'bidWon');
+        expect(bidWonEvents.length).to.be.equal(1);
+        const bidWonEvent = bidWonEvents[0];
         expect(bidWonEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -809,25 +809,25 @@ describe('r2b2 Analytics', function () {
           },
           o: 1,
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('targeting content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_RESPONSE, MOCK.BID_RESPONSE],
         [SET_TARGETING, MOCK.SET_TARGETING]
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const setTargetingEvents = getPrebidEventsByName(events, 'targeting')
-        expect(setTargetingEvents.length).to.be.equal(1)
+        const events = validateAndExtractEvents(ajaxStub);
+        const setTargetingEvents = getPrebidEventsByName(events, 'targeting');
+        expect(setTargetingEvents.length).to.be.equal(1);
         expect(setTargetingEvents[0].d).to.be.deep.equal({
           ai: AUCTION_ID,
           u: {
@@ -838,26 +838,26 @@ describe('r2b2 Analytics', function () {
               fmt: 'banner'
             }
           }
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('ad render succeeded content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_RESPONSE, MOCK.BID_RESPONSE],
         [AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const setTargetingEvents = getPrebidEventsByName(events, 'render')
-        expect(setTargetingEvents.length).to.be.equal(1)
-        const setTargeting = setTargetingEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const setTargetingEvents = getPrebidEventsByName(events, 'render');
+        expect(setTargetingEvents.length).to.be.equal(1);
+        const setTargeting = setTargetingEvents[0];
         expect(setTargeting.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -867,26 +867,26 @@ describe('r2b2 Analytics', function () {
           sz: '300x100',
           mt: 'banner',
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('ad render failed content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_RESPONSE, MOCK.BID_RESPONSE],
         [AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const renderFailedEvents = getPrebidEventsByName(events, 'renderFail')
-        expect(renderFailedEvents.length).to.be.equal(1)
-        const renderFailed = renderFailedEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const renderFailedEvents = getPrebidEventsByName(events, 'renderFail');
+        expect(renderFailedEvents.length).to.be.equal(1);
+        const renderFailed = renderFailedEvents[0];
         expect(renderFailed.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -895,25 +895,25 @@ describe('r2b2 Analytics', function () {
           c: 'USD',
           r: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('stale render content', (done) => {
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [STALE_RENDER, MOCK.STALE_RENDER],
-      ])
+      ]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const staleRenderEvents = getPrebidEventsByName(events, 'staleRender')
-        expect(staleRenderEvents.length).to.be.equal(1)
-        const staleRenderEvent = staleRenderEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const staleRenderEvents = getPrebidEventsByName(events, 'staleRender');
+        expect(staleRenderEvents.length).to.be.equal(1);
+        const staleRenderEvent = staleRenderEvents[0];
         expect(staleRenderEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
@@ -921,88 +921,88 @@ describe('r2b2 Analytics', function () {
           p: 1.5,
           c: 'USD',
           bi: R2B2_AD_UNIT_2_BID.requestId,
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('bid viewable content', (done) => {
-      clock.setSystemTime(100)
+      clock.setSystemTime(100);
 
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
         [BID_RESPONSE, MOCK.BID_RESPONSE],
         [AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED]
-      ])
+      ]);
 
-      clock.setSystemTime(150)
+      clock.setSystemTime(150);
 
-      fireEvents([[BID_VIEWABLE, MOCK.BID_VIEWABLE]])
+      fireEvents([[BID_VIEWABLE, MOCK.BID_VIEWABLE]]);
 
       setTimeout(() => {
-        const events = validateAndExtractEvents(ajaxStub)
-        const bidViewableEvents = getPrebidEventsByName(events, 'view')
-        expect(bidViewableEvents.length).to.be.equal(1)
-        const bidViewableEvent = bidViewableEvents[0]
+        const events = validateAndExtractEvents(ajaxStub);
+        const bidViewableEvents = getPrebidEventsByName(events, 'view');
+        expect(bidViewableEvents.length).to.be.equal(1);
+        const bidViewableEvent = bidViewableEvents[0];
         expect(bidViewableEvent.d).to.be.deep.equal({
           ai: AUCTION_ID,
           b: 'r2b2',
           u: AD_UNIT_2_CODE,
           rt: 50,
           bi: R2B2_AD_UNIT_2_BID.requestId
-        })
+        });
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('no auction data error', (done) => {
       fireEvents([
         [BID_RESPONSE, MOCK.BID_RESPONSE],
-      ])
+      ]);
 
       setTimeout(() => {
-        expect(ajaxStub.calledOnce).to.be.true
-        expect(typeof ajaxStub.firstCall.args[0]).to.be.equal('string')
-        const query = getQueryData(ajaxStub.firstCall.args[0], true)
-        expect(typeof query.m).to.be.equal('string')
-        expect(query.m.indexOf('No auction data when creating event')).to.not.be.equal(-1)
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(typeof ajaxStub.firstCall.args[0]).to.be.equal('string');
+        const query = getQueryData(ajaxStub.firstCall.args[0], true);
+        expect(typeof query.m).to.be.equal('string');
+        expect(query.m.indexOf('No auction data when creating event')).to.not.be.equal(-1);
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
+      clock.tick(500);
+    });
 
     it('empty auction', (done) => {
-      const emptyAuctionInit = utils.deepClone(MOCK.AUCTION_INIT)
-      emptyAuctionInit.bidderRequests = undefined
-      const emptyAuctionEnd = utils.deepClone(MOCK.AUCTION_END)
-      emptyAuctionEnd.bidderRequests = []
+      const emptyAuctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      emptyAuctionInit.bidderRequests = undefined;
+      const emptyAuctionEnd = utils.deepClone(MOCK.AUCTION_END);
+      emptyAuctionEnd.bidderRequests = [];
 
       fireEvents([
         [AUCTION_INIT, emptyAuctionInit],
         [AUCTION_END, emptyAuctionEnd],
-      ])
+      ]);
 
       setTimeout(() => {
-        expect(ajaxStub.calledOnce).to.be.true
-        const events = validateAndExtractEvents(ajaxStub)
-        const initEvents = getPrebidEventsByName(events, 'init')
-        const auctionEndEvents = getPrebidEventsByName(events, 'auction')
+        expect(ajaxStub.calledOnce).to.be.true;
+        const events = validateAndExtractEvents(ajaxStub);
+        const initEvents = getPrebidEventsByName(events, 'init');
+        const auctionEndEvents = getPrebidEventsByName(events, 'auction');
 
-        expect(initEvents.length).to.be.equal(1)
-        expect(auctionEndEvents.length).to.be.equal(0)
+        expect(initEvents.length).to.be.equal(1);
+        expect(auctionEndEvents.length).to.be.equal(0);
 
-        done()
-      }, 500)
+        done();
+      }, 500);
 
-      clock.tick(500)
-    })
-  })
-})
+      clock.tick(500);
+    });
+  });
+});

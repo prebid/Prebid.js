@@ -1,11 +1,11 @@
-import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js'
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { getBidIdParameter, deepSetValue, prefixLog } from '../src/utils.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-const adgLogger = prefixLog('Adgeneration: ')
+import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getBidIdParameter, deepSetValue, prefixLog } from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+const adgLogger = prefixLog('Adgeneration: ');
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -15,10 +15,10 @@ const adgLogger = prefixLog('Adgeneration: ')
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const ADG_BIDDER_CODE = 'adgeneration'
-const ADGENE_PREBID_VERSION = '1.6.6'
-const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid'
-const URL = 'https://d.socdm.com/adgen/prebid'
+const ADG_BIDDER_CODE = 'adgeneration';
+const ADGENE_PREBID_VERSION = '1.6.6';
+const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
+const URL = 'https://d.socdm.com/adgen/prebid';
 
 const converter = ortbConverter({
   context: {
@@ -27,19 +27,19 @@ const converter = ortbConverter({
     ttl: 30// default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
-    deepSetValue(imp, 'ext.params', bidRequest.params)
-    deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes)
-    return imp
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'ext.params', bidRequest.params);
+    deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes);
+    return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context)
-    return request
+    const request = buildRequest(imps, bidderRequest, context);
+    return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   }
-})
+});
 
 export const spec = {
   code: ADG_BIDDER_CODE,
@@ -52,7 +52,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.id)
+    return !!(bid.params.id);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -61,26 +61,26 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ortbObj = converter.toORTB({ bidRequests: validBidRequests, bidderRequest })
-    adgLogger.logInfo('ortbObj', ortbObj)
-    const { imp, ...rest } = ortbObj
+    const ortbObj = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+    adgLogger.logInfo('ortbObj', ortbObj);
+    const { imp, ...rest } = ortbObj;
     const requests = imp.map((impObj) => {
-      const customParams = impObj?.ext?.params
-      const id = getBidIdParameter('id', customParams)
-      const additionalParams = JSON.parse(JSON.stringify(rest))
+      const customParams = impObj?.ext?.params;
+      const id = getBidIdParameter('id', customParams);
+      const additionalParams = JSON.parse(JSON.stringify(rest));
 
-      let urlParams = ``
-      urlParams = tryAppendQueryString(urlParams, 'id', id)
-      urlParams = tryAppendQueryString(urlParams, 'posall', 'SSPLOC')// not reaquired
-      urlParams = tryAppendQueryString(urlParams, 'sdktype', '0')
+      let urlParams = ``;
+      urlParams = tryAppendQueryString(urlParams, 'id', id);
+      urlParams = tryAppendQueryString(urlParams, 'posall', 'SSPLOC');// not reaquired
+      urlParams = tryAppendQueryString(urlParams, 'sdktype', '0');
 
       // remove the trailing "&"
       if (urlParams.lastIndexOf('&') === urlParams.length - 1) {
-        urlParams = urlParams.substring(0, urlParams.length - 1)
+        urlParams = urlParams.substring(0, urlParams.length - 1);
       }
 
-      const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
-      const url = `${urlBase}?${urlParams}`
+      const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL;
+      const url = `${urlBase}?${urlParams}`;
 
       const data = {
         currency: getCurrencyType(bidderRequest),
@@ -91,11 +91,11 @@ export const spec = {
           imp: [impObj],
           ...additionalParams
         }
-      }
+      };
 
       // native以外にvideo等の対応が入った場合は要修正
       if (!impObj?.ext?.mediaTypes || !impObj?.ext?.mediaTypes.native) {
-        data.imark = 1
+        data.imark = 1;
       }
 
       return {
@@ -106,9 +106,9 @@ export const spec = {
           withCredentials: true,
           crossOrigin: true
         },
-      }
-    })
-    return requests
+      };
+    });
+    return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -118,19 +118,19 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequests) {
-    adgLogger.logInfo('serverResponse', JSON.parse(JSON.stringify(serverResponse)))
-    const body = serverResponse.body
+    adgLogger.logInfo('serverResponse', JSON.parse(JSON.stringify(serverResponse)));
+    const body = serverResponse.body;
     if (!body.results || body.results.length < 1) {
-      return []
+      return [];
     }
 
     if (!bidRequests?.data?.ortb?.imp || bidRequests?.data?.ortb?.imp.length < 1) {
-      return []
+      return [];
     }
 
-    const adResult = body?.results[0]
-    const targetImp = bidRequests?.data?.ortb?.imp[0]
-    const requestId = targetImp?.id
+    const adResult = body?.results[0];
+    const targetImp = bidRequests?.data?.ortb?.imp[0];
+    const requestId = targetImp?.id;
 
     const bidResponse = {
       requestId: requestId,
@@ -142,21 +142,21 @@ export const spec = {
       currency: bidRequests?.data?.currency || 'JPY',
       netRevenue: true,
       ttl: adResult.ttl || 10,
-    }
+    };
     if (adResult.adomain && Array.isArray(adResult.adomain) && adResult.adomain.length) {
       bidResponse.meta = {
         advertiserDomains: adResult.adomain
-      }
+      };
     }
     if (isNative(adResult)) {
-      bidResponse.native = createNativeAd(adResult.native, adResult.beaconurl)
-      bidResponse.mediaType = NATIVE
+      bidResponse.native = createNativeAd(adResult.native, adResult.beaconurl);
+      bidResponse.mediaType = NATIVE;
     } else {
       // banner
-      bidResponse.ad = createAd(adResult, body?.location_params, targetImp.ext.params, requestId)
-      bidResponse.mediaType = BANNER
+      bidResponse.ad = createAd(adResult, body?.location_params, targetImp.ext.params, requestId);
+      bidResponse.mediaType = BANNER;
     }
-    return [bidResponse]
+    return [bidResponse];
   },
 
   /**
@@ -167,88 +167,88 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = []
-    return syncs
+    const syncs = [];
+    return syncs;
   }
-}
+};
 
 function createAd(adResult, locationPrams, bidParams, requestId) {
-  adgLogger.logInfo('params', bidParams)
-  let ad = adResult.ad
+  adgLogger.logInfo('params', bidParams);
+  let ad = adResult.ad;
   if (adResult.vastxml && adResult.vastxml.length > 0) {
     if (isUpperBillboard(locationPrams)) {
-      const marginTop = bidParams.marginTop ? bidParams.marginTop : '0'
-      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(adResult.vastxml, marginTop)}</body>`
+      const marginTop = bidParams.marginTop ? bidParams.marginTop : '0';
+      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(adResult.vastxml, marginTop)}</body>`;
     } else {
-      ad = `<body><div id="apvad-${requestId}"></div>${createAPVTag()}${insertVASTMethodForAPV(requestId, adResult.vastxml)}</body>`
+      ad = `<body><div id="apvad-${requestId}"></div>${createAPVTag()}${insertVASTMethodForAPV(requestId, adResult.vastxml)}</body>`;
     }
   }
-  ad = appendChildToBody(ad, adResult.beacon)
-  if (removeWrapper(ad)) return removeWrapper(ad)
-  return ad
+  ad = appendChildToBody(ad, adResult.beacon);
+  if (removeWrapper(ad)) return removeWrapper(ad);
+  return ad;
 }
 
 function isUpperBillboard(locationParams) {
   if (locationParams && locationParams.option && locationParams.option.ad_type) {
-    return locationParams.option.ad_type === 'upper_billboard'
+    return locationParams.option.ad_type === 'upper_billboard';
   }
-  return false
+  return false;
 }
 
 function isNative(adResult) {
-  if (!adResult) return false
-  return adResult.native && adResult.native.assets.length > 0
+  if (!adResult) return false;
+  return adResult.native && adResult.native.assets.length > 0;
 }
 
 function createNativeAd(nativeAd, beaconUrl) {
-  const native = {}
+  const native = {};
   if (nativeAd && nativeAd.assets.length > 0) {
-    const assets = nativeAd.assets
+    const assets = nativeAd.assets;
     for (let i = 0, len = assets.length; i < len; i++) {
       switch (assets[i].id) {
         case 1:
-          native.title = assets[i].title.text
-          break
+          native.title = assets[i].title.text;
+          break;
         case 2:
           native.image = {
             url: assets[i].img.url,
             height: assets[i].img.h,
             width: assets[i].img.w,
-          }
-          break
+          };
+          break;
         case 3:
           native.icon = {
             url: assets[i].img.url,
             height: assets[i].img.h,
             width: assets[i].img.w,
-          }
-          break
+          };
+          break;
         case 4:
-          native.sponsoredBy = assets[i].data.value
-          break
+          native.sponsoredBy = assets[i].data.value;
+          break;
         case 5:
-          native.body = assets[i].data.value
-          break
+          native.body = assets[i].data.value;
+          break;
         case 6:
-          native.cta = assets[i].data.value
-          break
+          native.cta = assets[i].data.value;
+          break;
         case 502:
-          native.privacyLink = encodeURIComponent(assets[i].data.value)
-          break
+          native.privacyLink = encodeURIComponent(assets[i].data.value);
+          break;
       }
     }
-    native.clickUrl = nativeAd.link.url
-    native.clickTrackers = nativeAd.link.clicktrackers || []
-    native.impressionTrackers = nativeAd.imptrackers || []
+    native.clickUrl = nativeAd.link.url;
+    native.clickTrackers = nativeAd.link.clicktrackers || [];
+    native.impressionTrackers = nativeAd.imptrackers || [];
     if (beaconUrl) {
-      native.impressionTrackers.push(beaconUrl)
+      native.impressionTrackers.push(beaconUrl);
     }
   }
-  return native
+  return native;
 }
 
 function appendChildToBody(ad, data) {
-  return ad.replace(/<\/\s?body>/, `${data}</body>`)
+  return ad.replace(/<\/\s?body>/, `${data}</body>`);
 }
 
 /**
@@ -256,8 +256,8 @@ function appendChildToBody(ad, data) {
  * @return {string}
  */
 function createAPVTag() {
-  const APVURL = 'https://cdn.apvdr.com/js/VideoAd.min.js'
-  return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`
+  const APVURL = 'https://cdn.apvdr.com/js/VideoAd.min.js';
+  return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`;
 }
 
 /**
@@ -265,8 +265,8 @@ function createAPVTag() {
  * @return {string}
  */
 function createADGBrowserMTag() {
-  const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js'
-  return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`
+  const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
+  return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
 }
 
 /**
@@ -278,8 +278,8 @@ function createADGBrowserMTag() {
 function insertVASTMethodForAPV(targetId, vastXml) {
   const apvVideoAdParam = {
     s: targetId
-  }
-  return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`
+  };
+  return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`;
 }
 
 /**
@@ -289,7 +289,7 @@ function insertVASTMethodForAPV(targetId, vastXml) {
  * @return {string}
  */
 function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
-  return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`
+  return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`;
 }
 
 /**
@@ -297,18 +297,18 @@ function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
  * @param ad
  */
 function removeWrapper(ad) {
-  const bodyIndex = ad.indexOf('<body>')
-  const lastBodyIndex = ad.lastIndexOf('</body>')
-  if (bodyIndex === -1 || lastBodyIndex === -1) return false
-  return ad.substr(bodyIndex, lastBodyIndex).replace('<body>', '').replace('</body>', '')
+  const bodyIndex = ad.indexOf('<body>');
+  const lastBodyIndex = ad.lastIndexOf('</body>');
+  if (bodyIndex === -1 || lastBodyIndex === -1) return false;
+  return ad.substr(bodyIndex, lastBodyIndex).replace('<body>', '').replace('</body>', '');
 }
 
 /**
  * @return {?string} USD or JPY
  */
 function getCurrencyType(bidderRequest) {
-  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || ''
-  return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY'
+  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || '';
+  return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY';
 }
 
-registerBidder(spec)
+registerBidder(spec);

@@ -1,28 +1,28 @@
-import { AuctionIndex } from '../../src/auctionIndex.js'
+import { AuctionIndex } from '../../src/auctionIndex.js';
 
 export function stubAuctionIndex({ bidRequests, bidderRequests, adUnits, auctionId = 'mock-auction' }) {
   if (adUnits == null) {
-    adUnits = []
+    adUnits = [];
   }
   if (bidderRequests == null) {
-    bidderRequests = []
+    bidderRequests = [];
   }
   if (bidRequests != null) {
     bidderRequests.push({
       bidderRequestId: 'mock-bidder-request',
       bids: bidRequests
-    })
+    });
   }
   const auction = {
     getAuctionId() {
-      return auctionId
+      return auctionId;
     },
     getBidRequests() {
-      return bidderRequests
+      return bidderRequests;
     },
     getAdUnits() {
-      return adUnits
+      return adUnits;
     }
-  }
-  return new AuctionIndex(() => ([auction]))
+  };
+  return new AuctionIndex(() => ([auction]));
 }

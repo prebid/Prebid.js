@@ -1,22 +1,22 @@
-import { expect } from 'chai'
-import sinon from 'sinon'
-import { spec, storage } from 'modules/blueBidAdapter.js'
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { spec, storage } from 'modules/blueBidAdapter.js';
 
-const BIDDER_CODE = 'blue'
-const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid'
-const GVLID = 620
-const CURRENCY = 'USD'
+const BIDDER_CODE = 'blue';
+const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
+const GVLID = 620;
+const CURRENCY = 'USD';
 
 describe('blueBidAdapter:', function () {
-  let sandbox
+  let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox()
-  })
+    sandbox = sinon.createSandbox();
+  });
 
   afterEach(function () {
-    sandbox.restore()
-  })
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid:', function () {
     it('should return true for valid bid requests', function () {
@@ -25,23 +25,23 @@ describe('blueBidAdapter:', function () {
           placementId: '12345',
           publisherId: '67890',
         },
-      }
-      expect(spec.isBidRequestValid(validBid)).to.be.true
-    })
+      };
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
+    });
 
     it('should return false for invalid bid requests', function () {
       const invalidBid = {
         params: {
           placementId: '12345',
         },
-      }
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    });
+  });
 
   describe('buildRequests:', function () {
-    let validBidRequests
-    let bidderRequest
+    let validBidRequests;
+    let bidderRequest;
 
     beforeEach(function () {
       validBidRequests = [
@@ -53,37 +53,37 @@ describe('blueBidAdapter:', function () {
           },
           getFloor: () => ({ currency: CURRENCY, floor: 1.5 }),
         },
-      ]
+      ];
 
       bidderRequest = {
         refererInfo: {
           page: 'https://example.com',
         },
-      }
+      };
 
-      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testBuyerId')
-    })
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testBuyerId');
+    });
 
     it('should build a valid OpenRTB request', function () {
-      const [request] = spec.buildRequests(validBidRequests, bidderRequest)
-      expect(request.method).to.equal('POST')
-      expect(request.url).to.equal(ENDPOINT_URL)
-      expect(request.options.contentType).to.equal('application/json')
+      const [request] = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.options.contentType).to.equal('application/json');
 
-      const ortbRequest = request.data
-      expect(ortbRequest.ext.gvlid).to.equal(GVLID)
-      expect(ortbRequest.imp[0].bidfloor).to.equal(1.5)
-      expect(ortbRequest.imp[0].bidfloorcur).to.equal(CURRENCY)
-    })
+      const ortbRequest = request.data;
+      expect(ortbRequest.ext.gvlid).to.equal(GVLID);
+      expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
+      expect(ortbRequest.imp[0].bidfloorcur).to.equal(CURRENCY);
+    });
 
     it('should omit bidfloor if getFloor is not implemented', function () {
-      validBidRequests[0].getFloor = undefined
+      validBidRequests[0].getFloor = undefined;
 
-      const [request] = spec.buildRequests(validBidRequests, bidderRequest)
-      const ortbRequest = request.data
+      const [request] = spec.buildRequests(validBidRequests, bidderRequest);
+      const ortbRequest = request.data;
 
-      expect(ortbRequest.imp[0].bidfloor).to.be.undefined
-    })
+      expect(ortbRequest.imp[0].bidfloor).to.be.undefined;
+    });
 
     it('should convert from fromORTB', function () {
       const response = {
@@ -121,7 +121,7 @@ describe('blueBidAdapter:', function () {
             seat: '1',
           },
         ],
-      }
+      };
       const request = {
         id: '10bb57ee-712f-43e9-9769-b26d03lklkih',
         bidder: BIDDER_CODE,
@@ -146,19 +146,19 @@ describe('blueBidAdapter:', function () {
         bidderRequestId: '1ae6c8e18f8462',
         auctionId: '1286637c-51bc-4fdd-8e35-2435elklklka',
         ortb2: {},
-      }
+      };
 
       const [ortbReq] = spec.buildRequests([request], {
         bids: [request],
-      })
+      });
 
       const ortbResponse = spec.interpretResponse(
         { body: response },
         { data: ortbReq.data }
-      )
+      );
 
-      expect(ortbResponse.length).to.eq(1)
-      expect(ortbResponse[0].mediaType).to.eq('banner')
-    })
-  })
-})
+      expect(ortbResponse.length).to.eq(1);
+      expect(ortbResponse[0].mediaType).to.eq('banner');
+    });
+  });
+});

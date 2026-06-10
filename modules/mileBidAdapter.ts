@@ -1,8 +1,8 @@
-import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { deepAccess, deepSetValue, generateUUID, logInfo, logError } from '../src/utils.js'
-import { ajax } from '../src/ajax.js'
-import { getDNT } from '../libraries/dnt/index.js'
+import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, generateUUID, logInfo, logError } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * Mile Bid Adapter
@@ -12,19 +12,19 @@ import { getDNT } from '../libraries/dnt/index.js'
  * 2. Bid requests by parsing necessary parameters from the prebid auction
  */
 
-const BIDDER_CODE = 'mile'
+const BIDDER_CODE = 'mile';
 
-const MILE_BIDDER_HOST = 'https://pbs.atmtd.com'
-const ENDPOINT_URL = `${MILE_BIDDER_HOST}/mile/v1/request`
-const USER_SYNC_ENDPOINT = `https://scripts.atmtd.com/user-sync/load-cookie.html`
+const MILE_BIDDER_HOST = 'https://pbs.atmtd.com';
+const ENDPOINT_URL = `${MILE_BIDDER_HOST}/mile/v1/request`;
+const USER_SYNC_ENDPOINT = `https://scripts.atmtd.com/user-sync/load-cookie.html`;
 
-const MILE_ANALYTICS_ENDPOINT = `https://e01.atmtd.com/bidanalytics-event/json`
+const MILE_ANALYTICS_ENDPOINT = `https://e01.atmtd.com/bidanalytics-event/json`;
 
 type MileBidParams = {
   placementId: string;
   siteId: string;
   publisherId: string;
-}
+};
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -33,76 +33,76 @@ declare module '../src/adUnits' {
 }
 export const dep = {
   ajax
-}
-export let siteIdTracker : string | undefined
-export let publisherIdTracker : string | undefined
+};
+export let siteIdTracker : string | undefined;
+export let publisherIdTracker : string | undefined;
 
 export function getLowestFloorPrice(bid) {
-  let floorPrice: number
+  let floorPrice: number;
 
   if (typeof bid.getFloor === 'function') {
-    let sizes = []
+    let sizes = [];
     // Get floor prices for each banner size in the bid request
     if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-      sizes = deepAccess(bid, 'mediaTypes.banner.sizes')
+      sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     } else if (bid.sizes) {
-      sizes = bid.sizes
+      sizes = bid.sizes;
     }
 
     sizes.forEach((size: string | number[]) => {
-      const [w, h] = typeof size === 'string' ? size.split('x') : size as number[]
-      const floor = bid.getFloor({ currency: 'USD', mediaType: '*', size: [Number(w), Number(h)] })
+      const [w, h] = typeof size === 'string' ? size.split('x') : size as number[];
+      const floor = bid.getFloor({ currency: 'USD', mediaType: '*', size: [Number(w), Number(h)] });
       if (floor && floor.floor) {
         if (floorPrice === undefined) {
-          floorPrice = floor.floor
+          floorPrice = floor.floor;
         } else {
-          floorPrice = Math.min(floorPrice, floor.floor)
+          floorPrice = Math.min(floorPrice, floor.floor);
         }
       }
-    })
+    });
   } else {
-    floorPrice = 0
+    floorPrice = 0;
   }
 
-  return floorPrice
+  return floorPrice;
 }
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    const params = bid.params
+    const params = bid.params;
 
     if (!params?.placementId) {
-      logError(`${BIDDER_CODE}: Missing required param: placementId`)
-      return false
+      logError(`${BIDDER_CODE}: Missing required param: placementId`);
+      return false;
     }
 
     if (!params?.siteId) {
-      logError(`${BIDDER_CODE}: Missing required param: siteId`)
-      return false
+      logError(`${BIDDER_CODE}: Missing required param: siteId`);
+      return false;
     }
 
     if (!params?.publisherId) {
-      logError(`${BIDDER_CODE}: Missing required param: publisherId`)
-      return false
+      logError(`${BIDDER_CODE}: Missing required param: publisherId`);
+      return false;
     }
 
     if (siteIdTracker === undefined) {
-      siteIdTracker = params.siteId
+      siteIdTracker = params.siteId;
     } else if (siteIdTracker !== params.siteId) {
-      logError(`${BIDDER_CODE}: Site ID mismatch: ${siteIdTracker} !== ${params.siteId}`)
-      return false
+      logError(`${BIDDER_CODE}: Site ID mismatch: ${siteIdTracker} !== ${params.siteId}`);
+      return false;
     }
 
     if (publisherIdTracker === undefined) {
-      publisherIdTracker = params.publisherId
+      publisherIdTracker = params.publisherId;
     } else if (publisherIdTracker !== params.publisherId) {
-      logError(`${BIDDER_CODE}: Publisher ID mismatch: ${publisherIdTracker} !== ${params.publisherId}`)
-      return false
+      logError(`${BIDDER_CODE}: Publisher ID mismatch: ${publisherIdTracker} !== ${params.publisherId}`);
+      return false;
     }
 
-    return true
+    return true;
   },
 
   /**
@@ -114,12 +114,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @returns ServerRequest info describing the request to the server
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    logInfo(`${BIDDER_CODE}: Building batched request for ${validBidRequests.length} bids`)
+    logInfo(`${BIDDER_CODE}: Building batched request for ${validBidRequests.length} bids`);
 
     // Build imp[] array - one impression object per bid request
     const imps = validBidRequests.map((bid) => {
-      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes') || []
-      const floorPrice = getLowestFloorPrice(bid)
+      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes') || [];
+      const floorPrice = getLowestFloorPrice(bid);
 
       const imp: any = {
         id: bid.bidId,
@@ -136,16 +136,16 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           placementId: bid.params.placementId,
           gpid: deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot'),
         },
-      }
+      };
 
       // Add bidfloor if available
       if (floorPrice > 0) {
-        imp.bidfloor = floorPrice
-        imp.bidfloorcur = 'USD'
+        imp.bidfloor = floorPrice;
+        imp.bidfloorcur = 'USD';
       }
 
-      return imp
-    })
+      return imp;
+    });
 
     // Build the OpenRTB 2.5 BidRequest object
     const openRtbRequest: any = {
@@ -176,56 +176,56 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       source: {
         tid: deepAccess(bidderRequest, 'ortb2.source.tid')
       },
-    }
+    };
 
     // Add schain if available
-    const schain = deepAccess(validBidRequests, '0.ortb2.source.ext.schain')
+    const schain = deepAccess(validBidRequests, '0.ortb2.source.ext.schain');
     if (schain) {
-      deepSetValue(openRtbRequest, 'source.ext.schain', schain)
+      deepSetValue(openRtbRequest, 'source.ext.schain', schain);
     }
 
     // User object
-    const eids = deepAccess(validBidRequests, '0.userIdAsEids')
+    const eids = deepAccess(validBidRequests, '0.userIdAsEids');
     if (eids && eids.length) {
-      deepSetValue(openRtbRequest, 'user.ext.eids', eids)
+      deepSetValue(openRtbRequest, 'user.ext.eids', eids);
     }
 
     // Regs object for privacy/consent
-    const regs: any = { ext: {} }
+    const regs: any = { ext: {} };
 
     // GDPR
     if (bidderRequest.gdprConsent) {
-      regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-      deepSetValue(openRtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString || '')
+      regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      deepSetValue(openRtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString || '');
     }
 
     // US Privacy (CCPA)
     if (bidderRequest.uspConsent) {
-      regs.ext.us_privacy = bidderRequest.uspConsent
+      regs.ext.us_privacy = bidderRequest.uspConsent;
     }
 
     // GPP
     if (bidderRequest.gppConsent) {
-      regs.gpp = bidderRequest.gppConsent.gppString || ''
-      regs.gpp_sid = bidderRequest.gppConsent.applicableSections || []
+      regs.gpp = bidderRequest.gppConsent.gppString || '';
+      regs.gpp_sid = bidderRequest.gppConsent.applicableSections || [];
     }
 
     if (Object.keys(regs.ext).length > 0 || regs.gpp) {
-      openRtbRequest.regs = regs
+      openRtbRequest.regs = regs;
     }
 
     // Merge any first-party data from ortb2
     if (bidderRequest.ortb2) {
       if (bidderRequest.ortb2.site) {
-        openRtbRequest.site = { ...openRtbRequest.site, ...bidderRequest.ortb2.site }
+        openRtbRequest.site = { ...openRtbRequest.site, ...bidderRequest.ortb2.site };
         // Preserve publisher ID
-        openRtbRequest.site.publisher = { id: publisherIdTracker, ...bidderRequest.ortb2.site.publisher }
+        openRtbRequest.site.publisher = { id: publisherIdTracker, ...bidderRequest.ortb2.site.publisher };
       }
       if (bidderRequest.ortb2.user) {
-        openRtbRequest.user = { ...openRtbRequest.user, ...bidderRequest.ortb2.user }
+        openRtbRequest.user = { ...openRtbRequest.user, ...bidderRequest.ortb2.user };
       }
       if (bidderRequest.ortb2.device) {
-        openRtbRequest.device = { ...openRtbRequest.device, ...bidderRequest.ortb2.device }
+        openRtbRequest.device = { ...openRtbRequest.device, ...bidderRequest.ortb2.device };
       }
     }
 
@@ -233,13 +233,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     deepSetValue(openRtbRequest, 'ext.prebid.channel', {
       name: 'pbjs',
       version: '$prebid.version$',
-    })
+    });
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: openRtbRequest
-    }
+    };
   },
 
   /**
@@ -250,30 +250,30 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @returns An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, request) {
-    const bidResponses: any[] = []
+    const bidResponses: any[] = [];
 
     if (!serverResponse?.body) {
-      logInfo(`${BIDDER_CODE}: Empty server response`)
-      return bidResponses
+      logInfo(`${BIDDER_CODE}: Empty server response`);
+      return bidResponses;
     }
 
-    const response = serverResponse.body
-    const currency = response.cur || 'USD'
+    const response = serverResponse.body;
+    const currency = response.cur || 'USD';
 
     // OpenRTB 2.5 response format: seatbid[] contains bid[]
-    const seatbids = response.bids || []
+    const seatbids = response.bids || [];
 
     seatbids.forEach((bid: any) => {
       if (!bid || !bid.cpm) {
-        return
+        return;
       }
 
       const adserverTargeting : {
         upstream_partner?: string;
-      } = {}
+      } = {};
 
       if (bid.upstreamBidder) {
-        adserverTargeting.upstream_partner = bid.upstreamBidder
+        adserverTargeting.upstream_partner = bid.upstreamBidder;
       }
 
       const bidResponse = {
@@ -297,22 +297,22 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           page: deepAccess(response, 'site.page') || '',
           domain: deepAccess(response, 'site.domain') || '',
         }
-      }
+      };
 
       // Handle nurl (win notice URL) if present
       if (bid.nurl) {
-        (bidResponse as any).nurl = bid.nurl
+        (bidResponse as any).nurl = bid.nurl;
       }
 
       // Handle burl (billing URL) if present
       if (bid.burl) {
-        (bidResponse as any).burl = bid.burl
+        (bidResponse as any).burl = bid.burl;
       }
 
-      bidResponses.push(bidResponse)
-    })
+      bidResponses.push(bidResponse);
+    });
 
-    return bidResponses
+    return bidResponses;
   },
 
   /**
@@ -334,42 +334,42 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   ) {
     logInfo(`${BIDDER_CODE}: getUserSyncs called`, {
       iframeEnabled: syncOptions.iframeEnabled
-    })
+    });
 
-    const syncs = []
+    const syncs = [];
 
     // Build query parameters for consent
-    const queryParams: string[] = []
+    const queryParams: string[] = [];
 
     // GDPR consent
     if (gdprConsent) {
-      queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`)
-      queryParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`)
+      queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+      queryParams.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
     }
 
     // US Privacy / CCPA
     if (uspConsent) {
-      queryParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`)
+      queryParams.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
     }
 
     // GPP consent
     if (gppConsent?.gppString) {
-      queryParams.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`)
+      queryParams.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`);
       if (gppConsent.applicableSections?.length) {
-        queryParams.push(`gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`)
+        queryParams.push(`gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
       }
     }
 
-    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : ''
+    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe' as const,
         url: `${USER_SYNC_ENDPOINT}${queryString}`,
-      })
+      });
     }
 
-    return syncs
+    return syncs;
   },
 
   /**
@@ -379,7 +379,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @param bid - The winning bid object
    */
   onBidWon: function (bid) {
-    logInfo(`${BIDDER_CODE}: Bid won`, bid)
+    logInfo(`${BIDDER_CODE}: Bid won`, bid);
 
     const winNotificationData = {
       adUnitCode: bid.adUnitCode,
@@ -396,11 +396,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       yetiPublisherID: deepAccess(bid, 'meta.publisherID') || '',
       page: deepAccess(bid, 'meta.page') || '',
       site: deepAccess(bid, 'meta.domain') || '',
-    }
+    };
 
-    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' })
+    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
 
-    if ((bid as any).nurl) dep.ajax((bid as any).nurl, null, null, { method: 'GET' })
+    if ((bid as any).nurl) dep.ajax((bid as any).nurl, null, null, { method: 'GET' });
   },
 
   /**
@@ -410,11 +410,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * @param timeoutData - Array of bid requests that timed out
    */
   onTimeout: function (timeoutData) {
-    logInfo(`${BIDDER_CODE}: Timeout for ${timeoutData.length} bid(s)`, timeoutData)
+    logInfo(`${BIDDER_CODE}: Timeout for ${timeoutData.length} bid(s)`, timeoutData);
 
-    if (timeoutData.length === 0) return
+    if (timeoutData.length === 0) return;
 
-    const timedOutBids = []
+    const timedOutBids = [];
 
     timeoutData.forEach((bid) => {
       const timeoutNotificationData = {
@@ -426,13 +426,13 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         ua: navigator.userAgent,
         timestamp: Date.now(),
         eventType: 'mile-bidder-timeout'
-      }
+      };
 
-      timedOutBids.push(timeoutNotificationData)
-    })
+      timedOutBids.push(timeoutNotificationData);
+    });
 
-    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' })
+    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' });
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

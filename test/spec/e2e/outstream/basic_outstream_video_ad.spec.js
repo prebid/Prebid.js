@@ -1,8 +1,8 @@
-const expect = require('chai').expect
-const { setupTest, testPageURL, switchFrame } = require('../../../helpers/testing-utils.js')
+const expect = require('chai').expect;
+const { setupTest, testPageURL, switchFrame } = require('../../../helpers/testing-utils.js');
 
-const TEST_PAGE_URL = testPageURL('outstream.html')
-const CREATIVE_IFRAME_CSS_SELECTOR = 'div[id="video_ad_unit_1"] > div:nth-child(2) > iframe:nth-child(1)'
+const TEST_PAGE_URL = testPageURL('outstream.html');
+const CREATIVE_IFRAME_CSS_SELECTOR = 'div[id="video_ad_unit_1"] > div:nth-child(2) > iframe:nth-child(1)';
 
 const EXPECTED_TARGETING_KEYS = {
   hb_format: 'video',
@@ -13,7 +13,7 @@ const EXPECTED_TARGETING_KEYS = {
   hb_size_appnexus: '640x480',
   hb_pb_appnexus: '10.00',
   hb_bidder_appnexus: 'appnexus'
-}
+};
 
 setupTest({
   url: TEST_PAGE_URL,
@@ -21,22 +21,22 @@ setupTest({
 }, 'Prebid.js Outstream Video Ad Test', function () {
   it('should load the targeting keys with correct values', async function () {
     const result = await browser.execute(function () {
-      return window.pbjs.getAdserverTargeting('video_ad_unit_2')
-    })
+      return window.pbjs.getAdserverTargeting('video_ad_unit_2');
+    });
 
-    const targetingKeys = result['video_ad_unit_2']
-    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS)
-    expect(targetingKeys.hb_adid).to.be.a('string')
-    expect(targetingKeys.hb_adid_appnexus).to.be.a('string')
-  })
+    const targetingKeys = result['video_ad_unit_2'];
+    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+    expect(targetingKeys.hb_adid).to.be.a('string');
+    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+  });
 
   it('should render the video ad on the page', async function() {
     // skipping test in Edge due to wdio bug: https://github.com/webdriverio/webdriverio/issues/3880
     // the iframe for the video does not have a name property and id is generated automatically...
     if (browser.capabilities.browserName !== 'edge') {
-      await switchFrame(CREATIVE_IFRAME_CSS_SELECTOR)
-      const existing = await $('body > div[id*="an_video_ad_player"] > video').isExisting()
-      expect(existing).to.be.true
+      await switchFrame(CREATIVE_IFRAME_CSS_SELECTOR);
+      const existing = await $('body > div[id*="an_video_ad_player"] > video').isExisting();
+      expect(existing).to.be.true;
     }
-  })
-})
+  });
+});

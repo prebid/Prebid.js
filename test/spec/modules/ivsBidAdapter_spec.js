@@ -1,6 +1,6 @@
-import { spec, converter } from 'modules/ivsBidAdapter.js'
-import { assert } from 'chai'
-import { deepClone } from '../../../src/utils.js'
+import { spec, converter } from 'modules/ivsBidAdapter.js';
+import { assert } from 'chai';
+import { deepClone } from '../../../src/utils.js';
 
 describe('ivsBidAdapter', function () {
   describe('isBidRequestValid()', function () {
@@ -17,33 +17,33 @@ describe('ivsBidAdapter', function () {
         bidderDomain: 'https://www.example.com',
         publisherId: '3001234'
       }
-    }
+    };
 
     it('should return true for a valid bid', function () {
-      assert.isTrue(spec.isBidRequestValid(validBid))
-    })
+      assert.isTrue(spec.isBidRequestValid(validBid));
+    });
 
     it('should return false if publisherId info is missing', function () {
-      const bid = deepClone(validBid)
-      delete bid.params.publisherId
-      assert.isFalse(spec.isBidRequestValid(bid))
-    })
+      const bid = deepClone(validBid);
+      delete bid.params.publisherId;
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
 
     it('should return false for empty video parameters', function () {
-      const bid = deepClone(validBid)
-      delete bid.mediaTypes.video
-      assert.isFalse(spec.isBidRequestValid(bid))
-    })
+      const bid = deepClone(validBid);
+      delete bid.mediaTypes.video;
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
 
     it('should return false for non instream context', function () {
-      const bid = deepClone(validBid)
-      bid.mediaTypes.video.context = 'outstream'
-      assert.isFalse(spec.isBidRequestValid(bid))
-    })
-  })
+      const bid = deepClone(validBid);
+      bid.mediaTypes.video.context = 'outstream';
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
+  });
 
   describe('buildRequests()', function () {
-    let validBidRequests, validBidderRequest
+    let validBidRequests, validBidderRequest;
 
     beforeEach(function () {
       validBidRequests = [{
@@ -64,7 +64,7 @@ describe('ivsBidAdapter', function () {
           bidderDomain: 'https://www.example.com',
           publisherId: '3001234'
         }
-      }]
+      }];
 
       validBidderRequest = {
         bidderCode: 'ivs',
@@ -99,26 +99,26 @@ describe('ivsBidAdapter', function () {
             }
           }
         }
-      }
-    })
+      };
+    });
 
     it('should return a validate bid request', function () {
-      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest)
-      assert.equal(bidRequest.method, 'POST')
-      assert.deepEqual(bidRequest.options, { contentType: 'application/json' })
-      assert.ok(bidRequest.data)
-    })
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      assert.equal(bidRequest.method, 'POST');
+      assert.deepEqual(bidRequest.options, { contentType: 'application/json' });
+      assert.ok(bidRequest.data);
+    });
 
     it('should contain the required parameters', function () {
-      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest)
-      const bidderRequest = bidRequest.data
-      assert.ok(bidderRequest.site)
-      assert.lengthOf(bidderRequest.imp, 1)
-    })
-  })
+      const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+      const bidderRequest = bidRequest.data;
+      assert.ok(bidderRequest.site);
+      assert.lengthOf(bidderRequest.imp, 1);
+    });
+  });
 
   describe('interpretResponse()', function () {
-    let serverResponse, bidderRequest, request
+    let serverResponse, bidderRequest, request;
 
     beforeEach(function () {
       serverResponse = {
@@ -136,7 +136,7 @@ describe('ivsBidAdapter', function () {
           cur: 'USD'
         },
         headers: {}
-      }
+      };
 
       bidderRequest = {
         bidderCode: 'ivs',
@@ -162,14 +162,14 @@ describe('ivsBidAdapter', function () {
           bidderRequestId: '1def3e1d03f5a',
           auctionId: '635ba1ed-68ba-47b4-bcec-4a86565f25f9'
         }],
-      }
+      };
 
-      request = { data: converter.toORTB({ bidderRequest }) }
-    })
+      request = { data: converter.toORTB({ bidderRequest }) };
+    });
 
     if (FEATURES.VIDEO) {
       it('should match parsed server response', function () {
-        const results = spec.interpretResponse(serverResponse, request)
+        const results = spec.interpretResponse(serverResponse, request);
         const expected = {
           mediaType: 'video',
           playerWidth: 640,
@@ -181,15 +181,15 @@ describe('ivsBidAdapter', function () {
           currency: 'USD',
           creativeId: 3715,
           ttl: 360,
-        }
+        };
 
-        expect(results.length).to.equal(1)
-        sinon.assert.match(results[0], expected)
-      })
+        expect(results.length).to.equal(1);
+        sinon.assert.match(results[0], expected);
+      });
     }
 
     it('should return empty when no response', function () {
-      assert.ok(!spec.interpretResponse({}, request))
-    })
-  })
-})
+      assert.ok(!spec.interpretResponse({}, request));
+    });
+  });
+});

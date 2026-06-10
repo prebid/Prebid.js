@@ -1,13 +1,13 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert } from 'chai'
-import { spec } from 'modules/dianomiBidAdapter.js'
-import { config } from 'src/config.js'
-import { createEidsArray } from 'modules/userId/eids.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
-import { addFPDToBidderRequest } from '../../helpers/fpd.js'
+import { assert } from 'chai';
+import { spec } from 'modules/dianomiBidAdapter.js';
+import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('Dianomi adapter', () => {
-  let bids = []
+  let bids = [];
 
   describe('isBidRequestValid', () => {
     const bid = {
@@ -15,89 +15,89 @@ describe('Dianomi adapter', () => {
       params: {
         smartadId: 1234,
       },
-    }
+    };
 
     it('should return true when required params found', () => {
-      assert(spec.isBidRequestValid(bid))
+      assert(spec.isBidRequestValid(bid));
       bid.params = {
         smartadId: 4332,
-      }
-      assert(spec.isBidRequestValid(bid))
-    })
+      };
+      assert(spec.isBidRequestValid(bid));
+    });
 
     it('should return false when required params are missing', () => {
-      bid.params = {}
-      assert.isFalse(spec.isBidRequestValid(bid))
+      bid.params = {};
+      assert.isFalse(spec.isBidRequestValid(bid));
 
       bid.params = {
         smartadId: null,
-      }
-      assert.isFalse(spec.isBidRequestValid(bid))
-    })
-  })
+      };
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
+  });
 
   describe('buildRequests', () => {
     beforeEach(() => {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
     it('should send request with correct structure', () => {
       const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
-      ]
-      const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
+      ];
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
-      assert.equal(request.method, 'POST')
-      assert.equal(request.url, 'https://www-prebid.dianomi.com/cgi-bin/smartads_prebid.pl')
-      assert.ok(request.data)
-    })
+      assert.equal(request.method, 'POST');
+      assert.equal(request.url, 'https://www-prebid.dianomi.com/cgi-bin/smartads_prebid.pl');
+      assert.ok(request.data);
+    });
 
     describe('user privacy', () => {
       it('should send GDPR Consent data to Dianomi if gdprApplies', () => {
-        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }]
+        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         const bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
-        }
-        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data)
+        };
+        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
-        assert.equal(request.user.ext.consent, bidderRequest.gdprConsent.consentString)
-        assert.equal(request.regs.ext.gdpr, bidderRequest.gdprConsent.gdprApplies)
-        assert.equal(typeof request.regs.ext.gdpr, 'number')
-      })
+        assert.equal(request.user.ext.consent, bidderRequest.gdprConsent.consentString);
+        assert.equal(request.regs.ext.gdpr, bidderRequest.gdprConsent.gdprApplies);
+        assert.equal(typeof request.regs.ext.gdpr, 'number');
+      });
 
       it('should send gdpr as number', () => {
-        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }]
+        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
         const bidderRequest = {
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
-        }
-        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data)
+        };
+        const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
-        assert.equal(typeof request.regs.ext.gdpr, 'number')
-        assert.equal(request.regs.ext.gdpr, 1)
-      })
+        assert.equal(typeof request.regs.ext.gdpr, 'number');
+        assert.equal(request.regs.ext.gdpr, 1);
+      });
 
       it('should send CCPA Consent data to dianomi', () => {
-        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }]
-        let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } }
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data)
+        const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];
+        let bidderRequest = { uspConsent: '1YA-', refererInfo: { page: 'page' } };
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
-        assert.equal(request.regs.ext.us_privacy, '1YA-')
+        assert.equal(request.regs.ext.us_privacy, '1YA-');
 
         bidderRequest = {
           uspConsent: '1YA-',
           gdprConsent: { gdprApplies: true, consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
-        }
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data)
+        };
+        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
-        assert.equal(request.regs.ext.us_privacy, '1YA-')
-        assert.equal(request.user.ext.consent, 'consentDataString')
-        assert.equal(request.regs.ext.gdpr, 1)
-      })
+        assert.equal(request.regs.ext.us_privacy, '1YA-');
+        assert.equal(request.user.ext.consent, 'consentDataString');
+        assert.equal(request.regs.ext.gdpr, 1);
+      });
 
       it('should not send GDPR Consent data to dianomi if gdprApplies is undefined', () => {
         const validBidRequests = [
@@ -105,56 +105,56 @@ describe('Dianomi adapter', () => {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
-        ]
+        ];
         let bidderRequest = {
           gdprConsent: { gdprApplies: false, consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
-        }
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data)
+        };
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
-        assert.equal(request.user.ext.consent, 'consentDataString')
-        assert.equal(request.regs.ext.gdpr, 0)
+        assert.equal(request.user.ext.consent, 'consentDataString');
+        assert.equal(request.regs.ext.gdpr, 0);
 
         bidderRequest = {
           gdprConsent: { consentString: 'consentDataString' },
           refererInfo: { page: 'page' },
-        }
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data)
+        };
+        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
-        assert.equal(request.user, undefined)
-        assert.equal(request.regs, undefined)
-      })
+        assert.equal(request.user, undefined);
+        assert.equal(request.regs, undefined);
+      });
       it('should send default GDPR Consent data to dianomi', () => {
         const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
-        ]
+        ];
         const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-        )
+        );
 
-        assert.equal(request.user, undefined)
-        assert.equal(request.regs, undefined)
-      })
-    })
+        assert.equal(request.user, undefined);
+        assert.equal(request.regs, undefined);
+      });
+    });
 
     it('should have default request structure', () => {
-      const keys = 'site,device,source,ext,imp'.split(',')
+      const keys = 'site,device,source,ext,imp'.split(',');
       const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
-      ]
+      ];
       const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-      )
-      const data = Object.keys(request)
+      );
+      const data = Object.keys(request);
 
-      assert.deepEqual(keys, data)
-    })
+      assert.deepEqual(keys, data);
+    });
 
     it('should set request keys correct values', () => {
       const validBidRequests = [
@@ -162,54 +162,54 @@ describe('Dianomi adapter', () => {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
-      ]
+      ];
       const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2: { source: { tid: 'tid' } } }).data
-      )
+      );
 
-      assert.equal(request.source.tid, 'tid')
-      assert.equal(request.source.fd, 1)
-    })
+      assert.equal(request.source.tid, 'tid');
+      assert.equal(request.source.fd, 1);
+    });
 
     it('should send info about device', () => {
       config.setConfig({
         device: { w: 100, h: 100 },
-      })
+      });
       const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
         },
-      ]
+      ];
       const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-      )
+      );
 
-      assert.equal(request.device.ua, navigator.userAgent)
-      assert.equal(request.device.w, 100)
-      assert.equal(request.device.h, 100)
-    })
+      assert.equal(request.device.ua, navigator.userAgent);
+      assert.equal(request.device.w, 100);
+      assert.equal(request.device.h, 100);
+    });
 
     it('should send app info', () => {
       config.setConfig({
         app: { id: 'appid' },
-      })
-      const ortb2 = { app: { name: 'appname' } }
+      });
+      const ortb2 = { app: { name: 'appname' } };
       const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
           ortb2,
         },
-      ]
+      ];
       const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data
-      )
+      );
 
-      assert.equal(request.app.id, 'appid')
-      assert.equal(request.app.name, 'appname')
-      assert.equal(request.site, undefined)
-    })
+      assert.equal(request.app.id, 'appid');
+      assert.equal(request.app.name, 'appname');
+      assert.equal(request.site, undefined);
+    });
 
     it('should send info about the site', () => {
       config.setConfig({
@@ -219,23 +219,23 @@ describe('Dianomi adapter', () => {
             domain: 'publisher.domain.com',
           },
         },
-      })
+      });
       const ortb2 = {
         site: {
           publisher: {
             name: "publisher's name",
           },
         },
-      }
+      };
       const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
           ortb2,
         },
-      ]
-      const refererInfo = { page: 'page' }
-      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data)
+      ];
+      const refererInfo = { page: 'page' };
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo, ortb2 }).data);
 
       assert.deepEqual(request.site, {
         page: refererInfo.page,
@@ -244,8 +244,8 @@ describe('Dianomi adapter', () => {
           name: "publisher's name",
         },
         id: '123123',
-      })
-    })
+      });
+    });
 
     it('should pass extended ids', () => {
       const validBidRequests = [
@@ -260,24 +260,24 @@ describe('Dianomi adapter', () => {
             { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] },
           ],
         },
-      ]
+      ];
 
       const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-      )
-      assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids)
-    })
+      );
+      assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
+    });
 
     it('should send currency if defined', () => {
-      setCurrencyConfig({ adServerCurrency: 'EUR' })
-      const validBidRequests = [{ params: { smartadId: 1234 } }]
-      const refererInfo = { page: 'page' }
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
+      const validBidRequests = [{ params: { smartadId: 1234 } }];
+      const refererInfo = { page: 'page' };
       return addFPDToBidderRequest({ refererInfo }).then(res => {
-        const request = JSON.parse(spec.buildRequests(validBidRequests, res).data)
-        assert.deepEqual(request.cur, ['EUR'])
-        setCurrencyConfig({})
-      })
-    })
+        const request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        assert.deepEqual(request.cur, ['EUR']);
+        setCurrencyConfig({});
+      });
+    });
 
     it('should pass supply chain object', () => {
       const validBidRequests = [
@@ -297,18 +297,18 @@ describe('Dianomi adapter', () => {
             }
           },
         },
-      ]
+      ];
 
       const request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-      )
+      );
       assert.deepEqual(request.source.ext.schain, {
         validation: 'strict',
         config: {
           ver: '1.0',
         },
-      })
-    })
+      });
+    });
 
     describe('priceType', () => {
       it('should send default priceType', () => {
@@ -317,27 +317,27 @@ describe('Dianomi adapter', () => {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
-        ]
+        ];
         const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-        )
+        );
 
-        assert.equal(request.ext.pt, 'net')
-      })
+        assert.equal(request.ext.pt, 'net');
+      });
       it('should send correct priceType value', () => {
         const validBidRequests = [
           {
             bidId: 'bidId',
             params: { smartadId: 1234 },
           },
-        ]
+        ];
         const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-        )
+        );
 
-        assert.equal(request.ext.pt, 'net')
-      })
-    })
+        assert.equal(request.ext.pt, 'net');
+      });
+    });
 
     describe('bids', () => {
       it('should add more than one bid to the request', () => {
@@ -350,13 +350,13 @@ describe('Dianomi adapter', () => {
             bidId: 'bidId2',
             params: { smartadId: 1234 },
           },
-        ]
+        ];
         const request = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-        )
+        );
 
-        assert.equal(request.imp.length, 2)
-      })
+        assert.equal(request.imp.length, 2);
+      });
       it('should add incrementing values of id', () => {
         const validBidRequests = [
           {
@@ -374,60 +374,60 @@ describe('Dianomi adapter', () => {
             params: { smartadId: 1234 },
             mediaTypes: { video: {} },
           },
-        ]
+        ];
         const imps = JSON.parse(
           spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-        ).imp
+        ).imp;
 
         for (let i = 0; i < 3; i++) {
-          assert.equal(imps[i].id, i + 1)
+          assert.equal(imps[i].id, i + 1);
         }
-      })
+      });
 
       describe('price floors', () => {
         it('should not add if floors module not configured', () => {
           const validBidRequests = [
             { bidId: 'bidId', params: { smartadId: 1234 }, mediaTypes: { video: {} } },
-          ]
-          const imp = getRequestImps(validBidRequests)[0]
+          ];
+          const imp = getRequestImps(validBidRequests)[0];
 
-          assert.equal(imp.bidfloor, undefined)
-          assert.equal(imp.bidfloorcur, undefined)
-        })
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, undefined);
+        });
 
         it('should not add if floor price not defined', () => {
-          const validBidRequests = [getBidWithFloor()]
-          const imp = getRequestImps(validBidRequests)[0]
+          const validBidRequests = [getBidWithFloor()];
+          const imp = getRequestImps(validBidRequests)[0];
 
-          assert.equal(imp.bidfloor, undefined)
-          assert.equal(imp.bidfloorcur, 'USD')
-        })
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'USD');
+        });
 
         it('should request floor price in adserver currency', () => {
-          setCurrencyConfig({ adServerCurrency: 'GBP' })
-          const validBidRequests = [getBidWithFloor()]
-          const refererInfo = { page: 'page' }
+          setCurrencyConfig({ adServerCurrency: 'GBP' });
+          const validBidRequests = [getBidWithFloor()];
+          const refererInfo = { page: 'page' };
           return addFPDToBidderRequest({ refererInfo }).then(res => {
             const imp = JSON.parse(
               spec.buildRequests(validBidRequests, res).data
-            ).imp[0]
+            ).imp[0];
 
-            assert.equal(imp.bidfloor, undefined)
-            assert.equal(imp.bidfloorcur, 'GBP')
-            setCurrencyConfig({})
-          })
-        })
+            assert.equal(imp.bidfloor, undefined);
+            assert.equal(imp.bidfloorcur, 'GBP');
+            setCurrencyConfig({});
+          });
+        });
 
         it('should add correct floor values', () => {
-          const expectedFloors = [1, 1.3, 0.5]
-          const validBidRequests = expectedFloors.map(getBidWithFloor)
-          const imps = getRequestImps(validBidRequests)
+          const expectedFloors = [1, 1.3, 0.5];
+          const validBidRequests = expectedFloors.map(getBidWithFloor);
+          const imps = getRequestImps(validBidRequests);
 
           expectedFloors.forEach((floor, index) => {
-            assert.equal(imps[index].bidfloor, floor)
-            assert.equal(imps[index].bidfloorcur, 'USD')
-          })
-        })
+            assert.equal(imps[index].bidfloor, floor);
+            assert.equal(imps[index].bidfloorcur, 'USD');
+          });
+        });
 
         function getBidWithFloor(floor) {
           return {
@@ -437,11 +437,11 @@ describe('Dianomi adapter', () => {
               return {
                 currency: currency,
                 floor,
-              }
+              };
             },
-          }
+          };
         }
-      })
+      });
 
       describe('multiple media types', () => {
         it('should use all configured media types for bidding', () => {
@@ -484,24 +484,24 @@ describe('Dianomi adapter', () => {
                 video: {},
               },
             },
-          ]
+          ];
           const [first, second, third] = JSON.parse(
             spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-          ).imp
+          ).imp;
 
-          assert.ok(first.banner)
-          assert.ok(first.video)
-          assert.equal(first.native, undefined)
+          assert.ok(first.banner);
+          assert.ok(first.video);
+          assert.equal(first.native, undefined);
 
-          assert.ok(second.video)
-          assert.equal(second.banner, undefined)
-          assert.equal(second.native, undefined)
+          assert.ok(second.video);
+          assert.equal(second.banner, undefined);
+          assert.equal(second.native, undefined);
 
-          assert.ok(third.native)
-          assert.ok(third.video)
-          assert.ok(third.banner)
-        })
-      })
+          assert.ok(third.native);
+          assert.ok(third.video);
+          assert.ok(third.banner);
+        });
+      });
 
       describe('banner', () => {
         it('should convert sizes to openrtb format', () => {
@@ -518,18 +518,18 @@ describe('Dianomi adapter', () => {
                 },
               },
             },
-          ]
+          ];
           const { banner } = JSON.parse(
             spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-          ).imp[0]
+          ).imp[0];
           assert.deepEqual(banner, {
             format: [
               { w: 100, h: 100 },
               { w: 200, h: 300 },
             ],
-          })
-        })
-      })
+          });
+        });
+      });
 
       describe('video', () => {
         it('should pass video mediatype config', () => {
@@ -545,17 +545,17 @@ describe('Dianomi adapter', () => {
                 },
               },
             },
-          ]
+          ];
           const { video } = JSON.parse(
             spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-          ).imp[0]
+          ).imp[0];
           assert.deepEqual(video, {
             playerSize: [640, 480],
             context: 'outstream',
             mimes: ['video/mp4'],
-          })
-        })
-      })
+          });
+        });
+      });
 
       describe('native', () => {
         describe('assets', () => {
@@ -577,15 +577,15 @@ describe('Dianomi adapter', () => {
                   body: { len: 140 },
                 },
               },
-            ]
+            ];
             const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-            ).imp[0].native.assets
+            ).imp[0].native.assets;
 
-            assert.equal(assets[0].id, 0)
-            assert.equal(assets[1].id, 3)
-            assert.equal(assets[2].id, 4)
-          })
+            assert.equal(assets[0].id, 0);
+            assert.equal(assets[1].id, 3);
+            assert.equal(assets[2].id, 4);
+          });
           it('should add required key if it is necessary', () => {
             const validBidRequests = [
               {
@@ -605,17 +605,17 @@ describe('Dianomi adapter', () => {
                   sponsoredBy: { required: true, len: 140 },
                 },
               },
-            ]
+            ];
 
             const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-            ).imp[0].native.assets
+            ).imp[0].native.assets;
 
-            assert.equal(assets[0].required, 1)
-            assert.ok(!assets[1].required)
-            assert.ok(!assets[2].required)
-            assert.equal(assets[3].required, 1)
-          })
+            assert.equal(assets[0].required, 1);
+            assert.ok(!assets[1].required);
+            assert.ok(!assets[2].required);
+            assert.equal(assets[3].required, 1);
+          });
 
           it('should map img and data assets', () => {
             const validBidRequests = [
@@ -632,20 +632,20 @@ describe('Dianomi adapter', () => {
                   clickUrl: { required: false },
                 },
               },
-            ]
+            ];
 
             const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-            ).imp[0].native.assets
-            assert.ok(assets[0].title)
-            assert.equal(assets[0].title.len, 140)
-            assert.deepEqual(assets[1].img, { type: 3, w: 150, h: 50 })
-            assert.deepEqual(assets[2].img, { type: 1, w: 50, h: 50 })
-            assert.deepEqual(assets[3].data, { type: 2, len: 140 })
-            assert.deepEqual(assets[4].data, { type: 1 })
-            assert.deepEqual(assets[5].data, { type: 12 })
-            assert.ok(!assets[6])
-          })
+            ).imp[0].native.assets;
+            assert.ok(assets[0].title);
+            assert.equal(assets[0].title.len, 140);
+            assert.deepEqual(assets[1].img, { type: 3, w: 150, h: 50 });
+            assert.deepEqual(assets[2].img, { type: 1, w: 50, h: 50 });
+            assert.deepEqual(assets[3].data, { type: 2, len: 140 });
+            assert.deepEqual(assets[4].data, { type: 1 });
+            assert.deepEqual(assets[5].data, { type: 12 });
+            assert.ok(!assets[6]);
+          });
 
           describe('icon/image sizing', () => {
             it('should flatten sizes and utilise first pair', () => {
@@ -662,16 +662,16 @@ describe('Dianomi adapter', () => {
                     },
                   },
                 },
-              ]
+              ];
 
               const assets = JSON.parse(
                 spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-              ).imp[0].native.assets
-              assert.ok(assets[0].img)
-              assert.equal(assets[0].img.w, 200)
-              assert.equal(assets[0].img.h, 300)
-            })
-          })
+              ).imp[0].native.assets;
+              assert.ok(assets[0].img);
+              assert.equal(assets[0].img.w, 200);
+              assert.equal(assets[0].img.h, 300);
+            });
+          });
 
           it('should utilise aspect_ratios', () => {
             const validBidRequests = [
@@ -699,19 +699,19 @@ describe('Dianomi adapter', () => {
                   },
                 },
               },
-            ]
+            ];
 
             const assets = JSON.parse(
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-            ).imp[0].native.assets
-            assert.ok(assets[0].img)
-            assert.equal(assets[0].img.wmin, 100)
-            assert.equal(assets[0].img.hmin, 300)
+            ).imp[0].native.assets;
+            assert.ok(assets[0].img);
+            assert.equal(assets[0].img.wmin, 100);
+            assert.equal(assets[0].img.hmin, 300);
 
-            assert.ok(assets[1].img)
-            assert.equal(assets[1].img.wmin, 10)
-            assert.equal(assets[1].img.hmin, 25)
-          })
+            assert.ok(assets[1].img);
+            assert.equal(assets[1].img.wmin, 10);
+            assert.equal(assets[1].img.hmin, 25);
+          });
 
           it('should not throw error if aspect_ratios config is not defined', () => {
             const validBidRequests = [
@@ -727,30 +727,30 @@ describe('Dianomi adapter', () => {
                   },
                 },
               },
-            ]
+            ];
 
             assert.doesNotThrow(() =>
               spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })
-            )
-          })
-        })
-      })
-    })
+            );
+          });
+        });
+      });
+    });
 
     function getRequestImps(validBidRequests) {
       return JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
-      ).imp
+      ).imp;
     }
-  })
+  });
 
   describe('interpretResponse', () => {
     it('should return if no body in response', () => {
-      const serverResponse = {}
-      const bidRequest = {}
+      const serverResponse = {};
+      const bidRequest = {};
 
-      assert.ok(!spec.interpretResponse(serverResponse, bidRequest))
-    })
+      assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
+    });
     it('should return more than one bids', () => {
       const serverResponse = {
         body: {
@@ -781,7 +781,7 @@ describe('Dianomi adapter', () => {
             },
           ],
         },
-      }
+      };
       const bidRequest = {
         data: {},
         bids: [
@@ -818,11 +818,11 @@ describe('Dianomi adapter', () => {
             },
           },
         ],
-      }
+      };
 
-      bids = spec.interpretResponse(serverResponse, bidRequest)
-      assert.equal(spec.interpretResponse(serverResponse, bidRequest).length, 2)
-    })
+      bids = spec.interpretResponse(serverResponse, bidRequest);
+      assert.equal(spec.interpretResponse(serverResponse, bidRequest).length, 2);
+    });
 
     it('should parse seatbids', () => {
       const serverResponse = {
@@ -862,7 +862,7 @@ describe('Dianomi adapter', () => {
             },
           ],
         },
-      }
+      };
       const bidRequest = {
         data: {},
         bids: [
@@ -931,23 +931,23 @@ describe('Dianomi adapter', () => {
             },
           },
         ],
-      }
+      };
 
       bids = spec.interpretResponse(serverResponse, bidRequest).map((bid) => {
         const {
           requestId,
           native: { clickUrl },
-        } = bid
-        return [requestId, clickUrl]
-      })
+        } = bid;
+        return [requestId, clickUrl];
+      });
 
-      assert.equal(bids.length, 3)
+      assert.equal(bids.length, 3);
       assert.deepEqual(bids, [
         ['bidId1', 'link1'],
         ['bidId2', 'link2'],
         ['bidId4', 'link4'],
-      ])
-    })
+      ]);
+    });
 
     it('should set correct values to bid', () => {
       const serverResponse = {
@@ -979,7 +979,7 @@ describe('Dianomi adapter', () => {
           ],
           cur: 'USD',
         },
-      }
+      };
       const bidRequest = {
         data: {},
         bids: [
@@ -1000,21 +1000,21 @@ describe('Dianomi adapter', () => {
             },
           },
         ],
-      }
+      };
 
-      const bids = spec.interpretResponse(serverResponse, bidRequest)
-      const bid = serverResponse.body.seatbid[0].bid[0]
-      assert.deepEqual(bids[0].requestId, bidRequest.bids[0].bidId)
-      assert.deepEqual(bids[0].cpm, bid.price)
-      assert.deepEqual(bids[0].creativeId, bid.crid)
-      assert.deepEqual(bids[0].ttl, 360)
-      assert.deepEqual(bids[0].netRevenue, false)
-      assert.deepEqual(bids[0].currency, serverResponse.body.cur)
-      assert.deepEqual(bids[0].mediaType, 'native')
-      assert.deepEqual(bids[0].meta.mediaType, 'native')
-      assert.deepEqual(bids[0].meta.advertiserDomains, ['demo.com'])
-      assert.deepEqual(bids[0].dealId, 'deal-id')
-    })
+      const bids = spec.interpretResponse(serverResponse, bidRequest);
+      const bid = serverResponse.body.seatbid[0].bid[0];
+      assert.deepEqual(bids[0].requestId, bidRequest.bids[0].bidId);
+      assert.deepEqual(bids[0].cpm, bid.price);
+      assert.deepEqual(bids[0].creativeId, bid.crid);
+      assert.deepEqual(bids[0].ttl, 360);
+      assert.deepEqual(bids[0].netRevenue, false);
+      assert.deepEqual(bids[0].currency, serverResponse.body.cur);
+      assert.deepEqual(bids[0].mediaType, 'native');
+      assert.deepEqual(bids[0].meta.mediaType, 'native');
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['demo.com']);
+      assert.deepEqual(bids[0].dealId, 'deal-id');
+    });
     it('should set correct native params', () => {
       const bid = [
         {
@@ -1082,7 +1082,7 @@ describe('Dianomi adapter', () => {
             jstracker: 'jstracker',
           },
         },
-      ]
+      ];
       const serverResponse = {
         body: {
           id: null,
@@ -1090,15 +1090,15 @@ describe('Dianomi adapter', () => {
           seatbid: [{ bid }],
           cur: 'USD',
         },
-      }
+      };
       const bidRequest = {
         data: {},
         bids: [{ bidId: 'bidId1' }],
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0].native
-      const native = bid[0].native
-      const assets = native.assets
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0].native;
+      const native = bid[0].native;
+      const assets = native.assets;
       assert.deepEqual(
         {
           clickUrl: native.link.url,
@@ -1113,8 +1113,8 @@ describe('Dianomi adapter', () => {
           sponsoredBy: assets[5].data.value,
         },
         result
-      )
-    })
+      );
+    });
     it('should return empty when there is no bids in response', () => {
       const serverResponse = {
         body: {
@@ -1123,14 +1123,14 @@ describe('Dianomi adapter', () => {
           seatbid: [{ bid: [] }],
           cur: 'USD',
         },
-      }
+      };
       const bidRequest = {
         data: {},
         bids: [{ bidId: 'bidId1' }],
-      }
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0]
-      assert.ok(!result)
-    })
+      };
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
+      assert.ok(!result);
+    });
 
     describe('banner', () => {
       it('should set ad content on response', () => {
@@ -1142,7 +1142,7 @@ describe('Dianomi adapter', () => {
               },
             ],
           },
-        }
+        };
         const bidRequest = {
           data: {},
           bids: [
@@ -1151,15 +1151,15 @@ describe('Dianomi adapter', () => {
               params: { smartadId: 1234 },
             },
           ],
-        }
+        };
 
-        bids = spec.interpretResponse(serverResponse, bidRequest)
-        assert.equal(bids.length, 1)
-        assert.equal(bids[0].ad, '<banner>')
-        assert.equal(bids[0].mediaType, 'banner')
-        assert.equal(bids[0].meta.mediaType, 'banner')
-      })
-    })
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(bids.length, 1);
+        assert.equal(bids[0].ad, '<banner>');
+        assert.equal(bids[0].mediaType, 'banner');
+        assert.equal(bids[0].meta.mediaType, 'banner');
+      });
+    });
 
     describe('video', () => {
       it('should set vastXml on response', () => {
@@ -1171,7 +1171,7 @@ describe('Dianomi adapter', () => {
               },
             ],
           },
-        }
+        };
         const bidRequest = {
           data: {},
           bids: [
@@ -1180,14 +1180,14 @@ describe('Dianomi adapter', () => {
               params: { smartadId: 1234 },
             },
           ],
-        }
+        };
 
-        bids = spec.interpretResponse(serverResponse, bidRequest)
-        assert.equal(bids.length, 1)
-        assert.equal(bids[0].vastXml, '<vast>')
-        assert.equal(bids[0].mediaType, 'video')
-        assert.equal(bids[0].meta.mediaType, 'video')
-      })
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(bids.length, 1);
+        assert.equal(bids[0].vastXml, '<vast>');
+        assert.equal(bids[0].mediaType, 'video');
+        assert.equal(bids[0].meta.mediaType, 'video');
+      });
 
       it('should add renderer for outstream bids', () => {
         const serverResponse = {
@@ -1201,7 +1201,7 @@ describe('Dianomi adapter', () => {
               },
             ],
           },
-        }
+        };
         const bidRequest = {
           data: {},
           bids: [
@@ -1224,33 +1224,33 @@ describe('Dianomi adapter', () => {
               },
             },
           ],
-        }
+        };
 
-        bids = spec.interpretResponse(serverResponse, bidRequest)
-        assert.ok(bids[0].renderer)
-        assert.equal(bids[1].renderer, undefined)
-      })
-    })
-  })
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.ok(bids[0].renderer);
+        assert.equal(bids[1].renderer, undefined);
+      });
+    });
+  });
 
   describe('UserSyncs', () => {
-    const usersyncIframeUrl = 'https://www-prebid.dianomi.com/prebid/usersync/index.html?'
-    const usersyncRedirectUrl = 'https://data.dianomi.com/frontend/usync?'
+    const usersyncIframeUrl = 'https://www-prebid.dianomi.com/prebid/usersync/index.html?';
+    const usersyncRedirectUrl = 'https://data.dianomi.com/frontend/usync?';
     it('should register the usersync iframe', function () {
       const syncs = spec.getUserSyncs({
         iframeEnabled: true,
-      })
+      });
 
-      expect(syncs).to.deep.equal({ type: 'iframe', url: usersyncIframeUrl })
-    })
+      expect(syncs).to.deep.equal({ type: 'iframe', url: usersyncIframeUrl });
+    });
 
     it('should register the usersync redirect', function () {
       const syncs = spec.getUserSyncs({
         pixelEnabled: true,
-      })
+      });
 
-      expect(syncs).to.deep.equal({ type: 'image', url: usersyncRedirectUrl })
-    })
+      expect(syncs).to.deep.equal({ type: 'image', url: usersyncRedirectUrl });
+    });
 
     it('should pass gdpr params if consent is true', function () {
       expect(
@@ -1265,7 +1265,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}gdpr=1&gdpr_consent=foo`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1279,8 +1279,8 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}gdpr=1&gdpr_consent=foo`,
-      })
-    })
+      });
+    });
 
     it('should pass gdpr params if consent is false', function () {
       expect(
@@ -1295,7 +1295,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}gdpr=0&gdpr_consent=foo`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1309,8 +1309,8 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}gdpr=0&gdpr_consent=foo`,
-      })
-    })
+      });
+    });
 
     it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
       expect(
@@ -1324,7 +1324,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}gdpr_consent=foo`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1337,20 +1337,20 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}gdpr_consent=foo`,
-      })
-    })
+      });
+    });
 
     it('should pass no params if gdpr consentString is not defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}`,
-      })
+      });
 
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {})).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}`,
-      })
-    })
+      });
+    });
 
     it('should pass no params if gdpr consentString is a number', function () {
       expect(
@@ -1364,7 +1364,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1377,8 +1377,8 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}`,
-      })
-    })
+      });
+    });
 
     it('should pass no params if gdpr consentString is null', function () {
       expect(
@@ -1392,7 +1392,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1405,8 +1405,8 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}`,
-      })
-    })
+      });
+    });
 
     it('should pass no params if gdpr consentString is a object', function () {
       expect(
@@ -1420,7 +1420,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1433,32 +1433,32 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}`,
-      })
-    })
+      });
+    });
 
     it('should pass no params if gdpr is not defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}`,
-      })
+      });
 
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}`,
-      })
-    })
+      });
+    });
 
     it('should pass us_privacy if uspConsent is defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}us_privacy=1NYN`,
-      })
+      });
 
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}us_privacy=1NYN`,
-      })
-    })
+      });
+    });
 
     it('should pass us_privacy after gdpr if both are present', function () {
       expect(
@@ -1473,7 +1473,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}gdpr_consent=foo&us_privacy=1NYN`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1487,8 +1487,8 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}gdpr_consent=foo&us_privacy=1NYN`,
-      })
-    })
+      });
+    });
 
     it('should pass gdprApplies', function () {
       expect(
@@ -1503,7 +1503,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}gdpr=1&us_privacy=1NYN`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1517,8 +1517,8 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}gdpr=1&us_privacy=1NYN`,
-      })
-    })
+      });
+    });
 
     it('should pass all correctly', function () {
       expect(
@@ -1534,7 +1534,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'iframe',
         url: `${usersyncIframeUrl}gdpr=1&gdpr_consent=foo&us_privacy=1NYN`,
-      })
+      });
 
       expect(
         spec.getUserSyncs(
@@ -1549,7 +1549,7 @@ describe('Dianomi adapter', () => {
       ).to.deep.equal({
         type: 'image',
         url: `${usersyncRedirectUrl}gdpr=1&gdpr_consent=foo&us_privacy=1NYN`,
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

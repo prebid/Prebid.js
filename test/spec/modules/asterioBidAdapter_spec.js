@@ -1,7 +1,7 @@
-import { expect } from 'chai'
-import sinon from 'sinon'
-import { dep, ENDPOINT, spec } from 'modules/asterioBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { dep, ENDPOINT, spec } from 'modules/asterioBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const REQUEST = {
   bidId: '456',
@@ -26,7 +26,7 @@ const REQUEST = {
       }
     }
   }
-}
+};
 
 const BIDDER_BANNER_RESPONSE = {
   bids: [{
@@ -44,7 +44,7 @@ const BIDDER_BANNER_RESPONSE = {
     mediaType: 'banner',
     adomain: ['example.com']
   }]
-}
+};
 
 const BIDDER_VIDEO_RESPONSE = {
   bids: [{
@@ -62,7 +62,7 @@ const BIDDER_VIDEO_RESPONSE = {
     mediaType: 'video',
     adomain: ['video.example.com']
   }]
-}
+};
 
 const BIDDER_NATIVE_RESPONSE = {
   bids: [{
@@ -115,28 +115,28 @@ const BIDDER_NATIVE_RESPONSE = {
     mediaType: 'native',
     adomain: ['native.example.com']
   }]
-}
+};
 
 describe('asterioBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true when adUnitToken is present', function () {
-      expect(spec.isBidRequestValid(REQUEST)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(REQUEST)).to.equal(true);
+    });
 
     it('should return false when params are missing', function () {
-      const bid = { ...REQUEST, params: { pos: 1 } }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-      expect(spec.isBidRequestValid({ ...REQUEST, params: null })).to.equal(false)
-    })
-  })
+      const bid = { ...REQUEST, params: { pos: 1 } };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid({ ...REQUEST, params: null })).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     it('should create a POST request to the direct prebid endpoint', function () {
@@ -149,26 +149,26 @@ describe('asterioBidAdapter', function () {
         refererInfo: {
           page: 'http://test.com/path.html'
         }
-      })
+      });
 
-      expect(bidderRequest.method).to.equal('POST')
-      expect(bidderRequest.url).to.equal(ENDPOINT)
-      expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': 'true' })
-      expect(bidderRequest.options.contentType).to.equal('text/plain')
-      expect(bidderRequest.data.requestId).to.equal('123')
-      expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
-      expect(bidderRequest.data.schain).to.deep.equal(REQUEST.ortb2.source.ext.schain)
+      expect(bidderRequest.method).to.equal('POST');
+      expect(bidderRequest.url).to.equal(ENDPOINT);
+      expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': 'true' });
+      expect(bidderRequest.options.contentType).to.equal('text/plain');
+      expect(bidderRequest.data.requestId).to.equal('123');
+      expect(bidderRequest.data.referer).to.equal('http://test.com/path.html');
+      expect(bidderRequest.data.schain).to.deep.equal(REQUEST.ortb2.source.ext.schain);
       expect(bidderRequest.data.bids).to.deep.equal([{
         bidId: '456',
         adUnitToken: 'bbd6b4a6-66b8-479d-9527-e17899544693',
         pos: 1,
         sizes: [{ width: 300, height: 250 }, { width: 300, height: 600 }]
-      }])
+      }]);
       expect(bidderRequest.data.gdprConsent).to.deep.equal({
         consentRequired: true,
         consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
-      })
-    })
+      });
+    });
 
     it('should use banner mediaTypes pos when params pos is absent', function () {
       const bidderRequest = spec.buildRequests([{
@@ -183,10 +183,10 @@ describe('asterioBidAdapter', function () {
         }
       }], {
         bidderRequestId: '123'
-      })
+      });
 
-      expect(bidderRequest.data.bids[0].pos).to.equal(0)
-    })
+      expect(bidderRequest.data.bids[0].pos).to.equal(0);
+    });
 
     it('should use video mediaTypes pos when params pos and banner pos are absent', function () {
       const bidderRequest = spec.buildRequests([{
@@ -201,10 +201,10 @@ describe('asterioBidAdapter', function () {
         }
       }], {
         bidderRequestId: '123'
-      })
+      });
 
-      expect(bidderRequest.data.bids[0].pos).to.equal(3)
-    })
+      expect(bidderRequest.data.bids[0].pos).to.equal(3);
+    });
 
     it('should use params pos as an override', function () {
       const bidderRequest = spec.buildRequests([{
@@ -223,10 +223,10 @@ describe('asterioBidAdapter', function () {
         }
       }], {
         bidderRequestId: '123'
-      })
+      });
 
-      expect(bidderRequest.data.bids[0].pos).to.equal(2)
-    })
+      expect(bidderRequest.data.bids[0].pos).to.equal(2);
+    });
 
     it('should support flat size tuples', function () {
       const bidderRequest = spec.buildRequests([{
@@ -234,17 +234,17 @@ describe('asterioBidAdapter', function () {
         sizes: [640, 360]
       }], {
         bidderRequestId: '123'
-      })
+      });
 
-      expect(bidderRequest.data.bids[0].sizes).to.deep.equal([{ width: 640, height: 360 }])
-    })
-  })
+      expect(bidderRequest.data.bids[0].sizes).to.deep.equal([{ width: 640, height: 360 }]);
+    });
+  });
 
   describe('interpretResponse', function () {
     it('should map banner bids from direct response', function () {
-      const result = spec.interpretResponse({ body: BIDDER_BANNER_RESPONSE }, {})
+      const result = spec.interpretResponse({ body: BIDDER_BANNER_RESPONSE }, {});
 
-      expect(result).to.have.lengthOf(1)
+      expect(result).to.have.lengthOf(1);
       expect(result[0]).to.include({
         ad: '<div>test</div>',
         requestId: 'request-1',
@@ -258,74 +258,74 @@ describe('asterioBidAdapter', function () {
         winUrl: 'http://tracker.test/win?price=${AUCTION_PRICE}',
         format: 'banner',
         mediaType: 'banner'
-      })
-      expect(result[0].meta.advertiserDomains).to.deep.equal(['example.com'])
-    })
+      });
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
 
     it('should map video bids and expose vastXml', function () {
-      const result = spec.interpretResponse({ body: BIDDER_VIDEO_RESPONSE }, {})
+      const result = spec.interpretResponse({ body: BIDDER_VIDEO_RESPONSE }, {});
 
-      expect(result).to.have.lengthOf(1)
-      expect(result[0].mediaType).to.equal('video')
-      expect(result[0].vastXml).to.equal('<VAST version="3.0"></VAST>')
-      expect(result[0].meta.advertiserDomains).to.deep.equal(['video.example.com'])
-    })
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].mediaType).to.equal('video');
+      expect(result[0].vastXml).to.equal('<VAST version="3.0"></VAST>');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['video.example.com']);
+    });
 
     it('should map native bids from direct response', function () {
-      const result = spec.interpretResponse({ body: BIDDER_NATIVE_RESPONSE }, {})
+      const result = spec.interpretResponse({ body: BIDDER_NATIVE_RESPONSE }, {});
 
-      expect(result).to.have.lengthOf(1)
-      expect(result[0].mediaType).to.equal('native')
-      expect(result[0].ad).to.equal(undefined)
-      expect(result[0].native.title).to.equal('Native title')
-      expect(result[0].native.body).to.equal('Native body')
-      expect(result[0].native.clickUrl).to.equal('https://advertiser.example.com')
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].mediaType).to.equal('native');
+      expect(result[0].ad).to.equal(undefined);
+      expect(result[0].native.title).to.equal('Native title');
+      expect(result[0].native.body).to.equal('Native body');
+      expect(result[0].native.clickUrl).to.equal('https://advertiser.example.com');
       expect(result[0].native.image).to.deep.equal({
         url: 'https://cdn.example.com/image.jpg',
         width: 300,
         height: 250
-      })
+      });
       expect(result[0].native.icon).to.deep.equal({
         url: 'https://cdn.example.com/icon.jpg',
         width: 64,
         height: 64
-      })
-      expect(result[0].native.clickTrackers).to.deep.equal(['https://tracker.example.com/click'])
-      expect(result[0].native.impressionTrackers).to.deep.equal(['https://tracker.example.com/impression'])
-      expect(result[0].meta.advertiserDomains).to.deep.equal(['native.example.com'])
-    })
+      });
+      expect(result[0].native.clickTrackers).to.deep.equal(['https://tracker.example.com/click']);
+      expect(result[0].native.impressionTrackers).to.deep.equal(['https://tracker.example.com/impression']);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['native.example.com']);
+    });
 
     it('should return empty array for invalid response body', function () {
-      expect(spec.interpretResponse({ body: undefined }, {})).to.deep.equal([])
-      expect(spec.interpretResponse({ body: '' }, {})).to.deep.equal([])
-      expect(spec.interpretResponse({ body: {} }, {})).to.deep.equal([])
-    })
-  })
+      expect(spec.interpretResponse({ body: undefined }, {})).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: '' }, {})).to.deep.equal([]);
+      expect(spec.interpretResponse({ body: {} }, {})).to.deep.equal([]);
+    });
+  });
 
   describe('onBidWon', function () {
-    let ajaxStub
+    let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(dep, 'ajax')
-    })
+      ajaxStub = sinon.stub(dep, 'ajax');
+    });
 
     afterEach(function () {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('should fire win tracking request', function () {
-      const bidWonResult = spec.onBidWon(BIDDER_BANNER_RESPONSE.bids[0])
+      const bidWonResult = spec.onBidWon(BIDDER_BANNER_RESPONSE.bids[0]);
 
-      expect(bidWonResult).to.equal(true)
-      expect(ajaxStub.calledOnce).to.equal(true)
-      expect(ajaxStub.firstCall.args[0]).to.equal('http://tracker.test/win?price=1.23')
-      expect(ajaxStub.firstCall.args[1]).to.equal(null)
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ keepalive: true })
-    })
+      expect(bidWonResult).to.equal(true);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal('http://tracker.test/win?price=1.23');
+      expect(ajaxStub.firstCall.args[1]).to.equal(null);
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ keepalive: true });
+    });
 
     it('should return false when there is no winUrl', function () {
-      expect(spec.onBidWon({ cpm: 1.23 })).to.equal(false)
-      expect(ajaxStub.called).to.equal(false)
-    })
-  })
-})
+      expect(spec.onBidWon({ cpm: 1.23 })).to.equal(false);
+      expect(ajaxStub.called).to.equal(false);
+    });
+  });
+});

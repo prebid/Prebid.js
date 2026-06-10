@@ -1,19 +1,19 @@
-import { logInfo, deepAccess, generateUUID } from '../src/utils.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { getStorageManager } from '../src/storageManager.js'
+import { logInfo, deepAccess, generateUUID } from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
-const BIDDER_CODE = 'unicorn'
-const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json'
-const UNICORN_DEFAULT_CURRENCY = 'JPY'
-const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud'
-const UNICORN_PB_VERSION = '1.1'
-const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+const BIDDER_CODE = 'unicorn';
+const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
+const UNICORN_DEFAULT_CURRENCY = 'JPY';
+const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
+const UNICORN_PB_VERSION = '1.1';
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Placement ID and Account ID are required.
@@ -21,8 +21,8 @@ const storage = getStorageManager({ bidderCode: BIDDER_CODE })
  * @returns {boolean}
  */
 const isBidRequestValid = bidRequest => {
-  return !!bidRequest.adUnitCode && !!bidRequest.params.accountId
-}
+  return !!bidRequest.adUnitCode && !!bidRequest.params.accountId;
+};
 
 /**
  * @param {Array<BidRequest>} validBidRequests
@@ -34,8 +34,8 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     method: 'POST',
     url: UNICORN_ENDPOINT,
     data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest)
-  }
-}
+  };
+};
 
 /**
  * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -44,8 +44,8 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @returns {string}
  */
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
-  logInfo('[UNICORN] buildOpenRtbBidRequestPayload.validBidRequests:', validBidRequests)
-  logInfo('[UNICORN] buildOpenRtbBidRequestPayload.bidderRequest:', bidderRequest)
+  logInfo('[UNICORN] buildOpenRtbBidRequestPayload.validBidRequests:', validBidRequests);
+  logInfo('[UNICORN] buildOpenRtbBidRequestPayload.bidderRequest:', bidderRequest);
   const imp = validBidRequests.map(br => {
     return {
       id: br.bidId,
@@ -57,8 +57,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       tagid: deepAccess(br, 'params.placementId') || br.adUnitCode,
       secure: 1,
       bidfloor: parseFloat(0)
-    }
-  })
+    };
+  });
   const request = {
     id: bidderRequest.bidderRequestId,
     at: 1,
@@ -91,20 +91,20 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     ext: {
       accountId: deepAccess(validBidRequests[0], 'params.accountId')
     }
-  }
-  const eids = initializeEids(validBidRequests[0])
+  };
+  const eids = initializeEids(validBidRequests[0]);
   if (eids.length > 0) {
-    request.user.eids = eids
+    request.user.eids = eids;
   }
 
-  logInfo('[UNICORN] OpenRTB Formatted Request:', request)
-  return JSON.stringify(request)
+  logInfo('[UNICORN] OpenRTB Formatted Request:', request);
+  return JSON.stringify(request);
 }
 
 const initializeEids = (bidRequest) => {
-  const eids = []
+  const eids = [];
 
-  const id5 = deepAccess(bidRequest, 'userId.id5id.uid')
+  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
   if (id5) {
     eids.push({
       source: 'id5-sync.com',
@@ -113,17 +113,17 @@ const initializeEids = (bidRequest) => {
           id: id5
         }
       ]
-    })
+    });
   }
 
-  return eids
-}
+  return eids;
+};
 
 const interpretResponse = (serverResponse, request) => {
-  logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse)
-  logInfo('[UNICORN] interpretResponse.request:', request)
-  const res = serverResponse.body
-  var bids = []
+  logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);
+  logInfo('[UNICORN] interpretResponse.request:', request);
+  const res = serverResponse.body;
+  var bids = [];
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
@@ -137,44 +137,44 @@ const interpretResponse = (serverResponse, request) => {
           creativeId: b.crid,
           netRevenue: true,
           currency: res.cur
-        }
+        };
 
         if (b.adomain) {
-          bid.meta = { advertiserDomains: b.adomain }
+          bid.meta = { advertiserDomains: b.adomain };
         }
 
-        bids.push(bid)
-      })
-    })
+        bids.push(bid);
+      });
+    });
   }
-  logInfo('[UNICORN] interpretResponse bids:', bids)
-  return bids
-}
+  logInfo('[UNICORN] interpretResponse bids:', bids);
+  return bids;
+};
 
 /**
  * Get or Create Uid for First Party Cookie
  */
 const getUid = () => {
-  const ck = storage.getCookie(UNICORN_PB_COOKIE_KEY)
+  const ck = storage.getCookie(UNICORN_PB_COOKIE_KEY);
   if (ck) {
-    return JSON.parse(ck)['uid']
+    return JSON.parse(ck)['uid'];
   } else {
     const newCk = {
       uid: generateUUID()
-    }
-    const expireIn = new Date(Date.now() + 24 * 60 * 60 * 10000).toUTCString()
-    storage.setCookie(UNICORN_PB_COOKIE_KEY, JSON.stringify(newCk), expireIn)
-    return newCk.uid
+    };
+    const expireIn = new Date(Date.now() + 24 * 60 * 60 * 10000).toUTCString();
+    storage.setCookie(UNICORN_PB_COOKIE_KEY, JSON.stringify(newCk), expireIn);
+    return newCk.uid;
   }
-}
+};
 
 /**
  * Make imp.banner.format
  * @param {Array<Number>} arr
  */
 const makeFormat = arr => arr.map((s) => {
-  return { w: s[0], h: s[1] }
-})
+  return { w: s[0], h: s[1] };
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -183,6 +183,6 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { VIDEO } from '../src/mediaTypes.js'
-import { deepAccess } from '../src/utils.js'
-import { config } from '../src/config.js'
-import { userSync } from '../src/userSync.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { VIDEO } from '../src/mediaTypes.js';
+import { deepAccess } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { userSync } from '../src/userSync.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,7 +11,7 @@ import { userSync } from '../src/userSync.js'
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const DAILYMOTION_VENDOR_ID = 573
+const DAILYMOTION_VENDOR_ID = 573;
 
 const dailymotionOrtbConverter = ortbConverter({
   context: {
@@ -19,29 +19,29 @@ const dailymotionOrtbConverter = ortbConverter({
     ttl: 600,
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
+    const imp = buildImp(bidRequest, context);
 
     if (typeof bidRequest.getFloor === 'function') {
-      const size = imp.w > 0 && imp.h > 0 ? [imp.w, imp.h] : '*'
+      const size = imp.w > 0 && imp.h > 0 ? [imp.w, imp.h] : '*';
 
       const floorInfo = bidRequest.getFloor({
         currency: 'USD',
         mediaType: 'video', // or '*' for all the mediaType
         size
-      }) || {}
+      }) || {};
 
       if (floorInfo.floor && floorInfo.currency) {
-        imp.bidfloor = floorInfo.floor
-        imp.bidfloorcur = floorInfo.currency
+        imp.bidfloor = floorInfo.floor;
+        imp.bidfloorcur = floorInfo.currency;
       }
     }
 
-    return imp
+    return imp;
   },
-})
+});
 
 function isArrayFilled (_array) {
-  return _array && Array.isArray(_array) && _array.length > 0
+  return _array && Array.isArray(_array) && _array.length > 0;
 }
 
 /**
@@ -51,25 +51,25 @@ function isArrayFilled (_array) {
  * @return video metadata
  */
 function getVideoMetadata(bidRequest, bidderRequest) {
-  const videoParams = deepAccess(bidRequest, 'params.video', {})
+  const videoParams = deepAccess(bidRequest, 'params.video', {});
 
   // As per oRTB 2.5 spec, "A bid request must not contain both an App and a Site object."
   // See section 3.2.14
   const siteOrAppObj = deepAccess(bidderRequest, 'ortb2.site')
     ? deepAccess(bidderRequest, 'ortb2.site')
-    : deepAccess(bidderRequest, 'ortb2.app')
+    : deepAccess(bidderRequest, 'ortb2.app');
   // Content object is either from Object: Site or Object: App
-  const contentObj = deepAccess(siteOrAppObj, 'content')
+  const contentObj = deepAccess(siteOrAppObj, 'content');
 
-  const contentCattax = deepAccess(contentObj, 'cattax', 0)
-  const isContentCattaxV1 = contentCattax === 1
-  const isContentCattaxV2 = [2, 5, 6].includes(contentCattax)
+  const contentCattax = deepAccess(contentObj, 'cattax', 0);
+  const isContentCattaxV1 = contentCattax === 1;
+  const isContentCattaxV2 = [2, 5, 6].includes(contentCattax);
 
   const parsedContentData = {
     // Store as object keys to ensure uniqueness
     iabcat1: {},
     iabcat2: {},
-  }
+  };
 
   deepAccess(contentObj, 'data', []).forEach((data) => {
     if ([4, 5, 6, 7].includes(data?.ext?.segtax)) {
@@ -78,15 +78,15 @@ function getVideoMetadata(bidRequest, bidderRequest) {
           // See https://docs.prebid.org/features/firstPartyData.html#segments-and-taxonomy
           // Only take IAB cats of taxonomy V1
           if (data.ext.segtax === 4) {
-            parsedContentData.iabcat1[segment.id] = 1
+            parsedContentData.iabcat1[segment.id] = 1;
           } else {
             // Only take IAB cats of taxonomy V2 or higher
-            parsedContentData.iabcat2[segment.id] = 1
+            parsedContentData.iabcat2[segment.id] = 1;
           }
         }
-      })
+      });
     }
-  })
+  });
 
   const videoMetadata = {
     description: videoParams.description || '',
@@ -135,9 +135,9 @@ function getVideoMetadata(bidRequest, bidderRequest) {
         ? videoParams.playerVolume
         : null,
     },
-  }
+  };
 
-  return videoMetadata
+  return videoMetadata;
 }
 
 /**
@@ -146,14 +146,14 @@ function getVideoMetadata(bidRequest, bidderRequest) {
  * @return boolean True if user sync is enabled
  */
 function isUserSyncEnabled() {
-  const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
+  const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled');
 
-  if (!syncEnabled) return false
+  if (!syncEnabled) return false;
 
-  const canSyncWithIframe = userSync.canBidderRegisterSync('iframe', 'dailymotion')
-  const canSyncWithPixel = userSync.canBidderRegisterSync('image', 'dailymotion')
+  const canSyncWithIframe = userSync.canBidderRegisterSync('iframe', 'dailymotion');
+  const canSyncWithPixel = userSync.canBidderRegisterSync('image', 'dailymotion');
 
-  return !!(canSyncWithIframe || canSyncWithPixel)
+  return !!(canSyncWithIframe || canSyncWithPixel);
 }
 
 export const spec = {
@@ -171,22 +171,22 @@ export const spec = {
   isBidRequestValid: function (bid) {
     if (bid?.params) {
       // We only accept video adUnits
-      if (!bid?.mediaTypes?.[VIDEO]) return false
+      if (!bid?.mediaTypes?.[VIDEO]) return false;
 
       // As `context`, `placement` & `plcmt` are optional (although recommended)
       // values, we check the 3 of them to see if we are in an instream video context
       const isInstream = bid.mediaTypes[VIDEO].context === 'instream' ||
         bid.mediaTypes[VIDEO].placement === 1 ||
-        bid.mediaTypes[VIDEO].plcmt === 1
+        bid.mediaTypes[VIDEO].plcmt === 1;
 
       // We only accept instream video context
-      if (!isInstream) return false
+      if (!isInstream) return false;
 
       // We need API key
-      return typeof bid.params.apiKey === 'string' && bid.params.apiKey.length > 10
+      return typeof bid.params.apiKey === 'string' && bid.params.apiKey.length > 10;
     }
 
-    return false
+    return false;
   },
 
   /**
@@ -197,7 +197,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests = [], bidderRequest) {
-    const ortbData = dailymotionOrtbConverter.toORTB({ bidRequests: validBidRequests, bidderRequest })
+    const ortbData = dailymotionOrtbConverter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     // check consent to be able to read user cookie
     const allowCookieReading =
       // No GDPR applies
@@ -222,7 +222,7 @@ export const spec = {
             ? deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true
             : deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.legitimateInterests.${v}`) === true)
         )
-      )
+      );
 
     return validBidRequests.map(bid => ({
       method: 'POST',
@@ -282,7 +282,7 @@ export const spec = {
         withCredentials: allowCookieReading,
         crossOrigin: true,
       },
-    }))
+    }));
   },
 
   /**
@@ -304,27 +304,27 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     if (!!serverResponses?.length && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      const iframeSyncs = []
-      const pixelSyncs = []
+      const iframeSyncs = [];
+      const pixelSyncs = [];
 
       serverResponses.forEach((response) => {
         (response?.body?.userSyncs || []).forEach((syncUrl) => {
           if (syncUrl.type === 'image') {
-            pixelSyncs.push({ url: syncUrl.url, type: 'image' })
+            pixelSyncs.push({ url: syncUrl.url, type: 'image' });
           }
 
           if (syncUrl.type === 'iframe') {
-            iframeSyncs.push({ url: syncUrl.url, type: 'iframe' })
+            iframeSyncs.push({ url: syncUrl.url, type: 'iframe' });
           }
-        })
-      })
+        });
+      });
 
-      if (syncOptions.iframeEnabled) return iframeSyncs
-      return pixelSyncs
+      if (syncOptions.iframeEnabled) return iframeSyncs;
+      return pixelSyncs;
     }
 
-    return []
+    return [];
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

@@ -6,7 +6,7 @@ import {
   PROTOCOLS,
   VIDEO_MIME_TYPE,
   VPAID_MIME_TYPE
-} from '../libraries/video/constants/ortb.js'
+} from '../libraries/video/constants/ortb.js';
 import {
   AD_CLICK,
   AD_COMPLETE,
@@ -25,12 +25,12 @@ import {
   SETUP_COMPLETE,
   SETUP_FAILED,
   VOLUME
-} from '../libraries/video/constants/events.js'
-import { AD_PLAYER_PRO_VENDOR } from '../libraries/video/constants/vendorCodes.js'
-import { getEventHandler } from '../libraries/video/shared/eventHandler.js'
-import { submodule } from '../src/hook.js'
+} from '../libraries/video/constants/events.js';
+import { AD_PLAYER_PRO_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { submodule } from '../src/hook.js';
 
-const setupFailMessage = 'Failed to instantiate the player'
+const setupFailMessage = 'Failed to instantiate the player';
 
 /**
  * @class
@@ -41,27 +41,27 @@ const setupFailMessage = 'Failed to instantiate the player'
  * @returns {Object} - VideoProvider
  */
 export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, utils) {
-  const adPlayerPro = adPlayerPro_
-  let player = null
-  const playerVersion = null
-  const playerConfig = config.playerConfig
-  const divId = config.divId
-  const callbackStorage = callbackStorage_
-  let supportedMediaTypes = null
-  let setupCompleteCallbacks = []
-  let setupFailedCallbacks = []
+  const adPlayerPro = adPlayerPro_;
+  let player = null;
+  const playerVersion = null;
+  const playerConfig = config.playerConfig;
+  const divId = config.divId;
+  const callbackStorage = callbackStorage_;
+  let supportedMediaTypes = null;
+  let setupCompleteCallbacks = [];
+  let setupFailedCallbacks = [];
   const MEDIA_TYPES = [
     VIDEO_MIME_TYPE.MP4,
     VIDEO_MIME_TYPE.OGG,
     VIDEO_MIME_TYPE.WEBM,
     VIDEO_MIME_TYPE.AAC,
     VIDEO_MIME_TYPE.HLS
-  ]
+  ];
 
   function init() {
     if (!adPlayerPro) {
-      triggerSetupFailure(-1, setupFailMessage + ': player not present')
-      return
+      triggerSetupFailure(-1, setupFailMessage + ': player not present');
+      return;
     }
 
     // if (playerVersion < minimumSupportedPlayerVersion) {
@@ -70,24 +70,24 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     // }
 
     if (!document.getElementById(divId)) {
-      triggerSetupFailure(-3, setupFailMessage + ': No div found with id ' + divId)
-      return
+      triggerSetupFailure(-3, setupFailMessage + ': No div found with id ' + divId);
+      return;
     }
 
     if (!playerConfig || !playerConfig.placementId) {
-      triggerSetupFailure(-4, setupFailMessage + ': placementId is required in playerConfig')
-      return
+      triggerSetupFailure(-4, setupFailMessage + ': placementId is required in playerConfig');
+      return;
     }
 
-    triggerSetupComplete()
+    triggerSetupComplete();
   }
 
   function getId() {
-    return divId
+    return divId;
   }
 
   function getOrtbVideo() {
-    supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES)
+    supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
 
     const video = {
       mimes: supportedMediaTypes,
@@ -111,34 +111,34 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         API_FRAMEWORKS.OMID_1_0
       ],
       plcmt: utils.getPlcmt(playerConfig)
-    }
+    };
 
-    return video
+    return video;
   }
 
   function getOrtbContent() {
   }
 
   function setAdTagUrl(adTagUrl, options) {
-    setupPlayer(playerConfig, adTagUrl || options.adXml)
+    setupPlayer(playerConfig, adTagUrl || options.adXml);
   }
 
   function setAdXml(vastXml) {
-    setupPlayer(playerConfig, vastXml)
+    setupPlayer(playerConfig, vastXml);
   }
 
   function onEvent(externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
-      setupCompleteCallbacks.push(callback)
-      return
+      setupCompleteCallbacks.push(callback);
+      return;
     }
 
     if (externalEventName === SETUP_FAILED) {
-      setupFailedCallbacks.push(callback)
-      return
+      setupFailedCallbacks.push(callback);
+      return;
     }
 
-    let getEventPayload
+    let getEventPayload;
 
     switch (externalEventName) {
       case AD_REQUEST:
@@ -158,35 +158,35 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         getEventPayload = e => ({
           height: player.getAdHeight(),
           width: player.getAdWidth(),
-        })
-        break
+        });
+        break;
       default:
-        return
+        return;
     }
 
-    const playerEventName = utils.getPlayerEvent(externalEventName)
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
-    player && player.on(playerEventName, eventHandler)
-    callbackStorage.storeCallback(playerEventName, eventHandler, callback)
+    const playerEventName = utils.getPlayerEvent(externalEventName);
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
+    player && player.on(playerEventName, eventHandler);
+    callbackStorage.storeCallback(playerEventName, eventHandler, callback);
   }
 
   function offEvent(event, callback) {
-    const playerEventName = utils.getPlayerEvent(event)
-    const eventHandler = callbackStorage.getCallback(playerEventName, callback)
+    const playerEventName = utils.getPlayerEvent(event);
+    const eventHandler = callbackStorage.getCallback(playerEventName, callback);
     if (eventHandler) {
-      player && player.off(playerEventName, eventHandler)
+      player && player.off(playerEventName, eventHandler);
     } else {
-      player && player.off(playerEventName)
+      player && player.off(playerEventName);
     }
-    callbackStorage.clearCallback(playerEventName, callback)
+    callbackStorage.clearCallback(playerEventName, callback);
   }
 
   function destroy() {
     if (!player) {
-      return
+      return;
     }
-    player.remove()
-    player = null
+    player.remove();
+    player = null;
   }
 
   return {
@@ -199,34 +199,34 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     onEvent,
     offEvent,
     destroy
-  }
+  };
 
   function setupPlayer(config, urlOrXml) {
     if (!config || player) {
-      return
+      return;
     }
-    const playerConfig = utils.getConfig(config, urlOrXml)
+    const playerConfig = utils.getConfig(config, urlOrXml);
 
     if (!playerConfig) {
-      return
+      return;
     }
 
-    player = adPlayerPro(divId)
-    callbackStorage.addAllCallbacks(player.on)
+    player = adPlayerPro(divId);
+    callbackStorage.addAllCallbacks(player.on);
     player.on('AdStopped', () => {
-      player = null
-    })
-    player.setup(playerConfig)
+      player = null;
+    });
+    player.setup(playerConfig);
   }
 
   function triggerSetupComplete() {
     if (!setupCompleteCallbacks.length) {
-      return
+      return;
     }
 
-    const payload = getSetupCompletePayload()
-    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload))
-    setupCompleteCallbacks = []
+    const payload = getSetupCompletePayload();
+    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+    setupCompleteCallbacks = [];
   }
 
   function getSetupCompletePayload() {
@@ -234,12 +234,12 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
       divId,
       playerVersion,
       type: SETUP_COMPLETE
-    }
+    };
   }
 
   function triggerSetupFailure(errorCode, msg, sourceError) {
     if (!setupFailedCallbacks.length) {
-      return
+      return;
     }
 
     const payload = {
@@ -249,10 +249,10 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
       errorCode: errorCode,
       errorMessage: msg,
       sourceError: sourceError
-    }
+    };
 
-    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload))
-    setupFailedCallbacks = []
+    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
   }
 }
 
@@ -262,73 +262,73 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
  * @returns {Object} - VideoProvider
  */
 const adPlayerProSubmoduleFactory = function (config, sharedUtils) {
-  const callbackStorage = callbackStorageFactory()
-  return AdPlayerProProvider(config, window.playerPro, callbackStorage, utils)
-}
+  const callbackStorage = callbackStorageFactory();
+  return AdPlayerProProvider(config, window.playerPro, callbackStorage, utils);
+};
 
-adPlayerProSubmoduleFactory.vendorCode = AD_PLAYER_PRO_VENDOR
-submodule('video', adPlayerProSubmoduleFactory)
-export default adPlayerProSubmoduleFactory
+adPlayerProSubmoduleFactory.vendorCode = AD_PLAYER_PRO_VENDOR;
+submodule('video', adPlayerProSubmoduleFactory);
+export default adPlayerProSubmoduleFactory;
 
 // HELPERS
 
 export const utils = {
   getConfig: function (config, urlOrXml) {
     if (!config || !urlOrXml) {
-      return
+      return;
     }
 
-    const params = config.params || {}
-    params.placementId = config.placementId
-    params.advertising = params.advertising || {}
-    params.advertising.tag = params.advertising.tag || {}
+    const params = config.params || {};
+    params.placementId = config.placementId;
+    params.advertising = params.advertising || {};
+    params.advertising.tag = params.advertising.tag || {};
 
-    params._pType = 'pbjs'
-    params.advertising.tag.url = urlOrXml
-    return params
+    params._pType = 'pbjs';
+    params.advertising.tag.url = urlOrXml;
+    return params;
   },
 
   getPlayerEvent: function (eventName) {
     switch (eventName) {
       case DESTROYED:
-        return 'AdStopped'
+        return 'AdStopped';
 
       case AD_REQUEST:
-        return 'AdRequest'
+        return 'AdRequest';
       case AD_LOADED:
-        return 'AdLoaded'
+        return 'AdLoaded';
       case AD_STARTED:
-        return 'AdStarted'
+        return 'AdStarted';
       case AD_IMPRESSION:
-        return 'AdImpression'
+        return 'AdImpression';
       case AD_PLAY:
-        return 'AdPlaying'
+        return 'AdPlaying';
       case AD_PAUSE:
-        return 'AdPaused'
+        return 'AdPaused';
       case AD_CLICK:
-        return 'AdClickThru'
+        return 'AdClickThru';
       case AD_SKIPPED:
-        return 'AdSkipped'
+        return 'AdSkipped';
       case AD_ERROR:
-        return 'AdError'
+        return 'AdError';
       case AD_COMPLETE:
-        return 'AdCompleted'
+        return 'AdCompleted';
       case VOLUME:
-        return 'AdVolumeChange'
+        return 'AdVolumeChange';
       case PLAYER_RESIZE:
-        return 'AdSizeChange'
+        return 'AdSizeChange';
       // case FULLSCREEN:
       //   return FULLSCREEN;
       default:
-        return eventName
+        return eventName;
     }
   },
 
   getSupportedMediaTypes: function (mediaTypes = []) {
-    const el = document.createElement('video')
+    const el = document.createElement('video');
     return mediaTypes
       .filter(mediaType => el.canPlayType(mediaType))
-      .concat(VPAID_MIME_TYPE) // Always allow VPAIDs.
+      .concat(VPAID_MIME_TYPE); // Always allow VPAIDs.
   },
 
   /**
@@ -337,36 +337,36 @@ export const utils = {
    * @return {PLACEMENT|undefined}
    */
   getPlacement: function (adConfig) {
-    adConfig = adConfig || {}
+    adConfig = adConfig || {};
 
     switch (adConfig.type) {
       case 'inPage':
-        return PLACEMENT.ARTICLE
+        return PLACEMENT.ARTICLE;
       case 'rewarded':
       case 'inView':
-        return PLACEMENT.INTERSTITIAL_SLIDER_FLOATING
+        return PLACEMENT.INTERSTITIAL_SLIDER_FLOATING;
       default:
-        return PLACEMENT.BANNER
+        return PLACEMENT.BANNER;
     }
   },
 
   getPlaybackMethod: function ({ autoplay, mute }) {
     if (autoplay) {
-      return mute ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY
+      return mute ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
-    return PLAYBACK_METHODS.CLICK_TO_PLAY
+    return PLAYBACK_METHODS.CLICK_TO_PLAY;
   },
 
   getPlcmt: function ({ type, autoplay, muted, file }) {
-    type = type || 'inStream'
+    type = type || 'inStream';
     if (!file) {
       // INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.
-      return type === 'rewarded' || type === 'inView' ? PLCMT.INTERSTITIAL : PLCMT.OUTSTREAM
+      return type === 'rewarded' || type === 'inView' ? PLCMT.INTERSTITIAL : PLCMT.OUTSTREAM;
     }
     // INSTREAM must be set to “sound on” by default at player start
-    return type === 'inStream' && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT
+    return type === 'inStream' && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT;
   }
-}
+};
 
 /**
  * Tracks which functions are attached to events
@@ -382,68 +382,68 @@ export const utils = {
  * @returns {CallbackStorage}
  */
 export function callbackStorageFactory() {
-  let storage = {}
-  let storageHandlers = {}
+  let storage = {};
+  let storageHandlers = {};
 
   function storeCallback(eventType, eventHandler, callback) {
-    let eventHandlers = storage[eventType]
+    let eventHandlers = storage[eventType];
     if (!eventHandlers) {
-      eventHandlers = storage[eventType] = {}
+      eventHandlers = storage[eventType] = {};
     }
 
-    eventHandlers[callback] = eventHandler
-    addHandler(eventType, eventHandler)
+    eventHandlers[callback] = eventHandler;
+    addHandler(eventType, eventHandler);
   }
 
   function getCallback(eventType, callback) {
-    const eventHandlers = storage[eventType]
+    const eventHandlers = storage[eventType];
     if (eventHandlers) {
-      return eventHandlers[callback]
+      return eventHandlers[callback];
     }
   }
 
   function clearCallback(eventType, callback) {
     if (!callback) {
-      delete storage[eventType]
-      delete storageHandlers[eventType]
-      return
+      delete storage[eventType];
+      delete storageHandlers[eventType];
+      return;
     }
-    const eventHandlers = storage[eventType]
+    const eventHandlers = storage[eventType];
     if (eventHandlers) {
-      const eventHandler = eventHandlers[callback]
+      const eventHandler = eventHandlers[callback];
       if (eventHandler) {
-        delete eventHandlers[callback]
-        clearHandler(eventType, eventHandler)
+        delete eventHandlers[callback];
+        clearHandler(eventType, eventHandler);
       }
     }
   }
 
   function clearStorage() {
-    storage = {}
-    storageHandlers = {}
+    storage = {};
+    storageHandlers = {};
   }
 
   function addHandler(eventType, eventHandler) {
-    let eventHandlers = storageHandlers[eventType]
+    let eventHandlers = storageHandlers[eventType];
     if (!eventHandlers) {
-      eventHandlers = storageHandlers[eventType] = []
+      eventHandlers = storageHandlers[eventType] = [];
     }
-    eventHandlers.push(eventHandler)
+    eventHandlers.push(eventHandler);
   }
 
   function clearHandler(eventType, eventHandler) {
-    let eventHandlers = storageHandlers[eventType]
-    eventHandlers = eventHandlers.filter(handler => handler !== eventHandler)
+    let eventHandlers = storageHandlers[eventType];
+    eventHandlers = eventHandlers.filter(handler => handler !== eventHandler);
     if (eventHandlers.length) {
-      storageHandlers[eventType] = eventHandlers
+      storageHandlers[eventType] = eventHandlers;
     } else {
-      delete storageHandlers[eventType]
+      delete storageHandlers[eventType];
     }
   }
 
   function addAllCallbacks(functionOnPlayer) {
     for (const eventType in storageHandlers) {
-      storageHandlers[eventType].forEach(handler => functionOnPlayer(eventType, handler))
+      storageHandlers[eventType].forEach(handler => functionOnPlayer(eventType, handler));
     }
   }
 
@@ -453,5 +453,5 @@ export function callbackStorageFactory() {
     clearCallback,
     addAllCallbacks,
     clearStorage,
-  }
+  };
 }

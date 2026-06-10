@@ -1,13 +1,13 @@
-import { expect } from 'chai'
-import { spec, imps } from 'modules/exadsBidAdapter.js'
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js'
+import { expect } from 'chai';
+import { spec, imps } from 'modules/exadsBidAdapter.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('exadsBidAdapterTest', function () {
-  const bidder = 'exads'
+  const bidder = 'exads';
 
   const partners = {
     ORTB_2_4: 'ortb_2_4'
-  }
+  };
 
   const imageBanner = {
     mediaTypes: {
@@ -40,7 +40,7 @@ describe('exadsBidAdapterTest', function () {
         datatopub: 2
       },
     }
-  }
+  };
 
   const native = {
     mediaTypes: {
@@ -96,7 +96,7 @@ describe('exadsBidAdapterTest', function () {
       },
       endpoint: 'test.com'
     }
-  }
+  };
 
   const instream = {
     mediaTypes: {
@@ -130,20 +130,20 @@ describe('exadsBidAdapterTest', function () {
       },
       endpoint: 'test.com',
     }
-  }
+  };
 
   describe('while validating bid request', function () {
     it('should check the validity of bidRequest with all mandatory params for banner ad-format', function () {
-      expect(spec.isBidRequestValid(imageBanner)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(imageBanner)).to.equal(true);
+    });
 
     it('should check the validity of a bidRequest with all mandatory params for native ad-format', function () {
-      expect(spec.isBidRequestValid(native))
-    })
+      expect(spec.isBidRequestValid(native));
+    });
 
     it('should check the validity of a bidRequest with all mandatory params for instream ad-format', function () {
-      expect(spec.isBidRequestValid(instream)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(instream)).to.equal(true);
+    });
 
     it('should check the validity of a bidRequest with wrong partner', function () {
       expect(spec.isBidRequestValid({
@@ -152,54 +152,54 @@ describe('exadsBidAdapterTest', function () {
           ...imageBanner.params,
           partner: 'not_ortb_2_4'
         }
-      })).to.eql(false)
-    })
+      })).to.eql(false);
+    });
 
     it('should check the validity of a bidRequest without params', function () {
       expect(spec.isBidRequestValid({
         bidder: bidder,
         params: { }
-      })).to.equal(false)
-    })
-  })
+      })).to.equal(false);
+    });
+  });
 
   describe('while building bid request for banner ad-format', function () {
-    const bidRequests = [imageBanner]
+    const bidRequests = [imageBanner];
 
     it('should make a bidRequest by HTTP method', function () {
-      const requests = spec.buildRequests(bidRequests, {})
+      const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
-        expect(requestItem.method).to.equal('POST')
-      })
-    })
-  })
+        expect(requestItem.method).to.equal('POST');
+      });
+    });
+  });
 
   describe('while building bid request for native ad-format', function () {
-    const bidRequests = [native]
+    const bidRequests = [native];
 
     it('should make a bidRequest by HTTP method', function () {
-      const requests = spec.buildRequests(bidRequests, {})
+      const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
-        expect(requestItem.method).to.equal('POST')
-      })
-    })
-  })
+        expect(requestItem.method).to.equal('POST');
+      });
+    });
+  });
 
   describe('while building bid request for instream ad-format', function () {
-    const bidRequests = [instream]
+    const bidRequests = [instream];
 
     it('should make a bidRequest by HTTP method', function () {
-      const requests = spec.buildRequests(bidRequests, {})
+      const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
-        expect(requestItem.method).to.equal('POST')
-      })
-    })
-  })
+        expect(requestItem.method).to.equal('POST');
+      });
+    });
+  });
 
   describe('while interpreting bid response', function () {
     beforeEach(() => {
-      imps.set('270544423272657', { adPartner: 'ortb_2_4', mediaType: null })
-    })
+      imps.set('270544423272657', { adPartner: 'ortb_2_4', mediaType: null });
+    });
 
     it('should test the banner interpretResponse', function () {
       const serverResponse = {
@@ -237,7 +237,7 @@ describe('exadsBidAdapterTest', function () {
           ],
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         data: JSON.stringify({
@@ -285,17 +285,17 @@ describe('exadsBidAdapterTest', function () {
             'sub': 0
           }
         })
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bid = serverResponse.body.seatbid[0].bid[0]
-      const bidResponse = bidResponses[0]
+      const bid = serverResponse.body.seatbid[0].bid[0];
+      const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(BANNER)
-      expect(bidResponse.width).to.equal(bid.w)
-      expect(bidResponse.height).to.equal(bid.h)
-    })
+      expect(bidResponse.mediaType).to.equal(BANNER);
+      expect(bidResponse.width).to.equal(bid.w);
+      expect(bidResponse.height).to.equal(bid.h);
+    });
 
     it('should test the native interpretResponse', function () {
       const serverResponse = {
@@ -331,7 +331,7 @@ describe('exadsBidAdapterTest', function () {
           ],
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         data: JSON.stringify({
@@ -378,14 +378,14 @@ describe('exadsBidAdapterTest', function () {
             'sub': 0
           }
         })
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bidResponse = bidResponses[0]
+      const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(NATIVE)
-    })
+      expect(bidResponse.mediaType).to.equal(NATIVE);
+    });
 
     it('should test the InStream Video interpretResponse', function () {
       const serverResponse = {
@@ -420,7 +420,7 @@ describe('exadsBidAdapterTest', function () {
           ],
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         data: JSON.stringify({
@@ -474,31 +474,31 @@ describe('exadsBidAdapterTest', function () {
             'sub': 0
           }
         })
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bidResponse = bidResponses[0]
+      const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(VIDEO)
-    })
-  })
+      expect(bidResponse.mediaType).to.equal(VIDEO);
+    });
+  });
 
   describe('checking dsa information', function() {
     it('should add dsa information to the request via bidderRequest.params.dsa', function () {
-      const bidRequests = [imageBanner]
+      const bidRequests = [imageBanner];
 
-      const requests = spec.buildRequests(bidRequests, {})
+      const requests = spec.buildRequests(bidRequests, {});
 
       requests.forEach(function(requestItem) {
-        const payload = JSON.parse(requestItem.data)
+        const payload = JSON.parse(requestItem.data);
 
-        expect(payload.regs.ext.dsa).to.exist
-        expect(payload.regs.ext.dsa.dsarequired).to.equal(3)
-        expect(payload.regs.ext.dsa.pubrender).to.equal(0)
-        expect(payload.regs.ext.dsa.datatopub).to.equal(2)
-      })
-    })
+        expect(payload.regs.ext.dsa).to.exist;
+        expect(payload.regs.ext.dsa.dsarequired).to.equal(3);
+        expect(payload.regs.ext.dsa.pubrender).to.equal(0);
+        expect(payload.regs.ext.dsa.datatopub).to.equal(2);
+      });
+    });
 
     it('should test the dsa interpretResponse', function () {
       const dsaResponse = {
@@ -512,7 +512,7 @@ describe('exadsBidAdapterTest', function () {
           }
         ],
         'adrender': 0
-      }
+      };
 
       const serverResponse = {
         body: {
@@ -550,7 +550,7 @@ describe('exadsBidAdapterTest', function () {
           ],
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         data: JSON.stringify({
@@ -607,26 +607,26 @@ describe('exadsBidAdapterTest', function () {
             }
           }
         })
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
-      const bidResponse = bidResponses[0]
-      expect(bidResponse.meta).to.exist
-      expect(bidResponse.meta.dsa).to.exist
-      expect(bidResponse.meta.dsa).equal(dsaResponse)
-    })
-  })
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
+      const bidResponse = bidResponses[0];
+      expect(bidResponse.meta).to.exist;
+      expect(bidResponse.meta.dsa).to.exist;
+      expect(bidResponse.meta.dsa).equal(dsaResponse);
+    });
+  });
 
   describe('on getting the win event', function() {
     it('should not create nurl request if bid is undefined', function() {
-      const result = spec.onBidWon({})
-      expect(result).to.be.undefined
-    })
-  })
+      const result = spec.onBidWon({});
+      expect(result).to.be.undefined;
+    });
+  });
 
   describe('checking timeut', function () {
     it('should exists and be a function', () => {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function')
-    })
-  })
-})
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+  });
+});

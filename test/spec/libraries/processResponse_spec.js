@@ -1,5 +1,5 @@
-import { getBidFromResponse } from '../../../libraries/processResponse/index.js'
-import { expect } from 'chai/index.js'
+import { getBidFromResponse } from '../../../libraries/processResponse/index.js';
+import { expect } from 'chai/index.js';
 
 describe('processResponse', function () {
   const respItem = {
@@ -36,7 +36,7 @@ describe('processResponse', function () {
       }
     ],
     'seat': '1429601'
-  }
+  };
   const LOG_ERROR_MESS = {
     'noAuid': 'Bid from response has no auid parameter - ',
     'noAdm': 'Bid from response has no adm parameter - ',
@@ -52,9 +52,9 @@ describe('processResponse', function () {
     'currencyMismatch': 'Currency from the request is not match currency from the response - ',
     'onlyVideoInstream': 'Only video instream supported',
     'videoMissing': 'Bid request videoType property is missing - '
-  }
+  };
   it('returns bid when respItem and LOG_ERROR_MESS is passed', function () {
-    const response = getBidFromResponse(respItem, LOG_ERROR_MESS)
-    expect(response).not.include.any.keys('emptyResponse', 'hasNoArrayOfBids', 'emptySeatbid')
-  })
-})
+    const response = getBidFromResponse(respItem, LOG_ERROR_MESS);
+    expect(response).not.include.any.keys('emptyResponse', 'hasNoArrayOfBids', 'emptySeatbid');
+  });
+});

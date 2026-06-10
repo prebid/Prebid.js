@@ -1,10 +1,10 @@
-import { expect } from 'chai'
-import { spec } from '../../../modules/smarthubBidAdapter.js'
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js'
-import { getUniqueIdentifierStr } from '../../../src/utils.js'
+import { expect } from 'chai';
+import { spec } from '../../../modules/smarthubBidAdapter.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'smarthub'
-const bidderAlias = 'markapp'
+const bidder = 'smarthub';
+const bidderAlias = 'markapp';
 
 describe('SmartHubBidAdapter', function () {
   const bids = [
@@ -108,7 +108,7 @@ describe('SmartHubBidAdapter', function () {
         pos: 1,
       }
     }
-  ]
+  ];
 
   const invalidBid = {
     bidId: getUniqueIdentifierStr(),
@@ -121,7 +121,7 @@ describe('SmartHubBidAdapter', function () {
     params: {
 
     }
-  }
+  };
 
   const bidderRequest = {
     uspConsent: '1---',
@@ -132,46 +132,46 @@ describe('SmartHubBidAdapter', function () {
       page: 'https://test.com'
     },
     timeout: 500
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and key parameters present', function () {
-      expect(spec.isBidRequestValid(bids[0])).to.be.true
-    })
+      expect(spec.isBidRequestValid(bids[0])).to.be.true;
+    });
     it('Should return false if at least one of parameters is not present', function () {
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false
-    })
-  })
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    });
+  });
 
   describe('buildRequests', function () {
-    let [serverRequest, regionRequest, requestAlias] = spec.buildRequests(bids, bidderRequest)
+    let [serverRequest, regionRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist
-      expect(serverRequest.method).to.exist
-      expect(serverRequest.url).to.exist
-      expect(serverRequest.data).to.exist
-    })
+      expect(serverRequest).to.exist;
+      expect(serverRequest.method).to.exist;
+      expect(serverRequest.url).to.exist;
+      expect(serverRequest.data).to.exist;
+    });
 
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST')
-    })
+      expect(serverRequest.method).to.equal('POST');
+    });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(`https://prebid.attekmi.co/pbjs?partnerName=testname&seat=testSeat&token=testBanner`)
-    })
+      expect(serverRequest.url).to.equal(`https://prebid.attekmi.co/pbjs?partnerName=testname&seat=testSeat&token=testBanner`);
+    });
 
     it('Returns valid URL if region added', function () {
-      expect(regionRequest.url).to.equal(`https://jambojar-apac-prebid.attekmi.co/pbjs?seat=testSeat&token=testBanner`)
-    })
+      expect(regionRequest.url).to.equal(`https://jambojar-apac-prebid.attekmi.co/pbjs?seat=testSeat&token=testBanner`);
+    });
 
     it('Returns valid URL if alias', function () {
-      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.co/pbjs?seat=testSeat&token=testBanner`)
-    })
+      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.co/pbjs?seat=testSeat&token=testBanner`);
+    });
 
     it('Returns general data valid', function () {
-      const data = serverRequest.data
-      expect(data).to.be.an('object')
+      const data = serverRequest.data;
+      expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
         'language',
@@ -186,53 +186,53 @@ describe('SmartHubBidAdapter', function () {
         'bcat',
         'badv',
         'bapp'
-      )
-      expect(data.deviceWidth).to.be.a('number')
-      expect(data.deviceHeight).to.be.a('number')
-      expect(data.language).to.be.a('string')
-      expect(data.secure).to.be.within(0, 1)
-      expect(data.host).to.be.a('string')
-      expect(data.page).to.be.a('string')
-      expect(data.coppa).to.be.a('number')
-      expect(data.gdpr.consentString).to.be.a('string')
-      expect(data.ccpa).to.be.a('string')
-      expect(data.tmax).to.be.a('number')
-      expect(serverRequest.data.placements.length).to.be.greaterThan(0)
-    })
+      );
+      expect(data.deviceWidth).to.be.a('number');
+      expect(data.deviceHeight).to.be.a('number');
+      expect(data.language).to.be.a('string');
+      expect(data.secure).to.be.within(0, 1);
+      expect(data.host).to.be.a('string');
+      expect(data.page).to.be.a('string');
+      expect(data.coppa).to.be.a('number');
+      expect(data.gdpr.consentString).to.be.a('string');
+      expect(data.ccpa).to.be.a('string');
+      expect(data.tmax).to.be.a('number');
+      expect(serverRequest.data.placements.length).to.be.greaterThan(0);
+    });
 
     it('Returns valid placements', function () {
-      const { placements } = serverRequest.data
+      const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
-        const placement = placements[i]
-        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE])
-        expect(placement.bidId).to.be.a('string')
-        expect(placement.partnerName).to.be.a('string')
-        expect(placement.seat).to.be.a('string')
-        expect(placement.token).to.be.a('string')
-        expect(placement.iabCat).to.be.an('array')
-        expect(placement.minBidfloor).to.be.a('number')
-        expect(placement.pos).to.be.within(0, 7)
-        expect(placement.schain).to.be.an('object')
-        expect(placement.bidfloor).to.exist.and.to.equal(0)
+        const placement = placements[i];
+        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
+        expect(placement.bidId).to.be.a('string');
+        expect(placement.partnerName).to.be.a('string');
+        expect(placement.seat).to.be.a('string');
+        expect(placement.token).to.be.a('string');
+        expect(placement.iabCat).to.be.an('array');
+        expect(placement.minBidfloor).to.be.a('number');
+        expect(placement.pos).to.be.within(0, 7);
+        expect(placement.schain).to.be.an('object');
+        expect(placement.bidfloor).to.exist.and.to.equal(0);
 
         switch (placement.adFormat) {
           case BANNER:
-            expect(placement.sizes).to.be.an('array')
-            expect(placement.battr).to.deep.equal([1, 3])
-            break
+            expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
+            break;
           case VIDEO:
-            expect(placement.playerSize).to.be.an('array')
-            expect(placement.minduration).to.be.an('number')
-            expect(placement.maxduration).to.be.an('number')
-            expect(placement.plcmt).to.be.an('number')
-            expect(placement.battr).to.deep.equal([1, 3])
-            break
+            expect(placement.playerSize).to.be.an('array');
+            expect(placement.minduration).to.be.an('number');
+            expect(placement.maxduration).to.be.an('number');
+            expect(placement.plcmt).to.be.an('number');
+            expect(placement.battr).to.deep.equal([1, 3]);
+            break;
           case NATIVE:
-            expect(placement.native).to.be.an('object')
-            break
+            expect(placement.native).to.be.an('object');
+            break;
         }
       }
-    })
+    });
 
     it('splits requests by region', function () {
       const bids = [
@@ -248,10 +248,10 @@ describe('SmartHubBidAdapter', function () {
           mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
           params: { seat: 's', token: 't', region: 'apac' }
         }
-      ]
-      const requests = spec.buildRequests(bids, bidderRequest)
-      expect(requests).to.have.lengthOf(2)
-    })
+      ];
+      const requests = spec.buildRequests(bids, bidderRequest);
+      expect(requests).to.have.lengthOf(2);
+    });
 
     it('uses default region if not provided', function () {
       const bid = {
@@ -259,10 +259,10 @@ describe('SmartHubBidAdapter', function () {
         bidder: 'markapp',
         mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
         params: { seat: 's', token: 't' }
-      }
-      const [req] = spec.buildRequests([bid], bidderRequest)
-      expect(req.url).to.include('markapp-prebid.attekmi.co')
-    })
+      };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      expect(req.url).to.include('markapp-prebid.attekmi.co');
+    });
 
     it('uses base endpoint if partner endpoint not found', function () {
       const bid = {
@@ -275,11 +275,11 @@ describe('SmartHubBidAdapter', function () {
           token: 't',
           region: 'apac'
         }
-      }
-      const [req] = spec.buildRequests([bid], bidderRequest)
-      expect(req.url).to.include('prebid-apac.attekmi.co')
-      expect(req.url).to.include('partnerName=unknownpartner')
-    })
+      };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      expect(req.url).to.include('prebid-apac.attekmi.co');
+      expect(req.url).to.include('partnerName=unknownpartner');
+    });
 
     it('uses bidder name as partnerName if not provided', function () {
       const bid = {
@@ -287,10 +287,10 @@ describe('SmartHubBidAdapter', function () {
         bidder: 'markapp',
         mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
         params: { seat: 's', token: 't' }
-      }
-      const [req] = spec.buildRequests([bid], bidderRequest)
-      expect(req.url).to.include('markapp-prebid')
-    })
+      };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      expect(req.url).to.include('markapp-prebid');
+    });
 
     it('uses correct query params for partner endpoint', function () {
       const bid = {
@@ -298,12 +298,12 @@ describe('SmartHubBidAdapter', function () {
         bidder: 'markapp',
         mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
         params: { seat: 's', token: 't' }
-      }
-      const [req] = spec.buildRequests([bid], bidderRequest)
-      expect(req.url).to.include('seat=s')
-      expect(req.url).to.include('token=t')
-      expect(req.url).to.not.include('partnerName=')
-    })
+      };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      expect(req.url).to.include('seat=s');
+      expect(req.url).to.include('token=t');
+      expect(req.url).to.not.include('partnerName=');
+    });
 
     it('uses correct query params for base endpoint', function () {
       const bid = {
@@ -315,38 +315,38 @@ describe('SmartHubBidAdapter', function () {
           seat: 's',
           token: 't'
         }
-      }
-      const [req] = spec.buildRequests([bid], bidderRequest)
-      expect(req.url).to.include('partnerName=custom')
-    })
+      };
+      const [req] = spec.buildRequests([bid], bidderRequest);
+      expect(req.url).to.include('partnerName=custom');
+    });
 
     it('Returns data with gdprConsent and without uspConsent', function () {
-      delete bidderRequest.uspConsent
-      serverRequest = spec.buildRequests(bids, bidderRequest)
-      const data = serverRequest[0].data
-      expect(data.gdpr).to.exist
-      expect(data.gdpr.consentString).to.be.a('string')
-      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString)
-      expect(data.ccpa).to.not.exist
-      delete bidderRequest.gdprConsent
-    })
+      delete bidderRequest.uspConsent;
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest[0].data;
+      expect(data.gdpr).to.exist;
+      expect(data.gdpr.consentString).to.be.a('string');
+      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.ccpa).to.not.exist;
+      delete bidderRequest.gdprConsent;
+    });
 
     it('Returns data with uspConsent and without gdprConsent', function () {
-      bidderRequest.uspConsent = '1---'
-      delete bidderRequest.gdprConsent
-      serverRequest = spec.buildRequests(bids, bidderRequest)
-      const data = serverRequest[0].data
-      expect(data.ccpa).to.exist
-      expect(data.ccpa).to.be.a('string')
-      expect(data.ccpa).to.equal(bidderRequest.uspConsent)
-      expect(data.gdpr).to.not.exist
-    })
+      bidderRequest.uspConsent = '1---';
+      delete bidderRequest.gdprConsent;
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest[0].data;
+      expect(data.ccpa).to.exist;
+      expect(data.ccpa).to.be.a('string');
+      expect(data.ccpa).to.equal(bidderRequest.uspConsent);
+      expect(data.gdpr).to.not.exist;
+    });
 
     it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([], bidderRequest)
-      expect(serverRequest).to.be.an('array').that.is.empty
-    })
-  })
+      serverRequest = spec.buildRequests([], bidderRequest);
+      expect(serverRequest).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
@@ -368,23 +368,23 @@ describe('SmartHubBidAdapter', function () {
             advertiserId: 1234
           }
         }]
-      }
-      const bannerResponses = spec.interpretResponse(banner)
-      expect(bannerResponses).to.be.an('array').that.is.not.empty
-      const dataItem = bannerResponses[0]
+      };
+      const bannerResponses = spec.interpretResponse(banner);
+      expect(bannerResponses).to.be.an('array').that.is.not.empty;
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta')
-      expect(dataItem.requestId).to.equal(banner.body[0].requestId)
-      expect(dataItem.cpm).to.equal(banner.body[0].cpm)
-      expect(dataItem.width).to.equal(banner.body[0].width)
-      expect(dataItem.height).to.equal(banner.body[0].height)
-      expect(dataItem.ad).to.equal(banner.body[0].ad)
-      expect(dataItem.ttl).to.equal(banner.body[0].ttl)
-      expect(dataItem.creativeId).to.equal(banner.body[0].creativeId)
-      expect(dataItem.netRevenue).to.be.true
-      expect(dataItem.currency).to.equal(banner.body[0].currency)
-      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains')
-    })
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
+      expect(dataItem.requestId).to.equal(banner.body[0].requestId);
+      expect(dataItem.cpm).to.equal(banner.body[0].cpm);
+      expect(dataItem.width).to.equal(banner.body[0].width);
+      expect(dataItem.height).to.equal(banner.body[0].height);
+      expect(dataItem.ad).to.equal(banner.body[0].ad);
+      expect(dataItem.ttl).to.equal(banner.body[0].ttl);
+      expect(dataItem.creativeId).to.equal(banner.body[0].creativeId);
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal(banner.body[0].currency);
+      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains');
+    });
     it('Should interpret video response', function () {
       const video = {
         body: [{
@@ -404,22 +404,22 @@ describe('SmartHubBidAdapter', function () {
             advertiserId: 1234
           }
         }]
-      }
-      const videoResponses = spec.interpretResponse(video)
-      expect(videoResponses).to.be.an('array').that.is.not.empty
+      };
+      const videoResponses = spec.interpretResponse(video);
+      expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      const dataItem = videoResponses[0]
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta', 'width', 'height')
-      expect(dataItem.requestId).to.equal('23fhj33i987f')
-      expect(dataItem.cpm).to.equal(0.5)
-      expect(dataItem.vastUrl).to.equal('test.com')
-      expect(dataItem.ttl).to.equal(120)
-      expect(dataItem.creativeId).to.equal('2')
-      expect(dataItem.netRevenue).to.be.true
-      expect(dataItem.currency).to.equal('USD')
-      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains')
-    })
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta', 'width', 'height');
+      expect(dataItem.requestId).to.equal('23fhj33i987f');
+      expect(dataItem.cpm).to.equal(0.5);
+      expect(dataItem.vastUrl).to.equal('test.com');
+      expect(dataItem.ttl).to.equal(120);
+      expect(dataItem.creativeId).to.equal('2');
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains');
+    });
     it('Should interpret native response', function () {
       const native = {
         body: [{
@@ -441,26 +441,26 @@ describe('SmartHubBidAdapter', function () {
             advertiserId: 1234
           }
         }]
-      }
-      const nativeResponses = spec.interpretResponse(native)
-      expect(nativeResponses).to.be.an('array').that.is.not.empty
+      };
+      const nativeResponses = spec.interpretResponse(native);
+      expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      const dataItem = nativeResponses[0]
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta')
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
-      expect(dataItem.requestId).to.equal('23fhj33i987f')
-      expect(dataItem.cpm).to.equal(0.4)
-      expect(dataItem.native.clickUrl).to.equal('test.com')
-      expect(dataItem.native.title).to.equal('Test')
-      expect(dataItem.native.image).to.equal('test.com')
-      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty
-      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com')
-      expect(dataItem.ttl).to.equal(120)
-      expect(dataItem.creativeId).to.equal('2')
-      expect(dataItem.netRevenue).to.be.true
-      expect(dataItem.currency).to.equal('USD')
-      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains')
-    })
+      const dataItem = nativeResponses[0];
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
+      expect(dataItem.requestId).to.equal('23fhj33i987f');
+      expect(dataItem.cpm).to.equal(0.4);
+      expect(dataItem.native.clickUrl).to.equal('test.com');
+      expect(dataItem.native.title).to.equal('Test');
+      expect(dataItem.native.image).to.equal('test.com');
+      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty;
+      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com');
+      expect(dataItem.ttl).to.equal(120);
+      expect(dataItem.creativeId).to.equal('2');
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal('USD');
+      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains');
+    });
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
         body: [{
@@ -474,11 +474,11 @@ describe('SmartHubBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      }
+      };
 
-      const serverResponses = spec.interpretResponse(invBanner)
-      expect(serverResponses).to.be.an('array').that.is.empty
-    })
+      const serverResponses = spec.interpretResponse(invBanner);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
     it('Should return an empty array if invalid video response is passed', function () {
       const invVideo = {
         body: [{
@@ -491,10 +491,10 @@ describe('SmartHubBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      }
-      const serverResponses = spec.interpretResponse(invVideo)
-      expect(serverResponses).to.be.an('array').that.is.empty
-    })
+      };
+      const serverResponses = spec.interpretResponse(invVideo);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
     it('Should return an empty array if invalid native response is passed', function () {
       const invNative = {
         body: [{
@@ -508,10 +508,10 @@ describe('SmartHubBidAdapter', function () {
           netRevenue: true,
           currency: 'USD',
         }]
-      }
-      const serverResponses = spec.interpretResponse(invNative)
-      expect(serverResponses).to.be.an('array').that.is.empty
-    })
+      };
+      const serverResponses = spec.interpretResponse(invNative);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
     it('Should return an empty array if invalid response is passed', function () {
       const invalid = {
         body: [{
@@ -521,54 +521,54 @@ describe('SmartHubBidAdapter', function () {
           currency: 'USD',
           dealId: '1'
         }]
-      }
-      const serverResponses = spec.interpretResponse(invalid)
-      expect(serverResponses).to.be.an('array').that.is.empty
-    })
-  })
+      };
+      const serverResponses = spec.interpretResponse(invalid);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('getUserSyncs', function() {
     it('Should return array of objects with GDPR values', function() {
       const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, undefined)
-      expect(syncData).to.be.an('array').which.is.not.empty
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0&pid=300')
-    })
+      }, undefined);
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0&pid=300');
+    });
     it('Should return array of objects with CCPA values', function() {
-      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---')
-      expect(syncData).to.be.an('array').which.is.not.empty
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0&pid=300')
-    })
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---');
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0&pid=300');
+    });
     it('Should return array of objects with GPP values', function() {
       const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, {
         gppString: 'ab12345',
         applicableSections: [8]
-      })
-      expect(syncData).to.be.an('array').which.is.not.empty
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0&pid=300')
-    })
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0&pid=300');
+    });
     it('Should return iframe type if iframeEnabled is true', function() {
-      const syncData = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, undefined, {})
-      expect(syncData).to.be.an('array').which.is.not.empty
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('iframe')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://us.shb-sync.com/iframe?pbjs=1&coppa=0&pid=300')
-    })
-  })
-})
+      const syncData = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, undefined, {});
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('iframe');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/iframe?pbjs=1&coppa=0&pid=300');
+    });
+  });
+});

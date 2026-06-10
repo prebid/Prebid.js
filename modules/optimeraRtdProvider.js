@@ -17,44 +17,44 @@
  * @property {string} transmitWithBidRequests
  */
 
-import { logInfo, logError, mergeDeep } from '../src/utils.js'
-import { submodule } from '../src/hook.js'
-import { ajaxBuilder } from '../src/ajax.js'
+import { logInfo, logError, mergeDeep } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajaxBuilder } from '../src/ajax.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
 /** @type {ModuleParams} */
-let _moduleParams = {}
+let _moduleParams = {};
 
 // Default key name used in legacy targeting
 /** @type {string} */
-export let optimeraKeyName = 'hb_deal_optimera'
+export let optimeraKeyName = 'hb_deal_optimera';
 
 /** @type {Object<string, string>} */
 export const scoresBaseURL = {
   v0: 'https://dyv1bugovvq1g.cloudfront.net/',
   v1: 'https://v1.oapi26b.com/',
-}
+};
 
 /** @type {string} */
-export let scoresURL
+export let scoresURL;
 
 /** @type {string} */
-export let clientID
+export let clientID;
 
 /** @type {string} */
-export let device = 'default'
+export let device = 'default';
 
 /** @type {string} */
-export let apiVersion = 'v0'
+export let apiVersion = 'v0';
 
 /** @type {string} */
-export let transmitWithBidRequests = 'allow'
+export let transmitWithBidRequests = 'allow';
 
 /** @type {Object<string, any>} */
-export let optimeraTargeting = {}
+export let optimeraTargeting = {};
 
 /** @type {RtdSubmodule} */
 export const optimeraSubmodule = {
@@ -62,7 +62,7 @@ export const optimeraSubmodule = {
   init: init,
   getBidRequestData: fetchScores,
   getTargetingData: returnTargetingData,
-}
+};
 
 /**
  * Initializes the module with publisher-provided params.
@@ -70,46 +70,46 @@ export const optimeraSubmodule = {
  * @returns {boolean}
  */
 export function init(moduleConfig) {
-  _moduleParams = moduleConfig.params
+  _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.clientID) {
-    clientID = _moduleParams.clientID
-    if (_moduleParams.optimeraKeyName) optimeraKeyName = _moduleParams.optimeraKeyName
-    if (_moduleParams.device) device = _moduleParams.device
+    clientID = _moduleParams.clientID;
+    if (_moduleParams.optimeraKeyName) optimeraKeyName = _moduleParams.optimeraKeyName;
+    if (_moduleParams.device) device = _moduleParams.device;
     if (_moduleParams.apiVersion) {
-      apiVersion = (_moduleParams.apiVersion.includes('v1', 'v0')) ? _moduleParams.apiVersion : 'v0'
+      apiVersion = (_moduleParams.apiVersion.includes('v1', 'v0')) ? _moduleParams.apiVersion : 'v0';
     }
     if (_moduleParams.transmitWithBidRequests) {
-      transmitWithBidRequests = _moduleParams.transmitWithBidRequests
+      transmitWithBidRequests = _moduleParams.transmitWithBidRequests;
     }
-    return true
+    return true;
   }
-  logError('Optimera clientID is missing in the Optimera RTD configuration.')
-  return false
+  logError('Optimera clientID is missing in the Optimera RTD configuration.');
+  return false;
 }
 
 /**
  * Builds the URL for the score file based on config and location.
  */
 export function setScoresURL() {
-  const optimeraHost = window.location.host
-  const optimeraPathName = window.location.pathname
-  const baseUrl = scoresBaseURL[apiVersion] || scoresBaseURL.v0
+  const optimeraHost = window.location.host;
+  const optimeraPathName = window.location.pathname;
+  const baseUrl = scoresBaseURL[apiVersion] || scoresBaseURL.v0;
 
-  let newScoresURL
+  let newScoresURL;
   if (apiVersion === 'v1') {
-    newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`
+    newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
   } else {
     const encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
       .replaceAll('%2F', '/')
-      .replaceAll('%20', '+')
-    newScoresURL = `${baseUrl}${clientID}/${encoded}.js`
+      .replaceAll('%20', '+');
+    newScoresURL = `${baseUrl}${clientID}/${encoded}.js`;
   }
 
   if (scoresURL !== newScoresURL) {
-    scoresURL = newScoresURL
-    return true
+    scoresURL = newScoresURL;
+    return true;
   } else {
-    return false
+    return false;
   }
 }
 
@@ -123,34 +123,34 @@ export function setScoresURL() {
 export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
   // If setScoresURL returns false, no need to re-fetch the score file
   if (!setScoresURL()) {
-    callback()
-    return
+    callback();
+    return;
   }
   // Else, fetch the score file
-  const ajax = ajaxBuilder()
+  const ajax = ajaxBuilder();
   ajax(scoresURL, {
     success: (res, req) => {
       if (req.status === 200) {
         try {
-          setScores(res)
+          setScores(res);
           if (transmitWithBidRequests === 'allow') {
-            injectOrtbScores(reqBidsConfigObj)
+            injectOrtbScores(reqBidsConfigObj);
           }
-          callback()
+          callback();
         } catch (err) {
-          logError('Unable to parse Optimera Score File.', err)
-          callback()
+          logError('Unable to parse Optimera Score File.', err);
+          callback();
         }
       } else if (req.status === 403) {
-        logError('Unable to fetch the Optimera Score File - 403')
-        callback()
+        logError('Unable to fetch the Optimera Score File - 403');
+        callback();
       }
     },
     error: () => {
-      logError('Unable to fetch the Optimera Score File.')
-      callback()
+      logError('Unable to fetch the Optimera Score File.');
+      callback();
     }
-  })
+  });
 }
 
 /**
@@ -158,38 +158,38 @@ export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
  * @param {string} result
  */
 export function setScores(result) {
-  let scores = {}
+  let scores = {};
   try {
-    scores = JSON.parse(result)
-    let pagelevel
+    scores = JSON.parse(result);
+    let pagelevel;
     if (scores.pagelevel) {
-      pagelevel = scores.pagelevel
+      pagelevel = scores.pagelevel;
     }
     if (device !== 'default' && scores.device && scores.device[device]) {
-      scores = scores.device[device]
+      scores = scores.device[device];
     }
-    logInfo(scores)
+    logInfo(scores);
     // Store globally for debug/legacy/measurement script access
-    window.optimera = window.optimera || {}
-    window.optimera.data = window.optimera.data || {}
-    window.optimera.insights = window.optimera.insights || {}
-    window.optimera.pagelevel = window.optimera.pagelevel || []
+    window.optimera = window.optimera || {};
+    window.optimera.data = window.optimera.data || {};
+    window.optimera.insights = window.optimera.insights || {};
+    window.optimera.pagelevel = window.optimera.pagelevel || [];
     Object.keys(scores).forEach((key) => {
       if (key !== 'insights') {
-        window.optimera.data[key] = scores[key]
+        window.optimera.data[key] = scores[key];
       }
-    })
+    });
     if (scores.insights) {
-      window.optimera.insights = scores.insights
+      window.optimera.insights = scores.insights;
     }
     if (pagelevel !== undefined) {
-      window.optimera.pagelevel = pagelevel
+      window.optimera.pagelevel = pagelevel;
     }
   } catch (e) {
-    logError('Optimera score file could not be parsed.')
+    logError('Optimera score file could not be parsed.');
   }
 
-  optimeraTargeting = scores
+  optimeraTargeting = scores;
 }
 
 /**
@@ -198,10 +198,10 @@ export function setScores(result) {
  */
 export function injectOrtbScores(reqBidsConfigObj) {
   reqBidsConfigObj.adUnits.forEach((adUnit) => {
-    const auCode = adUnit.code
-    adUnit.ortb2Imp = adUnit.ortb2Imp || {}
-    adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {}
-    adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {}
+    const auCode = adUnit.code;
+    adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+    adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
+    adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
     // Example structure of optimeraTargeting[auCode] and assorted comma separated scoring data:
     // optimeraTargeting['some-div']:
     // {
@@ -213,9 +213,9 @@ export function injectOrtbScores(reqBidsConfigObj) {
     if (auCode && optimeraTargeting[auCode]) {
       mergeDeep(adUnit.ortb2Imp.ext.data, {
         optimera: optimeraTargeting[auCode]
-      })
+      });
     }
-  })
+  });
 }
 
 /**
@@ -224,19 +224,19 @@ export function injectOrtbScores(reqBidsConfigObj) {
  * @returns {Object<string, Object<string, Array<string>>>}
  */
 export function returnTargetingData(adUnits) {
-  const targeting = {}
+  const targeting = {};
   try {
     adUnits.forEach((adUnit) => {
       if (optimeraTargeting[adUnit]) {
-        targeting[adUnit] = {}
-        targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]]
+        targeting[adUnit] = {};
+        targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]];
       }
-    })
+    });
   } catch (err) {
-    logError('Optimera RTD targeting error', err)
+    logError('Optimera RTD targeting error', err);
   }
-  return targeting
+  return targeting;
 }
 
 // Register the RTD module with Prebid core
-submodule('realTimeData', optimeraSubmodule)
+submodule('realTimeData', optimeraSubmodule);

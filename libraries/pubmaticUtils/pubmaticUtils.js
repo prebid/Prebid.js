@@ -1,4 +1,4 @@
-import { getLowEntropySUA } from '../../src/fpd/sua.js'
+import { getLowEntropySUA } from '../../src/fpd/sua.js';
 
 const CONSTANTS = Object.freeze({
   TIME_OF_DAY_VALUES: {
@@ -12,7 +12,7 @@ const CONSTANTS = Object.freeze({
     TRUE: '1',
     FALSE: '0'
   },
-})
+});
 
 const BROWSER_REGEX_MAP = [
   { regex: /\b(?:crios)\/([\w.]+)/i, id: 1 }, // Chrome for iOS
@@ -27,50 +27,50 @@ const BROWSER_REGEX_MAP = [
   { regex: /version\/([\w.,]+) .*mobile\/\w+ (safari)/i, id: 10 }, // Safari Mobile
   { regex: /version\/([\w.,]+) .*(mobile ?safari|safari)/i, id: 11 }, // Safari
   { regex: /(firefox)\/([\w.]+)/i, id: 12 } // Firefox
-]
+];
 
 export const getBrowserType = () => {
   const brandName = getLowEntropySUA()?.browsers
     ?.map(b => b.brand.toLowerCase())
-    .join(' ') || ''
-  const browserMatch = brandName ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(brandName)) : -1
+    .join(' ') || '';
+  const browserMatch = brandName ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(brandName)) : -1;
 
-  if (browserMatch?.id) return browserMatch.id.toString()
+  if (browserMatch?.id) return browserMatch.id.toString();
 
-  const userAgent = navigator?.userAgent
-  let browserIndex = userAgent == null ? -1 : 0
+  const userAgent = navigator?.userAgent;
+  let browserIndex = userAgent == null ? -1 : 0;
 
   if (userAgent) {
-    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0
+    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
   }
-  return browserIndex.toString()
-}
+  return browserIndex.toString();
+};
 
 export const getCurrentTimeOfDay = () => {
-  const currentHour = new Date().getHours()
+  const currentHour = new Date().getHours();
 
   return currentHour < 5 ? CONSTANTS.TIME_OF_DAY_VALUES.NIGHT
     : currentHour < 12 ? CONSTANTS.TIME_OF_DAY_VALUES.MORNING
       : currentHour < 17 ? CONSTANTS.TIME_OF_DAY_VALUES.AFTERNOON
         : currentHour < 19 ? CONSTANTS.TIME_OF_DAY_VALUES.EVENING
-          : CONSTANTS.TIME_OF_DAY_VALUES.NIGHT
-}
+          : CONSTANTS.TIME_OF_DAY_VALUES.NIGHT;
+};
 
 export const getUtmValue = () => {
-  const url = new URL(window.location?.href)
-  const urlParams = new URLSearchParams(url?.search)
-  return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE
-}
+  const url = new URL(window.location?.href);
+  const urlParams = new URLSearchParams(url?.search);
+  return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
+};
 
 export const getDayOfWeek = () => {
-  const dayOfWeek = new Date().getDay()
-  return dayOfWeek.toString()
-}
+  const dayOfWeek = new Date().getDay();
+  return dayOfWeek.toString();
+};
 
 export const getHourOfDay = () => {
-  const hourOfDay = new Date().getHours()
-  return hourOfDay.toString()
-}
+  const hourOfDay = new Date().getHours();
+  return hourOfDay.toString();
+};
 
 /**
  * Determines whether an action should be throttled based on a given percentage.
@@ -81,6 +81,6 @@ export const getHourOfDay = () => {
  */
 export const shouldThrottle = (skipRate, maxRandomValue = 100) => {
   // Determine throttling based on the throttle rate and a random value
-  const rate = skipRate ?? maxRandomValue
-  return Math.floor(Math.random() * maxRandomValue) < rate
-}
+  const rate = skipRate ?? maxRandomValue;
+  return Math.floor(Math.random() * maxRandomValue) < rate;
+};

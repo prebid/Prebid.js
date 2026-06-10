@@ -1,4 +1,4 @@
-import { DEFAULT_SID_MAPPING, getSections, NORMALIZATIONS, normalizer } from '../../../modules/gppControl_usstates.js'
+import { DEFAULT_SID_MAPPING, getSections, NORMALIZATIONS, normalizer } from '../../../modules/gppControl_usstates.js';
 
 describe('normalizer', () => {
   it('sets nullify fields to null', () => {
@@ -15,28 +15,28 @@ describe('normalizer', () => {
       untouched: 1,
       field: 2,
       arr: ['a', 'b', 'c']
-    })
+    });
     sinon.assert.match(res, {
       untouched: 1,
       field: null,
       arr: ['a', null, 'c']
-    })
-  })
+    });
+  });
   it('initializes scalar fields to null', () => {
-    const res = normalizer({}, { untouched: 0, f1: 0, f2: 0 })({ untouched: 0 })
+    const res = normalizer({}, { untouched: 0, f1: 0, f2: 0 })({ untouched: 0 });
     expect(res).to.eql({
       untouched: 0,
       f1: null,
       f2: null,
-    })
-  })
+    });
+  });
   it('initializes list fields to null-array with correct size', () => {
-    const res = normalizer({}, { 'l1': 2, 'l2': 3 })({})
+    const res = normalizer({}, { 'l1': 2, 'l2': 3 })({});
     expect(res).to.eql({
       l1: [null, null],
       l2: [null, null, null]
-    })
-  })
+    });
+  });
   Object.entries({
     'arrays of the same size': [
       [1, 2],
@@ -75,36 +75,36 @@ describe('normalizer', () => {
     ]
   }).forEach(([t, [from, to, move]]) => {
     it(`carries over values for list fields - ${t}`, () => {
-      const res = normalizer({ move: { field: move || {} } }, { field: Array.isArray(to) ? to.length : 0 })({ field: from })
-      expect(res.field).to.eql(to)
-    })
-  })
+      const res = normalizer({ move: { field: move || {} } }, { field: Array.isArray(to) ? to.length : 0 })({ field: from });
+      expect(res.field).to.eql(to);
+    });
+  });
 
   it('runs fn as a final step', () => {
     const fn = sinon.stub().callsFake((orig, normalized) => {
-      normalized.fn = true
-    })
+      normalized.fn = true;
+    });
     const orig = {
       untouched: 0,
       nulled: 1,
       multi: ['a', 'b', 'c']
-    }
+    };
     const res = normalizer({
       nullify: ['nulled'],
       move: {
         multi: { 1: 2 }
       },
       fn
-    }, { nulled: 0, untouched: 0, multi: 2 })(orig)
+    }, { nulled: 0, untouched: 0, multi: 2 })(orig);
     const transformed = {
       nulled: null,
       untouched: 0,
       multi: [null, 'a']
-    }
-    sinon.assert.calledWith(fn, orig, sinon.match(transformed))
-    expect(res).to.eql(Object.assign({ fn: true }, transformed))
-  })
-})
+    };
+    sinon.assert.calledWith(fn, orig, sinon.match(transformed));
+    expect(res).to.eql(Object.assign({ fn: true }, transformed));
+  });
+});
 
 describe('state normalizations', () => {
   Object.entries({
@@ -403,15 +403,15 @@ describe('state normalizations', () => {
     ]
   }).forEach(([t, [sid, original, normalized]]) => {
     it(t, () => {
-      expect(NORMALIZATIONS[sid](original)).to.eql(normalized)
-    })
-  })
+      expect(NORMALIZATIONS[sid](original)).to.eql(normalized);
+    });
+  });
 
   describe('child consent', () => {
     function checkChildConsent(sid, orig, normalized) {
       expect(NORMALIZATIONS[sid]({
         KnownChildSensitiveDataConsents: orig
-      }).KnownChildSensitiveDataConsents).to.eql(normalized)
+      }).KnownChildSensitiveDataConsents).to.eql(normalized);
     }
 
     describe('states with single flag', () => {
@@ -426,14 +426,14 @@ describe('state normalizations', () => {
             1: [1, 1],
             2: [1, 1]
           }).forEach(([orig, normalized]) => {
-            orig = Number(orig)
+            orig = Number(orig);
             it(`translates ${orig} to ${normalized}`, () => {
-              checkChildConsent(sid, orig, normalized)
-            })
-          })
-        })
-      })
-    })
+              checkChildConsent(sid, orig, normalized);
+            });
+          });
+        });
+      });
+    });
 
     Object.entries({
       'CA/8, consent not known': [
@@ -468,11 +468,11 @@ describe('state normalizations', () => {
       ]
     }).forEach(([t, [sid, orig, normalized]]) => {
       it(t, () => {
-        checkChildConsent(sid, orig, normalized)
-      })
-    })
-  })
-})
+        checkChildConsent(sid, orig, normalized);
+      });
+    });
+  });
+});
 
 describe('getSections', () => {
   it('returns default values for all sections', () => {
@@ -480,15 +480,15 @@ describe('getSections', () => {
       api,
       [Number(sid)],
       NORMALIZATIONS[sid]
-    ])
-    expect(getSections()).to.eql(expected)
-  })
+    ]);
+    expect(getSections()).to.eql(expected);
+  });
 
   it('filters by sid', () => {
     expect(getSections({ sids: [8] })).to.eql([
       ['usca', [8], NORMALIZATIONS[8]]
-    ])
-  })
+    ]);
+  });
 
   it('can override api name', () => {
     expect(getSections({
@@ -500,8 +500,8 @@ describe('getSections', () => {
       }
     })).to.eql([
       ['uspv1ca', [8], NORMALIZATIONS[8]]
-    ])
-  })
+    ]);
+  });
 
   it('can override normalization', () => {
     expect(getSections({
@@ -514,6 +514,6 @@ describe('getSections', () => {
     })).to.eql([
       ['usca', [8], NORMALIZATIONS[9]],
       ['usva', [9], NORMALIZATIONS[9]]
-    ])
-  })
-})
+    ]);
+  });
+});

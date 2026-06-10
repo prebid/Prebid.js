@@ -1,29 +1,29 @@
-import { config } from '../../src/config.js'
-import { getHook, module } from '../../src/hook.js'
-import { logError, logInfo, logWarn, mergeDeep } from '../../src/utils.js'
-import * as events from '../../src/events.js'
-import { EVENTS, JSON_MAPPING } from '../../src/constants.js'
-import adapterManager, { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../src/adapterManager.js'
-import { timedAuctionHook } from '../../src/utils/perfMetrics.js'
-import { GDPR_GVLIDS } from '../../src/consentHandler.js'
-import { MODULE_TYPE_RTD } from '../../src/activities/modules.js'
-import { guardOrtb2Fragments } from '../../libraries/objectGuard/ortbGuard.js'
-import { activityParamsBuilder } from '../../src/activities/params.js'
-import type { StartAuctionOptions } from "../../src/prebid.ts"
-import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts"
+import { config } from '../../src/config.js';
+import { getHook, module } from '../../src/hook.js';
+import { logError, logInfo, logWarn, mergeDeep } from '../../src/utils.js';
+import * as events from '../../src/events.js';
+import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
+import adapterManager, { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../src/adapterManager.js';
+import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
+import { GDPR_GVLIDS } from '../../src/consentHandler.js';
+import { MODULE_TYPE_RTD } from '../../src/activities/modules.js';
+import { guardOrtb2Fragments } from '../../libraries/objectGuard/ortbGuard.js';
+import { activityParamsBuilder } from '../../src/activities/params.js';
+import type { StartAuctionOptions } from "../../src/prebid.ts";
+import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts";
 
 // export so that consumers can `import {type RTDProviderConfig} from 'prebid.js/modules/rtdModule'`
-export { type RTDProviderConfig } from './spec.ts'
+export { type RTDProviderConfig } from './spec.ts';
 
-const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al))
+const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
-const MODULE_NAME = 'realTimeData'
-const registeredSubModules = []
-export let subModules = []
-let _moduleConfig: RealTimeDataConfig
-let _dataProviders = []
-let _userConsent
+const MODULE_NAME = 'realTimeData';
+const registeredSubModules = [];
+export let subModules = [];
+let _moduleConfig: RealTimeDataConfig;
+let _dataProviders = [];
+let _userConsent;
 
 /**
  * Register a Real-Time Data (RTD) submodule.
@@ -34,22 +34,22 @@ let _userConsent
  * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
-  registeredSubModules.push(submodule)
-  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
+  registeredSubModules.push(submodule);
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
   return function detach() {
-    const idx = registeredSubModules.indexOf(submodule)
+    const idx = registeredSubModules.indexOf(submodule);
     if (idx >= 0) {
-      registeredSubModules.splice(idx, 1)
-      initSubModules()
+      registeredSubModules.splice(idx, 1);
+      initSubModules();
     }
-  }
+  };
 }
 
 /**
  * call each sub module event function by config order
  */
 const setEventsListeners = (function () {
-  let registered = false
+  let registered = false;
   return function setEventsListeners() {
     if (!registered) {
       Object.entries({
@@ -60,20 +60,20 @@ const setEventsListeners = (function () {
         [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent'],
       }).forEach(([ev, [handler, preprocess]]) => {
         events.on(ev as any, (args) => {
-          preprocess && (preprocess as any)(args)
+          preprocess && (preprocess as any)(args);
           subModules.forEach(sm => {
             try {
-              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent)
+              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent);
             } catch (e) {
-              logError(`RTD provider '${sm.name}': error in '${handler}':`, e)
+              logError(`RTD provider '${sm.name}': error in '${handler}':`, e);
             }
-          })
-        })
-      })
-      registered = true
+          });
+        });
+      });
+      registered = true;
     }
-  }
-})()
+  };
+})();
 
 type RealTimeDataConfig = {
   dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
@@ -81,7 +81,7 @@ type RealTimeDataConfig = {
    * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
    */
   auctionDelay?: number;
-}
+};
 
 declare module '../../src/config' {
   interface Config {
@@ -92,17 +92,17 @@ declare module '../../src/config' {
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({ realTimeData }) => {
     if (!realTimeData.dataProviders) {
-      logError('missing parameters for real time module')
-      return
+      logError('missing parameters for real time module');
+      return;
     }
-    confListener() // unsubscribe config listener
-    _moduleConfig = realTimeData
-    _dataProviders = realTimeData.dataProviders
-    setEventsListeners()
-    getHook('startAuction').before(setBidRequestsData, 20) // RTD should run before FPD
-    adapterManager.callDataDeletionRequest.before(onDataDeletionRequest)
-    initSubModules()
-  })
+    confListener(); // unsubscribe config listener
+    _moduleConfig = realTimeData;
+    _dataProviders = realTimeData.dataProviders;
+    setEventsListeners();
+    getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
+    adapterManager.callDataDeletionRequest.before(onDataDeletionRequest);
+    initSubModules();
+  });
 }
 
 function getConsentData() {
@@ -111,7 +111,7 @@ function getConsentData() {
     usp: uspDataHandler.getConsentData(),
     gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
-  }
+  };
 }
 
 /**
@@ -119,17 +119,17 @@ function getConsentData() {
  * if no init function / init return failure / module not configured - remove it from submodules list
  */
 function initSubModules() {
-  _userConsent = getConsentData()
-  const subModulesByOrder = []
+  _userConsent = getConsentData();
+  const subModulesByOrder = [];
   _dataProviders.forEach(provider => {
-    const sm = ((registeredSubModules) || []).find(s => s.name === provider.name)
-    const initResponse = sm && sm.init && sm.init(provider, _userConsent)
+    const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
+    const initResponse = sm && sm.init && sm.init(provider, _userConsent);
     if (initResponse) {
-      subModulesByOrder.push(Object.assign(sm, { config: provider }))
+      subModulesByOrder.push(Object.assign(sm, { config: provider }));
     }
-  })
-  subModules = subModulesByOrder
-  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`)
+  });
+  subModules = subModulesByOrder;
+  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
 }
 
 /**
@@ -140,80 +140,80 @@ function initSubModules() {
  * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj: StartAuctionOptions) {
-  _userConsent = getConsentData()
+  _userConsent = getConsentData();
 
-  const relevantSubModules = []
-  const prioritySubModules = []
+  const relevantSubModules = [];
+  const prioritySubModules = [];
   subModules.forEach(sm => {
     if (typeof sm.getBidRequestData !== 'function') {
-      return
+      return;
     }
-    relevantSubModules.push(sm)
-    const config = sm.config
+    relevantSubModules.push(sm);
+    const config = sm.config;
     if (config && config.waitForIt) {
-      prioritySubModules.push(sm)
+      prioritySubModules.push(sm);
     }
-  })
+  });
 
-  const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0
-  let callbacksExpected = prioritySubModules.length
-  let isDone = false
-  let waitTimeout
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
+  let callbacksExpected = prioritySubModules.length;
+  let isDone = false;
+  let waitTimeout;
 
   if (!relevantSubModules.length) {
-    return exitHook()
+    return exitHook();
   }
 
-  const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0
-  waitTimeout = setTimeout(exitHook, timeout)
-  const fpdKey = 'ortb2Fragments'
+  const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
+  waitTimeout = setTimeout(exitHook, timeout);
+  const fpdKey = 'ortb2Fragments';
 
   relevantSubModules.forEach(sm => {
-    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj[fpdKey] ?? {}, activityParams(MODULE_TYPE_RTD, sm.name))
+    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj[fpdKey] ?? {}, activityParams(MODULE_TYPE_RTD, sm.name));
     // submodules need to be able to modify the request object, but we need
     // to protect the FPD portion of it. Use a proxy that passes through everything
     // except 'ortb2Fragments'.
     const request = new Proxy(reqBidsConfigObj, {
       get(target, prop, receiver) {
-        if (prop === fpdKey) return fpdGuard
-        return Reflect.get(target, prop, receiver)
+        if (prop === fpdKey) return fpdGuard;
+        return Reflect.get(target, prop, receiver);
       },
       set(target, prop, value, receiver) {
         if (prop === fpdKey) {
-          mergeDeep(fpdGuard, value)
-          return true
+          mergeDeep(fpdGuard, value);
+          return true;
         }
-        return Reflect.set(target, prop, value, receiver)
+        return Reflect.set(target, prop, value, receiver);
       },
       deleteProperty(target, prop) {
-        if (prop === fpdKey) return true
-        return Reflect.deleteProperty(target, prop)
+        if (prop === fpdKey) return true;
+        return Reflect.deleteProperty(target, prop);
       }
-    })
-    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout)
-  })
+    });
+    sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+  });
 
   function onGetBidRequestDataCallback() {
     if (isDone) {
-      return
+      return;
     }
     if (this.config && this.config.waitForIt) {
-      callbacksExpected--
+      callbacksExpected--;
     }
     if (callbacksExpected === 0) {
-      setTimeout(exitHook, 0)
+      setTimeout(exitHook, 0);
     }
   }
 
   function exitHook() {
     if (isDone) {
-      return
+      return;
     }
-    isDone = true
-    clearTimeout(waitTimeout)
-    fn.call(this, reqBidsConfigObj)
+    isDone = true;
+    clearTimeout(waitTimeout);
+    fn.call(this, reqBidsConfigObj);
   }
-})
+});
 
 /**
  * loop through configured data providers If the data provider has registered getTargetingData,
@@ -223,50 +223,50 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
  * @param {Object} auction object received on auction end event
  */
 export function getAdUnitTargeting(auction) {
-  const relevantSubModules = subModules.filter(sm => typeof sm.getTargetingData === 'function')
+  const relevantSubModules = subModules.filter(sm => typeof sm.getTargetingData === 'function');
   if (!relevantSubModules.length) {
-    return
+    return;
   }
 
   // get data
-  const adUnitCodes = auction.adUnitCodes
+  const adUnitCodes = auction.adUnitCodes;
   if (!adUnitCodes) {
-    return
+    return;
   }
-  const targeting = []
+  const targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
-    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction)
+    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
     if (smTargeting && typeof smTargeting === 'object') {
-      targeting.push(smTargeting)
+      targeting.push(smTargeting);
     } else {
-      logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name)
+      logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
     }
   }
   // place data on auction adUnits
-  const mergedTargeting = mergeDeep({}, ...targeting)
+  const mergedTargeting = mergeDeep({}, ...targeting);
   auction.adUnits.forEach(adUnit => {
-    const kv = adUnit.code && mergedTargeting[adUnit.code]
+    const kv = adUnit.code && mergedTargeting[adUnit.code];
     if (!kv) {
-      return
+      return;
     }
-    logInfo('RTD set ad unit targeting of', kv, 'for', adUnit)
-    adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv)
-  })
-  return auction.adUnits
+    logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
+    adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
+  });
+  return auction.adUnits;
 }
 
 export function onDataDeletionRequest(next, ...args) {
   subModules.forEach((sm) => {
     if (typeof sm.onDataDeletionRequest === 'function') {
       try {
-        sm.onDataDeletionRequest(sm.config)
+        sm.onDataDeletionRequest(sm.config);
       } catch (e) {
-        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e)
+        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e);
       }
     }
-  })
-  next.apply(this, args)
+  });
+  next.apply(this, args);
 }
 
-module('realTimeData', attachRealTimeDataProvider)
-init(config)
+module('realTimeData', attachRealTimeDataProvider);
+init(config);

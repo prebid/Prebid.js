@@ -1,6 +1,6 @@
-import { deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,15 +10,15 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'zmaticoo'
-const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid'
-const DEFAULT_CUR = 'USD'
-const TTL = 200
-const NET_REV = true
+const BIDDER_CODE = 'zmaticoo';
+const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
+const DEFAULT_CUR = 'USD';
+const TTL = 200;
+const NET_REV = true;
 
 const DATA_TYPES = {
   'NUMBER': 'number', 'STRING': 'string', 'BOOLEAN': 'boolean', 'ARRAY': 'array', 'OBJECT': 'object'
-}
+};
 const VIDEO_CUSTOM_PARAMS = {
   'mimes': DATA_TYPES.ARRAY,
   'minduration': DATA_TYPES.NUMBER,
@@ -36,7 +36,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -51,19 +51,19 @@ export const spec = {
   isBidRequestValid: function (bid) {
     // check for all required bid fields
     if (!(hasBannerMediaType(bid) || hasVideoMediaType(bid))) {
-      logWarn('Invalid bid request - missing required mediaTypes')
-      return false
+      logWarn('Invalid bid request - missing required mediaTypes');
+      return false;
     }
     if (!(bid && bid.params)) {
-      logWarn('Invalid bid request - missing required bid data')
-      return false
+      logWarn('Invalid bid request - missing required bid data');
+      return false;
     }
 
     if (!(bid.params.pubId)) {
-      logWarn('Invalid bid request - missing required field pubId')
-      return false
+      logWarn('Invalid bid request - missing required field pubId');
+      return false;
     }
-    return true
+    return true;
   },
 
   /**
@@ -74,9 +74,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const secure = 1
-    const request = validBidRequests[0]
-    const params = request.params
+    const secure = 1;
+    const request = validBidRequests[0];
+    const params = request.params;
     const imps = validBidRequests.map(request => {
       const impData = {
         id: request.bidId,
@@ -86,19 +86,19 @@ export const spec = {
             pubId: params.pubId
           }
         }
-      }
+      };
       if (params.tagid) {
-        impData.tagid = params.tagid
+        impData.tagid = params.tagid;
       }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
           switch (mediaType) {
             case BANNER:
-              impData.banner = buildBanner(request)
-              break
+              impData.banner = buildBanner(request);
+              break;
             case VIDEO:
-              impData.video = buildVideo(request)
-              break
+              impData.video = buildVideo(request);
+              break;
           }
         }
       }
@@ -107,16 +107,16 @@ export const spec = {
           currency: 'USD',
           mediaType: impData.video ? 'video' : 'banner',
           size: [impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h]
-        })
+        });
         if (floorInfo && floorInfo.floor) {
-          impData.bidfloor = floorInfo.floor
+          impData.bidfloor = floorInfo.floor;
         }
       }
       if (!impData.bidfloor && params.bidfloor) {
-        impData.bidfloor = params.bidfloor
+        impData.bidfloor = params.bidfloor;
       }
-      return impData
-    })
+      return impData;
+    });
     const payload = {
       id: bidderRequest.bidderRequestId,
       imp: imps,
@@ -137,27 +137,27 @@ export const spec = {
       source: params.source ? params.source : {},
       regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
-    }
-    payload.regs.ext = {}
-    payload.user.ext = {}
-    payload.device.ua = navigator.userAgent
-    payload.device.ip = navigator.ip
-    payload.site.page = bidderRequest?.refererInfo?.page || window.location.href
-    payload.site.domain = _getDomainFromURL(payload.site.page)
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0
+    };
+    payload.regs.ext = {};
+    payload.user.ext = {};
+    payload.device.ua = navigator.userAgent;
+    payload.device.ip = navigator.ip;
+    payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
+    payload.site.domain = _getDomainFromURL(payload.site.page);
+    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     if (params.test) {
-      payload.test = params.test
+      payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, { gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0 })
+      payload.regs.ext = Object.assign(payload.regs.ext, { gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0 });
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      payload.user.ext = Object.assign(payload.user.ext, { consent: bidderRequest.gdprConsent.consentString })
+      payload.user.ext = Object.assign(payload.user.ext, { consent: bidderRequest.gdprConsent.consentString });
     }
-    const postUrl = ENDPOINT_URL
+    const postUrl = ENDPOINT_URL;
     return {
       method: 'POST', url: postUrl, data: JSON.stringify(payload),
-    }
+    };
   },
 
   /**
@@ -168,8 +168,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = []
-    const response = (serverResponse || {}).body
+    const bidResponses = [];
+    const response = (serverResponse || {}).body;
     if (response && response.seatbid && response.seatbid.length && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zmSeatbid => {
         zmSeatbid.bid.forEach(zmBid => {
@@ -184,30 +184,30 @@ export const spec = {
             creativeId: zmBid.crid,
             netRevenue: NET_REV,
             nurl: zmBid.nurl,
-          }
+          };
           bid.meta = {
             advertiserDomains: (zmBid.adomain && zmBid.adomain.length) ? zmBid.adomain : []
-          }
+          };
           if (zmBid.ext && zmBid.ext.vast_url) {
-            bid.vastXml = zmBid.ext.vast_url
+            bid.vastXml = zmBid.ext.vast_url;
           }
           if (zmBid.ext && zmBid.ext.prebid) {
-            bid.mediaType = zmBid.ext.prebid.type
+            bid.mediaType = zmBid.ext.prebid.type;
           } else {
-            bid.mediaType = BANNER
+            bid.mediaType = BANNER;
           }
-          bidResponses.push(bid)
-        })
-      })
+          bidResponses.push(bid);
+        });
+      });
     }
-    return bidResponses
+    return bidResponses;
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) {
-      return false
+      return false;
     }
-    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
-    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm;
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency;
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       winCpm
@@ -223,80 +223,80 @@ export const spec = {
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId
-    )
-    triggerPixel(winUrl)
-    return true
+    );
+    triggerPixel(winUrl);
+    return true;
   }
-}
+};
 
 function buildBanner(request) {
-  let sizes = request.sizes
+  let sizes = request.sizes;
   if (request.mediaTypes && request.mediaTypes.banner && request.mediaTypes.banner.sizes) {
-    sizes = request.mediaTypes.banner.sizes
+    sizes = request.mediaTypes.banner.sizes;
   }
   return {
     w: sizes[0][0], h: sizes[0][1]
-  }
+  };
 }
 
 function buildVideo(request) {
-  const video = {}
-  const videoParams = deepAccess(request, 'mediaTypes.video', {})
+  const video = {};
+  const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
-      video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key])
+      video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
     }
   }
   if (videoParams.playerSize) {
     if (isArray(videoParams.playerSize[0])) {
-      video.w = parseInt(videoParams.playerSize[0][0], 10)
-      video.h = parseInt(videoParams.playerSize[0][1], 10)
+      video.w = parseInt(videoParams.playerSize[0][0], 10);
+      video.h = parseInt(videoParams.playerSize[0][1], 10);
     } else if (isNumber(videoParams.playerSize[0])) {
-      video.w = parseInt(videoParams.playerSize[0], 10)
-      video.h = parseInt(videoParams.playerSize[1], 10)
+      video.w = parseInt(videoParams.playerSize[0], 10);
+      video.h = parseInt(videoParams.playerSize[1], 10);
     }
   }
-  return video
+  return video;
 }
 
 export function checkParamDataType(key, value, datatype) {
-  let functionToExecute
+  let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
-      functionToExecute = isBoolean
-      break
+      functionToExecute = isBoolean;
+      break;
     case DATA_TYPES.NUMBER:
-      functionToExecute = isNumber
-      break
+      functionToExecute = isNumber;
+      break;
     case DATA_TYPES.STRING:
-      functionToExecute = isStr
-      break
+      functionToExecute = isStr;
+      break;
     case DATA_TYPES.ARRAY:
-      functionToExecute = isArray
-      break
+      functionToExecute = isArray;
+      break;
   }
   if (functionToExecute(value)) {
-    return value
+    return value;
   }
-  logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value)
-  return undefined
+  logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
+  return undefined;
 }
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner')
+  return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
 /**
  * @param {BidRequest} bidRequest bid request
  */
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video')
+  return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
 export function _getDomainFromURL(url) {
-  const anchor = document.createElement('a')
-  anchor.href = url
-  return anchor.hostname
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
 }
 
-registerBidder(spec)
+registerBidder(spec);

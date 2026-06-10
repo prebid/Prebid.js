@@ -1,12 +1,12 @@
 export default function Adapter(code) {
-  var bidderCode = code
+  var bidderCode = code;
 
   function setBidderCode(code) {
-    bidderCode = code
+    bidderCode = code;
   }
 
   function getBidderCode() {
-    return bidderCode
+    return bidderCode;
   }
 
   function callBids() {
@@ -16,5 +16,5 @@ export default function Adapter(code) {
     callBids: callBids,
     setBidderCode: setBidderCode,
     getBidderCode: getBidderCode
-  }
+  };
 }

@@ -1,9 +1,9 @@
-import uniquestAnalyticsAdapter from 'modules/uniquestAnalyticsAdapter.js'
-import { config } from 'src/config'
-import { EVENTS } from 'src/constants.js'
-import { server } from '../../mocks/xhr.js'
+import uniquestAnalyticsAdapter from 'modules/uniquestAnalyticsAdapter.js';
+import { config } from 'src/config';
+import { EVENTS } from 'src/constants.js';
+import { server } from '../../mocks/xhr.js';
 
-const events = require('src/events')
+const events = require('src/events');
 
 const SAMPLE_EVENTS = {
   AUCTION_END: {
@@ -374,22 +374,22 @@ const SAMPLE_EVENTS = {
       ]
     }
   }
-}
+};
 
 describe('Uniquest Analytics Adapter', function () {
-  let sandbox
-  let requests
+  let sandbox;
+  let requests;
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox()
-    requests = server.requests
-    sandbox.stub(events, 'getEvents').returns([])
-  })
+    sandbox = sinon.createSandbox();
+    requests = server.requests;
+    sandbox.stub(events, 'getEvents').returns([]);
+  });
 
   afterEach(function () {
-    sandbox.restore()
-    config.resetConfig()
-  })
+    sandbox.restore();
+    config.resetConfig();
+  });
 
   describe('handle events', function () {
     beforeEach(function () {
@@ -397,26 +397,26 @@ describe('Uniquest Analytics Adapter', function () {
         options: {
           sid: 'ABCDE123',
         }
-      })
-    })
+      });
+    });
 
     afterEach(function () {
-      uniquestAnalyticsAdapter.disableAnalytics()
-    })
+      uniquestAnalyticsAdapter.disableAnalytics();
+    });
 
     it('Handle events', function () {
-      this.timeout(1000)
+      this.timeout(1000);
 
-      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END)
-      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED)
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
 
       // bids count
-      expect(requests.length).to.equal(2)
-      const auctionEnd = JSON.parse(requests[0].requestBody)
+      expect(requests.length).to.equal(2);
+      const auctionEnd = JSON.parse(requests[0].requestBody);
       // event_type
-      expect(auctionEnd.event_type).to.eql(EVENTS.AUCTION_END)
+      expect(auctionEnd.event_type).to.eql(EVENTS.AUCTION_END);
       // URL
-      expect(auctionEnd.url).to.eql(window.top.location.href)
+      expect(auctionEnd.url).to.eql(window.top.location.href);
       // bid
       expect(auctionEnd.bids).to.be.deep.equal([{
         auction_id: '75e394d9',
@@ -432,13 +432,13 @@ describe('Uniquest Analytics Adapter', function () {
         bidding_time: 100,
         ad_unit_code: '/12345678910/uniquest_1',
       }]
-      )
+      );
 
-      const auctionSucceeded = JSON.parse(requests[1].requestBody)
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
       // event_type
-      expect(auctionSucceeded.event_type).to.eql(EVENTS.AD_RENDER_SUCCEEDED)
+      expect(auctionSucceeded.event_type).to.eql(EVENTS.AD_RENDER_SUCCEEDED);
       // URL
-      expect(auctionSucceeded.url).to.eql(window.top.location.href)
+      expect(auctionSucceeded.url).to.eql(window.top.location.href);
       // bid
       expect(auctionSucceeded.bid).to.be.deep.equal({
         auction_id: '75e394d9',
@@ -453,7 +453,7 @@ describe('Uniquest Analytics Adapter', function () {
         hb_pb: '2.70',
         bidding_time: 100,
         ad_unit_code: '12345678910/uniquest_1'
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

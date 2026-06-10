@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect } from 'chai';
 import {
   getImp,
   setImpPos,
@@ -10,7 +10,7 @@ import {
   setEids,
   spec,
   ALLOWED_ORTB2_PARAMETERS,
-} from 'modules/nextMillenniumBidAdapter.js'
+} from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
   describe('function getImp', () => {
@@ -174,16 +174,16 @@ describe('nextMillenniumBidAdapterTests', () => {
           banner: { w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 320, h: 250 }] },
         },
       },
-    ]
+    ];
 
     for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const { impId, bid, id, mediaTypes } = data
-        const imp = getImp(impId, bid, id, mediaTypes)
-        expect(imp).to.deep.equal(expected)
-      })
+        const { impId, bid, id, mediaTypes } = data;
+        const imp = getImp(impId, bid, id, mediaTypes);
+        expect(imp).to.deep.equal(expected);
+      });
     }
-  })
+  });
 
   describe('function setImpPos', () => {
     const tests = [
@@ -203,16 +203,16 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'position is empty',
         expected: {},
       },
-    ]
+    ];
 
     for (const { title, pos, expected } of tests) {
       it(title, () => {
-        const obj = {}
-        setImpPos(obj, pos)
-        expect(obj).to.deep.equal(expected)
-      })
+        const obj = {};
+        setImpPos(obj, pos);
+        expect(obj).to.deep.equal(expected);
+      });
     };
-  })
+  });
 
   describe('function getSourceObj', () => {
     const dataTests = [
@@ -316,15 +316,15 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         },
       },
-    ]
+    ];
 
     for (const { title, validBidRequests, bidderRequest, expected } of dataTests) {
       it(title, () => {
-        const source = getSourceObj(validBidRequests, bidderRequest)
-        expect(source).to.deep.equal(expected)
-      })
+        const source = getSourceObj(validBidRequests, bidderRequest);
+        expect(source).to.deep.equal(expected);
+      });
     }
-  })
+  });
 
   describe('function setConsentStrings', () => {
     const dataTests = [
@@ -394,16 +394,16 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: {},
       },
-    ]
+    ];
 
     for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const { postBody, bidderRequest } = data
-        setConsentStrings(postBody, bidderRequest)
-        expect(postBody).to.deep.equal(expected)
-      })
+        const { postBody, bidderRequest } = data;
+        setConsentStrings(postBody, bidderRequest);
+        expect(postBody).to.deep.equal(expected);
+      });
     }
-  })
+  });
 
   describe('function replaceUsersyncMacros', () => {
     const dataTests = [
@@ -454,16 +454,16 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: 'https://some.url?gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=&type=',
       },
-    ]
+    ];
 
     for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const { url, gdprConsent, uspConsent, gppConsent, type } = data
-        const newUrl = replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type)
-        expect(newUrl).to.equal(expected)
-      })
+        const { url, gdprConsent, uspConsent, gppConsent, type } = data;
+        const newUrl = replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type);
+        expect(newUrl).to.equal(expected);
+      });
     }
-  })
+  });
 
   describe('function spec.getUserSyncs', () => {
     const dataTests = [
@@ -648,16 +648,16 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: [],
       },
-    ]
+    ];
 
     for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const { syncOptions, responses, gdprConsent, uspConsent, gppConsent } = data
-        const pixels = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent)
-        expect(pixels).to.deep.equal(expected)
-      })
+        const { syncOptions, responses, gdprConsent, uspConsent, gppConsent } = data;
+        const pixels = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent);
+        expect(pixels).to.deep.equal(expected);
+      });
     }
-  })
+  });
 
   describe('function setOrtb2Parameters', () => {
     const dataTests = [
@@ -739,16 +739,16 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: { imp: [] },
       },
-    ]
+    ];
 
     for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const { postBody, ortb2 } = data
-        setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2)
-        expect(postBody).to.deep.equal(expected)
-      })
+        const { postBody, ortb2 } = data;
+        setOrtb2Parameters(ALLOWED_ORTB2_PARAMETERS, postBody, ortb2);
+        expect(postBody).to.deep.equal(expected);
+      });
     };
-  })
+  });
 
   describe('function setEids', () => {
     const dataTests = [
@@ -826,18 +826,18 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         },
       },
-    ]
+    ];
 
     for (const { title, data, expected } of dataTests) {
       it(title, () => {
-        const { postBody, bids } = data
-        setEids(postBody, bids)
-        expect(postBody).to.deep.equal(expected)
-      })
+        const { postBody, bids } = data;
+        setEids(postBody, bids);
+        expect(postBody).to.deep.equal(expected);
+      });
     }
-  })
+  });
 
-  const bidRequestDataGI = getBidRequestDataGI()
+  const bidRequestDataGI = getBidRequestDataGI();
   function getBidRequestDataGI(adUnitCodes = ['test-banner-gi', 'test-banner-gi', 'test-video-gi']) {
     return [
       {
@@ -898,38 +898,38 @@ describe('nextMillenniumBidAdapterTests', () => {
           gdprApplies: true
         }
       },
-    ]
+    ];
   }
 
   describe('check parameters group_id or placement_id', function() {
-    let numberTest = 0
+    let numberTest = 0;
     for (const test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
-        const request = spec.buildRequests([test])
-        const requestData = JSON.parse(request[0].data)
-        const storeRequestId = (requestData.imp[0].ext.prebid.storedrequest.id || '')
-        expect(storeRequestId.length).to.be.not.equal(0)
+        const request = spec.buildRequests([test]);
+        const requestData = JSON.parse(request[0].data);
+        const storeRequestId = (requestData.imp[0].ext.prebid.storedrequest.id || '');
+        expect(storeRequestId.length).to.be.not.equal(0);
 
-        const srId = storeRequestId.split(';')
-        const isGroupId = (/^g[1-9]\d*/).test(srId[0])
+        const srId = storeRequestId.split(';');
+        const isGroupId = (/^g[1-9]\d*/).test(srId[0]);
         if (isGroupId) {
-          expect(srId.length).to.be.equal(3)
-          expect((/^g[1-9]\d*/).test(srId[0])).to.be.true
-          const sizes = srId[1].split('|')
+          expect(srId.length).to.be.equal(3);
+          expect((/^g[1-9]\d*/).test(srId[0])).to.be.true;
+          const sizes = srId[1].split('|');
           for (const size of sizes) {
             if (!(/^[1-9]\d*[xX,][1-9]\d*$/).test(size)) {
-              expect(storeRequestId).to.be.equal('')
+              expect(storeRequestId).to.be.equal('');
             }
 
-            expect((/^[1-9]\d*[xX,][1-9]\d*$/).test(size)).to.be.true
+            expect((/^[1-9]\d*[xX,][1-9]\d*$/).test(size)).to.be.true;
           }
         } else {
-          expect(srId.length).to.be.equal(1)
-          expect((/^[1-9]\d*/).test(srId[0])).to.be.true
+          expect(srId.length).to.be.equal(1);
+          expect((/^[1-9]\d*/).test(srId[0])).to.be.true;
         };
-      })
+      });
     };
-  })
+  });
 
   describe('Check ext.next_mil_imps', function() {
     const expectedNextMilImps = [
@@ -947,21 +947,21 @@ describe('nextMillenniumBidAdapterTests', () => {
         impId: '3',
         nextMillennium: { refresh_count: 1 },
       },
-    ]
+    ];
 
-    const dataForRequest = getBidRequestDataGI(expectedNextMilImps.map(el => el.impId))
+    const dataForRequest = getBidRequestDataGI(expectedNextMilImps.map(el => el.impId));
     for (let j = 0; j < 2; j++) {
-      const request = spec.buildRequests(dataForRequest)
-      const bidRequest = JSON.parse(request[0].data)
+      const request = spec.buildRequests(dataForRequest);
+      const bidRequest = JSON.parse(request[0].data);
       for (let i = 0; i < bidRequest.ext.next_mil_imps.length; i++) {
         it(`test - ${j * i + 1}`, () => {
-          const nextMilImp = bidRequest.ext.next_mil_imps[i]
-          expect(nextMilImp.impId).to.deep.equal(expectedNextMilImps[i].impId)
-          expect(nextMilImp.nextMillennium.refresh_count).to.deep.equal(expectedNextMilImps[i].nextMillennium.refresh_count + j)
-        })
+          const nextMilImp = bidRequest.ext.next_mil_imps[i];
+          expect(nextMilImp.impId).to.deep.equal(expectedNextMilImps[i].impId);
+          expect(nextMilImp.nextMillennium.refresh_count).to.deep.equal(expectedNextMilImps[i].nextMillennium.refresh_count + j);
+        });
       };
     };
-  })
+  });
 
   describe('function spec._getUrlPixelMetric', function() {
     const dataForTests = [
@@ -1127,15 +1127,15 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: 'https://hb-analytics.nextmillmedia.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456;7777&placements=222;8888',
       },
-    ]
+    ];
 
     for (const { title, eventName, bids, expected } of dataForTests) {
       it(title, () => {
-        const url = spec._getUrlPixelMetric(eventName, bids)
-        expect(url).to.equal(expected)
-      })
+        const url = spec._getUrlPixelMetric(eventName, bids);
+        expect(url).to.equal(expected);
+      });
     };
-  })
+  });
 
   describe('check function buildRequests', () => {
     const tests = [
@@ -1206,26 +1206,26 @@ describe('nextMillenniumBidAdapterTests', () => {
           tmax: 1200,
         },
       },
-    ]
+    ];
 
     for (const { title, bidRequests, bidderRequest, expected } of tests) {
       it(title, () => {
-        const request = spec.buildRequests(bidRequests, bidderRequest)
-        expect(request.length).to.equal(expected.requestSize)
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.length).to.equal(expected.requestSize);
 
-        const requestData = JSON.parse(request[0].data)
-        expect(requestData.id).to.equal(expected.id)
-        expect(requestData.tmax).to.equal(expected.tmax)
-        expect(requestData?.imp?.length).to.equal(expected.impSize)
+        const requestData = JSON.parse(request[0].data);
+        expect(requestData.id).to.equal(expected.id);
+        expect(requestData.tmax).to.equal(expected.tmax);
+        expect(requestData?.imp?.length).to.equal(expected.impSize);
 
         for (let i = 0; i < bidRequests.length; i++) {
-          const impId = String(i + 1)
-          expect(impId).to.equal(requestData.imp[i].id)
-          expect(bidRequests[i].bidId).to.equal(request[0].bidIds.get(impId))
+          const impId = String(i + 1);
+          expect(impId).to.equal(requestData.imp[i].id);
+          expect(bidRequests[i].bidId).to.equal(request[0].bidIds.get(impId));
         };
-      })
+      });
     };
-  })
+  });
 
   describe('check function interpretResponse', () => {
     const tests = [
@@ -1327,30 +1327,30 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         ],
       },
-    ]
+    ];
 
     for (const { title, serverResponse, bidRequest, expected } of tests) {
       describe(title, () => {
-        const bids = spec.interpretResponse(serverResponse, bidRequest)
+        const bids = spec.interpretResponse(serverResponse, bidRequest);
         for (let i = 0; i < bids.length; i++) {
           it(expected[i].title, () => {
-            expect(bids).to.have.lengthOf(expected.length)
+            expect(bids).to.have.lengthOf(expected.length);
 
-            const bid = bids[i]
-            expect(bid.creativeId).to.equal(expected[i].creativeId)
-            expect(bid.requestId).to.equal(expected[i].requestId)
-            expect(bid.ad).to.equal(expected[i].ad)
-            expect(bid.vastUrl).to.equal(expected[i].vastUrl)
-            expect(bid.vastXml).to.equal(expected[i].vastXml)
-            expect(bid.cpm).to.equal(expected[i].cpm)
-            expect(bid.width).to.equal(expected[i].width)
-            expect(bid.height).to.equal(expected[i].height)
-            expect(bid.currency).to.equal(expected[i].currency)
-          })
+            const bid = bids[i];
+            expect(bid.creativeId).to.equal(expected[i].creativeId);
+            expect(bid.requestId).to.equal(expected[i].requestId);
+            expect(bid.ad).to.equal(expected[i].ad);
+            expect(bid.vastUrl).to.equal(expected[i].vastUrl);
+            expect(bid.vastXml).to.equal(expected[i].vastXml);
+            expect(bid.cpm).to.equal(expected[i].cpm);
+            expect(bid.width).to.equal(expected[i].width);
+            expect(bid.height).to.equal(expected[i].height);
+            expect(bid.currency).to.equal(expected[i].currency);
+          });
         };
-      })
+      });
     };
-  })
+  });
 
   describe('getExtNextMilImp parameters adSlots and allowedAds', () => {
     const tests = [
@@ -1382,15 +1382,15 @@ describe('nextMillenniumBidAdapterTests', () => {
           allowedAds: ['test2'],
         },
       },
-    ]
+    ];
 
     for (const { title, impId, bid, expected } of tests) {
       it(title, () => {
-        const extNextMilImp = getExtNextMilImp(impId, bid)
-        expect(extNextMilImp.impId).to.deep.equal(expected.impId)
-        expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots)
-        expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds)
-      })
+        const extNextMilImp = getExtNextMilImp(impId, bid);
+        expect(extNextMilImp.impId).to.deep.equal(expected.impId);
+        expect(extNextMilImp.nextMillennium.adSlots).to.deep.equal(expected.adSlots);
+        expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
+      });
     };
-  })
-})
+  });
+});

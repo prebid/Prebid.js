@@ -1,8 +1,8 @@
-import { deepAccess, triggerPixel } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { OUTSTREAM } from '../src/video.js'
-import { Renderer } from '../src/Renderer.js'
+import { deepAccess, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,10 +12,10 @@ import { Renderer } from '../src/Renderer.js'
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDDER_CODE = 'rtbsape'
-const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid'
-const RENDERER_SRC = 'https://cdn-rtb.sape.ru/js/player.js'
-const MATCH_SRC = 'https://www.acint.net/mc/?dp=141'
+const BIDDER_CODE = 'rtbsape';
+const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid';
+const RENDERER_SRC = 'https://cdn-rtb.sape.ru/js/player.js';
+const MATCH_SRC = 'https://www.acint.net/mc/?dp=141';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,7 +29,7 @@ export const spec = {
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.video) && bid.params && bid.params.placeId)
+    return !!(bid && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.video) && bid.params && bid.params.placeId);
   },
 
   /**
@@ -40,8 +40,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const tz = (new Date()).getTimezoneOffset()
-    const padInt = (v) => (v < 10 ? '0' + v : '' + v)
+    const tz = (new Date()).getTimezoneOffset();
+    const padInt = (v) => (v < 10 ? '0' + v : '' + v);
 
     return {
       url: ENDPOINT,
@@ -55,7 +55,7 @@ export const spec = {
         // TODO: please do not send internal data structures over the network
         refererInfo: bidderRequest.refererInfo.legacy
       },
-    }
+    };
   },
 
   /**
@@ -67,40 +67,40 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     if (!(serverResponse.body && Array.isArray(serverResponse.body.bids))) {
-      return []
+      return [];
     }
 
-    const bids = {}
+    const bids = {};
     bidRequest.data.bids.forEach(bid => {
-      bids[bid.bidId] = bid
-    })
+      bids[bid.bidId] = bid;
+    });
 
     return serverResponse.body.bids
       .filter(bid => typeof (bid.meta || {}).advertiserDomains !== 'undefined')
       .map(bid => {
-        const requestBid = bids[bid.requestId]
-        const context = deepAccess(requestBid, 'mediaTypes.video.context')
+        const requestBid = bids[bid.requestId];
+        const context = deepAccess(requestBid, 'mediaTypes.video.context');
 
         if (context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
           const renderer = Renderer.install({
             id: bid.requestId,
             url: RENDERER_SRC,
             loaded: false
-          })
+          });
 
-          let muted = deepAccess(requestBid, 'params.video.playerMuted')
+          let muted = deepAccess(requestBid, 'params.video.playerMuted');
           if (typeof muted === 'undefined') {
-            muted = true
+            muted = true;
           }
 
-          bid.playerMuted = muted
-          bid.renderer = renderer
+          bid.playerMuted = muted;
+          bid.renderer = renderer;
 
-          renderer.setRender(setOutstreamRenderer)
+          renderer.setRender(setOutstreamRenderer);
         }
 
-        return bid
-      })
+        return bid;
+      });
   },
 
   /**
@@ -110,14 +110,14 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions) {
-    const sync = []
+    const sync = [];
     if (syncOptions.iframeEnabled) {
       sync.push({
         type: 'iframe',
         url: MATCH_SRC
-      })
+      });
     }
-    return sync
+    return sync;
   },
 
   /**
@@ -126,10 +126,10 @@ export const spec = {
    */
   onBidWon: function(bid) {
     if (bid.nurl) {
-      triggerPixel(bid.nurl)
+      triggerPixel(bid.nurl);
     }
   }
-}
+};
 
 /**
  * Initialize RtbSape outstream player
@@ -137,19 +137,19 @@ export const spec = {
  * @param bid
  */
 function setOutstreamRenderer(bid) {
-  const props = {}
+  const props = {};
   if (bid.vastUrl) {
-    props.url = bid.vastUrl
+    props.url = bid.vastUrl;
   }
   if (bid.vastXml) {
-    props.xml = bid.vastXml
+    props.xml = bid.vastXml;
   }
   bid.renderer.push(() => {
-    const player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, { singleton: true })
-    props.onComplete = () => player.destroy()
-    props.onError = () => player.destroy()
-    player.addSlot(props)
-  })
+    const player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, { singleton: true });
+    props.onComplete = () => player.destroy();
+    props.onError = () => player.destroy();
+    player.addSlot(props);
+  });
 }
 
-registerBidder(spec)
+registerBidder(spec);

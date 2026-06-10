@@ -1,19 +1,19 @@
-import { expect } from 'chai'
-import { spec, storage } from '../../../modules/insticatorBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { getWinDimensions } from '../../../src/utils.js'
-import { getGlobal } from '../../../src/prebidGlobal.js'
+import { expect } from 'chai';
+import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const USER_ID_KEY = 'hb_insticator_uid'
-const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2'
-const USER_ID_STUBBED = '12345678-1234-1234-1234-123456789abc'
+const USER_ID_KEY = 'hb_insticator_uid';
+const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
+const USER_ID_STUBBED = '12345678-1234-1234-1234-123456789abc';
 
-const utils = require('src/utils.js')
+const utils = require('src/utils.js');
 
 describe('InsticatorBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
-  const bidderRequestId = '22edbae2733bf6'
+  const bidderRequestId = '22edbae2733bf6';
   const bidRequest = {
     bidder: 'insticator',
     adUnitCode: 'adunit-code',
@@ -76,7 +76,7 @@ describe('InsticatorBidAdapter', function () {
         ]
       }
     ],
-  }
+  };
 
   let bidderRequest = {
     bidderRequestId,
@@ -100,46 +100,46 @@ describe('InsticatorBidAdapter', function () {
       ref: 'https://referrer.com',
       stack: ['https://example.com']
     },
-  }
+  };
 
   describe('.code', function () {
     it('should return a bidder code of insticator', function () {
-      expect(spec.code).to.equal('insticator')
-    })
-  })
+      expect(spec.code).to.equal('insticator');
+    });
+  });
 
   describe('inherited functions', function () {
     it('should exist and be a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true if the bid is valid', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.be.true
-    })
+      expect(spec.isBidRequestValid(bidRequest)).to.be.true;
+    });
 
     it('should return false if there is no adUnitId param', () => {
-      expect(spec.isBidRequestValid({ ...bidRequest, ...{ params: {} } })).to.be.false
-    })
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ params: {} } })).to.be.false;
+    });
 
     it('should return false if there is no mediaTypes', () => {
-      expect(spec.isBidRequestValid({ ...bidRequest, ...{ mediaTypes: {} } })).to.be.false
-    })
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ mediaTypes: {} } })).to.be.false;
+    });
 
     it('should return false if there are no banner sizes and no sizes', () => {
-      bidRequest.mediaTypes.banner = {}
-      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.false
-    })
+      bidRequest.mediaTypes.banner = {};
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.false;
+    });
 
     it('should return true if there is sizes and no banner sizes', () => {
-      expect(spec.isBidRequestValid(bidRequest)).to.be.true
-    })
+      expect(spec.isBidRequestValid(bidRequest)).to.be.true;
+    });
 
     it('should return true if there is banner sizes and no sizes', () => {
-      bidRequest.mediaTypes.banner.sizes = [[300, 250], [300, 600]]
-      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.true
-    })
+      bidRequest.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.true;
+    });
 
     it('should return true if there is video and video sizes', () => {
       expect(spec.isBidRequestValid({
@@ -156,8 +156,8 @@ describe('InsticatorBidAdapter', function () {
             },
           }
         }
-      })).to.be.true
-    })
+      })).to.be.true;
+    });
 
     it('should return false if there is no video sizes', () => {
       expect(spec.isBidRequestValid({
@@ -167,8 +167,8 @@ describe('InsticatorBidAdapter', function () {
             video: {},
           }
         }
-      })).to.be.false
-    })
+      })).to.be.false;
+    });
 
     it('should return true if video object is absent/undefined', () => {
       expect(spec.isBidRequestValid({
@@ -180,8 +180,8 @@ describe('InsticatorBidAdapter', function () {
             },
           }
         }
-      })).to.be.true
-    })
+      })).to.be.true;
+    });
 
     it('should return false if video plcmt is not a number', () => {
       expect(spec.isBidRequestValid({
@@ -199,8 +199,8 @@ describe('InsticatorBidAdapter', function () {
             },
           }
         }
-      })).to.be.false
-    })
+      })).to.be.false;
+    });
 
     it('should return true if playerSize is present instead of w and h', () => {
       expect(spec.isBidRequestValid({
@@ -217,8 +217,8 @@ describe('InsticatorBidAdapter', function () {
             },
           }
         }
-      })).to.be.true
-    })
+      })).to.be.true;
+    });
 
     it('should return true if optional video fields are valid', () => {
       expect(spec.isBidRequestValid({
@@ -248,8 +248,8 @@ describe('InsticatorBidAdapter', function () {
             },
           }
         }
-      })).to.be.true
-    })
+      })).to.be.true;
+    });
 
     it('should return false if video min duration > max duration', () => {
       expect(spec.isBidRequestValid({
@@ -268,8 +268,8 @@ describe('InsticatorBidAdapter', function () {
             },
           }
         }
-      })).to.be.false
-    })
+      })).to.be.false;
+    });
 
     it('should return true when video bidder params override bidRequest video params', () => {
       expect(spec.isBidRequestValid({
@@ -298,86 +298,86 @@ describe('InsticatorBidAdapter', function () {
             plcmt: 2,
           },
         }
-      })).to.be.true
-    })
-  })
+      })).to.be.true;
+    });
+  });
 
   describe('buildRequests', function () {
-    let getDataFromLocalStorageStub, localStorageIsEnabledStub
-    let getCookieStub, cookiesAreEnabledStub
-    let sandbox
-    let serverRequests, serverRequest
+    let getDataFromLocalStorageStub, localStorageIsEnabledStub;
+    let getCookieStub, cookiesAreEnabledStub;
+    let sandbox;
+    let serverRequests, serverRequest;
 
     beforeEach(() => {
       getGlobal().bidderSettings = {
         insticator: {
           storageAllowed: true
         }
-      }
-      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled')
-      getCookieStub = sinon.stub(storage, 'getCookie')
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled')
+      };
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      getCookieStub = sinon.stub(storage, 'getCookie');
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
 
-      sandbox = sinon.createSandbox()
-      sandbox.stub(utils, 'generateUUID').returns(USER_ID_STUBBED)
-    })
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'generateUUID').returns(USER_ID_STUBBED);
+    });
 
     afterEach(() => {
-      sandbox.restore()
-      getDataFromLocalStorageStub.restore()
-      localStorageIsEnabledStub.restore()
-      getCookieStub.restore()
-      cookiesAreEnabledStub.restore()
-      getGlobal().bidderSettings = {}
-    })
+      sandbox.restore();
+      getDataFromLocalStorageStub.restore();
+      localStorageIsEnabledStub.restore();
+      getCookieStub.restore();
+      cookiesAreEnabledStub.restore();
+      getGlobal().bidderSettings = {};
+    });
 
     before(() => {
-      serverRequests = spec.buildRequests([bidRequest], bidderRequest)
-      serverRequest = serverRequests[0]
-    })
+      serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+      serverRequest = serverRequests[0];
+    });
 
     it('should create a request', function () {
-      expect(serverRequests).to.have.length(1)
-    })
+      expect(serverRequests).to.have.length(1);
+    });
 
     it('should create a request object with method, URL, options and data', function () {
-      expect(serverRequest).to.exist
-      expect(serverRequest.method).to.exist
-      expect(serverRequest.url).to.exist
-      expect(serverRequest.options).to.exist
-      expect(serverRequest.data).to.exist
-    })
+      expect(serverRequest).to.exist;
+      expect(serverRequest.method).to.exist;
+      expect(serverRequest.url).to.exist;
+      expect(serverRequest.options).to.exist;
+      expect(serverRequest.data).to.exist;
+    });
 
     it('should return POST method', function () {
-      expect(serverRequest.method).to.equal('POST')
-    })
+      expect(serverRequest.method).to.equal('POST');
+    });
 
     it('should return valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ex.ingage.tech/v1/openrtb')
-    })
+      expect(serverRequest.url).to.equal('https://ex.ingage.tech/v1/openrtb');
+    });
 
     it('should return valid options', function () {
-      expect(serverRequest.options).to.be.an('object')
-      expect(serverRequest.options.contentType).to.equal('application/json')
-      expect(serverRequest.options.withCredentials).to.be.true
-    })
+      expect(serverRequest.options).to.be.an('object');
+      expect(serverRequest.options.contentType).to.equal('application/json');
+      expect(serverRequest.options.withCredentials).to.be.true;
+    });
 
     it('should return valid data if array of bids is valid', function () {
-      localStorageIsEnabledStub.returns(true)
-      cookiesAreEnabledStub.returns(false)
-      localStorage.setItem(USER_ID_KEY, USER_ID_DUMMY_VALUE)
+      localStorageIsEnabledStub.returns(true);
+      cookiesAreEnabledStub.returns(false);
+      localStorage.setItem(USER_ID_KEY, USER_ID_DUMMY_VALUE);
 
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
 
-      expect(data).to.be.an('object')
-      expect(data).to.have.all.keys('id', 'tmax', 'source', 'site', 'device', 'regs', 'user', 'imp', 'ext')
-      expect(data.id).to.equal(bidderRequest.bidderRequestId)
-      expect(data.tmax).to.equal(bidderRequest.timeout)
-      expect(data.source).to.have.all.keys('fd', 'tid', 'ext')
-      expect(data.source.fd).to.equal(1)
-      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid)
+      expect(data).to.be.an('object');
+      expect(data).to.have.all.keys('id', 'tmax', 'source', 'site', 'device', 'regs', 'user', 'imp', 'ext');
+      expect(data.id).to.equal(bidderRequest.bidderRequestId);
+      expect(data.tmax).to.equal(bidderRequest.timeout);
+      expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
+      expect(data.source.fd).to.equal(1);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
       expect(data.source.ext).to.have.property('schain').to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -389,27 +389,27 @@ describe('InsticatorBidAdapter', function () {
             rid: bidderRequest.bidderRequestId
           }
         ]
-      })
-      expect(data.site).to.be.an('object')
-      expect(data.site.domain).not.to.be.empty
-      expect(data.site.page).not.to.be.empty
-      expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref)
-      expect(data.device).to.be.an('object')
-      expect(data.device.w).to.equal(getWinDimensions().innerWidth)
-      expect(data.device.h).to.equal(getWinDimensions().innerHeight)
-      expect(data.device.js).to.equal(1)
-      expect(data.device.ext).to.be.an('object')
-      expect(data.device.ext.localStorage).to.equal(true)
-      expect(data.device.ext.cookies).to.equal(false)
-      expect(data.regs).to.be.an('object')
-      expect(data.regs.ext.gdpr).to.equal(1)
-      expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString)
-      expect(data.user).to.be.an('object')
-      expect(data.user).to.have.property('yob')
-      expect(data.user.yob).to.equal(1984)
-      expect(data.user).to.have.property('gender')
-      expect(data.user.gender).to.equal('M')
-      expect(data.user.ext).to.have.property('eids')
+      });
+      expect(data.site).to.be.an('object');
+      expect(data.site.domain).not.to.be.empty;
+      expect(data.site.page).not.to.be.empty;
+      expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
+      expect(data.device).to.be.an('object');
+      expect(data.device.w).to.equal(getWinDimensions().innerWidth);
+      expect(data.device.h).to.equal(getWinDimensions().innerHeight);
+      expect(data.device.js).to.equal(1);
+      expect(data.device.ext).to.be.an('object');
+      expect(data.device.ext.localStorage).to.equal(true);
+      expect(data.device.ext.cookies).to.equal(false);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.user).to.be.an('object');
+      expect(data.user).to.have.property('yob');
+      expect(data.user.yob).to.equal(1984);
+      expect(data.user).to.have.property('gender');
+      expect(data.user.gender).to.equal('M');
+      expect(data.user.ext).to.have.property('eids');
       expect(data.user.ext.eids).to.deep.equal([
         {
           source: 'criteo.com',
@@ -420,8 +420,8 @@ describe('InsticatorBidAdapter', function () {
             }
           ]
         }
-      ])
-      expect(data.imp).to.be.an('array').that.have.lengthOf(1)
+      ]);
+      expect(data.imp).to.be.an('array').that.have.lengthOf(1);
       expect(data.imp).to.deep.equal([{
         id: bidRequest.bidId,
         tagid: bidRequest.adUnitCode,
@@ -455,50 +455,50 @@ describe('InsticatorBidAdapter', function () {
             }
           }
         }
-      }])
-      expect(data.ext).to.be.an('object')
-      expect(data.ext.insticator).to.be.an('object')
+      }]);
+      expect(data.ext).to.be.an('object');
+      expect(data.ext.insticator).to.be.an('object');
       expect(data.ext.insticator).to.deep.equal({
         adapter: {
           vendor: 'prebid',
           prebid: '$prebid.version$'
         }
-      })
-    })
+      });
+    });
 
     it('should generate new userId if not valid user is stored', function () {
-      localStorageIsEnabledStub.returns(true)
-      localStorage.setItem(USER_ID_KEY, 'fake-user-id')
+      localStorageIsEnabledStub.returns(true);
+      localStorage.setItem(USER_ID_KEY, 'fake-user-id');
 
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
 
-      expect(data.user.id).to.equal(USER_ID_STUBBED)
-    })
+      expect(data.user.id).to.equal(USER_ID_STUBBED);
+    });
 
     it('should return with coppa regs object if no gdprConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } })
-      const data = JSON.parse(requests[0].data)
-      expect(data.regs).to.be.an('object')
-      expect(data.regs.coppa).to.be.oneOf([0, 1])
-    })
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.coppa).to.be.oneOf([0, 1]);
+    });
 
     it('should return with us_privacy string if uspConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } })
-      const data = JSON.parse(requests[0].data)
-      expect(data.regs).to.be.an('object')
-      expect(data.regs.ext).to.be.an('object')
-      expect(data.regs.ext.us_privacy).to.equal('1YNN')
-      expect(data.regs.ext.ccpa).to.equal('1YNN')
-    })
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      expect(data.regs.ext.ccpa).to.equal('1YNN');
+    });
 
     it('should return with gpp if gppConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gppConsent: { gppString: '1YNN', applicableSections: ['1', '2'] } } })
-      const data = JSON.parse(requests[0].data)
-      expect(data.regs).to.be.an('object')
-      expect(data.regs.ext).to.be.an('object')
-      expect(data.regs.ext.gppSid).to.deep.equal(['1', '2'])
-    })
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gppConsent: { gppString: '1YNN', applicableSections: ['1', '2'] } } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.gppSid).to.deep.equal(['1', '2']);
+    });
 
     it('should create the request with dsa data and return with dsa object', function() {
       const dsa = {
@@ -509,7 +509,7 @@ describe('InsticatorBidAdapter', function () {
           domain: 'google.com',
           dsaparams: [1, 2]
         }]
-      }
+      };
       const bidRequestWithDsa = {
         ...bidderRequest,
         ortb2: {
@@ -519,17 +519,17 @@ describe('InsticatorBidAdapter', function () {
             }
           }
         }
-      }
-      const requests = spec.buildRequests([bidRequest], { ...bidRequestWithDsa })
-      const data = JSON.parse(requests[0].data)
-      expect(data.regs).to.be.an('object')
-      expect(data.regs.ext).to.be.an('object')
-      expect(data.regs.ext.dsa).to.deep.equal(dsa)
-    })
+      };
+      const requests = spec.buildRequests([bidRequest], { ...bidRequestWithDsa });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.dsa).to.deep.equal(dsa);
+    });
 
     it('should return empty array if no valid requests are passed', function () {
-      expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0)
-    })
+      expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0);
+    });
 
     it('should have bidder params override bidRequest mediatypes', function () {
       const tempBiddRequest = {
@@ -549,21 +549,21 @@ describe('InsticatorBidAdapter', function () {
             h: 480,
           }
         }
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
       expect(data.imp[0].video.mimes).to.deep.equal([
         'video/mp4',
         'video/mpeg',
         'video/x-flv',
         'video/webm',
         'video/ogg',
-      ])
-      expect(data.imp[0].video.placement).to.equal(2)
-      expect(data.imp[0].video.plcmt).to.equal(4)
-      expect(data.imp[0].video.w).to.equal(640)
-      expect(data.imp[0].video.h).to.equal(480)
-    })
+      ]);
+      expect(data.imp[0].video.placement).to.equal(2);
+      expect(data.imp[0].video.plcmt).to.equal(4);
+      expect(data.imp[0].video.w).to.equal(640);
+      expect(data.imp[0].video.h).to.equal(480);
+    });
 
     it('should have bidder bidfloor from the request', function () {
       const tempBiddRequest = {
@@ -572,16 +572,16 @@ describe('InsticatorBidAdapter', function () {
           ...bidRequest.params,
           floor: 0.5,
         },
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.imp[0].bidfloor).to.equal(0.5)
-      expect(data.imp[0].bidfloorcur).to.equal('USD')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(0.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
 
     it('should have bidder bidfloorcur from the request', function () {
-      const expectedFloor = 1.5
-      const currency = 'USD'
+      const expectedFloor = 1.5;
+      const currency = 'USD';
       const tempBiddRequest = {
         ...bidRequest,
         params: {
@@ -589,14 +589,14 @@ describe('InsticatorBidAdapter', function () {
           floor: 0.5,
           currency: 'USD',
         },
-      }
-      tempBiddRequest.getFloor = () => ({ floor: expectedFloor, currency })
+      };
+      tempBiddRequest.getFloor = () => ({ floor: expectedFloor, currency });
 
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.imp[0].bidfloor).to.equal(1.5)
-      expect(data.imp[0].bidfloorcur).to.equal('USD')
-    })
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(1.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
 
     it('should have 1 floor for banner 300x250 and 1.5 for 300x600', function () {
       const tempBiddRequest = {
@@ -610,21 +610,21 @@ describe('InsticatorBidAdapter', function () {
             format: [{ w: 300, h: 250 }]
           },
         },
-      }
+      };
       tempBiddRequest.getFloor = (params) => {
-        return { floor: params.size[1] === 250 ? 1 : 1.5, currency: 'USD' }
-      }
+        return { floor: params.size[1] === 250 ? 1 : 1.5, currency: 'USD' };
+      };
 
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.imp[0].bidfloor).to.equal(1)
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(1);
 
       tempBiddRequest.mediaTypes.banner.format = [{ w: 300, h: 600 },
-      ]
-      const request2 = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data2 = JSON.parse(request2[0].data)
-      expect(data2.imp[0].bidfloor).to.equal(1.5)
-    })
+      ];
+      const request2 = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data2 = JSON.parse(request2[0].data);
+      expect(data2.imp[0].bidfloor).to.equal(1.5);
+    });
 
     it('should have 4 floor for video 300x250 and 4.5 for 300x600', function () {
       const tempBiddRequest = {
@@ -643,21 +643,21 @@ describe('InsticatorBidAdapter', function () {
             placement: 2,
           },
         },
-      }
+      };
       tempBiddRequest.getFloor = (params) => {
-        return { floor: params.size[1] === 250 ? 4 : 4.5, currency: 'USD' }
-      }
+        return { floor: params.size[1] === 250 ? 4 : 4.5, currency: 'USD' };
+      };
 
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.imp[0].bidfloor).to.equal(4)
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(4);
 
-      tempBiddRequest.mediaTypes.video.w = 300
-      tempBiddRequest.mediaTypes.video.h = 600
-      const request2 = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data2 = JSON.parse(request2[0].data)
-      expect(data2.imp[0].bidfloor).to.equal(4.5)
-    })
+      tempBiddRequest.mediaTypes.video.w = 300;
+      tempBiddRequest.mediaTypes.video.h = 600;
+      const request2 = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data2 = JSON.parse(request2[0].data);
+      expect(data2.imp[0].bidfloor).to.equal(4.5);
+    });
 
     it('should have sites first party data if present in bidderRequest ortb2', function () {
       bidderRequest = {
@@ -675,24 +675,24 @@ describe('InsticatorBidAdapter', function () {
             cat: ['IAB1', 'IAB2']
           }
         }
-      }
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data).to.have.property('site')
-      expect(data.site).to.have.property('keywords')
-      expect(data.site.keywords).to.equal('keyword1,keyword2')
-      expect(data.site).to.have.property('search')
-      expect(data.site.search).to.equal('search')
-      expect(data.site).to.have.property('content')
-      expect(data.site.content).to.have.property('title')
-      expect(data.site.content.title).to.equal('title')
-      expect(data.site.content).to.have.property('keywords')
-      expect(data.site.content.keywords).to.equal('keyword3,keyword4')
-      expect(data.site.content).to.have.property('genre')
-      expect(data.site.content.genre).to.equal('rock')
-      expect(data.site).to.have.property('cat')
-      expect(data.site.cat).to.deep.equal(['IAB1', 'IAB2'])
-    })
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data).to.have.property('site');
+      expect(data.site).to.have.property('keywords');
+      expect(data.site.keywords).to.equal('keyword1,keyword2');
+      expect(data.site).to.have.property('search');
+      expect(data.site.search).to.equal('search');
+      expect(data.site).to.have.property('content');
+      expect(data.site.content).to.have.property('title');
+      expect(data.site.content.title).to.equal('title');
+      expect(data.site.content).to.have.property('keywords');
+      expect(data.site.content.keywords).to.equal('keyword3,keyword4');
+      expect(data.site.content).to.have.property('genre');
+      expect(data.site.content.genre).to.equal('rock');
+      expect(data.site).to.have.property('cat');
+      expect(data.site.cat).to.deep.equal(['IAB1', 'IAB2']);
+    });
 
     it('should have device.sua if present in bidderRequest ortb2', function () {
       bidderRequest = {
@@ -704,12 +704,12 @@ describe('InsticatorBidAdapter', function () {
             sua: {}
           }
         }
-      }
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data).to.have.property('device')
-      expect(data.device).to.have.property('sua')
-    })
+      };
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data).to.have.property('device');
+      expect(data.device).to.have.property('sua');
+    });
 
     it('should use param bid_endpoint_request_url for request endpoint if present', function () {
       const tempBiddRequest = {
@@ -718,10 +718,10 @@ describe('InsticatorBidAdapter', function () {
           ...bidRequest.params,
           bid_endpoint_request_url: 'https://example.com'
         }
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      expect(requests[0].url).to.equal('https://example.com')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.equal('https://example.com');
+    });
 
     it('should have user keywords if present in bidrequest', function () {
       const tempBiddRequest = {
@@ -732,12 +732,12 @@ describe('InsticatorBidAdapter', function () {
             keywords: 'keyword1,keyword2'
           }
         }
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.user).to.have.property('keywords')
-      expect(data.user.keywords).to.equal('keyword1,keyword2')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.user).to.have.property('keywords');
+      expect(data.user.keywords).to.equal('keyword1,keyword2');
+    });
 
     it('should remove video params if they are invalid', function () {
       const tempBiddRequest = {
@@ -757,109 +757,109 @@ describe('InsticatorBidAdapter', function () {
             h: '250',
           }
         }
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.imp[0].video).to.not.have.property('plcmt')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].video).to.not.have.property('plcmt');
+    });
 
     it('should have user consent and gdpr string if gdprConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.regs).to.be.an('object')
-      expect(data.regs.ext).to.be.an('object')
-      expect(data.regs.ext.gdpr).to.equal(1)
-      expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString)
-      expect(data.user.ext).to.have.property('consent')
-      expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString)
-    })
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.user.ext).to.have.property('consent');
+      expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
 
     it('should have one or more privacy policies if present in bidrequest, like gpp, gdpr and us_privacy', function () {
-      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } })
-      const data = JSON.parse(requests[0].data)
-      expect(data.regs.ext).to.have.property('gdpr')
-      expect(data.regs.ext).to.have.property('us_privacy')
-      expect(data.regs.ext).to.have.property('gppSid')
-    })
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs.ext).to.have.property('gdpr');
+      expect(data.regs.ext).to.have.property('us_privacy');
+      expect(data.regs.ext).to.have.property('gppSid');
+    });
 
     it('should return true if publisherId is absent', () => {
-      expect(spec.isBidRequestValid(bidRequest)).to.be.true
-    })
+      expect(spec.isBidRequestValid(bidRequest)).to.be.true;
+    });
 
     it('should have publisher object with id in site object, if publisherId present in params', function () {
       const tempBiddRequest = {
         ...bidRequest,
-      }
+      };
       tempBiddRequest.params = {
         ...tempBiddRequest.params,
         publisherId: '86dd03a1-053f-4e3e-90e7-389070a0c62c'
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.site.publisher).to.be.an('object')
-      expect(data.site.publisher.id).to.equal(tempBiddRequest.params.publisherId)
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.site.publisher).to.be.an('object');
+      expect(data.site.publisher.id).to.equal(tempBiddRequest.params.publisherId);
+    });
 
     it('should have publisher object should be empty, if publisherId is empty string', function () {
       const tempBiddRequest = {
         ...bidRequest,
-      }
+      };
       tempBiddRequest.params = {
         ...tempBiddRequest.params,
         publisherId: ''
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      const data = JSON.parse(requests[0].data)
-      expect(data.site.publisher).to.not.an('object')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.site.publisher).to.not.an('object');
+    });
 
     it('should include publisherId as query parameter in endpoint URL', function () {
       const tempBiddRequest = {
         ...bidRequest,
-      }
+      };
       tempBiddRequest.params = {
         ...tempBiddRequest.params,
         publisherId: '86dd03a1-053f-4e3e-90e7-389070a0c62c'
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      expect(requests[0].url).to.include('publisherId=86dd03a1-053f-4e3e-90e7-389070a0c62c')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.include('publisherId=86dd03a1-053f-4e3e-90e7-389070a0c62c');
+    });
 
     it('should not include publisherId query param if publisherId is not present', function () {
       const tempBiddRequest = {
         ...bidRequest,
-      }
+      };
       // Ensure no publisherId in params
-      delete tempBiddRequest.params.publisherId
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      expect(requests[0].url).to.not.include('publisherId')
-    })
+      delete tempBiddRequest.params.publisherId;
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.not.include('publisherId');
+    });
 
     it('should not include publisherId query param if publisherId is empty string', function () {
       const tempBiddRequest = {
         ...bidRequest,
-      }
+      };
       tempBiddRequest.params = {
         ...tempBiddRequest.params,
         publisherId: ''
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      expect(requests[0].url).to.not.include('publisherId')
-    })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.not.include('publisherId');
+    });
 
     it('should include publisherId query param with custom endpoint URL', function () {
       const tempBiddRequest = {
         ...bidRequest,
-      }
+      };
       tempBiddRequest.params = {
         ...tempBiddRequest.params,
         publisherId: 'test-publisher-123',
         bid_endpoint_request_url: 'https://custom.endpoint.com/v1/bid'
-      }
-      const requests = spec.buildRequests([tempBiddRequest], bidderRequest)
-      expect(requests[0].url).to.equal('https://custom.endpoint.com/v1/bid?publisherId=test-publisher-123')
-    })
-  })
+      };
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.equal('https://custom.endpoint.com/v1/bid?publisherId=test-publisher-123');
+    });
+  });
 
   describe('interpretResponse', function () {
     const bidRequests = {
@@ -919,7 +919,7 @@ describe('InsticatorBidAdapter', function () {
           }
         ]
       }
-    }
+    };
 
     const bidResponse = {
       body: {
@@ -967,7 +967,7 @@ describe('InsticatorBidAdapter', function () {
           },
         ]
       }
-    }
+    };
 
     const prebidResponse = [
       {
@@ -1026,41 +1026,41 @@ describe('InsticatorBidAdapter', function () {
         ad: 'adm3',
         adUnitCode: 'adunit-code-3',
       },
-    ]
+    ];
 
     it('should map bidResponse to prebidResponse', function () {
-      const response = spec.interpretResponse(bidResponse, bidRequests)
+      const response = spec.interpretResponse(bidResponse, bidRequests);
       response.forEach((resp, i) => {
-        expect(resp).to.deep.equal(prebidResponse[i])
-      })
-    })
+        expect(resp).to.deep.equal(prebidResponse[i]);
+      });
+    });
 
     it('should return empty response if bidderRequestId is invalid', function () {
-      const response = Object.assign({}, bidResponse)
-      response.body.id = 'fake-id'
-      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0)
-    })
+      const response = Object.assign({}, bidResponse);
+      response.body.id = 'fake-id';
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
 
     it('should return empty response if there is no seatbid array in response', function () {
-      const response = Object.assign({}, bidResponse)
-      delete response.body.seatbid
-      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0)
-    })
+      const response = Object.assign({}, bidResponse);
+      delete response.body.seatbid;
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
 
     it('should return empty response for 204 No Content (undefined body)', function () {
-      const response = { body: undefined }
-      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0)
-    })
+      const response = { body: undefined };
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
 
     it('should return empty response for 204 No Content (null body)', function () {
-      const response = { body: null }
-      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0)
-    })
+      const response = { body: null };
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
 
     it('should return empty response for empty object body', function () {
-      const response = { body: {} }
-      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0)
-    })
+      const response = { body: {} };
+      expect(spec.interpretResponse(response, bidRequests)).to.have.length(0);
+    });
 
     // ORTB 2.6 Response Fields Tests
     describe('ORTB 2.6 response fields', function () {
@@ -1093,7 +1093,7 @@ describe('InsticatorBidAdapter', function () {
             }
           ]
         }
-      }
+      };
 
       it('should map category (cat) to meta.primaryCatId and meta.secondaryCatIds', function () {
         const response = {
@@ -1112,12 +1112,12 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse.meta).to.have.property('primaryCatId', 'IAB1')
-        expect(bidResponse.meta).to.have.property('secondaryCatIds').that.deep.equals(['IAB2-1', 'IAB3'])
-      })
+        expect(bidResponse.meta).to.have.property('primaryCatId', 'IAB1');
+        expect(bidResponse.meta).to.have.property('secondaryCatIds').that.deep.equals(['IAB2-1', 'IAB3']);
+      });
 
       it('should map single category without secondaryCatIds', function () {
         const response = {
@@ -1136,12 +1136,12 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse.meta).to.have.property('primaryCatId', 'IAB1')
-        expect(bidResponse.meta).to.not.have.property('secondaryCatIds')
-      })
+        expect(bidResponse.meta).to.have.property('primaryCatId', 'IAB1');
+        expect(bidResponse.meta).to.not.have.property('secondaryCatIds');
+      });
 
       it('should map seat to meta.seat', function () {
         const response = {
@@ -1160,11 +1160,11 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse.meta).to.have.property('seat', 'dsp-seat-123')
-      })
+        expect(bidResponse.meta).to.have.property('seat', 'dsp-seat-123');
+      });
 
       it('should map creative attributes (attr) to meta.attr', function () {
         const response = {
@@ -1183,11 +1183,11 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse.meta).to.have.property('attr').that.deep.equals([1, 2, 3])
-      })
+        expect(bidResponse.meta).to.have.property('attr').that.deep.equals([1, 2, 3]);
+      });
 
       it('should map dealid to bidResponse.dealId', function () {
         const response = {
@@ -1206,11 +1206,11 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse).to.have.property('dealId', 'deal-abc-123')
-      })
+        expect(bidResponse).to.have.property('dealId', 'deal-abc-123');
+      });
 
       it('should map billing URL (burl) to bidResponse.burl', function () {
         const response = {
@@ -1229,11 +1229,11 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse).to.have.property('burl', 'https://billing.example.com/win?price=${AUCTION_PRICE}')
-      })
+        expect(bidResponse).to.have.property('burl', 'https://billing.example.com/win?price=${AUCTION_PRICE}');
+      });
 
       it('should map notice URL (nurl) to bidResponse.nurl', function () {
         const response = {
@@ -1252,11 +1252,11 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
-        expect(bidResponse).to.have.property('nurl', 'https://win.example.com/notify?price=${AUCTION_PRICE}')
-      })
+        expect(bidResponse).to.have.property('nurl', 'https://win.example.com/notify?price=${AUCTION_PRICE}');
+      });
 
       it('should map video duration (dur) to bidResponse.video.durationSeconds', function () {
         const videoBidRequests = {
@@ -1273,7 +1273,7 @@ describe('InsticatorBidAdapter', function () {
               }
             }]
           }
-        }
+        };
 
         const response = {
           body: {
@@ -1291,12 +1291,12 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, videoBidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, videoBidRequests)[0];
 
-        expect(bidResponse).to.have.property('video')
-        expect(bidResponse.video).to.have.property('durationSeconds', 30)
-      })
+        expect(bidResponse).to.have.property('video');
+        expect(bidResponse.video).to.have.property('durationSeconds', 30);
+      });
 
       it('should set video.durationSeconds and not set video.context for instream video', function () {
         const instreamBidRequests = {
@@ -1314,7 +1314,7 @@ describe('InsticatorBidAdapter', function () {
               }
             }]
           }
-        }
+        };
 
         const response = {
           body: {
@@ -1332,13 +1332,13 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, instreamBidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, instreamBidRequests)[0];
 
-        expect(bidResponse).to.have.property('video')
-        expect(bidResponse.video).to.have.property('durationSeconds', 30)
-        expect(bidResponse.video).to.not.have.property('context')
-      })
+        expect(bidResponse).to.have.property('video');
+        expect(bidResponse.video).to.have.property('durationSeconds', 30);
+        expect(bidResponse.video).to.not.have.property('context');
+      });
 
       it('should use MIN of bid.exp and BID_TTL for ttl (bid.exp is upper bound)', function () {
         // When bid.exp (60) is less than BID_TTL (300), use 60
@@ -1358,9 +1358,9 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponseLow = spec.interpretResponse(responseWithLowExp, ortb26BidRequests)[0]
-        expect(bidResponseLow.ttl).to.equal(60) // MIN(60, 300) = 60
+        };
+        const bidResponseLow = spec.interpretResponse(responseWithLowExp, ortb26BidRequests)[0];
+        expect(bidResponseLow.ttl).to.equal(60); // MIN(60, 300) = 60
 
         // When bid.exp (600) is greater than BID_TTL (300), use 300
         const responseWithHighExp = {
@@ -1379,10 +1379,10 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponseHigh = spec.interpretResponse(responseWithHighExp, ortb26BidRequests)[0]
-        expect(bidResponseHigh.ttl).to.equal(300) // MIN(600, 300) = 300
-      })
+        };
+        const bidResponseHigh = spec.interpretResponse(responseWithHighExp, ortb26BidRequests)[0];
+        expect(bidResponseHigh.ttl).to.equal(300); // MIN(600, 300) = 300
+      });
 
       it('should default ttl to BID_TTL when bid.exp is not provided', function () {
         const response = {
@@ -1401,10 +1401,10 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
-        expect(bidResponse.ttl).to.equal(300) // defaults to configTTL when no bid.exp
-      })
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+        expect(bidResponse.ttl).to.equal(300); // defaults to configTTL when no bid.exp
+      });
 
       it('should include all ORTB 2.6 fields in a single response', function () {
         const response = {
@@ -1428,19 +1428,19 @@ describe('InsticatorBidAdapter', function () {
               }]
             }]
           }
-        }
-        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
+        };
+        const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
 
         // Check all ORTB 2.6 fields
-        expect(bidResponse.meta.advertiserDomains).to.deep.equal(['advertiser.com'])
-        expect(bidResponse.meta.primaryCatId).to.equal('IAB1')
-        expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB2'])
-        expect(bidResponse.meta.seat).to.equal('full-dsp')
-        expect(bidResponse.meta.attr).to.deep.equal([1, 2])
-        expect(bidResponse.dealId).to.equal('premium-deal')
-        expect(bidResponse.burl).to.equal('https://billing.example.com/win')
-        expect(bidResponse.ttl).to.equal(300) // MIN(450, 300) = 300 - bid.exp is upper bound
-      })
+        expect(bidResponse.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+        expect(bidResponse.meta.primaryCatId).to.equal('IAB1');
+        expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB2']);
+        expect(bidResponse.meta.seat).to.equal('full-dsp');
+        expect(bidResponse.meta.attr).to.deep.equal([1, 2]);
+        expect(bidResponse.dealId).to.equal('premium-deal');
+        expect(bidResponse.burl).to.equal('https://billing.example.com/win');
+        expect(bidResponse.ttl).to.equal(300); // MIN(450, 300) = 300 - bid.exp is upper bound
+      });
 
       // Media Type Detection Tests
       describe('media type detection', function () {
@@ -1461,10 +1461,10 @@ describe('InsticatorBidAdapter', function () {
                 }]
               }]
             }
-          }
-          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
-          expect(bidResponse.mediaType).to.equal('video')
-        })
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('video');
+        });
 
         it('should detect banner using mtype=1 (ORTB 2.6 standard)', function () {
           const response = {
@@ -1483,10 +1483,10 @@ describe('InsticatorBidAdapter', function () {
                 }]
               }]
             }
-          }
-          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
-          expect(bidResponse.mediaType).to.equal('banner')
-        })
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('banner');
+        });
 
         it('should detect video using case-insensitive VAST detection', function () {
           const response = {
@@ -1505,10 +1505,10 @@ describe('InsticatorBidAdapter', function () {
                 }]
               }]
             }
-          }
-          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
-          expect(bidResponse.mediaType).to.equal('video')
-        })
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('video');
+        });
 
         it('should default to banner when no video signals present', function () {
           const response = {
@@ -1527,10 +1527,10 @@ describe('InsticatorBidAdapter', function () {
                 }]
               }]
             }
-          }
-          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
-          expect(bidResponse.mediaType).to.equal('banner')
-        })
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('banner');
+        });
 
         it('should detect banner when VAST-like content is inside script tag', function () {
           const response = {
@@ -1549,13 +1549,13 @@ describe('InsticatorBidAdapter', function () {
                 }]
               }]
             }
-          }
-          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0]
-          expect(bidResponse.mediaType).to.equal('banner')
-        })
-      })
-    })
-  })
+          };
+          const bidResponse = spec.interpretResponse(response, ortb26BidRequests)[0];
+          expect(bidResponse.mediaType).to.equal('banner');
+        });
+      });
+    });
+  });
 
   describe('getUserSyncs', function () {
     const bidResponse = [{
@@ -1567,25 +1567,25 @@ describe('InsticatorBidAdapter', function () {
           }]
         }
       }
-    }]
+    }];
 
     it('should return one user sync', function () {
       expect(spec.getUserSyncs({}, bidResponse)).to.deep.equal([{
         code: 'so',
         delay: 0
-      }])
-    })
+      }]);
+    });
 
     it('should return an empty array when sync is enabled but there are no bidResponses', function () {
-      expect(spec.getUserSyncs({}, [])).to.have.length(0)
-    })
+      expect(spec.getUserSyncs({}, [])).to.have.length(0);
+    });
 
     it('should return an empty array when sync is enabled but no sync ext returned', function () {
-      const response = Object.assign({}, bidResponse[0])
-      delete response.body.ext.sync
-      expect(spec.getUserSyncs({}, [response])).to.have.length(0)
-    })
-  })
+      const response = Object.assign({}, bidResponse[0]);
+      delete response.body.ext.sync;
+      expect(spec.getUserSyncs({}, [response])).to.have.length(0);
+    });
+  });
 
   describe('Response with video Instream', function () {
     const bidRequestVid = {
@@ -1622,7 +1622,7 @@ describe('InsticatorBidAdapter', function () {
           }
         ]
       }
-    }
+    };
 
     const bidResponseVid = {
       body: {
@@ -1653,22 +1653,22 @@ describe('InsticatorBidAdapter', function () {
           },
         ]
       }
-    }
-    const bidRequestWithVideo = utils.deepClone(bidRequestVid)
+    };
+    const bidRequestWithVideo = utils.deepClone(bidRequestVid);
 
     it('should have related properties for video Instream', function() {
-      const serverResponseWithInstream = utils.deepClone(bidResponseVid)
-      serverResponseWithInstream.body.seatbid[0].bid[0].vastXml = '<VAST version="4.0"><Ad></Ad></VAST>'
-      serverResponseWithInstream.body.seatbid[0].bid[0].mediaType = 'video'
-      const bidResponse = spec.interpretResponse(serverResponseWithInstream, bidRequestWithVideo)[0]
-      expect(bidResponse).to.have.any.keys('mediaType', 'vastXml', 'vastUrl')
-      expect(bidResponse).to.have.property('mediaType', 'video')
-      expect(bidResponse.width).to.equal(300)
-      expect(bidResponse.height).to.equal(250)
-      expect(bidResponse).to.have.property('vastXml', '<VAST version="4.0"><Ad></Ad></VAST>')
-      expect(bidResponse.vastUrl).to.match(/^data:text\/xml;charset=utf-8;base64,[\w+/=]+$/)
-    })
-  })
+      const serverResponseWithInstream = utils.deepClone(bidResponseVid);
+      serverResponseWithInstream.body.seatbid[0].bid[0].vastXml = '<VAST version="4.0"><Ad></Ad></VAST>';
+      serverResponseWithInstream.body.seatbid[0].bid[0].mediaType = 'video';
+      const bidResponse = spec.interpretResponse(serverResponseWithInstream, bidRequestWithVideo)[0];
+      expect(bidResponse).to.have.any.keys('mediaType', 'vastXml', 'vastUrl');
+      expect(bidResponse).to.have.property('mediaType', 'video');
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse).to.have.property('vastXml', '<VAST version="4.0"><Ad></Ad></VAST>');
+      expect(bidResponse.vastUrl).to.match(/^data:text\/xml;charset=utf-8;base64,[\w+/=]+$/);
+    });
+  });
 
   describe(`Response with DSA data`, function() {
     const bidRequestDsa = {
@@ -1720,7 +1720,7 @@ describe('InsticatorBidAdapter', function () {
           }
         },
       }
-    }
+    };
 
     const bidResponseDsa = {
       body: {
@@ -1760,15 +1760,15 @@ describe('InsticatorBidAdapter', function () {
           },
         ]
       }
-    }
-    const bidRequestWithDsa = utils.deepClone(bidRequestDsa)
+    };
+    const bidRequestWithDsa = utils.deepClone(bidRequestDsa);
     it('should have related properties for DSA data', function() {
-      const serverResponseWithDsa = utils.deepClone(bidResponseDsa)
-      const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequestWithDsa)[0]
-      expect(bidResponse).to.have.any.keys('ext')
-      expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser')
-      expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser')
-      expect(bidResponse.ext.dsa).to.have.property('adrender', 1)
-    })
-  })
-})
+      const serverResponseWithDsa = utils.deepClone(bidResponseDsa);
+      const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequestWithDsa)[0];
+      expect(bidResponse).to.have.any.keys('ext');
+      expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser');
+      expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser');
+      expect(bidResponse.ext.dsa).to.have.property('adrender', 1);
+    });
+  });
+});

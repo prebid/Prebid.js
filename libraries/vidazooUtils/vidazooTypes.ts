@@ -1,4 +1,4 @@
-import { MediaTypes } from '../../src/mediaTypes.js'
+import { MediaTypes } from '../../src/mediaTypes.js';
 
 export interface VidazooBaseBidderParams {
   /**
@@ -32,8 +32,8 @@ export type Ext = {
   [key: string]: Record<string, any>
 } & {
   customParameters?: CustomParameters;
-}
+};
 
 type CustomParameters = {
   mediaTypes?: MediaTypes
-}
+};

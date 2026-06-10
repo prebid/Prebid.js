@@ -1,12 +1,12 @@
-import { deepAccess, deepSetValue, logInfo } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { deepAccess, deepSetValue, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
-const ENDPOINT_URL = 'https://x.yieldlift.com/pbjs'
+const ENDPOINT_URL = 'https://x.yieldlift.com/pbjs';
 
-const DEFAULT_BID_TTL = 300
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_NET_REVENUE = true
+const DEFAULT_BID_TTL = 300;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: 'yieldlift',
@@ -16,15 +16,15 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return (!!bid.params.unitId && typeof bid.params.unitId === 'string') ||
       (!!bid.params.networkId && typeof bid.params.networkId === 'string') ||
-      (!!bid.params.publisherId && typeof bid.params.publisherId === 'string')
+      (!!bid.params.publisherId && typeof bid.params.publisherId === 'string');
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || !bidderRequest) {
-      return
+      return;
     }
-    const publisherId = validBidRequests[0].params.publisherId
-    const networkId = validBidRequests[0].params.networkId
+    const publisherId = validBidRequests[0].params.publisherId;
+    const networkId = validBidRequests[0].params.networkId;
     const impressions = validBidRequests.map(bidRequest => ({
       id: bidRequest.bidId,
       banner: {
@@ -38,7 +38,7 @@ export const spec = {
           unitId: bidRequest.params.unitId
         }
       }
-    }))
+    }));
 
     const openrtbRequest = {
       id: bidderRequest.bidderRequestId,
@@ -54,42 +54,42 @@ export const spec = {
           networkId: networkId,
         }
       }
-    }
+    };
 
     // adding schain object
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
-      deepSetValue(openrtbRequest, 'source.ext.schain', schain)
+      deepSetValue(openrtbRequest, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params
     if (bidderRequest.gdprConsent) {
-      deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0))
+      deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA
     if (bidderRequest.uspConsent) {
-      deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     // EIDS
-    const eids = deepAccess(validBidRequests[0], 'userIdAsEids')
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
     if (Array.isArray(eids) && eids.length > 0) {
-      deepSetValue(openrtbRequest, 'user.ext.eids', eids)
+      deepSetValue(openrtbRequest, 'user.ext.eids', eids);
     }
 
-    const payloadString = JSON.stringify(openrtbRequest)
+    const payloadString = JSON.stringify(openrtbRequest);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString,
-    }
+    };
   },
 
   interpretResponse: function (serverResponse) {
-    const bidResponses = []
-    const response = (serverResponse || {}).body
+    const bidResponses = [];
+    const response = (serverResponse || {}).body;
     // response is always one seat (exchange) with (optional) bids for each impression
     if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid[0].bid.forEach(bid => {
@@ -104,49 +104,49 @@ export const spec = {
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
           meta: { advertiserDomains: bid && bid.advertiserDomains ? bid.advertiserDomains : [] }
-        })
-      })
+        });
+      });
     } else {
-      logInfo('yieldlift.interpretResponse :: no valid responses to interpret')
+      logInfo('yieldlift.interpretResponse :: no valid responses to interpret');
     }
-    return bidResponses
+    return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    logInfo('yieldlift.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
-    let syncs = []
+    logInfo('yieldlift.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
+    let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return syncs
+      return syncs;
     }
 
     serverResponses.forEach(resp => {
-      const userSync = deepAccess(resp, 'body.ext.usersync')
+      const userSync = deepAccess(resp, 'body.ext.usersync');
       if (userSync) {
-        let syncDetails = []
+        let syncDetails = [];
         Object.keys(userSync).forEach(key => {
-          const value = userSync[key]
+          const value = userSync[key];
           if (value.syncs && value.syncs.length) {
-            syncDetails = syncDetails.concat(value.syncs)
+            syncDetails = syncDetails.concat(value.syncs);
           }
-        })
+        });
         syncDetails.forEach(syncDetails => {
           syncs.push({
             type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
             url: syncDetails.url
-          })
-        })
+          });
+        });
 
         if (!syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type !== 'iframe')
+          syncs = syncs.filter(s => s.type !== 'iframe');
         }
         if (!syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type !== 'image')
+          syncs = syncs.filter(s => s.type !== 'image');
         }
       }
-    })
-    logInfo('yieldlift.getUserSyncs result=%o', syncs)
-    return syncs
+    });
+    logInfo('yieldlift.getUserSyncs result=%o', syncs);
+    return syncs;
   },
 
-}
-registerBidder(spec)
+};
+registerBidder(spec);

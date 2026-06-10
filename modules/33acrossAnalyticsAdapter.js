@@ -1,11 +1,11 @@
-import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js'
-import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
-import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js'
+import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 /**
  * @typedef {typeof import('../src/constants.js').EVENTS} EVENTS
  */
-import { EVENTS } from '../src/constants.js'
-import { sendBeacon } from '../src/ajax.js'
+import { EVENTS } from '../src/constants.js';
+import { sendBeacon } from '../src/ajax.js';
 
 /** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
 /**
@@ -20,18 +20,18 @@ const BidStatus = {
   REJECTED: 'rejected',
   NOBID: 'noBid',
   ERROR: 'error',
-}
+};
 
-const ANALYTICS_VERSION = '1.0.0'
-const PROVIDER_NAME = '33across'
-const GVLID = 58
+const ANALYTICS_VERSION = '1.0.0';
+const PROVIDER_NAME = '33across';
+const GVLID = 58;
 /** Time to wait for all transactions in an auction to complete before sending the report */
-const DEFAULT_TRANSACTION_TIMEOUT = 10000
+const DEFAULT_TRANSACTION_TIMEOUT = 10000;
 /** Time to wait after all GAM slots have registered before sending the report */
-export const POST_GAM_TIMEOUT = 500
-export const DEFAULT_ENDPOINT = 'https://analytics.33across.com/api/v1/event'
+export const POST_GAM_TIMEOUT = 500;
+export const DEFAULT_ENDPOINT = 'https://analytics.33across.com/api/v1/event';
 
-export const log = getLogger()
+export const log = getLogger();
 
 /**
  * @typedef {Object} AnalyticsReport - Sent when all bids are complete (as determined by `bidWon` and `slotRenderEnded` events)
@@ -111,65 +111,65 @@ class TransactionManager {
    * Milliseconds between activity to allow until this collection automatically completes.
    * @type {number}
    */
-  #sendTimeout
-  #sendTimeoutId
-  #transactionsPending = new Set()
-  #transactionsCompleted = new Set()
-  #onComplete
+  #sendTimeout;
+  #sendTimeoutId;
+  #transactionsPending = new Set();
+  #transactionsCompleted = new Set();
+  #onComplete;
 
   constructor({ timeout, onComplete }) {
-    this.#sendTimeout = timeout
-    this.#onComplete = onComplete
+    this.#sendTimeout = timeout;
+    this.#onComplete = onComplete;
   }
 
   status() {
     return {
       pending: [...this.#transactionsPending],
       completed: [...this.#transactionsCompleted],
-    }
+    };
   }
 
   initiate(transactionId) {
-    this.#transactionsPending.add(transactionId)
-    this.#restartSendTimeout()
+    this.#transactionsPending.add(transactionId);
+    this.#restartSendTimeout();
   }
 
   complete(transactionId) {
     if (!this.#transactionsPending.has(transactionId)) {
-      log.warn(`transactionId "${transactionId}" was not found. No transaction to mark as complete.`)
-      return
+      log.warn(`transactionId "${transactionId}" was not found. No transaction to mark as complete.`);
+      return;
     }
 
-    this.#transactionsPending.delete(transactionId)
-    this.#transactionsCompleted.add(transactionId)
+    this.#transactionsPending.delete(transactionId);
+    this.#transactionsCompleted.add(transactionId);
 
     if (this.#transactionsPending.size === 0) {
-      this.#flushTransactions()
+      this.#flushTransactions();
     }
   }
 
   #flushTransactions() {
-    this.#clearSendTimeout()
-    this.#transactionsPending = new Set()
-    this.#onComplete()
+    this.#clearSendTimeout();
+    this.#transactionsPending = new Set();
+    this.#onComplete();
   }
 
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
 
   #clearSendTimeout() {
-    return clearTimeout(this.#sendTimeoutId)
+    return clearTimeout(this.#sendTimeoutId);
   }
 
   #restartSendTimeout() {
-    this.#clearSendTimeout()
+    this.#clearSendTimeout();
 
     this.#sendTimeoutId = setTimeout(() => {
       if (this.#sendTimeout !== 0) {
-        log.warn(`Timed out waiting for ad transactions to complete. Sending report.`)
+        log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
       }
 
-      this.#flushTransactions()
-    }, this.#sendTimeout)
+      this.#flushTransactions();
+    }, this.#sendTimeout);
   }
 }
 
@@ -187,14 +187,14 @@ export const locals = {
   /** @type {Object<string, Object>} */
   adUnitMap: {},
   reset() {
-    this.transactionManagers = {}
+    this.transactionManagers = {};
     this.cache = {
       auctions: {},
       pid: '',
-    }
-    this.adUnitMap = {}
+    };
+    this.adUnitMap = {};
   }
-}
+};
 
 /**
  * @typedef {Object} AnalyticsAdapter
@@ -212,10 +212,10 @@ export const locals = {
 const analyticsAdapter = Object.assign(
   buildAdapter({ analyticsType: 'endpoint' }),
   { track: analyticEventHandler }
-)
+);
 
-analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics
-analyticsAdapter.enableAnalytics = enableAnalyticsWrapper
+analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
+analyticsAdapter.enableAnalytics = enableAnalyticsWrapper;
 
 /**
  * @typedef {Object} AnalyticsConfig
@@ -230,30 +230,30 @@ analyticsAdapter.enableAnalytics = enableAnalyticsWrapper
  * @param {AnalyticsConfig} config Analytics module configuration
  */
 function enableAnalyticsWrapper(config) {
-  const { options } = config
+  const { options } = config;
 
-  const pid = options.pid
+  const pid = options.pid;
   if (!pid) {
-    log.error('No partnerId provided for "options.pid". No analytics will be sent.')
+    log.error('No partnerId provided for "options.pid". No analytics will be sent.');
 
-    return
+    return;
   }
 
-  const endpoint = calculateEndpoint(options.endpoint)
-  this.getUrl = () => endpoint
+  const endpoint = calculateEndpoint(options.endpoint);
+  this.getUrl = () => endpoint;
 
-  const timeout = calculateTransactionTimeout(options.timeout)
-  this.getTimeout = () => timeout
+  const timeout = calculateTransactionTimeout(options.timeout);
+  this.getTimeout = () => timeout;
 
   locals.cache = {
     pid,
     auctions: {},
-  }
+  };
 
-  window.googletag = window.googletag || { cmd: [] }
-  window.googletag.cmd.push(subscribeToGamSlots)
+  window.googletag = window.googletag || { cmd: [] };
+  window.googletag.cmd.push(subscribeToGamSlots);
 
-  analyticsAdapter.originEnableAnalytics(config)
+  analyticsAdapter.originEnableAnalytics(config);
 }
 
 /**
@@ -262,12 +262,12 @@ function enableAnalyticsWrapper(config) {
  */
 function calculateEndpoint(endpoint = DEFAULT_ENDPOINT) {
   if (typeof endpoint === 'string' && endpoint.startsWith('http')) {
-    return endpoint
+    return endpoint;
   }
 
-  log.info(`Invalid endpoint provided for "options.endpoint". Using default endpoint.`)
+  log.info(`Invalid endpoint provided for "options.endpoint". Using default endpoint.`);
 
-  return DEFAULT_ENDPOINT
+  return DEFAULT_ENDPOINT;
 }
 /**
  * @param {number} [configTimeout]
@@ -275,54 +275,54 @@ function calculateEndpoint(endpoint = DEFAULT_ENDPOINT) {
  */
 function calculateTransactionTimeout(configTimeout = DEFAULT_TRANSACTION_TIMEOUT) {
   if (typeof configTimeout === 'number' && configTimeout >= 0) {
-    return configTimeout
+    return configTimeout;
   }
 
-  log.info(`Invalid timeout provided for "options.timeout". Using default timeout of ${DEFAULT_TRANSACTION_TIMEOUT}ms.`)
+  log.info(`Invalid timeout provided for "options.timeout". Using default timeout of ${DEFAULT_TRANSACTION_TIMEOUT}ms.`);
 
-  return DEFAULT_TRANSACTION_TIMEOUT
+  return DEFAULT_TRANSACTION_TIMEOUT;
 }
 
 function subscribeToGamSlots() {
   window.googletag.pubads().addEventListener('slotRenderEnded', event => {
     setTimeout(() => {
       const { transactionId, auctionId } =
-          getAdUnitMetadata(event.slot.getAdUnitPath(), event.slot.getSlotElementId())
+          getAdUnitMetadata(event.slot.getAdUnitPath(), event.slot.getSlotElementId());
       if (!transactionId || !auctionId) {
-        const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`
-        log.warn('Could not find configured ad unit matching GAM render of slot:', { slotName })
-        return
+        const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`;
+        log.warn('Could not find configured ad unit matching GAM render of slot:', { slotName });
+        return;
       }
 
       locals.transactionManagers[auctionId] &&
-        locals.transactionManagers[auctionId].complete(transactionId)
-    }, POST_GAM_TIMEOUT)
-  })
+        locals.transactionManagers[auctionId].complete(transactionId);
+    }, POST_GAM_TIMEOUT);
+  });
 }
 
 function getAdUnitMetadata(adUnitPath, adSlotElementId) {
-  const adUnitMeta = locals.adUnitMap[adUnitPath] || locals.adUnitMap[adSlotElementId]
+  const adUnitMeta = locals.adUnitMap[adUnitPath] || locals.adUnitMap[adSlotElementId];
   if (adUnitMeta && adUnitMeta.length > 0) {
-    return adUnitMeta[adUnitMeta.length - 1]
+    return adUnitMeta[adUnitMeta.length - 1];
   }
-  return {}
+  return {};
 }
 
 /** necessary for testing */
-analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics
+analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics;
 analyticsAdapter.disableAnalytics = function () {
-  analyticsAdapter._oldEnable = enableAnalyticsWrapper
-  locals.reset()
-  analyticsAdapter.originDisableAnalytics()
-}
+  analyticsAdapter._oldEnable = enableAnalyticsWrapper;
+  locals.reset();
+  analyticsAdapter.originDisableAnalytics();
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: PROVIDER_NAME,
   gvlid: GVLID,
-})
+});
 
-export default analyticsAdapter
+export default analyticsAdapter;
 
 /**
  * @param {AnalyticsCache} analyticsCache
@@ -330,7 +330,7 @@ export default analyticsAdapter
  * @return {AnalyticsReport} Analytics report
  */
 function createReportFromCache(analyticsCache, completedAuctionId) {
-  const { pid, auctions } = analyticsCache
+  const { pid, auctions } = analyticsCache;
 
   const report = {
     pid,
@@ -338,38 +338,38 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: [auctions[completedAuctionId]],
-  }
+  };
   if (uspDataHandler.getConsentData()) {
-    report.usPrivacy = uspDataHandler.getConsentData()
+    report.usPrivacy = uspDataHandler.getConsentData();
   }
 
   if (gdprDataHandler.getConsentData()) {
-    report.gdpr = Number(Boolean(gdprDataHandler.getConsentData().gdprApplies))
-    report.gdprConsent = gdprDataHandler.getConsentData().consentString || ''
+    report.gdpr = Number(Boolean(gdprDataHandler.getConsentData().gdprApplies));
+    report.gdprConsent = gdprDataHandler.getConsentData().consentString || '';
   }
 
   if (gppDataHandler.getConsentData()) {
-    report.gpp = gppDataHandler.getConsentData().gppString
-    report.gppSid = gppDataHandler.getConsentData().applicableSections
+    report.gpp = gppDataHandler.getConsentData().gppString;
+    report.gppSid = gppDataHandler.getConsentData().applicableSections;
   }
 
   if (coppaDataHandler.getCoppa()) {
-    report.coppa = Number(coppaDataHandler.getCoppa())
+    report.coppa = Number(coppaDataHandler.getCoppa());
   }
 
-  return report
+  return report;
 }
 
 function getCachedBid(auctionId, bidId) {
-  const auction = locals.cache.auctions[auctionId]
+  const auction = locals.cache.auctions[auctionId];
   for (const adUnit of auction.adUnits) {
     for (const bid of adUnit.bids) {
       if (bid.bidId === bidId) {
-        return bid
+        return bid;
       }
     }
   }
-  log.error(`Cannot find bid "${bidId}" in auction "${auctionId}".`)
+  log.error(`Cannot find bid "${bidId}" in auction "${auctionId}".`);
 };
 
 /**
@@ -379,46 +379,46 @@ function getCachedBid(auctionId, bidId) {
  */
 function analyticEventHandler({ eventType, args }) {
   if (!locals.cache) {
-    log.error('Something went wrong. Analytics cache is not initialized.')
-    return
+    log.error('Something went wrong. Analytics cache is not initialized.');
+    return;
   }
 
   switch (eventType) {
     case EVENTS.AUCTION_INIT:
-      onAuctionInit(args)
-      break
+      onAuctionInit(args);
+      break;
     case EVENTS.BID_REQUESTED: // BidStatus.PENDING
-      onBidRequested(args)
-      break
+      onBidRequested(args);
+      break;
     case EVENTS.BID_TIMEOUT:
       for (const bid of args) {
-        setCachedBidStatus(bid.auctionId, bid.bidId, BidStatus.TIMEOUT)
+        setCachedBidStatus(bid.auctionId, bid.bidId, BidStatus.TIMEOUT);
       }
-      break
+      break;
     case EVENTS.BID_RESPONSE:
-      onBidResponse(args)
-      break
+      onBidResponse(args);
+      break;
     case EVENTS.BID_REJECTED:
-      onBidRejected(args)
-      break
+      onBidRejected(args);
+      break;
     case EVENTS.NO_BID: // todo: need to also consider pbsanalytics where nonbid is not null
-      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID)
-      break
+      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
+      break;
     case EVENTS.BIDDER_ERROR:
       if (args.bidderRequest && args.bidderRequest.bids) {
         for (const bid of args.bidderRequest.bids) {
-          setCachedBidStatus(args.bidderRequest.auctionId, bid.bidId, BidStatus.ERROR)
+          setCachedBidStatus(args.bidderRequest.auctionId, bid.bidId, BidStatus.ERROR);
         }
       }
-      break
+      break;
     case EVENTS.AUCTION_END:
-      onAuctionEnd(args)
-      break
+      onAuctionEnd(args);
+      break;
     case EVENTS.BID_WON: // BidStatus.TARGETING_SET | BidStatus.RENDERED | BidStatus.ERROR
-      onBidWon(args)
-      break
+      onBidWon(args);
+      break;
     default:
-      break
+      break;
   }
 }
 
@@ -427,14 +427,14 @@ function analyticEventHandler({ eventType, args }) {
  ***************/
 function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
-    log.error('Analytics adapter failed to parse auction.')
-    return
+    log.error('Analytics adapter failed to parse auction.');
+    return;
   }
 
   locals.cache.auctions[auctionId] = {
     auctionId,
     adUnits: adUnits.map(au => {
-      setAdUnitMap(au.code, auctionId, au.transactionId)
+      setAdUnitMap(au.code, auctionId, au.transactionId);
 
       return {
         transactionId: au.transactionId,
@@ -446,10 +446,10 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],
-      }
+      };
     }),
     userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {})),
-  }
+  };
 
   locals.transactionManagers[auctionId] ||=
     new TransactionManager({
@@ -458,18 +458,18 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         sendReport(
           createReportFromCache(locals.cache, auctionId),
           analyticsAdapter.getUrl()
-        )
-        delete locals.transactionManagers[auctionId]
+        );
+        delete locals.transactionManagers[auctionId];
       }
-    })
+    });
 }
 
 function setAdUnitMap(adUnitCode, auctionId, transactionId) {
   if (!locals.adUnitMap[adUnitCode]) {
-    locals.adUnitMap[adUnitCode] = []
+    locals.adUnitMap[adUnitCode] = [];
   }
 
-  locals.adUnitMap[adUnitCode].push({ auctionId, transactionId })
+  locals.adUnitMap[adUnitCode].push({ auctionId, transactionId });
 }
 
 /*****************
@@ -477,20 +477,20 @@ function setAdUnitMap(adUnitCode, auctionId, transactionId) {
  ****************/
 function onBidRequested({ auctionId, bids }) {
   for (const { bidder, bidId, transactionId, src } of bids) {
-    const auction = locals.cache.auctions[auctionId]
-    const adUnit = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId)
-    if (!adUnit) return
+    const auction = locals.cache.auctions[auctionId];
+    const adUnit = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId);
+    if (!adUnit) return;
     adUnit.bids.push({
       bidder,
       bidId,
       status: BidStatus.PENDING,
       hasWon: 0,
       source: src,
-    })
+    });
 
     // if there is no manager for this auction, then the auction has already been completed
     locals.transactionManagers[auctionId] &&
-      locals.transactionManagers[auctionId].initiate(transactionId)
+      locals.transactionManagers[auctionId].initiate(transactionId);
   }
 }
 
@@ -498,10 +498,10 @@ function onBidRequested({ auctionId, bids }) {
  * BID_RESPONSE *
  ***************/
 function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, status, source }) {
-  const bid = getCachedBid(auctionId, requestId)
-  if (!bid) return
+  const bid = getCachedBid(auctionId, requestId);
+  if (!bid) return;
 
-  setBidStatus(bid, status)
+  setBidStatus(bid, status);
   Object.assign(bid,
     {
       bidResponse: {
@@ -514,17 +514,17 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
       },
       source
     }
-  )
+  );
 }
 
 /****************
  * BID_REJECTED *
  ***************/
 function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, width, height, source }) {
-  const bid = getCachedBid(auctionId, requestId)
-  if (!bid) return
+  const bid = getCachedBid(auctionId, requestId);
+  if (!bid) return;
 
-  setBidStatus(bid, BidStatus.REJECTED)
+  setBidStatus(bid, BidStatus.REJECTED);
   Object.assign(bid,
     {
       bidResponse: {
@@ -537,7 +537,7 @@ function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floor
       },
       source
     }
-  )
+  );
 }
 
 /***************
@@ -551,7 +551,7 @@ function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floor
  */
 function onAuctionEnd({ bidsReceived, auctionId }) {
   for (const bid of bidsReceived) {
-    setCachedBidStatus(auctionId, bid.requestId, bid.status)
+    setCachedBidStatus(auctionId, bid.requestId, bid.status);
   }
 }
 
@@ -559,16 +559,16 @@ function onAuctionEnd({ bidsReceived, auctionId }) {
  * BID_WON *
  **********/
 function onBidWon(bidWon) {
-  const { auctionId, requestId, transactionId } = bidWon
-  const bid = getCachedBid(auctionId, requestId)
+  const { auctionId, requestId, transactionId } = bidWon;
+  const bid = getCachedBid(auctionId, requestId);
   if (!bid) {
-    return
+    return;
   }
 
-  setBidStatus(bid, bidWon.status ?? BidStatus.ERROR)
+  setBidStatus(bid, bidWon.status ?? BidStatus.ERROR);
 
   locals.transactionManagers[auctionId] &&
-    locals.transactionManagers[auctionId].complete(transactionId)
+    locals.transactionManagers[auctionId].complete(transactionId);
 }
 
 /**
@@ -602,23 +602,23 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
     error: {
       next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
     },
-  }
+  };
 
-  const winningStatuses = [BidStatus.RENDERED]
+  const winningStatuses = [BidStatus.RENDERED];
 
   if (statusStates[bid.status].next.includes(status)) {
-    bid.status = status
+    bid.status = status;
     if (winningStatuses.includes(status)) {
       // occassionally we can detect a bidWon before prebid reports it as such
-      bid.hasWon = 1
+      bid.hasWon = 1;
     }
   }
 }
 
 function setCachedBidStatus(auctionId, bidId, status) {
-  const bid = getCachedBid(auctionId, bidId)
-  if (!bid) return
-  setBidStatus(bid, status)
+  const bid = getCachedBid(auctionId, bidId);
+  if (!bid) return;
+  setBidStatus(bid, status);
 }
 
 /**
@@ -629,12 +629,12 @@ function setCachedBidStatus(auctionId, bidId, status) {
  */
 function sendReport(report, endpoint) {
   if (sendBeacon(endpoint, JSON.stringify(report))) {
-    log.info(`Analytics report sent to ${endpoint}`, report)
+    log.info(`Analytics report sent to ${endpoint}`, report);
 
-    return
+    return;
   }
 
-  log.error('Analytics report exceeded User-Agent data limits and was not sent.', report)
+  log.error('Analytics report exceeded User-Agent data limits and was not sent.', report);
 }
 
 /**
@@ -643,11 +643,11 @@ function sendReport(report, endpoint) {
  * @return {Object} New logger functions
  */
 function getLogger() {
-  const LPREFIX = `${PROVIDER_NAME} Analytics: `
+  const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {
     info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...deepClone(args)),
     warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...deepClone(args)),
     error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...deepClone(args)),
-  }
+  };
 }

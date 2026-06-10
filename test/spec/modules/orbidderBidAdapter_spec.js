@@ -1,12 +1,12 @@
-import { expect } from 'chai'
-import { spec } from 'modules/orbidderBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as _ from 'lodash'
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js'
-import { getGlobal } from '../../../src/prebidGlobal.js'
+import { expect } from 'chai';
+import { spec } from 'modules/orbidderBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as _ from 'lodash';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('orbidderBidAdapter', () => {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   const defaultBidRequestBanner = {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bb',
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d8',
@@ -48,7 +48,7 @@ describe('orbidderBidAdapter', () => {
         ]
       }
     ]
-  }
+  };
 
   const defaultBidRequestNative = {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bc',
@@ -100,15 +100,15 @@ describe('orbidderBidAdapter', () => {
         ]
       }
     ]
-  }
+  };
 
   const deepClone = function(val) {
-    return JSON.parse(JSON.stringify(val))
-  }
+    return JSON.parse(JSON.stringify(val));
+  };
 
   const buildRequest = (buildRequest, bidderRequest) => {
     if (!Array.isArray(buildRequest)) {
-      buildRequest = [buildRequest]
+      buildRequest = [buildRequest];
     }
 
     return spec.buildRequests(buildRequest, {
@@ -116,233 +116,233 @@ describe('orbidderBidAdapter', () => {
       refererInfo: {
         page: 'https://localhost:9876/'
       }
-    })[0]
-  }
+    })[0];
+  };
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', () => {
     it('banner: should return true when required params found', () => {
-      expect(spec.isBidRequestValid(defaultBidRequestBanner)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(defaultBidRequestBanner)).to.equal(true);
+    });
 
     it('native: should return true when required params found', () => {
-      expect(spec.isBidRequestValid(defaultBidRequestNative)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(defaultBidRequestNative)).to.equal(true);
+    });
 
     it('banner: accepts optional keyValues object', () => {
-      const bidRequest = deepClone(defaultBidRequestBanner)
-      bidRequest.params.keyValues = { 'key': 'value' }
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
+      const bidRequest = deepClone(defaultBidRequestBanner);
+      bidRequest.params.keyValues = { 'key': 'value' };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
     it('native: accepts optional keyValues object', () => {
-      const bidRequest = deepClone(defaultBidRequestNative)
-      bidRequest.params.keyValues = { 'key': 'value' }
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
+      const bidRequest = deepClone(defaultBidRequestNative);
+      bidRequest.params.keyValues = { 'key': 'value' };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
     it('banner: performs type checking', () => {
-      const bidRequest = deepClone(defaultBidRequestBanner)
-      bidRequest.params.accountId = 1 // supposed to be a string
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
+      const bidRequest = deepClone(defaultBidRequestBanner);
+      bidRequest.params.accountId = 1; // supposed to be a string
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
     it('native: performs type checking', () => {
-      const bidRequest = deepClone(defaultBidRequestNative)
-      bidRequest.params.accountId = 1 // supposed to be a string
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
+      const bidRequest = deepClone(defaultBidRequestNative);
+      bidRequest.params.accountId = 1; // supposed to be a string
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
     it('banner: doesn\'t accept malformed keyValues', () => {
-      const bidRequest = deepClone(defaultBidRequestBanner)
-      bidRequest.params.keyValues = 'another not usable string'
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
+      const bidRequest = deepClone(defaultBidRequestBanner);
+      bidRequest.params.keyValues = 'another not usable string';
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
     it('native: doesn\'t accept malformed keyValues', () => {
-      const bidRequest = deepClone(defaultBidRequestNative)
-      bidRequest.params.keyValues = 'another not usable string'
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
+      const bidRequest = deepClone(defaultBidRequestNative);
+      bidRequest.params.keyValues = 'another not usable string';
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
     it('banner: should return false when required params are not passed', () => {
-      const bidRequest = deepClone(defaultBidRequestBanner)
-      delete bidRequest.params
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
+      const bidRequest = deepClone(defaultBidRequestBanner);
+      delete bidRequest.params;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
     it('native: should return false when required params are not passed', () => {
-      const bidRequest = deepClone(defaultBidRequestNative)
-      delete bidRequest.params
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
+      const bidRequest = deepClone(defaultBidRequestNative);
+      delete bidRequest.params;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
 
     it('banner: accepts optional bidfloor', () => {
-      const bidRequest = deepClone(defaultBidRequestBanner)
-      bidRequest.params.bidfloor = 123
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+      const bidRequest = deepClone(defaultBidRequestBanner);
+      bidRequest.params.bidfloor = 123;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
 
-      bidRequest.params.bidfloor = 1.23
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
+      bidRequest.params.bidfloor = 1.23;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
     it('native: accepts optional bidfloor', () => {
-      const bidRequest = deepClone(defaultBidRequestNative)
-      bidRequest.params.bidfloor = 123
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
+      const bidRequest = deepClone(defaultBidRequestNative);
+      bidRequest.params.bidfloor = 123;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
 
-      bidRequest.params.bidfloor = 1.23
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
-  })
+      bidRequest.params.bidfloor = 1.23;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+  });
 
   describe('buildRequests', () => {
-    let request, nativeRequest
+    let request, nativeRequest;
     before(() => {
-      request = buildRequest(defaultBidRequestBanner)
-      nativeRequest = buildRequest(defaultBidRequestNative)
-    })
+      request = buildRequest(defaultBidRequestBanner);
+      nativeRequest = buildRequest(defaultBidRequestNative);
+    });
 
     it('sends bid request to endpoint via https using post', () => {
-      expect(request.method).to.equal('POST')
-      expect(request.url.indexOf('https://')).to.equal(0)
-      expect(request.url).to.equal(`${spec.hostname}/bid`)
-    })
+      expect(request.method).to.equal('POST');
+      expect(request.url.indexOf('https://')).to.equal(0);
+      expect(request.url).to.equal(`${spec.hostname}/bid`);
+    });
 
     it('contains prebid version parameter', () => {
-      expect(request.data.v).to.equal(getGlobal().version)
-    })
+      expect(request.data.v).to.equal(getGlobal().version);
+    });
 
     it('banner: sends correct bid parameters', () => {
       // we add two, because we add pageUrl and version from bidderRequest object
-      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequestBanner).length + 2)
+      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequestBanner).length + 2);
 
-      const expectedBidRequest = deepClone(defaultBidRequestBanner)
-      expectedBidRequest.pageUrl = 'https://localhost:9876/'
-      expectedBidRequest.v = getGlobal().version
-      expect(request.data).to.deep.equal(expectedBidRequest)
-    })
+      const expectedBidRequest = deepClone(defaultBidRequestBanner);
+      expectedBidRequest.pageUrl = 'https://localhost:9876/';
+      expectedBidRequest.v = getGlobal().version;
+      expect(request.data).to.deep.equal(expectedBidRequest);
+    });
 
     it('native: sends correct bid parameters', () => {
       // we add two, because we add pageUrl and version from bidderRequest object
-      expect(Object.keys(nativeRequest.data).length).to.equal(Object.keys(defaultBidRequestNative).length + 2)
+      expect(Object.keys(nativeRequest.data).length).to.equal(Object.keys(defaultBidRequestNative).length + 2);
 
-      const expectedBidRequest = deepClone(defaultBidRequestNative)
-      expectedBidRequest.pageUrl = 'https://localhost:9876/'
-      expectedBidRequest.v = getGlobal().version
-      expect(nativeRequest.data).to.deep.equal(expectedBidRequest)
-    })
+      const expectedBidRequest = deepClone(defaultBidRequestNative);
+      expectedBidRequest.pageUrl = 'https://localhost:9876/';
+      expectedBidRequest.v = getGlobal().version;
+      expect(nativeRequest.data).to.deep.equal(expectedBidRequest);
+    });
 
     it('banner: handles empty gdpr object', () => {
       const request = buildRequest(defaultBidRequestBanner, {
         gdprConsent: {}
-      })
-      expect(request.data.gdprConsent.consentRequired).to.be.equal(false)
-    })
+      });
+      expect(request.data.gdprConsent.consentRequired).to.be.equal(false);
+    });
 
     it('native: handles empty gdpr object', () => {
       const request = buildRequest(defaultBidRequestNative, {
         gdprConsent: {}
-      })
-      expect(request.data.gdprConsent.consentRequired).to.be.equal(false)
-    })
+      });
+      expect(request.data.gdprConsent.consentRequired).to.be.equal(false);
+    });
 
     it('banner: handles non-existent gdpr object', () => {
       const request = buildRequest(defaultBidRequestBanner, {
         gdprConsent: null
-      })
-      expect(request.data.gdprConsent).to.be.undefined
-    })
+      });
+      expect(request.data.gdprConsent).to.be.undefined;
+    });
 
     it('native: handles non-existent gdpr object', () => {
       const request = buildRequest(defaultBidRequestNative, {
         gdprConsent: null
-      })
-      expect(request.data.gdprConsent).to.be.undefined
-    })
+      });
+      expect(request.data.gdprConsent).to.be.undefined;
+    });
 
     it('banner: handles properly filled gdpr object where gdpr applies', () => {
-      const consentString = 'someWeirdString'
+      const consentString = 'someWeirdString';
       const request = buildRequest(defaultBidRequestBanner, {
         gdprConsent: {
           gdprApplies: true,
           consentString: consentString
         }
-      })
+      });
 
-      const gdprConsent = request.data.gdprConsent
-      expect(gdprConsent.consentRequired).to.be.equal(true)
-      expect(gdprConsent.consentString).to.be.equal(consentString)
-    })
+      const gdprConsent = request.data.gdprConsent;
+      expect(gdprConsent.consentRequired).to.be.equal(true);
+      expect(gdprConsent.consentString).to.be.equal(consentString);
+    });
 
     it('native: handles properly filled gdpr object where gdpr applies', () => {
-      const consentString = 'someWeirdString'
+      const consentString = 'someWeirdString';
       const request = buildRequest(defaultBidRequestNative, {
         gdprConsent: {
           gdprApplies: true,
           consentString: consentString
         }
-      })
+      });
 
-      const gdprConsent = request.data.gdprConsent
-      expect(gdprConsent.consentRequired).to.be.equal(true)
-      expect(gdprConsent.consentString).to.be.equal(consentString)
-    })
+      const gdprConsent = request.data.gdprConsent;
+      expect(gdprConsent.consentRequired).to.be.equal(true);
+      expect(gdprConsent.consentString).to.be.equal(consentString);
+    });
 
     it('banner: handles properly filled gdpr object where gdpr does not apply', () => {
-      const consentString = 'someWeirdString'
+      const consentString = 'someWeirdString';
       const request = buildRequest(defaultBidRequestBanner, {
         gdprConsent: {
           gdprApplies: false,
           consentString: consentString
         }
-      })
+      });
 
-      const gdprConsent = request.data.gdprConsent
-      expect(gdprConsent.consentRequired).to.be.equal(false)
-      expect(gdprConsent.consentString).to.be.equal(consentString)
-    })
+      const gdprConsent = request.data.gdprConsent;
+      expect(gdprConsent.consentRequired).to.be.equal(false);
+      expect(gdprConsent.consentString).to.be.equal(consentString);
+    });
 
     it('native: handles properly filled gdpr object where gdpr does not apply', () => {
-      const consentString = 'someWeirdString'
+      const consentString = 'someWeirdString';
       const request = buildRequest(defaultBidRequestNative, {
         gdprConsent: {
           gdprApplies: false,
           consentString: consentString
         }
-      })
+      });
 
-      const gdprConsent = request.data.gdprConsent
-      expect(gdprConsent.consentRequired).to.be.equal(false)
-      expect(gdprConsent.consentString).to.be.equal(consentString)
-    })
-  })
+      const gdprConsent = request.data.gdprConsent;
+      expect(gdprConsent.consentRequired).to.be.equal(false);
+      expect(gdprConsent.consentString).to.be.equal(consentString);
+    });
+  });
 
   it('buildRequests with price floor module', () => {
-    const bidRequest = deepClone(defaultBidRequestBanner)
-    bidRequest.params.bidfloor = 1
+    const bidRequest = deepClone(defaultBidRequestBanner);
+    bidRequest.params.bidfloor = 1;
     bidRequest.getFloor = (floorObj) => {
       return {
         floor: bidRequest.floors.values['banner|640x480'],
         currency: floorObj.currency,
         mediaType: floorObj.mediaType
-      }
-    }
+      };
+    };
 
     bidRequest.floors = {
       currency: 'EUR',
       values: {
         'banner|640x480': 15.07
       }
-    }
-    const request = buildRequest(bidRequest)
-    expect(request.data.params.bidfloor).to.equal(15.07)
-  })
+    };
+    const request = buildRequest(bidRequest);
+    expect(request.data.params.bidfloor).to.equal(15.07);
+  });
 
   describe('interpretResponse', () => {
     it('banner: should get correct bid response', () => {
@@ -359,7 +359,7 @@ describe('orbidderBidAdapter', () => {
           'currency': 'EUR',
           'mediaType': BANNER,
         }
-      ]
+      ];
 
       const expectedResponse = [
         {
@@ -374,12 +374,12 @@ describe('orbidderBidAdapter', () => {
           'netRevenue': true,
           'mediaType': BANNER,
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse({ body: serverResponse })
-      expect(result.length).to.equal(expectedResponse.length)
-      expect(_.isEqual(expectedResponse, serverResponse)).to.be.true
-    })
+      const result = spec.interpretResponse({ body: serverResponse });
+      expect(result.length).to.equal(expectedResponse.length);
+      expect(_.isEqual(expectedResponse, serverResponse)).to.be.true;
+    });
 
     it('should get correct bid response with advertiserDomains', () => {
       const serverResponse = [
@@ -396,7 +396,7 @@ describe('orbidderBidAdapter', () => {
           'advertiserDomains': ['cm.tavira.pt'],
           'mediaType': BANNER
         }
-      ]
+      ];
 
       const expectedResponse = [
         {
@@ -414,15 +414,15 @@ describe('orbidderBidAdapter', () => {
           },
           'mediaType': BANNER
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse({ body: serverResponse })
+      const result = spec.interpretResponse({ body: serverResponse });
 
-      expect(result.length).to.equal(expectedResponse.length)
+      expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
-        expect(result[0][key]).to.deep.equal(expectedResponse[0][key])
-      })
-    })
+        expect(result[0][key]).to.deep.equal(expectedResponse[0][key]);
+      });
+    });
 
     it('native: should get correct bid response', () => {
       const serverResponse = [
@@ -452,7 +452,7 @@ describe('orbidderBidAdapter', () => {
             'body': 'text',
           }
         }
-      ]
+      ];
 
       const expectedResponse = [
         {
@@ -481,13 +481,13 @@ describe('orbidderBidAdapter', () => {
             'body': 'text',
           }
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse({ body: serverResponse })
+      const result = spec.interpretResponse({ body: serverResponse });
 
-      expect(result.length).to.equal(expectedResponse.length)
-      expect(_.isEqual(expectedResponse, serverResponse)).to.be.true
-    })
+      expect(result.length).to.equal(expectedResponse.length);
+      expect(_.isEqual(expectedResponse, serverResponse)).to.be.true;
+    });
 
     it('banner: handles broken bid response, missing creativeId', () => {
       const serverResponse = [
@@ -502,10 +502,10 @@ describe('orbidderBidAdapter', () => {
           'height': 250,
           'netRevenue': true,
         }
-      ]
-      const result = spec.interpretResponse({ body: serverResponse })
-      expect(result.length).to.equal(0)
-    })
+      ];
+      const result = spec.interpretResponse({ body: serverResponse });
+      expect(result.length).to.equal(0);
+    });
 
     it('banner: handles broken bid response, missing ad', () => {
       const serverResponse = [
@@ -520,10 +520,10 @@ describe('orbidderBidAdapter', () => {
           'netRevenue': true,
           'creativeId': '29681110',
         }
-      ]
-      const result = spec.interpretResponse({ body: serverResponse })
-      expect(result.length).to.equal(0)
-    })
+      ];
+      const result = spec.interpretResponse({ body: serverResponse });
+      expect(result.length).to.equal(0);
+    });
 
     it('native: handles broken bid response, missing impressionTrackers', () => {
       const serverResponse = [
@@ -546,15 +546,15 @@ describe('orbidderBidAdapter', () => {
             'clickUrl': 'click'
           }
         }
-      ]
-      const result = spec.interpretResponse({ body: serverResponse })
-      expect(result.length).to.equal(0)
-    })
+      ];
+      const result = spec.interpretResponse({ body: serverResponse });
+      expect(result.length).to.equal(0);
+    });
 
     it('handles nobid responses', () => {
-      const serverResponse = []
-      const result = spec.interpretResponse({ body: serverResponse })
-      expect(result.length).to.equal(0)
-    })
-  })
-})
+      const serverResponse = [];
+      const result = spec.interpretResponse({ body: serverResponse });
+      expect(result.length).to.equal(0);
+    });
+  });
+});

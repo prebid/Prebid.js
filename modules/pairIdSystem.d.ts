@@ -1,4 +1,4 @@
-export type PairIdSystemModuleName = 'pairId'
+export type PairIdSystemModuleName = 'pairId';
 
 export interface PairIdLiverampParams {
   /**
@@ -12,7 +12,7 @@ export type PairIdSystemParams = {
    * Container of all liveramp cleanroom specified params.
    */
   liveramp?: PairIdLiverampParams;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -28,4 +28,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

@@ -1,18 +1,18 @@
-import { getTimeZone } from '../libraries/timezone/timezone.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { getTimeZone } from '../libraries/timezone/timezone.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'gamma'
+const BIDDER_CODE = 'gamma';
 const ENDPOINTS = {
   SGP: 'https://hb.gammaplatform.com',
   JPN: 'https://hb-jp.gammaplatform.com',
   US_WEST: 'https://hb-us.gammaplatform.com',
   EU: 'https://hb-eu.gammaplatform.com'
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,7 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.siteId || bid.params.zoneId)
+    return !!(bid.params.siteId || bid.params.zoneId);
   },
 
   /**
@@ -36,18 +36,18 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const serverRequests = []
-    const bidderRequestReferer = bidderRequest?.refererInfo?.page || ''
-    let ENDPOINT
+    const serverRequests = [];
+    const bidderRequestReferer = bidderRequest?.refererInfo?.page || '';
+    let ENDPOINT;
     for (var i = 0, len = bidRequests.length; i < len; i++) {
-      const gaxObjParams = bidRequests[i]
-      ENDPOINT = getAdUrlByRegion(gaxObjParams)
+      const gaxObjParams = bidRequests[i];
+      ENDPOINT = getAdUrlByRegion(gaxObjParams);
       serverRequests.push({
         method: 'GET',
         url: ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(bidderRequestReferer)
-      })
+      });
     }
-    return serverRequests
+    return serverRequests;
   },
 
   /**
@@ -57,18 +57,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    serverResponse = serverResponse.body
+    serverResponse = serverResponse.body;
 
-    const bids = []
+    const bids = [];
 
     if (serverResponse.id) {
-      const bid = newBid(serverResponse)
-      bids.push(bid)
+      const bid = newBid(serverResponse);
+      bids.push(bid);
     }
 
-    return bids
+    return bids;
   }
-}
+};
 
 /**
  * Get endpoint url by region
@@ -76,35 +76,35 @@ export const spec = {
  * @return aUrl
  */
 function getAdUrlByRegion(bid) {
-  let ENDPOINT
+  let ENDPOINT;
 
   if (bid.params.region && ENDPOINTS[bid.params.region]) {
-    ENDPOINT = ENDPOINTS[bid.params.region]
+    ENDPOINT = ENDPOINTS[bid.params.region];
   } else {
     try {
-      const region = getTimeZone().split('/')[0]
+      const region = getTimeZone().split('/')[0];
 
       switch (region) {
         case 'Europe':
-          ENDPOINT = ENDPOINTS['EU']
-          break
+          ENDPOINT = ENDPOINTS['EU'];
+          break;
         case 'Australia':
-          ENDPOINT = ENDPOINTS['JPN']
-          break
+          ENDPOINT = ENDPOINTS['JPN'];
+          break;
         case 'Asia':
-          ENDPOINT = ENDPOINTS['SGP']
-          break
+          ENDPOINT = ENDPOINTS['SGP'];
+          break;
         case 'America':
-          ENDPOINT = ENDPOINTS['US_WEST']
-          break
-        default: ENDPOINT = ENDPOINTS['SGP']
+          ENDPOINT = ENDPOINTS['US_WEST'];
+          break;
+        default: ENDPOINT = ENDPOINTS['SGP'];
       }
     } catch (err) {
-      ENDPOINT = ENDPOINTS['SGP']
+      ENDPOINT = ENDPOINTS['SGP'];
     }
   }
 
-  return ENDPOINT
+  return ENDPOINT;
 }
 
 /**
@@ -128,17 +128,17 @@ function newBid(serverBid) {
     meta: {
       advertiserDomains: serverBid.seatbid[0].bid[0].adomain && serverBid.seatbid[0].bid[0].adomain.length ? serverBid.seatbid[0].bid[0].adomain : []
     }
-  }
+  };
 
   if (serverBid.type === 'video') {
     Object.assign(bid, {
       vastXml: serverBid.seatbid[0].bid[0].vastXml,
       vastUrl: serverBid.seatbid[0].bid[0].vastUrl,
       ttl: 3600
-    })
+    });
   }
 
-  return bid
+  return bid;
 }
 
-registerBidder(spec)
+registerBidder(spec);

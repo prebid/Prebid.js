@@ -1,5 +1,5 @@
-import { spec } from 'modules/rixengineBidAdapter.js'
-const ENDPOINT = 'http://demo.svr.rixengine.com/rtb?sid=36540&token=1e05a767930d7d96ef6ce16318b4ab99'
+import { spec } from 'modules/rixengineBidAdapter.js';
+const ENDPOINT = 'http://demo.svr.rixengine.com/rtb?sid=36540&token=1e05a767930d7d96ef6ce16318b4ab99';
 
 const REQUEST = [
   {
@@ -16,7 +16,7 @@ const REQUEST = [
       sid: '36540',
     },
   },
-]
+];
 
 const RESPONSE = {
   headers: null,
@@ -47,7 +47,7 @@ const RESPONSE = {
       },
     ],
   },
-}
+};
 
 describe('rixengine bid adapter', function () {
   describe('isBidRequestValid', function () {
@@ -58,84 +58,84 @@ describe('rixengine bid adapter', function () {
         token: '1e05a767930d7d96ef6ce16318b4ab99',
         sid: '36540',
       },
-    }
+    };
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
     it('should return false when missing endpoint', function () {
-      delete bid.params.endpoint
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      delete bid.params.endpoint;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
     it('should return false when missing sid', function () {
-      delete bid.params.sid
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      delete bid.params.sid;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
     it('should return false when missing token', function () {
-      delete bid.params.token
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      delete bid.params.token;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
   describe('buildRequests', function () {
     it('creates request data', function () {
       const request = spec.buildRequests(REQUEST, {
         refererInfo: {
           page: 'page',
         },
-      })[0]
-      expect(request).to.exist.and.to.be.a('object')
-    })
+      })[0];
+      expect(request).to.exist.and.to.be.a('object');
+    });
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(REQUEST, {})[0]
-      expect(request.url).to.equal(ENDPOINT)
-      expect(request.method).to.equal('POST')
-    })
-  })
+      const request = spec.buildRequests(REQUEST, {})[0];
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('POST');
+    });
+  });
 
   describe('interpretResponse', function () {
     it('has bids', function () {
-      const request = spec.buildRequests(REQUEST, {})[0]
-      const bids = spec.interpretResponse(RESPONSE, request)
-      expect(bids).to.be.an('array').that.is.not.empty
-      validateBidOnIndex(0)
+      const request = spec.buildRequests(REQUEST, {})[0];
+      const bids = spec.interpretResponse(RESPONSE, request);
+      expect(bids).to.be.an('array').that.is.not.empty;
+      validateBidOnIndex(0);
 
       function validateBidOnIndex(index) {
-        expect(bids[index]).to.have.property('currency', 'USD')
+        expect(bids[index]).to.have.property('currency', 'USD');
         expect(bids[index]).to.have.property(
           'requestId',
           RESPONSE.body.seatbid[0].bid[index].id
-        )
+        );
         expect(bids[index]).to.have.property(
           'cpm',
           RESPONSE.body.seatbid[0].bid[index].price
-        )
+        );
         expect(bids[index]).to.have.property(
           'width',
           RESPONSE.body.seatbid[0].bid[index].w
-        )
+        );
         expect(bids[index]).to.have.property(
           'height',
           RESPONSE.body.seatbid[0].bid[index].h
-        )
+        );
         expect(bids[index]).to.have.property(
           'ad',
           RESPONSE.body.seatbid[0].bid[index].adm
-        )
+        );
         expect(bids[index]).to.have.property(
           'creativeId',
           RESPONSE.body.seatbid[0].bid[index].crid
-        )
-        expect(bids[index]).to.have.property('ttl', 30)
-        expect(bids[index]).to.have.property('netRevenue', true)
+        );
+        expect(bids[index]).to.have.property('ttl', 30);
+        expect(bids[index]).to.have.property('netRevenue', true);
       }
-    })
+    });
 
     it('handles empty response', function () {
       it('No bid response', function() {
         var noBidResponse = spec.interpretResponse({
           body: '',
-        })
-        expect(noBidResponse.length).to.equal(0)
-      })
-    })
-  })
-})
+        });
+        expect(noBidResponse.length).to.equal(0);
+      });
+    });
+  });
+});

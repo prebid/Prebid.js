@@ -1,11 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { deepAccess, parseQueryStringParameters, parseSizesInput } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { deepAccess, parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
 
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const BIDDER_CODE = 'adnow'
-const ENDPOINT = 'https://n.nnowa.com/a'
+const BIDDER_CODE = 'adnow';
+const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
  * @typedef {object} CommonBidData
@@ -35,16 +35,16 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid(bid) {
-    if (!bid || !bid.params) return false
+    if (!bid || !bid.params) return false;
 
-    const codeId = parseInt(bid.params.codeId, 10)
+    const codeId = parseInt(bid.params.codeId, 10);
     if (!codeId) {
-      return false
+      return false;
     }
 
-    const mediaType = bid.params.mediaType || NATIVE
+    const mediaType = bid.params.mediaType || NATIVE;
 
-    return this.supportedMediaTypes.includes(mediaType)
+    return this.supportedMediaTypes.includes(mediaType);
   },
 
   /**
@@ -54,11 +54,11 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     return validBidRequests.map(req => {
-      const mediaType = this._isBannerRequest(req) ? BANNER : NATIVE
-      const codeId = parseInt(req.params.codeId, 10)
+      const mediaType = this._isBannerRequest(req) ? BANNER : NATIVE;
+      const codeId = parseInt(req.params.codeId, 10);
 
       const data = {
         Id: codeId,
@@ -66,22 +66,22 @@ export const spec = {
         out: 'prebid',
         d_user_agent: navigator.userAgent,
         requestid: req.bidId
-      }
+      };
 
       if (mediaType === BANNER) {
         data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
-        ).join('|')
+        ).join('|');
       } else {
-        data.width = data.height = 200
+        data.width = data.height = 200;
 
-        const sizes = deepAccess(req, 'mediaTypes.native.image.sizes', [])
+        const sizes = deepAccess(req, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
-          const size = Array.isArray(sizes[0]) ? sizes[0] : sizes
+          const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
 
-          data.width = size[0] || data.width
-          data.height = size[1] || data.height
+          data.width = size[0] || data.width;
+          data.height = size[1] || data.height;
         }
       }
 
@@ -95,8 +95,8 @@ export const spec = {
           crossOrigin: true
         },
         bidRequest: req
-      }
-    })
+      };
+    });
   },
 
   /**
@@ -105,29 +105,29 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse(response, request) {
-    const bidObj = request.bidRequest
-    const bid = response.body
+    const bidObj = request.bidRequest;
+    const bid = response.body;
 
     if (!bid || !bid.currency || !bid.cpm) {
-      return []
+      return [];
     }
 
-    const mediaType = bid.meta.mediaType || NATIVE
+    const mediaType = bid.meta.mediaType || NATIVE;
     if (!this.supportedMediaTypes.includes(mediaType)) {
-      return []
+      return [];
     }
 
-    bid.requestId = bidObj.bidId
+    bid.requestId = bidObj.bidId;
 
     if (mediaType === BANNER) {
-      return [this._getBannerBid(bid)]
+      return [this._getBannerBid(bid)];
     }
 
     if (mediaType === NATIVE) {
-      return [this._getNativeBid(bid)]
+      return [this._getNativeBid(bid)];
     }
 
-    return []
+    return [];
   },
 
   /**
@@ -144,7 +144,7 @@ export const spec = {
       netRevenue: bid.netRevenue || true,
       ttl: bid.ttl || 360,
       meta: bid.meta || {}
-    }
+    };
   },
 
   /**
@@ -153,7 +153,7 @@ export const spec = {
    * @private
    */
   _isBannerRequest(req) {
-    return !!(req.mediaTypes && req.mediaTypes.banner)
+    return !!(req.mediaTypes && req.mediaTypes.banner);
   },
 
   /**
@@ -167,7 +167,7 @@ export const spec = {
       width: bid.width || 300,
       height: bid.height || 250,
       ad: bid.ad || '<div>Empty Ad</div>'
-    }
+    };
   },
 
   /**
@@ -179,8 +179,8 @@ export const spec = {
     return {
       ...this._commonBidData(bid),
       native: bid.native || {}
-    }
+    };
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

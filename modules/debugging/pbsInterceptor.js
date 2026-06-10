@@ -1,21 +1,21 @@
 export function makePbsInterceptor({ createBid, utils }) {
-  const { deepClone, delayExecution } = utils
+  const { deepClone, delayExecution } = utils;
   return function pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {
     onResponse,
     onError,
     onBid,
   }) {
-    let responseArgs
-    const done = delayExecution(() => onResponse(...responseArgs), bidRequests.length + 1)
+    let responseArgs;
+    const done = delayExecution(() => onResponse(...responseArgs), bidRequests.length + 1);
     function signalResponse(...args) {
-      responseArgs = args
-      done()
+      responseArgs = args;
+      done();
     }
     function addBid(bid, bidRequest) {
       onBid({
         adUnit: bidRequest.adUnitCode,
         bid: Object.assign(createBid(bidRequest), { requestBidder: bidRequest.bidder }, bid)
-      })
+      });
     }
     bidRequests = bidRequests
       .map((req) => interceptBids({
@@ -23,19 +23,19 @@ export function makePbsInterceptor({ createBid, utils }) {
         addBid,
         done
       }).bidRequest)
-      .filter((req) => req.bids.length > 0)
+      .filter((req) => req.bids.length > 0);
 
     if (bidRequests.length > 0) {
-      const bidIds = new Set()
-      bidRequests.forEach((req) => req.bids.forEach((bid) => bidIds.add(bid.bidId)))
-      s2sBidRequest = deepClone(s2sBidRequest)
+      const bidIds = new Set();
+      bidRequests.forEach((req) => req.bids.forEach((bid) => bidIds.add(bid.bidId)));
+      s2sBidRequest = deepClone(s2sBidRequest);
       s2sBidRequest.ad_units.forEach((unit) => {
-        unit.bids = unit.bids.filter((bid) => bidIds.has(bid.bid_id))
-      })
-      s2sBidRequest.ad_units = s2sBidRequest.ad_units.filter((unit) => unit.bids.length > 0)
-      next(s2sBidRequest, bidRequests, ajax, { onResponse: signalResponse, onError, onBid })
+        unit.bids = unit.bids.filter((bid) => bidIds.has(bid.bid_id));
+      });
+      s2sBidRequest.ad_units = s2sBidRequest.ad_units.filter((unit) => unit.bids.length > 0);
+      next(s2sBidRequest, bidRequests, ajax, { onResponse: signalResponse, onError, onBid });
     } else {
-      signalResponse(true, [])
+      signalResponse(true, []);
     }
-  }
+  };
 }

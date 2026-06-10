@@ -1,7 +1,7 @@
-import { isArrayOfNums, isInteger, isStr } from './utils.js'
-import type { Size } from "./types/common.d.ts"
-import type { ORTBImp } from "./types/ortb/request.d.ts"
-import type { BaseMediaType } from "./mediaTypes.ts"
+import { isArrayOfNums, isInteger, isStr } from './utils.js';
+import type { Size } from "./types/common.d.ts";
+import type { ORTBImp } from "./types/ortb/request.d.ts";
+import type { BaseMediaType } from "./mediaTypes.ts";
 
 const ORTB_PARAMS = [
   ['format', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'object')],
@@ -16,14 +16,14 @@ const ORTB_PARAMS = [
   ['api', isArrayOfNums],
   ['id', isStr],
   ['vcm', value => [1, 0].includes(value)]
-] as const
+] as const;
 
 /**
  * List of OpenRTB 2.x banner object properties with simple validators.
  * Not included: `ext`
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
-export const ORTB_BANNER_PARAMS = new Map(ORTB_PARAMS)
+export const ORTB_BANNER_PARAMS = new Map(ORTB_PARAMS);
 export interface BannerMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['banner']>, (typeof ORTB_PARAMS)[number][0]>> {
   /**
    * All sizes this ad unit can accept.

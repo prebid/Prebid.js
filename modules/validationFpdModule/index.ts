@@ -2,14 +2,14 @@
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
-import { deepAccess, isEmpty, isNumber, logWarn } from '../../src/utils.js'
-import { ORTB_MAP } from './config.js'
-import { submodule } from '../../src/hook.js'
-import { getCoreStorageManager } from '../../src/storageManager.js'
+import { deepAccess, isEmpty, isNumber, logWarn } from '../../src/utils.js';
+import { ORTB_MAP } from './config.js';
+import { submodule } from '../../src/hook.js';
+import { getCoreStorageManager } from '../../src/storageManager.js';
 
 // TODO: do FPD modules need their own namespace?
-const STORAGE = getCoreStorageManager('FPDValidation')
-let optout
+const STORAGE = getCoreStorageManager('FPDValidation');
+let optout;
 
 /**
  * Check if data passed is empty
@@ -17,15 +17,15 @@ let optout
  * @returns {Boolean} is data empty
  */
 function isEmptyData(data) {
-  let check = true
+  let check = true;
 
   if (typeof data === 'object' && !isEmpty(data)) {
-    check = false
+    check = false;
   } else if (typeof data !== 'object' && (isNumber(data) || data)) {
-    check = false
+    check = false;
   }
 
-  return check
+  return check;
 }
 
 /**
@@ -37,16 +37,16 @@ function isEmptyData(data) {
  * @returns {Boolean} is requirements fulfilled
  */
 function getRequiredData(obj, required, parent, i) {
-  let check = true
+  let check = true;
 
   required.forEach(key => {
     if (!obj[key] || isEmptyData(obj[key])) {
-      check = false
-      logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: missing required property ${key}`)
+      check = false;
+      logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: missing required property ${key}`);
     }
-  })
+  });
 
-  return check
+  return check;
 }
 
 /**
@@ -56,23 +56,23 @@ function getRequiredData(obj, required, parent, i) {
  * @returns {Boolean} is type fulfilled
  */
 function typeValidation(data, mapping) {
-  let check = false
+  let check = false;
 
   switch (mapping.type) {
     case 'string':
-      if (typeof data === 'string') check = true
-      break
+      if (typeof data === 'string') check = true;
+      break;
     case 'number':
-      if (typeof data === 'number' && isFinite(data)) check = true
-      break
+      if (typeof data === 'number' && isFinite(data)) check = true;
+      break;
     case 'object':
       if (typeof data === 'object') {
-        if ((Array.isArray(data) && mapping.isArray) || (!Array.isArray(data) && !mapping.isArray)) check = true
+        if ((Array.isArray(data) && mapping.isArray) || (!Array.isArray(data) && !mapping.isArray)) check = true;
       }
-      break
+      break;
   }
 
-  return check
+  return check;
 }
 
 /**
@@ -85,55 +85,55 @@ function typeValidation(data, mapping) {
  */
 export function filterArrayData(arr, child, path, parent) {
   arr = arr.filter((index, i) => {
-    const check = typeValidation(index, { type: child.type, isArray: child.isArray })
+    const check = typeValidation(index, { type: child.type, isArray: child.isArray });
 
     if (check && Array.isArray(index) === Boolean(child.isArray)) {
-      return true
+      return true;
     }
 
-    logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`)
-    return false
+    logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
+    return false;
   }).filter((index, i) => {
-    let requiredCheck = true
-    const mapping = deepAccess(ORTB_MAP, path)
+    let requiredCheck = true;
+    const mapping = deepAccess(ORTB_MAP, path);
 
-    if (mapping && mapping.required) requiredCheck = getRequiredData(index, mapping.required, parent, i)
+    if (mapping && mapping.required) requiredCheck = getRequiredData(index, mapping.required, parent, i);
 
-    if (requiredCheck) return true
-    return false
+    if (requiredCheck) return true;
+    return false;
   }).reduce((result, value, i) => {
-    let typeBool = false
-    const mapping = deepAccess(ORTB_MAP, path)
+    let typeBool = false;
+    const mapping = deepAccess(ORTB_MAP, path);
 
     switch (child.type) {
       case 'string':
-        result.push(value)
-        typeBool = true
-        break
+        result.push(value);
+        typeBool = true;
+        break;
       case 'object':
         if (mapping && mapping.children) {
-          const validObject = validateFpd(value, path + '.children.', parent + '.')
+          const validObject = validateFpd(value, path + '.children.', parent + '.');
           if (Object.keys(validObject).length) {
-            const requiredCheck = getRequiredData(validObject, mapping.required, parent, i)
+            const requiredCheck = getRequiredData(validObject, mapping.required, parent, i);
 
             if (requiredCheck) {
-              result.push(validObject)
-              typeBool = true
+              result.push(validObject);
+              typeBool = true;
             }
           }
         } else {
-          result.push(value)
-          typeBool = true
+          result.push(value);
+          typeBool = true;
         }
-        break
+        break;
     }
 
-    if (!typeBool) logWarn(`Filtered ${parent}[] value at index ${i}  in ortb2 data: expected type ${child.type}`)
+    if (!typeBool) logWarn(`Filtered ${parent}[] value at index ${i}  in ortb2 data: expected type ${child.type}`);
 
-    return result
-  }, [])
+    return result;
+  }, []);
 
-  return arr
+  return arr;
 }
 
 /**
@@ -144,33 +144,33 @@ export function filterArrayData(arr, child, path, parent) {
  * @returns {Object} validated/filtered data
  */
 export function validateFpd(fpd, path = '', parent = '') {
-  if (!fpd) return {}
+  if (!fpd) return {};
 
   // Filter out imp property if exists
   const validObject = Object.assign({}, Object.keys(fpd).filter(key => {
-    const mapping = deepAccess(ORTB_MAP, path + key)
+    const mapping = deepAccess(ORTB_MAP, path + key);
 
-    if (!mapping || !mapping.invalid) return key
+    if (!mapping || !mapping.invalid) return key;
 
-    logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`)
-    return false
+    logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`);
+    return false;
   }).filter(key => {
-    const mapping = deepAccess(ORTB_MAP, path + key)
+    const mapping = deepAccess(ORTB_MAP, path + key);
     // let typeBool = false;
-    const typeBool = (mapping) ? typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray }) : true
+    const typeBool = (mapping) ? typeValidation(fpd[key], { type: mapping.type, isArray: mapping.isArray }) : true;
 
-    if (typeBool || !mapping) return key
+    if (typeBool || !mapping) return key;
 
-    logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`)
-    return false
+    logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
+    return false;
   }).reduce((result, key) => {
-    const mapping = deepAccess(ORTB_MAP, path + key)
-    let modified = {}
+    const mapping = deepAccess(ORTB_MAP, path + key);
+    let modified = {};
 
     if (mapping) {
       if (mapping.optoutApplies && optout) {
-        logWarn(`Filtered ${parent}${key} data: pubcid optout found`)
-        return result
+        logWarn(`Filtered ${parent}${key} data: pubcid optout found`);
+        return result;
       }
 
       modified = (mapping.type === 'object' && !mapping.isArray)
@@ -180,16 +180,16 @@ export function validateFpd(fpd, path = '', parent = '') {
 
       // Check if modified data has data and return
       (!isEmptyData(modified)) ? result[key] = modified
-        : logWarn(`Filtered ${parent}${key} property in ortb2 data: empty data found`)
+        : logWarn(`Filtered ${parent}${key} property in ortb2 data: empty data found`);
     } else {
-      result[key] = fpd[key]
+      result[key] = fpd[key];
     }
 
-    return result
-  }, {}))
+    return result;
+  }, {}));
 
   // Return validated data
-  return validObject
+  return validObject;
 }
 
 /**
@@ -201,7 +201,7 @@ function runValidations(data) {
   return {
     global: validateFpd(data.global),
     bidder: Object.fromEntries(Object.entries(data.bidder).map(([bidder, conf]) => [bidder, validateFpd(conf)]))
-  }
+  };
 }
 
 declare module '../../src/fpd/enrichment' {
@@ -220,9 +220,9 @@ export function processFpd(fpdConf, data) {
   // Checks for existsnece of pubcid optout cookie/storage
   // if exists, filters user data out
   optout = (STORAGE.cookiesAreEnabled() && STORAGE.getCookie('_pubcid_optout')) ||
-    (STORAGE.hasLocalStorage() && STORAGE.getDataFromLocalStorage('_pubcid_optout'))
+    (STORAGE.hasLocalStorage() && STORAGE.getDataFromLocalStorage('_pubcid_optout'));
 
-  return (!fpdConf.skipValidations) ? runValidations(data) : data
+  return (!fpdConf.skipValidations) ? runValidations(data) : data;
 }
 
 /** @type {{name: string, queue: number, processFpd: function}} */
@@ -230,6 +230,6 @@ export const validationSubmodule = {
   name: 'validation',
   queue: 1,
   processFpd
-}
+};
 
-submodule('firstPartyData', validationSubmodule)
+submodule('firstPartyData', validationSubmodule);

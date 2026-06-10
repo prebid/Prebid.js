@@ -1,11 +1,11 @@
-import type { TargetingMap } from "../targeting.ts"
-import { config } from "../config.ts"
-import { ttlCollection } from "../utils/ttlCollection.ts"
-import { isGptPubadsDefined } from "../utils.js"
-import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent
-import { getSlotTargeting } from "../utils/gptTargeting.ts"
+import type { TargetingMap } from "../targeting.ts";
+import { config } from "../config.ts";
+import { ttlCollection } from "../utils/ttlCollection.ts";
+import { isGptPubadsDefined } from "../utils.js";
+import SlotRenderEndedEvent = googletag.events.SlotRenderEndedEvent;
+import { getSlotTargeting } from "../utils/gptTargeting.ts";
 
-const DEFAULT_LOCK_TIMEOUT = 3000
+const DEFAULT_LOCK_TIMEOUT = 3000;
 
 declare module '../targeting.ts' {
   interface TargetingControlsConfig {
@@ -28,51 +28,51 @@ declare module '../targeting.ts' {
 }
 
 export function targetingLock() {
-  let timeout, keys
+  let timeout, keys;
   let locked = ttlCollection<unknown>({
     monotonic: true,
     ttl: () => timeout,
     slack: 0,
-  })
+  });
   config.getConfig('targetingControls', (cfg) => {
-    ({ lock: keys, lockTimeout: timeout = DEFAULT_LOCK_TIMEOUT } = cfg.targetingControls ?? {})
+    ({ lock: keys, lockTimeout: timeout = DEFAULT_LOCK_TIMEOUT } = cfg.targetingControls ?? {});
     if (keys != null && !Array.isArray(keys)) {
-      keys = [keys]
+      keys = [keys];
     } else if (keys == null) {
-      tearDownGpt()
+      tearDownGpt();
     }
-    locked.clear()
-  })
+    locked.clear();
+  });
   const [setupGpt, tearDownGpt] = (() => {
-    let enabled = false
+    let enabled = false;
     function onGptRender({ slot }: SlotRenderEndedEvent) {
-      keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete))
+      keys?.forEach(key => getSlotTargeting(slot, key)?.forEach(locked.delete));
     }
     return [
       () => {
         if (keys != null && !enabled && isGptPubadsDefined()) {
-          googletag.pubads().addEventListener?.('slotRenderEnded', onGptRender)
-          enabled = true
+          googletag.pubads().addEventListener?.('slotRenderEnded', onGptRender);
+          enabled = true;
         }
       },
       () => {
         if (enabled && isGptPubadsDefined()) {
-          googletag.pubads().removeEventListener?.('slotRenderEnded', onGptRender)
-          enabled = false
+          googletag.pubads().removeEventListener?.('slotRenderEnded', onGptRender);
+          enabled = false;
         }
       }
-    ]
-  })()
+    ];
+  })();
 
   return {
     isLocked(targeting: TargetingMap<unknown>) {
-      return keys?.some(key => targeting[key] != null && locked.has(targeting[key])) ?? false
+      return keys?.some(key => targeting[key] != null && locked.has(targeting[key])) ?? false;
     },
     lock(targeting: TargetingMap<unknown>) {
-      setupGpt()
-      keys?.forEach(key => targeting[key] != null && locked.add(targeting[key]))
+      setupGpt();
+      keys?.forEach(key => targeting[key] != null && locked.add(targeting[key]));
     }
-  }
+  };
 }
 
-export const lock = targetingLock()
+export const lock = targetingLock();

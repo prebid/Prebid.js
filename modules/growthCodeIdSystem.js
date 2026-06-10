@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -15,10 +15,10 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js'
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'growthCodeId'
-const GCID_KEY = 'gcid'
+const MODULE_NAME = 'growthCodeId';
+const GCID_KEY = 'gcid';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /** @type {Submodule} */
 export const growthCodeIdSubmodule = {
@@ -34,7 +34,7 @@ export const growthCodeIdSubmodule = {
    * @returns {{growthCodeId: {string}}|undefined}
    */
   decode(value) {
-    return value && value !== '' ? { 'growthCodeId': value } : undefined
+    return value && value !== '' ? { 'growthCodeId': value } : undefined;
   },
 
   /**
@@ -44,10 +44,10 @@ export const growthCodeIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    const configParams = (config && config.params) || {}
+    const configParams = (config && config.params) || {};
 
-    let ids = []
-    const gcid = storage.getDataFromLocalStorage(GCID_KEY, null)
+    let ids = [];
+    const gcid = storage.getDataFromLocalStorage(GCID_KEY, null);
 
     if (gcid !== null) {
       const gcEid = {
@@ -56,20 +56,20 @@ export const growthCodeIdSubmodule = {
           id: gcid,
           atype: 3,
         }]
-      }
+      };
 
-      ids = ids.concat(gcEid)
+      ids = ids.concat(gcEid);
     }
 
-    const additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null)
+    const additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null);
     if (additionalEids !== null) {
-      const data = JSON.parse(additionalEids)
-      ids = ids.concat(data)
+      const data = JSON.parse(additionalEids);
+      ids = ids.concat(data);
     }
 
-    return { id: ids }
+    return { id: ids };
   },
 
-}
+};
 
-submodule('userId', growthCodeIdSubmodule)
+submodule('userId', growthCodeIdSubmodule);

@@ -4,33 +4,33 @@
  * @module modules/zeotapIdPlusIdSystem
  * @requires module:modules/userId
  */
-import { isStr, isPlainObject } from '../src/utils.js'
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { isStr, isPlainObject } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
-const ZEOTAP_COOKIE_NAME = 'IDP'
-const ZEOTAP_VENDOR_ID = 301
-const ZEOTAP_MODULE_NAME = 'zeotapIdPlus'
+const ZEOTAP_COOKIE_NAME = 'IDP';
+const ZEOTAP_VENDOR_ID = 301;
+const ZEOTAP_MODULE_NAME = 'zeotapIdPlus';
 
 function readCookie() {
-  return storage.cookiesAreEnabled() ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null
+  return storage.cookiesAreEnabled() ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
 }
 
 function readFromLocalStorage() {
-  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null;
 }
 
 export function getStorage() {
-  return getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: ZEOTAP_MODULE_NAME })
+  return getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: ZEOTAP_MODULE_NAME });
 }
 
-export const storage = getStorage()
+export const storage = getStorage();
 
 /** @type {Submodule} */
 export const zeotapIdPlusSubmodule = {
@@ -51,10 +51,10 @@ export const zeotapIdPlusSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    const id = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined
+    const id = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return id ? {
       'IDP': JSON.parse(atob(id))
-    } : undefined
+    } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -62,8 +62,8 @@ export const zeotapIdPlusSubmodule = {
    * @return {{id: string | undefined} | undefined}
    */
   getId() {
-    const id = readCookie() || readFromLocalStorage()
-    return id ? { id } : undefined
+    const id = readCookie() || readFromLocalStorage();
+    return id ? { id } : undefined;
   },
   eids: {
     'IDP': {
@@ -71,5 +71,5 @@ export const zeotapIdPlusSubmodule = {
       atype: 1
     },
   }
-}
-submodule('userId', zeotapIdPlusSubmodule)
+};
+submodule('userId', zeotapIdPlusSubmodule);

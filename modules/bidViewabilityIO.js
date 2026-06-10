@@ -1,33 +1,33 @@
-import { logMessage } from '../src/utils.js'
-import { config } from '../src/config.js'
-import * as events from '../src/events.js'
-import { EVENTS } from '../src/constants.js'
-import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js'
-import { getAdUnitElement } from '../src/utils/adUnits.js'
+import { logMessage } from '../src/utils.js';
+import { config } from '../src/config.js';
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
-const MODULE_NAME = 'bidViewabilityIO'
-const CONFIG_ENABLED = 'enabled'
+const MODULE_NAME = 'bidViewabilityIO';
+const CONFIG_ENABLED = 'enabled';
 
 // IAB numbers from: https://support.google.com/admanager/answer/4524488?hl=en
-const IAB_VIEWABLE_DISPLAY_TIME = 1000
-const IAB_VIEWABLE_DISPLAY_LARGE_PX = 242000
-export const IAB_VIEWABLE_DISPLAY_THRESHOLD = 0.5
-export const IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD = 0.3
+const IAB_VIEWABLE_DISPLAY_TIME = 1000;
+const IAB_VIEWABLE_DISPLAY_LARGE_PX = 242000;
+export const IAB_VIEWABLE_DISPLAY_THRESHOLD = 0.5;
+export const IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD = 0.3;
 
 const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObserverEntry && window.IntersectionObserverEntry.prototype &&
-    'intersectionRatio' in window.IntersectionObserverEntry.prototype
+    'intersectionRatio' in window.IntersectionObserverEntry.prototype;
 
 const supportedMediaTypes = [
   'banner'
-]
+];
 
 export const isSupportedMediaType = (bid) => {
-  return supportedMediaTypes.indexOf(bid.mediaType) > -1
-}
+  return supportedMediaTypes.indexOf(bid.mediaType) > -1;
+};
 
 const _logMessage = (message) => {
-  return logMessage(`${MODULE_NAME}: ${message}`)
-}
+  return logMessage(`${MODULE_NAME}: ${message}`);
+};
 
 // returns options for the iO that detects if the ad is viewable
 export const getViewableOptions = (bid) => {
@@ -36,18 +36,18 @@ export const getViewableOptions = (bid) => {
       root: null,
       rootMargin: '0px',
       threshold: bid.width * bid.height > IAB_VIEWABLE_DISPLAY_LARGE_PX ? IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD : IAB_VIEWABLE_DISPLAY_THRESHOLD
-    }
+    };
   }
-}
+};
 
 // markViewed returns a function what will be executed when an ad satisifes the viewable iO
 export const markViewed = (bid, entry, observer) => {
   return () => {
-    observer.unobserve(entry.target)
-    triggerBidViewable(bid)
-    _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`)
-  }
-}
+    observer.unobserve(entry.target);
+    triggerBidViewable(bid);
+    _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
+  };
+};
 
 // viewCallbackFactory creates the callback used by the viewable IntersectionObserver.
 // When an ad comes into view, it sets a timeout for a function to be executed
@@ -61,18 +61,18 @@ export const viewCallbackFactory = (bid) => {
   return (entries, observer) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        _logMessage(`viewable timer starting for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`)
-        entry.target.view_tracker = setTimeout(markViewed(bid, entry, observer), IAB_VIEWABLE_DISPLAY_TIME)
+        _logMessage(`viewable timer starting for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
+        entry.target.view_tracker = setTimeout(markViewed(bid, entry, observer), IAB_VIEWABLE_DISPLAY_TIME);
       } else {
-        _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} is out of view`)
+        _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} is out of view`);
         if (entry.target.view_tracker) {
-          clearTimeout(entry.target.view_tracker)
-          _logMessage(`viewable timer stopped for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`)
+          clearTimeout(entry.target.view_tracker);
+          _logMessage(`viewable timer stopped for id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode}`);
         }
       }
-    })
-  }
-}
+    });
+  };
+};
 
 export const init = () => {
   config.getConfig(MODULE_NAME, conf => {
@@ -81,13 +81,13 @@ export const init = () => {
       // then listen to AD_RENDER_SUCCEEDED to setup IO's for supported mediaTypes
       events.on(EVENTS.AD_RENDER_SUCCEEDED, ({ doc, bid, id }) => {
         if (isSupportedMediaType(bid)) {
-          const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid))
-          const element = getAdUnitElement(bid)
-          viewable.observe(element)
+          const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
+          const element = getAdUnitElement(bid);
+          viewable.observe(element);
         }
-      })
+      });
     }
-  })
-}
+  });
+};
 
-init()
+init();

@@ -1,16 +1,16 @@
-import { isEmpty } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes, getVideoBidFloor, getVideoBidParam, getVideoSizes, isBannerBidValid, isVideoBid, isVideoBidValid } from '../libraries/advangUtils/index.js'
+import { isEmpty } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes, getVideoBidFloor, getVideoBidParam, getVideoSizes, isBannerBidValid, isVideoBid, isVideoBidValid } from '../libraries/advangUtils/index.js';
 
-const ADAPTER_VERSION = '1.0'
-const BIDDER_CODE = 'advangelists'
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context']
-export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid='
-export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid='
-export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js'
+const ADAPTER_VERSION = '1.0';
+const BIDDER_CODE = 'advangelists';
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context'];
+export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';
+export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';
+export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
-let pubid = ''
+let pubid = '';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -18,40 +18,40 @@ export const spec = {
   aliases: ['saambaa'],
   isBidRequestValid(bidRequest) {
     if (typeof bidRequest !== 'undefined') {
-      if (typeof bidRequest.params === 'undefined') { return false }
-      if (bidRequest === '' || bidRequest.params.placement === '' || bidRequest.params.pubid === '') { return false }
-      return true
-    } else { return false }
+      if (typeof bidRequest.params === 'undefined') { return false; }
+      if (bidRequest === '' || bidRequest.params.placement === '' || bidRequest.params.pubid === '') { return false; }
+      return true;
+    } else { return false; }
   },
 
   buildRequests(bids, bidderRequest) {
-    const requests = []
-    const videoBids = bids.filter(bid => isVideoBidValid(bid))
-    const bannerBids = bids.filter(bid => isBannerBidValid(bid))
+    const requests = [];
+    const videoBids = bids.filter(bid => isVideoBidValid(bid));
+    const bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
-      pubid = getVideoBidParam(bid, 'pubid')
+      pubid = getVideoBidParam(bid, 'pubid');
       requests.push({
         method: 'POST',
         url: VIDEO_ENDPOINT + pubid,
         data: createRequestData(bid, bidderRequest, true, getVideoBidParam, getVideoSizes, getVideoBidFloor),
         bidRequest: bid
-      })
-    })
+      });
+    });
 
     bannerBids.forEach(bid => {
-      pubid = getBannerBidParam(bid, 'pubid')
+      pubid = getBannerBidParam(bid, 'pubid');
       requests.push({
         method: 'POST',
         url: BANNER_ENDPOINT + pubid,
         data: createRequestData(bid, bidderRequest, false, getBannerBidParam, getBannerSizes, getBannerBidFloor, BIDDER_CODE, ADAPTER_VERSION),
         bidRequest: bid
-      })
-    })
-    return requests
+      });
+    });
+    return requests;
   },
 
   interpretResponse(serverResponse, { bidRequest }) {
-    const response = serverResponse.body
+    const response = serverResponse.body;
     if (response !== null && isEmpty(response) === false) {
       if (isVideoBid(bidRequest)) {
         const bidResponse = {
@@ -65,18 +65,18 @@ export const spec = {
           meta: { 'advertiserDomains': response.seatbid[0].bid[0].adomain },
           mediaType: VIDEO,
           netRevenue: true
-        }
+        };
 
         if (response.seatbid[0].bid[0].adm) {
-          bidResponse.vastXml = response.seatbid[0].bid[0].adm
+          bidResponse.vastXml = response.seatbid[0].bid[0].adm;
           bidResponse.adResponse = {
             content: response.seatbid[0].bid[0].adm
-          }
+          };
         } else {
-          bidResponse.vastUrl = response.seatbid[0].bid[0].nurl
+          bidResponse.vastUrl = response.seatbid[0].bid[0].nurl;
         }
 
-        return bidResponse
+        return bidResponse;
       } else {
         return {
           requestId: response.id,
@@ -91,10 +91,10 @@ export const spec = {
           meta: { 'advertiserDomains': response.seatbid[0].bid[0].adomain },
           mediaType: BANNER,
           netRevenue: true
-        }
+        };
       }
     }
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

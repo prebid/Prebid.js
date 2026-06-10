@@ -15,49 +15,49 @@
  * @property {?string} keyName
  */
 
-import { submodule } from '../src/hook.js'
-import { ajax } from '../src/ajax.js'
-import { generateUUID, createInvisibleIframe, insertElement, isEmpty, logError } from '../src/utils.js'
-import * as events from '../src/events.js'
-import { EVENTS } from '../src/constants.js'
-import { loadExternalScript } from '../src/adloader.js'
-import { auctionManager } from '../src/auctionManager.js'
-import { getRefererInfo } from '../src/refererDetection.js'
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { generateUUID, createInvisibleIframe, insertElement, isEmpty, logError } from '../src/utils.js';
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
 /** @type {string} */
-const SUBMODULE_NAME = 'geoedge'
+const SUBMODULE_NAME = 'geoedge';
 /** @type {string} */
-export const WRAPPER_URL = 'https://wrappers.geoedge.be/wrapper.html'
+export const WRAPPER_URL = 'https://wrappers.geoedge.be/wrapper.html';
 /** @type {string} */
 /* eslint-disable no-template-curly-in-string */
-export const HTML_PLACEHOLDER = '${creative}'
+export const HTML_PLACEHOLDER = '${creative}';
 /** @type {string} */
-const PV_ID = generateUUID()
+const PV_ID = generateUUID();
 /** @type {string} */
-const HOST_NAME = 'https://rumcdn.geoedge.be'
+const HOST_NAME = 'https://rumcdn.geoedge.be';
 /** @type {string} */
-const FILE_NAME_CLIENT = 'grumi.js'
+const FILE_NAME_CLIENT = 'grumi.js';
 /** @type {string} */
-const FILE_NAME_INPAGE = 'grumi-ip.js'
+const FILE_NAME_INPAGE = 'grumi-ip.js';
 /** @type {function} */
-export const getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`
+export const getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`;
 /** @type {function} */
-export const getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`
+export const getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`;
 /** @type {string} */
-export let wrapper
+export let wrapper;
 /** @type {boolean} */
-let wrapperReady
+let wrapperReady;
 /** @type {boolean} */
-let preloaded
+let preloaded;
 /** @type {object} */
-const refererInfo = getRefererInfo()
+const refererInfo = getRefererInfo();
 /** @type {object} */
-const overrides = window.grumi?.overrides
+const overrides = window.grumi?.overrides;
 
 /**
  * fetches the creative wrapper
@@ -65,9 +65,9 @@ const overrides = window.grumi?.overrides
  */
 export function fetchWrapper(success) {
   if (wrapperReady) {
-    return success(wrapper)
+    return success(wrapper);
   }
-  ajax(WRAPPER_URL, success)
+  ajax(WRAPPER_URL, success);
 }
 
 /**
@@ -75,8 +75,8 @@ export function fetchWrapper(success) {
  * @param {string} responseText
  */
 export function setWrapper(responseText) {
-  wrapperReady = true
-  wrapper = responseText
+  wrapperReady = true;
+  wrapper = responseText;
 }
 
 export function getInitialParams(key) {
@@ -91,12 +91,12 @@ export function getInitialParams(key) {
     pimp: PV_ID,
     fsRan: true,
     frameApi: true
-  }
-  return params
+  };
+  return params;
 }
 
 export function markAsLoaded() {
-  preloaded = true
+  preloaded = true;
 }
 
 /**
@@ -104,12 +104,12 @@ export function markAsLoaded() {
  * @param {string} key
  */
 export function preloadClient(key) {
-  const iframe = createInvisibleIframe()
-  iframe.id = 'grumiFrame'
-  insertElement(iframe)
-  iframe.contentWindow.grumi = getInitialParams(key)
-  const url = getClientUrl(key)
-  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument)
+  const iframe = createInvisibleIframe();
+  iframe.id = 'grumiFrame';
+  insertElement(iframe);
+  iframe.contentWindow.grumi = getInitialParams(key);
+  const url = getClientUrl(key);
+  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
 }
 
 /**
@@ -119,12 +119,12 @@ export function preloadClient(key) {
  */
 function replacer(str) {
   return function () {
-    return str
-  }
+    return str;
+  };
 }
 
 export function wrapHtml(wrapper, html) {
-  return wrapper.replace(HTML_PLACEHOLDER, replacer(html))
+  return wrapper.replace(HTML_PLACEHOLDER, replacer(html));
 }
 
 /**
@@ -149,7 +149,7 @@ export function getMacros(bid, key) {
     '%_pimp%': PV_ID,
     '%_hbCpm!': bid.cpm,
     '%_hbCurrency!': bid.currency
-  }
+  };
 }
 
 /**
@@ -159,11 +159,11 @@ export function getMacros(bid, key) {
  * @return {string}
  */
 function replaceMacros(wrapper, macros) {
-  var re = new RegExp('\\' + Object.keys(macros).join('|'), 'gi')
+  var re = new RegExp('\\' + Object.keys(macros).join('|'), 'gi');
 
   return wrapper.replace(re, function(matched) {
-    return macros[matched]
-  })
+    return macros[matched];
+  });
 }
 
 /**
@@ -174,9 +174,9 @@ function replaceMacros(wrapper, macros) {
  * @return {string}
  */
 function buildHtml(bid, wrapper, html, key) {
-  const macros = getMacros(bid, key)
-  wrapper = replaceMacros(wrapper, macros)
-  return wrapHtml(wrapper, html)
+  const macros = getMacros(bid, key);
+  wrapper = replaceMacros(wrapper, macros);
+  return wrapHtml(wrapper, html);
 }
 
 /**
@@ -185,7 +185,7 @@ function buildHtml(bid, wrapper, html, key) {
  * @param {string} ad
  */
 function mutateBid(bid, ad) {
-  bid.ad = ad
+  bid.ad = ad;
 }
 
 /**
@@ -194,8 +194,8 @@ function mutateBid(bid, ad) {
  * @param {string} key
  */
 export function wrapBidResponse(bid, key) {
-  const wrapped = buildHtml(bid, wrapper, bid.ad, key)
-  mutateBid(bid, wrapped)
+  const wrapped = buildHtml(bid, wrapper, bid.ad, key);
+  mutateBid(bid, wrapped);
 }
 
 /**
@@ -204,7 +204,7 @@ export function wrapBidResponse(bid, key) {
  * @return {boolean}
  */
 function isSupportedBidder(bidder, paramsBidders) {
-  return isEmpty(paramsBidders) || paramsBidders[bidder] === true
+  return isEmpty(paramsBidders) || paramsBidders[bidder] === true;
 }
 
 /**
@@ -213,21 +213,21 @@ function isSupportedBidder(bidder, paramsBidders) {
  * @return {boolean}
  */
 function shouldWrap(bid, params) {
-  const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders)
-  const donePreload = params.wap ? preloaded : true
-  const isGPT = params.gpt
-  return wrapperReady && supportedBidder && donePreload && !isGPT
+  const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
+  const donePreload = params.wap ? preloaded : true;
+  const isGPT = params.gpt;
+  return wrapperReady && supportedBidder && donePreload && !isGPT;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
-  const params = config.params
+  const params = config.params;
   if (shouldWrap(bidResponse, params)) {
-    wrapBidResponse(bidResponse, params.key)
+    wrapBidResponse(bidResponse, params.key);
   }
 }
 
 function isBillingMessage(data, params) {
-  return data.key === params.key && data.impression
+  return data.key === params.key && data.impression;
 }
 
 /**
@@ -238,9 +238,9 @@ function isBillingMessage(data, params) {
  */
 function fireBillableEventsForApplicableBids(params) {
   window.addEventListener('message', function (message) {
-    const data = message.data
+    const data = message.data;
     if (isBillingMessage(data, params)) {
-      const winningBid = auctionManager.findBidByAdId(data.adId)
+      const winningBid = auctionManager.findBidByAdId(data.adId);
       events.emit(EVENTS.BILLABLE_EVENT, {
         vendor: SUBMODULE_NAME,
         billingId: data.impressionId,
@@ -248,9 +248,9 @@ function fireBillableEventsForApplicableBids(params) {
         transactionId: winningBid?.transactionId || data.transactionId,
         auctionId: winningBid?.auctionId || data.auctionId,
         bidId: winningBid?.requestId || data.requestId
-      })
+      });
     }
-  })
+  });
 }
 
 /**
@@ -258,25 +258,25 @@ function fireBillableEventsForApplicableBids(params) {
  * @param {Object} params
  */
 function setupInPage(params) {
-  window.grumi = params
-  window.grumi.fromPrebid = true
-  loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME)
+  window.grumi = params;
+  window.grumi.fromPrebid = true;
+  loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME);
 }
 
 function init(config, userConsent) {
-  const params = config.params
+  const params = config.params;
   if (!params || !params.key) {
-    logError('missing key for geoedge RTD module provider')
-    return false
+    logError('missing key for geoedge RTD module provider');
+    return false;
   }
   if (params.gpt) {
-    setupInPage(params)
+    setupInPage(params);
   } else {
-    fetchWrapper(setWrapper)
-    preloadClient(params.key)
+    fetchWrapper(setWrapper);
+    preloadClient(params.key);
   }
-  fireBillableEventsForApplicableBids(params)
-  return true
+  fireBillableEventsForApplicableBids(params);
+  return true;
 }
 
 /** @type {RtdSubmodule} */
@@ -288,6 +288,6 @@ export const geoedgeSubmodule = {
   name: SUBMODULE_NAME,
   init,
   onBidResponseEvent: conditionallyWrap
-}
+};
 
-submodule('realTimeData', geoedgeSubmodule)
+submodule('realTimeData', geoedgeSubmodule);

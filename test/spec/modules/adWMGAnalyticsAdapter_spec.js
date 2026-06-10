@@ -1,15 +1,15 @@
-import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js'
-import { expect } from 'chai'
-import { server } from 'test/mocks/xhr.js'
-import { expectEvents } from '../../helpers/analytics.js'
-import { EVENTS } from 'src/constants.js'
-const adapterManager = require('src/adapterManager').default
-const events = require('src/events')
+import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { expectEvents } from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
 
 describe('adWMG Analytics', function () {
-  const timestamp = new Date() - 256
-  const auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f'
-  const timeout = 1500
+  const timestamp = new Date() - 256;
+  const auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
+  const timeout = 1500;
 
   const bidTimeoutArgs = [
     {
@@ -24,7 +24,7 @@ describe('adWMG Analytics', function () {
       adUnitCode: '/19968336/header-bid-tag-0',
       auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
     }
-  ]
+  ];
 
   const bidResponse = {
     bidderCode: 'bidderA',
@@ -39,7 +39,7 @@ describe('adWMG Analytics', function () {
     size: '300x250',
     width: 300,
     height: 250,
-  }
+  };
 
   const wonRequest = {
     'adId': '4587fec4900b81',
@@ -57,7 +57,7 @@ describe('adWMG Analytics', function () {
     'adUnitCode': 'div-gpt-ad-1438287399331-0',
     'sizes': [[300, 250]],
     'size': [300, 250],
-  }
+  };
 
   const expectedBidWonData = {
     publisher_id: '5abd0543ba45723db49d97ea',
@@ -85,7 +85,7 @@ describe('adWMG Analytics', function () {
         ]
       }
     ]
-  }
+  };
 
   const adUnits = [{
     code: 'ad-slot-1',
@@ -109,28 +109,28 @@ describe('adWMG Analytics', function () {
         }
       }
     ]
-  }]
+  }];
 
   after(function () {
-    adWMGAnalyticsAdapter.disableAnalytics()
-  })
+    adWMGAnalyticsAdapter.disableAnalytics();
+  });
 
   describe('main test flow', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
-    })
+      sinon.stub(events, 'getEvents').returns([]);
+    });
 
     afterEach(function () {
-      events.getEvents.restore()
-    })
+      events.getEvents.restore();
+    });
 
     it('should catch all events', function () {
-      sinon.spy(adWMGAnalyticsAdapter, 'track')
+      sinon.spy(adWMGAnalyticsAdapter, 'track');
 
       adapterManager.registerAnalyticsAdapter({
         code: 'adWMG',
         adapter: adWMGAnalyticsAdapter
-      })
+      });
 
       adapterManager.enableAnalytics({
         provider: 'adWMG',
@@ -138,7 +138,7 @@ describe('adWMG Analytics', function () {
           site: 'test.com',
           publisher_id: '5abd0543ba45723db49d97ea'
         }
-      })
+      });
 
       expectEvents([
         [EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits }],
@@ -148,30 +148,30 @@ describe('adWMG Analytics', function () {
         [EVENTS.BID_TIMEOUT, bidTimeoutArgs],
         [EVENTS.AUCTION_END, {}],
         [EVENTS.BID_WON, wonRequest],
-      ]).to.beTrackedBy(adWMGAnalyticsAdapter.track)
-    })
+      ]).to.beTrackedBy(adWMGAnalyticsAdapter.track);
+    });
 
     it('should be two xhr requests', function () {
-      events.emit(EVENTS.AUCTION_END, {})
-      events.emit(EVENTS.BID_WON, wonRequest)
-      expect(server.requests.length).to.equal(2)
-    })
+      events.emit(EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.BID_WON, wonRequest);
+      expect(server.requests.length).to.equal(2);
+    });
 
     it('second request should be bidWon', function () {
-      events.emit(EVENTS.AUCTION_END, {})
-      events.emit(EVENTS.BID_WON, wonRequest)
-      expect(JSON.parse(server.requests[1].requestBody).events[0].status).to.equal(expectedBidWonData.events[0].status)
-    })
+      events.emit(EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.BID_WON, wonRequest);
+      expect(JSON.parse(server.requests[1].requestBody).events[0].status).to.equal(expectedBidWonData.events[0].status);
+    });
 
     it('check bidWon data', function () {
-      events.emit(EVENTS.AUCTION_END, {})
-      events.emit(EVENTS.BID_WON, wonRequest)
-      const realBidWonData = JSON.parse(server.requests[1].requestBody)
-      expect(realBidWonData.publisher_id).to.equal(expectedBidWonData.publisher_id)
-      expect(realBidWonData.site).to.equal(expectedBidWonData.site)
-      expect(realBidWonData.ad_unit_type[0]).to.equal(expectedBidWonData.ad_unit_type[0])
-      expect(realBidWonData.ad_unit_size[0]).to.equal(expectedBidWonData.ad_unit_size[0])
-      expect(realBidWonData.events[0].bids[0].bidder).to.equal(expectedBidWonData.events[0].bids[0].bidder)
-    })
-  })
-})
+      events.emit(EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.BID_WON, wonRequest);
+      const realBidWonData = JSON.parse(server.requests[1].requestBody);
+      expect(realBidWonData.publisher_id).to.equal(expectedBidWonData.publisher_id);
+      expect(realBidWonData.site).to.equal(expectedBidWonData.site);
+      expect(realBidWonData.ad_unit_type[0]).to.equal(expectedBidWonData.ad_unit_type[0]);
+      expect(realBidWonData.ad_unit_size[0]).to.equal(expectedBidWonData.ad_unit_size[0]);
+      expect(realBidWonData.events[0].bids[0].bidder).to.equal(expectedBidWonData.events[0].bids[0].bidder);
+    });
+  });
+});

@@ -1,25 +1,25 @@
-import { BANNER } from '../src/mediaTypes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { triggerPixel } from '../src/utils.js'
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { triggerPixel } from '../src/utils.js';
 
-const ADPONE_CODE = 'adpone'
-const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request'
-const ADPONE_REQUEST_METHOD = 'POST'
-const ADPONE_CURRENCY = 'EUR'
+const ADPONE_CODE = 'adpone';
+const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
+const ADPONE_REQUEST_METHOD = 'POST';
+const ADPONE_CURRENCY = 'EUR';
 
-const GVLID = 799
+const GVLID = 799;
 export const spec = {
   code: ADPONE_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: bid => {
-    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone';
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map(bid => {
-      let url = ADPONE_ENDPOINT + '?pid=' + bid.params.placementId
+      let url = ADPONE_ENDPOINT + '?pid=' + bid.params.placementId;
       const data = {
         at: 1,
         id: bid.bidId,
@@ -31,15 +31,15 @@ export const spec = {
               h: size[1]
             }
           }))
-      }
+      };
 
       const options = {
         withCredentials: true
-      }
+      };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        url += '&gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies
-        url += '&consentString=' + bidderRequest.gdprConsent.consentString
+        url += '&gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies;
+        url += '&consentString=' + bidderRequest.gdprConsent.consentString;
       }
 
       return {
@@ -47,16 +47,16 @@ export const spec = {
         url,
         data,
         options,
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: (serverResponse, bidRequest) => {
     if (!serverResponse || !serverResponse.body) {
-      return []
+      return [];
     }
 
-    let answer = []
+    let answer = [];
 
     serverResponse.body.seatbid.forEach(seatbid => {
       if (seatbid.bid.length) {
@@ -72,27 +72,27 @@ export const spec = {
             netRevenue: true,
             ttl: 300,
             creativeId: adponeBid.crid || 0
-          }
+          };
 
           if (adponeBid.meta && adponeBid.meta.adomain && adponeBid.meta.adomain.length > 0) {
-            bid.meta = {}
-            bid.meta.advertiserDomains = adponeBid.meta.adomain
+            bid.meta = {};
+            bid.meta.advertiserDomains = adponeBid.meta.adomain;
           }
 
-          return bid
-        })]
+          return bid;
+        })];
       }
-    })
+    });
 
-    return answer
+    return answer;
   },
 
   onBidWon: bid => {
-    const bidString = JSON.stringify(bid)
-    const encodedBuf = window.btoa(bidString)
-    triggerPixel(`https://rtb.adpone.com/prebid/analytics?q=${encodedBuf}`)
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    triggerPixel(`https://rtb.adpone.com/prebid/analytics?q=${encodedBuf}`);
   },
 
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

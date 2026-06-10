@@ -1,17 +1,17 @@
-import { expect } from 'chai'
-import { spec } from 'modules/distroscaleBidAdapter.js'
-import * as utils from 'src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/distroscaleBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('distroscaleBidAdapter', function() {
-  const DSNAME = 'distroscale'
+  const DSNAME = 'distroscale';
 
   describe('isBidRequestValid', function() {
     it('with no param', function() {
       expect(spec.isBidRequestValid({
         bidder: DSNAME,
         params: {}
-      })).to.equal(false)
-    })
+      })).to.equal(false);
+    });
 
     it('with pubid param', function() {
       expect(spec.isBidRequestValid({
@@ -19,8 +19,8 @@ describe('distroscaleBidAdapter', function() {
         params: {
           pubid: '12345'
         }
-      })).to.equal(true)
-    })
+      })).to.equal(true);
+    });
 
     it('with pubid and zoneid params', function() {
       expect(spec.isBidRequestValid({
@@ -29,12 +29,12 @@ describe('distroscaleBidAdapter', function() {
           pubid: '12345',
           zoneid: '67890'
         }
-      })).to.equal(true)
-    })
-  })
+      })).to.equal(true);
+    });
+  });
 
   describe('buildRequests', function() {
-    const CONSENT_STRING = 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw'
+    const CONSENT_STRING = 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw';
     const BID_REQUESTS = [{
       'bidder': DSNAME,
       'params': {
@@ -52,7 +52,7 @@ describe('distroscaleBidAdapter', function() {
       'bidId': '20b96f0310083c',
       'bidderRequestId': '1dd684edba2006',
       'auctionId': '22ed3053-f76f-476c-a08e-dcda5862443d'
-    }]
+    }];
     const BIDDER_REQUEST = {
       'bidderCode': DSNAME,
       'auctionId': '22ed3053-f76f-476c-a08e-dcda5862443d',
@@ -71,48 +71,48 @@ describe('distroscaleBidAdapter', function() {
         'consentString': CONSENT_STRING,
         'gdprApplies': true
       }
-    }
+    };
 
     it('basic', function() {
-      const request = spec.buildRequests(BID_REQUESTS, BIDDER_REQUEST)
-      expect(request.method).to.equal('POST')
-      expect(request.url).to.have.string('https://hb.jsrdn.com/hb?from=pbjs')
-      expect(request.bidderRequest).to.deep.equal(BIDDER_REQUEST)
-      expect(request.data).to.exist
-      expect(request.data.id).to.be.a('string').that.is.not.empty
-      expect(request.data.at).to.equal(1)
-      expect(request.data.cur).to.deep.equal(['USD'])
-      expect(request.data.device).to.exist
-      expect(request.data.site).to.exist
-      expect(request.data.user).to.exist
-      expect(request.data.imp).to.be.an('array').that.is.not.empty
-      expect(request.data.imp[0]).to.exist
-      expect(request.data.imp[0].id).to.equal(BID_REQUESTS[0].bidId)
-      expect(request.data.imp[0].tagid).to.equal(BID_REQUESTS[0].params.zoneid || '')
-      expect(request.data.imp[0].secure).to.equal(1)
-      expect(request.data.imp[0].banner).to.exist
-      expect(request.data.imp[0].banner.format).to.be.an('array').that.is.not.empty
-      expect(request.data.imp[0].banner.format[0]).to.exist
-      expect(request.data.imp[0].banner.format[0].w).to.equal(970)
-      expect(request.data.imp[0].banner.format[0].h).to.equal(250)
-      expect(request.data.imp[0].banner.w).to.equal(970)
-      expect(request.data.imp[0].banner.h).to.equal(250)
-      expect(request.data.imp[0].banner.pos).to.equal(0)
-      expect(request.data.imp[0].banner.topframe).to.be.oneOf([0, 1])
-      expect(request.data.imp[0].ext).to.exist
-      expect(request.data.imp[0].ext.pubid).to.equal(BID_REQUESTS[0].params.pubid)
-      expect(request.data.imp[0].ext.zoneid).to.equal(BID_REQUESTS[0].params.zoneid || '')
-    })
+      const request = spec.buildRequests(BID_REQUESTS, BIDDER_REQUEST);
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.have.string('https://hb.jsrdn.com/hb?from=pbjs');
+      expect(request.bidderRequest).to.deep.equal(BIDDER_REQUEST);
+      expect(request.data).to.exist;
+      expect(request.data.id).to.be.a('string').that.is.not.empty;
+      expect(request.data.at).to.equal(1);
+      expect(request.data.cur).to.deep.equal(['USD']);
+      expect(request.data.device).to.exist;
+      expect(request.data.site).to.exist;
+      expect(request.data.user).to.exist;
+      expect(request.data.imp).to.be.an('array').that.is.not.empty;
+      expect(request.data.imp[0]).to.exist;
+      expect(request.data.imp[0].id).to.equal(BID_REQUESTS[0].bidId);
+      expect(request.data.imp[0].tagid).to.equal(BID_REQUESTS[0].params.zoneid || '');
+      expect(request.data.imp[0].secure).to.equal(1);
+      expect(request.data.imp[0].banner).to.exist;
+      expect(request.data.imp[0].banner.format).to.be.an('array').that.is.not.empty;
+      expect(request.data.imp[0].banner.format[0]).to.exist;
+      expect(request.data.imp[0].banner.format[0].w).to.equal(970);
+      expect(request.data.imp[0].banner.format[0].h).to.equal(250);
+      expect(request.data.imp[0].banner.w).to.equal(970);
+      expect(request.data.imp[0].banner.h).to.equal(250);
+      expect(request.data.imp[0].banner.pos).to.equal(0);
+      expect(request.data.imp[0].banner.topframe).to.be.oneOf([0, 1]);
+      expect(request.data.imp[0].ext).to.exist;
+      expect(request.data.imp[0].ext.pubid).to.equal(BID_REQUESTS[0].params.pubid);
+      expect(request.data.imp[0].ext.zoneid).to.equal(BID_REQUESTS[0].params.zoneid || '');
+    });
 
     it('gdpr', function() {
-      const request = spec.buildRequests(BID_REQUESTS, BIDDER_REQUEST)
-      expect(request.data).to.exist
-      expect(request.data.regs).to.exist
-      expect(request.data.regs.gdpr).to.equal(1)
-      expect(request.data.user).to.exist
-      expect(request.data.user.consent).to.equal(CONSENT_STRING)
-    })
-  })
+      const request = spec.buildRequests(BID_REQUESTS, BIDDER_REQUEST);
+      expect(request.data).to.exist;
+      expect(request.data.regs).to.exist;
+      expect(request.data.regs.gdpr).to.equal(1);
+      expect(request.data.user).to.exist;
+      expect(request.data.user.consent).to.equal(CONSENT_STRING);
+    });
+  });
 
   describe('interpretResponse', function() {
     const REQUEST = {
@@ -152,7 +152,7 @@ describe('distroscaleBidAdapter', function() {
           'canonicalUrl': null
         }
       }
-    }
+    };
     const RESPONSE = {
       'body': {
         'id': '1648161050749',
@@ -169,7 +169,7 @@ describe('distroscaleBidAdapter', function() {
         'cur': 'USD'
       },
       'headers': {}
-    }
+    };
     const SAMPLE_PARSED = [{
       'requestId': '20b96f0310083c',
       'cpm': 0.1,
@@ -183,31 +183,31 @@ describe('distroscaleBidAdapter', function() {
       'meta': {
         'advertiserDomains': []
       }
-    }]
+    }];
 
     it('valid bid response for banner ad', function() {
-      const result = spec.interpretResponse(RESPONSE, REQUEST)
-      const bid = RESPONSE.body.seatbid[0].bid[0]
-      expect(result).to.have.lengthOf(1)
-      expect(result[0].requestId).to.equal(bid.impid)
-      expect(result[0].cpm).to.equal(Number(bid.price))
-      expect(result[0].currency).to.equal(RESPONSE.body.cur)
-      expect(result[0].width).to.equal(Number(bid.w))
-      expect(result[0].height).to.equal(Number(bid.h))
-      expect(result[0].creativeId).to.be.a('string').that.is.not.empty
-      expect(result[0].netRevenue).to.equal(true)
-      expect(result[0].ttl).to.equal(300)
-      expect(result[0].ad).to.equal(bid.adm)
-      expect(result[0].meta).to.exist
-      expect(result[0].meta.advertiserDomains).to.exist
-    })
+      const result = spec.interpretResponse(RESPONSE, REQUEST);
+      const bid = RESPONSE.body.seatbid[0].bid[0];
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].requestId).to.equal(bid.impid);
+      expect(result[0].cpm).to.equal(Number(bid.price));
+      expect(result[0].currency).to.equal(RESPONSE.body.cur);
+      expect(result[0].width).to.equal(Number(bid.w));
+      expect(result[0].height).to.equal(Number(bid.h));
+      expect(result[0].creativeId).to.be.a('string').that.is.not.empty;
+      expect(result[0].netRevenue).to.equal(true);
+      expect(result[0].ttl).to.equal(300);
+      expect(result[0].ad).to.equal(bid.adm);
+      expect(result[0].meta).to.exist;
+      expect(result[0].meta.advertiserDomains).to.exist;
+    });
 
     it('advertiserDomains is included when sent by server', function() {
-      const ADOMAIN = ['advertiser_adomain']
-      const RESPONSE_CLONE = utils.deepClone(RESPONSE)
-      RESPONSE_CLONE.body.seatbid[0].bid[0].adomain = utils.deepClone(ADOMAIN)
-      const result = spec.interpretResponse(RESPONSE_CLONE, REQUEST)
-      expect(result[0].meta.advertiserDomains).to.deep.equal(ADOMAIN)
-    })
-  })
-})
+      const ADOMAIN = ['advertiser_adomain'];
+      const RESPONSE_CLONE = utils.deepClone(RESPONSE);
+      RESPONSE_CLONE.body.seatbid[0].bid[0].adomain = utils.deepClone(ADOMAIN);
+      const result = spec.interpretResponse(RESPONSE_CLONE, REQUEST);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(ADOMAIN);
+    });
+  });
+});

@@ -1,34 +1,34 @@
-import { fillVideoDefaults, isValidVideoBid } from 'src/video.js'
-import { hook } from '../../src/hook.js'
-import { stubAuctionIndex } from '../helpers/indexStub.js'
-import * as utils from '../../src/utils.js'
-import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js'
-import { config } from 'src/config.js'
+import { fillVideoDefaults, isValidVideoBid } from 'src/video.js';
+import { hook } from '../../src/hook.js';
+import { stubAuctionIndex } from '../helpers/indexStub.js';
+import * as utils from '../../src/utils.js';
+import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
+import { config } from 'src/config.js';
 
 describe('video.js', function () {
-  let sandbox
-  let utilsMock
+  let sandbox;
+  let utilsMock;
 
   before(() => {
-    hook.ready()
-  })
+    hook.ready();
+  });
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    utilsMock = sandbox.mock(utils)
-  })
+    sandbox = sinon.createSandbox();
+    utilsMock = sandbox.mock(utils);
+  });
 
   afterEach(() => {
-    utilsMock.restore()
-    config.resetConfig()
-    sandbox.restore()
-  })
+    utilsMock.restore();
+    config.resetConfig();
+    sandbox.restore();
+  });
 
   describe('fillVideoDefaults', () => {
     function fillDefaults(videoMediaType = {}) {
-      const adUnit = { mediaTypes: { video: videoMediaType } }
-      fillVideoDefaults(adUnit)
-      return adUnit.mediaTypes.video
+      const adUnit = { mediaTypes: { video: videoMediaType } };
+      fillVideoDefaults(adUnit);
+      return adUnit.mediaTypes.video;
     }
 
     describe('should set plcmt = 4 when', () => {
@@ -36,27 +36,27 @@ describe('video.js', function () {
         expect(fillDefaults({ context: 'outstream' })).to.eql({
           context: 'outstream',
           plcmt: 4
-        })
+        });
       });
       [2, 3, 4].forEach(placement => {
         it(`placemement is "${placement}"`, () => {
           expect(fillDefaults({ placement })).to.eql({
             placement,
             plcmt: 4
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
     describe('should set plcmt = 2 when', () => {
       [[2], [6]].forEach(playbackmethod => {
         it(`playbackmethod is "${playbackmethod}"`, () => {
           expect(fillDefaults({ playbackmethod })).to.eql({
             playbackmethod,
             plcmt: 2,
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
     describe('should not set plcmt when', () => {
       Object.entries({
         'it was set by pub (context=outstream)': {
@@ -88,10 +88,10 @@ describe('video.js', function () {
         }
       }).forEach(([t, { expected, video }]) => {
         it(t, () => {
-          expect(fillDefaults(video).plcmt).to.eql(expected)
-        })
-      })
-    })
+          expect(fillDefaults(video).plcmt).to.eql(expected);
+        });
+      });
+    });
     describe('video.playerSize', () => {
       Object.entries({
         'single size': [1, 2],
@@ -105,14 +105,14 @@ describe('video.js', function () {
                 playerSize
               }
             }
-          }
-          fillVideoDefaults(adUnit)
+          };
+          fillVideoDefaults(adUnit);
 
           sinon.assert.match(adUnit.mediaTypes.video, {
             w: 1,
             h: 2
-          })
-        })
+          });
+        });
         it('should not override w/h when they exist', () => {
           const adUnit = {
             mediaTypes: {
@@ -121,11 +121,11 @@ describe('video.js', function () {
                 w: 123
               }
             }
-          }
-          fillVideoDefaults(adUnit)
-          expect(adUnit.mediaTypes.video.w).to.eql(123)
-        })
-      })
+          };
+          fillVideoDefaults(adUnit);
+          expect(adUnit.mediaTypes.video.w).to.eql(123);
+        });
+      });
 
       it('should set playerSize from w/h (if they are not defined)', () => {
         const adUnit = {
@@ -135,10 +135,10 @@ describe('video.js', function () {
               h: 2
             }
           }
-        }
-        fillVideoDefaults(adUnit)
-        expect(adUnit.mediaTypes.video.playerSize).to.eql([[1, 2]])
-      })
+        };
+        fillVideoDefaults(adUnit);
+        expect(adUnit.mediaTypes.video.playerSize).to.eql([[1, 2]]);
+      });
       it('should not override playerSize', () => {
         const adUnit = {
           mediaTypes: {
@@ -148,17 +148,17 @@ describe('video.js', function () {
               h: 4
             }
           }
-        }
-        fillVideoDefaults(adUnit)
-        expect(adUnit.mediaTypes.video.playerSize).to.eql([1, 2])
-      })
-    })
-  })
+        };
+        fillVideoDefaults(adUnit);
+        expect(adUnit.mediaTypes.video.playerSize).to.eql([1, 2]);
+      });
+    });
+  });
 
   if (FEATURES.VIDEO) {
     describe('validateOrtbVideoFields', () => {
       it('remove incorrect ortb properties, and keep non ortb ones', () => {
-        sandbox.spy(utils, 'logWarn')
+        sandbox.spy(utils, 'logWarn');
 
         const mt = {
           content: 'outstream',
@@ -198,35 +198,35 @@ describe('video.js', function () {
           poddedupe: [1],
 
           otherOne: 'test',
-        }
+        };
 
-        const expected = { ...mt }
-        delete expected.api
+        const expected = { ...mt };
+        delete expected.api;
 
         const adUnit = {
           code: 'adUnitCode',
           mediaTypes: { video: mt }
-        }
-        validateOrtbFields(adUnit, 'video')
+        };
+        validateOrtbFields(adUnit, 'video');
 
-        expect(adUnit.mediaTypes.video).to.eql(expected)
-        sinon.assert.callCount(utils.logWarn, 1)
-      })
+        expect(adUnit.mediaTypes.video).to.eql(expected);
+        sinon.assert.callCount(utils.logWarn, 1);
+      });
 
       it('Early return when 1st param is not a plain object', () => {
-        sandbox.spy(utils, 'logWarn')
+        sandbox.spy(utils, 'logWarn');
 
-        validateOrtbFields(undefined, 'video')
-        validateOrtbFields([], 'video')
-        validateOrtbFields(null, 'video')
-        validateOrtbFields('hello', 'video')
-        validateOrtbFields(() => {}, 'video')
+        validateOrtbFields(undefined, 'video');
+        validateOrtbFields([], 'video');
+        validateOrtbFields(null, 'video');
+        validateOrtbFields('hello', 'video');
+        validateOrtbFields(() => {}, 'video');
 
-        sinon.assert.callCount(utils.logWarn, 5)
-      })
+        sinon.assert.callCount(utils.logWarn, 5);
+      });
 
       it('Calls onInvalidParam when a property is invalid', () => {
-        const onInvalidParam = sandbox.spy()
+        const onInvalidParam = sandbox.spy();
         const adUnit = {
           code: 'adUnitCode',
           mediaTypes: {
@@ -236,13 +236,13 @@ describe('video.js', function () {
               api: 6
             }
           }
-        }
-        validateOrtbFields(adUnit, 'video', onInvalidParam)
+        };
+        validateOrtbFields(adUnit, 'video', onInvalidParam);
 
-        sinon.assert.calledOnce(onInvalidParam)
-        sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit)
-      })
-    })
+        sinon.assert.calledOnce(onInvalidParam);
+        sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
+      });
+    });
   }
 
   describe('isValidVideoBid', () => {
@@ -251,57 +251,57 @@ describe('video.js', function () {
         adId: '456xyz',
         vastUrl: 'http://www.example.com/vastUrl',
         adUnitId: 'au'
-      }
+      };
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
           video: { context: 'instream' }
         }
-      }]
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })
-      expect(valid).to.equal(true)
-    })
+      }];
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
+    });
 
     it('catches invalid instream bids', function () {
       const bid = {
         adUnitId: 'au'
-      }
+      };
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
           video: { context: 'instream' }
         }
-      }]
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })
-      expect(valid).to.equal(false)
-    })
+      }];
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(false);
+    });
 
     it('catches invalid bids when prebid-cache is disabled', function () {
       const adUnits = [{
         adUnitId: 'au',
         bidder: 'vastOnlyVideoBidder',
         mediaTypes: { video: {} },
-      }]
+      }];
 
-      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) })
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
 
-      expect(valid).to.equal(false)
-    })
+      expect(valid).to.equal(false);
+    });
 
     it('validates vastXml-only bids when cache.allowVastXmlOnly is enabled', function () {
-      utilsMock.expects('logWarn').once()
-      utilsMock.expects('logError').never()
-      config.setConfig({ cache: { allowVastXmlOnly: true } })
+      utilsMock.expects('logWarn').once();
+      utilsMock.expects('logError').never();
+      config.setConfig({ cache: { allowVastXmlOnly: true } });
 
       const adUnits = [{
         adUnitId: 'au',
         bidder: 'vastOnlyVideoBidder',
         mediaTypes: { video: {} },
-      }]
+      }];
 
-      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) })
-      expect(valid).to.equal(true)
-    })
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
+    });
 
     it('validates valid outstream bids', function () {
       const bid = {
@@ -310,21 +310,21 @@ describe('video.js', function () {
           url: 'render.url',
           render: () => true,
         }
-      }
+      };
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
           video: { context: 'outstream' }
         }
-      }]
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })
-      expect(valid).to.equal(true)
-    })
+      }];
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
+    });
 
     it('validates valid outstream bids with a publisher defined renderer', function () {
       const bid = {
         adUnitId: 'au',
-      }
+      };
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
@@ -336,40 +336,40 @@ describe('video.js', function () {
           url: 'render.url',
           render: () => true,
         }
-      }]
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })
-      expect(valid).to.equal(true)
-    })
+      }];
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(true);
+    });
 
     it('catches invalid outstream bids', function () {
       const bid = {
         adUnitId: 'au',
-      }
+      };
       const adUnits = [{
         adUnitId: 'au',
         mediaTypes: {
           video: { context: 'outstream' }
         }
-      }]
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })
-      expect(valid).to.equal(false)
-    })
-  })
+      }];
+      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
+      expect(valid).to.equal(false);
+    });
+  });
 
   describe('syncOrtb2', () => {
     if (!FEATURES.VIDEO) {
-      return
+      return;
     }
 
-    let logWarnSpy
+    let logWarnSpy;
 
     beforeEach(function () {
-      logWarnSpy = sinon.spy(utils, 'logWarn')
-    })
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
 
     afterEach(function () {
-      utils.logWarn.restore()
-    })
+      utils.logWarn.restore();
+    });
 
     it('should properly sync fields if both present', () => {
       const adUnit = {
@@ -393,7 +393,7 @@ describe('video.js', function () {
             bar: 'omitted_value' // should be omitted during copying - not part of video obj spec
           }
         }
-      }
+      };
 
       const expected = {
         mediaTypes: {
@@ -424,13 +424,13 @@ describe('video.js', function () {
             bar: 'omitted_value'
           }
         }
-      }
+      };
 
-      syncOrtb2(adUnit, 'video')
-      expect(adUnit).to.deep.eql(expected)
+      syncOrtb2(adUnit, 'video');
+      expect(adUnit).to.deep.eql(expected);
 
-      assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting linearity')
-    })
+      assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting linearity');
+    });
 
     it('should omit sync if video mediaType not present on adUnit', () => {
       const adUnit = {
@@ -444,13 +444,13 @@ describe('video.js', function () {
             fieldToOmit2: 'omitted_value'
           }
         }
-      }
+      };
 
-      syncOrtb2(adUnit, 'video')
+      syncOrtb2(adUnit, 'video');
 
-      expect(adUnit.mediaTypes.video).to.be.undefined
-      expect(adUnit.ortb2Imp.video).to.be.undefined
-    })
+      expect(adUnit.mediaTypes.video).to.be.undefined;
+      expect(adUnit.ortb2Imp.video).to.be.undefined;
+    });
 
     it('should properly sync if mediaTypes is not present on any of side', () => {
       const adUnit = {
@@ -468,7 +468,7 @@ describe('video.js', function () {
         ortb2Imp: {
           // lack of video field
         }
-      }
+      };
 
       const expected1 = {
         mediaTypes: {
@@ -492,10 +492,10 @@ describe('video.js', function () {
             h: 200,
           }
         }
-      }
+      };
 
-      syncOrtb2(adUnit, 'video')
-      expect(adUnit).to.deep.eql(expected1)
+      syncOrtb2(adUnit, 'video');
+      expect(adUnit).to.deep.eql(expected1);
 
       const adUnit2 = {
         mediaTypes: {
@@ -512,7 +512,7 @@ describe('video.js', function () {
             foo: 'omitted_value'
           }
         }
-      }
+      };
 
       const expected2 = {
         mediaTypes: {
@@ -536,11 +536,11 @@ describe('video.js', function () {
             foo: 'omitted_value',
           }
         }
-      }
+      };
 
-      syncOrtb2(adUnit2, 'video')
-      expect(adUnit2).to.deep.eql(expected2)
-    })
+      syncOrtb2(adUnit2, 'video');
+      expect(adUnit2).to.deep.eql(expected2);
+    });
 
     it('should not create empty video object on ortb2Imp if there was nothing to copy', () => {
       const adUnit2 = {
@@ -553,9 +553,9 @@ describe('video.js', function () {
         ortb2Imp: {
           // lack of video field
         }
-      }
-      syncOrtb2(adUnit2, 'video')
-      expect(adUnit2.ortb2Imp.video).to.be.undefined
-    })
-  })
-})
+      };
+      syncOrtb2(adUnit2, 'video');
+      expect(adUnit2.ortb2Imp.video).to.be.undefined;
+    });
+  });
+});

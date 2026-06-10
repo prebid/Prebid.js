@@ -1,11 +1,11 @@
 /* eslint prebid/validate-imports: 0 */
 
-import type { Ext } from './common.d.ts'
-import type { DSARequest } from "./ext/dsa.d.ts"
+import type { Ext } from './common.d.ts';
+import type { DSARequest } from "./ext/dsa.d.ts";
 
-import type { BidRequest, Imp } from 'iab-openrtb/v26'
+import type { BidRequest, Imp } from 'iab-openrtb/v26';
 
-type TidSource = 'pbjs' | 'pbjsStable' | 'pub'
+type TidSource = 'pbjs' | 'pbjsStable' | 'pub';
 
 export interface ORTBRequest extends BidRequest {
   source: BidRequest['source'] & {
@@ -45,4 +45,4 @@ export type ORTBImp = Imp & {
      */
     tidSource?: TidSource;
   }
-}
+};

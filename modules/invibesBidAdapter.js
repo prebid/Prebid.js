@@ -1,6 +1,6 @@
-import { getWinDimensions, logInfo } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { getStorageManager } from '../src/storageManager.js'
+import { getWinDimensions, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -20,9 +20,9 @@ const CONSTANTS = {
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
   META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
   DISABLE_USER_SYNC: true
-}
+};
 
-export const storage = getStorageManager({ bidderCode: CONSTANTS.BIDDER_CODE })
+export const storage = getStorageManager({ bidderCode: CONSTANTS.BIDDER_CODE });
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -44,116 +44,116 @@ export const spec = {
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function (responseObj, requestParams) {
-    return handleResponse(responseObj, requestParams != null ? requestParams.bidRequests : null)
+    return handleResponse(responseObj, requestParams != null ? requestParams.bidRequests : null);
   },
   getUserSyncs: getUserSync,
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 
 // some state info is required: cookie info, unique user visit id
-const topWin = getTopMostWindow()
-const invibes = topWin.invibes = topWin.invibes || {}
-invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false, false]
-invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false, false]
-invibes.placementBids = invibes.placementBids || []
-invibes.pushedCids = invibes.pushedCids || {}
-let preventPageViewEvent = false
-let isInfiniteScrollPage = false
-let isPlacementRefresh = false
-let _customUserSync
-let _disableUserSyncs
+const topWin = getTopMostWindow();
+const invibes = topWin.invibes = topWin.invibes || {};
+invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false, false];
+invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false, false];
+invibes.placementBids = invibes.placementBids || [];
+invibes.pushedCids = invibes.pushedCids || {};
+let preventPageViewEvent = false;
+let isInfiniteScrollPage = false;
+let isPlacementRefresh = false;
+let _customUserSync;
+let _disableUserSyncs;
 
 function updateInfiniteScrollFlag() {
-  const { scrollHeight } = document.documentElement
+  const { scrollHeight } = document.documentElement;
 
   if (invibes.originalURL === undefined) {
-    invibes.originalURL = window.location.href
-    return
+    invibes.originalURL = window.location.href;
+    return;
   }
 
   if (invibes.originalScrollHeight === undefined) {
-    invibes.originalScrollHeight = scrollHeight
-    return
+    invibes.originalScrollHeight = scrollHeight;
+    return;
   }
 
-  const currentURL = window.location.href
+  const currentURL = window.location.href;
 
   if (scrollHeight > invibes.originalScrollHeight && invibes.originalURL !== currentURL) {
-    isInfiniteScrollPage = true
+    isInfiniteScrollPage = true;
   }
 }
 
 function isBidRequestValid(bid) {
   if (typeof bid.params !== 'object') {
-    return false
+    return false;
   }
-  const params = bid.params
+  const params = bid.params;
 
   if (params.placementId == null) {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }
 
 function getUserSync(syncOptions) {
   if (syncOptions.iframeEnabled) {
     if (!(_disableUserSyncs ?? CONSTANTS.DISABLE_USER_SYNC)) {
-      const syncUrl = buildSyncUrl()
+      const syncUrl = buildSyncUrl();
       return {
         type: 'iframe',
         url: syncUrl
-      }
+      };
     }
   }
 }
 
 function buildRequest(bidRequests, bidderRequest) {
-  bidderRequest = bidderRequest || {}
-  const _placementIds = []
-  const _adUnitCodes = []
-  let _customEndpoint, _userId, _domainId
-  const _ivAuctionStart = Date.now()
-  window.invibes = window.invibes || {}
-  window.invibes.placementIds = window.invibes.placementIds || []
+  bidderRequest = bidderRequest || {};
+  const _placementIds = [];
+  const _adUnitCodes = [];
+  let _customEndpoint, _userId, _domainId;
+  const _ivAuctionStart = Date.now();
+  window.invibes = window.invibes || {};
+  window.invibes.placementIds = window.invibes.placementIds || [];
 
   if (isInfiniteScrollPage === false) {
-    updateInfiniteScrollFlag()
+    updateInfiniteScrollFlag();
   }
 
   bidRequests.forEach(function (bidRequest) {
-    bidRequest.startTime = new Date().getTime()
+    bidRequest.startTime = new Date().getTime();
 
     if (window.invibes.placementIds.includes(bidRequest.params.placementId)) {
-      isPlacementRefresh = true
+      isPlacementRefresh = true;
     }
 
-    window.invibes.placementIds.push(bidRequest.params.placementId)
+    window.invibes.placementIds.push(bidRequest.params.placementId);
 
-    _placementIds.push(bidRequest.params.placementId)
-    _adUnitCodes.push(bidRequest.adUnitCode)
-    _domainId = _domainId || bidRequest.params.domainId
-    _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint
-    _customUserSync = _customUserSync || bidRequest.params.customUserSync
-    _disableUserSyncs = bidRequest?.params?.disableUserSyncs
-    _userId = _userId || bidRequest.userId
-  })
+    _placementIds.push(bidRequest.params.placementId);
+    _adUnitCodes.push(bidRequest.adUnitCode);
+    _domainId = _domainId || bidRequest.params.domainId;
+    _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
+    _customUserSync = _customUserSync || bidRequest.params.customUserSync;
+    _disableUserSyncs = bidRequest?.params?.disableUserSyncs;
+    _userId = _userId || bidRequest.userId;
+  });
 
-  invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent, bidderRequest.uspConsent)
+  invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent, bidderRequest.uspConsent);
 
-  invibes.visitId = invibes.visitId || generateRandomId()
+  invibes.visitId = invibes.visitId || generateRandomId();
 
-  const currentQueryStringParams = parseQueryStringParams()
-  const userIdModel = getUserIds(_userId)
+  const currentQueryStringParams = parseQueryStringParams();
+  const userIdModel = getUserIds(_userId);
   const bidParamsJson = {
     placementIds: _placementIds,
     adUnitCodes: _adUnitCodes,
     auctionStartTime: _ivAuctionStart,
     bidVersion: CONSTANTS.PREBID_VERSION
-  }
+  };
   if (userIdModel) {
-    bidParamsJson.userId = userIdModel
+    bidParamsJson.userId = userIdModel;
   }
   const data = {
     location: getDocumentLocation(bidderRequest),
@@ -181,45 +181,45 @@ function buildRequest(bidRequests, bidderRequest) {
     preventPageViewEvent: preventPageViewEvent,
     isPlacementRefresh: isPlacementRefresh,
     isInfiniteScrollPage: isInfiniteScrollPage
-  }
+  };
 
   if (bidderRequest.refererInfo && bidderRequest.refererInfo.ref) {
-    data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300)
+    data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
   }
 
-  const hid = invibes.getCookie('handIid')
+  const hid = invibes.getCookie('handIid');
   if (hid) {
-    data.handIid = hid
+    data.handIid = hid;
   }
 
-  let lid = readFromLocalStorage('ivbsdid')
+  let lid = readFromLocalStorage('ivbsdid');
   if (!lid) {
-    const str = invibes.getCookie('ivbsdid')
+    const str = invibes.getCookie('ivbsdid');
     if (str) {
       try {
-        const cookieLid = JSON.parse(str)
-        lid = cookieLid.id ? cookieLid.id : cookieLid
+        const cookieLid = JSON.parse(str);
+        lid = cookieLid.id ? cookieLid.id : cookieLid;
       } catch (e) {
       }
     }
   }
   if (lid) {
-    data.lId = lid
+    data.lId = lid;
   }
 
-  const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',')
+  const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
   for (const key in currentQueryStringParams) {
     if (currentQueryStringParams.hasOwnProperty(key)) {
-      const value = currentQueryStringParams[key]
+      const value = currentQueryStringParams[key];
       if (parametersToPassForward.indexOf(key) > -1 || /^vs|^invib/i.test(key)) {
-        data[key] = value
+        data[key] = value;
       }
     }
   }
 
-  const endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds)
+  const endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
 
-  preventPageViewEvent = true
+  preventPageViewEvent = true;
 
   return {
     method: CONSTANTS.METHOD,
@@ -228,127 +228,127 @@ function buildRequest(bidRequests, bidderRequest) {
     options: { withCredentials: true },
     // for POST: { contentType: 'application/json', withCredentials: true }
     bidRequests: bidRequests
-  }
+  };
 }
 
 function handleResponse(responseObj, bidRequests) {
   if (bidRequests == null || bidRequests.length === 0) {
-    logInfo('Invibes Adapter - No bids have been requested')
-    return []
+    logInfo('Invibes Adapter - No bids have been requested');
+    return [];
   }
 
   if (!responseObj) {
-    logInfo('Invibes Adapter - Bid response is empty')
-    return []
+    logInfo('Invibes Adapter - Bid response is empty');
+    return [];
   }
 
-  responseObj = responseObj.body || responseObj
-  responseObj = responseObj.videoAdContentResult || responseObj
+  responseObj = responseObj.body || responseObj;
+  responseObj = responseObj.videoAdContentResult || responseObj;
 
   if (responseObj.ShouldSetLId && responseObj.LId) {
     if ((!invibes.optIn || !invibes.purposes[0]) && responseObj.PrivacyPolicyRule && responseObj.TcModel && responseObj.TcModel.PurposeConsents) {
-      invibes.optIn = responseObj.PrivacyPolicyRule
-      invibes.purposes = responseObj.TcModel.PurposeConsents
+      invibes.optIn = responseObj.PrivacyPolicyRule;
+      invibes.purposes = responseObj.TcModel.PurposeConsents;
     }
 
-    setInLocalStorage('ivbsdid', responseObj.LId)
+    setInLocalStorage('ivbsdid', responseObj.LId);
   }
 
   if (typeof invibes.bidResponse === 'object') {
     if (responseObj.MultipositionEnabled === true) {
-      invibes.bidResponse.AdPlacements = invibes.bidResponse.AdPlacements.concat(responseObj.AdPlacements)
+      invibes.bidResponse.AdPlacements = invibes.bidResponse.AdPlacements.concat(responseObj.AdPlacements);
     } else {
-      logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit')
-      return []
+      logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
+      return [];
     }
   } else {
-    invibes.bidResponse = responseObj
+    invibes.bidResponse = responseObj;
   }
 
-  const bidResponses = []
+  const bidResponses = [];
   for (let i = 0; i < bidRequests.length; i++) {
-    const bidRequest = bidRequests[i]
+    const bidRequest = bidRequests[i];
     const usedPlacementId = responseObj.UseAdUnitCode === true
       ? bidRequest.params.placementId + '_' + bidRequest.adUnitCode
-      : bidRequest.params.placementId
+      : bidRequest.params.placementId;
 
     if (invibes.placementBids.indexOf(usedPlacementId) > -1) {
-      logInfo('Invibes Adapter - Placement was previously bid on ' + usedPlacementId)
-      continue
+      logInfo('Invibes Adapter - Placement was previously bid on ' + usedPlacementId);
+      continue;
     }
 
-    let requestPlacement = null
+    let requestPlacement = null;
     if (responseObj.AdPlacements != null) {
       for (let j = 0; j < responseObj.AdPlacements.length; j++) {
-        const bidModel = responseObj.AdPlacements[j].BidModel
+        const bidModel = responseObj.AdPlacements[j].BidModel;
         if (bidModel != null && bidModel.PlacementId === usedPlacementId) {
-          requestPlacement = responseObj.AdPlacements[j]
-          break
+          requestPlacement = responseObj.AdPlacements[j];
+          break;
         }
       }
     } else {
-      const bidModel = responseObj.BidModel
+      const bidModel = responseObj.BidModel;
       if (bidModel != null && bidModel.PlacementId === usedPlacementId) {
-        requestPlacement = responseObj
+        requestPlacement = responseObj;
       }
     }
 
-    const bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId)
+    const bid = createBid(bidRequest, requestPlacement, responseObj.MultipositionEnabled, usedPlacementId);
     if (bid !== null) {
-      invibes.placementBids.push(usedPlacementId)
-      bidResponses.push(bid)
+      invibes.placementBids.push(usedPlacementId);
+      bidResponses.push(bid);
     }
   }
 
-  return bidResponses
+  return bidResponses;
 }
 
 function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlacementId) {
   if (requestPlacement === null || requestPlacement.BidModel === null) {
-    logInfo('Invibes Adapter - Placement not configured for bidding ' + usedPlacementId)
-    return null
+    logInfo('Invibes Adapter - Placement not configured for bidding ' + usedPlacementId);
+    return null;
   }
 
-  const bidModel = requestPlacement.BidModel
-  const ads = requestPlacement.Ads
+  const bidModel = requestPlacement.BidModel;
+  const ads = requestPlacement.Ads;
   if (!Array.isArray(ads) || ads.length < 1) {
     if (requestPlacement.AdReason != null) {
-      logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason)
+      logInfo('Invibes Adapter - No ads ' + requestPlacement.AdReason);
     }
 
-    logInfo('Invibes Adapter - No ads available')
-    return null
+    logInfo('Invibes Adapter - No ads available');
+    return null;
   }
 
-  const ad = ads[0]
-  const size = getBiggerSize(bidRequest.sizes)
+  const ad = ads[0];
+  const size = getBiggerSize(bidRequest.sizes);
 
   if (multipositionEnabled === true) {
     if (Object.keys(invibes.pushedCids).length > 0) {
       if (ad.Blcids != null && ad.Blcids.length > 0) {
         const blacklistsPushedCids = Object.keys(invibes.pushedCids).some(function(pushedCid) {
-          return ad.Blcids.indexOf(parseInt(pushedCid)) > -1
-        })
+          return ad.Blcids.indexOf(parseInt(pushedCid)) > -1;
+        });
 
         if (blacklistsPushedCids) {
-          logInfo('Invibes Adapter - Ad blacklists pushed ids')
-          return null
+          logInfo('Invibes Adapter - Ad blacklists pushed ids');
+          return null;
         }
       }
 
       const isBlacklisted = Object.keys(invibes.pushedCids).some(function(pushedCid) {
-        return invibes.pushedCids[pushedCid].indexOf(ad.Cid) > -1
-      })
+        return invibes.pushedCids[pushedCid].indexOf(ad.Cid) > -1;
+      });
       if (isBlacklisted) {
-        logInfo('Invibes Adapter - Ad is blacklisted')
-        return null
+        logInfo('Invibes Adapter - Ad is blacklisted');
+        return null;
       }
     }
   }
 
-  invibes.pushedCids[ad.Cid] = ad.Blcids || []
-  const now = Date.now()
-  logInfo('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.')
+  invibes.pushedCids[ad.Cid] = ad.Blcids || [];
+  const now = Date.now();
+  logInfo('Bid auction started at ' + bidModel.AuctionStartTime + ' . Invibes registered the bid at ' + now + ' ; bid request took a total of ' + (now - bidModel.AuctionStartTime) + ' ms.');
 
   return {
     requestId: bidRequest.bidId,
@@ -361,131 +361,131 @@ function createBid(bidRequest, requestPlacement, multipositionEnabled, usedPlace
     ttl: CONSTANTS.TIME_TO_LIVE,
     ad: renderCreative(bidModel),
     meta: addMeta(bidModel.Meta)
-  }
+  };
 }
 
 function createEndpoint(customEndpoint, domainId, placementIds) {
   if (customEndpoint != null) {
-    return customEndpoint
+    return customEndpoint;
   }
 
   if (domainId != null) {
-    return extractEndpointFromId(domainId - 1000)
+    return extractEndpointFromId(domainId - 1000);
   }
 
   if (placementIds.length > 0) {
     for (var i = 0; i < placementIds.length; i++) {
-      const id = extractFromPlacement(placementIds[i])
+      const id = extractFromPlacement(placementIds[i]);
       if (id != null) {
-        return extractEndpointFromId(id)
+        return extractEndpointFromId(id);
       }
     }
   }
 
-  return extractEndpointFromId(1)
+  return extractEndpointFromId(1);
 }
 
 function extractEndpointFromId(domainId) {
   if (domainId < 2) {
-    return CONSTANTS.BID_SUBDOMAIN + CONSTANTS.BID_ENDPOINT
+    return CONSTANTS.BID_SUBDOMAIN + CONSTANTS.BID_ENDPOINT;
   }
 
-  return CONSTANTS.BID_SUBDOMAIN + domainId + CONSTANTS.BID_ENDPOINT
+  return CONSTANTS.BID_SUBDOMAIN + domainId + CONSTANTS.BID_ENDPOINT;
 }
 
 function extractFromPlacement(placementId) {
-  if (placementId == null) { return null }
+  if (placementId == null) { return null; }
 
-  var pattern = /_ivbs([0-9]+)/g
+  var pattern = /_ivbs([0-9]+)/g;
 
-  var match = pattern.exec(placementId)
+  var match = pattern.exec(placementId);
   if (match != null && match[1] != null) {
-    return parseInt(match[1])
+    return parseInt(match[1]);
   }
 
-  return null
+  return null;
 }
 
 function addMeta(bidModelMeta) {
-  var meta = {}
+  var meta = {};
   if (bidModelMeta != null) {
     for (let i = 0; i < CONSTANTS.META_TAXONOMY.length; i++) {
       if (bidModelMeta.hasOwnProperty(CONSTANTS.META_TAXONOMY[i])) {
-        meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]]
+        meta[CONSTANTS.META_TAXONOMY[i]] = bidModelMeta[CONSTANTS.META_TAXONOMY[i]];
       }
     }
   }
 
-  return meta
+  return meta;
 }
 
 function generateRandomId() {
   return '10000000100040008000100000000000'.replace(/[018]/g, c =>
     (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-  )
+  );
 }
 
 function getDocumentLocation(bidderRequest) {
-  return bidderRequest.refererInfo.page.substring(0, 300)
+  return bidderRequest.refererInfo.page.substring(0, 300);
 }
 
 function getUserIds(bidUserId) {
-  let userId
+  let userId;
   if (bidUserId) {
     CONSTANTS.USERID_PROVIDERS.forEach(provider => {
       if (bidUserId[provider]) {
-        userId = userId || {}
-        userId[provider] = bidUserId[provider]
+        userId = userId || {};
+        userId[provider] = bidUserId[provider];
       }
-    })
+    });
   }
 
-  return userId
+  return userId;
 }
 
 function parseQueryStringParams() {
-  let params = {}
+  let params = {};
   try {
-    const storedParam = storage.getDataFromLocalStorage('ivbs')
+    const storedParam = storage.getDataFromLocalStorage('ivbs');
     if (storedParam != null) {
-      params = JSON.parse(storedParam)
+      params = JSON.parse(storedParam);
     }
   } catch (e) {
   }
-  const re = /[\\?&]([^=]+)=([^\\?&#]+)/g
-  let m
+  const re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
+  let m;
   while ((m = re.exec(window.location.href)) != null) {
     if (m.index === re.lastIndex) {
-      re.lastIndex++
+      re.lastIndex++;
     }
-    params[m[1].toLowerCase()] = m[2]
+    params[m[1].toLowerCase()] = m[2];
   }
-  return params
+  return params;
 }
 
 function getBiggerSize(array) {
-  let result = [0, 0]
+  let result = [0, 0];
   for (let i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] > result[0] * result[1]) {
-      result = array[i]
+      result = array[i];
     }
   }
-  return result
+  return result;
 }
 
 function getTopMostWindow() {
-  let res = window
+  let res = window;
 
   try {
     while (top !== res) {
       if (res.parent.location.href.length) {
-        res = res.parent
+        res = res.parent;
       }
     }
   } catch (e) {
   }
 
-  return res
+  return res;
 }
 
 function renderCreative(bidModel) {
@@ -495,359 +495,359 @@ function renderCreative(bidModel) {
           creativeHtml
           </body>
         </html>`
-    .replace('creativeHtml', bidModel.CreativeHtml)
+    .replace('creativeHtml', bidModel.CreativeHtml);
 }
 
 function readFromLocalStorage(key) {
   if ((invibes.GdprModuleInstalled || invibes.UspModuleInstalled) && (!invibes.optIn || !invibes.purposes[0])) {
-    return
+    return;
   }
 
-  return storage.getDataFromLocalStorage(key) || ''
+  return storage.getDataFromLocalStorage(key) || '';
 }
 
 function setInLocalStorage(key, value) {
   if (!invibes.optIn || !invibes.purposes[0]) {
-    return
+    return;
   }
 
-  storage.setDataInLocalStorage(key, value)
+  storage.setDataInLocalStorage(key, value);
 }
 
 function getCappedCampaignsAsString() {
-  const key = 'ivvcap'
+  const key = 'ivvcap';
 
   if (!invibes.optIn || !invibes.purposes[0]) {
-    return ''
+    return '';
   }
 
   const loadData = function () {
     try {
-      return JSON.parse(storage.getDataFromLocalStorage(key)) || {}
+      return JSON.parse(storage.getDataFromLocalStorage(key)) || {};
     } catch (e) {
-      return {}
+      return {};
     }
-  }
+  };
 
   const saveData = function (data) {
-    storage.setDataInLocalStorage(key, JSON.stringify(data))
-  }
+    storage.setDataInLocalStorage(key, JSON.stringify(data));
+  };
 
   const clearExpired = function () {
-    const now = new Date().getTime()
-    const data = loadData()
-    let dirty = false
+    const now = new Date().getTime();
+    const data = loadData();
+    let dirty = false;
     Object.keys(data).forEach(function (k) {
-      const exp = data[k][1]
+      const exp = data[k][1];
       if (exp <= now) {
-        delete data[k]
-        dirty = true
+        delete data[k];
+        dirty = true;
       }
-    })
+    });
     if (dirty) {
-      saveData(data)
+      saveData(data);
     }
-  }
+  };
 
   const getCappedCampaigns = function () {
-    clearExpired()
-    const data = loadData()
+    clearExpired();
+    const data = loadData();
     return Object.keys(data)
       .filter(function (k) {
-        return data.hasOwnProperty(k)
+        return data.hasOwnProperty(k);
       })
       .sort()
       .map(function (k) {
-        return [k, data[k][0]]
-      })
-  }
+        return [k, data[k][0]];
+      });
+  };
 
   return getCappedCampaigns()
     .map(function (record) {
-      return record.join('=')
+      return record.join('=');
     })
-    .join(',')
+    .join(',');
 }
 
 function buildSyncUrl() {
-  let syncUrl = _customUserSync || CONSTANTS.SYNC_ENDPOINT
-  syncUrl += '?visitId=' + invibes.visitId
-  syncUrl += '&optIn=' + invibes.optIn
+  let syncUrl = _customUserSync || CONSTANTS.SYNC_ENDPOINT;
+  syncUrl += '?visitId=' + invibes.visitId;
+  syncUrl += '&optIn=' + invibes.optIn;
 
-  let did = readFromLocalStorage('ivbsdid')
+  let did = readFromLocalStorage('ivbsdid');
   if (!did) {
-    const str = invibes.getCookie('ivbsdid')
+    const str = invibes.getCookie('ivbsdid');
     if (str) {
       try {
-        const cookieLid = JSON.parse(str)
-        did = cookieLid.id ? cookieLid.id : cookieLid
+        const cookieLid = JSON.parse(str);
+        did = cookieLid.id ? cookieLid.id : cookieLid;
       } catch (e) {
       }
     }
   }
 
   if (did) {
-    syncUrl += '&ivbsdid=' + encodeURIComponent(did)
+    syncUrl += '&ivbsdid=' + encodeURIComponent(did);
   }
 
-  return syncUrl
+  return syncUrl;
 }
 
 function readGdprConsent(gdprConsent, usConsent) {
-  invibes.GdprModuleInstalled = false
-  invibes.UspModuleInstalled = false
+  invibes.GdprModuleInstalled = false;
+  invibes.UspModuleInstalled = false;
   if (gdprConsent && gdprConsent.vendorData) {
-    invibes.GdprModuleInstalled = true
-    invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData)
+    invibes.GdprModuleInstalled = true;
+    invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
 
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
-      setAllPurposesAndLegitimateInterests(true)
-      return 2
+      setAllPurposesAndLegitimateInterests(true);
+      return 2;
     }
 
-    const purposeConsents = getPurposeConsents(gdprConsent.vendorData)
+    const purposeConsents = getPurposeConsents(gdprConsent.vendorData);
 
     if (purposeConsents == null) {
-      return 0
+      return 0;
     }
-    const purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData)
+    const purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData);
 
     if (!tryCopyValueToArray(purposeConsents, invibes.purposes, purposesLength)) {
-      return 0
+      return 0;
     }
 
-    const legitimateInterests = getLegitimateInterests(gdprConsent.vendorData)
-    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, purposesLength)
+    const legitimateInterests = getLegitimateInterests(gdprConsent.vendorData);
+    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, purposesLength);
 
-    const invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10)
-    const vendorConsents = getVendorConsents(gdprConsent.vendorData)
-    const vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true
+    const invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
+    const vendorConsents = getVendorConsents(gdprConsent.vendorData);
+    const vendorHasLegitimateInterest = getVendorLegitimateInterest(gdprConsent.vendorData)[invibesVendorId] === true;
     if (vendorConsents == null || vendorConsents[invibesVendorId] == null) {
-      return 4
+      return 4;
     }
 
     if (vendorConsents[invibesVendorId] === false && vendorHasLegitimateInterest === false) {
-      return 0
+      return 0;
     }
 
-    return 2
+    return 2;
   } else if (usConsent && usConsent.length > 2) {
-    invibes.UspModuleInstalled = true
+    invibes.UspModuleInstalled = true;
     if (usConsent[2] === 'N') {
-      setAllPurposesAndLegitimateInterests(true)
-      return 2
+      setAllPurposesAndLegitimateInterests(true);
+      return 2;
     }
   }
 
-  setAllPurposesAndLegitimateInterests(false)
-  return 0
+  setAllPurposesAndLegitimateInterests(false);
+  return 0;
 }
 
 function setAllPurposesAndLegitimateInterests(value) {
-  var index
+  var index;
   for (index = 0; index < invibes.purposes.length; ++index) {
-    invibes.purposes[index] = value
+    invibes.purposes[index] = value;
   }
 
   for (index = 0; index < invibes.legitimateInterests.length; ++index) {
-    invibes.legitimateInterests[index] = value
+    invibes.legitimateInterests[index] = value;
   }
 }
 
 function tryCopyValueToArray(value, target, length) {
   if (value instanceof Array) {
     for (let i = 0; i < length && i < value.length; i++) {
-      target[i] = !((value[i] === false || value[i] === 'false' || value[i] == null))
+      target[i] = !((value[i] === false || value[i] === 'false' || value[i] == null));
     }
-    return true
+    return true;
   }
   if (typeof value === 'object' && value !== null) {
-    let i = 0
+    let i = 0;
     for (const prop in value) {
       if (i === length) {
-        break
+        break;
       }
 
       if (value.hasOwnProperty(prop)) {
-        const parsedProp = parseInt(prop)
+        const parsedProp = parseInt(prop);
         if (isNaN(parsedProp)) {
-          target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null))
+          target[i] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
         } else {
-          target[parsedProp - 1] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null))
+          target[parsedProp - 1] = !((value[prop] === false || value[prop] === 'false' || value[prop] == null));
         }
 
-        i++
+        i++;
       }
     }
-    return true
+    return true;
   }
 
-  return false
+  return false;
 }
 
 function getPurposeConsentsCounter(vendorData) {
   if (vendorData.purpose && vendorData.purpose.consents) {
     if (vendorData.tcfPolicyVersion >= 4) {
-      return 11
+      return 11;
     }
 
-    return 10
+    return 10;
   }
 
-  return 5
+  return 5;
 }
 
 function getPurposeConsents(vendorData) {
   if (vendorData.purpose && vendorData.purpose.consents) {
-    return vendorData.purpose.consents
+    return vendorData.purpose.consents;
   }
 
   if (vendorData.purposeConsents) {
-    return vendorData.purposeConsents
+    return vendorData.purposeConsents;
   }
 
-  return null
+  return null;
 }
 
 function getLegitimateInterests(vendorData) {
   if (vendorData.purpose && vendorData.purpose.legitimateInterests) {
-    return vendorData.purpose.legitimateInterests
+    return vendorData.purpose.legitimateInterests;
   }
 
-  return null
+  return null;
 }
 
 function getVendorConsentData(vendorData) {
   if (vendorData.purpose && vendorData.purpose.consents) {
     if (vendorData.tcString != null) {
-      return vendorData.tcString
+      return vendorData.tcString;
     }
   }
-  return vendorData.consentData
+  return vendorData.consentData;
 };
 
 function getVendorConsents(vendorData) {
   if (vendorData.vendor && vendorData.vendor.consents) {
-    return vendorData.vendor.consents
+    return vendorData.vendor.consents;
   }
 
   if (vendorData.vendorConsents) {
-    return vendorData.vendorConsents
+    return vendorData.vendorConsents;
   }
 
-  return null
+  return null;
 }
 
 function getVendorLegitimateInterest(vendorData) {
   if (vendorData.vendor && vendorData.vendor.legitimateInterests) {
-    return vendorData.vendor.legitimateInterests
+    return vendorData.vendor.legitimateInterests;
   }
 
-  return {}
+  return {};
 }
 
 /// Local domain cookie management =====================
 invibes.Uid = {
   generate: function () {
-    const maxRand = parseInt('zzzzzz', 36)
+    const maxRand = parseInt('zzzzzz', 36);
     const mkRand = function () {
-      return Math.floor(Math.random() * maxRand).toString(36)
-    }
-    const rand1 = mkRand()
-    const rand2 = mkRand()
-    return rand1 + rand2
+      return Math.floor(Math.random() * maxRand).toString(36);
+    };
+    const rand1 = mkRand();
+    const rand2 = mkRand();
+    return rand1 + rand2;
   }
-}
+};
 
 invibes.getCookie = function (name) {
   if (!storage.cookiesAreEnabled()) {
-    return
+    return;
   }
 
   if ((invibes.GdprModuleInstalled || invibes.UspModuleInstalled) && (!invibes.optIn || !invibes.purposes[0])) {
-    return
+    return;
   }
 
-  return storage.getCookie(name)
-}
+  return storage.getCookie(name);
+};
 
 const keywords = (function () {
-  const cap = 300
-  const headTag = document.getElementsByTagName('head')[0]
-  const metaTag = headTag ? headTag.getElementsByTagName('meta') : []
+  const cap = 300;
+  const headTag = document.getElementsByTagName('head')[0];
+  const metaTag = headTag ? headTag.getElementsByTagName('meta') : [];
 
   function parse(str, cap) {
-    let parsedStr = str.replace(/[<>~|\\"`!@#$%^&*()=+?]/g, '')
-    let words = parsedStr.split(/[\s,;.:]+/)
-    let uniqueWords = Array.from(new Set(words.filter(word => word)))
-    parsedStr = ''
+    let parsedStr = str.replace(/[<>~|\\"`!@#$%^&*()=+?]/g, '');
+    let words = parsedStr.split(/[\s,;.:]+/);
+    let uniqueWords = Array.from(new Set(words.filter(word => word)));
+    parsedStr = '';
 
     for (let i = 0; i < uniqueWords.length; i++) {
-      parsedStr += uniqueWords[i]
+      parsedStr += uniqueWords[i];
       if (parsedStr.length >= cap) {
-        return parsedStr
+        return parsedStr;
       }
       if (i < uniqueWords.length - 1) {
-        parsedStr += ','
+        parsedStr += ',';
       }
     }
 
-    return parsedStr
+    return parsedStr;
   }
 
   function gt(cap, prefix) {
-    cap = cap || 300
-    prefix = prefix || ''
+    cap = cap || 300;
+    prefix = prefix || '';
     const title = document.title || headTag
       ? headTag.getElementsByTagName('title')[0]
         ? headTag.getElementsByTagName('title')[0].innerHTML
         : ''
-      : ''
+      : '';
 
-    return parse(prefix + ',' + title, cap)
+    return parse(prefix + ',' + title, cap);
   }
 
   function gmeta(metaName, cap, prefix) {
-    metaName = metaName || 'keywords'
-    cap = cap || 100
-    prefix = prefix || ''
-    let fallbackKw = prefix
+    metaName = metaName || 'keywords';
+    cap = cap || 100;
+    prefix = prefix || '';
+    let fallbackKw = prefix;
 
     for (let i = 0; i < metaTag.length; i++) {
       if (metaTag[i].name && metaTag[i].name.toLowerCase() === metaName.toLowerCase()) {
-        const kw = prefix + ',' + metaTag[i].content || ''
-        return parse(kw, cap)
+        const kw = prefix + ',' + metaTag[i].content || '';
+        return parse(kw, cap);
       } else if (metaTag[i].name && metaTag[i].name.toLowerCase().indexOf(metaName.toLowerCase()) > -1) {
-        fallbackKw = prefix + ',' + metaTag[i].content || ''
+        fallbackKw = prefix + ',' + metaTag[i].content || '';
       }
     }
 
-    return parse(fallbackKw, cap)
+    return parse(fallbackKw, cap);
   }
 
-  let kw = gmeta('keywords', cap)
+  let kw = gmeta('keywords', cap);
   if (!kw || kw.length < cap - 8) {
-    kw = gmeta('description', cap, kw)
+    kw = gmeta('description', cap, kw);
     if (!kw || kw.length < cap - 8) {
-      kw = gt(cap, kw)
+      kw = gt(cap, kw);
     }
   }
-  return kw
-}())
+  return kw;
+}());
 
 // ======================
 
 export function resetInvibes() {
-  invibes.optIn = undefined
-  invibes.dom = undefined
-  invibes.bidResponse = undefined
-  invibes.domainOptions = undefined
-  invibes.placementBids = []
-  invibes.pushedCids = {}
+  invibes.optIn = undefined;
+  invibes.dom = undefined;
+  invibes.bidResponse = undefined;
+  invibes.domainOptions = undefined;
+  invibes.placementBids = [];
+  invibes.pushedCids = {};
 }
 
 export function stubDomainOptions(persistence) {
   invibes.domainOptions = {
     persistence: persistence
-  }
+  };
 }

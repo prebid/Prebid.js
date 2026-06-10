@@ -1,12 +1,12 @@
-import { expect } from 'chai'
-import { dep, spec } from 'modules/colombiaBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { expect } from 'chai';
+import { dep, spec } from 'modules/colombiaBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-const HOST_NAME = document.location.protocol + '//' + window.location.host
-const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm'
+const HOST_NAME = document.location.protocol + '//' + window.location.host;
+const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
 describe('colombiaBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -21,23 +21,23 @@ describe('colombiaBidAdapter', function () {
       'bidId': '23beaa6af6cdde',
       'bidderRequestId': '19c0c1efdf37e7',
       'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when placementId not passed correctly', function () {
-      bid.params.placementId = ''
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      bid.params.placementId = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false when require params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      invalidBid.params = {}
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      const invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -67,7 +67,7 @@ describe('colombiaBidAdapter', function () {
         'bidderRequestId': '"1f9c98192de2511"',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
-    ]
+    ];
     const bidderRequest = {
       refererInfo: {
         numIframes: 0,
@@ -75,17 +75,17 @@ describe('colombiaBidAdapter', function () {
         referer: 'http://example.com',
         stack: ['http://example.com']
       }
-    }
+    };
 
-    const request = spec.buildRequests(bidRequests)
+    const request = spec.buildRequests(bidRequests);
     it('sends bid request to our endpoint via POST', function () {
-      expect(request[0].method).to.equal('POST')
-    })
+      expect(request[0].method).to.equal('POST');
+    });
 
     it('attaches source and version to endpoint URL as query params', function () {
-      expect(request[0].url).to.equal(ENDPOINT)
-    })
-  })
+      expect(request[0].url).to.equal(ENDPOINT);
+    });
+  });
 
   describe('interpretResponse', function () {
     const bidRequest = [
@@ -103,7 +103,7 @@ describe('colombiaBidAdapter', function () {
           't': 'i',
         }
       }
-    ]
+    ];
 
     const serverResponse = [{
       'ad': '<div>This is test case for colombia adapter</div> ',
@@ -117,7 +117,7 @@ describe('colombiaBidAdapter', function () {
       'ttl': 600,
       'dealid': '',
       'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836'
-    }]
+    }];
 
     it('should get the correct bid response', function () {
       const expectedResponse = [{
@@ -132,10 +132,10 @@ describe('colombiaBidAdapter', function () {
         'ttl': 300,
         'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
         'ad': '<div>This is test case for colombia adapter</div>'
-      }]
-      const result = spec.interpretResponse(serverResponse, bidRequest[0])
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]))
-    })
+      }];
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
 
     it('handles empty bid response', function () {
       const response = {
@@ -146,20 +146,20 @@ describe('colombiaBidAdapter', function () {
           'width': 0,
           'cpm': 0
         }
-      }
-      const result = spec.interpretResponse(response, bidRequest[0])
-      expect(result.length).to.equal(0)
-    })
-  })
+      };
+      const result = spec.interpretResponse(response, bidRequest[0]);
+      expect(result.length).to.equal(0);
+    });
+  });
   describe('onBidWon', function () {
-    let ajaxStub
+    let ajaxStub;
     beforeEach(() => {
-      ajaxStub = sinon.stub(dep, 'ajax')
-    })
+      ajaxStub = sinon.stub(dep, 'ajax');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('should call ajax with correct URL and encoded evtData when event 500 is present', function () {
       const bid = {
@@ -171,38 +171,38 @@ describe('colombiaBidAdapter', function () {
         ext: {
           evtData: 'd_1_%7B%22iId%22%3A%22abc123-impr-id%22%2C%22aId%22%3A%22ad5678%22%2C%22ci%22%3A%22call-id-789%22%2C%22fpc%22%3A%22some-fpc-value%22%2C%22prebid%22%3A1%7D'
         }
-      }
-      spec.onBidWon(bid)
-      expect(ajaxStub.calledOnce).to.be.true
-      const [url, , data, options] = ajaxStub.firstCall.args
-      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm')
-      const parsedPayload = JSON.parse(data)
+      };
+      spec.onBidWon(bid);
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [url, , data, options] = ajaxStub.firstCall.args;
+      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm');
+      const parsedPayload = JSON.parse(data);
       expect(parsedPayload).to.deep.equal({
         bidNotifyType: 1,
         evt: 'd_1_%7B%22iId%22%3A%22abc123-impr-id%22%2C%22aId%22%3A%22ad5678%22%2C%22ci%22%3A%22call-id-789%22%2C%22fpc%22%3A%22some-fpc-value%22%2C%22prebid%22%3A1%7D'
-      })
+      });
       expect(options).to.deep.include({
         method: 'POST',
         withCredentials: false
-      })
-    })
+      });
+    });
     it('should not call ajax if eventTrackers is missing or event 500 not present', function () {
-      spec.onBidWon({})
-      spec.onBidWon({ eventTrackers: [{ event: 200 }] })
+      spec.onBidWon({});
+      spec.onBidWon({ eventTrackers: [{ event: 200 }] });
 
-      expect(ajaxStub.notCalled).to.be.true
-    })
-  })
+      expect(ajaxStub.notCalled).to.be.true;
+    });
+  });
   describe('onTimeout', function () {
-    let ajaxStub
+    let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(dep, 'ajax')
-    })
+      ajaxStub = sinon.stub(dep, 'ajax');
+    });
 
     afterEach(function () {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('should call ajax with correct payload and pubAdCodeNames from gpid', function () {
       const timeoutData = [
@@ -227,34 +227,34 @@ describe('colombiaBidAdapter', function () {
             }
           }
         }
-      ]
+      ];
 
-      spec.onTimeout(timeoutData)
+      spec.onTimeout(timeoutData);
 
-      expect(ajaxStub.calledOnce).to.be.true
+      expect(ajaxStub.calledOnce).to.be.true;
 
-      const [url, , data, options] = ajaxStub.firstCall.args
+      const [url, , data, options] = ajaxStub.firstCall.args;
 
-      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm')
+      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm');
 
-      const parsedPayload = JSON.parse(data)
+      const parsedPayload = JSON.parse(data);
       expect(parsedPayload).to.deep.equal({
         bidNotifyType: 2,
         pubAdCodeNames: 'abc,def,ghi'
-      })
+      });
 
       expect(options).to.deep.include({
         method: 'POST',
         withCredentials: false
-      })
-    })
+      });
+    });
 
     it('should not call ajax if timeoutData is null or empty', function () {
-      spec.onTimeout(null)
-      spec.onTimeout([])
+      spec.onTimeout(null);
+      spec.onTimeout([]);
 
-      expect(ajaxStub.notCalled).to.be.true
-    })
+      expect(ajaxStub.notCalled).to.be.true;
+    });
 
     it('should skip entries without valid gpid', function () {
       const timeoutData = [
@@ -262,15 +262,15 @@ describe('colombiaBidAdapter', function () {
         { ortb2Imp: { ext: {} } },
         { ortb2Imp: {} },
         {},
-      ]
+      ];
 
-      spec.onTimeout(timeoutData)
+      spec.onTimeout(timeoutData);
 
-      expect(ajaxStub.calledOnce).to.be.true
-      const [, , data] = ajaxStub.firstCall.args
-      const parsed = JSON.parse(data)
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [, , data] = ajaxStub.firstCall.args;
+      const parsed = JSON.parse(data);
 
-      expect(parsed.pubAdCodeNames).to.equal('valid')
-    })
-  })
-})
+      expect(parsed.pubAdCodeNames).to.equal('valid');
+    });
+  });
+});

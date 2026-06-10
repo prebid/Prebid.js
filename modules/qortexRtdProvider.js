@@ -1,23 +1,23 @@
-import { submodule } from '../src/hook.js'
-import { logWarn, mergeDeep, logMessage, generateUUID } from '../src/utils.js'
-import { loadExternalScript } from '../src/adloader.js'
-import * as events from '../src/events.js'
-import { EVENTS } from '../src/constants.js'
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js';
+import { logWarn, mergeDeep, logMessage, generateUUID } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
-const QX_VERSION = { v: '1.0' }
+const QX_VERSION = { v: '1.0' };
 
-const qortexSessionInfo = {}
+const qortexSessionInfo = {};
 const QX_IN_MESSAGE = {
   BID_ENRICH_INITIALIZED: 'CX-BID-ENRICH-INITIALIZED',
   DISPATCH_CONTEXT: 'DISPATCH-CONTEXT'
-}
+};
 const QX_OUT_MESSAGE = {
   AUCTION_END: 'AUCTION-END',
   NO_CONTEXT: 'NO-CONTEXT',
   RTD_INITIALIZED: 'RTD-INITIALIZED',
   REQUEST_CONTEXT: 'REQUEST-CONTEXT'
-}
+};
 
 /**
  * Init if module configuration is valid
@@ -26,19 +26,19 @@ const QX_OUT_MESSAGE = {
  */
 function init (config) {
   if (!config?.params?.groupId?.length > 0) {
-    logWarn('Qortex RTD module config does not contain valid groupId parameter. Config params: ' + JSON.stringify(config.params))
-    return false
+    logWarn('Qortex RTD module config does not contain valid groupId parameter. Config params: ' + JSON.stringify(config.params));
+    return false;
   } else {
-    initializeModuleData(config)
+    initializeModuleData(config);
     if (config?.params?.enableBidEnrichment) {
-      initializeBidEnrichment()
+      initializeBidEnrichment();
     } else {
-      logWarn('Bid Enrichment Function has been disabled in module configuration')
+      logWarn('Bid Enrichment Function has been disabled in module configuration');
     }
     if (config?.params?.tagConfig) {
-      loadScriptTag(config)
+      loadScriptTag(config);
     }
-    return true
+    return true;
   }
 }
 
@@ -49,11 +49,11 @@ function init (config) {
  */
 function getBidRequestData (reqBidsConfig, callback) {
   if (reqBidsConfig?.adUnits?.length > 0 && shouldAllowBidEnrichment()) {
-    addContextToRequests(reqBidsConfig)
+    addContextToRequests(reqBidsConfig);
   } else {
-    logWarn('Module function is paused due to configuration \n Module Config: ' + JSON.stringify(reqBidsConfig))
+    logWarn('Module function is paused due to configuration \n Module Config: ' + JSON.stringify(reqBidsConfig));
   }
-  callback()
+  callback();
 }
 
 /**
@@ -61,13 +61,13 @@ function getBidRequestData (reqBidsConfig, callback) {
  * @param {Object} data Auction end object
  */
 function onAuctionEndEvent (data, config, t) {
-  logMessage('Auction ended: ', JSON.stringify(data))
+  logMessage('Auction ended: ', JSON.stringify(data));
   if (shouldAllowBidEnrichment()) {
     if (!qortexSessionInfo.auctionsEnded) {
-      qortexSessionInfo.auctionsEnded = []
+      qortexSessionInfo.auctionsEnded = [];
     }
-    qortexSessionInfo.auctionsEnded.push(JSON.stringify(data))
-    postBidEnrichmentMessage(QX_OUT_MESSAGE.AUCTION_END, JSON.stringify(data))
+    qortexSessionInfo.auctionsEnded.push(JSON.stringify(data));
+    postBidEnrichmentMessage(QX_OUT_MESSAGE.AUCTION_END, JSON.stringify(data));
   }
 }
 
@@ -77,17 +77,17 @@ function onAuctionEndEvent (data, config, t) {
  */
 export function addContextToRequests (reqBidsConfig) {
   if (qortexSessionInfo.currentSiteContext === null) {
-    logWarn('No context data received at this time')
-    requestContextData()
+    logWarn('No context data received at this time');
+    requestContextData();
   } else {
     if (checkPercentageOutcome(qortexSessionInfo.groupConfig?.prebidBidEnrichmentPercentage)) {
-      const fragment = qortexSessionInfo.currentSiteContext
+      const fragment = qortexSessionInfo.currentSiteContext;
       if (qortexSessionInfo.bidderArray?.length > 0) {
-        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, { [bidder]: fragment }))
+        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, { [bidder]: fragment }));
       } else if (!qortexSessionInfo.bidderArray) {
-        mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment)
+        mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
       } else {
-        logWarn('Config contains an empty bidders array, unable to determine which bids to enrich')
+        logWarn('Config contains an empty bidders array, unable to determine which bids to enrich');
       }
     }
   }
@@ -98,15 +98,15 @@ export function addContextToRequests (reqBidsConfig) {
  * @param {Object} config module config obtained during init
  */
 export function loadScriptTag(config) {
-  const code = 'qortex'
-  const groupId = config.params.groupId
-  const src = 'https://tags.qortex.ai/bootstrapper'
-  const attr = { 'data-group-id': groupId }
-  const tc = config.params.tagConfig
+  const code = 'qortex';
+  const groupId = config.params.groupId;
+  const src = 'https://tags.qortex.ai/bootstrapper';
+  const attr = { 'data-group-id': groupId };
+  const tc = config.params.tagConfig;
 
   Object.keys(tc).forEach(p => {
-    attr[`data-${p.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`)}`] = tc[p]
-  })
+    attr[`data-${p.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`)}`] = tc[p];
+  });
 
   addEventListener('qortex-rtd', (e) => {
     const billableEvent = {
@@ -114,26 +114,26 @@ export function loadScriptTag(config) {
       billingId: generateUUID(),
       type: e?.detail?.type,
       accountId: groupId
-    }
+    };
     switch (e?.detail?.type) {
       case 'qx-impression':
-        const { uid } = e.detail
+        const { uid } = e.detail;
         if (!uid || qortexSessionInfo.impressionIds.has(uid)) {
-          logWarn(`Received invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
-          return
+          logWarn(`Received invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`);
+          return;
         } else {
-          logMessage('Received billable event: qx-impression')
-          qortexSessionInfo.impressionIds.add(uid)
-          billableEvent.transactionId = e.detail.uid
-          events.emit(EVENTS.BILLABLE_EVENT, billableEvent)
-          break
+          logMessage('Received billable event: qx-impression');
+          qortexSessionInfo.impressionIds.add(uid);
+          billableEvent.transactionId = e.detail.uid;
+          events.emit(EVENTS.BILLABLE_EVENT, billableEvent);
+          break;
         }
       default:
-        logWarn(`Received invalid billable event: ${e.detail?.type}`)
+        logWarn(`Received invalid billable event: ${e.detail?.type}`);
     }
-  })
+  });
 
-  loadExternalScript(src, MODULE_TYPE_RTD, code, undefined, undefined, attr)
+  loadExternalScript(src, MODULE_TYPE_RTD, code, undefined, undefined, attr);
 }
 
 /**
@@ -141,9 +141,9 @@ export function loadScriptTag(config) {
  */
 export function initializeBidEnrichment() {
   if (shouldAllowBidEnrichment()) {
-    requestContextData()
+    requestContextData();
   }
-  addEventListener('message', windowPostMessageReceived)
+  addEventListener('message', windowPostMessageReceived);
 }
 
 /**
@@ -151,9 +151,9 @@ export function initializeBidEnrichment() {
  */
 export function requestContextData() {
   if (qortexSessionInfo.currentSiteContext) {
-    logMessage('Context data already retrieved.')
+    logMessage('Context data already retrieved.');
   } else {
-    postBidEnrichmentMessage(QX_OUT_MESSAGE.REQUEST_CONTEXT)
+    postBidEnrichmentMessage(QX_OUT_MESSAGE.REQUEST_CONTEXT);
   }
 }
 
@@ -162,28 +162,28 @@ export function requestContextData() {
  * @param {Object} config module config obtained during init
  */
 export function initializeModuleData(config) {
-  const { groupId, bidders, enableBidEnrichment } = config.params
-  qortexSessionInfo.bidEnrichmentDisabled = enableBidEnrichment !== null ? !enableBidEnrichment : true
-  qortexSessionInfo.bidderArray = bidders
-  qortexSessionInfo.impressionIds = new Set()
-  qortexSessionInfo.currentSiteContext = null
-  qortexSessionInfo.sessionId = generateSessionId()
-  qortexSessionInfo.groupId = groupId
-  return qortexSessionInfo
+  const { groupId, bidders, enableBidEnrichment } = config.params;
+  qortexSessionInfo.bidEnrichmentDisabled = enableBidEnrichment !== null ? !enableBidEnrichment : true;
+  qortexSessionInfo.bidderArray = bidders;
+  qortexSessionInfo.impressionIds = new Set();
+  qortexSessionInfo.currentSiteContext = null;
+  qortexSessionInfo.sessionId = generateSessionId();
+  qortexSessionInfo.groupId = groupId;
+  return qortexSessionInfo;
 }
 
 /**
  * Allows setting of contextual data
  */
 export function setContextData(value) {
-  qortexSessionInfo.currentSiteContext = value
+  qortexSessionInfo.currentSiteContext = value;
 }
 
 /**
  * Allows setting of group configuration data
  */
 export function setGroupConfigData(value) {
-  qortexSessionInfo.groupConfig = value
+  qortexSessionInfo.groupConfig = value;
 }
 
 /**
@@ -191,9 +191,9 @@ export function setGroupConfigData(value) {
  * @returns {string}
  */
 function generateSessionId() {
-  const randomInt = window.crypto.getRandomValues(new Uint32Array(1))
-  const currentDateTime = Math.floor(Date.now() / 1000)
-  return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
+  const randomInt = window.crypto.getRandomValues(new Uint32Array(1));
+  const currentDateTime = Math.floor(Date.now() / 1000);
+  return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString();
 }
 
 /**
@@ -202,7 +202,7 @@ function generateSessionId() {
  * @returns {Boolean}
  */
 function checkPercentageOutcome(percentageValue) {
-  return (percentageValue ?? 0) > (Math.random() * 100)
+  return (percentageValue ?? 0) > (Math.random() * 100);
 }
 
 /**
@@ -211,10 +211,10 @@ function checkPercentageOutcome(percentageValue) {
  */
 function shouldAllowBidEnrichment() {
   if (qortexSessionInfo.bidEnrichmentDisabled) {
-    logWarn('Bid enrichment disabled at prebid config')
-    return false
+    logWarn('Bid enrichment disabled at prebid config');
+    return false;
   }
-  return true
+  return true;
 }
 
 /**
@@ -227,8 +227,8 @@ function postBidEnrichmentMessage(msg, data) {
     target: 'CX-BID-ENRICH',
     message: msg,
     params: data
-  }, window.location.protocol + '//' + window.location.host)
-  logMessage('Dispatching window postMessage: ' + msg)
+  }, window.location.protocol + '//' + window.location.host);
+  logMessage('Dispatching window postMessage: ' + msg);
 }
 
 /**
@@ -236,21 +236,21 @@ function postBidEnrichmentMessage(msg, data) {
  * @param {Object} evt data object holding Event information
  */
 export function windowPostMessageReceived(evt) {
-  const data = evt.data
+  const data = evt.data;
   if (typeof data.target !== 'undefined' && data.target === 'QORTEX-PREBIDJS-RTD-MODULE') {
     if (shouldAllowBidEnrichment()) {
       if (data.message === QX_IN_MESSAGE.BID_ENRICH_INITIALIZED) {
         if (Boolean(data.params) && Boolean(data.params?.groupConfig)) {
-          setGroupConfigData(data.params.groupConfig)
+          setGroupConfigData(data.params.groupConfig);
         }
-        postBidEnrichmentMessage(QX_OUT_MESSAGE.RTD_INITIALIZED, QX_VERSION)
+        postBidEnrichmentMessage(QX_OUT_MESSAGE.RTD_INITIALIZED, QX_VERSION);
         if (qortexSessionInfo?.auctionsEnded?.length > 0) {
-          qortexSessionInfo.auctionsEnded.forEach(data => postBidEnrichmentMessage(QX_OUT_MESSAGE.AUCTION_END, data))
+          qortexSessionInfo.auctionsEnded.forEach(data => postBidEnrichmentMessage(QX_OUT_MESSAGE.AUCTION_END, data));
         }
-        requestContextData()
+        requestContextData();
       } else if (data.message === QX_IN_MESSAGE.DISPATCH_CONTEXT) {
         if (data.params?.context) {
-          setContextData(data.params.context)
+          setContextData(data.params.context);
         }
       }
     }
@@ -262,6 +262,6 @@ export const qortexSubmodule = {
   init,
   getBidRequestData,
   onAuctionEndEvent
-}
+};
 
-submodule('realTimeData', qortexSubmodule)
+submodule('realTimeData', qortexSubmodule);

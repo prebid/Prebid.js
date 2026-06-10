@@ -1,8 +1,8 @@
-import { _map, isArray } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
-import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js'
+import { _map, isArray } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,20 +11,20 @@ import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '..
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'vox'
-const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid'
-const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js'
-const TTL = 60
-const GVLID = 206
+const BIDDER_CODE = 'vox';
+const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
+const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const TTL = 60;
+const GVLID = 206;
 
 function buildBidRequests(validBidRequests, bidderRequest) {
   return _map(validBidRequests, function(bid) {
-    const currency = getCurrencyFromBidderRequest(bidderRequest)
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const floorInfo = bid.getFloor ? bid.getFloor({
       currency: currency || 'USD'
-    }) : {}
+    }) : {};
 
-    const params = bid.params
+    const params = bid.params;
     const bidRequest = {
       floorInfo,
       schain: bid?.ortb2?.source?.ext?.schain,
@@ -36,10 +36,10 @@ function buildBidRequests(validBidRequests, bidderRequest) {
       placement: params.placement,
       placeId: params.placementId,
       imageUrl: params.imageUrl
-    }
+    };
 
-    return bidRequest
-  })
+    return bidRequest;
+  });
 }
 
 function buildBid(bidData) {
@@ -55,30 +55,30 @@ function buildBid(bidData) {
     ttl: TTL,
     content: bidData.content,
     meta: { advertiserDomains: bidData.advertiserDomains || [] }
-  }
+  };
 
   if (bidData.placement === 'video') {
-    bid.vastXml = bidData.content
-    bid.mediaType = VIDEO
-    const video = bidData.mediaTypes?.video
+    bid.vastXml = bidData.content;
+    bid.mediaType = VIDEO;
+    const video = bidData.mediaTypes?.video;
 
     if (video) {
-      bid.width = video.playerSize[0][0]
-      bid.height = video.playerSize[0][1]
+      bid.width = video.playerSize[0][0];
+      bid.height = video.playerSize[0][1];
 
       if (video.context === 'outstream') {
-        bid.renderer = createRenderer(bid, VIDEO_RENDERER_URL)
+        bid.renderer = createRenderer(bid, VIDEO_RENDERER_URL);
       }
     }
   } else if (bidData.placement === 'inImage') {
-    bid.mediaType = BANNER
-    bid.ad = wrapInImageBanner(bid, bidData)
+    bid.mediaType = BANNER;
+    bid.ad = wrapInImageBanner(bid, bidData);
   } else {
-    bid.mediaType = BANNER
-    bid.ad = wrapBanner(bid, bidData)
+    bid.mediaType = BANNER;
+    bid.ad = wrapBanner(bid, bidData);
   }
 
-  return bid
+  return bid;
 }
 
 function wrapInImageBanner(bid, bidData) {
@@ -106,7 +106,7 @@ function wrapInImageBanner(bid, bidData) {
         }
       </script>
     </body>
-  </html>`
+  </html>`;
 }
 
 function wrapBanner(bid, bidData) {
@@ -129,7 +129,7 @@ function wrapBanner(bid, bidData) {
         s.src = "https://st.hybrid.ai/prebidrenderer.js?t=" + Date.now();
       </script>
     </body>
-  </html>`
+  </html>`;
 }
 
 export const spec = {
@@ -152,7 +152,7 @@ export const spec = {
         (getMediaTypeFromBid(bid) === BANNER && bid.params.placement === 'inImage' && !!bid.params.imageUrl) ||
         (getMediaTypeFromBid(bid) === VIDEO && bid.params.placement === 'video' && hasVideoMandatoryParams(bid.mediaTypes))
       )
-    )
+    );
   },
 
   /**
@@ -168,15 +168,15 @@ export const spec = {
       url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       bidRequests: buildBidRequests(validBidRequests, bidderRequest)
-    }
+    };
 
     if (payload.cmp) {
-      const gdprApplies = bidderRequest.gdprConsent.gdprApplies
-      if (gdprApplies !== undefined) payload['ga'] = gdprApplies
-      payload['cs'] = bidderRequest.gdprConsent.consentString
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
+      if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
+      payload['cs'] = bidderRequest.gdprConsent.consentString;
     }
 
-    const payloadString = JSON.stringify(payload)
+    const payloadString = JSON.stringify(payload);
 
     return {
       method: 'POST',
@@ -185,7 +185,7 @@ export const spec = {
       options: {
         contentType: 'application/json'
       }
-    }
+    };
   },
 
   /**
@@ -195,23 +195,23 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidRequests = JSON.parse(bidRequest.data).bidRequests
-    const serverBody = serverResponse.body
+    const bidRequests = JSON.parse(bidRequest.data).bidRequests;
+    const serverBody = serverResponse.body;
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
         const rawBid = ((bidRequests) || []).find(function (item) {
-          return item.bidId === bid.bidId
-        })
-        bid.placement = rawBid.placement
-        bid.transactionId = rawBid.transactionId
-        bid.placeId = rawBid.placeId
-        return buildBid(bid)
-      })
+          return item.bidId === bid.bidId;
+        });
+        bid.placement = rawBid.placement;
+        bid.transactionId = rawBid.transactionId;
+        bid.placeId = rawBid.placeId;
+        return buildBid(bid);
+      });
     } else {
-      return []
+      return [];
     }
   }
 
-}
-registerBidder(spec)
+};
+registerBidder(spec);

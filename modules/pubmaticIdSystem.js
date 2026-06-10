@@ -1,26 +1,26 @@
-import { logInfo, logError, isStr, isEmptyStr } from '../src/utils.js'
-import { ajax } from '../src/ajax.js'
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
-import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from '../src/adapterManager.js'
+import { logInfo, logError, isStr, isEmptyStr } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from '../src/adapterManager.js';
 
-const MODULE_NAME = 'pubmaticId'
-const GVLID = 76
-export const STORAGE_NAME = 'pubmaticId'
-const STORAGE_EXPIRES = 30 // days
-const STORAGE_REFRESH_IN_SECONDS = 24 * 3600 // 24 Hours
-const LOG_PREFIX = 'PubMatic User ID: '
-const VERSION = '1'
-const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p='
+const MODULE_NAME = 'pubmaticId';
+const GVLID = 76;
+export const STORAGE_NAME = 'pubmaticId';
+const STORAGE_EXPIRES = 30; // days
+const STORAGE_REFRESH_IN_SECONDS = 24 * 3600; // 24 Hours
+const LOG_PREFIX = 'PubMatic User ID: ';
+const VERSION = '1';
+const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function generateQueryStringParams(config) {
-  const uspString = uspDataHandler.getConsentData()
-  const coppaValue = coppaDataHandler.getCoppa()
-  const gppConsent = gppDataHandler.getConsentData()
-  const gdprConsent = gdprDataHandler.getConsentData()
+  const uspString = uspDataHandler.getConsentData();
+  const coppaValue = coppaDataHandler.getCoppa();
+  const gppConsent = gppDataHandler.getConsentData();
+  const gdprConsent = gdprDataHandler.getConsentData();
 
   const params = {
     publisherId: String(config.params.publisherId || '').trim(),
@@ -32,95 +32,95 @@ function generateQueryStringParams(config) {
     us_privacy: uspString ? encodeURIComponent(uspString) : '',
     gpp: gppConsent?.gppString ? encodeURIComponent(gppConsent.gppString) : '',
     gpp_sid: gppConsent?.applicableSections?.length ? encodeURIComponent(gppConsent.applicableSections.join(',')) : ''
-  }
+  };
 
-  return params
+  return params;
 }
 
 function buildUrl(config) {
-  let baseUrl = `${API_URL}${config.params.publisherId}`
-  const params = generateQueryStringParams(config)
+  let baseUrl = `${API_URL}${config.params.publisherId}`;
+  const params = generateQueryStringParams(config);
 
   Object.keys(params).forEach((key) => {
-    baseUrl += `&${key}=${params[key]}`
-  })
+    baseUrl += `&${key}=${params[key]}`;
+  });
 
-  return baseUrl
+  return baseUrl;
 }
 
 function deleteFromAllStorages(key) {
-  const cKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`]
+  const cKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
   cKeys.forEach((cKey) => {
     if (storage.getCookie(cKey)) {
-      storage.setCookie(cKey, '', new Date(0).toUTCString())
+      storage.setCookie(cKey, '', new Date(0).toUTCString());
     }
-  })
+  });
 
-  const lsKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`]
+  const lsKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
   lsKeys.forEach((lsKey) => {
     if (storage.getDataFromLocalStorage(lsKey)) {
-      storage.removeDataFromLocalStorage(lsKey)
+      storage.removeDataFromLocalStorage(lsKey);
     }
-  })
+  });
 }
 
 function getSuccessAndErrorHandler(callback) {
   return {
     success: (response) => {
-      let responseObj
+      let responseObj;
 
       try {
-        responseObj = JSON.parse(response)
-        logInfo(LOG_PREFIX + 'response received from the server', responseObj)
+        responseObj = JSON.parse(response);
+        logInfo(LOG_PREFIX + 'response received from the server', responseObj);
       } catch (error) {}
 
       if (responseObj && isStr(responseObj.id) && !isEmptyStr(responseObj.id)) {
-        callback(responseObj)
+        callback(responseObj);
       } else {
-        deleteFromAllStorages(STORAGE_NAME)
-        callback()
+        deleteFromAllStorages(STORAGE_NAME);
+        callback();
       }
     },
     error: (error) => {
-      deleteFromAllStorages(STORAGE_NAME)
-      logError(LOG_PREFIX + 'getId fetch encountered an error', error)
-      callback()
+      deleteFromAllStorages(STORAGE_NAME);
+      logError(LOG_PREFIX + 'getId fetch encountered an error', error);
+      callback();
     }
-  }
+  };
 }
 
 function hasRequiredConfig(config) {
   if (!config || !config.storage || !config.params) {
-    logError(LOG_PREFIX + 'config.storage and config.params should be passed.')
-    return false
+    logError(LOG_PREFIX + 'config.storage and config.params should be passed.');
+    return false;
   }
 
   // convert publisherId to string and trim
   if (config.params.publisherId) {
-    config.params.publisherId = String(config.params.publisherId).trim()
+    config.params.publisherId = String(config.params.publisherId).trim();
   }
 
   if (!config.params.publisherId) {
-    logError(LOG_PREFIX + 'config.params.publisherId should be provided.')
-    return false
+    logError(LOG_PREFIX + 'config.params.publisherId should be provided.');
+    return false;
   }
 
   if (config.storage.name !== STORAGE_NAME) {
-    logError(LOG_PREFIX + `config.storage.name should be '${STORAGE_NAME}'.`)
-    return false
+    logError(LOG_PREFIX + `config.storage.name should be '${STORAGE_NAME}'.`);
+    return false;
   }
 
   if (config.storage.expires !== STORAGE_EXPIRES) {
-    logError(LOG_PREFIX + `config.storage.expires should be ${STORAGE_EXPIRES}.`)
-    return false
+    logError(LOG_PREFIX + `config.storage.expires should be ${STORAGE_EXPIRES}.`);
+    return false;
   }
 
   if (config.storage.refreshInSeconds !== STORAGE_REFRESH_IN_SECONDS) {
-    logError(LOG_PREFIX + `config.storage.refreshInSeconds should be ${STORAGE_REFRESH_IN_SECONDS}.`)
-    return false
+    logError(LOG_PREFIX + `config.storage.refreshInSeconds should be ${STORAGE_REFRESH_IN_SECONDS}.`);
+    return false;
   }
 
-  return true
+  return true;
 }
 
 export const pubmaticIdSubmodule = {
@@ -128,35 +128,35 @@ export const pubmaticIdSubmodule = {
   gvlid: GVLID,
   decode(value) {
     if (isStr(value.id) && !isEmptyStr(value.id)) {
-      return { pubmaticId: value.id }
+      return { pubmaticId: value.id };
     }
-    return undefined
+    return undefined;
   },
   getId(config) {
     if (!hasRequiredConfig(config)) {
-      return undefined
+      return undefined;
     }
 
     const resp = (callback) => {
-      logInfo(LOG_PREFIX + 'requesting an ID from the server')
-      const url = buildUrl(config)
+      logInfo(LOG_PREFIX + 'requesting an ID from the server');
+      const url = buildUrl(config);
       ajax(url, getSuccessAndErrorHandler(callback), null, {
         method: 'GET',
         withCredentials: true,
-      })
-    }
+      });
+    };
 
-    return { callback: resp }
+    return { callback: resp };
   },
   eids: {
     'pubmaticId': {
       source: 'esp.pubmatic.com',
       atype: 1,
       getValue: (data) => {
-        return data
+        return data;
       }
     },
   }
-}
+};
 
-submodule('userId', pubmaticIdSubmodule)
+submodule('userId', pubmaticIdSubmodule);

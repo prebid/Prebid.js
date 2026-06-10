@@ -1,8 +1,8 @@
-import { spec } from '../../../modules/rhythmoneBidAdapter.js'
-import * as utils from '../../../src/utils.js'
-import * as sinon from 'sinon'
+import { spec } from '../../../modules/rhythmoneBidAdapter.js';
+import * as utils from '../../../src/utils.js';
+import * as sinon from 'sinon';
 
-var r1adapter = spec
+var r1adapter = spec;
 
 describe('rhythmone adapter tests', function () {
   beforeEach(function() {
@@ -14,8 +14,8 @@ describe('rhythmone adapter tests', function () {
           'page.dvl'
         ]
       }
-    }
-  })
+    };
+  });
 
   describe('Verify 1.0 POST Banner Bid Request', function () {
     it('buildRequests works', function () {
@@ -36,24 +36,24 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=')
-      expect(bidRequest.method).to.equal('POST')
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.site).to.not.equal(null)
-      expect(openrtbRequest.site.ref).to.equal('Reference Page')
-      expect(openrtbRequest.device).to.not.equal(null)
-      expect(openrtbRequest.device.ua).to.equal(navigator.userAgent)
-      expect(openrtbRequest.device.dnt).to.equal(0)
-      expect(openrtbRequest.imp[0].banner).to.not.equal(null)
-      expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300)
-      expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(250)
-      expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('myzone')
-      expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mypath')
-    })
+      expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
+      expect(bidRequest.method).to.equal('POST');
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.site).to.not.equal(null);
+      expect(openrtbRequest.site.ref).to.equal('Reference Page');
+      expect(openrtbRequest.device).to.not.equal(null);
+      expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
+      expect(openrtbRequest.device.dnt).to.equal(0);
+      expect(openrtbRequest.imp[0].banner).to.not.equal(null);
+      expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300);
+      expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(250);
+      expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('myzone');
+      expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mypath');
+    });
 
     it('interpretResponse works', function() {
       var bidList = {
@@ -67,21 +67,21 @@ describe('rhythmone adapter tests', function () {
             'crid': 'cr-cfy24'
           }
         ]
-      }
+      };
 
-      var bannerBids = r1adapter.interpretResponse(bidList)
+      var bannerBids = r1adapter.interpretResponse(bidList);
 
-      expect(bannerBids.length).to.equal(1)
-      const bid = bannerBids[0]
-      expect(bid.width).to.equal(300)
-      expect(bid.height).to.equal(250)
-      expect(bid.creativeId).to.equal('cr-cfy24')
-      expect(bid.currency).to.equal('USD')
-      expect(bid.netRevenue).to.equal(true)
-      expect(bid.cpm).to.equal(1.0)
-      expect(bid.ttl).to.equal(350)
-    })
-  })
+      expect(bannerBids.length).to.equal(1);
+      const bid = bannerBids[0];
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.creativeId).to.equal('cr-cfy24');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(350);
+    });
+  });
 
   describe('Verify POST Video Bid Request', function() {
     it('buildRequests works', function () {
@@ -109,28 +109,28 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=')
-      expect(bidRequest.method).to.equal('POST')
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.site).to.not.equal(null)
-      expect(openrtbRequest.device).to.not.equal(null)
-      expect(openrtbRequest.device.ua).to.equal(navigator.userAgent)
-      expect(openrtbRequest.device).to.have.property('dnt')
-      expect(openrtbRequest.imp[0].video).to.not.equal(null)
-      expect(openrtbRequest.imp[0].video.w).to.equal(640)
-      expect(openrtbRequest.imp[0].video.h).to.equal(480)
-      expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4')
-      expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6])
-      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0)
-      expect(openrtbRequest.imp[0].video.skip).to.equal(0)
-      expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4])
-      expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1)
-      expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5])
-    })
+      expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
+      expect(bidRequest.method).to.equal('POST');
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.site).to.not.equal(null);
+      expect(openrtbRequest.device).to.not.equal(null);
+      expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
+      expect(openrtbRequest.device).to.have.property('dnt');
+      expect(openrtbRequest.imp[0].video).to.not.equal(null);
+      expect(openrtbRequest.imp[0].video.w).to.equal(640);
+      expect(openrtbRequest.imp[0].video.h).to.equal(480);
+      expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
+      expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
+      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
+      expect(openrtbRequest.imp[0].video.skip).to.equal(0);
+      expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
+      expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1);
+      expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
+    });
 
     it('interpretResponse works', function() {
       var bidList = {
@@ -148,24 +148,24 @@ describe('rhythmone adapter tests', function () {
             'h': 600
           }
         ]
-      }
+      };
 
-      var videoBids = r1adapter.interpretResponse(bidList)
+      var videoBids = r1adapter.interpretResponse(bidList);
 
-      expect(videoBids.length).to.equal(1)
-      const bid = videoBids[0]
-      expect(bid.width).to.equal(800)
-      expect(bid.height).to.equal(600)
-      expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037')
-      expect(bid.meta.advertiserDomains).to.deep.equal(['test.com'])
-      expect(bid.mediaType).to.equal('video')
-      expect(bid.creativeId).to.equal('cr-vid')
-      expect(bid.currency).to.equal('USD')
-      expect(bid.netRevenue).to.equal(true)
-      expect(bid.cpm).to.equal(1.0)
-      expect(bid.ttl).to.equal(600)
-    })
-  })
+      expect(videoBids.length).to.equal(1);
+      const bid = videoBids[0];
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.meta.advertiserDomains).to.deep.equal(['test.com']);
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.creativeId).to.equal('cr-vid');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(600);
+    });
+  });
 
   describe('Verify Multi-Format ads and Multiple Size Bid Request', function() {
     it('buildRequests works', function () {
@@ -196,34 +196,34 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.site).to.not.equal(null)
-      expect(openrtbRequest.site.ref).to.equal('Reference Page')
-      expect(openrtbRequest.device).to.not.equal(null)
-      expect(openrtbRequest.device.ua).to.equal(navigator.userAgent)
-      expect(openrtbRequest.device).to.have.property('dnt')
-      expect(openrtbRequest.imp[0].video).to.not.equal(null)
-      expect(openrtbRequest.imp[0].video.w).to.equal(640)
-      expect(openrtbRequest.imp[0].video.h).to.equal(480)
-      expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4')
-      expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6])
-      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0)
-      expect(openrtbRequest.imp[0].video.skip).to.equal(0)
-      expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4])
-      expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1)
-      expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5])
-      expect(openrtbRequest.imp[0].banner).to.not.equal(null)
-      expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300)
-      expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(250)
-      expect(openrtbRequest.imp[0].banner.format[1].w).to.equal(300)
-      expect(openrtbRequest.imp[0].banner.format[1].h).to.equal(600)
-      expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('myzone')
-      expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mypath')
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.site).to.not.equal(null);
+      expect(openrtbRequest.site.ref).to.equal('Reference Page');
+      expect(openrtbRequest.device).to.not.equal(null);
+      expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
+      expect(openrtbRequest.device).to.have.property('dnt');
+      expect(openrtbRequest.imp[0].video).to.not.equal(null);
+      expect(openrtbRequest.imp[0].video.w).to.equal(640);
+      expect(openrtbRequest.imp[0].video.h).to.equal(480);
+      expect(openrtbRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
+      expect(openrtbRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
+      expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
+      expect(openrtbRequest.imp[0].video.skip).to.equal(0);
+      expect(openrtbRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
+      expect(openrtbRequest.imp[0].video.delivery[0]).to.equal(1);
+      expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
+      expect(openrtbRequest.imp[0].banner).to.not.equal(null);
+      expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300);
+      expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(250);
+      expect(openrtbRequest.imp[0].banner.format[1].w).to.equal(300);
+      expect(openrtbRequest.imp[0].banner.format[1].h).to.equal(600);
+      expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('myzone');
+      expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mypath');
+    });
 
     it('interpretResponse works', function() {
       var bidList = {
@@ -248,23 +248,23 @@ describe('rhythmone adapter tests', function () {
             }
           ]
         }
-      }
+      };
 
-      var forRMPMultiFormatResponse = r1adapter.interpretResponse(bidList)
+      var forRMPMultiFormatResponse = r1adapter.interpretResponse(bidList);
 
-      expect(forRMPMultiFormatResponse.length).to.equal(1)
-      const bid = forRMPMultiFormatResponse[0]
-      expect(bid.width).to.equal(800)
-      expect(bid.height).to.equal(600)
-      expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037')
-      expect(bid.mediaType).to.equal('video')
-      expect(bid.creativeId).to.equal('cr-vid')
-      expect(bid.currency).to.equal('USD')
-      expect(bid.netRevenue).to.equal(true)
-      expect(bid.cpm).to.equal(1.0)
-      expect(bid.ttl).to.equal(600)
-    })
-  })
+      expect(forRMPMultiFormatResponse.length).to.equal(1);
+      const bid = forRMPMultiFormatResponse[0];
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.creativeId).to.equal('cr-vid');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(600);
+    });
+  });
 
   describe('misc buildRequests', function() {
     it('should send GDPR Consent data to RhythmOne tag', function () {
@@ -288,21 +288,21 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var consentString = 'testConsentString'
-      var gdprBidderRequest = this.defaultBidderRequest
+      var consentString = 'testConsentString';
+      var gdprBidderRequest = this.defaultBidderRequest;
       gdprBidderRequest.gdprConsent = {
         'gdprApplies': true,
         'consentString': consentString
-      }
+      };
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, gdprBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, gdprBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.user.ext.consent).to.equal(consentString)
-      expect(openrtbRequest.regs.ext.gdpr).to.equal(true)
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.user.ext.consent).to.equal(consentString);
+      expect(openrtbRequest.regs.ext.gdpr).to.equal(true);
+    });
 
     it('prefer 2.0 sizes', function () {
       var bidRequestList = [
@@ -326,14 +326,14 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300)
-      expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(600)
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300);
+      expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(600);
+    });
 
     it('does not return request for invalid banner size configuration', function () {
       var bidRequestList = [
@@ -356,11 +356,11 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
-      expect(bidRequest.method).to.be.undefined
-    })
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      expect(bidRequest.method).to.be.undefined;
+    });
 
     it('does not return request for missing banner size configuration', function () {
       var bidRequestList = [
@@ -381,11 +381,11 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
-      expect(bidRequest.method).to.be.undefined
-    })
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      expect(bidRequest.method).to.be.undefined;
+    });
 
     it('reject bad sizes', function () {
       var bidRequestList = [
@@ -406,12 +406,12 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].banner.format.length).to.equal(1)
-    })
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
+    });
 
     it('sets floor to zero', function () {
       var bidRequestList = [
@@ -433,13 +433,13 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].bidfloor).to.equal(0)
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].bidfloor).to.equal(0);
+    });
 
     it('supports string video sizes', function () {
       var bidRequestList = [
@@ -461,14 +461,14 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].video.w).to.equal(600)
-      expect(openrtbRequest.imp[0].video.h).to.equal(300)
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].video.w).to.equal(600);
+      expect(openrtbRequest.imp[0].video.h).to.equal(300);
+    });
 
     it('rejects bad video sizes', function () {
       var bidRequestList = [
@@ -490,14 +490,14 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].video.w).to.be.undefined
-      expect(openrtbRequest.imp[0].video.h).to.be.undefined
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].video.w).to.be.undefined;
+      expect(openrtbRequest.imp[0].video.h).to.be.undefined;
+    });
 
     it('supports missing video size', function () {
       var bidRequestList = [
@@ -518,14 +518,14 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].video.w).to.be.undefined
-      expect(openrtbRequest.imp[0].video.h).to.be.undefined
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].video.w).to.be.undefined;
+      expect(openrtbRequest.imp[0].video.h).to.be.undefined;
+    });
 
     it('uses default zone and path', function () {
       var bidRequestList = [
@@ -548,14 +548,14 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      const openrtbRequest = JSON.parse(bidRequest.data)
-      expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('1r')
-      expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mvo')
-    })
+      const openrtbRequest = JSON.parse(bidRequest.data);
+      expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('1r');
+      expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mvo');
+    });
 
     it('should return empty when required params not found', function () {
       var bidRequestList = [
@@ -579,15 +579,15 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest).to.be.empty
-    })
+      expect(bidRequest).to.be.empty;
+    });
 
     it('should return empty site data when refererInfo is missing', function() {
-      delete this.defaultBidderRequest.refererInfo
+      delete this.defaultBidderRequest.refererInfo;
       var bidRequestList = [
         {
           'bidder': 'rhythmone',
@@ -605,19 +605,19 @@ describe('rhythmone adapter tests', function () {
           'bidRequestsCount': 1,
           'bidId': '51ef8751f9aead'
         }
-      ]
+      ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
-      const openrtbRequest = JSON.parse(bidRequest.data)
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      const openrtbRequest = JSON.parse(bidRequest.data);
 
-      expect(openrtbRequest.site.domain).to.equal('')
-      expect(openrtbRequest.site.page).to.equal('')
-      expect(openrtbRequest.site.ref).to.equal('')
-    })
-  })
+      expect(openrtbRequest.site.domain).to.equal('');
+      expect(openrtbRequest.site.page).to.equal('');
+      expect(openrtbRequest.site.ref).to.equal('');
+    });
+  });
 
   it('should secure correctly', function() {
-    this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl']
+    this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl'];
     var bidRequestList = [
       {
         'bidder': 'rhythmone',
@@ -635,13 +635,13 @@ describe('rhythmone adapter tests', function () {
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead'
       }
-    ]
+    ];
 
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
-    const openrtbRequest = JSON.parse(bidRequest.data)
+    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    const openrtbRequest = JSON.parse(bidRequest.data);
 
-    expect(openrtbRequest.imp[0].secure).to.equal(1)
-  })
+    expect(openrtbRequest.imp[0].secure).to.equal(1);
+  });
 
   it('should pass schain', function() {
     var schain = {
@@ -656,7 +656,7 @@ describe('rhythmone adapter tests', function () {
         'sid': '00002',
         'hp': 1
       }]
-    }
+    };
     var bidRequestList = [
       {
         'bidder': 'rhythmone',
@@ -681,22 +681,22 @@ describe('rhythmone adapter tests', function () {
           }
         }
       }
-    ]
+    ];
 
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest)
-    const openrtbRequest = JSON.parse(bidRequest.data)
+    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    const openrtbRequest = JSON.parse(bidRequest.data);
 
-    expect(openrtbRequest.source.ext.schain).to.deep.equal(schain)
-  })
+    expect(openrtbRequest.source.ext.schain).to.deep.equal(schain);
+  });
 
   describe('misc interpretResponse', function () {
     it('No bid response', function() {
       var noBidResponse = r1adapter.interpretResponse({
         'body': ''
-      })
-      expect(noBidResponse.length).to.equal(0)
-    })
-  })
+      });
+      expect(noBidResponse.length).to.equal(0);
+    });
+  });
 
   describe('isBidRequestValid', function () {
     var bid = {
@@ -712,21 +712,21 @@ describe('rhythmone adapter tests', function () {
         }
       },
       'adUnitCode': 'bannerDiv'
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(r1adapter.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(r1adapter.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when placementId missing', function () {
-      delete bid.params.placementId
-      expect(r1adapter.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      delete bid.params.placementId;
+      expect(r1adapter.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('getUserSyncs', function () {
     it('returns an empty string', function () {
-      expect(r1adapter.getUserSyncs()).to.deep.equal([])
-    })
-  })
-})
+      expect(r1adapter.getUserSyncs()).to.deep.equal([]);
+    });
+  });
+});

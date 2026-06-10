@@ -5,22 +5,22 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js'
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { VENDORLESS_GVLID } from '../src/consentHandler.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
-import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js'
+import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
-import type { IdProviderSpec } from "./userId/spec.ts"
+import type { IdProviderSpec } from "./userId/spec.ts";
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' })
-const COOKIE = 'cookie'
-const LOCAL_STORAGE = 'html5'
-const OPTOUT_NAME = '_pubcid_optout'
-const PUB_COMMON_ID = 'PublisherCommonId'
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
+const COOKIE = 'cookie';
+const LOCAL_STORAGE = 'html5';
+const OPTOUT_NAME = '_pubcid_optout';
+const PUB_COMMON_ID = 'PublisherCommonId';
 
-export type SharedIdSystemModuleName = 'sharedId' | 'pubCommonId'
+export type SharedIdSystemModuleName = 'sharedId' | 'pubCommonId';
 
 export type SharedIdParams = {
   /**
@@ -41,7 +41,7 @@ export type SharedIdParams = {
    * The value to use for `inserter` in EIDs.
    */
   inserter?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -67,14 +67,14 @@ declare module './userId/spec' {
  */
 function readValue(name, type) {
   if (type === COOKIE) {
-    return storage.getCookie(name)
+    return storage.getCookie(name);
   } else if (type === LOCAL_STORAGE) {
     if (storage.hasLocalStorage()) {
-      const expValue = storage.getDataFromLocalStorage(`${name}_exp`)
+      const expValue = storage.getDataFromLocalStorage(`${name}_exp`);
       if (!expValue) {
-        return storage.getDataFromLocalStorage(name)
+        return storage.getDataFromLocalStorage(name);
       } else if ((new Date(expValue)).getTime() - Date.now() > 0) {
-        return storage.getDataFromLocalStorage(name)
+        return storage.getDataFromLocalStorage(name);
       }
     }
   }
@@ -84,32 +84,32 @@ function getIdCallback(pubcid, pixelUrl) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
-        callback(getStoredId() || pubcid)
-      })()
+        callback(getStoredId() || pubcid);
+      })();
     } else {
-      callback(pubcid)
+      callback(pubcid);
     }
-  }
+  };
 }
 
 function queuePixelCallback(pixelUrl, id = '', callback?) {
   if (!pixelUrl) {
-    return
+    return;
   }
 
   // Use pubcid as a cache buster
-  const urlInfo = parseUrl(pixelUrl)
-  urlInfo.search.id = encodeURIComponent('pubcid:' + id)
-  const targetUrl = buildUrl(urlInfo)
+  const urlInfo = parseUrl(pixelUrl);
+  urlInfo.search.id = encodeURIComponent('pubcid:' + id);
+  const targetUrl = buildUrl(urlInfo);
 
   return function () {
-    triggerPixel(targetUrl, callback)
-  }
+    triggerPixel(targetUrl, callback);
+  };
 }
 
 function hasOptedOut() {
   return !!((storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
-    (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)))
+    (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
 }
 
 export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
@@ -127,37 +127,37 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
    */
   decode(value, config) {
     if (hasOptedOut()) {
-      logInfo('PubCommonId decode: Has opted-out')
-      return undefined
+      logInfo('PubCommonId decode: Has opted-out');
+      return undefined;
     }
-    logInfo(' Decoded value PubCommonId ' + value)
-    const idObj = { 'pubcid': value as string }
-    return idObj
+    logInfo(' Decoded value PubCommonId ' + value);
+    const idObj = { 'pubcid': value as string };
+    return idObj;
   },
   getId: function (config = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
-      logInfo('PubCommonId: Has opted-out')
-      return
+      logInfo('PubCommonId: Has opted-out');
+      return;
     }
     if (consentData?.coppa) {
-      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId')
-      return
+      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      return;
     }
-    const { params: { create = true, pixelUrl } = {} } = config
-    let newId = storedId
+    const { params: { create = true, pixelUrl } = {} } = config;
+    let newId = storedId;
     if (!newId) {
       try {
         if (typeof window[PUB_COMMON_ID] === 'object') {
           // If the page includes its own pubcid module, then save a copy of id.
-          newId = window[PUB_COMMON_ID].getId()
+          newId = window[PUB_COMMON_ID].getId();
         }
       } catch (e) {
       }
 
-      if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined
+      if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return { id: newId, callback: getIdCallback(newId, pixelUrl) }
+    return { id: newId, callback: getIdCallback(newId, pixelUrl) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -174,21 +174,21 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
    */
   extendId: function(config = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
-      logInfo('PubCommonId: Has opted-out')
-      return { id: undefined }
+      logInfo('PubCommonId: Has opted-out');
+      return { id: undefined };
     }
     if (consentData?.coppa) {
-      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId')
-      return
+      logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
+      return;
     }
-    const { params: { extend = false, pixelUrl } = {} } = config
+    const { params: { extend = false, pixelUrl } = {} } = config;
 
     if (extend) {
       if (pixelUrl) {
-        const callback = queuePixelCallback(pixelUrl, storedId as string)
-        return { callback: callback }
+        const callback = queuePixelCallback(pixelUrl, storedId as string);
+        return { callback: callback };
       } else {
-        return { id: storedId }
+        return { id: storedId };
       }
     }
   },
@@ -198,13 +198,13 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       const eid: any = {
         source: 'pubcid.org',
         uids: values.map(id => ({ id, atype: 1 }))
-      }
+      };
       if (config?.params?.inserter != null) {
-        eid.inserter = config.params.inserter
+        eid.inserter = config.params.inserter;
       }
-      return eid
+      return eid;
     },
   }
-}
+};
 
-submodule('userId', sharedIdSystemSubmodule)
+submodule('userId', sharedIdSystemSubmodule);

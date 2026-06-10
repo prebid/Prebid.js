@@ -1,12 +1,12 @@
-import { assert, expect } from 'chai'
-import { spec } from 'modules/admediaBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from 'src/utils.js'
+import { assert, expect } from 'chai';
+import { spec } from 'modules/admediaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
-const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/'
+const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 
 describe('admediaBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     const bid = {
       adUnitCode: 'adunit-code',
@@ -20,11 +20,11 @@ describe('admediaBidAdapter', function () {
       refererInfo: {
         page: 'https://test.com'
       }
-    }
+    };
     it('should return true where required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
-  })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+  });
   describe('buildRequests', function () {
     const bidRequests = [
       {
@@ -40,19 +40,19 @@ describe('admediaBidAdapter', function () {
           page: 'https://test.com'
         }
       }
-    ]
+    ];
 
     const bidderRequests = {
       refererInfo: {
         page: 'https://test.com',
       }
-    }
+    };
 
-    const request = spec.buildRequests(bidRequests, bidderRequests)
+    const request = spec.buildRequests(bidRequests, bidderRequests);
     it('sends bid request via POST', function () {
-      expect(request[0].method).to.equal('POST')
-    })
-  })
+      expect(request[0].method).to.equal('POST');
+    });
+  });
 
   describe('interpretResponse', function () {
     const bidRequest = {
@@ -73,7 +73,7 @@ describe('admediaBidAdapter', function () {
         'bidId': '2556388472b168',
         'referer': 'https%3A%2F%test.com'
       }
-    }
+    };
     const serverResponse = {
       body:
         {
@@ -97,7 +97,7 @@ describe('admediaBidAdapter', function () {
           ]
         }
 
-    }
+    };
     it('should get the correct bid response', function () {
       let expectedResponse =
       {
@@ -119,12 +119,12 @@ describe('admediaBidAdapter', function () {
             }
           }
         ]
-      }
-      let result = spec.interpretResponse(serverResponse, bidRequest)
-      expect(result).to.be.an('array').that.is.not.empty
+      };
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result).to.be.an('array').that.is.not.empty;
       expect(Object.keys(result[0])).to.have.members(
         Object.keys(expectedResponse.tags[0])
-      )
-    })
-  })
-})
+      );
+    });
+  });
+});

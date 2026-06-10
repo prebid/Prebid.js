@@ -1,7 +1,7 @@
-import { oxxionSubmodule } from 'modules/oxxionRtdProvider.js'
-import 'src/prebid.js'
+import { oxxionSubmodule } from 'modules/oxxionRtdProvider.js';
+import 'src/prebid.js';
 
-const utils = require('src/utils.js')
+const utils = require('src/utils.js');
 
 const moduleConfig = {
   params: {
@@ -11,7 +11,7 @@ const moduleConfig = {
     threshold: false,
     bidders: ['appnexus', 'mediasquare'],
   }
-}
+};
 
 const request = {
   'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
@@ -43,7 +43,7 @@ const request = {
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
     }
   ]
-}
+};
 
 const bids = [{
   'bidderCode': 'mediasquare',
@@ -111,14 +111,14 @@ const bids = [{
     'impression': ['https://some.tracking-url.com']
   }
 },
-]
+];
 
 const bidInterests = [
   { 'id': 0, 'rate': 50.0, 'suggestion': true },
   { 'id': 1, 'rate': 12.0, 'suggestion': false },
   { 'id': 2, 'rate': 0.0, 'suggestion': true },
   { 'id': 3, 'rate': 0.0, 'suggestion': false },
-]
+];
 
 const userConsent = {
   'gdpr': {
@@ -127,34 +127,34 @@ const userConsent = {
   'usp': null,
   'gpp': null,
   'coppa': false
-}
+};
 
 describe('oxxionRtdProvider', () => {
   describe('Oxxion RTD sub module', () => {
     it('should init, return true, and set the params', () => {
-      expect(oxxionSubmodule.init(moduleConfig)).to.equal(true)
-    })
-  })
+      expect(oxxionSubmodule.init(moduleConfig)).to.equal(true);
+    });
+  });
 
   describe('Oxxion RTD sub module', () => {
-    const auctionEnd = request
-    auctionEnd.bidsReceived = bids
+    const auctionEnd = request;
+    auctionEnd.bidsReceived = bids;
     it('call everything', function() {
-      oxxionSubmodule.getBidRequestData(request, null, moduleConfig)
-    })
+      oxxionSubmodule.getBidRequestData(request, null, moduleConfig);
+    });
     it('check bid filtering', function() {
-      const requestsList = oxxionSubmodule.getRequestsList(request)
-      expect(requestsList.length).to.equal(4)
-      expect(requestsList[0]).to.have.property('id')
-      expect(request.adUnits[0].bids[0]).to.have.property('_id')
-      expect(requestsList[0].id).to.equal(request.adUnits[0].bids[0]._id)
-      const [filteredBiddderRequests, filteredBids] = oxxionSubmodule.getFilteredAdUnitsOnBidRates(bidInterests, request.adUnits, moduleConfig.params, false)
-      expect(filteredBids.length).to.equal(1)
-      expect(filteredBiddderRequests.length).to.equal(3)
-      expect(filteredBiddderRequests[0]).to.have.property('bids')
-      expect(filteredBiddderRequests[0].bids.length).to.equal(1)
-      expect(filteredBiddderRequests[1]).to.have.property('bids')
-      expect(filteredBiddderRequests[1].bids.length).to.equal(1)
-    })
-  })
-})
+      const requestsList = oxxionSubmodule.getRequestsList(request);
+      expect(requestsList.length).to.equal(4);
+      expect(requestsList[0]).to.have.property('id');
+      expect(request.adUnits[0].bids[0]).to.have.property('_id');
+      expect(requestsList[0].id).to.equal(request.adUnits[0].bids[0]._id);
+      const [filteredBiddderRequests, filteredBids] = oxxionSubmodule.getFilteredAdUnitsOnBidRates(bidInterests, request.adUnits, moduleConfig.params, false);
+      expect(filteredBids.length).to.equal(1);
+      expect(filteredBiddderRequests.length).to.equal(3);
+      expect(filteredBiddderRequests[0]).to.have.property('bids');
+      expect(filteredBiddderRequests[0].bids.length).to.equal(1);
+      expect(filteredBiddderRequests[1]).to.have.property('bids');
+      expect(filteredBiddderRequests[1].bids.length).to.equal(1);
+    });
+  });
+});

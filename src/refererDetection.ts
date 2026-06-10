@@ -8,27 +8,27 @@
  * Canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
  */
 
-import { config } from './config.js'
-import { logWarn } from './utils.js'
+import { config } from './config.js';
+import { logWarn } from './utils.js';
 
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
  */
 export function ensureProtocol(url, win = window) {
-  if (!url) return url
+  if (!url) return url;
   if (/\w+:\/\//.exec(url)) {
     // url already has protocol
-    return url
+    return url;
   }
-  let windowProto = win.location.protocol
+  let windowProto = win.location.protocol;
   try {
-    windowProto = win.top.location.protocol
+    windowProto = win.top.location.protocol;
   } catch (e) {}
   if (/^\/\//.exec(url)) {
     // url uses relative protocol ("//example.com")
-    return windowProto + url
+    return windowProto + url;
   } else {
-    return `${windowProto}//${url}`
+    return `${windowProto}//${url}`;
   }
 }
 
@@ -41,17 +41,17 @@ export function ensureProtocol(url, win = window) {
  * @return The extracted domain or undefined if the URL is invalid.
  */
 export function parseDomain(url: string, { noLeadingWww = false, noPort = false } = {}): string | null {
-  let target
+  let target;
   try {
-    target = new URL(ensureProtocol(url))
+    target = new URL(ensureProtocol(url));
   } catch (e) {
-    return
+    return;
   }
-  target = noPort ? target.hostname : target.host
+  target = noPort ? target.hostname : target.host;
   if (noLeadingWww && target.startsWith('www.')) {
-    target = target.substring(4)
+    target = target.substring(4);
   }
-  return target
+  return target;
 }
 
 /**
@@ -62,16 +62,16 @@ export function parseDomain(url: string, { noLeadingWww = false, noPort = false 
  */
 function getCanonicalUrl(doc) {
   try {
-    const element = doc.querySelector("link[rel='canonical']")
+    const element = doc.querySelector("link[rel='canonical']");
 
     if (element !== null) {
-      return element.href
+      return element.href;
     }
   } catch (e) {
     // Ignore error
   }
 
-  return null
+  return null;
 }
 
 declare module './config' {
@@ -103,10 +103,10 @@ export function detectReferer(win) {
   function getAncestorOrigins(win) {
     try {
       if (!win.location.ancestorOrigins) {
-        return
+        return;
       }
 
-      return win.location.ancestorOrigins
+      return win.location.ancestorOrigins;
     } catch (e) {
       // Ignore error
     }
@@ -122,120 +122,120 @@ export function detectReferer(win) {
    * @returns An object containing referer information.
    */
   function refererInfo() {
-    const stack: string[] = []
-    const ancestors = getAncestorOrigins(win)
-    const maxNestedIframes = config.getConfig('maxNestedIframes')
+    const stack: string[] = [];
+    const ancestors = getAncestorOrigins(win);
+    const maxNestedIframes = config.getConfig('maxNestedIframes');
 
-    let currentWindow
-    let bestLocation: string
-    let bestCanonicalUrl
-    let reachedTop = false
-    let level = 0
-    let valuesFromAmp = false
-    let inAmpFrame = false
-    let hasTopLocation = false
+    let currentWindow;
+    let bestLocation: string;
+    let bestCanonicalUrl;
+    let reachedTop = false;
+    let level = 0;
+    let valuesFromAmp = false;
+    let inAmpFrame = false;
+    let hasTopLocation = false;
 
     do {
-      const previousWindow = currentWindow
-      const wasInAmpFrame = inAmpFrame
-      let currentLocation
-      let crossOrigin = false
-      let foundLocation = null
+      const previousWindow = currentWindow;
+      const wasInAmpFrame = inAmpFrame;
+      let currentLocation;
+      let crossOrigin = false;
+      let foundLocation = null;
 
-      inAmpFrame = false
-      currentWindow = currentWindow ? currentWindow.parent : win
+      inAmpFrame = false;
+      currentWindow = currentWindow ? currentWindow.parent : win;
 
       try {
-        currentLocation = currentWindow.location.href || null
+        currentLocation = currentWindow.location.href || null;
       } catch (e) {
-        crossOrigin = true
+        crossOrigin = true;
       }
 
       if (crossOrigin) {
         if (wasInAmpFrame) {
-          const context = previousWindow.context
+          const context = previousWindow.context;
 
           try {
-            foundLocation = context.sourceUrl
-            bestLocation = foundLocation
-            hasTopLocation = true
+            foundLocation = context.sourceUrl;
+            bestLocation = foundLocation;
+            hasTopLocation = true;
 
-            valuesFromAmp = true
+            valuesFromAmp = true;
 
             if (currentWindow === win.top) {
-              reachedTop = true
+              reachedTop = true;
             }
 
             if (context.canonicalUrl) {
-              bestCanonicalUrl = context.canonicalUrl
+              bestCanonicalUrl = context.canonicalUrl;
             }
           } catch (e) { /* Do nothing */ }
         } else {
-          logWarn('Trying to access cross domain iframe. Continuing without referrer and location')
+          logWarn('Trying to access cross domain iframe. Continuing without referrer and location');
 
           try {
             // the referrer to an iframe is the parent window
-            const referrer = previousWindow.document.referrer
+            const referrer = previousWindow.document.referrer;
 
             if (referrer) {
-              foundLocation = referrer
+              foundLocation = referrer;
 
               if (currentWindow === win.top) {
-                reachedTop = true
+                reachedTop = true;
               }
             }
           } catch (e) { /* Do nothing */ }
 
           if (!foundLocation && ancestors && ancestors[level - 1]) {
-            foundLocation = ancestors[level - 1]
+            foundLocation = ancestors[level - 1];
             if (currentWindow === win.top) {
-              hasTopLocation = true
+              hasTopLocation = true;
             }
           }
 
           if (foundLocation && !valuesFromAmp) {
-            bestLocation = foundLocation
+            bestLocation = foundLocation;
           }
         }
       } else {
         if (currentLocation) {
-          foundLocation = currentLocation
-          bestLocation = foundLocation
-          valuesFromAmp = false
+          foundLocation = currentLocation;
+          bestLocation = foundLocation;
+          valuesFromAmp = false;
 
           if (currentWindow === win.top) {
-            reachedTop = true
+            reachedTop = true;
 
-            const canonicalUrl = getCanonicalUrl(currentWindow.document)
+            const canonicalUrl = getCanonicalUrl(currentWindow.document);
 
             if (canonicalUrl) {
-              bestCanonicalUrl = canonicalUrl
+              bestCanonicalUrl = canonicalUrl;
             }
           }
         }
 
         if (currentWindow.context && currentWindow.context.sourceUrl) {
-          inAmpFrame = true
+          inAmpFrame = true;
         }
       }
 
-      stack.push(foundLocation)
-      level++
-    } while (currentWindow !== win.top && level < maxNestedIframes)
+      stack.push(foundLocation);
+      level++;
+    } while (currentWindow !== win.top && level < maxNestedIframes);
 
-    stack.reverse()
+    stack.reverse();
 
-    let ref: string
+    let ref: string;
     try {
-      ref = win.top.document.referrer
+      ref = win.top.document.referrer;
     } catch (e) {}
 
-    const location: string = reachedTop || hasTopLocation ? bestLocation : null
-    const canonicalUrl: string | null = config.getConfig('pageUrl') || bestCanonicalUrl || null
-    let page: string = config.getConfig('pageUrl') || location || ensureProtocol(canonicalUrl, win)
+    const location: string = reachedTop || hasTopLocation ? bestLocation : null;
+    const canonicalUrl: string | null = config.getConfig('pageUrl') || bestCanonicalUrl || null;
+    let page: string = config.getConfig('pageUrl') || location || ensureProtocol(canonicalUrl, win);
 
     if (location && location.indexOf('?') > -1 && page.indexOf('?') === -1) {
-      page = `${page}${location.substring(location.indexOf('?'))}`
+      page = `${page}${location.substring(location.indexOf('?'))}`;
     }
 
     return {
@@ -286,29 +286,29 @@ export function detectReferer(win) {
         referer: bestLocation || null,
         canonicalUrl
       }
-    }
+    };
   }
 
-  return refererInfo
+  return refererInfo;
 }
 
 // cache result of fn (= referer info) as long as:
 // - we are the top window
 // - canonical URL tag and window location have not changed
 export function cacheWithLocation(fn, win = window) {
-  if (win.top !== win) return fn
-  let canonical, href, value
+  if (win.top !== win) return fn;
+  let canonical, href, value;
   return function () {
-    const newCanonical = getCanonicalUrl(win.document)
-    const newHref = win.location.href
+    const newCanonical = getCanonicalUrl(win.document);
+    const newHref = win.location.href;
     if (canonical !== newCanonical || newHref !== href) {
-      canonical = newCanonical
-      href = newHref
-      value = fn()
+      canonical = newCanonical;
+      href = newHref;
+      value = fn();
     }
-    return value
-  }
+    return value;
+  };
 }
 
-export type RefererInfo = ReturnType<ReturnType<typeof detectReferer>>
-export const getRefererInfo: () => RefererInfo = cacheWithLocation(detectReferer(window))
+export type RefererInfo = ReturnType<ReturnType<typeof detectReferer>>;
+export const getRefererInfo: () => RefererInfo = cacheWithLocation(detectReferer(window));

@@ -1,8 +1,8 @@
-import { expect } from 'chai'
-import { spec, resetSync } from 'modules/optidigitalBidAdapter.js'
-import * as utils from 'src/utils.js'
+import { expect } from 'chai';
+import { spec, resetSync } from 'modules/optidigitalBidAdapter.js';
+import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://pbs.optidigital.com/bidder'
+const ENDPOINT = 'https://pbs.optidigital.com/bidder';
 
 describe('optidigitalAdapterTests', function () {
   describe('isBidRequestValid', function () {
@@ -13,31 +13,31 @@ describe('optidigitalAdapterTests', function () {
           publisherId: 's123',
           placementId: 'Billboard_Top'
         }
-      })).to.equal(true)
-    })
+      })).to.equal(true);
+    });
     it('bidRequest without publisherId', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optidigital',
         params: {
           placementId: 'Billboard_Top'
         }
-      })).to.equal(false)
-    })
+      })).to.equal(false);
+    });
     it('bidRequest without placementId', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optidigital',
         params: {
           publisherId: 's123'
         }
-      })).to.equal(false)
-    })
+      })).to.equal(false);
+    });
     it('bidRequest without required parameters', function () {
       expect(spec.isBidRequestValid({
         bidder: 'optidigital',
         params: {}
-      })).to.equal(false)
-    })
-  })
+      })).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidderRequest = {
@@ -176,7 +176,7 @@ describe('optidigitalAdapterTests', function () {
       'refererInfo': {
         'canonicalUrl': 'https://www.prebid.org/the/link/to/the/page'
       }
-    }
+    };
 
     const validBidRequests = [
       {
@@ -196,29 +196,29 @@ describe('optidigitalAdapterTests', function () {
         'bidderRequestId': '418b37f85e772c',
         'auctionId': '18fd8b8b0bd757'
       }
-    ]
+    ];
 
     it('should return an empty array if there are no bid requests', () => {
-      const emptyBidRequests = []
-      const request = spec.buildRequests(emptyBidRequests, emptyBidRequests)
-      expect(request).to.be.an('array').that.is.empty
-    })
+      const emptyBidRequests = [];
+      const request = spec.buildRequests(emptyBidRequests, emptyBidRequests);
+      expect(request).to.be.an('array').that.is.empty;
+    });
 
     it('should send bid request via POST', function() {
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      expect(request.method).to.equal('POST')
-    })
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.method).to.equal('POST');
+    });
 
     it('should send bid request to given endpoint', function() {
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const finalEndpoint = `${ENDPOINT}/s123`
-      expect(request.url).to.equal(finalEndpoint)
-    })
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const finalEndpoint = `${ENDPOINT}/s123`;
+      expect(request.url).to.equal(finalEndpoint);
+    });
 
     it('should be bidRequest data', function () {
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      expect(request.data).to.exist
-    })
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.exist;
+    });
 
     it('should add schain object to payload if exists', function () {
       const bidRequest = Object.assign({}, validBidRequests[0], {
@@ -237,10 +237,10 @@ describe('optidigitalAdapterTests', function () {
             }
           }
         }
-      })
-      const request = spec.buildRequests([bidRequest], bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.schain).to.exist
+      });
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.exist;
       expect(payload.schain).to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -249,8 +249,8 @@ describe('optidigitalAdapterTests', function () {
           sid: '00001',
           hp: 1
         }]
-      })
-    })
+      });
+    });
 
     it('should add adContainerWidth and adContainerHeight to payload if divId exsists in parameter', function () {
       const validBidRequestsWithDivId = [
@@ -273,25 +273,25 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
-      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest)
-      const payload = JSON.parse(request.data)
-      payload.imp[0].adContainerWidth = 1920
-      payload.imp[0].adContainerHeight = 1080
-      expect(payload.imp[0].adContainerWidth).to.exist
-      expect(payload.imp[0].adContainerHeight).to.exist
-    })
+      ];
+      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
+      const payload = JSON.parse(request.data);
+      payload.imp[0].adContainerWidth = 1920;
+      payload.imp[0].adContainerHeight = 1080;
+      expect(payload.imp[0].adContainerWidth).to.exist;
+      expect(payload.imp[0].adContainerHeight).to.exist;
+    });
 
     it('should read container size from DOM when divId exists', function () {
-      const containerId = 'od-test-container'
-      const el = document.createElement('div')
-      el.id = containerId
-      el.style.width = '321px'
-      el.style.height = '111px'
-      el.style.position = 'absolute'
-      el.style.left = '0'
-      el.style.top = '0'
-      document.body.appendChild(el)
+      const containerId = 'od-test-container';
+      const el = document.createElement('div');
+      el.id = containerId;
+      el.style.width = '321px';
+      el.style.height = '111px';
+      el.style.position = 'absolute';
+      el.style.left = '0';
+      el.style.top = '0';
+      document.body.appendChild(el);
 
       const validBidRequestsWithDivId = [
         {
@@ -313,17 +313,17 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
 
-      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest)
-      const payload = JSON.parse(request.data)
+      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
+      const payload = JSON.parse(request.data);
       try {
-        expect(payload.imp[0].adContainerWidth).to.equal(el.offsetWidth)
-        expect(payload.imp[0].adContainerHeight).to.equal(el.offsetHeight)
+        expect(payload.imp[0].adContainerWidth).to.equal(el.offsetWidth);
+        expect(payload.imp[0].adContainerHeight).to.equal(el.offsetHeight);
       } finally {
-        document.body.removeChild(el)
+        document.body.removeChild(el);
       }
-    })
+    });
 
     it('should add pageTemplate to payload if pageTemplate exsists in parameter', function () {
       const validBidRequestsWithDivId = [
@@ -346,19 +346,19 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
-      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest)
-      const payload = JSON.parse(request.data)
-      payload.imp[0].pageTemplate = 'home'
-      expect(payload.imp[0].pageTemplate).to.exist
-    })
+      ];
+      const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
+      const payload = JSON.parse(request.data);
+      payload.imp[0].pageTemplate = 'home';
+      expect(payload.imp[0].pageTemplate).to.exist;
+    });
 
     it('should add referrer to payload if it exsists in bidderRequest', function () {
-      bidderRequest.refererInfo.page = 'https://www.prebid.org'
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.referrer).to.equal('https://www.prebid.org')
-    })
+      bidderRequest.refererInfo.page = 'https://www.prebid.org';
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.referrer).to.equal('https://www.prebid.org');
+    });
 
     it('should use value for badv, bcat, bapp from params', function () {
       bidderRequest.ortb2 = {
@@ -422,29 +422,29 @@ describe('optidigitalAdapterTests', function () {
             'architecture': 'x86'
           }
         }
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.badv).to.deep.equal(validBidRequests[0].params.badv)
-      expect(payload.bcat).to.deep.equal(validBidRequests[0].params.bcat)
-      expect(payload.bapp).to.deep.equal(validBidRequests[0].params.bapp)
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.badv).to.deep.equal(validBidRequests[0].params.badv);
+      expect(payload.bcat).to.deep.equal(validBidRequests[0].params.bcat);
+      expect(payload.bapp).to.deep.equal(validBidRequests[0].params.bapp);
+    });
 
     it('should add keywords to payload when site keywords present', function() {
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.site.keywords).to.deep.equal('key1,key2')
-    })
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.site.keywords).to.deep.equal('key1,key2');
+    });
 
     it('should send empty GDPR consent and required set to false', function() {
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gdpr.consent).to.equal('')
-      expect(payload.gdpr.required).to.equal(false)
-    })
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gdpr.consent).to.equal('');
+      expect(payload.gdpr.required).to.equal(false);
+    });
 
     it('should send GDPR to given endpoint', function() {
-      const consentString = 'DFR8KRePoQNsRREZCADBG+A=='
+      const consentString = 'DFR8KRePoQNsRREZCADBG+A==';
       bidderRequest.gdprConsent = {
         'consentString': consentString,
         'gdprApplies': true,
@@ -453,17 +453,17 @@ describe('optidigitalAdapterTests', function () {
         },
         'addtlConsent': '1~7.12.35.62.66.70.89.93.108',
         'apiVersion': 1
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gdpr).to.exist
-      expect(payload.gdpr.consent).to.equal(consentString)
-      expect(payload.gdpr.required).to.exist.and.to.be.true
-      expect(payload.gdpr.addtlConsent).to.exist
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gdpr).to.exist;
+      expect(payload.gdpr.consent).to.equal(consentString);
+      expect(payload.gdpr.required).to.exist.and.to.be.true;
+      expect(payload.gdpr.addtlConsent).to.exist;
+    });
 
     it('should send empty GDPR consent to endpoint', function() {
-      const consentString = false
+      const consentString = false;
       bidderRequest.gdprConsent = {
         'consentString': consentString,
         'gdprApplies': true,
@@ -471,14 +471,14 @@ describe('optidigitalAdapterTests', function () {
           'hasGlobalConsent': false
         },
         'apiVersion': 1
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gdpr.consent).to.equal('')
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gdpr.consent).to.equal('');
+    });
 
     it('should send GDPR consent and required set to false when gdprApplies is not boolean', function() {
-      let consentString = 'DFR8KRePoQNsRREZCADBG+A=='
+      let consentString = 'DFR8KRePoQNsRREZCADBG+A==';
       bidderRequest.gdprConsent = {
         'consentString': consentString,
         'gdprApplies': "",
@@ -486,59 +486,59 @@ describe('optidigitalAdapterTests', function () {
           'hasGlobalConsent': false
         },
         'apiVersion': 1
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gdpr.consent).to.equal(consentString)
-      expect(payload.gdpr.required).to.exist.and.to.be.false
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gdpr.consent).to.equal(consentString);
+      expect(payload.gdpr.required).to.exist.and.to.be.false;
+    });
 
     it('should send uspConsent to given endpoint', function() {
-      bidderRequest.uspConsent = '1YYY'
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.us_privacy).to.exist
-    })
+      bidderRequest.uspConsent = '1YYY';
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.us_privacy).to.exist;
+    });
 
     it('should send gppConsent to given endpoint where there is gppConsent', function() {
-      const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+      const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
       bidderRequest.gppConsent = {
         'gppString': consentString,
         'applicableSections': [7]
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gpp).to.exist
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gpp).to.exist;
+    });
 
     it('should send gppConsent to given endpoint when there is gpp in ortb2', function() {
-      const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
-      bidderRequest.gppConsent = undefined
+      const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      bidderRequest.gppConsent = undefined;
       bidderRequest.ortb2 = {
         regs: {
           gpp: consentString,
           gpp_sid: [7]
         }
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gpp).to.exist
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gpp).to.exist;
+    });
 
     it('should set testMode when optidigitalTestMode flag present in location', function() {
-      const originalUrl = window.location.href
+      const originalUrl = window.location.href;
       const newUrl = originalUrl.includes('optidigitalTestMode=true')
         ? originalUrl
-        : `${window.location.pathname}${window.location.search}${window.location.search && window.location.search.length ? '&' : '?'}optidigitalTestMode=true${window.location.hash || ''}`
+        : `${window.location.pathname}${window.location.search}${window.location.search && window.location.search.length ? '&' : '?'}optidigitalTestMode=true${window.location.hash || ''}`;
       try {
-        window.history.pushState({}, '', newUrl)
-        const request = spec.buildRequests(validBidRequests, bidderRequest)
-        const payload = JSON.parse(request.data)
-        expect(payload.testMode).to.equal(true)
+        window.history.pushState({}, '', newUrl);
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.testMode).to.equal(true);
       } finally {
-        window.history.replaceState({}, '', originalUrl)
+        window.history.replaceState({}, '', originalUrl);
       }
-    })
+    });
 
     it('should use appropriate mediaTypes banner sizes', function() {
       const mediaTypesBannerSize = {
@@ -547,9 +547,9 @@ describe('optidigitalAdapterTests', function () {
             'sizes': [300, 600]
           }
         }
-      }
-      returnBannerSizes(mediaTypesBannerSize, '300x600')
-    })
+      };
+      returnBannerSizes(mediaTypesBannerSize, '300x600');
+    });
 
     it('should use appropriate mediaTypes banner sizes as array', function() {
       const mediaTypesBannerSize = {
@@ -558,9 +558,9 @@ describe('optidigitalAdapterTests', function () {
             'sizes': [300, 600]
           }
         }
-      }
-      returnBannerSizes(mediaTypesBannerSize, ['300x600'])
-    })
+      };
+      returnBannerSizes(mediaTypesBannerSize, ['300x600']);
+    });
 
     it('should fetch floor from floor module if it is available', function() {
       const validBidRequestsWithCurrency = [
@@ -584,14 +584,14 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
-      let floorInfo
-      validBidRequestsWithCurrency[0].getFloor = () => floorInfo
-      floorInfo = { currency: 'USD', floor: 1.99 }
-      const request = spec.buildRequests(validBidRequestsWithCurrency, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.imp[0].bidFloor).to.exist
-    })
+      ];
+      let floorInfo;
+      validBidRequestsWithCurrency[0].getFloor = () => floorInfo;
+      floorInfo = { currency: 'USD', floor: 1.99 };
+      const request = spec.buildRequests(validBidRequestsWithCurrency, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].bidFloor).to.exist;
+    });
 
     it('should add userEids to payload', function() {
       const userIdAsEids = [{
@@ -600,20 +600,20 @@ describe('optidigitalAdapterTests', function () {
           id: '121213434342343',
           atype: 1
         }]
-      }]
-      validBidRequests[0].userIdAsEids = userIdAsEids
-      bidderRequest.userIdAsEids = userIdAsEids
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.user.eids).to.deep.equal(userIdAsEids)
-    })
+      }];
+      validBidRequests[0].userIdAsEids = userIdAsEids;
+      bidderRequest.userIdAsEids = userIdAsEids;
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.eids).to.deep.equal(userIdAsEids);
+    });
 
     it('should not add userIdAsEids to payload when userIdAsEids is not present', function() {
-      validBidRequests[0].userIdAsEids = undefined
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.user).to.deep.equal(undefined)
-    })
+      validBidRequests[0].userIdAsEids = undefined;
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user).to.deep.equal(undefined);
+    });
 
     it('should add gpid to payload when gpid', function() {
       validBidRequests[0].ortb2Imp = {
@@ -626,68 +626,68 @@ describe('optidigitalAdapterTests', function () {
           },
           'gpid': '/19968336/header-bid-tag-0'
         }
-      }
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.imp[0].gpid).to.deep.equal('/19968336/header-bid-tag-0')
-    })
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].gpid).to.deep.equal('/19968336/header-bid-tag-0');
+    });
 
     function returnBannerSizes(mediaTypes, expectedSizes) {
-      const bidRequest = Object.assign(validBidRequests[0], mediaTypes)
-      const request = spec.buildRequests([bidRequest], bidderRequest)
-      const payload = JSON.parse(request.data)
+      const bidRequest = Object.assign(validBidRequests[0], mediaTypes);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
       return payload.imp.forEach(bid => {
         if (Array.isArray(expectedSizes)) {
-          expect(JSON.stringify(bid.sizes)).to.equal(JSON.stringify(expectedSizes))
+          expect(JSON.stringify(bid.sizes)).to.equal(JSON.stringify(expectedSizes));
         } else {
-          expect(bid.sizes[0]).to.equal(expectedSizes)
+          expect(bid.sizes[0]).to.equal(expectedSizes);
         }
-      })
+      });
     }
-  })
+  });
   describe('getUserSyncs', function() {
-    const syncurlIframe = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital'
-    let test
+    const syncurlIframe = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
+    let test;
     beforeEach(function () {
-      test = sinon.createSandbox()
-      resetSync()
-    })
+      test = sinon.createSandbox();
+      resetSync();
+    });
     afterEach(function() {
-      test.restore()
-    })
+      test.restore();
+    });
 
     it('should be executed as in config', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
         type: 'iframe', url: syncurlIframe
-      }])
-    })
+      }]);
+    });
 
     it('should return appropriate URL with GDPR equals to 1 and GDPR consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo`
-      }])
-    })
+      }]);
+    });
     it('should return appropriate URL with GDPR equals to 0 and GDPR consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=0&gdpr_consent=foo`
-      }])
-    })
+      }]);
+    });
     it('should return appropriate URL with GDPR equals to 1 and no consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=`
-      }])
-    })
+      }]);
+    });
     it('should return appropriate URL with GDPR equals to 1, GDPR consent and US Privacy consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, 'fooUsp')).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp`
-      }])
-    })
+      }]);
+    });
     it('should return appropriate URL with GDPR equals to 1, GDPR consent, US Privacy consent and GPP consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, 'fooUsp', { gppString: 'fooGpp', applicableSections: [7] })).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp&gpp=fooGpp&gpp_sid=7`
-      }])
-    })
-  })
+      }]);
+    });
+  });
   describe('interpretResponse', function () {
     it('should get bids', function() {
       const bids = {
@@ -718,7 +718,7 @@ describe('optidigitalAdapterTests', function () {
             'adomain': []
           }]
         }
-      }
+      };
       const expectedResponse = [
         {
           'placementId': 'Billboard_Top',
@@ -749,19 +749,19 @@ describe('optidigitalAdapterTests', function () {
             'advertiserDomains': []
           }
         }
-      ]
-      const result = spec.interpretResponse(bids)
-      expect(result).to.eql(expectedResponse)
-    })
+      ];
+      const result = spec.interpretResponse(bids);
+      expect(result).to.eql(expectedResponse);
+    });
 
     it('should handle empty array bid response', function() {
       const bids = {
         'body': {
           'bids': []
         }
-      }
-      const result = spec.interpretResponse(bids)
-      expect(result.length).to.equal(0)
-    })
-  })
-})
+      };
+      const result = spec.interpretResponse(bids);
+      expect(result.length).to.equal(0);
+    });
+  });
+});

@@ -1,23 +1,23 @@
-import { expect } from 'chai'
-import { spec } from 'modules/temedyaBidAdapter.js'
-import * as utils from 'src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/temedyaBidAdapter.js';
+import * as utils from 'src/utils.js';
 
-const ENDPOINT_URL = 'https://adm.vidyome.com/'
+const ENDPOINT_URL = 'https://adm.vidyome.com/';
 
 export const _getUrlVars = function(url) {
-  var hash
-  var myJson = {}
-  var hashes = url.slice(url.indexOf('?') + 1).split('&')
+  var hash;
+  var myJson = {};
+  var hashes = url.slice(url.indexOf('?') + 1).split('&');
   for (var i = 0; i < hashes.length; i++) {
-    hash = hashes[i].split('=')
-    myJson[hash[0]] = hash[1]
+    hash = hashes[i].split('=');
+    myJson[hash[0]] = hash[1];
   }
-  return myJson
-}
+  return myJson;
+};
 
 describe('temedya adapter', function() {
-  let bidRequests
-  let nativeBidRequests
+  let bidRequests;
+  let nativeBidRequests;
 
   beforeEach(function() {
     bidRequests = [
@@ -33,7 +33,7 @@ describe('temedya adapter', function() {
           }
         }
       }
-    ]
+    ];
 
     nativeBidRequests = [
       {
@@ -51,8 +51,8 @@ describe('temedya adapter', function() {
           }
         }
       }
-    ]
-  })
+    ];
+  });
 
   describe('isBidRequestValid', function () {
     it('valid bid case', function () {
@@ -62,49 +62,49 @@ describe('temedya adapter', function() {
           widgetId: 753497,
           count: 1
         }
-      }
-      const isValid = spec.isBidRequestValid(validBid)
-      expect(isValid).to.equal(true)
-    })
+      };
+      const isValid = spec.isBidRequestValid(validBid);
+      expect(isValid).to.equal(true);
+    });
 
     it('invalid bid case: widgetId and countId is not passed', function() {
       const validBid = {
         bidder: 'temedya',
         params: {
         }
-      }
-      const isValid = spec.isBidRequestValid(validBid)
-      expect(isValid).to.equal(false)
-    })
-  })
+      };
+      const isValid = spec.isBidRequestValid(validBid);
+      expect(isValid).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via GET', function () {
-      const request = spec.buildRequests(bidRequests)[0]
-      expect(request.url).to.include(ENDPOINT_URL)
-      expect(request.method).to.equal('GET')
-    })
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.url).to.include(ENDPOINT_URL);
+      expect(request.method).to.equal('GET');
+    });
 
     it('buildRequests function should not modify original bidRequests object', function () {
-      const originalBidRequests = utils.deepClone(bidRequests)
-      const request = spec.buildRequests(bidRequests)
-      expect(bidRequests).to.deep.equal(originalBidRequests)
-    })
+      const originalBidRequests = utils.deepClone(bidRequests);
+      const request = spec.buildRequests(bidRequests);
+      expect(bidRequests).to.deep.equal(originalBidRequests);
+    });
 
     it('buildRequests function should not modify original nativeBidRequests object', function () {
-      const originalBidRequests = utils.deepClone(nativeBidRequests)
-      const request = spec.buildRequests(nativeBidRequests)
-      expect(nativeBidRequests).to.deep.equal(originalBidRequests)
-    })
+      const originalBidRequests = utils.deepClone(nativeBidRequests);
+      const request = spec.buildRequests(nativeBidRequests);
+      expect(nativeBidRequests).to.deep.equal(originalBidRequests);
+    });
 
     it('Request params check', function() {
-      const request = spec.buildRequests(bidRequests)[0]
-      const data = _getUrlVars(request.url)
-      data.type = 'native'
-      data.wid = bidRequests[0].params.widgetId
-      data.count = bidRequests[0].params.count
-    })
-  })
+      const request = spec.buildRequests(bidRequests)[0];
+      const data = _getUrlVars(request.url);
+      data.type = 'native';
+      data.wid = bidRequests[0].params.widgetId;
+      data.count = bidRequests[0].params.count;
+    });
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -147,7 +147,7 @@ describe('temedya adapter', function() {
           'impression': 'https://impression.adm.vidyome.com/collect/v1?widgetId=122129'
         }
       },
-    }
+    };
 
     it('should get correct bid response', function () {
       const expectedResponse = [
@@ -163,15 +163,15 @@ describe('temedya adapter', function() {
           'ttl': 700,
           'ad': '<!-- ADS TAG -->'
         }
-      ]
-      const request = spec.buildRequests(bidRequests)[0]
-      const result = spec.interpretResponse({ body: response }, request)
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-      expect(result[0].cpm).to.not.equal(null)
-      expect(result[0].creativeId).to.not.equal(null)
-      expect(result[0].ad).to.not.equal(null)
-      expect(result[0].currency).to.equal('TRY')
-      expect(result[0].netRevenue).to.equal(false)
-    })
-  })
-})
+      ];
+      const request = spec.buildRequests(bidRequests)[0];
+      const result = spec.interpretResponse({ body: response }, request);
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].cpm).to.not.equal(null);
+      expect(result[0].creativeId).to.not.equal(null);
+      expect(result[0].ad).to.not.equal(null);
+      expect(result[0].currency).to.equal('TRY');
+      expect(result[0].netRevenue).to.equal(false);
+    });
+  });
+});

@@ -1,15 +1,15 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { isArray, logError, logInfo } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { isArray, logError, logInfo } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'pxyz'
-const URL = 'https://ads.playground.xyz/host-config/prebid?v=2'
-const DEFAULT_CURRENCY = 'USD'
+const BIDDER_CODE = 'pxyz';
+const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
+const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -27,7 +27,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placementId)
+    return !!(bid.params.placementId);
   },
 
   /**
@@ -37,13 +37,13 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const referer = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation
-    const parts = referer.split('/')
+    const referer = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+    const parts = referer.split('/');
 
-    let protocol, hostname
+    let protocol, hostname;
     if (parts.length >= 3) {
-      protocol = parts[0]
-      hostname = parts[2]
+      protocol = parts[0];
+      hostname = parts[2];
     }
 
     const payload = {
@@ -60,22 +60,22 @@ export const spec = {
       },
       imp: bidRequests.map(mapImpression),
       Regs: { ext: {} }
-    }
+    };
 
     // GDPR
     if (bidderRequest && bidderRequest.gdprConsent) {
-      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-      const consentString = bidderRequest.gdprConsent.consentString
-      logInfo(`PXYZ: GDPR applies ${gdpr}`)
-      logInfo(`PXYZ: GDPR consent string ${consentString}`)
-      payload.Regs.ext.gdpr = gdpr
-      payload.User = { ext: { consent: consentString } }
+      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      const consentString = bidderRequest.gdprConsent.consentString;
+      logInfo(`PXYZ: GDPR applies ${gdpr}`);
+      logInfo(`PXYZ: GDPR consent string ${consentString}`);
+      payload.Regs.ext.gdpr = gdpr;
+      payload.User = { ext: { consent: consentString } };
     }
 
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
-      logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`)
-      payload.Regs.ext['us_privacy'] = bidderRequest.uspConsent
+      logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
+      payload.Regs.ext['us_privacy'] = bidderRequest.uspConsent;
     }
 
     return {
@@ -83,7 +83,7 @@ export const spec = {
       url: URL,
       data: JSON.stringify(payload),
       bidderRequest
-    }
+    };
   },
 
   /**
@@ -93,40 +93,40 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, { bidderRequest }) {
-    serverResponse = serverResponse.body
-    const bids = []
+    serverResponse = serverResponse.body;
+    const bids = [];
 
     if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
       if (serverResponse && serverResponse.error) {
-        errorMessage += `: ${serverResponse.error}`
-        logError(errorMessage)
+        errorMessage += `: ${serverResponse.error}`;
+        logError(errorMessage);
       }
-      return bids
+      return bids;
     }
 
     if (!isArray(serverResponse.seatbid)) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `
-      logError(errorMessage += 'Malformed seatbid response')
-      return bids
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
+      logError(errorMessage += 'Malformed seatbid response');
+      return bids;
     }
 
     if (!serverResponse.seatbid) {
-      return bids
+      return bids;
     }
 
-    const currency = serverResponse.cur || DEFAULT_CURRENCY
+    const currency = serverResponse.cur || DEFAULT_CURRENCY;
     serverResponse.seatbid.forEach(sBid => {
       if (sBid.hasOwnProperty('bid')) {
         sBid.bid.forEach(iBid => {
           if (iBid.price !== 0) {
-            const bid = newBid(iBid, currency)
-            bids.push(bid)
+            const bid = newBid(iBid, currency);
+            bids.push(bid);
           }
-        })
+        });
       }
-    })
-    return bids
+    });
+    return bids;
   },
 
   getUserSyncs: function () {
@@ -136,12 +136,12 @@ export const spec = {
     }, {
       type: 'iframe',
       url: '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D'
-    }]
+    }];
   }
-}
+};
 
 function newBid(bid, currency) {
-  const { adomain } = bid
+  const { adomain } = bid;
   return {
     requestId: bid.impid,
     mediaType: BANNER,
@@ -156,7 +156,7 @@ function newBid(bid, currency) {
     meta: {
       ...(adomain && adomain.length > 0 ? { advertiserDomains: adomain } : {})
     }
-  }
+  };
 }
 
 function mapImpression(bid) {
@@ -174,7 +174,7 @@ function mapImpression(bid) {
         }
       }
     }
-  }
+  };
 }
 
 function mapBanner(bid) {
@@ -182,26 +182,26 @@ function mapBanner(bid) {
     w: parseInt(bid.sizes[0][0], 10),
     h: parseInt(bid.sizes[0][1], 10),
     format: mapSizes(bid.sizes)
-  }
+  };
 }
 
 function mapSizes(bidSizes) {
-  const format = []
+  const format = [];
   bidSizes.forEach(size => {
     format.push({
       w: parseInt(size[0], 10),
       h: parseInt(size[1], 10)
-    })
-  })
-  return format
+    });
+  });
+  return format;
 }
 
 function isMobile() {
-  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent)
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
 function isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent)
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-registerBidder(spec)
+registerBidder(spec);

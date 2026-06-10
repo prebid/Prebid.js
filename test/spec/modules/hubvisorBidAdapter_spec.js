@@ -1,9 +1,9 @@
-import { expect } from 'chai'
-import sinon from 'sinon'
-import { spec } from 'modules/hubvisorBidAdapter.js'
-import { config } from 'src/config.js'
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { spec } from 'modules/hubvisorBidAdapter.js';
+import { config } from 'src/config.js';
 
-const BIDDER_CODE = 'hubvisor'
+const BIDDER_CODE = 'hubvisor';
 
 function makeBannerBidRequest(overrides = {}) {
   return Object.assign({
@@ -17,7 +17,7 @@ function makeBannerBidRequest(overrides = {}) {
       banner: { sizes: [[300, 250], [728, 90]] }
     },
     sizes: [[300, 250], [728, 90]],
-  }, overrides)
+  }, overrides);
 }
 
 function makeVideoBidRequest(context = 'outstream', overrides = {}) {
@@ -40,7 +40,7 @@ function makeVideoBidRequest(context = 'outstream', overrides = {}) {
         playbackmethod: [2],
       }
     },
-  }, overrides)
+  }, overrides);
 }
 
 function makeBidderRequest(overrides = {}) {
@@ -53,156 +53,156 @@ function makeBidderRequest(overrides = {}) {
       gdprApplies: true,
       consentString: 'test-consent-string',
     },
-  }, overrides)
+  }, overrides);
 }
 
 describe('Hubvisor Bid Adapter', () => {
   describe('spec metadata', () => {
     it('should have the correct bidder code', () => {
-      expect(spec.code).to.equal(BIDDER_CODE)
-    })
+      expect(spec.code).to.equal(BIDDER_CODE);
+    });
 
     it('should have gvlid 1112', () => {
-      expect(spec.gvlid).to.equal(1112)
-    })
+      expect(spec.gvlid).to.equal(1112);
+    });
 
     it('should support BANNER and VIDEO media types', () => {
-      expect(spec.supportedMediaTypes).to.include('banner')
-      expect(spec.supportedMediaTypes).to.include('video')
-    })
-  })
+      expect(spec.supportedMediaTypes).to.include('banner');
+      expect(spec.supportedMediaTypes).to.include('video');
+    });
+  });
 
   describe('isBidRequestValid()', () => {
     it('should return true for a valid banner bid', () => {
-      expect(spec.isBidRequestValid(makeBannerBidRequest())).to.be.true
-    })
+      expect(spec.isBidRequestValid(makeBannerBidRequest())).to.be.true;
+    });
 
     it('should return true for a bid with no placementId (it is optional)', () => {
-      const bid = makeBannerBidRequest({ params: {} })
-      expect(spec.isBidRequestValid(bid)).to.be.true
-    })
+      const bid = makeBannerBidRequest({ params: {} });
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
 
     it('should return true for a valid video bid', () => {
-      expect(spec.isBidRequestValid(makeVideoBidRequest())).to.be.true
-    })
-  })
+      expect(spec.isBidRequestValid(makeVideoBidRequest())).to.be.true;
+    });
+  });
 
   describe('buildRequests()', () => {
-    let bidRequests
-    let bidderRequest
+    let bidRequests;
+    let bidderRequest;
 
     beforeEach(() => {
-      bidRequests = [makeBannerBidRequest()]
-      bidderRequest = makeBidderRequest()
-    })
+      bidRequests = [makeBannerBidRequest()];
+      bidderRequest = makeBidderRequest();
+    });
 
     it('should return an array of two requests', () => {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests).to.be.an('array').with.length(2)
-    })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests).to.be.an('array').with.length(2);
+    });
 
     describe('sync request (first element)', () => {
       it('should be a GET request to the sync endpoint', () => {
-        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(syncReq.method).to.equal('GET')
-        expect(syncReq.url).to.equal('https://relay.hubvisor.io/v1/sync/pbjs')
-      })
+        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(syncReq.method).to.equal('GET');
+        expect(syncReq.url).to.equal('https://relay.hubvisor.io/v1/sync/pbjs');
+      });
 
       it('should include gdpr and placement_ids in sync request data', () => {
-        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(syncReq.data.gdpr).to.equal(true)
-        expect(syncReq.data.gdpr_consent).to.equal('test-consent-string')
-        expect(syncReq.data.placement_ids).to.equal('test-placement-1')
-      })
+        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(syncReq.data.gdpr).to.equal(true);
+        expect(syncReq.data.gdpr_consent).to.equal('test-consent-string');
+        expect(syncReq.data.placement_ids).to.equal('test-placement-1');
+      });
 
       it('should not include gdpr_consent when no consent string is provided', () => {
-        bidderRequest.gdprConsent = { gdprApplies: true }
-        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(syncReq.data).to.not.have.property('gdpr_consent')
-      })
+        bidderRequest.gdprConsent = { gdprApplies: true };
+        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(syncReq.data).to.not.have.property('gdpr_consent');
+      });
 
       it('should default gdpr to false when gdprConsent is absent', () => {
-        const request = makeBidderRequest({ gdprConsent: undefined })
-        const [syncReq] = spec.buildRequests(bidRequests, request)
-        expect(syncReq.data.gdpr).to.equal(false)
-      })
+        const request = makeBidderRequest({ gdprConsent: undefined });
+        const [syncReq] = spec.buildRequests(bidRequests, request);
+        expect(syncReq.data.gdpr).to.equal(false);
+      });
 
       it('should join multiple placement IDs with commas', () => {
         bidRequests = [
           makeBannerBidRequest({ bidId: 'id1', params: { placementId: 'p1' } }),
           makeBannerBidRequest({ bidId: 'id2', params: { placementId: 'p2' } }),
-        ]
-        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(syncReq.data.placement_ids).to.equal('p1,p2')
-      })
+        ];
+        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(syncReq.data.placement_ids).to.equal('p1,p2');
+      });
 
       it('should omit undefined placement IDs from the sync request', () => {
         bidRequests = [
           makeBannerBidRequest({ bidId: 'id1', params: {} }),
-        ]
-        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(syncReq.data.placement_ids).to.equal('')
-      })
-    })
+        ];
+        const [syncReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(syncReq.data.placement_ids).to.equal('');
+      });
+    });
 
     describe('auction request (second element)', () => {
       it('should be a POST request to the auction endpoint', () => {
-        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(auctionReq.method).to.equal('POST')
-        expect(auctionReq.url).to.equal('https://relay.hubvisor.io/v1/auction/pbjs')
-      })
+        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(auctionReq.method).to.equal('POST');
+        expect(auctionReq.url).to.equal('https://relay.hubvisor.io/v1/auction/pbjs');
+      });
 
       it('should include an ORTB request body', () => {
-        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(auctionReq.data).to.be.an('object')
-        expect(auctionReq.data.imp).to.be.an('array').with.length(1)
-      })
+        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(auctionReq.data).to.be.an('object');
+        expect(auctionReq.data.imp).to.be.an('array').with.length(1);
+      });
 
       it('should set imp.ext.hubvisor.placementId', () => {
-        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(auctionReq.data.imp[0].ext.hubvisor.placementId).to.equal('test-placement-1')
-      })
+        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(auctionReq.data.imp[0].ext.hubvisor.placementId).to.equal('test-placement-1');
+      });
 
       it('should store bidRequestsById in internal field', () => {
-        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(auctionReq.internal).to.be.an('object')
-        expect(auctionReq.internal.bidRequestsById).to.have.key('bid-id-banner-1')
-      })
+        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(auctionReq.internal).to.be.an('object');
+        expect(auctionReq.internal.bidRequestsById).to.have.key('bid-id-banner-1');
+      });
 
       it('should set test=1 when config test is true', () => {
-        config.setConfig({ test: true })
-        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(auctionReq.data.test).to.equal(1)
-        config.resetConfig()
-      })
+        config.setConfig({ test: true });
+        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(auctionReq.data.test).to.equal(1);
+        config.resetConfig();
+      });
 
       it('should set test=0 when config test is not set', () => {
-        config.resetConfig()
-        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest)
-        expect(auctionReq.data.test).to.equal(0)
-      })
-    })
-  })
+        config.resetConfig();
+        const [, auctionReq] = spec.buildRequests(bidRequests, bidderRequest);
+        expect(auctionReq.data.test).to.equal(0);
+      });
+    });
+  });
 
   describe('interpretResponse()', () => {
-    let bidRequests
-    let bidderRequest
-    let requests
+    let bidRequests;
+    let bidderRequest;
+    let requests;
 
     beforeEach(() => {
-      bidRequests = [makeBannerBidRequest()]
-      bidderRequest = makeBidderRequest()
-      requests = spec.buildRequests(bidRequests, bidderRequest)
-    })
+      bidRequests = [makeBannerBidRequest()];
+      bidderRequest = makeBidderRequest();
+      requests = spec.buildRequests(bidRequests, bidderRequest);
+    });
 
     it('should return empty array when internal is missing', () => {
-      const response = { body: {} }
-      const result = spec.interpretResponse(response, { data: {}, url: '' })
-      expect(result).to.be.an('array').with.length(0)
-    })
+      const response = { body: {} };
+      const result = spec.interpretResponse(response, { data: {}, url: '' });
+      expect(result).to.be.an('array').with.length(0);
+    });
 
     it('should parse a banner bid response', () => {
-      const [, auctionReq] = requests
+      const [, auctionReq] = requests;
       const response = {
         body: {
           id: 'resp-1',
@@ -221,22 +221,22 @@ describe('Hubvisor Bid Adapter', () => {
             }]
           }]
         }
-      }
-      const bids = spec.interpretResponse(response, auctionReq)
-      expect(bids).to.have.length(1)
-      expect(bids[0].requestId).to.equal('bid-id-banner-1')
-      expect(bids[0].cpm).to.equal(2.5)
-      expect(bids[0].width).to.equal(300)
-      expect(bids[0].height).to.equal(250)
-      expect(bids[0].ad).to.equal('<div>ad</div>')
-      expect(bids[0].currency).to.equal('USD')
-    })
+      };
+      const bids = spec.interpretResponse(response, auctionReq);
+      expect(bids).to.have.length(1);
+      expect(bids[0].requestId).to.equal('bid-id-banner-1');
+      expect(bids[0].cpm).to.equal(2.5);
+      expect(bids[0].width).to.equal(300);
+      expect(bids[0].height).to.equal(250);
+      expect(bids[0].ad).to.equal('<div>ad</div>');
+      expect(bids[0].currency).to.equal('USD');
+    });
 
     if (FEATURES.VIDEO) {
       it('should attach an outstream renderer to video bids with outstream context', () => {
-        const videoBid = makeVideoBidRequest('outstream')
-        const videoRequests = spec.buildRequests([videoBid], bidderRequest)
-        const [, auctionReq] = videoRequests
+        const videoBid = makeVideoBidRequest('outstream');
+        const videoRequests = spec.buildRequests([videoBid], bidderRequest);
+        const [, auctionReq] = videoRequests;
         const response = {
           body: {
             id: 'resp-2',
@@ -255,17 +255,17 @@ describe('Hubvisor Bid Adapter', () => {
               }]
             }]
           }
-        }
-        const bids = spec.interpretResponse(response, auctionReq)
-        expect(bids).to.have.length(1)
-        expect(bids[0].renderer).to.exist
-      })
+        };
+        const bids = spec.interpretResponse(response, auctionReq);
+        expect(bids).to.have.length(1);
+        expect(bids[0].renderer).to.exist;
+      });
 
       it('should NOT attach a renderer for instream video bids', () => {
-        const videoBid = makeVideoBidRequest('instream')
-        videoBid.bidId = 'bid-id-instream-1'
-        const videoRequests = spec.buildRequests([videoBid], bidderRequest)
-        const [, auctionReq] = videoRequests
+        const videoBid = makeVideoBidRequest('instream');
+        videoBid.bidId = 'bid-id-instream-1';
+        const videoRequests = spec.buildRequests([videoBid], bidderRequest);
+        const [, auctionReq] = videoRequests;
         const response = {
           body: {
             id: 'resp-3',
@@ -284,69 +284,69 @@ describe('Hubvisor Bid Adapter', () => {
               }]
             }]
           }
-        }
-        const bids = spec.interpretResponse(response, auctionReq)
-        expect(bids).to.have.length(1)
-        expect(bids[0].renderer).to.not.exist
-      })
+        };
+        const bids = spec.interpretResponse(response, auctionReq);
+        expect(bids).to.have.length(1);
+        expect(bids[0].renderer).to.not.exist;
+      });
     }
-  })
+  });
 
   describe('getUserSyncs()', () => {
     it('should return empty array when no response has a bidders array', () => {
-      expect(spec.getUserSyncs({}, [])).to.eql([])
-      expect(spec.getUserSyncs({}, [{ body: {} }])).to.eql([])
-      expect(spec.getUserSyncs({}, [{ body: {} }, { body: {} }])).to.eql([])
-    })
+      expect(spec.getUserSyncs({}, [])).to.eql([]);
+      expect(spec.getUserSyncs({}, [{ body: {} }])).to.eql([]);
+      expect(spec.getUserSyncs({}, [{ body: {} }, { body: {} }])).to.eql([]);
+    });
 
     it('should find the sync response by shape regardless of position', () => {
       const responses = [
         { body: { id: 'ortb-auction-resp', seatbid: [] } },
         { body: { bidders: [{ type: 'image', url: 'https://sync.example.com/pixel' }] } },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }])
-    })
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }]);
+    });
 
     it('should work with only the sync response present (e.g. auction failed)', () => {
       const responses = [
         { body: { bidders: [{ type: 'image', url: 'https://sync.example.com/pixel' }] } },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }])
-    })
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }]);
+    });
 
     it('should return empty array when sync response has no bidders', () => {
-      const responses = [{ body: {} }, { body: {} }]
-      expect(spec.getUserSyncs({}, responses)).to.eql([])
-    })
+      const responses = [{ body: {} }, { body: {} }];
+      expect(spec.getUserSyncs({}, responses)).to.eql([]);
+    });
 
     it('should map image type syncs', () => {
       const responses = [
         { body: { bidders: [{ type: 'image', url: 'https://sync.example.com/pixel' }] } },
         { body: {} },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }])
-    })
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/pixel' }]);
+    });
 
     it('should map redirect type syncs to image', () => {
       const responses = [
         { body: { bidders: [{ type: 'redirect', url: 'https://sync.example.com/redirect' }] } },
         { body: {} },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/redirect' }])
-    })
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/redirect' }]);
+    });
 
     it('should map iframe type syncs', () => {
       const responses = [
         { body: { bidders: [{ type: 'iframe', url: 'https://sync.example.com/iframe' }] } },
         { body: {} },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.eql([{ type: 'iframe', url: 'https://sync.example.com/iframe' }])
-    })
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'iframe', url: 'https://sync.example.com/iframe' }]);
+    });
 
     it('should skip entries with unknown type or missing url', () => {
       const responses = [
@@ -360,10 +360,10 @@ describe('Hubvisor Bid Adapter', () => {
           }
         },
         { body: {} },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/valid' }])
-    })
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.eql([{ type: 'image', url: 'https://sync.example.com/valid' }]);
+    });
 
     it('should return multiple syncs from multiple bidders', () => {
       const responses = [
@@ -376,11 +376,11 @@ describe('Hubvisor Bid Adapter', () => {
           }
         },
         { body: {} },
-      ]
-      const syncs = spec.getUserSyncs({}, responses)
-      expect(syncs).to.have.length(2)
-      expect(syncs[0]).to.eql({ type: 'image', url: 'https://sync1.example.com' })
-      expect(syncs[1]).to.eql({ type: 'iframe', url: 'https://sync2.example.com' })
-    })
-  })
-})
+      ];
+      const syncs = spec.getUserSyncs({}, responses);
+      expect(syncs).to.have.length(2);
+      expect(syncs[0]).to.eql({ type: 'image', url: 'https://sync1.example.com' });
+      expect(syncs[1]).to.eql({ type: 'iframe', url: 'https://sync2.example.com' });
+    });
+  });
+});

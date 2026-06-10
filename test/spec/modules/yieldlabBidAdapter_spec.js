@@ -1,7 +1,7 @@
-import { config } from 'src/config.js'
-import { expect } from 'chai'
-import { spec } from 'modules/yieldlabBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { config } from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/yieldlabBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const DEFAULT_REQUEST = () => ({
   bidder: 'yieldlab',
@@ -75,7 +75,7 @@ const DEFAULT_REQUEST = () => ({
       }
     }
   },
-})
+});
 
 const VIDEO_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
   mediaTypes: {
@@ -84,13 +84,13 @@ const VIDEO_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
       context: 'instream',
     },
   },
-})
+});
 
 const NATIVE_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
   mediaTypes: {
     native: {},
   },
-})
+});
 
 const IAB_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
   params: {
@@ -165,7 +165,7 @@ const IAB_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
       },
     },
   },
-})
+});
 
 const RESPONSE = {
   advertiser: 'yieldlab',
@@ -177,7 +177,7 @@ const RESPONSE = {
   adsize: '728x90',
   adtype: 'BANNER',
   netRevenue: false,
-}
+};
 
 const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
   adtype: 'NATIVE',
@@ -223,15 +223,15 @@ const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
       'http://localhost:8080/imp?s=13216&d=2171514&a=12548955&ts=1633363025216&tid=fb134faa-7ca9-4e0e-ba39-b96549d0e540&l=0',
     ],
   },
-})
+});
 
 const VIDEO_RESPONSE = Object.assign({}, RESPONSE, {
   adtype: 'VIDEO',
-})
+});
 
 const PVID_RESPONSE = Object.assign({}, VIDEO_RESPONSE, {
   pvid: '43513f11-55a0-4a83-94e5-0ebc08f54a2c',
-})
+});
 
 const DIGITAL_SERVICES_ACT_RESPONSE = Object.assign({}, RESPONSE, {
   dsa: {
@@ -243,7 +243,7 @@ const DIGITAL_SERVICES_ACT_RESPONSE = Object.assign({}, RESPONSE, {
     }],
     adrender: 1
   }
-})
+});
 
 const DIGITAL_SERVICES_ACT_CONFIG = {
   ortb2: {
@@ -261,29 +261,29 @@ const DIGITAL_SERVICES_ACT_CONFIG = {
       }
     },
   }
-}
+};
 
 const REQPARAMS = {
   json: true,
   ts: 1234567890,
-}
+};
 
 const REQPARAMS_GDPR = Object.assign({}, REQPARAMS, {
   gdpr: true,
   gdpr_consent: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
-})
+});
 
 const REQPARAMS_IAB_CONTENT = Object.assign({}, REQPARAMS, {
   iab_content: 'id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0',
-})
+});
 
 describe('yieldlabBidAdapter', () => {
   describe('instantiation from spec', () => {
     it('is working properly', () => {
-      const yieldlabBidAdapter = newBidder(spec)
-      expect(yieldlabBidAdapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      const yieldlabBidAdapter = newBidder(spec);
+      expect(yieldlabBidAdapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', () => {
     it('should return true when all required parameters are found', () => {
@@ -292,65 +292,65 @@ describe('yieldlabBidAdapter', () => {
           adslotId: '1111',
           supplyId: '2222',
         },
-      }
-      expect(spec.isBidRequestValid(request)).to.equal(true)
-    })
+      };
+      expect(spec.isBidRequestValid(request)).to.equal(true);
+    });
 
     it('should return false when required parameters are missing', () => {
-      expect(spec.isBidRequestValid({})).to.equal(false)
-    })
-  })
+      expect(spec.isBidRequestValid({})).to.equal(false);
+    });
+  });
 
   describe('buildRequests', () => {
-    const bidRequests = [DEFAULT_REQUEST()]
+    const bidRequests = [DEFAULT_REQUEST()];
 
     describe('default functionality', () => {
-      let request
+      let request;
 
       before(() => {
-        request = spec.buildRequests(bidRequests)
-      })
+        request = spec.buildRequests(bidRequests);
+      });
 
       it('sends bid request to ENDPOINT via GET', () => {
-        expect(request.method).to.equal('GET')
-      })
+        expect(request.method).to.equal('GET');
+      });
 
       it('returns a list of valid requests', () => {
-        expect(request.validBidRequests).to.eql(bidRequests)
-      })
+        expect(request.validBidRequests).to.eql(bidRequests);
+      });
 
       it('passes single-encoded targeting to bid request', () => {
-        expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2%26notDoubleEncoded%3Dvalue3%2Cvalue4')
-      })
+        expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2%26notDoubleEncoded%3Dvalue3%2Cvalue4');
+      });
 
       it('passes userids to bid request', () => {
-        expect(request.url).to.include('ids=netid.de%3AfH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg%2Cdigitrust.de%3Ad8aa10fa-d86c-451d-aad8-5f16162a9e64')
-      })
+        expect(request.url).to.include('ids=netid.de%3AfH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg%2Cdigitrust.de%3Ad8aa10fa-d86c-451d-aad8-5f16162a9e64');
+      });
 
       it('passes atype to bid request', () => {
-        expect(request.url).to.include('atypes=netid.de%3A1%2Cdigitrust.de%3A2')
-      })
+        expect(request.url).to.include('atypes=netid.de%3A1%2Cdigitrust.de%3A2');
+      });
 
       it('passes extra params to bid request', () => {
-        expect(request.url).to.include('extraParam=true&foo=bar')
-      })
+        expect(request.url).to.include('extraParam=true&foo=bar');
+      });
 
       it('passes unencoded schain string to bid request', () => {
-        expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
-      })
+        expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,');
+      });
 
       it('passes iab_content string to bid request', () => {
-        expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
-      })
+        expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0');
+      });
 
       it('passes correct size to bid request', () => {
-        expect(request.url).to.include('728x90')
-      })
+        expect(request.url).to.include('728x90');
+      });
 
       it('passes external id to bid request', () => {
-        expect(request.url).to.include('id=abc')
-      })
-    })
+        expect(request.url).to.include('id=abc');
+      });
+    });
 
     describe('iab_content handling', () => {
       const siteConfig = {
@@ -361,28 +361,28 @@ describe('yieldlabBidAdapter', () => {
             },
           },
         },
-      }
+      };
 
       beforeEach(() => {
-        config.setConfig(siteConfig)
-      })
+        config.setConfig(siteConfig);
+      });
 
       afterEach(() => {
-        config.resetConfig()
-      })
+        config.resetConfig();
+      });
 
       it('generates iab_content string from bidder params', () => {
-        const request = spec.buildRequests(bidRequests)
-        expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
-      })
+        const request = spec.buildRequests(bidRequests);
+        expect(request.url).to.include('iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0');
+      });
 
       it('generates iab_content string from first party data if not provided in bidder params', () => {
-        const requestWithoutIabContent = DEFAULT_REQUEST()
-        delete requestWithoutIabContent.params.iabContent
+        const requestWithoutIabContent = DEFAULT_REQUEST();
+        delete requestWithoutIabContent.params.iabContent;
 
-        const request = spec.buildRequests([{ ...requestWithoutIabContent, ...siteConfig }])
-        expect(request.url).to.include('iab_content=id%3Aid_from_config')
-      })
+        const request = spec.buildRequests([{ ...requestWithoutIabContent, ...siteConfig }]);
+        expect(request.url).to.include('iab_content=id%3Aid_from_config');
+      });
 
       it('flattens the iabContent, encodes the values, joins the keywords into one value, and than encodes the iab_content request param ', () => {
         const expectedIabContentValue = encodeURIComponent(
@@ -429,18 +429,18 @@ describe('yieldlabBidAdapter', () => {
           'channel.id:bar,' +
           'channel.name:foo,' +
           'channel.domain:channel.test'
-        )
-        const request = spec.buildRequests([IAB_REQUEST()], REQPARAMS)
-        expect(request.url).to.include('iab_content=' + expectedIabContentValue)
-      })
-    })
+        );
+        const request = spec.buildRequests([IAB_REQUEST()], REQPARAMS);
+        expect(request.url).to.include('iab_content=' + expectedIabContentValue);
+      });
+    });
 
     it('passes unencoded schain string to bid request when complete == 0', () => {
-      const schainRequest = DEFAULT_REQUEST()
-      schainRequest.ortb2.source.ext.schain.complete = 0
-      const request = spec.buildRequests([schainRequest])
-      expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
-    })
+      const schainRequest = DEFAULT_REQUEST();
+      schainRequest.ortb2.source.ext.schain.complete = 0;
+      const request = spec.buildRequests([schainRequest]);
+      expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,');
+    });
 
     it('passes encoded referer to bid request', () => {
       const refererRequest = spec.buildRequests(bidRequests, {
@@ -451,10 +451,10 @@ describe('yieldlabBidAdapter', () => {
           page: 'https://www.yieldlab.de/test?with=querystring',
           stack: ['https://www.yieldlab.de/test?with=querystring'],
         },
-      })
+      });
 
-      expect(refererRequest.url).to.include('pubref=https%3A%2F%2Fwww.yieldlab.de%2Ftest%3Fwith%3Dquerystring')
-    })
+      expect(refererRequest.url).to.include('pubref=https%3A%2F%2Fwww.yieldlab.de%2Ftest%3Fwith%3Dquerystring');
+    });
 
     it('passes gdpr flag and consent if present', () => {
       const gdprRequest = spec.buildRequests(bidRequests, {
@@ -462,101 +462,101 @@ describe('yieldlabBidAdapter', () => {
           consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
           gdprApplies: true,
         },
-      })
+      });
 
-      expect(gdprRequest.url).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
-      expect(gdprRequest.url).to.include('&gdpr=true')
-    })
+      expect(gdprRequest.url).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
+      expect(gdprRequest.url).to.include('&gdpr=true');
+    });
 
     describe('sizes handling', () => {
       it('passes correct size to bid request for mediaType banner', () => {
-        const bannerRequest = DEFAULT_REQUEST()
+        const bannerRequest = DEFAULT_REQUEST();
         bannerRequest.mediaTypes = {
           banner: {
             sizes: [[123, 456]],
           },
-        }
+        };
 
         // when mediaTypes is present it has precedence over the sizes field (728, 90)
-        let request = spec.buildRequests([bannerRequest], REQPARAMS)
-        expect(request.url).to.include('sizes')
-        expect(request.url).to.include('123x456')
+        let request = spec.buildRequests([bannerRequest], REQPARAMS);
+        expect(request.url).to.include('sizes');
+        expect(request.url).to.include('123x456');
 
-        bannerRequest.mediaTypes.banner.sizes = [123, 456]
-        request = spec.buildRequests([bannerRequest], REQPARAMS)
-        expect(request.url).to.include('123x456')
+        bannerRequest.mediaTypes.banner.sizes = [123, 456];
+        request = spec.buildRequests([bannerRequest], REQPARAMS);
+        expect(request.url).to.include('123x456');
 
-        bannerRequest.mediaTypes.banner.sizes = [[123, 456], [320, 240]]
-        request = spec.buildRequests([bannerRequest], REQPARAMS)
-        expect(request.url).to.include('123x456')
-        expect(request.url).to.include('320x240')
-      })
+        bannerRequest.mediaTypes.banner.sizes = [[123, 456], [320, 240]];
+        request = spec.buildRequests([bannerRequest], REQPARAMS);
+        expect(request.url).to.include('123x456');
+        expect(request.url).to.include('320x240');
+      });
 
       it('passes correct sizes to bid request when mediaType is not present', () => {
         // information is taken from the top level sizes field
-        const sizesRequest = DEFAULT_REQUEST()
+        const sizesRequest = DEFAULT_REQUEST();
 
-        let request = spec.buildRequests([sizesRequest], REQPARAMS)
-        expect(request.url).to.include('sizes')
-        expect(request.url).to.include('728x90')
+        let request = spec.buildRequests([sizesRequest], REQPARAMS);
+        expect(request.url).to.include('sizes');
+        expect(request.url).to.include('728x90');
 
-        sizesRequest.sizes = [[728, 90]]
-        request = spec.buildRequests([sizesRequest], REQPARAMS)
-        expect(request.url).to.include('728x90')
+        sizesRequest.sizes = [[728, 90]];
+        request = spec.buildRequests([sizesRequest], REQPARAMS);
+        expect(request.url).to.include('728x90');
 
-        sizesRequest.sizes = [[728, 90], [320, 240]]
-        request = spec.buildRequests([sizesRequest], REQPARAMS)
-        expect(request.url).to.include('728x90')
-      })
+        sizesRequest.sizes = [[728, 90], [320, 240]];
+        request = spec.buildRequests([sizesRequest], REQPARAMS);
+        expect(request.url).to.include('728x90');
+      });
 
       it('does not pass the sizes parameter for mediaType video', () => {
-        const videoRequest = VIDEO_REQUEST()
+        const videoRequest = VIDEO_REQUEST();
 
-        const request = spec.buildRequests([videoRequest], REQPARAMS)
-        expect(request.url).to.not.include('sizes')
-      })
+        const request = spec.buildRequests([videoRequest], REQPARAMS);
+        expect(request.url).to.not.include('sizes');
+      });
 
       it('does not pass the sizes parameter for mediaType native', () => {
-        const nativeRequest = NATIVE_REQUEST()
+        const nativeRequest = NATIVE_REQUEST();
 
-        const request = spec.buildRequests([nativeRequest], REQPARAMS)
-        expect(request.url).to.not.include('sizes')
-      })
-    })
+        const request = spec.buildRequests([nativeRequest], REQPARAMS);
+        expect(request.url).to.not.include('sizes');
+      });
+    });
 
     describe('Digital Services Act handling', () => {
       beforeEach(() => {
-        config.setConfig(DIGITAL_SERVICES_ACT_CONFIG)
-      })
+        config.setConfig(DIGITAL_SERVICES_ACT_CONFIG);
+      });
 
       afterEach(() => {
-        config.resetConfig()
-      })
+        config.resetConfig();
+      });
 
       it('does pass dsarequired parameter', () => {
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG })
-        expect(request.url).to.include('dsarequired=1')
-      })
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsarequired=1');
+      });
 
       it('does pass dsapubrender parameter', () => {
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG })
-        expect(request.url).to.include('dsapubrender=2')
-      })
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsapubrender=2');
+      });
 
       it('does pass dsadatatopub parameter', () => {
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG })
-        expect(request.url).to.include('dsadatatopub=3')
-      })
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsadatatopub=3');
+      });
 
       it('does pass dsadomain parameter', () => {
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG })
-        expect(request.url).to.include('dsadomain=test.com')
-      })
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsadomain=test.com');
+      });
 
       it('does pass encoded dsaparams parameter', () => {
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG })
-        expect(request.url).to.include('dsaparams=1%2C2%2C3')
-      })
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsaparams=1%2C2%2C3');
+      });
 
       it('does pass multiple transparencies in dsatransparency param', () => {
         const DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES = {
@@ -581,22 +581,22 @@ describe('yieldlabBidAdapter', () => {
               }
             }
           }
-        }
+        };
 
-        config.setConfig(DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES)
+        config.setConfig(DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES);
 
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES })
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES });
 
-        expect(request.url).to.include('dsatransparency=test.com~1_2_3~~example.com~4_5_6')
-        expect(request.url).to.not.include('dsadomain')
-        expect(request.url).to.not.include('dsaparams')
-      })
-    })
+        expect(request.url).to.include('dsatransparency=test.com~1_2_3~~example.com~4_5_6');
+        expect(request.url).to.not.include('dsadomain');
+        expect(request.url).to.not.include('dsaparams');
+      });
+    });
 
     describe('google topics handling', () => {
       afterEach(() => {
-        config.resetConfig()
-      })
+        config.resetConfig();
+      });
 
       it('does pass segtax, segclass, segments for google topics data', () => {
         const GOOGLE_TOPICS_DATA = {
@@ -615,11 +615,11 @@ describe('yieldlabBidAdapter', () => {
               ]
             },
           },
-        }
-        config.setConfig(GOOGLE_TOPICS_DATA)
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA })
-        expect(request.url).to.include('segtax=600&segclass=v1&segments=717%2C808')
-      })
+        };
+        config.setConfig(GOOGLE_TOPICS_DATA);
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA });
+        expect(request.url).to.include('segtax=600&segclass=v1&segments=717%2C808');
+      });
 
       it('does not pass topics params for invalid topics data', () => {
         const INVALID_TOPICS_DATA = {
@@ -652,59 +652,59 @@ describe('yieldlabBidAdapter', () => {
               ]
             }
           }
-        }
+        };
 
-        config.setConfig(INVALID_TOPICS_DATA)
-        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA })
+        config.setConfig(INVALID_TOPICS_DATA);
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA });
 
-        expect(request.url).to.not.include('segtax')
-        expect(request.url).to.not.include('segclass')
-        expect(request.url).to.not.include('segments')
-      })
-    })
-  })
+        expect(request.url).to.not.include('segtax');
+        expect(request.url).to.not.include('segclass');
+        expect(request.url).to.not.include('segments');
+      });
+    });
+  });
 
   describe('interpretResponse', () => {
-    let bidRequest
+    let bidRequest;
 
     before(() => {
-      bidRequest = DEFAULT_REQUEST()
-    })
+      bidRequest = DEFAULT_REQUEST();
+    });
 
     it('handles nobid responses', () => {
-      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
-      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
-    })
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0);
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0);
+    });
 
     it('should get correct bid response', () => {
-      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS })
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS });
 
-      expect(result[0].requestId).to.equal('2d925f27f5079f')
-      expect(result[0].cpm).to.equal(0.01)
-      expect(result[0].width).to.equal(728)
-      expect(result[0].height).to.equal(90)
-      expect(result[0].creativeId).to.equal('1111')
-      expect(result[0].dealId).to.equal(2222)
-      expect(result[0].currency).to.equal('EUR')
-      expect(result[0].netRevenue).to.equal(false)
-      expect(result[0].ttl).to.equal(300)
-      expect(result[0].referrer).to.equal('')
-      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab'])
-      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=')
-      expect(result[0].ad).to.include('&id=abc')
-    })
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].cpm).to.equal(0.01);
+      expect(result[0].width).to.equal(728);
+      expect(result[0].height).to.equal(90);
+      expect(result[0].creativeId).to.equal('1111');
+      expect(result[0].dealId).to.equal(2222);
+      expect(result[0].currency).to.equal('EUR');
+      expect(result[0].netRevenue).to.equal(false);
+      expect(result[0].ttl).to.equal(300);
+      expect(result[0].referrer).to.equal('');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
+      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
+      expect(result[0].ad).to.include('&id=abc');
+    });
 
     it('should append gdpr parameters to adtag', () => {
-      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS_GDPR })
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS_GDPR });
 
-      expect(result[0].ad).to.include('&gdpr=true')
-      expect(result[0].ad).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
-    })
+      expect(result[0].ad).to.include('&gdpr=true');
+      expect(result[0].ad).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
+    });
 
     it('should append iab_content to adtag', () => {
-      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS_IAB_CONTENT })
-      expect(result[0].ad).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
-    })
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS_IAB_CONTENT });
+      expect(result[0].ad).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0');
+    });
 
     it('should get correct bid response when passing more than one size', () => {
       const REQUEST2 = Object.assign(DEFAULT_REQUEST(), {
@@ -713,64 +713,64 @@ describe('yieldlabBidAdapter', () => {
           [728, 90],
           [970, 90],
         ],
-      })
-      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [REQUEST2], queryParams: REQPARAMS })
+      });
+      const result = spec.interpretResponse({ body: [RESPONSE] }, { validBidRequests: [REQUEST2], queryParams: REQPARAMS });
 
-      expect(result[0].requestId).to.equal('2d925f27f5079f')
-      expect(result[0].cpm).to.equal(0.01)
-      expect(result[0].width).to.equal(728)
-      expect(result[0].height).to.equal(90)
-      expect(result[0].creativeId).to.equal('1111')
-      expect(result[0].dealId).to.equal(2222)
-      expect(result[0].currency).to.equal('EUR')
-      expect(result[0].netRevenue).to.equal(false)
-      expect(result[0].ttl).to.equal(300)
-      expect(result[0].referrer).to.equal('')
-      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab'])
-      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=')
-      expect(result[0].ad).to.include('&id=abc')
-    })
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].cpm).to.equal(0.01);
+      expect(result[0].width).to.equal(728);
+      expect(result[0].height).to.equal(90);
+      expect(result[0].creativeId).to.equal('1111');
+      expect(result[0].dealId).to.equal(2222);
+      expect(result[0].currency).to.equal('EUR');
+      expect(result[0].netRevenue).to.equal(false);
+      expect(result[0].ttl).to.equal(300);
+      expect(result[0].referrer).to.equal('');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
+      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
+      expect(result[0].ad).to.include('&id=abc');
+    });
 
     it('should add vastUrl when type is video', () => {
-      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS })
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS });
 
-      expect(result[0].requestId).to.equal('2d925f27f5079f')
-      expect(result[0].cpm).to.equal(0.01)
-      expect(result[0].mediaType).to.equal('video')
-      expect(result[0].vastUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=')
-      expect(result[0].vastUrl).to.include('&id=abc')
-    })
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].cpm).to.equal(0.01);
+      expect(result[0].mediaType).to.equal('video');
+      expect(result[0].vastUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=');
+      expect(result[0].vastUrl).to.include('&id=abc');
+    });
 
     it('should add adUrl and native assets when type is Native', () => {
-      const result = spec.interpretResponse({ body: [NATIVE_RESPONSE] }, { validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS })
-      expect(result[0].requestId).to.equal('2d925f27f5079f')
-      expect(result[0].cpm).to.equal(0.01)
-      expect(result[0].mediaType).to.equal('native')
-      expect(result[0].adUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=')
-      expect(result[0].native.title).to.equal('This is a great headline')
-      expect(result[0].native.body).to.equal('Native body value')
-      expect(result[0].native.image.url).to.equal('https://localhost:8080/yl-logo100x100.jpg')
-      expect(result[0].native.image.width).to.equal(100)
-      expect(result[0].native.image.height).to.equal(100)
-      expect(result[0].native.icon.url).to.equal('https://localhost:8080/assets/favicon/favicon-16x16.png')
-      expect(result[0].native.icon.width).to.equal(16)
-      expect(result[0].native.icon.height).to.equal(16)
-      expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de')
-      expect(result[0].native.impressionTrackers.length).to.equal(3)
-      expect(result[0].native.assets.length).to.equal(4)
-      const titleAsset = result[0].native.assets.find(asset => 'title' in asset)
+      const result = spec.interpretResponse({ body: [NATIVE_RESPONSE] }, { validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS });
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].cpm).to.equal(0.01);
+      expect(result[0].mediaType).to.equal('native');
+      expect(result[0].adUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=');
+      expect(result[0].native.title).to.equal('This is a great headline');
+      expect(result[0].native.body).to.equal('Native body value');
+      expect(result[0].native.image.url).to.equal('https://localhost:8080/yl-logo100x100.jpg');
+      expect(result[0].native.image.width).to.equal(100);
+      expect(result[0].native.image.height).to.equal(100);
+      expect(result[0].native.icon.url).to.equal('https://localhost:8080/assets/favicon/favicon-16x16.png');
+      expect(result[0].native.icon.width).to.equal(16);
+      expect(result[0].native.icon.height).to.equal(16);
+      expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de');
+      expect(result[0].native.impressionTrackers.length).to.equal(3);
+      expect(result[0].native.assets.length).to.equal(4);
+      const titleAsset = result[0].native.assets.find(asset => 'title' in asset);
       const imageAsset = result[0].native.assets.find((asset) => {
-        return asset?.img?.type === 3
-      })
+        return asset?.img?.type === 3;
+      });
       const iconAsset = result[0].native.assets.find((asset) => {
-        return asset?.img?.type === 1
-      })
-      const bodyAsset = result[0].native.assets.find(asset => 'data' in asset)
-      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1)
-      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2)
-      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3)
-      expect(iconAsset).to.exist.and.to.have.nested.property('id', 4)
-    })
+        return asset?.img?.type === 1;
+      });
+      const bodyAsset = result[0].native.assets.find(asset => 'data' in asset);
+      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1);
+      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2);
+      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3);
+      expect(iconAsset).to.exist.and.to.have.nested.property('id', 4);
+    });
 
     it('should add adUrl and default native assets when type is Native', () => {
       const NATIVE_RESPONSE_2 = Object.assign({}, NATIVE_RESPONSE, {
@@ -781,19 +781,19 @@ describe('yieldlabBidAdapter', () => {
           assets: [],
           imptrackers: [],
         },
-      })
-      const result = spec.interpretResponse({ body: [NATIVE_RESPONSE_2] }, { validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS })
+      });
+      const result = spec.interpretResponse({ body: [NATIVE_RESPONSE_2] }, { validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS });
 
-      expect(result[0].requestId).to.equal('2d925f27f5079f')
-      expect(result[0].cpm).to.equal(0.01)
-      expect(result[0].mediaType).to.equal('native')
-      expect(result[0].adUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=')
-      expect(result[0].native.title).to.equal('')
-      expect(result[0].native.body).to.equal('')
-      expect(result[0].native.image.url).to.equal('')
-      expect(result[0].native.image.width).to.equal(0)
-      expect(result[0].native.image.height).to.equal(0)
-    })
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].cpm).to.equal(0.01);
+      expect(result[0].mediaType).to.equal('native');
+      expect(result[0].adUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=');
+      expect(result[0].native.title).to.equal('');
+      expect(result[0].native.body).to.equal('');
+      expect(result[0].native.image.url).to.equal('');
+      expect(result[0].native.image.width).to.equal(0);
+      expect(result[0].native.image.height).to.equal(0);
+    });
 
     it('should not add icon if not present in the native response', () => {
       const NATIVE_RESPONSE_WITHOUT_ICON = Object.assign({}, NATIVE_RESPONSE, {
@@ -811,18 +811,18 @@ describe('yieldlabBidAdapter', () => {
           ],
           imptrackers: [],
         },
-      })
-      const result = spec.interpretResponse({ body: [NATIVE_RESPONSE_WITHOUT_ICON] }, { validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS })
-      expect(result[0].native.hasOwnProperty('icon')).to.be.false
-      expect(result[0].native.title).to.equal('This is a great headline')
-    })
+      });
+      const result = spec.interpretResponse({ body: [NATIVE_RESPONSE_WITHOUT_ICON] }, { validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS });
+      expect(result[0].native.hasOwnProperty('icon')).to.be.false;
+      expect(result[0].native.title).to.equal('This is a great headline');
+    });
 
     it('should append gdpr parameters to vastUrl', () => {
-      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_GDPR })
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_GDPR });
 
-      expect(result[0].vastUrl).to.include('&gdpr=true')
-      expect(result[0].vastUrl).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA')
-    })
+      expect(result[0].vastUrl).to.include('&gdpr=true');
+      expect(result[0].vastUrl).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
+    });
 
     it('should add renderer if outstream context', () => {
       const OUTSTREAM_REQUEST = Object.assign(DEFAULT_REQUEST(), {
@@ -832,55 +832,55 @@ describe('yieldlabBidAdapter', () => {
             context: 'outstream',
           },
         },
-      })
-      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [OUTSTREAM_REQUEST], queryParams: REQPARAMS })
+      });
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [OUTSTREAM_REQUEST], queryParams: REQPARAMS });
 
-      expect(result[0].renderer.id).to.equal('2d925f27f5079f')
-      expect(result[0].renderer.url).to.equal('https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
-      expect(result[0].width).to.equal(640)
-      expect(result[0].height).to.equal(480)
-    })
+      expect(result[0].renderer.id).to.equal('2d925f27f5079f');
+      expect(result[0].renderer.url).to.equal('https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event');
+      expect(result[0].width).to.equal(640);
+      expect(result[0].height).to.equal(480);
+    });
 
     it('should add pvid to adtag urls when present', () => {
-      const result = spec.interpretResponse({ body: [PVID_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS })
+      const result = spec.interpretResponse({ body: [PVID_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS });
 
-      expect(result[0].ad).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
-      expect(result[0].vastUrl).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c')
-    })
+      expect(result[0].ad).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c');
+      expect(result[0].vastUrl).to.include('&pvid=43513f11-55a0-4a83-94e5-0ebc08f54a2c');
+    });
 
     it('should append iab_content to vastUrl', () => {
-      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_IAB_CONTENT })
-      expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0')
-    })
+      const result = spec.interpretResponse({ body: [VIDEO_RESPONSE] }, { validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_IAB_CONTENT });
+      expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0');
+    });
 
     it('should get digital services act object in matched bid response', () => {
-      const result = spec.interpretResponse({ body: [DIGITAL_SERVICES_ACT_RESPONSE] }, { validBidRequests: [{ ...DEFAULT_REQUEST(), ...DIGITAL_SERVICES_ACT_CONFIG }], queryParams: REQPARAMS })
+      const result = spec.interpretResponse({ body: [DIGITAL_SERVICES_ACT_RESPONSE] }, { validBidRequests: [{ ...DEFAULT_REQUEST(), ...DIGITAL_SERVICES_ACT_CONFIG }], queryParams: REQPARAMS });
 
-      expect(result[0].requestId).to.equal('2d925f27f5079f')
-      expect(result[0].meta.dsa.behalf).to.equal('some-behalf')
-      expect(result[0].meta.dsa.paid).to.equal('some-paid')
-      expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com')
-      expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3])
-      expect(result[0].meta.dsa.adrender).to.equal(1)
-    })
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].meta.dsa.behalf).to.equal('some-behalf');
+      expect(result[0].meta.dsa.paid).to.equal('some-paid');
+      expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
+      expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
+      expect(result[0].meta.dsa.adrender).to.equal(1);
+    });
 
     it('should set netRevenue correctly', () => {
       const NET_REVENUE_RESPONSE = {
         ...RESPONSE,
         netRevenue: true,
-      }
-      const result = spec.interpretResponse({ body: [NET_REVENUE_RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS })
+      };
+      const result = spec.interpretResponse({ body: [NET_REVENUE_RESPONSE] }, { validBidRequests: [bidRequest], queryParams: REQPARAMS });
 
-      expect(result[0].netRevenue).to.equal(true)
-    })
-  })
+      expect(result[0].netRevenue).to.equal(true);
+    });
+  });
 
   describe('getUserSyncs', () => {
     const syncOptions = {
       iframeEnabled: true,
       pixelEnabled: false,
-    }
-    const expectedUrlSnippets = ['https://ad.yieldlab.net/d/6846326/766/2x2?', 'ts=', 'type=h']
+    };
+    const expectedUrlSnippets = ['https://ad.yieldlab.net/d/6846326/766/2x2?', 'ts=', 'type=h'];
 
     it('should return user sync as expected', () => {
       const bidRequest = {
@@ -889,36 +889,36 @@ describe('yieldlabBidAdapter', () => {
           gdprApplies: true,
         },
         uspConsent: '1YYY',
-      }
-      const sync = spec.getUserSyncs(syncOptions, [], bidRequest.gdprConsent, bidRequest.uspConsent)
-      expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)))
-      expect(sync[0].url).to.have.string('gdpr=' + Number(bidRequest.gdprConsent.gdprApplies))
-      expect(sync[0].url).to.have.string('gdpr_consent=' + bidRequest.gdprConsent.consentString)
+      };
+      const sync = spec.getUserSyncs(syncOptions, [], bidRequest.gdprConsent, bidRequest.uspConsent);
+      expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)));
+      expect(sync[0].url).to.have.string('gdpr=' + Number(bidRequest.gdprConsent.gdprApplies));
+      expect(sync[0].url).to.have.string('gdpr_consent=' + bidRequest.gdprConsent.consentString);
       // USP consent should be ignored
-      expect(sync[0].url).not.have.string('usp_consent=')
-      expect(sync[0].type).to.have.string('iframe')
-    })
+      expect(sync[0].url).not.have.string('usp_consent=');
+      expect(sync[0].type).to.have.string('iframe');
+    });
 
     it('should return user sync even without gdprApplies in gdprConsent', () => {
       const gdprConsent = {
         consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
-      }
-      const sync = spec.getUserSyncs(syncOptions, [], gdprConsent, undefined)
-      expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)))
-      expect(sync[0].url).to.have.string('gdpr_consent=' + gdprConsent.consentString)
-      expect(sync[0].url).not.have.string('gdpr=')
-      expect(sync[0].type).to.have.string('iframe')
-    })
-  })
+      };
+      const sync = spec.getUserSyncs(syncOptions, [], gdprConsent, undefined);
+      expect(expectedUrlSnippets.every(urlSnippet => sync[0].url.includes(urlSnippet)));
+      expect(sync[0].url).to.have.string('gdpr_consent=' + gdprConsent.consentString);
+      expect(sync[0].url).not.have.string('gdpr=');
+      expect(sync[0].type).to.have.string('iframe');
+    });
+  });
 
   describe('getBidFloor', function () {
-    let bidRequest, bidRequest2, currency, floor
+    let bidRequest, bidRequest2, currency, floor;
     const getFloor = () => {
       return {
         currency: currency,
         floor: floor,
-      }
-    }
+      };
+    };
 
     it('should add valid bid floor in the format floor={adslotId}:{floorPriceInCents}[, ...]', () => {
       bidRequest = Object.assign(DEFAULT_REQUEST(), {
@@ -926,9 +926,9 @@ describe('yieldlabBidAdapter', () => {
           return {
             currency: 'EUR',
             floor: 1.33,
-          }
+          };
         }
-      })
+      });
       bidRequest2 = Object.assign(DEFAULT_REQUEST(), {
         params: {
           adslotId: 2222,
@@ -937,45 +937,45 @@ describe('yieldlabBidAdapter', () => {
           return {
             currency: 'EUR',
             floor: 2.99,
-          }
+          };
         },
-      })
-      const result = spec.buildRequests([bidRequest, bidRequest2], REQPARAMS)
-      expect(result).to.have.nested.property('queryParams.floor', '1111:133,2222:299')
-    })
+      });
+      const result = spec.buildRequests([bidRequest, bidRequest2], REQPARAMS);
+      expect(result).to.have.nested.property('queryParams.floor', '1111:133,2222:299');
+    });
 
     it('should round the floor price up', () => {
-      currency = 'EUR'
-      floor = 0.745
-      bidRequest = Object.assign(DEFAULT_REQUEST(), { getFloor })
-      const result = spec.buildRequests([bidRequest], REQPARAMS)
-      expect(result).to.have.nested.property('queryParams.floor', '1111:75')
-    })
+      currency = 'EUR';
+      floor = 0.745;
+      bidRequest = Object.assign(DEFAULT_REQUEST(), { getFloor });
+      const result = spec.buildRequests([bidRequest], REQPARAMS);
+      expect(result).to.have.nested.property('queryParams.floor', '1111:75');
+    });
 
     it('should round the floor price down', () => {
-      currency = 'EUR'
-      floor = 0.034
-      bidRequest = Object.assign(DEFAULT_REQUEST(), { getFloor })
-      const result = spec.buildRequests([bidRequest], REQPARAMS)
-      expect(result).to.have.nested.property('queryParams.floor', '1111:3')
-    })
+      currency = 'EUR';
+      floor = 0.034;
+      bidRequest = Object.assign(DEFAULT_REQUEST(), { getFloor });
+      const result = spec.buildRequests([bidRequest], REQPARAMS);
+      expect(result).to.have.nested.property('queryParams.floor', '1111:3');
+    });
 
     it('should not add empty bid floor', () => {
       bidRequest = Object.assign(DEFAULT_REQUEST(), {
         getFloor: () => {
-          return {}
+          return {};
         }
-      })
-      const result = spec.buildRequests([bidRequest], REQPARAMS)
-      expect(result).not.to.have.nested.property('queryParams.floor')
-    })
+      });
+      const result = spec.buildRequests([bidRequest], REQPARAMS);
+      expect(result).not.to.have.nested.property('queryParams.floor');
+    });
 
     it('should not add bid floor when currency is not matching', () => {
-      currency = 'USD'
-      floor = 1.33
-      bidRequest = Object.assign(DEFAULT_REQUEST(), { getFloor })
-      const result = spec.buildRequests([bidRequest], REQPARAMS)
-      expect(result).not.to.have.nested.property('queryParams.floor')
-    })
-  })
-})
+      currency = 'USD';
+      floor = 1.33;
+      bidRequest = Object.assign(DEFAULT_REQUEST(), { getFloor });
+      const result = spec.buildRequests([bidRequest], REQPARAMS);
+      expect(result).not.to.have.nested.property('queryParams.floor');
+    });
+  });
+});

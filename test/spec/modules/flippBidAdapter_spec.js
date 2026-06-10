@@ -1,15 +1,15 @@
-import { expect } from 'chai'
-import { spec } from 'modules/flippBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
-const ENDPOINT = 'https://ads-flipp.com/flyer-locator-service/client_bidding'
+import { expect } from 'chai';
+import { spec } from 'modules/flippBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
+const ENDPOINT = 'https://ads-flipp.com/flyer-locator-service/client_bidding';
 describe('flippAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -19,17 +19,17 @@ describe('flippAdapter', function () {
         siteId: 1234,
         zoneIds: [1, 2, 3, 4],
       }
-    }
+    };
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      invalidBid.params = { siteId: 1234 }
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      const invalidBid = Object.assign({}, bid);
+      invalidBid.params = { siteId: 1234 };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [{
@@ -44,23 +44,23 @@ describe('flippAdapter', function () {
       bidderRequestId: '1a857fa34c1c96',
       auctionId: 'a297d1aa-7900-4ce4-a0aa-caa8d46c4af7',
       transactionId: '00b2896c-2731-4f01-83e4-7a3ad5da13b6',
-    }]
+    }];
     const bidderRequest = {
       refererInfo: {
         referer: 'http://example.com'
       }
-    }
+    };
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      expect(request.method).to.equal('POST')
-    })
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.method).to.equal('POST');
+    });
 
     it('sends bid request to ENDPOINT with query parameter', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      expect(request.url).to.equal(ENDPOINT)
-    })
-  })
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.equal(ENDPOINT);
+    });
+  });
 
   describe('interpretResponse', function() {
     it('should get correct bid response', function() {
@@ -84,7 +84,7 @@ describe('flippAdapter', function () {
           }],
           url: 'http://example.com',
         },
-      }
+      };
 
       const serverResponse = {
         body: {
@@ -112,7 +112,7 @@ describe('flippAdapter', function () {
           },
           'location': { 'city': 'Oakville' },
         },
-      }
+      };
 
       const expectedResponse = [
         {
@@ -127,12 +127,12 @@ describe('flippAdapter', function () {
           ttl: 30,
           ad: 'Returned from server',
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)
-      expect(result).to.have.lengthOf(1)
-      expect(result).to.deep.have.same.members(expectedResponse)
-    })
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result).to.have.lengthOf(1);
+      expect(result).to.deep.have.same.members(expectedResponse);
+    });
 
     it('should get empty bid response when no ad is returned', function() {
       const bidRequest = {
@@ -155,7 +155,7 @@ describe('flippAdapter', function () {
           }],
           url: 'http://example.com',
         },
-      }
+      };
 
       const serverResponse = {
         body: {
@@ -164,15 +164,15 @@ describe('flippAdapter', function () {
           },
           'location': { 'city': 'Oakville' },
         },
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)
-      expect(result).to.have.lengthOf(0)
-      expect(result).to.deep.have.same.members([])
-    })
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result).to.have.lengthOf(0);
+      expect(result).to.deep.have.same.members([]);
+    });
 
     it('should get empty response when bid server returns 204', function() {
-      expect(spec.interpretResponse({})).to.be.empty
-    })
-  })
-})
+      expect(spec.interpretResponse({})).to.be.empty;
+    });
+  });
+});

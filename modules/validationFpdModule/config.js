@@ -5,7 +5,7 @@ const TYPES = {
   string: 'string',
   object: 'object',
   number: 'number',
-}
+};
 
 /**
  * Template to define what ortb2 attributes should be validated
@@ -179,4 +179,4 @@ export const ORTB_MAP = {
       }
     }
   }
-}
+};

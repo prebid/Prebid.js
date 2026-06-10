@@ -1,29 +1,29 @@
-import roxotAnalytic from 'modules/roxotAnalyticsAdapter.js'
-import { expect } from 'chai'
-import { server } from 'test/mocks/xhr.js'
-import { EVENTS } from 'src/constants.js'
+import roxotAnalytic from 'modules/roxotAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events')
+const events = require('src/events');
 
 describe('Roxot Prebid Analytic', function () {
-  const roxotConfigServerUrl = 'config-server'
-  const roxotEventServerUrl = 'event-server'
-  const publisherId = 'test_roxot_prebid_analytics_publisher_id'
+  const roxotConfigServerUrl = 'config-server';
+  const roxotEventServerUrl = 'event-server';
+  const publisherId = 'test_roxot_prebid_analytics_publisher_id';
 
-  const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56'
-  const timeout = 3000
-  const auctionStartTimestamp = Date.now()
-  const bidder = 'rubicon'
+  const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
+  const timeout = 3000;
+  const auctionStartTimestamp = Date.now();
+  const bidder = 'rubicon';
 
-  const bidAdUnit = 'div_with_bid'
-  const noBidAdUnit = 'div_no_bid'
-  const bidAfterTimeoutAdUnit = 'div_after_timeout'
+  const bidAdUnit = 'div_with_bid';
+  const noBidAdUnit = 'div_no_bid';
+  const bidAfterTimeoutAdUnit = 'div_after_timeout';
 
   const auctionInit = {
     timestamp: auctionStartTimestamp,
     auctionId: auctionId,
     timeout: timeout
-  }
+  };
 
   const bidRequested = {
     auctionId: auctionId,
@@ -65,7 +65,7 @@ describe('Roxot Prebid Analytic', function () {
     doneCbCallCount: 1,
     start: auctionStartTimestamp,
     timeout: timeout
-  }
+  };
 
   const bidAdjustmentWithBid = {
     ad: 'html',
@@ -88,7 +88,7 @@ describe('Roxot Prebid Analytic', function () {
     timeToRespond: 421,
     ttl: 300,
     width: 300
-  }
+  };
 
   const bidAdjustmentAfterTimeout = {
     ad: 'html',
@@ -111,7 +111,7 @@ describe('Roxot Prebid Analytic', function () {
     timeToRespond: 6141,
     ttl: 300,
     width: 300
-  }
+  };
 
   const bidAdjustmentNoBid = {
     ad: 'html',
@@ -134,11 +134,11 @@ describe('Roxot Prebid Analytic', function () {
     timeToRespond: 215,
     ttl: 300,
     width: 0
-  }
+  };
 
   const auctionEnd = {
     auctionId: auctionId
-  }
+  };
 
   const bidTimeout = [
     {
@@ -148,22 +148,22 @@ describe('Roxot Prebid Analytic', function () {
       bidder: bidder,
       timeout: timeout
     }
-  ]
+  ];
 
-  const bidResponseWithBid = bidAdjustmentWithBid
-  const bidResponseAfterTimeout = bidAdjustmentAfterTimeout
-  const bidResponseNoBid = bidAdjustmentNoBid
-  const bidderDone = bidRequested
-  const bidWon = bidAdjustmentWithBid
+  const bidResponseWithBid = bidAdjustmentWithBid;
+  const bidResponseAfterTimeout = bidAdjustmentAfterTimeout;
+  const bidResponseNoBid = bidAdjustmentNoBid;
+  const bidderDone = bidRequested;
+  const bidWon = bidAdjustmentWithBid;
 
   describe('correct build and send events', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
-    })
+      sinon.stub(events, 'getEvents').returns([]);
+    });
     afterEach(function () {
-      roxotAnalytic.disableAnalytics()
-      events.getEvents.restore()
-    })
+      roxotAnalytic.disableAnalytics();
+      events.getEvents.restore();
+    });
     it('should send prepared events to backend', function () {
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
@@ -172,76 +172,76 @@ describe('Roxot Prebid Analytic', function () {
           configServer: roxotConfigServerUrl,
           server: roxotEventServerUrl
         }
-      })
+      });
 
-      expect(server.requests.length).to.equal(1)
-      expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost')
-      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"a": 1, "i": 1, "bat": 1}')
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost');
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"a": 1, "i": 1, "bat": 1}');
 
-      events.emit(EVENTS.AUCTION_INIT, auctionInit)
-      events.emit(EVENTS.BID_REQUESTED, bidRequested)
-      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid)
-      events.emit(EVENTS.BID_RESPONSE, bidResponseWithBid)
-      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid)
-      events.emit(EVENTS.BID_RESPONSE, bidResponseNoBid)
-      events.emit(EVENTS.BID_TIMEOUT, bidTimeout)
-      events.emit(EVENTS.AUCTION_END, auctionEnd)
-      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout)
-      events.emit(EVENTS.BID_RESPONSE, bidResponseAfterTimeout)
-      events.emit(EVENTS.BIDDER_DONE, bidderDone)
-      events.emit(EVENTS.BID_WON, bidWon)
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseWithBid);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseNoBid);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseAfterTimeout);
+      events.emit(EVENTS.BIDDER_DONE, bidderDone);
+      events.emit(EVENTS.BID_WON, bidWon);
 
-      expect(server.requests.length).to.equal(4)
+      expect(server.requests.length).to.equal(4);
 
-      expect(server.requests[1].url).to.equal('https://' + roxotEventServerUrl + '/a?publisherId=' + publisherId + '&host=localhost')
-      expect(server.requests[2].url).to.equal('https://' + roxotEventServerUrl + '/bat?publisherId=' + publisherId + '&host=localhost')
-      expect(server.requests[3].url).to.equal('https://' + roxotEventServerUrl + '/i?publisherId=' + publisherId + '&host=localhost')
+      expect(server.requests[1].url).to.equal('https://' + roxotEventServerUrl + '/a?publisherId=' + publisherId + '&host=localhost');
+      expect(server.requests[2].url).to.equal('https://' + roxotEventServerUrl + '/bat?publisherId=' + publisherId + '&host=localhost');
+      expect(server.requests[3].url).to.equal('https://' + roxotEventServerUrl + '/i?publisherId=' + publisherId + '&host=localhost');
 
-      const auction = JSON.parse(server.requests[1].requestBody)
-      expect(auction).to.include.all.keys('event', 'eventName', 'options', 'data')
-      expect(auction.event).to.equal('a')
+      const auction = JSON.parse(server.requests[1].requestBody);
+      expect(auction).to.include.all.keys('event', 'eventName', 'options', 'data');
+      expect(auction.event).to.equal('a');
 
-      expect(auction.data).to.include.all.keys('id', 'start', 'finish', 'timeout', 'adUnits')
-      expect(auction.data.id).to.equal(auctionId)
-      expect(auction.data.timeout).to.equal(timeout)
+      expect(auction.data).to.include.all.keys('id', 'start', 'finish', 'timeout', 'adUnits');
+      expect(auction.data.id).to.equal(auctionId);
+      expect(auction.data.timeout).to.equal(timeout);
 
-      expect(auction.data.adUnits).to.include.all.keys(bidAdUnit, bidAfterTimeoutAdUnit, noBidAdUnit)
-      expect(auction.data.adUnits[bidAdUnit].bidders).to.have.property(bidder)
-      expect(auction.data.adUnits[bidAfterTimeoutAdUnit].bidders).to.have.property(bidder)
-      expect(auction.data.adUnits[noBidAdUnit].bidders).to.have.property(bidder)
+      expect(auction.data.adUnits).to.include.all.keys(bidAdUnit, bidAfterTimeoutAdUnit, noBidAdUnit);
+      expect(auction.data.adUnits[bidAdUnit].bidders).to.have.property(bidder);
+      expect(auction.data.adUnits[bidAfterTimeoutAdUnit].bidders).to.have.property(bidder);
+      expect(auction.data.adUnits[noBidAdUnit].bidders).to.have.property(bidder);
 
-      expect(auction.data.adUnits[bidAdUnit].bidders[bidder].status).to.equal('bid')
-      expect(auction.data.adUnits[bidAfterTimeoutAdUnit].bidders[bidder].status).to.equal('timeout')
-      expect(auction.data.adUnits[noBidAdUnit].bidders[bidder].status).to.equal('noBid')
+      expect(auction.data.adUnits[bidAdUnit].bidders[bidder].status).to.equal('bid');
+      expect(auction.data.adUnits[bidAfterTimeoutAdUnit].bidders[bidder].status).to.equal('timeout');
+      expect(auction.data.adUnits[noBidAdUnit].bidders[bidder].status).to.equal('noBid');
 
-      const bidAfterTimeout = JSON.parse(server.requests[2].requestBody)
-      expect(bidAfterTimeout).to.include.all.keys('event', 'eventName', 'options', 'data')
-      expect(bidAfterTimeout.event).to.equal('bat')
+      const bidAfterTimeout = JSON.parse(server.requests[2].requestBody);
+      expect(bidAfterTimeout).to.include.all.keys('event', 'eventName', 'options', 'data');
+      expect(bidAfterTimeout.event).to.equal('bat');
 
-      expect(bidAfterTimeout.data).to.include.all.keys('start', 'finish', 'mediaType', 'adUnit', 'bidder', 'cpm', 'size', 'auction')
-      expect(bidAfterTimeout.data.adUnit).to.equal(bidAfterTimeoutAdUnit)
-      expect(bidAfterTimeout.data.bidder).to.equal(bidder)
-      expect(bidAfterTimeout.data.cpm).to.equal(bidAdjustmentAfterTimeout.cpm)
+      expect(bidAfterTimeout.data).to.include.all.keys('start', 'finish', 'mediaType', 'adUnit', 'bidder', 'cpm', 'size', 'auction');
+      expect(bidAfterTimeout.data.adUnit).to.equal(bidAfterTimeoutAdUnit);
+      expect(bidAfterTimeout.data.bidder).to.equal(bidder);
+      expect(bidAfterTimeout.data.cpm).to.equal(bidAdjustmentAfterTimeout.cpm);
 
-      const impression = JSON.parse(server.requests[3].requestBody)
-      expect(impression).to.include.all.keys('event', 'eventName', 'options', 'data')
-      expect(impression.event).to.equal('i')
+      const impression = JSON.parse(server.requests[3].requestBody);
+      expect(impression).to.include.all.keys('event', 'eventName', 'options', 'data');
+      expect(impression.event).to.equal('i');
 
-      expect(impression.data).to.include.all.keys('mediaType', 'adUnit', 'bidder', 'cpm', 'size', 'auction', 'isNew')
-      expect(impression.data.adUnit).to.equal(bidAdUnit)
-      expect(impression.data.bidder).to.equal(bidder)
-      expect(impression.data.cpm).to.equal(bidAdjustmentWithBid.cpm)
-    })
-  })
+      expect(impression.data).to.include.all.keys('mediaType', 'adUnit', 'bidder', 'cpm', 'size', 'auction', 'isNew');
+      expect(impression.data.adUnit).to.equal(bidAdUnit);
+      expect(impression.data.bidder).to.equal(bidder);
+      expect(impression.data.cpm).to.equal(bidAdjustmentWithBid.cpm);
+    });
+  });
 
   describe('support ad unit filter', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
-    })
+      sinon.stub(events, 'getEvents').returns([]);
+    });
     afterEach(function () {
-      roxotAnalytic.disableAnalytics()
-      events.getEvents.restore()
-    })
+      roxotAnalytic.disableAnalytics();
+      events.getEvents.restore();
+    });
     it('should not send event for blocked ad unit', function () {
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
@@ -251,45 +251,45 @@ describe('Roxot Prebid Analytic', function () {
           server: roxotEventServerUrl,
           adUnits: [noBidAdUnit, bidAfterTimeoutAdUnit]
         }
-      })
+      });
 
-      expect(server.requests.length).to.equal(1)
-      expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost')
-      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"a": 1, "i": 1, "bat": 1}')
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost');
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, '{"a": 1, "i": 1, "bat": 1}');
 
-      events.emit(EVENTS.AUCTION_INIT, auctionInit)
-      events.emit(EVENTS.BID_REQUESTED, bidRequested)
-      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid)
-      events.emit(EVENTS.BID_RESPONSE, bidResponseWithBid)
-      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid)
-      events.emit(EVENTS.BID_RESPONSE, bidResponseNoBid)
-      events.emit(EVENTS.BID_TIMEOUT, bidTimeout)
-      events.emit(EVENTS.AUCTION_END, auctionEnd)
-      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout)
-      events.emit(EVENTS.BID_RESPONSE, bidResponseAfterTimeout)
-      events.emit(EVENTS.BIDDER_DONE, bidderDone)
-      events.emit(EVENTS.BID_WON, bidWon)
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseWithBid);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseNoBid);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseAfterTimeout);
+      events.emit(EVENTS.BIDDER_DONE, bidderDone);
+      events.emit(EVENTS.BID_WON, bidWon);
 
-      expect(server.requests.length).to.equal(3)
+      expect(server.requests.length).to.equal(3);
 
-      expect(server.requests[1].url).to.equal('https://' + roxotEventServerUrl + '/a?publisherId=' + publisherId + '&host=localhost')
-      expect(server.requests[2].url).to.equal('https://' + roxotEventServerUrl + '/bat?publisherId=' + publisherId + '&host=localhost')
+      expect(server.requests[1].url).to.equal('https://' + roxotEventServerUrl + '/a?publisherId=' + publisherId + '&host=localhost');
+      expect(server.requests[2].url).to.equal('https://' + roxotEventServerUrl + '/bat?publisherId=' + publisherId + '&host=localhost');
 
-      const auction = JSON.parse(server.requests[1].requestBody)
-      expect(auction.data.adUnits).to.include.all.keys(noBidAdUnit, bidAfterTimeoutAdUnit)
-      expect(auction.data.adUnits).to.not.include.all.keys(bidAdUnit)
-    })
-  })
+      const auction = JSON.parse(server.requests[1].requestBody);
+      expect(auction.data.adUnits).to.include.all.keys(noBidAdUnit, bidAfterTimeoutAdUnit);
+      expect(auction.data.adUnits).to.not.include.all.keys(bidAdUnit);
+    });
+  });
 
   describe('should correct parse config', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
-    })
+      sinon.stub(events, 'getEvents').returns([]);
+    });
 
     afterEach(function () {
-      roxotAnalytic.disableAnalytics()
-      events.getEvents.restore()
-    })
+      roxotAnalytic.disableAnalytics();
+      events.getEvents.restore();
+    });
 
     it('correct parse publisher config', function () {
       const publisherOptions = {
@@ -297,144 +297,144 @@ describe('Roxot Prebid Analytic', function () {
         configServer: roxotConfigServerUrl,
         server: roxotEventServerUrl,
         anything: 'else',
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().options).to.deep.equal(publisherOptions)
-    })
+      expect(roxotAnalytic.getOptions().options).to.deep.equal(publisherOptions);
+    });
 
     it('support deprecated options', function () {
       const publisherOptions = {
         publisherIds: [publisherId],
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().options).to.deep.equal(publisherOptions)
-      expect(roxotAnalytic.getOptions().publisherId).to.equal(publisherId)
-    })
+      expect(roxotAnalytic.getOptions().options).to.deep.equal(publisherOptions);
+      expect(roxotAnalytic.getOptions().publisherId).to.equal(publisherId);
+    });
 
     it('support default end-points', function () {
       const publisherOptions = {
         publisherId: publisherId,
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().configServer).to.equal('pa.rxthdr.com/v3')
-      expect(roxotAnalytic.getOptions().server).to.equal('pa.rxthdr.com/v3')
-    })
+      expect(roxotAnalytic.getOptions().configServer).to.equal('pa.rxthdr.com/v3');
+      expect(roxotAnalytic.getOptions().server).to.equal('pa.rxthdr.com/v3');
+    });
 
     it('support custom config end-point', function () {
       const publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().configServer).to.equal(roxotConfigServerUrl)
-      expect(roxotAnalytic.getOptions().server).to.equal('pa.rxthdr.com/v3')
-    })
+      expect(roxotAnalytic.getOptions().configServer).to.equal(roxotConfigServerUrl);
+      expect(roxotAnalytic.getOptions().server).to.equal('pa.rxthdr.com/v3');
+    });
 
     it('support custom config and event end-point', function () {
       const publisherOptions = {
         publisherId: publisherId,
         server: roxotEventServerUrl
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().configServer).to.equal(roxotEventServerUrl)
-      expect(roxotAnalytic.getOptions().server).to.equal(roxotEventServerUrl)
-    })
+      expect(roxotAnalytic.getOptions().configServer).to.equal(roxotEventServerUrl);
+      expect(roxotAnalytic.getOptions().server).to.equal(roxotEventServerUrl);
+    });
 
     it('support different config and event end-points', function () {
       const publisherOptions = {
         publisherId: publisherId,
         configServer: roxotConfigServerUrl,
         server: roxotEventServerUrl
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().configServer).to.equal(roxotConfigServerUrl)
-      expect(roxotAnalytic.getOptions().server).to.equal(roxotEventServerUrl)
-    })
+      expect(roxotAnalytic.getOptions().configServer).to.equal(roxotConfigServerUrl);
+      expect(roxotAnalytic.getOptions().server).to.equal(roxotEventServerUrl);
+    });
 
     it('support adUnit filter', function () {
       const publisherOptions = {
         publisherId: publisherId,
         adUnits: ['div1', 'div2']
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      expect(roxotAnalytic.getOptions().adUnits).to.deep.equal(['div1', 'div2'])
-    })
+      expect(roxotAnalytic.getOptions().adUnits).to.deep.equal(['div1', 'div2']);
+    });
 
     it('support fail loading server config', function () {
       const publisherOptions = {
         publisherId: publisherId
-      }
+      };
 
       roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: publisherOptions
-      })
+      });
 
-      server.requests[0].respond(500)
+      server.requests[0].respond(500);
 
-      expect(roxotAnalytic.getOptions().serverConfig).to.deep.equal({ a: 1, i: 1, bat: 1, isError: 1 })
-    })
-  })
+      expect(roxotAnalytic.getOptions().serverConfig).to.deep.equal({ a: 1, i: 1, bat: 1, isError: 1 });
+    });
+  });
 
   describe('build utm tag data', function () {
     beforeEach(function () {
-      localStorage.setItem('roxot_analytics_utm_source', 'utm_source')
-      localStorage.setItem('roxot_analytics_utm_medium', 'utm_medium')
-      localStorage.setItem('roxot_analytics_utm_campaign', '')
-      localStorage.setItem('roxot_analytics_utm_term', '')
-      localStorage.setItem('roxot_analytics_utm_content', '')
-      localStorage.setItem('roxot_analytics_utm_ttl', Date.now())
-    })
+      localStorage.setItem('roxot_analytics_utm_source', 'utm_source');
+      localStorage.setItem('roxot_analytics_utm_medium', 'utm_medium');
+      localStorage.setItem('roxot_analytics_utm_campaign', '');
+      localStorage.setItem('roxot_analytics_utm_term', '');
+      localStorage.setItem('roxot_analytics_utm_content', '');
+      localStorage.setItem('roxot_analytics_utm_ttl', Date.now());
+    });
     afterEach(function () {
-      localStorage.removeItem('roxot_analytics_utm_source')
-      localStorage.removeItem('roxot_analytics_utm_medium')
-      localStorage.removeItem('roxot_analytics_utm_campaign')
-      localStorage.removeItem('roxot_analytics_utm_term')
-      localStorage.removeItem('roxot_analytics_utm_content')
-      localStorage.removeItem('roxot_analytics_utm_ttl')
-    })
+      localStorage.removeItem('roxot_analytics_utm_source');
+      localStorage.removeItem('roxot_analytics_utm_medium');
+      localStorage.removeItem('roxot_analytics_utm_campaign');
+      localStorage.removeItem('roxot_analytics_utm_term');
+      localStorage.removeItem('roxot_analytics_utm_content');
+      localStorage.removeItem('roxot_analytics_utm_ttl');
+    });
     it('should build utm data from local storage', function () {
-      const utmTagData = roxotAnalytic.buildUtmTagData()
-      expect(utmTagData.utm_source).to.equal('utm_source')
-      expect(utmTagData.utm_medium).to.equal('utm_medium')
-      expect(utmTagData.utm_campaign).to.equal('')
-      expect(utmTagData.utm_term).to.equal('')
-      expect(utmTagData.utm_content).to.equal('')
-    })
-  })
-})
+      const utmTagData = roxotAnalytic.buildUtmTagData();
+      expect(utmTagData.utm_source).to.equal('utm_source');
+      expect(utmTagData.utm_medium).to.equal('utm_medium');
+      expect(utmTagData.utm_campaign).to.equal('');
+      expect(utmTagData.utm_term).to.equal('');
+      expect(utmTagData.utm_content).to.equal('');
+    });
+  });
+});

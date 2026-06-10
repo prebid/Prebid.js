@@ -1,7 +1,7 @@
-import { assert, expect } from 'chai'
-import { spec } from 'modules/digitalMatterBidAdapter'
-import { config } from '../../../src/config.js'
-import { deepClone } from '../../../src/utils.js'
+import { assert, expect } from 'chai';
+import { spec } from 'modules/digitalMatterBidAdapter';
+import { config } from '../../../src/config.js';
+import { deepClone } from '../../../src/utils.js';
 
 const bid = {
   'adUnitCode': 'adUnitCode',
@@ -16,7 +16,7 @@ const bid = {
     'accountId': '1_demo_1',
     'siteId': '1-demo-1'
   }
-}
+};
 const bidderRequest = {
   ortb2: {
     source: {
@@ -42,61 +42,61 @@ const bidderRequest = {
       language: 'en'
     }
   }
-}
+};
 
 describe('Digital Matter BidAdapter', function () {
   describe('isBidRequestValid', function () {
     it('should return true when all required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
 
     it('should return false when media type banner is missing', function () {
-      const invalidBid = deepClone(bid)
-      delete invalidBid.mediaTypes.banner
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      const invalidBid = deepClone(bid);
+      delete invalidBid.mediaTypes.banner;
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     beforeEach(function () {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
     it('should send request with correct structure', function () {
-      const request = spec.buildRequests([bid], bidderRequest)
+      const request = spec.buildRequests([bid], bidderRequest);
 
-      assert.equal(request.method, 'POST')
-      assert.equal(request.url, 'https://adx.digitalmatter.services/openrtb2/auction')
-      assert.equal(request.options, undefined)
-      assert.ok(request.data)
-    })
+      assert.equal(request.method, 'POST');
+      assert.equal(request.url, 'https://adx.digitalmatter.services/openrtb2/auction');
+      assert.equal(request.options, undefined);
+      assert.ok(request.data);
+    });
 
     it('should have default request structure', function () {
-      const keys = 'tid,site,device,imp,test,ext'.split(',')
-      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data)
-      const data = Object.keys(request)
+      const keys = 'tid,site,device,imp,test,ext'.split(',');
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = Object.keys(request);
 
-      assert.deepEqual(keys, data)
-    })
+      assert.deepEqual(keys, data);
+    });
 
     it('should send info about device', function () {
       config.setConfig({
         device: { w: 1920, h: 1080 }
-      })
-      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data)
+      });
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
-      assert.equal(request.device.ua, navigator.userAgent)
-      assert.equal(request.device.w, 100)
-      assert.equal(request.device.h, 100)
-    })
+      assert.equal(request.device.ua, navigator.userAgent);
+      assert.equal(request.device.w, 100);
+      assert.equal(request.device.h, 100);
+    });
 
     it('should send info about the site', function () {
-      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data)
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
       assert.deepEqual(request.site, {
         domain: 'publisher.domain.com',
@@ -104,15 +104,15 @@ describe('Digital Matter BidAdapter', function () {
           domain: 'publisher.domain.com'
         },
         page: 'https://publisher.domain.com/test.html'
-      })
-    })
+      });
+    });
 
     it('should send currency if defined', function () {
-      config.setConfig({ currency: { adServerCurrency: 'EUR' } })
-      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data)
+      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
-      assert.deepEqual(request.cur, [{ adServerCurrency: 'EUR' }])
-    })
+      assert.deepEqual(request.cur, [{ adServerCurrency: 'EUR' }]);
+    });
 
     it('should pass supply chain object', function () {
       const validBidRequests = {
@@ -129,16 +129,16 @@ describe('Digital Matter BidAdapter', function () {
             }
           }
         }
-      }
+      };
 
-      const request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data)
+      const request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data);
       assert.deepEqual(request.source.ext.schain, {
         validation: 'strict',
         config: {
           ver: '1.0'
         }
-      })
-    })
+      });
+    });
 
     it('should pass extended ids if exists', function () {
       const validBidRequests = {
@@ -157,12 +157,12 @@ describe('Digital Matter BidAdapter', function () {
             ]
           }
         ]
-      }
+      };
 
-      const request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data)
+      const request = JSON.parse(spec.buildRequests([validBidRequests], bidderRequest).data);
 
-      assert.deepEqual(request.user.ext.eids, validBidRequests.userIdAsEids)
-    })
+      assert.deepEqual(request.user.ext.eids, validBidRequests.userIdAsEids);
+    });
 
     it('should pass gdpr consent data if gdprApplies', function () {
       const consentedBidderRequest = {
@@ -171,19 +171,19 @@ describe('Digital Matter BidAdapter', function () {
           gdprApplies: true,
           consentString: 'consentDataString'
         }
-      }
+      };
 
-      const request = JSON.parse(spec.buildRequests([bid], consentedBidderRequest).data)
-      assert.equal(request.user.ext.consent, consentedBidderRequest.gdprConsent.consentString)
-      assert.equal(request.regs.ext.gdpr, consentedBidderRequest.gdprConsent.gdprApplies)
-      assert.equal(typeof request.regs.ext.gdpr, 'number')
-    })
-  })
+      const request = JSON.parse(spec.buildRequests([bid], consentedBidderRequest).data);
+      assert.equal(request.user.ext.consent, consentedBidderRequest.gdprConsent.consentString);
+      assert.equal(request.regs.ext.gdpr, consentedBidderRequest.gdprConsent.gdprApplies);
+      assert.equal(typeof request.regs.ext.gdpr, 'number');
+    });
+  });
 
   describe('interpretResponse', function () {
     it('should return empty array if no body in response', function () {
-      assert.ok(spec.interpretResponse([]))
-    })
+      assert.ok(spec.interpretResponse([]));
+    });
 
     it('should return array with bids if response not empty', function () {
       const firstResponse = {
@@ -204,7 +204,7 @@ describe('Digital Matter BidAdapter', function () {
             'advertiser.org'
           ]
         }
-      }
+      };
       const secondResponse = {
         'id': 'id_2',
         'impid': 'impId_2',
@@ -223,8 +223,8 @@ describe('Digital Matter BidAdapter', function () {
             'advertiser.org'
           ]
         }
-      }
-      const currency = 'EUR'
+      };
+      const currency = 'EUR';
 
       const bids = spec.interpretResponse({
         body: {
@@ -235,37 +235,37 @@ describe('Digital Matter BidAdapter', function () {
             secondResponse
           ]
         }
-      })
+      });
 
-      assert.ok(bids)
-      assert.deepEqual(bids[0].requestId, firstResponse.bidid)
-      assert.deepEqual(bids[0].cpm, firstResponse.cpm)
-      assert.deepEqual(bids[0].creativeId, firstResponse.creativeid)
-      assert.deepEqual(bids[0].ttl, 300)
-      assert.deepEqual(bids[0].netRevenue, true)
-      assert.deepEqual(bids[0].currency, currency)
-      assert.deepEqual(bids[0].width, firstResponse.width)
-      assert.deepEqual(bids[0].height, firstResponse.height)
-      assert.deepEqual(bids[0].dealId, undefined)
-      assert.deepEqual(bids[0].meta.advertiserDomains, ['advertiser.org'])
+      assert.ok(bids);
+      assert.deepEqual(bids[0].requestId, firstResponse.bidid);
+      assert.deepEqual(bids[0].cpm, firstResponse.cpm);
+      assert.deepEqual(bids[0].creativeId, firstResponse.creativeid);
+      assert.deepEqual(bids[0].ttl, 300);
+      assert.deepEqual(bids[0].netRevenue, true);
+      assert.deepEqual(bids[0].currency, currency);
+      assert.deepEqual(bids[0].width, firstResponse.width);
+      assert.deepEqual(bids[0].height, firstResponse.height);
+      assert.deepEqual(bids[0].dealId, undefined);
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['advertiser.org']);
 
-      assert.deepEqual(bids[1].requestId, secondResponse.bidid)
-      assert.deepEqual(bids[1].cpm, secondResponse.cpm)
-      assert.deepEqual(bids[1].creativeId, secondResponse.creativeid)
-      assert.deepEqual(bids[1].ttl, 300)
-      assert.deepEqual(bids[1].netRevenue, true)
-      assert.deepEqual(bids[1].currency, currency)
-      assert.deepEqual(bids[1].width, secondResponse.width)
-      assert.deepEqual(bids[1].height, secondResponse.height)
-      assert.deepEqual(bids[1].dealId, undefined)
-      assert.deepEqual(bids[1].meta.advertiserDomains, ['advertiser.org'])
-    })
-  })
+      assert.deepEqual(bids[1].requestId, secondResponse.bidid);
+      assert.deepEqual(bids[1].cpm, secondResponse.cpm);
+      assert.deepEqual(bids[1].creativeId, secondResponse.creativeid);
+      assert.deepEqual(bids[1].ttl, 300);
+      assert.deepEqual(bids[1].netRevenue, true);
+      assert.deepEqual(bids[1].currency, currency);
+      assert.deepEqual(bids[1].width, secondResponse.width);
+      assert.deepEqual(bids[1].height, secondResponse.height);
+      assert.deepEqual(bids[1].dealId, undefined);
+      assert.deepEqual(bids[1].meta.advertiserDomains, ['advertiser.org']);
+    });
+  });
 
   describe('getUserSyncs', function () {
     it('handle empty array (e.g. timeout)', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [])
-      expect(syncs).to.deep.equal([])
-    })
-  })
-})
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
+      expect(syncs).to.deep.equal([]);
+    });
+  });
+});

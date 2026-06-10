@@ -1,8 +1,8 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import { deepSetValue, getParameterByName, logError } from '../src/utils.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepSetValue, getParameterByName, logError } from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,15 +13,15 @@ import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js'
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDDER_CODE = 'akcelo'
-const COOKIE_SYNC_ENDPOINT = 'akcelo'
+const BIDDER_CODE = 'akcelo';
+const COOKIE_SYNC_ENDPOINT = 'akcelo';
 
-const AUCTION_URL = 'https://s2s.sportslocalmedia.com/openrtb2/auction'
-const IFRAME_SYNC_URL = 'https://ads.sportslocalmedia.com/load-cookie.html'
+const AUCTION_URL = 'https://s2s.sportslocalmedia.com/openrtb2/auction';
+const IFRAME_SYNC_URL = 'https://ads.sportslocalmedia.com/load-cookie.html';
 
-const DEFAULT_TTL = 300
+const DEFAULT_TTL = 300;
 
-const akceloDemoIsOn = () => getParameterByName('akcelo_demo') === 'true'
+const akceloDemoIsOn = () => getParameterByName('akcelo_demo') === 'true';
 
 export const converter = ortbConverter({
   context: {
@@ -29,45 +29,45 @@ export const converter = ortbConverter({
     ttl: DEFAULT_TTL,
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
+    const imp = buildImp(bidRequest, context);
 
     if (bidRequest.params.siteId) {
-      deepSetValue(imp, 'ext.akcelo.siteId', bidRequest.params.siteId)
+      deepSetValue(imp, 'ext.akcelo.siteId', bidRequest.params.siteId);
     } else {
-      logError('Missing parameter : siteId')
+      logError('Missing parameter : siteId');
     }
 
     if (bidRequest.params.adUnitId) {
-      deepSetValue(imp, 'ext.akcelo.adUnitId', bidRequest.params.adUnitId)
+      deepSetValue(imp, 'ext.akcelo.adUnitId', bidRequest.params.adUnitId);
     } else {
-      logError('Missing parameter : adUnitId')
+      logError('Missing parameter : adUnitId');
     }
 
     if (akceloDemoIsOn()) {
-      deepSetValue(imp, 'ext.akcelo.test', 1)
+      deepSetValue(imp, 'ext.akcelo.test', 1);
     }
 
-    return imp
+    return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context)
+    const request = buildRequest(imps, bidderRequest, context);
 
-    deepSetValue(request, 'test', akceloDemoIsOn() ? 1 : 0)
+    deepSetValue(request, 'test', akceloDemoIsOn() ? 1 : 0);
 
-    const siteId = bidderRequest.bids.map((bid) => bid.params.siteId).find(Boolean)
-    deepSetValue(request, 'site.publisher.ext.prebid.parentAccount', siteId)
+    const siteId = bidderRequest.bids.map((bid) => bid.params.siteId).find(Boolean);
+    deepSetValue(request, 'site.publisher.ext.prebid.parentAccount', siteId);
 
-    return request
+    return request;
   },
   bidResponse(buildBidResponse, bid, context) {
     // In ORTB 2.5, bid responses do not specify their mediatype, which is something Prebid.js requires
     context.mediaType = bid.mtype && ORTB_MTYPES[bid.mtype]
       ? ORTB_MTYPES[bid.mtype]
-      : bid.ext?.prebid?.type
+      : bid.ext?.prebid?.type;
 
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   },
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -81,14 +81,14 @@ export const spec = {
    */
   isBidRequestValid(bid) {
     if (!bid?.params?.adUnitId) {
-      logError("Missing required parameter 'adUnitId'")
-      return false
+      logError("Missing required parameter 'adUnitId'");
+      return false;
     }
     if (!bid?.params?.siteId) {
-      logError("Missing required parameter 'siteId'")
-      return false
+      logError("Missing required parameter 'siteId'");
+      return false;
     }
-    return true
+    return true;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -98,9 +98,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidRequests, bidderRequest })
+    const data = converter.toORTB({ bidRequests, bidderRequest });
 
-    return [{ method: 'POST', url: AUCTION_URL, data }]
+    return [{ method: 'POST', url: AUCTION_URL, data }];
   },
 
   /**
@@ -114,9 +114,9 @@ export const spec = {
     const { bids } = converter.fromORTB({
       response: serverResponse.body,
       request: bidRequest.data,
-    })
+    });
 
-    return bids
+    return bids;
   },
 
   /**
@@ -130,19 +130,19 @@ export const spec = {
    */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled) {
-      let syncParams = `?endpoint=${COOKIE_SYNC_ENDPOINT}`
+      let syncParams = `?endpoint=${COOKIE_SYNC_ENDPOINT}`;
       if (gdprConsent) {
-        syncParams += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`
-        syncParams += `&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`
+        syncParams += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+        syncParams += `&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`;
       }
       if (uspConsent) {
-        syncParams += `&us_privacy=${encodeURIComponent(uspConsent)}`
+        syncParams += `&us_privacy=${encodeURIComponent(uspConsent)}`;
       }
 
-      return [{ type: 'iframe', url: IFRAME_SYNC_URL + syncParams }]
+      return [{ type: 'iframe', url: IFRAME_SYNC_URL + syncParams }];
     }
-    return []
+    return [];
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

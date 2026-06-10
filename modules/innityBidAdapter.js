@@ -1,18 +1,18 @@
-import { parseSizesInput, timestamp } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { parseSizesInput, timestamp } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const BIDDER_CODE = 'innity'
-const ENDPOINT = 'https://as.innity.com/synd/'
+const BIDDER_CODE = 'innity';
+const ENDPOINT = 'https://as.innity.com/synd/';
 
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.pub && bid.params.zone)
+    return !!(bid.params && bid.params.pub && bid.params.zone);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const parseSized = parseSizesInput(bidRequest.sizes)
-      const arrSize = parseSized[0].split('x')
+      const parseSized = parseSizesInput(bidRequest.sizes);
+      const arrSize = parseSized[0].split('x');
       return {
         method: 'GET',
         url: ENDPOINT,
@@ -33,13 +33,13 @@ export const spec = {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auction: bidRequest.auctionId,
         },
-      }
-    })
+      };
+    });
   },
   interpretResponse: function(serverResponse, request) {
-    const res = serverResponse.body
+    const res = serverResponse.body;
     if (Object.keys(res).length === 0) {
-      return []
+      return [];
     }
     const bidResponse = {
       requestId: res.callback_uid,
@@ -55,8 +55,8 @@ export const spec = {
         advertiserDomains: res.adomain && res.adomain.length ? res.adomain : [],
         mediaType: res.mediaType,
       }
-    }
-    return [bidResponse]
+    };
+    return [bidResponse];
   }
-}
-registerBidder(spec)
+};
+registerBidder(spec);

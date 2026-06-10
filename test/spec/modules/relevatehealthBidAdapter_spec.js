@@ -1,14 +1,14 @@
 import {
   expect
-} from 'chai'
+} from 'chai';
 import {
   spec
-} from '../../../modules/relevatehealthBidAdapter.js'
-import * as utils from '../../../src/utils.js'
+} from '../../../modules/relevatehealthBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('relevatehealth adapter', function() {
-  let request
-  let bannerResponse, invalidResponse
+  let request;
+  let bannerResponse, invalidResponse;
 
   beforeEach(function() {
     request = [{
@@ -27,7 +27,7 @@ describe('relevatehealth adapter', function() {
         domain: '',
         bid_floor: 0.5
       }
-    }]
+    }];
     bannerResponse = {
       'body': {
         'id': 'a48b79e7-7104-4213-99f3-55f3234f2e54',
@@ -52,7 +52,7 @@ describe('relevatehealth adapter', function() {
         'cur': 'USD',
         'bidid': 'BIDDER_1276'
       }
-    }
+    };
     invalidResponse = {
       'body': {
         'id': 'a48b79e7-7104-4213-99f3-55f3234f2e54',
@@ -77,8 +77,8 @@ describe('relevatehealth adapter', function() {
         'cur': 'USD',
         'bidid': 'BIDDER_1276'
       }
-    }
-  })
+    };
+  });
 
   describe('validations', function() {
     it('isBidValid : placement_id is passed', function() {
@@ -87,10 +87,10 @@ describe('relevatehealth adapter', function() {
         params: {
           placement_id: 110011
         }
-      }
-      const isValid = spec.isBidRequestValid(bid)
-      expect(isValid).to.equals(true)
-    })
+      };
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equals(true);
+    });
     it('isBidValid : placement_id is not passed', function() {
       const bid = {
         bidder: 'relevatehealth',
@@ -100,72 +100,72 @@ describe('relevatehealth adapter', function() {
           domain: '',
           bid_floor: 0.5
         }
-      }
-      const isValid = spec.isBidRequestValid(bid)
-      expect(isValid).to.equals(false)
-    })
-  })
+      };
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equals(false);
+    });
+  });
   describe('Validate Request', function() {
     it('Immutable bid request validate', function() {
-      const _Request = utils.deepClone(request)
-      const bidRequest = spec.buildRequests(request)
-      expect(request).to.deep.equal(_Request)
-    })
+      const _Request = utils.deepClone(request);
+      const bidRequest = spec.buildRequests(request);
+      expect(request).to.deep.equal(_Request);
+    });
     it('Validate bidder connection', function() {
-      const _Request = spec.buildRequests(request)
-      expect(_Request.url).to.equal('https://rtb.relevate.health/prebid/relevate')
-      expect(_Request.method).to.equal('POST')
-      expect(_Request.options.contentType).to.equal('application/json')
-    })
+      const _Request = spec.buildRequests(request);
+      expect(_Request.url).to.equal('https://rtb.relevate.health/prebid/relevate');
+      expect(_Request.method).to.equal('POST');
+      expect(_Request.options.contentType).to.equal('application/json');
+    });
     it('Validate bid request : Impression', function() {
-      const _Request = spec.buildRequests(request)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].imp[0].id).to.equal(request[0].bidId)
-      expect(data[0].placementId).to.equal(110011)
-    })
+      const _Request = spec.buildRequests(request);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].imp[0].id).to.equal(request[0].bidId);
+      expect(data[0].placementId).to.equal(110011);
+    });
     it('Validate bid request : ad size', function() {
-      const _Request = spec.buildRequests(request)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].imp[0].banner).to.be.a('object')
-      expect(data[0].imp[0].banner.w).to.equal(160)
-      expect(data[0].imp[0].banner.h).to.equal(600)
-    })
+      const _Request = spec.buildRequests(request);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].imp[0].banner).to.be.a('object');
+      expect(data[0].imp[0].banner.w).to.equal(160);
+      expect(data[0].imp[0].banner.h).to.equal(600);
+    });
     it('Validate bid request : user object', function() {
-      const _Request = spec.buildRequests(request)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].user).to.be.a('object')
-      expect(data[0].user.id).to.be.a('string')
-    })
+      const _Request = spec.buildRequests(request);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].user).to.be.a('object');
+      expect(data[0].user.id).to.be.a('string');
+    });
     it('Validate bid request : CCPA Check', function() {
       const bidRequest = {
         uspConsent: '1NYN'
-      }
-      const _Request = spec.buildRequests(request, bidRequest)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].regs.ext.us_privacy).to.equal('1NYN')
-    })
-  })
+      };
+      const _Request = spec.buildRequests(request, bidRequest);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.ext.us_privacy).to.equal('1NYN');
+    });
+  });
   describe('Validate response ', function() {
     it('Validate bid response : valid bid response', function() {
-      const bResponse = spec.interpretResponse(bannerResponse, request)
-      expect(bResponse).to.be.an('array').with.length.above(0)
-      expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid)
-      expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w)
-      expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h)
-      expect(bResponse[0].currency).to.equal('USD')
-      expect(bResponse[0].netRevenue).to.equal(false)
-      expect(bResponse[0].mediaType).to.equal('banner')
-      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['google.com'])
-      expect(bResponse[0].ttl).to.equal(300)
-      expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid)
-      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId)
-    })
+      const bResponse = spec.interpretResponse(bannerResponse, request);
+      expect(bResponse).to.be.an('array').with.length.above(0);
+      expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
+      expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w);
+      expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h);
+      expect(bResponse[0].currency).to.equal('USD');
+      expect(bResponse[0].netRevenue).to.equal(false);
+      expect(bResponse[0].mediaType).to.equal('banner');
+      expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['google.com']);
+      expect(bResponse[0].ttl).to.equal(300);
+      expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
+      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
+    });
     it('Invalid bid response check ', function() {
-      const bRequest = spec.buildRequests(request)
-      const response = spec.interpretResponse(invalidResponse, bRequest)
-      expect(response[0].ad).to.equal('invalid response')
-    })
-  })
+      const bRequest = spec.buildRequests(request);
+      const response = spec.interpretResponse(invalidResponse, bRequest);
+      expect(response[0].ad).to.equal('invalid response');
+    });
+  });
   describe('GPP and coppa', function() {
     it('Request params check with GPP Consent', function() {
       const bidderReq = {
@@ -173,12 +173,12 @@ describe('relevatehealth adapter', function() {
           gppString: 'gpp-string-test',
           applicableSections: [5]
         }
-      }
-      const _Request = spec.buildRequests(request, bidderReq)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].regs.gpp).to.equal('gpp-string-test')
-      expect(data[0].regs.gpp_sid[0]).to.equal(5)
-    })
+      };
+      const _Request = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.gpp).to.equal('gpp-string-test');
+      expect(data[0].regs.gpp_sid[0]).to.equal(5);
+    });
     it('Request params check with GPP Consent read from ortb2', function() {
       const bidderReq = {
         ortb2: {
@@ -187,12 +187,12 @@ describe('relevatehealth adapter', function() {
             gpp_sid: [5]
           }
         }
-      }
-      const _Request = spec.buildRequests(request, bidderReq)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].regs.gpp).to.equal('gpp-test-string')
-      expect(data[0].regs.gpp_sid[0]).to.equal(5)
-    })
+      };
+      const _Request = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.gpp).to.equal('gpp-test-string');
+      expect(data[0].regs.gpp_sid[0]).to.equal(5);
+    });
     it(' Bid request should have coppa flag if its true', () => {
       const bidderReq = {
         ortb2: {
@@ -200,10 +200,10 @@ describe('relevatehealth adapter', function() {
             coppa: 1
           }
         }
-      }
-      const _Request = spec.buildRequests(request, bidderReq)
-      const data = JSON.parse(_Request.data)
-      expect(data[0].regs.coppa).to.equal(1)
-    })
-  })
-})
+      };
+      const _Request = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(_Request.data);
+      expect(data[0].regs.coppa).to.equal(1);
+    });
+  });
+});

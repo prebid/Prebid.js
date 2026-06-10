@@ -1,8 +1,8 @@
-import { expect } from 'chai'
-import { spec } from '../../../modules/bmtmBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from '../../../modules/bmtmBidAdapter.js';
 
-const BIDDER_CODE = 'bmtm'
-const PLACEMENT_ID = 329
+const BIDDER_CODE = 'bmtm';
+const PLACEMENT_ID = 329;
 
 describe('brightMountainMediaBidAdapter_spec', function () {
   const bidBanner = {
@@ -24,7 +24,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       return {
         currency: 'USD',
         floor: 0.5,
-      }
+      };
     },
     ortb2: {
       source: {
@@ -67,7 +67,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         ]
       }
     ]
-  }
+  };
 
   const bidVideo = {
     bidId: '2dd581a2b6281d',
@@ -88,7 +88,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
-  }
+  };
 
   const bidderRequest = {
     bidderCode: BIDDER_CODE,
@@ -107,99 +107,99 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       gdprApplies: true
     },
     bids: [bidBanner],
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('Should return true when  when required params found', function () {
-      expect(spec.isBidRequestValid(bidBanner)).to.be.true
-    })
+      expect(spec.isBidRequestValid(bidBanner)).to.be.true;
+    });
     it('Should return false when required params are not passed', function () {
-      bidBanner.params = {}
-      expect(spec.isBidRequestValid(bidBanner)).to.be.false
-    })
-  })
+      bidBanner.params = {};
+      expect(spec.isBidRequestValid(bidBanner)).to.be.false;
+    });
+  });
 
   describe('buildRequests', function () {
-    const request = spec.buildRequests([bidBanner], bidderRequest)[0]
-    const data = JSON.parse(request.data)
+    const request = spec.buildRequests([bidBanner], bidderRequest)[0];
+    const data = JSON.parse(request.data);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(request).to.exist
-      expect(request.method).to.exist
-      expect(request.url).to.exist
-      expect(request.data).to.exist
-      expect(request.method).to.be.a('string')
-      expect(request.url).to.be.a('string')
-      expect(request.data).to.be.an('string')
-    })
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+      expect(request.method).to.be.a('string');
+      expect(request.url).to.be.a('string');
+      expect(request.data).to.be.an('string');
+    });
 
     it('Returns valid data if array of bids is valid', function () {
-      expect(data).to.be.an('object')
-      expect(data).to.have.all.keys('at', 'site', 'device', 'cur', 'tmax', 'regs', 'user', 'source', 'imp', 'id')
-      expect(data.at).to.be.a('number')
-      expect(data.site).to.be.an('object')
-      expect(data.device).to.be.an('object')
-      expect(data.cur).to.be.an('array')
-      expect(data.tmax).to.be.a('number')
-      expect(data.regs).to.be.an('object')
-      expect(data.user).to.be.an('object')
-      expect(data.source).to.be.an('object')
-      expect(data.imp).to.be.an('array')
-      expect(data.id).to.be.a('string')
-    })
+      expect(data).to.be.an('object');
+      expect(data).to.have.all.keys('at', 'site', 'device', 'cur', 'tmax', 'regs', 'user', 'source', 'imp', 'id');
+      expect(data.at).to.be.a('number');
+      expect(data.site).to.be.an('object');
+      expect(data.device).to.be.an('object');
+      expect(data.cur).to.be.an('array');
+      expect(data.tmax).to.be.a('number');
+      expect(data.regs).to.be.an('object');
+      expect(data.user).to.be.an('object');
+      expect(data.source).to.be.an('object');
+      expect(data.imp).to.be.an('array');
+      expect(data.id).to.be.a('string');
+    });
 
     it('Sends bidfloor param if present', function () {
-      expect(data.imp[0].bidfloor).to.equal(0.5)
-    })
+      expect(data.imp[0].bidfloor).to.equal(0.5);
+    });
 
     it('Sends regs info if exists', function () {
-      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number')
-      expect(data.regs.ext.gdprConsentString).to.exist.and.to.be.a('string')
-      expect(data.regs.ext.us_privacy).to.exist.and.to.be.a('string')
-    })
+      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.ext.gdprConsentString).to.exist.and.to.be.a('string');
+      expect(data.regs.ext.us_privacy).to.exist.and.to.be.a('string');
+    });
 
     it('Sends schain info if exists', function () {
-      expect(data.source.ext).to.be.an('object')
-    })
+      expect(data.source.ext).to.be.an('object');
+    });
 
     it('sends userId info if exists', function () {
-      expect(data.user.ext).to.have.property('eids')
-      expect(data.user.ext.eids).to.not.equal(null).and.to.not.be.undefined
-      expect(data.user.ext.eids.length).to.greaterThan(0)
+      expect(data.user.ext).to.have.property('eids');
+      expect(data.user.ext.eids).to.not.equal(null).and.to.not.be.undefined;
+      expect(data.user.ext.eids.length).to.greaterThan(0);
       for (const index in data.user.ext.eids) {
-        const eid = data.user.ext.eids[index]
-        expect(eid.source).to.not.equal(null).and.to.not.be.undefined
-        expect(eid.uids).to.not.equal(null).and.to.not.be.undefined
+        const eid = data.user.ext.eids[index];
+        expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
+        expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
         for (const uidsIndex in eid.uids) {
-          const uid = eid.uids[uidsIndex]
-          expect(uid.id).to.not.equal(null).and.to.not.be.undefined
+          const uid = eid.uids[uidsIndex];
+          expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
         }
       }
-    })
+    });
 
     it('Returns valid data if array of bids is valid for banner', function () {
-      expect(data).to.be.an('object')
-      expect(data).to.have.property('imp')
-      expect(data.imp.length).to.greaterThan(0)
-      expect(data.imp[0]).to.have.property('banner')
-      expect(data.imp[0].banner).to.be.an('object')
-      expect(data.imp[0].banner.h).to.exist.and.to.be.a('number')
-      expect(data.imp[0].banner.w).to.exist.and.to.be.a('number')
-    })
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('imp');
+      expect(data.imp.length).to.greaterThan(0);
+      expect(data.imp[0]).to.have.property('banner');
+      expect(data.imp[0].banner).to.be.an('object');
+      expect(data.imp[0].banner.h).to.exist.and.to.be.a('number');
+      expect(data.imp[0].banner.w).to.exist.and.to.be.a('number');
+    });
 
     it('Returns valid data if array of bids is valid for video', function () {
-      bidderRequest.bids = [bidVideo]
-      const serverRequest = spec.buildRequests([bidVideo], bidderRequest)[0]
-      const data = JSON.parse(serverRequest.data)
-      expect(data).to.be.an('object')
-      expect(data).to.have.property('imp')
-      expect(data.imp.length).to.greaterThan(0)
-      expect(data.imp[0]).to.have.property('video')
-      expect(data.imp[0].video).to.be.an('object')
-      expect(data.imp[0].video.h).to.exist.and.to.be.a('number')
-      expect(data.imp[0].video.w).to.exist.and.to.be.a('number')
-    })
-  })
+      bidderRequest.bids = [bidVideo];
+      const serverRequest = spec.buildRequests([bidVideo], bidderRequest)[0];
+      const data = JSON.parse(serverRequest.data);
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('imp');
+      expect(data.imp.length).to.greaterThan(0);
+      expect(data.imp[0]).to.have.property('video');
+      expect(data.imp[0].video).to.be.an('object');
+      expect(data.imp[0].video.h).to.exist.and.to.be.a('number');
+      expect(data.imp[0].video.w).to.exist.and.to.be.a('number');
+    });
+  });
 
   describe('interpretResponse', function () {
     const resObjectBanner = {
@@ -229,7 +229,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         }
       ],
       'cur': 'USD'
-    }
+    };
 
     const resObjectVideo = {
       'id': '2763-05f22da29b3ffb6-6959',
@@ -258,70 +258,70 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         }
       ],
       'cur': 'USD'
-    }
+    };
 
     it('Returns an array of valid response if response object is valid for banner', function () {
       const bidResponse = spec.interpretResponse({
         body: resObjectBanner
-      }, { bidRequest: bidBanner })
+      }, { bidRequest: bidBanner });
 
-      expect(bidResponse).to.be.an('array').that.is.not.empty
+      expect(bidResponse).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < bidResponse.length; i++) {
-        const dataItem = bidResponse[i]
-        expect(dataItem.requestId).to.be.a('string')
-        expect(dataItem.cpm).to.be.a('number')
-        expect(dataItem.width).to.be.a('number')
-        expect(dataItem.height).to.be.a('number')
-        expect(dataItem.ad).to.be.a('string')
-        expect(dataItem.ttl).to.be.a('number')
-        expect(dataItem.creativeId).to.be.a('string')
-        expect(dataItem.netRevenue).to.be.a('boolean')
-        expect(dataItem.currency).to.be.a('string')
-        expect(dataItem.mediaType).to.be.a('string')
-        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string')
+        const dataItem = bidResponse[i];
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.ad).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
       }
-    })
+    });
 
     it('Returns an array of valid response if response object is valid for video', function () {
       const bidResponse = spec.interpretResponse({
         body: resObjectVideo
-      }, { bidRequest: bidVideo })
+      }, { bidRequest: bidVideo });
 
-      expect(bidResponse).to.be.an('array').that.is.not.empty
+      expect(bidResponse).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < bidResponse.length; i++) {
-        const dataItem = bidResponse[i]
-        expect(dataItem.requestId).to.be.a('string')
-        expect(dataItem.cpm).to.be.a('number')
-        expect(dataItem.width).to.be.a('number')
-        expect(dataItem.height).to.be.a('number')
-        expect(dataItem.vastXml).to.be.a('string')
-        expect(dataItem.ttl).to.be.a('number')
-        expect(dataItem.creativeId).to.be.a('string')
-        expect(dataItem.netRevenue).to.be.a('boolean')
-        expect(dataItem.currency).to.be.a('string')
-        expect(dataItem.mediaType).to.be.a('string')
-        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string')
+        const dataItem = bidResponse[i];
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.vastXml).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
       }
-    })
+    });
 
     it('Returns an empty array if invalid response is passed', function () {
       const bidResponse = spec.interpretResponse({
         body: ''
-      }, { bidRequest: bidBanner })
-      expect(bidResponse).to.be.an('array').that.is.empty
-    })
-  })
+      }, { bidRequest: bidBanner });
+      expect(bidResponse).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('getUserSyncs', function () {
     const syncoptionsIframe = {
       'iframeEnabled': 'true'
-    }
+    };
     it('should return iframe sync option', function () {
-      expect(spec.getUserSyncs(syncoptionsIframe)).to.be.an('array').with.lengthOf(1)
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync')
-    })
-  })
-})
+      expect(spec.getUserSyncs(syncoptionsIframe)).to.be.an('array').with.lengthOf(1);
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist;
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist;
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe');
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync');
+    });
+  });
+});

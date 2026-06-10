@@ -1,6 +1,6 @@
-import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -8,13 +8,13 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js'
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
-const BIDDER_CODE = 'retailspot'
+const BIDDER_CODE = 'retailspot';
 
-const DEFAULT_SUBDOMAIN = 'hbapi'
-const PREPROD_SUBDOMAIN = 'hbapi-preprod'
-const HOST = 'retailspotads.com'
-const ENDPOINT = '/'
-const DEV_URL = 'http://localhost:3030/'
+const DEFAULT_SUBDOMAIN = 'hbapi';
+const PREPROD_SUBDOMAIN = 'hbapi-preprod';
+const HOST = 'retailspotads.com';
+const ENDPOINT = '/';
+const DEV_URL = 'http://localhost:3030/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -27,10 +27,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const sizes = getSize(bid)
-    const sizeValid = sizes.width > 0 && sizes.height > 0
+    const sizes = getSize(bid);
+    const sizeValid = sizes.width > 0 && sizes.height > 0;
 
-    return deepAccess(bid, 'params.placement') && sizeValid
+    return deepAccess(bid, 'params.placement') && sizeValid;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -40,28 +40,28 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const payload = bidderRequest
-    payload.rs_pbjs_version = '$prebid.version$'
+    const payload = bidderRequest;
+    payload.rs_pbjs_version = '$prebid.version$';
 
-    const data = JSON.stringify(payload)
+    const data = JSON.stringify(payload);
     const options = {
       withCredentials: true
-    }
+    };
 
-    const envParam = bidRequests[0].params.env
-    var subDomain = DEFAULT_SUBDOMAIN
+    const envParam = bidRequests[0].params.env;
+    var subDomain = DEFAULT_SUBDOMAIN;
     if (envParam === 'preprod') {
-      subDomain = PREPROD_SUBDOMAIN
+      subDomain = PREPROD_SUBDOMAIN;
     }
 
     let url = buildUrl({
       protocol: 'https',
       host: `${subDomain}.${HOST}`,
       pathname: ENDPOINT
-    })
+    });
 
     if (envParam === 'dev') {
-      url = DEV_URL
+      url = DEV_URL;
     }
 
     return {
@@ -69,7 +69,7 @@ export const spec = {
       url,
       data,
       options
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -78,66 +78,66 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, request) {
-    const bidResponses = []
-    var bidRequests = {}
+    const bidResponses = [];
+    var bidRequests = {};
 
     try {
-      bidRequests = JSON.parse(request.data).bids
+      bidRequests = JSON.parse(request.data).bids;
     } catch (err) {
       // json error initial request can't be read
     }
 
     // For this adapter, serverResponse is a list
     serverResponse.body.forEach(response => {
-      const bid = createBid(response, bidRequests)
+      const bid = createBid(response, bidRequests);
       if (bid) {
-        bidResponses.push(bid)
+        bidResponses.push(bid);
       }
-    })
+    });
 
-    return bidResponses
+    return bidResponses;
   }
-}
+};
 
 /* Get parsed size from request size */
 function getSize(bid) {
-  let inputSize = bid.sizes || []
+  let inputSize = bid.sizes || [];
 
   if (bid.mediaTypes?.banner) {
-    inputSize = bid.mediaTypes.banner.sizes || []
+    inputSize = bid.mediaTypes.banner.sizes || [];
   }
 
   // Size can be [w, h] or array of sizes : [[w,h]].
   if (Array.isArray(bid.params?.size)) {
-    inputSize = bid.params.size
+    inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize]
+      inputSize = [inputSize];
     }
   }
 
-  const sizesArray = parseSizesInput(inputSize)
-  const parsed = {}
+  const sizesArray = parseSizesInput(inputSize);
+  const parsed = {};
 
   // Use the first size as the main requested one
-  const size = sizesArray[0]
+  const size = sizesArray[0];
 
   // size is ready
   if (typeof size !== 'string') {
-    return parsed
+    return parsed;
   }
 
   // size is given as string "wwwxhhh" or "www*hhh"
-  const parsedSize = size.includes('*') ? size.split('*') : size.toUpperCase().split('X')
-  const width = parseInt(parsedSize[0], 10)
+  const parsedSize = size.includes('*') ? size.split('*') : size.toUpperCase().split('X');
+  const width = parseInt(parsedSize[0], 10);
   if (width) {
-    parsed.width = width
+    parsed.width = width;
   }
-  const height = parseInt(parsedSize[1], 10)
+  const height = parseInt(parsedSize[1], 10);
   if (height) {
-    parsed.height = height
+    parsed.height = height;
   }
 
-  return parsed
+  return parsed;
 }
 
 /* Create bid from response */
@@ -145,18 +145,18 @@ function createBid(response, bidRequests) {
   if (!response || !response.mediaType ||
     (response.mediaType === 'video' && !response.vastXml) ||
     (response.mediaType === 'banner' && !response.ad)) {
-    return
+    return;
   }
 
-  const request = bidRequests && bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId)
+  const request = bidRequests && bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId);
   // In case we don't retrieve the size from the adserver, use the given one.
   if (request) {
     if (!response.width || response.width === '0') {
-      response.width = request.width
+      response.width = request.width;
     }
 
     if (!response.height || response.height === '0') {
-      response.height = request.height
+      response.height = request.height;
     }
   }
 
@@ -172,22 +172,22 @@ function createBid(response, bidRequests) {
     currency: response.currency,
     meta: response.meta || { advertiserDomains: ['retail-spot.io'] },
     mediaType: response.mediaType
-  }
+  };
 
   // retrieve video response if present
   if (response.mediaType === 'video') {
-    bid.vastXml = window.atob(response.vastXml)
+    bid.vastXml = window.atob(response.vastXml);
   } else {
-    bid.ad = response.ad
+    bid.ad = response.ad;
   }
   if (response.adId) {
-    bid.adId = response.adId
+    bid.adId = response.adId;
   }
   if (response.dealId) {
-    bid.dealId = response.dealId
+    bid.dealId = response.dealId;
   }
 
-  return bid
+  return bid;
 }
 
-registerBidder(spec)
+registerBidder(spec);

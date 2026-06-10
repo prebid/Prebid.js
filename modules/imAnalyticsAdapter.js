@@ -1,16 +1,16 @@
-import { logMessage, deepAccess } from '../src/utils.js'
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
-import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js'
-import { EVENTS } from '../src/constants.js'
-import { sendBeacon } from '../src/ajax.js'
+import { logMessage, deepAccess } from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { EVENTS } from '../src/constants.js';
+import { sendBeacon } from '../src/ajax.js';
 
-const DEFAULT_BID_WON_TIMEOUT = 1500 // 1.5 second for initial batch
-const DEFAULT_CID = 5126
-const API_BASE_URL = 'https://b6.im-apps.net/bid'
+const DEFAULT_BID_WON_TIMEOUT = 1500; // 1.5 second for initial batch
+const DEFAULT_CID = 5126;
+const API_BASE_URL = 'https://b6.im-apps.net/bid';
 
 const cache = {
   auctions: {}
-}
+};
 
 /**
  * Get CID from adapter options
@@ -18,7 +18,7 @@ const cache = {
  * @returns {string|number} CID or default value
  */
 function getCid(options) {
-  return (options && options.cid) || DEFAULT_CID
+  return (options && options.cid) || DEFAULT_CID;
 }
 
 /**
@@ -27,10 +27,10 @@ function getCid(options) {
  * @returns {number} Timeout in ms or default value
  */
 function getWaitTimeout(options) {
-  const waitTimeout = options && options.waitTimeout
+  const waitTimeout = options && options.waitTimeout;
   return (typeof waitTimeout === 'number' && waitTimeout >= 0)
     ? waitTimeout
-    : DEFAULT_BID_WON_TIMEOUT
+    : DEFAULT_BID_WON_TIMEOUT;
 }
 
 /**
@@ -41,8 +41,8 @@ function getWaitTimeout(options) {
  * @returns {string} Full API URL
  */
 function buildApiUrlWithOptions(options, endpoint, auctionId) {
-  const cid = getCid(options)
-  return `${API_BASE_URL}/${cid}/${endpoint}/${auctionId}`
+  const cid = getCid(options);
+  return `${API_BASE_URL}/${cid}/${endpoint}/${auctionId}`;
 }
 
 /**
@@ -51,9 +51,9 @@ function buildApiUrlWithOptions(options, endpoint, auctionId) {
  * @param {Object} payload - Data to send
  */
 function sendToApi(url, payload) {
-  const data = JSON.stringify(payload)
-  const blob = new Blob([data], { type: 'application/json' })
-  sendBeacon(url, blob)
+  const data = JSON.stringify(payload);
+  const blob = new Blob([data], { type: 'application/json' });
+  sendBeacon(url, blob);
 }
 
 /**
@@ -63,7 +63,7 @@ function sendToApi(url, payload) {
  */
 function clearTimer(timer) {
   if (timer) {
-    clearTimeout(timer)
+    clearTimeout(timer);
   }
 }
 
@@ -72,9 +72,9 @@ function clearTimer(timer) {
  * @returns {Object} Consent data object
  */
 function getConsentData() {
-  const gdprConsent = gdprDataHandler.getConsentData() || {}
-  const uspConsent = uspDataHandler.getConsentData()
-  const gppConsent = gppDataHandler.getConsentData() || {}
+  const gdprConsent = gdprDataHandler.getConsentData() || {};
+  const uspConsent = uspDataHandler.getConsentData();
+  const gppConsent = gppDataHandler.getConsentData() || {};
   return {
     gdpr: gdprConsent.gdprApplies ? 1 : 0,
     usp: uspConsent,
@@ -83,7 +83,7 @@ function getConsentData() {
       gpp: gppConsent.applicableSections.toString(),
       gppStr: gppConsent.gppString
     })
-  }
+  };
 }
 
 /**
@@ -100,7 +100,7 @@ function extractMetaFields(meta) {
     advertiser: meta.advertiserName || '',
     bid: meta.brandId || '',
     brand: meta.brandName || '',
-  }
+  };
 }
 
 // IM Analytics Adapter implementation
@@ -116,19 +116,19 @@ const imAnalyticsAdapter = Object.assign(
     track({ eventType, args }) {
       switch (eventType) {
         case EVENTS.AUCTION_INIT:
-          logMessage('IM Analytics: AUCTION_INIT', args)
-          this.handleAuctionInit(args)
-          break
+          logMessage('IM Analytics: AUCTION_INIT', args);
+          this.handleAuctionInit(args);
+          break;
 
         case EVENTS.BID_WON:
-          logMessage('IM Analytics: BID_WON', args)
-          this.handleWonBidsData(args)
-          break
+          logMessage('IM Analytics: BID_WON', args);
+          this.handleWonBidsData(args);
+          break;
 
         case EVENTS.AUCTION_END:
-          logMessage('IM Analytics: AUCTION_END', args)
-          this.handleAuctionEnd(args.auctionId)
-          break
+          logMessage('IM Analytics: AUCTION_END', args);
+          this.handleAuctionEnd(args.auctionId);
+          break;
       }
     },
 
@@ -137,12 +137,12 @@ const imAnalyticsAdapter = Object.assign(
      * @param {string} auctionId - Auction ID
      */
     handleAuctionEnd(auctionId) {
-      const auction = cache.auctions[auctionId]
+      const auction = cache.auctions[auctionId];
       if (auction) {
-        clearTimer(auction.wonBidsTimer)
+        clearTimer(auction.wonBidsTimer);
         auction.wonBidsTimer = setTimeout(() => {
-          this.sendWonBidsData(auctionId)
-        }, getWaitTimeout(this.options))
+          this.sendWonBidsData(auctionId);
+        }, getWaitTimeout(this.options));
       }
     },
 
@@ -151,8 +151,8 @@ const imAnalyticsAdapter = Object.assign(
      * @param {Object} args - Auction arguments
      */
     handleAuctionInit(args) {
-      const consentData = getConsentData()
-      const imUid = deepAccess(args.bidderRequests, '0.bids.0.userId.imuid') ?? ''
+      const consentData = getConsentData();
+      const imUid = deepAccess(args.bidderRequests, '0.bids.0.userId.imuid') ?? '';
       cache.auctions[args.auctionId] = {
         imUid,
         consentData,
@@ -160,8 +160,8 @@ const imAnalyticsAdapter = Object.assign(
         wonBids: [],
         wonBidsTimer: null,
         auctionInitTimestamp: args.timestamp
-      }
-      this.handleAucInitData(args, imUid, consentData)
+      };
+      this.handleAucInitData(args, imUid, consentData);
     },
     /**
      * Handle auction init data - send immediately for PV tracking
@@ -176,9 +176,9 @@ const imAnalyticsAdapter = Object.assign(
         ...this.transformAucInitData(args),
         uid,
         consent
-      }
+      };
 
-      sendToApi(buildApiUrlWithOptions(this.options, 'pv', args.auctionId), payload)
+      sendToApi(buildApiUrlWithOptions(this.options, 'pv', args.auctionId), payload);
     },
 
     /**
@@ -190,7 +190,7 @@ const imAnalyticsAdapter = Object.assign(
       return {
         ts: auctionArgs.timestamp,
         adUnit: (auctionArgs.adUnits || []).length
-      }
+      };
     },
 
     /**
@@ -198,16 +198,16 @@ const imAnalyticsAdapter = Object.assign(
      * @param {Object} bidWonArgs - Bid won arguments
      */
     handleWonBidsData(bidWonArgs) {
-      const auctionId = bidWonArgs.auctionId
-      const auction = cache.auctions[auctionId]
+      const auctionId = bidWonArgs.auctionId;
+      const auction = cache.auctions[auctionId];
 
-      if (!auction) return
+      if (!auction) return;
 
-      this.cacheWonBid(auctionId, bidWonArgs)
+      this.cacheWonBid(auctionId, bidWonArgs);
 
       // If initial batch has been sent, send immediately
       if (auction.wonSent) {
-        this.sendWonBidsData(auctionId)
+        this.sendWonBidsData(auctionId);
       }
     },
 
@@ -217,13 +217,13 @@ const imAnalyticsAdapter = Object.assign(
      * @param {Object} bidWonArgs - Bid won arguments
      */
     cacheWonBid(auctionId, bidWonArgs) {
-      const auction = cache.auctions[auctionId]
+      const auction = cache.auctions[auctionId];
       if (auction) {
         // Deduplicate based on requestId
         if (auction.wonBids.some(bid => bid.requestId === bidWonArgs.requestId)) {
-          return
+          return;
         }
-        auction.wonBids.push(this.transformWonBidsData(bidWonArgs))
+        auction.wonBids.push(this.transformWonBidsData(bidWonArgs));
       }
     },
 
@@ -233,13 +233,13 @@ const imAnalyticsAdapter = Object.assign(
      * @returns {Object} Transformed bid won data
      */
     transformWonBidsData(bidWonArgs) {
-      const meta = bidWonArgs.meta || {}
+      const meta = bidWonArgs.meta || {};
 
       return {
         requestId: bidWonArgs.requestId,
         bidderCode: bidWonArgs.bidderCode,
         ...extractMetaFields(meta)
-      }
+      };
     },
 
     /**
@@ -247,51 +247,51 @@ const imAnalyticsAdapter = Object.assign(
      * @param {string} auctionId - Auction ID to send data for
      */
     sendWonBidsData(auctionId) {
-      const auction = cache.auctions[auctionId]
+      const auction = cache.auctions[auctionId];
       if (!auction) {
-        return
+        return;
       }
 
-      auction.wonSent = true
-      auction.wonBidsTimer = null
+      auction.wonSent = true;
+      auction.wonBidsTimer = null;
 
       if (auction.wonBids.length === 0) {
-        delete cache.auctions[auctionId]
-        return
+        delete cache.auctions[auctionId];
+        return;
       }
 
-      const consent = auction.consentData
-      const ts = auction.auctionInitTimestamp || Date.now()
-      const bids = auction.wonBids
-      const uid = auction.imUid
-      delete cache.auctions[auctionId]
+      const consent = auction.consentData;
+      const ts = auction.auctionInitTimestamp || Date.now();
+      const bids = auction.wonBids;
+      const uid = auction.imUid;
+      delete cache.auctions[auctionId];
       sendToApi(buildApiUrlWithOptions(this.options, 'won', auctionId), {
         bids,
         ts,
         uid,
         consent,
-      })
+      });
     }
   }
-)
+);
 
-const originalEnableAnalytics = imAnalyticsAdapter.enableAnalytics
+const originalEnableAnalytics = imAnalyticsAdapter.enableAnalytics;
 imAnalyticsAdapter.enableAnalytics = function(config) {
-  this.options = (config && config.options) || {}
-  logMessage('IM Analytics: enableAnalytics called with cid:', this.options.cid)
-  originalEnableAnalytics.call(this, config)
-}
+  this.options = (config && config.options) || {};
+  logMessage('IM Analytics: enableAnalytics called with cid:', this.options.cid);
+  originalEnableAnalytics.call(this, config);
+};
 
-const originalDisableAnalytics = imAnalyticsAdapter.disableAnalytics
+const originalDisableAnalytics = imAnalyticsAdapter.disableAnalytics;
 imAnalyticsAdapter.disableAnalytics = function() {
-  Object.values(cache.auctions).forEach(auction => clearTimer(auction.wonBidsTimer))
-  cache.auctions = {}
-  originalDisableAnalytics.call(this)
-}
+  Object.values(cache.auctions).forEach(auction => clearTimer(auction.wonBidsTimer));
+  cache.auctions = {};
+  originalDisableAnalytics.call(this);
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: imAnalyticsAdapter,
   code: 'imAnalytics'
-})
+});
 
-export default imAnalyticsAdapter
+export default imAnalyticsAdapter;

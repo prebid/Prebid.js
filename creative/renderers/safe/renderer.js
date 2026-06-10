@@ -11,33 +11,33 @@
  *
  */
 export function render(data, { mkFrame }, win) {
-  const { safeRenderer, ...renderingData } = data
+  const { safeRenderer, ...renderingData } = data;
 
-  const width = data.width
-  const height = data.height
-  const instl = data.instl
+  const width = data.width;
+  const height = data.height;
+  const instl = data.instl;
 
   if (height == null) {
-    const body = win.document && win.document.body
-    const parent = body && body.parentElement
-    if (body && body.style) body.style.height = '100%'
-    if (parent && parent.style) parent.style.height = '100%'
+    const body = win.document && win.document.body;
+    const parent = body && body.parentElement;
+    if (body && body.style) body.style.height = '100%';
+    if (parent && parent.style) parent.style.height = '100%';
   }
 
-  const doc = win.document
+  const doc = win.document;
   const attrs = {
     width: width != null ? width : '100%',
     height: height != null ? height : '100%'
-  }
+  };
 
   if (instl && win.frameElement) {
-    const style = win.frameElement.style
-    style.width = width ? String(width) + 'px' : '100vw'
-    style.height = height ? String(height) + 'px' : '100vh'
+    const style = win.frameElement.style;
+    style.width = width ? String(width) + 'px' : '100vw';
+    style.height = height ? String(height) + 'px' : '100vh';
   }
 
   if (typeof safeRenderer.url !== 'string' || safeRenderer.url === '') {
-    return Promise.reject(new Error('Prebid SafeRenderer: missing data.safeRenderer.url'))
+    return Promise.reject(new Error('Prebid SafeRenderer: missing data.safeRenderer.url'));
   }
 
   // Prebid will wait for it to resolve before firing AD_RENDER_SUCCEEDED.
@@ -45,42 +45,42 @@ export function render(data, { mkFrame }, win) {
     const frame = mkFrame(doc, {
       width: attrs.width,
       height: attrs.height
-    })
+    });
     frame.onload = function () {
       try {
-        const cw = frame.contentWindow
-        const idoc = cw.document
-        const script = idoc.createElement('script')
-        script.src = safeRenderer.url
+        const cw = frame.contentWindow;
+        const idoc = cw.document;
+        const script = idoc.createElement('script');
+        script.src = safeRenderer.url;
         script.onload = function () {
           try {
-            const fn = cw.pbRenderInFrame
+            const fn = cw.pbRenderInFrame;
             if (typeof fn !== 'function') {
               throw new Error(
                 'Prebid SafeRenderer: safeRenderer.url script must define window.pbRenderInFrame as a function.'
-              )
+              );
             }
-            fn.call(cw, { config: safeRenderer.config, ...renderingData })
-            resolve()
+            fn.call(cw, { config: safeRenderer.config, ...renderingData });
+            resolve();
           } catch (e) {
-            reject(e)
+            reject(e);
           }
-        }
+        };
         script.onerror = function () {
           reject(
             new Error('Prebid SafeRenderer: failed to load script from safeRenderer.url')
-          )
+          );
         };
-        (idoc.head || idoc.body).appendChild(script)
+        (idoc.head || idoc.body).appendChild(script);
       } catch (e) {
-        reject(e)
+        reject(e);
       }
-    }
+    };
     frame.onerror = function () {
-      reject(new Error('Prebid SafeRenderer: iframe failed to load'))
-    }
-    doc.body.appendChild(frame)
-  })
+      reject(new Error('Prebid SafeRenderer: iframe failed to load'));
+    };
+    doc.body.appendChild(frame);
+  });
 }
 
-window.render = render
+window.render = render;

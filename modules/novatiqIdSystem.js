@@ -5,18 +5,18 @@
  * @requires module:modules/userId
  */
 
-import { logInfo, getWindowLocation } from '../src/utils.js'
-import { ajax } from '../src/ajax.js'
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { logInfo, getWindowLocation } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
-const MODULE_NAME = 'novatiq'
+const MODULE_NAME = 'novatiq';
 
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
@@ -42,18 +42,18 @@ export const novatiqIdSubmodule = {
       novatiq: {
         snowflake: novatiqId
       }
-    }
+    };
 
     if (novatiqId.syncResponse !== undefined) {
-      responseObj.novatiq.ext = {}
-      responseObj.novatiq.ext.syncResponse = novatiqId.syncResponse
+      responseObj.novatiq.ext = {};
+      responseObj.novatiq.ext.syncResponse = novatiqId.syncResponse;
     }
 
     if (typeof config !== 'undefined' && typeof config.params !== 'undefined' && typeof config.params.removeAdditionalInfo !== 'undefined' && config.params.removeAdditionalInfo === true) {
-      delete responseObj.novatiq.snowflake.syncResponse
+      delete responseObj.novatiq.snowflake.syncResponse;
     }
 
-    return responseObj
+    return responseObj;
   },
 
   /**
@@ -63,118 +63,118 @@ export const novatiqIdSubmodule = {
    * @returns {string}
    */
   getId(config) {
-    const configParams = config.params || {}
-    const urlParams = this.getUrlParams(configParams)
-    const srcId = this.getSrcId(configParams, urlParams)
-    const sharedId = this.getSharedId(configParams)
-    const useCallbacks = this.useCallbacks(configParams)
+    const configParams = config.params || {};
+    const urlParams = this.getUrlParams(configParams);
+    const srcId = this.getSrcId(configParams, urlParams);
+    const sharedId = this.getSharedId(configParams);
+    const useCallbacks = this.useCallbacks(configParams);
 
-    logInfo('NOVATIQ config params: ' + JSON.stringify(configParams))
-    logInfo('NOVATIQ Sync request used sourceid param: ' + srcId)
-    logInfo('NOVATIQ Sync request Shared ID: ' + sharedId)
+    logInfo('NOVATIQ config params: ' + JSON.stringify(configParams));
+    logInfo('NOVATIQ Sync request used sourceid param: ' + srcId);
+    logInfo('NOVATIQ Sync request Shared ID: ' + sharedId);
 
-    return this.sendSyncRequest(useCallbacks, sharedId, srcId, urlParams)
+    return this.sendSyncRequest(useCallbacks, sharedId, srcId, urlParams);
   },
 
   sendSyncRequest(useCallbacks, sharedId, sspid, urlParams) {
-    const syncUrl = this.getSyncUrl(sharedId, sspid, urlParams)
-    const url = syncUrl.url
-    const novatiqId = syncUrl.novatiqId
+    const syncUrl = this.getSyncUrl(sharedId, sspid, urlParams);
+    const url = syncUrl.url;
+    const novatiqId = syncUrl.novatiqId;
 
     // for testing
-    const sharedStatus = (sharedId !== null && sharedId !== undefined && sharedId !== false) ? 'Found' : 'Not Found'
+    const sharedStatus = (sharedId !== null && sharedId !== undefined && sharedId !== false) ? 'Found' : 'Not Found';
 
     if (useCallbacks) {
-      const res = this.sendAsyncSyncRequest(novatiqId, url)
-      res.sharedStatus = sharedStatus
+      const res = this.sendAsyncSyncRequest(novatiqId, url);
+      res.sharedStatus = sharedStatus;
 
-      return res
+      return res;
     } else {
-      this.sendSimpleSyncRequest(novatiqId, url)
+      this.sendSimpleSyncRequest(novatiqId, url);
 
       return {
         'id': novatiqId,
         'sharedStatus': sharedStatus
-      }
+      };
     }
   },
 
   sendAsyncSyncRequest(novatiqId, url) {
-    logInfo('NOVATIQ Setting up ASYNC sync request')
+    logInfo('NOVATIQ Setting up ASYNC sync request');
 
     const resp = function (callback) {
-      logInfo('NOVATIQ *** Calling ASYNC sync request')
+      logInfo('NOVATIQ *** Calling ASYNC sync request');
 
       function onSuccess(response, responseObj) {
-        let syncrc
-        var novatiqIdJson = { syncResponse: 0 }
-        syncrc = responseObj.status
-        logInfo('NOVATIQ Sync Response Code:' + syncrc)
-        logInfo('NOVATIQ *** ASYNC request returned ' + syncrc)
+        let syncrc;
+        var novatiqIdJson = { syncResponse: 0 };
+        syncrc = responseObj.status;
+        logInfo('NOVATIQ Sync Response Code:' + syncrc);
+        logInfo('NOVATIQ *** ASYNC request returned ' + syncrc);
         if (syncrc === 200) {
-          novatiqIdJson = { 'id': novatiqId, syncResponse: 1 }
+          novatiqIdJson = { 'id': novatiqId, syncResponse: 1 };
         } else {
           if (syncrc === 204) {
-            novatiqIdJson = { 'id': novatiqId, syncResponse: 2 }
+            novatiqIdJson = { 'id': novatiqId, syncResponse: 2 };
           }
         }
-        callback(novatiqIdJson)
+        callback(novatiqIdJson);
       }
 
       ajax(url,
         { success: onSuccess },
-        undefined, { method: 'GET', withCredentials: false })
-    }
+        undefined, { method: 'GET', withCredentials: false });
+    };
 
-    return { callback: resp }
+    return { callback: resp };
   },
 
   sendSimpleSyncRequest(novatiqId, url) {
-    logInfo('NOVATIQ Sending SIMPLE sync request')
+    logInfo('NOVATIQ Sending SIMPLE sync request');
 
-    ajax(url, undefined, undefined, { method: 'GET', withCredentials: false })
+    ajax(url, undefined, undefined, { method: 'GET', withCredentials: false });
 
-    logInfo('NOVATIQ snowflake: ' + novatiqId)
+    logInfo('NOVATIQ snowflake: ' + novatiqId);
   },
 
   getNovatiqId(urlParams) {
     // standard uuid format
-    let uuidFormat = [1e7] + -1e3 + -4e3 + -8e3 + -1e11
+    let uuidFormat = [1e7] + -1e3 + -4e3 + -8e3 + -1e11;
     if (urlParams.useStandardUuid === false) {
       // novatiq standard uuid(like) format
-      uuidFormat = uuidFormat + 1e3
+      uuidFormat = uuidFormat + 1e3;
     }
 
     return (uuidFormat).replace(/[018]/g, c =>
       (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-    )
+    );
   },
 
   getSyncUrl(sharedId, sspid, urlParams) {
-    const novatiqId = this.getNovatiqId(urlParams)
+    const novatiqId = this.getNovatiqId(urlParams);
 
-    let url = 'https://spadsync.com/sync?' + urlParams.novatiqId + '=' + novatiqId
+    let url = 'https://spadsync.com/sync?' + urlParams.novatiqId + '=' + novatiqId;
 
     if (urlParams.useSspId) {
-      url = url + '&sspid=' + sspid
+      url = url + '&sspid=' + sspid;
     }
 
     if (urlParams.useSspHost) {
-      const ssphost = getWindowLocation().hostname
-      logInfo('NOVATIQ partner hostname: ' + ssphost)
+      const ssphost = getWindowLocation().hostname;
+      logInfo('NOVATIQ partner hostname: ' + ssphost);
 
-      url = url + '&ssphost=' + ssphost
+      url = url + '&ssphost=' + ssphost;
     }
 
     // append on the shared ID if we have one
     if (sharedId !== null && sharedId !== undefined) {
-      url = url + '&sharedId=' + sharedId
+      url = url + '&sharedId=' + sharedId;
     }
 
     return {
       url: url,
       novatiqId: novatiqId
-    }
+    };
   },
 
   getUrlParams(configParams) {
@@ -183,101 +183,101 @@ export const novatiqIdSubmodule = {
       useStandardUuid: false,
       useSspId: true,
       useSspHost: true
-    }
+    };
 
     if (typeof configParams.urlParams !== 'undefined') {
       if (configParams.urlParams.novatiqId !== undefined) {
-        urlParams.novatiqId = configParams.urlParams.novatiqId
+        urlParams.novatiqId = configParams.urlParams.novatiqId;
       }
       if (configParams.urlParams.useStandardUuid !== undefined) {
-        urlParams.useStandardUuid = configParams.urlParams.useStandardUuid
+        urlParams.useStandardUuid = configParams.urlParams.useStandardUuid;
       }
       if (configParams.urlParams.useSspId !== undefined) {
-        urlParams.useSspId = configParams.urlParams.useSspId
+        urlParams.useSspId = configParams.urlParams.useSspId;
       }
       if (configParams.urlParams.useSspHost !== undefined) {
-        urlParams.useSspHost = configParams.urlParams.useSspHost
+        urlParams.useSspHost = configParams.urlParams.useSspHost;
       }
     }
 
-    return urlParams
+    return urlParams;
   },
 
   useCallbacks(configParams) {
-    return typeof configParams.useCallbacks !== 'undefined' && configParams.useCallbacks === true
+    return typeof configParams.useCallbacks !== 'undefined' && configParams.useCallbacks === true;
   },
 
   useSharedId(configParams) {
-    return typeof configParams.useSharedId !== 'undefined' && configParams.useSharedId === true
+    return typeof configParams.useSharedId !== 'undefined' && configParams.useSharedId === true;
   },
 
   getCookieOrStorageID(configParams) {
-    let cookieOrStorageID = '_pubcid'
+    let cookieOrStorageID = '_pubcid';
 
     if (typeof configParams.sharedIdName !== 'undefined' && configParams.sharedIdName !== null && configParams.sharedIdName !== '') {
-      cookieOrStorageID = configParams.sharedIdName
-      logInfo('NOVATIQ sharedID name redefined: ' + cookieOrStorageID)
+      cookieOrStorageID = configParams.sharedIdName;
+      logInfo('NOVATIQ sharedID name redefined: ' + cookieOrStorageID);
     }
 
-    return cookieOrStorageID
+    return cookieOrStorageID;
   },
 
   // return null if we aren't supposed to use one or we are but there isn't one present
   getSharedId(configParams) {
-    let sharedId = null
+    let sharedId = null;
     if (this.useSharedId(configParams)) {
-      const cookieOrStorageID = this.getCookieOrStorageID(configParams)
-      const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+      const cookieOrStorageID = this.getCookieOrStorageID(configParams);
+      const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
       // first check local storage
       if (storage.hasLocalStorage()) {
-        sharedId = storage.getDataFromLocalStorage(cookieOrStorageID)
-        logInfo('NOVATIQ sharedID retrieved from local storage:' + sharedId)
+        sharedId = storage.getDataFromLocalStorage(cookieOrStorageID);
+        logInfo('NOVATIQ sharedID retrieved from local storage:' + sharedId);
       }
 
       // if nothing check the local cookies
       if (sharedId === null || sharedId === undefined) {
-        sharedId = storage.getCookie(cookieOrStorageID)
-        logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId)
+        sharedId = storage.getCookie(cookieOrStorageID);
+        logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId);
       }
     }
 
-    logInfo('NOVATIQ sharedID returning: ' + sharedId)
+    logInfo('NOVATIQ sharedID returning: ' + sharedId);
 
-    return sharedId
+    return sharedId;
   },
 
   getSrcId(configParams, urlParams) {
     if (urlParams.useSspId === false) {
-      logInfo('NOVATIQ Configured to NOT use sspid')
-      return ''
+      logInfo('NOVATIQ Configured to NOT use sspid');
+      return '';
     }
 
-    logInfo('NOVATIQ Configured sourceid param: ' + configParams.sourceid)
+    logInfo('NOVATIQ Configured sourceid param: ' + configParams.sourceid);
 
-    let srcId
+    let srcId;
     if (typeof configParams.sourceid === 'undefined' || configParams.sourceid === null || configParams.sourceid === '') {
-      srcId = '000'
-      logInfo('NOVATIQ sourceid param set to value 000 due to undefined parameter or missing value in config section')
+      srcId = '000';
+      logInfo('NOVATIQ sourceid param set to value 000 due to undefined parameter or missing value in config section');
     } else if (configParams.sourceid.length < 3 || configParams.sourceid.length > 3) {
-      srcId = '001'
-      logInfo('NOVATIQ sourceid param set to value 001 due to wrong size in config section 3 chars max e.g. 1ab')
+      srcId = '001';
+      logInfo('NOVATIQ sourceid param set to value 001 due to wrong size in config section 3 chars max e.g. 1ab');
     } else {
-      srcId = configParams.sourceid
+      srcId = configParams.sourceid;
     }
-    return srcId
+    return srcId;
   },
   eids: {
     'novatiq': {
       getValue: function(data) {
         if (data.snowflake.id === undefined) {
-          return data.snowflake
+          return data.snowflake;
         }
 
-        return data.snowflake.id
+        return data.snowflake.id;
       },
       source: 'novatiq.com',
     },
   }
-}
-submodule('userId', novatiqIdSubmodule)
+};
+submodule('userId', novatiqIdSubmodule);

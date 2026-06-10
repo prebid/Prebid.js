@@ -1,17 +1,17 @@
-import { expect } from 'chai'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { spec } from '../../../modules/admaruBidAdapter.js'
+import { expect } from 'chai';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from '../../../modules/admaruBidAdapter.js';
 
-const ENDPOINT = 'https://p1.admaru.net/AdCall'
+const ENDPOINT = 'https://p1.admaru.net/AdCall';
 
 describe('Admaru Adapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValidForBanner', () => {
     const bid = {
@@ -32,21 +32,21 @@ describe('Admaru Adapter', function () {
       'bidId': '26e88c3c703e66',
       'bidderRequestId': '1a8ff729f6c1a3',
       'auctionId': 'cb65d954-ffe1-4f4a-8603-02b521c00333',
-    }
+    };
 
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', () => {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
       invalidBid.params = {
         wrong: 'missing pub_id or adspace_id'
-      }
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequestsForBanner', () => {
     const bidRequests = [
@@ -69,26 +69,26 @@ describe('Admaru Adapter', function () {
         'bidderRequestId': '1a8ff729f6c1a3',
         'auctionId': 'cb65d954-ffe1-4f4a-8603-02b521c00333'
       }
-    ]
+    ];
 
     it('should add parameters to the tag', () => {
-      const request = spec.buildRequests(bidRequests)
-      const payload = request[0].data
-      expect(payload.pub_id).to.equal('1234')
-      expect(payload.adspace_id).to.equal('1234')
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload.pub_id).to.equal('1234');
+      expect(payload.adspace_id).to.equal('1234');
       // expect(payload.refererInfo).to.equal('{"referer": "https://www.admaru.com/test/admaru_prebid/icv_reminder/test.html","reachedTop": true,"numIframes": 1,"stack": ["https://www.admaru.com/test/admaru_prebid/icv_reminder/test.html","https://www.admaru.com/test/admaru_prebid/icv_reminder/test.html"]}');
       // expect(payload.os).to.equal('windows');
       // expect(payload.platform).to.equal('pc_web');
-      expect(payload.bidderRequestId).to.equal('1a8ff729f6c1a3')
-      expect(payload.bidId).to.equal('26e88c3c703e66')
-    })
+      expect(payload.bidderRequestId).to.equal('1a8ff729f6c1a3');
+      expect(payload.bidId).to.equal('26e88c3c703e66');
+    });
 
     it('sends bid request to ENDPOINT via GET', () => {
-      const request = spec.buildRequests(bidRequests)
-      expect(request[0].url).to.contain(ENDPOINT)
-      expect(request[0].method).to.equal('GET')
-    })
-  })
+      const request = spec.buildRequests(bidRequests);
+      expect(request[0].url).to.contain(ENDPOINT);
+      expect(request[0].method).to.equal('GET');
+    });
+  });
 
   describe('interpretResponseForBanner', () => {
     const bidRequests = [
@@ -111,16 +111,16 @@ describe('Admaru Adapter', function () {
         'bidderRequestId': '1a8ff729f6c1a3',
         'auctionId': 'cb65d954-ffe1-4f4a-8603-02b521c00333'
       }
-    ]
+    ];
 
     it('handles nobid responses', () => {
-      var request = spec.buildRequests(bidRequests)
-      const response = ''
+      var request = spec.buildRequests(bidRequests);
+      const response = '';
 
-      const result = spec.interpretResponse(response, request[0])
-      expect(result.length).to.equal(0)
-    })
-  })
+      const result = spec.interpretResponse(response, request[0]);
+      expect(result.length).to.equal(0);
+    });
+  });
 
   describe('getUserSyncs()', () => {
     it('should return iframe user sync if iframe sync is enabled', () => {
@@ -130,15 +130,15 @@ describe('Admaru Adapter', function () {
           iframeEnabled: true,
         },
         null
-      )
+      );
 
       expect(syncs).to.deep.equal([
         {
           type: 'iframe',
           url: 'https://p2.admaru.net/UserSync/sync',
         },
-      ])
-    })
+      ]);
+    });
 
     it('should return image syncs if they are enabled and iframe is disabled', () => {
       const syncs = spec.getUserSyncs(
@@ -147,15 +147,15 @@ describe('Admaru Adapter', function () {
           iframeEnabled: false,
         },
         null
-      )
+      );
 
       expect(syncs).to.deep.equal([
         {
           type: 'image',
           url: 'https://p2.admaru.net/UserSync/sync',
         },
-      ])
-    })
+      ]);
+    });
 
     it('should not return user syncs if syncs are disabled', () => {
       const syncs = spec.getUserSyncs(
@@ -164,9 +164,9 @@ describe('Admaru Adapter', function () {
           iframeEnabled: false,
         },
         null
-      )
+      );
 
-      expect(syncs).to.deep.equal([])
-    })
-  })
-})
+      expect(syncs).to.deep.equal([]);
+    });
+  });
+});

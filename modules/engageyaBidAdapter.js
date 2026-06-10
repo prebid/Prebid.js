@@ -1,51 +1,51 @@
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { createTrackPixelHtml } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { createTrackPixelHtml } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const BIDDER_CODE = 'engageya'
-const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json'
-const ENDPOINT_METHOD = 'GET'
-const MAX_DEVIATION = 0.05
+const BIDDER_CODE = 'engageya';
+const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
+const ENDPOINT_METHOD = 'GET';
+const MAX_DEVIATION = 0.05;
 const SUPPORTED_SIZES = [
   [100, 75], [236, 202], [100, 100], [130, 130], [200, 200], [250, 250], [300, 272], [300, 250], [300, 230], [300, 214], [300, 187], [300, 166], [300, 150], [300, 133], [300, 120], [400, 200], [300, 200], [250, 377], [620, 410], [207, 311], [310, 166], [310, 333], [190, 106], [228, 132], [300, 174], [80, 60], [600, 500], [600, 600], [1080, 610], [1080, 610], [624, 350], [650, 1168], [1080, 1920], [300, 374], [336, 280]
-]
+];
 
 function getPageUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.pageUrl && bidRequest.params.pageUrl !== '[PAGE_URL]') {
-    return bidRequest.params.pageUrl
+    return bidRequest.params.pageUrl;
   }
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-    return bidderRequest.refererInfo.page
+    return bidderRequest.refererInfo.page;
   }
   // TODO: does this fallback make sense?
   const pageUrl = (isInIframe() && document.referrer)
     ? document.referrer
-    : window.location.href
-  return encodeURIComponent(pageUrl)
+    : window.location.href;
+  return encodeURIComponent(pageUrl);
 }
 
 function isInIframe() {
   try {
-    var isInIframe = (window.self !== window.top)
+    var isInIframe = (window.self !== window.top);
   } catch (e) {
-    isInIframe = true
+    isInIframe = true;
   }
-  return isInIframe
+  return isInIframe;
 }
 
 function getImageSrc(rec) {
-  return rec.thumbnail_path.indexOf('http') === -1 ? 'https:' + rec.thumbnail_path : rec.thumbnail_path
+  return rec.thumbnail_path.indexOf('http') === -1 ? 'https:' + rec.thumbnail_path : rec.thumbnail_path;
 }
 
 function getImpressionTrackers(rec, response) {
-  const responseTrackers = [response.viewPxl]
+  const responseTrackers = [response.viewPxl];
   if (!rec.trackers) {
-    return responseTrackers
+    return responseTrackers;
   }
-  const impressionTrackers = rec.trackers.impressionPixels || []
-  const viewTrackers = rec.trackers.viewPixels || []
-  return [...impressionTrackers, ...viewTrackers, ...responseTrackers]
+  const impressionTrackers = rec.trackers.impressionPixels || [];
+  const viewTrackers = rec.trackers.viewPixels || [];
+  return [...impressionTrackers, ...viewTrackers, ...responseTrackers];
 }
 
 function parseNativeResponse(rec, response) {
@@ -63,54 +63,54 @@ function parseNativeResponse(rec, response) {
     cta: '',
     sponsoredBy: rec.displayName,
     impressionTrackers: getImpressionTrackers(rec, response),
-  }
+  };
 }
 
 function parseBannerResponse(rec, response) {
   if (rec.tag) {
-    return rec.tag
+    return rec.tag;
   }
-  let style
+  let style;
   try {
-    const additionalData = JSON.parse(response.widget.additionalData)
-    const css = additionalData.css || ''
-    style = css ? `<style>${css}</style>` : ''
+    const additionalData = JSON.parse(response.widget.additionalData);
+    const css = additionalData.css || '';
+    style = css ? `<style>${css}</style>` : '';
   } catch (e) {
-    style = ''
+    style = '';
   }
-  const title = rec.title && rec.title.trim() ? `<div class="eng_tag_ttl" style="display: none">${rec.title}</div>` : ''
-  const displayName = rec.displayName && title ? `<div class="eng_tag_brnd" style="display: none">${rec.displayName}</div>` : ''
+  const title = rec.title && rec.title.trim() ? `<div class="eng_tag_ttl" style="display: none">${rec.title}</div>` : '';
+  const displayName = rec.displayName && title ? `<div class="eng_tag_brnd" style="display: none">${rec.displayName}</div>` : '';
   const trackers = getImpressionTrackers(rec, response)
     .map((url) => createTrackPixelHtml(url))
-    .join('')
-  return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`
+    .join('');
+  return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }
 
 function getImageSize(bidRequest) {
   if (bidRequest.sizes && bidRequest.sizes.length > 0) {
-    return bidRequest.sizes[0]
+    return bidRequest.sizes[0];
   } else if (bidRequest.nativeParams && bidRequest.nativeParams.image && bidRequest.nativeParams.image.sizes) {
-    return bidRequest.nativeParams.image.sizes
+    return bidRequest.nativeParams.image.sizes;
   }
-  return [-1, -1]
+  return [-1, -1];
 }
 
 function isValidSize([width, height]) {
   if (!width || !height) {
-    return false
+    return false;
   }
   return SUPPORTED_SIZES.some(([supportedWidth, supportedHeight]) => {
     if (supportedWidth === width && supportedHeight === height) {
-      return true
+      return true;
     }
-    const supportedRatio = supportedWidth / supportedHeight
-    const ratioDeviation = supportedRatio / width * height
+    const supportedRatio = supportedWidth / supportedHeight;
+    const ratioDeviation = supportedRatio / width * height;
     if (Math.abs(ratioDeviation - 1) > MAX_DEVIATION) {
-      return false
+      return false;
     }
     return supportedWidth > width ||
-      (width - supportedWidth) / width <= MAX_DEVIATION
-  })
+      (width - supportedWidth) / width <= MAX_DEVIATION;
+  });
 }
 
 export const spec = {
@@ -124,44 +124,44 @@ export const spec = {
       bidRequest.params.hasOwnProperty('websiteId') &&
       !isNaN(bidRequest.params.widgetId) &&
       !isNaN(bidRequest.params.websiteId) &&
-      isValidSize(getImageSize(bidRequest))
+      isValidSize(getImageSize(bidRequest));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     if (!validBidRequests) {
-      return []
+      return [];
     }
     return validBidRequests.map(bidRequest => {
       if (bidRequest.params) {
-        const mediaType = bidRequest.hasOwnProperty('nativeParams') ? 1 : 2
-        const [imageWidth, imageHeight] = getImageSize(bidRequest)
-        const widgetId = bidRequest.params.widgetId
-        const websiteId = bidRequest.params.websiteId
-        const pageUrl = getPageUrl(bidRequest, bidderRequest)
-        const bidId = bidRequest.bidId
-        let finalUrl = ENDPOINT_URL + '?pubid=0&webid=' + websiteId + '&wid=' + widgetId + '&url=' + pageUrl + '&ireqid=' + bidId + '&pbtpid=' + mediaType + '&imw=' + imageWidth + '&imh=' + imageHeight
+        const mediaType = bidRequest.hasOwnProperty('nativeParams') ? 1 : 2;
+        const [imageWidth, imageHeight] = getImageSize(bidRequest);
+        const widgetId = bidRequest.params.widgetId;
+        const websiteId = bidRequest.params.websiteId;
+        const pageUrl = getPageUrl(bidRequest, bidderRequest);
+        const bidId = bidRequest.bidId;
+        let finalUrl = ENDPOINT_URL + '?pubid=0&webid=' + websiteId + '&wid=' + widgetId + '&url=' + pageUrl + '&ireqid=' + bidId + '&pbtpid=' + mediaType + '&imw=' + imageWidth + '&imh=' + imageHeight;
         if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprApplies && bidderRequest.consentString) {
-          finalUrl += '&is_gdpr=1&gdpr_consent=' + bidderRequest.consentString
+          finalUrl += '&is_gdpr=1&gdpr_consent=' + bidderRequest.consentString;
         }
         return {
           url: finalUrl,
           method: ENDPOINT_METHOD,
           data: ''
-        }
+        };
       }
-      return undefined
-    }).filter(Boolean)
+      return undefined;
+    }).filter(Boolean);
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body || !serverResponse.body.recs || !serverResponse.body.recs.length) {
-      return []
+      return [];
     }
-    var response = serverResponse.body
-    var isNative = Number(response.pbtypeId) === 1
+    var response = serverResponse.body;
+    var isNative = Number(response.pbtypeId) === 1;
     return response.recs.map(rec => {
       const bid = {
         requestId: response.ireqId,
@@ -173,15 +173,15 @@ export const spec = {
         netRevenue: !!rec.pecpm,
         ttl: 360,
         meta: { advertiserDomains: rec.domain ? [rec.domain] : [] },
-      }
+      };
       if (isNative) {
-        bid.native = parseNativeResponse(rec, response)
+        bid.native = parseNativeResponse(rec, response);
       } else {
-        bid.ad = parseBannerResponse(rec, response)
+        bid.ad = parseBannerResponse(rec, response);
       }
-      return bid
-    })
+      return bid;
+    });
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

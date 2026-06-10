@@ -1,5 +1,5 @@
-import { _each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { _each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -9,7 +9,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'bidglass'
+const BIDDER_CODE = 'bidglass';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,7 +21,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!bid.params.adUnitId // only adUnitId is required
+    return !!bid.params.adUnitId; // only adUnitId is required
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -49,48 +49,48 @@ export const spec = {
     }]
     */
 
-    const imps = []
+    const imps = [];
     const getReferer = function() {
-      return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null
-    }
+      return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
+    };
     const getOrigins = function() {
-      var ori = [window.location.protocol + '//' + window.location.hostname]
+      var ori = [window.location.protocol + '//' + window.location.hostname];
 
       if (window.location.ancestorOrigins) {
         for (var i = 0; i < window.location.ancestorOrigins.length; i++) {
-          ori.push(window.location.ancestorOrigins[i])
+          ori.push(window.location.ancestorOrigins[i]);
         }
       } else if (window !== window.top) {
         // Derive the parent origin
-        var parts = document.referrer.split('/')
+        var parts = document.referrer.split('/');
 
-        ori.push(parts[0] + '//' + parts[2])
+        ori.push(parts[0] + '//' + parts[2]);
 
         if (window.parent !== window.top) {
           // Additional unknown origins exist
-          ori.push('null')
+          ori.push('null');
         }
       }
 
-      return ori
-    }
+      return ori;
+    };
 
-    const bidglass = window['bidglass']
+    const bidglass = window['bidglass'];
 
     _each(validBidRequests, function(bid) {
-      bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes])
-      bid.sizes = bid.sizes.filter(size => isArray(size))
+      bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
+      bid.sizes = bid.sizes.filter(size => isArray(size));
 
-      var adUnitId = getBidIdParameter('adUnitId', bid.params)
-      var options = deepClone(bid.params)
+      var adUnitId = getBidIdParameter('adUnitId', bid.params);
+      var options = deepClone(bid.params);
 
-      delete options.adUnitId
+      delete options.adUnitId;
 
       // Merge externally set targeting params
       if (typeof bidglass === 'object' && bidglass.getTargeting) {
-        const targeting = bidglass.getTargeting(adUnitId, options.targeting)
+        const targeting = bidglass.getTargeting(adUnitId, options.targeting);
 
-        if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting
+        if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting;
       }
 
       // Stuff to send: [bid id, sizes, adUnitId, options]
@@ -99,15 +99,15 @@ export const spec = {
         sizes: bid.sizes,
         adUnitId: adUnitId,
         options: options
-      })
-    })
+      });
+    });
 
     // Consent data
-    const gdprConsentObj = bidderRequest && bidderRequest.gdprConsent
-    const gppConsentObj = bidderRequest && bidderRequest.gppConsent
-    const gppApplicableSections = gppConsentObj && gppConsentObj.applicableSections
-    const ortb2Regs = bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs
-    const ortb2Gpp = ortb2Regs && ortb2Regs.gpp
+    const gdprConsentObj = bidderRequest && bidderRequest.gdprConsent;
+    const gppConsentObj = bidderRequest && bidderRequest.gppConsent;
+    const gppApplicableSections = gppConsentObj && gppConsentObj.applicableSections;
+    const ortb2Regs = bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs;
+    const ortb2Gpp = ortb2Regs && ortb2Regs.gpp;
 
     // Build bid request data to be sent to ad server
     const bidReq = {
@@ -127,10 +127,10 @@ export const spec = {
       gppSid: (isArray(gppApplicableSections) && gppApplicableSections.length)
         ? gppApplicableSections.join(',')
         : ((ortb2Gpp && ortb2Regs.gpp_sid) || '')
-    }
+    };
 
     const url = 'https://bid.glass/ad/hb.php?' +
-      `src=$$REPO_AND_VERSION$$`
+      `src=$$REPO_AND_VERSION$$`;
 
     return {
       method: 'POST',
@@ -140,7 +140,7 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: false
       }
-    }
+    };
   },
 
   /**
@@ -151,8 +151,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, serverRequest) {
-    const bidResponses = []
-    const bidReq = JSON.parse(serverRequest.data)
+    const bidResponses = [];
+    const bidReq = JSON.parse(serverRequest.data);
 
     _each(serverResponse.body.bidResponses, function(serverBid) {
       const bidResponse = {
@@ -175,27 +175,27 @@ export const spec = {
             const urlEncodedExtras = ['gdprApplies', 'gdprConsent', 'gppString', 'gppSid']
               .filter(key => bidReq[key] != null)
               .map(key => `${key}=${encodeURIComponent(bidReq[key])}`)
-              .join('&')
-            return urlEncodedExtras ? ('&' + urlEncodedExtras) : ''
+              .join('&');
+            return urlEncodedExtras ? ('&' + urlEncodedExtras) : '';
           }
         ),
         meta: {}
-      }
+      };
 
       if (serverBid.meta) {
-        const meta = serverBid.meta
+        const meta = serverBid.meta;
 
         if (meta.advertiserDomains && meta.advertiserDomains.length) {
-          bidResponse.meta.advertiserDomains = meta.advertiserDomains
+          bidResponse.meta.advertiserDomains = meta.advertiserDomains;
         }
       }
 
-      bidResponses.push(bidResponse)
-    })
+      bidResponses.push(bidResponse);
+    });
 
-    return bidResponses
+    return bidResponses;
   }
 
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

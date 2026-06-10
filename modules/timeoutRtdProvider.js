@@ -1,20 +1,20 @@
-import { submodule } from '../src/hook.js'
-import { qualifiedAjaxBuilder } from '../src/ajax.js'
-import { logInfo, deepAccess, logError } from '../src/utils.js'
-import { getGlobal } from '../src/prebidGlobal.js'
-import { bidderTimeoutFunctions } from '../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js'
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
+import { logInfo, deepAccess, logError } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { bidderTimeoutFunctions } from '../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const SUBMODULE_NAME = 'timeout'
+const SUBMODULE_NAME = 'timeout';
 
 // this allows the stubbing of functions during testing
 export const timeoutRtdFunctions = {
   handleTimeoutIncrement
-}
+};
 
 /**
  *
@@ -24,31 +24,31 @@ export const timeoutRtdFunctions = {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  logInfo('Timeout rtd config', config)
-  const timeoutUrl = deepAccess(config, 'params.endpoint.url')
+  logInfo('Timeout rtd config', config);
+  const timeoutUrl = deepAccess(config, 'params.endpoint.url');
   if (timeoutUrl) {
-    logInfo('Timeout url', timeoutUrl)
+    logInfo('Timeout url', timeoutUrl);
     qualifiedAjaxBuilder(MODULE_TYPE_RTD, SUBMODULE_NAME)(timeoutUrl, {
       success: function(response) {
         try {
-          const rules = JSON.parse(response)
-          timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules)
+          const rules = JSON.parse(response);
+          timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
         } catch (e) {
-          logError('Error parsing json response from timeout provider.')
+          logError('Error parsing json response from timeout provider.');
         }
-        callback()
+        callback();
       },
       error: function(errorStatus) {
-        logError('Timeout request error!', errorStatus)
-        callback()
+        logError('Timeout request error!', errorStatus);
+        callback();
       }
-    })
+    });
   } else if (deepAccess(config, 'params.rules')) {
-    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, deepAccess(config, 'params.rules'))
-    callback()
+    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, deepAccess(config, 'params.rules'));
+    callback();
   } else {
-    logInfo('No timeout endpoint or timeout rules found. Exiting timeout rtd module')
-    callback()
+    logInfo('No timeout endpoint or timeout rules found. Exiting timeout rtd module');
+    callback();
   }
 }
 
@@ -58,10 +58,10 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
  * @param {Object} rules
  */
 function handleTimeoutIncrement(reqBidsConfigObj, rules) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
-  const timeoutModifier = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules)
-  const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout')
-  reqBidsConfigObj.timeout = bidderTimeout + timeoutModifier
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  const timeoutModifier = bidderTimeoutFunctions.calculateTimeoutModifier(adUnits, rules);
+  const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout');
+  reqBidsConfigObj.timeout = bidderTimeout + timeoutModifier;
 }
 
 /** @type {RtdSubmodule} */
@@ -73,10 +73,10 @@ export const timeoutSubmodule = {
   name: SUBMODULE_NAME,
   init: () => true,
   getBidRequestData,
-}
+};
 
 function registerSubModule() {
-  submodule('realTimeData', timeoutSubmodule)
+  submodule('realTimeData', timeoutSubmodule);
 }
 
-registerSubModule()
+registerSubModule();

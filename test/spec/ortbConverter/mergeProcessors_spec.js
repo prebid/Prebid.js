@@ -1,5 +1,5 @@
-import { mergeProcessors } from '../../../libraries/ortbConverter/lib/mergeProcessors.js'
-import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js'
+import { mergeProcessors } from '../../../libraries/ortbConverter/lib/mergeProcessors.js';
+import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js';
 
 describe('mergeProcessors', () => {
   it('can merge', () => {
@@ -34,7 +34,7 @@ describe('mergeProcessors', () => {
           fn: 'overridden'
         }
       }
-    })
+    });
     expect(result).to.eql({
       [REQUEST]: {
         first: {
@@ -54,6 +54,6 @@ describe('mergeProcessors', () => {
         }
       },
       [BID_RESPONSE]: {}
-    })
-  })
-})
+    });
+  });
+});

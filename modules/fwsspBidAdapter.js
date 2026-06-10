@@ -1,13 +1,13 @@
-import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { getGlobal } from '../src/prebidGlobal.js'
+import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
-const BIDDER_CODE = 'fwssp'
-const GVL_ID = 285
-const USER_SYNC_URL = 'https://user-sync.fwmrm.net/ad/u?'
-let PRIVACY_VALUES = {}
+const BIDDER_CODE = 'fwssp';
+const GVL_ID = 285;
+const USER_SYNC_URL = 'https://user-sync.fwmrm.net/ad/u?';
+let PRIVACY_VALUES = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -22,7 +22,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId)
+    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId);
   },
 
   /**
@@ -45,35 +45,35 @@ export const spec = {
      * @private
      */
     const buildRequest = (currentBidRequest, bidderRequest) => {
-      const globalParams = constructGlobalParams(currentBidRequest)
-      const keyValues = constructKeyValues(currentBidRequest, bidderRequest)
-      const slotParams = constructSlotParams(currentBidRequest)
-      const serializedSChain = constructSupplyChain(currentBidRequest, bidderRequest)
-      const dataString = constructDataString(globalParams, keyValues, serializedSChain, slotParams)
+      const globalParams = constructGlobalParams(currentBidRequest);
+      const keyValues = constructKeyValues(currentBidRequest, bidderRequest);
+      const slotParams = constructSlotParams(currentBidRequest);
+      const serializedSChain = constructSupplyChain(currentBidRequest, bidderRequest);
+      const dataString = constructDataString(globalParams, keyValues, serializedSChain, slotParams);
       return {
         method: 'GET',
         url: currentBidRequest.params.serverUrl,
         data: dataString,
         bidRequest: currentBidRequest
-      }
-    }
+      };
+    };
 
     const constructSupplyChain = (currentBidRequest, bidderRequest) => {
       // Add schain object
-      let schain = deepAccess(bidderRequest, 'ortb2.source.schain')
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
       if (!schain) {
-        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain')
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
       }
       if (!schain) {
-        schain = currentBidRequest.schain
+        schain = currentBidRequest.schain;
       }
 
-      return this.serializeSupplyChain(schain)
-    }
+      return this.serializeSupplyChain(schain);
+    };
 
     const constructGlobalParams = currentBidRequest => {
-      const sdkVersion = getSDKVersion(currentBidRequest)
-      const prebidVersion = getGlobal().version
+      const sdkVersion = getSDKVersion(currentBidRequest);
+      const prebidVersion = getGlobal().version;
       return {
         nw: currentBidRequest.params.networkId,
         resp: 'vast4',
@@ -85,143 +85,143 @@ export const spec = {
         flag: setFlagParameter(currentBidRequest.params.flags),
         mode: currentBidRequest.params.mode ? currentBidRequest.params.mode : 'on-demand',
         vclr: `js-${sdkVersion}-prebid-${prebidVersion}`
-      }
-    }
+      };
+    };
 
     const getRandomNumber = () => {
-      return (new Date().getTime() * Math.random()).toFixed(0)
-    }
+      return (new Date().getTime() * Math.random()).toFixed(0);
+    };
 
     const setFlagParameter = optionalFlags => {
-      logInfo('setFlagParameter, optionalFlags: ', optionalFlags)
-      const requiredFlags = '+fwssp+emcr+nucr+aeti+rema+exvt+fwpbjs'
-      return optionalFlags ? optionalFlags + requiredFlags : requiredFlags
-    }
+      logInfo('setFlagParameter, optionalFlags: ', optionalFlags);
+      const requiredFlags = '+fwssp+emcr+nucr+aeti+rema+exvt+fwpbjs';
+      return optionalFlags ? optionalFlags + requiredFlags : requiredFlags;
+    };
 
     const constructKeyValues = (currentBidRequest, bidderRequest) => {
-      const keyValues = currentBidRequest.params.adRequestKeyValues || {}
+      const keyValues = currentBidRequest.params.adRequestKeyValues || {};
 
       // Add bidfloor to keyValues
-      const { floor, currency } = getBidFloor(currentBidRequest, config)
-      keyValues._fw_bidfloor = floor
-      keyValues._fw_bidfloorcur = currency
+      const { floor, currency } = getBidFloor(currentBidRequest, config);
+      keyValues._fw_bidfloor = floor;
+      keyValues._fw_bidfloorcur = currency;
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
-        keyValues._fw_gdpr_consent = bidderRequest.gdprConsent.consentString
+        keyValues._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+          keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
       }
 
       if (currentBidRequest.params.gdpr_consented_providers) {
-        keyValues._fw_gdpr_consented_providers = currentBidRequest.params.gdpr_consented_providers
+        keyValues._fw_gdpr_consented_providers = currentBidRequest.params.gdpr_consented_providers;
       }
 
       // Add CCPA consent string
       if (bidderRequest && bidderRequest.uspConsent) {
-        keyValues._fw_us_privacy = bidderRequest.uspConsent
+        keyValues._fw_us_privacy = bidderRequest.uspConsent;
       }
 
       // Add GPP consent
       if (bidderRequest && bidderRequest.gppConsent) {
-        keyValues.gpp = bidderRequest.gppConsent.gppString
-        keyValues.gpp_sid = bidderRequest.gppConsent.applicableSections
+        keyValues.gpp = bidderRequest.gppConsent.gppString;
+        keyValues.gpp_sid = bidderRequest.gppConsent.applicableSections;
       } else if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs && bidderRequest.ortb2.regs.gpp) {
-        keyValues.gpp = bidderRequest.ortb2.regs.gpp
-        keyValues.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
+        keyValues.gpp = bidderRequest.ortb2.regs.gpp;
+        keyValues.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
       }
 
       // Add content object
       if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site && bidderRequest.ortb2.site.content && typeof bidderRequest.ortb2.site.content === 'object') {
         try {
-          keyValues._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content)
+          keyValues._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content);
         } catch (error) {
-          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error)
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error);
         }
       }
 
       // Add 3rd party user ID
       if (currentBidRequest.userIdAsEids && currentBidRequest.userIdAsEids.length > 0) {
         try {
-          keyValues._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids)
+          keyValues._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids);
         } catch (error) {
-          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the userIdAsEids: ' + error)
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the userIdAsEids: ' + error);
         }
       }
 
-      const location = bidderRequest?.refererInfo?.page
+      const location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
-        keyValues.loc = location
+        keyValues.loc = location;
       }
 
-      let playerSize = []
+      let playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
         if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
-          playerSize = currentBidRequest.mediaTypes.video.playerSize[0]
+          playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
         } else {
-          playerSize = currentBidRequest.mediaTypes.video.playerSize
+          playerSize = currentBidRequest.mediaTypes.video.playerSize;
         }
       } else if (currentBidRequest.mediaTypes.banner.sizes) {
         // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
-        playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit)
+        playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
       } else {
         // Backward compatible code, in case size still pass by sizes in bid request
-        playerSize = getBiggerSize(currentBidRequest.sizes)
+        playerSize = getBiggerSize(currentBidRequest.sizes);
       }
 
       // Add player size to keyValues
       if (playerSize[0] > 0 || playerSize[1] > 0) {
-        keyValues._fw_player_width = keyValues._fw_player_width ? keyValues._fw_player_width : playerSize[0]
-        keyValues._fw_player_height = keyValues._fw_player_height ? keyValues._fw_player_height : playerSize[1]
+        keyValues._fw_player_width = keyValues._fw_player_width ? keyValues._fw_player_width : playerSize[0];
+        keyValues._fw_player_height = keyValues._fw_player_height ? keyValues._fw_player_height : playerSize[1];
       }
 
       // Add video context and placement in keyValues
       if (currentBidRequest.mediaTypes.video) {
-        let videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : ''
-        let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null
-        const videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null
+        let videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : '';
+        let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
+        const videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
 
         if (currentBidRequest.params.format === 'inbanner') {
-          videoContext = 'In-Banner'
-          videoPlacement = 2
+          videoContext = 'In-Banner';
+          videoPlacement = 2;
         }
 
-        keyValues._fw_video_context = videoContext
-        keyValues._fw_placement_type = videoPlacement
-        keyValues._fw_plcmt_type = videoPlcmt
+        keyValues._fw_video_context = videoContext;
+        keyValues._fw_placement_type = videoPlacement;
+        keyValues._fw_plcmt_type = videoPlcmt;
       }
 
-      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa')
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
       if (typeof coppa === 'number') {
-        keyValues._fw_coppa = coppa
+        keyValues._fw_coppa = coppa;
       }
 
-      const atts = deepAccess(bidderRequest, 'ortb2.device.ext.atts')
+      const atts = deepAccess(bidderRequest, 'ortb2.device.ext.atts');
       if (typeof atts === 'number') {
-        keyValues._fw_atts = atts
+        keyValues._fw_atts = atts;
       }
 
-      const lmt = deepAccess(bidderRequest, 'ortb2.device.lmt')
+      const lmt = deepAccess(bidderRequest, 'ortb2.device.lmt');
       if (typeof lmt === 'number') {
-        keyValues._fw_is_lat = lmt
+        keyValues._fw_is_lat = lmt;
       }
 
-      PRIVACY_VALUES = {}
+      PRIVACY_VALUES = {};
       if (keyValues._fw_coppa != null) {
-        PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa
+        PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
       }
 
       if (keyValues._fw_atts != null) {
-        PRIVACY_VALUES._fw_atts = keyValues._fw_atts
+        PRIVACY_VALUES._fw_atts = keyValues._fw_atts;
       }
       if (keyValues._fw_is_lat != null) {
-        PRIVACY_VALUES._fw_is_lat = keyValues._fw_is_lat
+        PRIVACY_VALUES._fw_is_lat = keyValues._fw_is_lat;
       }
 
-      return keyValues
-    }
+      return keyValues;
+    };
 
     const constructSlotParams = currentBidRequest => {
       /**
@@ -243,32 +243,32 @@ export const spec = {
         ptgt: 'a',   // Currently only support temporal slot
         slid: currentBidRequest.params.slid ? currentBidRequest.params.slid : 'Preroll_1',
         slau: currentBidRequest.params.slau ? currentBidRequest.params.slau : 'preroll',
-      }
-      const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {}
-      const mind = video.minduration || currentBidRequest.params.minD
-      const maxd = video.maxduration || currentBidRequest.params.maxD
+      };
+      const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {};
+      const mind = video.minduration || currentBidRequest.params.minD;
+      const maxd = video.maxduration || currentBidRequest.params.maxD;
 
       if (mind) {
-        slotParams.mind = mind
+        slotParams.mind = mind;
       }
       if (maxd) {
-        slotParams.maxd = maxd
+        slotParams.maxd = maxd;
       }
-      return slotParams
-    }
+      return slotParams;
+    };
 
     const constructDataString = (globalParams, keyValues, serializedSChain, slotParams) => {
-      const globalParamsString = appendParams(globalParams) + ';'
+      const globalParamsString = appendParams(globalParams) + ';';
       // serializedSChain requires special encoding logic as outlined in the ORTB spec https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/supplychainobject.md
-      const keyValuesString = appendParams(keyValues) + serializedSChain + ';'
-      const slotParamsString = appendParams(slotParams) + ';'
+      const keyValuesString = appendParams(keyValues) + serializedSChain + ';';
+      const slotParamsString = appendParams(slotParams) + ';';
 
-      return globalParamsString + keyValuesString + slotParamsString
-    }
+      return globalParamsString + keyValuesString + slotParamsString;
+    };
 
     return bidRequests.map(function(currentBidRequest) {
-      return buildRequest(currentBidRequest, bidderRequest)
-    })
+      return buildRequest(currentBidRequest, bidderRequest);
+    });
   },
 
   /**
@@ -277,13 +277,13 @@ export const spec = {
    * @param {*} schain object
    */
   serializeSupplyChain: function(schain) {
-    if (!schain || !schain.nodes) return ''
-    const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+    if (!schain || !schain.nodes) return '';
+    const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
     return `&schain=${schain.ver},${schain.complete}!` +
       schain.nodes.map(node => nodesProperties.map(prop =>
         node[prop] ? encodeURIComponent(node[prop]) : '')
         .join(','))
-        .join('!')
+        .join('!');
   },
 
   /**
@@ -294,39 +294,39 @@ export const spec = {
    * @return {object[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, request) {
-    const bidrequest = request.bidRequest
-    let playerSize = []
+    const bidrequest = request.bidRequest;
+    let playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
       if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
-        playerSize = bidrequest.mediaTypes.video.playerSize[0]
+        playerSize = bidrequest.mediaTypes.video.playerSize[0];
       } else {
-        playerSize = bidrequest.mediaTypes.video.playerSize
+        playerSize = bidrequest.mediaTypes.video.playerSize;
       }
     } else if (bidrequest.mediaTypes.banner.sizes) {
       // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
-      playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit)
+      playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
     } else {
       // Backward compatible code, in case size still pass by sizes in bid request
-      playerSize = getBiggerSize(bidrequest.sizes)
+      playerSize = getBiggerSize(bidrequest.sizes);
     }
 
     if (typeof serverResponse === 'object' && typeof serverResponse.body === 'string') {
-      serverResponse = serverResponse.body
+      serverResponse = serverResponse.body;
     }
 
-    let xmlDoc
+    let xmlDoc;
     try {
-      const parser = new DOMParser()
-      xmlDoc = parser.parseFromString(serverResponse, 'application/xml')
+      const parser = new DOMParser();
+      xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err)
-      return
+      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      return;
     }
 
-    const bidResponses = []
+    const bidResponses = [];
 
-    const princingData = getPricing(xmlDoc)
+    const princingData = getPricing(xmlDoc);
     if (princingData.price) {
       const bidResponse = {
         requestId: bidrequest.bidId,
@@ -341,76 +341,76 @@ export const spec = {
         dealId: getDealId(xmlDoc),
         campaignId: getCampaignId(xmlDoc),
         bannerId: getBannerId(xmlDoc)
-      }
+      };
 
       if (bidrequest.mediaTypes.video) {
-        bidResponse.mediaType = 'video'
+        bidResponse.mediaType = 'video';
       }
 
-      const topWin = getTopMostWindow()
+      const topWin = getTopMostWindow();
       if (!topWin.fwssp_cache) {
-        topWin.fwssp_cache = {}
+        topWin.fwssp_cache = {};
       }
       topWin.fwssp_cache[bidrequest.adUnitCode] = {
         response: serverResponse,
         listeners: bidrequest.params.listeners
-      }
+      };
 
-      bidResponse.vastXml = serverResponse
-      bidResponse.ad = formatAdHTML(bidrequest, playerSize, serverResponse)
-      bidResponses.push(bidResponse)
+      bidResponse.vastXml = serverResponse;
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize, serverResponse);
+      bidResponses.push(bidResponse);
     }
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const params = {
       mode: 'auto-user-sync',
       ...PRIVACY_VALUES
-    }
+    };
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params.gdpr = Number(gdprConsent.gdprApplies)
-        params.gdpr_consent = gdprConsent.consentString
+        params.gdpr = Number(gdprConsent.gdprApplies);
+        params.gdpr_consent = gdprConsent.consentString;
       } else {
-        params.gdpr_consent = gdprConsent.consentString
+        params.gdpr_consent = gdprConsent.consentString;
       }
     }
 
     if (uspConsent) {
-      params.us_privacy = uspConsent
+      params.us_privacy = uspConsent;
     }
 
     if (gppConsent) {
       if (typeof gppConsent.gppString === 'string') {
-        params.gpp = gppConsent.gppString
+        params.gpp = gppConsent.gppString;
       }
       if (gppConsent.applicableSections) {
-        params.gpp_sid = gppConsent.applicableSections
+        params.gpp_sid = gppConsent.applicableSections;
       }
     }
 
-    const url = USER_SYNC_URL + appendParams(params)
+    const url = USER_SYNC_URL + appendParams(params);
 
-    const syncs = []
+    const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
         url: url
-      })
+      });
     }
     if (syncOptions && syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
         url: url
-      })
+      });
     }
 
-    return syncs
+    return syncs;
   }
-}
+};
 
 /**
  * Generates structured HTML for FreeWheel MRM ad integration with Prebid.js
@@ -419,17 +419,17 @@ export const spec = {
  * @returns {string} Formatted HTML string for ad rendering
  */
 export function formatAdHTML(bidrequest, size) {
-  const sdkUrl = getSdkUrl(bidrequest)
-  const displayBaseId = 'fwssp_display_base'
+  const sdkUrl = getSdkUrl(bidrequest);
+  const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true;
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false;
 
-  let playerParams = null
+  let playerParams = null;
   try {
-    playerParams = JSON.stringify(bidrequest.params.playerParams)
+    playerParams = JSON.stringify(bidrequest.params.playerParams);
   } catch (error) {
-    logWarn('Error parsing playerParams:', error)
+    logWarn('Error parsing playerParams:', error);
   }
 
   return `<div id='${displayBaseId}' class='ad-container' style='width:${size[0]}px;height:${size[1]}px;'>
@@ -489,14 +489,14 @@ export function formatAdHTML(bidrequest, size) {
 
     document.head.appendChild(script);
   </script>
-</div>`
+</div>`;
 }
 
 function getSdkUrl(bidrequest) {
-  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg'
-  const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net'
-  const sdkVersion = getSDKVersion(bidrequest)
-  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
+  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
+  const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
+  const sdkVersion = getSDKVersion(bidrequest);
+  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`;
 }
 
 /**
@@ -506,18 +506,18 @@ function getSdkUrl(bidrequest) {
  * @returns {string} The SDK version to use, defaults to '7.10.0' if version parsing fails
  */
 export function getSDKVersion(bidRequest) {
-  const DEFAULT = '7.11.0'
+  const DEFAULT = '7.11.0';
 
   try {
-    const paramVersion = getSdkVersionFromBidRequest(bidRequest)
+    const paramVersion = getSdkVersionFromBidRequest(bidRequest);
     if (!paramVersion) {
-      return DEFAULT
+      return DEFAULT;
     }
     // Compare versions and return the higher one
-    return compareVersions(paramVersion, DEFAULT) > 0 ? paramVersion : DEFAULT
+    return compareVersions(paramVersion, DEFAULT) > 0 ? paramVersion : DEFAULT;
   } catch (error) {
-    logError('Version parsing failed, using default version:', error)
-    return DEFAULT
+    logError('Version parsing failed, using default version:', error);
+    return DEFAULT;
   }
 };
 
@@ -528,9 +528,9 @@ export function getSDKVersion(bidRequest) {
  */
 function getSdkVersionFromBidRequest(bidRequest) {
   if (bidRequest.params.sdkVersion && bidRequest.params.sdkVersion.startsWith('v')) {
-    return bidRequest.params.sdkVersion.substring(1)
+    return bidRequest.params.sdkVersion.substring(1);
   }
-  return bidRequest.params.sdkVersion
+  return bidRequest.params.sdkVersion;
 }
 
 /**
@@ -542,89 +542,89 @@ function getSdkVersionFromBidRequest(bidRequest) {
  */
 function compareVersions(versionA, versionB) {
   if (!versionA || !versionB) {
-    return 0
+    return 0;
   }
 
-  const normalize = (v) => v.split('.').map(Number)
+  const normalize = (v) => v.split('.').map(Number);
 
-  const partsA = normalize(versionA)
-  const partsB = normalize(versionB)
+  const partsA = normalize(versionA);
+  const partsB = normalize(versionB);
 
   // compare parts
-  const maxLength = Math.max(partsA.length, partsB.length)
+  const maxLength = Math.max(partsA.length, partsB.length);
   for (let i = 0; i < maxLength; i++) {
-    const a = partsA[i] || 0
-    const b = partsB[i] || 0
-    if (a > b) return 1
-    if (a < b) return -1
+    const a = partsA[i] || 0;
+    const b = partsB[i] || 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
   }
 
-  return 0
+  return 0;
 };
 
 export function getBidFloor(bid, config) {
-  logInfo('PREBID -: getBidFloor called with:', bid)
-  let floor = deepAccess(bid, 'params.bidfloor', 0) // fallback bid params
-  let currency = deepAccess(bid, 'params.bidfloorcur', 'USD') // fallback bid params
+  logInfo('PREBID -: getBidFloor called with:', bid);
+  let floor = deepAccess(bid, 'params.bidfloor', 0); // fallback bid params
+  let currency = deepAccess(bid, 'params.bidfloorcur', 'USD'); // fallback bid params
 
   if (isFn(bid.getFloor)) {
-    logInfo('PREBID - : getFloor() present and use it to retrieve floor and currency.')
+    logInfo('PREBID - : getFloor() present and use it to retrieve floor and currency.');
     try {
       const floorInfo = bid.getFloor({
         currency: config.getConfig('floors.data.currency') || 'USD',
         mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
         size: '*',
-      }) || {}
+      }) || {};
 
       // Use getFloor's results if valid
       if (typeof floorInfo.floor === 'number') {
-        floor = floorInfo.floor
+        floor = floorInfo.floor;
       }
 
       if (floorInfo.currency) {
-        currency = floorInfo.currency
+        currency = floorInfo.currency;
       }
-      logInfo('PREBID - : getFloor() returned floor:', floor, 'currency:', currency)
+      logInfo('PREBID - : getFloor() returned floor:', floor, 'currency:', currency);
     } catch (e) {
       // fallback to static bid.params.bidfloor
-      floor = deepAccess(bid, 'params.bidfloor', 0)
-      currency = deepAccess(bid, 'params.bidfloorcur', 'USD')
-      logInfo('PREBID - : getFloor() exception, fallback to static bid.params.bidfloor:', floor, 'currency:', currency)
+      floor = deepAccess(bid, 'params.bidfloor', 0);
+      currency = deepAccess(bid, 'params.bidfloorcur', 'USD');
+      logInfo('PREBID - : getFloor() exception, fallback to static bid.params.bidfloor:', floor, 'currency:', currency);
     }
   }
-  return { floor, currency }
+  return { floor, currency };
 }
 
 function isValidUrl(str) {
-  let url = null
+  let url = null;
   try {
-    url = new URL(str)
+    url = new URL(str);
   } catch (_) {}
-  return url != null
+  return url != null;
 }
 
 function getBiggerSize(array) {
-  let result = [0, 0]
+  let result = [0, 0];
   for (let i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] > result[0] * result[1]) {
-      result = array[i]
+      result = array[i];
     }
   }
-  return result
+  return result;
 }
 
 function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
-  const minSize = minSizeLimit || [0, 0]
-  const maxSize = maxSizeLimit || [Number.MAX_VALUE, Number.MAX_VALUE]
-  const candidates = []
+  const minSize = minSizeLimit || [0, 0];
+  const maxSize = maxSizeLimit || [Number.MAX_VALUE, Number.MAX_VALUE];
+  const candidates = [];
 
   for (let i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] >= minSize[0] * minSize[1] && array[i][0] * array[i][1] <= maxSize[0] * maxSize[1]) {
-      candidates.push(array[i])
+      candidates.push(array[i]);
     }
   }
 
-  return getBiggerSize(candidates)
+  return getBiggerSize(candidates);
 }
 
 /*
@@ -632,27 +632,27 @@ function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
 * @return {object} pricing data in format: {currency: 'EUR', price:'1.000'}
 */
 function getPricing(xmlNode) {
-  let pricingExtNode
-  let princingData = {}
+  let pricingExtNode;
+  let princingData = {};
 
-  const extensions = xmlNode.querySelectorAll('Extension')
+  const extensions = xmlNode.querySelectorAll('Extension');
   extensions.forEach(node => {
     if (node.getAttribute('type') === 'StickyPricing') {
-      pricingExtNode = node
+      pricingExtNode = node;
     }
-  })
+  });
 
   if (pricingExtNode) {
-    const priceNode = pricingExtNode.querySelector('Price')
+    const priceNode = pricingExtNode.querySelector('Price');
     princingData = {
       currency: priceNode.getAttribute('currency'),
       price: priceNode.textContent
-    }
+    };
   } else {
-    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.')
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
-  return princingData
+  return princingData;
 }
 
 /*
@@ -666,108 +666,108 @@ function getPricing(xmlNode) {
 * @return {object} pricing data in format: {currency: 'EUR', price:'1.000'}
 */
 function getAdvertiserDomain(xmlNode) {
-  const domain = []
-  let brandExtNode
-  const extensions = xmlNode.querySelectorAll('Extension')
+  const domain = [];
+  let brandExtNode;
+  const extensions = xmlNode.querySelectorAll('Extension');
   extensions.forEach(node => {
     if (node.getAttribute('type') === 'StickyBrand') {
-      brandExtNode = node
+      brandExtNode = node;
     }
-  })
+  });
 
   // Currently we only return one Domain
   if (brandExtNode) {
-    const domainNode = brandExtNode.querySelector('Domain')
-    domain.push(domainNode.textContent)
+    const domainNode = brandExtNode.querySelector('Domain');
+    domain.push(domainNode.textContent);
   } else {
-    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.')
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
   }
 
-  return domain
+  return domain;
 }
 
 function getCreativeId(xmlNode) {
-  let creaId = ''
-  const adNodes = xmlNode.querySelectorAll('Creative')
+  let creaId = '';
+  const adNodes = xmlNode.querySelectorAll('Creative');
   adNodes.forEach(el => {
-    creaId += '[' + el.getAttribute('id') + ']'
-  })
+    creaId += '[' + el.getAttribute('id') + ']';
+  });
 
-  return creaId
+  return creaId;
 }
 
 function getValueFromKeyInImpressionNode(xmlNode, key) {
-  let value = ''
-  const impNodes = xmlNode.querySelectorAll('Impression')
-  let isRootViewKeyPresent = false
-  let isAdsDisplayStartedPresent = false
+  let value = '';
+  const impNodes = xmlNode.querySelectorAll('Impression');
+  let isRootViewKeyPresent = false;
+  let isAdsDisplayStartedPresent = false;
 
   impNodes.forEach(el => {
     if (isRootViewKeyPresent && isAdsDisplayStartedPresent) {
-      return value
+      return value;
     }
-    isRootViewKeyPresent = false
-    isAdsDisplayStartedPresent = false
-    const text = el.textContent
-    const queries = text.substring(el.textContent.indexOf('?') + 1).split('&')
-    let tempValue = ''
+    isRootViewKeyPresent = false;
+    isAdsDisplayStartedPresent = false;
+    const text = el.textContent;
+    const queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
+    let tempValue = '';
     queries.forEach(item => {
-      const split = item.split('=')
+      const split = item.split('=');
       if (split[0] === key) {
-        tempValue = split[1]
+        tempValue = split[1];
       }
       if (split[0] === 'reqType' && split[1] === 'AdsDisplayStarted') {
-        isAdsDisplayStartedPresent = true
+        isAdsDisplayStartedPresent = true;
       }
       if (split[0] === 'rootViewKey') {
-        isRootViewKeyPresent = true
+        isRootViewKeyPresent = true;
       }
-    })
+    });
     if (isAdsDisplayStartedPresent) {
-      value = tempValue
+      value = tempValue;
     }
-  })
+  });
 
-  return value
+  return value;
 }
 
 function getDealId(xmlNode) {
-  return getValueFromKeyInImpressionNode(xmlNode, 'dealId')
+  return getValueFromKeyInImpressionNode(xmlNode, 'dealId');
 }
 
 function getBannerId(xmlNode) {
-  return getValueFromKeyInImpressionNode(xmlNode, 'adId')
+  return getValueFromKeyInImpressionNode(xmlNode, 'adId');
 }
 
 function getCampaignId(xmlNode) {
-  return getValueFromKeyInImpressionNode(xmlNode, 'campaignId')
+  return getValueFromKeyInImpressionNode(xmlNode, 'campaignId');
 }
 
 /**
  * returns the top most accessible window
  */
 function getTopMostWindow() {
-  let res = window
+  let res = window;
 
   try {
     while (top !== res) {
       if (res.parent.location.href.length) {
-        res = res.parent
+        res = res.parent;
       }
     }
   } catch (e) {}
 
-  return res
+  return res;
 }
 
 // Helper function to append parameters to the data string and to not include the last '&' param before ';
 function appendParams(params) {
-  const keys = Object.keys(params)
+  const keys = Object.keys(params);
   return keys.map((key, index) => {
-    const encodedKey = encodeURIComponent(key)
-    const encodedValue = encodeURIComponent(params[key])
-    return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`
-  }).join('')
+    const encodedKey = encodeURIComponent(key);
+    const encodedValue = encodeURIComponent(params[key]);
+    return `${encodedKey}=${encodedValue}${index < keys.length - 1 ? '&' : ''}`;
+  }).join('');
 }
 
-registerBidder(spec)
+registerBidder(spec);

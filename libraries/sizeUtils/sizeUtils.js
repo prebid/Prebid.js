@@ -6,26 +6,26 @@
  */
 export function getAdUnitSizes(adUnit) {
   if (!adUnit) {
-    return
+    return;
   }
 
-  let sizes = []
+  let sizes = [];
   if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
-    const bannerSizes = adUnit.mediaTypes.banner.sizes
+    const bannerSizes = adUnit.mediaTypes.banner.sizes;
     if (Array.isArray(bannerSizes[0])) {
-      sizes = bannerSizes
+      sizes = bannerSizes;
     } else {
-      sizes.push(bannerSizes)
+      sizes.push(bannerSizes);
     }
     // TODO - remove this else block when we're ready to deprecate adUnit.sizes for bidders
   } else if (Array.isArray(adUnit.sizes)) {
     if (Array.isArray(adUnit.sizes[0])) {
-      sizes = adUnit.sizes
+      sizes = adUnit.sizes;
     } else {
-      sizes.push(adUnit.sizes)
+      sizes.push(adUnit.sizes);
     }
   }
-  return sizes
+  return sizes;
 }
 
 /**
@@ -36,23 +36,23 @@ export function getAdUnitSizes(adUnit) {
  */
 
 export function normalizeBannerSizes(bidSizes) {
-  const sizes = []
+  const sizes = [];
   if (Array.isArray(bidSizes) && bidSizes.length === 2 && !Array.isArray(bidSizes[0])) {
     sizes.push({
       width: parseInt(bidSizes[0], 10),
       height: parseInt(bidSizes[1], 10),
-    })
+    });
   } else if (Array.isArray(bidSizes) && Array.isArray(bidSizes[0])) {
     bidSizes.forEach((size) => {
       sizes.push({
         width: parseInt(size[0], 10),
         height: parseInt(size[1], 10),
-      })
-    })
+      });
+    });
   }
-  return sizes
+  return sizes;
 }
 
 export function getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
+  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }

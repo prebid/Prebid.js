@@ -1,8 +1,8 @@
-import { deepSetValue, isFn, logWarn } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
+import { deepSetValue, isFn, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,23 +12,23 @@ import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
-export const ADAPTER_VERSION = 1.0
-export const BIDDER_CODE = 'sonarads'
-export const GVLID = 1300
-export const DEFAULT_CUR = 'USD'
+export const ADAPTER_VERSION = 1.0;
+export const BIDDER_CODE = 'sonarads';
+export const GVLID = 1300;
+export const DEFAULT_CUR = 'USD';
 // export const SERVER_PATH_US1_BID = 'http://localhost:8000/analyze_request/bids';
 // export const SERVER_PATH_US1_EVENTS = 'http://localhost:8000/analyze_request/events';
 // export const SERVER_PATH_US1_SYNC = 'http://localhost:8000/analyze_request/sync';
-export const SERVER_PATH_US1_BID = 'https://prebidjs-bids-us1.sonar-ads.com/analyze_request/bids'
-export const SERVER_PATH_US1_EVENTS = 'https://prebidjs-events-us1.sonar-ads.com/events'
-export const SERVER_PATH_US1_SYNC = 'https://prebidjs-sync-us1.sonar-ads.com/sync'
+export const SERVER_PATH_US1_BID = 'https://prebidjs-bids-us1.sonar-ads.com/analyze_request/bids';
+export const SERVER_PATH_US1_EVENTS = 'https://prebidjs-events-us1.sonar-ads.com/events';
+export const SERVER_PATH_US1_SYNC = 'https://prebidjs-sync-us1.sonar-ads.com/sync';
 
 /**
  * Bridgeupp : Report events for analytics and debuging.
  */
 function reportEvents(eventType, eventData) {
   if (!eventData || spec?.reportEventsEnabled !== true) {
-    return
+    return;
   }
 
   const payload = JSON.stringify({
@@ -36,7 +36,7 @@ function reportEvents(eventType, eventData) {
     prebidVersion: '$prebid.version$',
     eventType: eventType,
     eventPayload: eventData
-  })
+  });
 
   fetch(`${SERVER_PATH_US1_EVENTS}`, {
     body: payload,
@@ -48,7 +48,7 @@ function reportEvents(eventType, eventData) {
     }
   }).catch((_e) => {
     // ignore errors for now
-  })
+  });
 }
 
 /**
@@ -64,7 +64,7 @@ const CONVERTER = ortbConverter({
   request,
   bidResponse,
   response
-})
+});
 
 /**
  * Bridgeupp : Builds an impression object for oRTB requests based on the bid request.
@@ -75,23 +75,23 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The constructed impression object.
  */
 function imp(buildImp, bidRequest, context) {
-  const imp = buildImp(bidRequest, context)
-  const params = bidRequest.params
+  const imp = buildImp(bidRequest, context);
+  const params = bidRequest.params;
 
-  imp.tagid = bidRequest.adUnitCode
-  let floorInfo = {}
+  imp.tagid = bidRequest.adUnitCode;
+  let floorInfo = {};
 
   if (isFn(bidRequest.getFloor)) {
-    floorInfo = bidRequest.getFloor()
+    floorInfo = bidRequest.getFloor();
   }
 
   // if floor price module is not set reading from bidRequest.params or default
   if (!imp.bidfloor) {
-    imp.bidfloor = bidRequest.params.bidfloor || 0.001
-    imp.bidfloorcur = DEFAULT_CUR
+    imp.bidfloor = bidRequest.params.bidfloor || 0.001;
+    imp.bidfloorcur = DEFAULT_CUR;
   }
 
-  imp.secure = bidRequest.ortb2Imp?.secure ?? 1
+  imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   deepSetValue(imp, 'ext', {
     ...imp.ext,
     params: bidRequest.params,
@@ -99,9 +99,9 @@ function imp(buildImp, bidRequest, context) {
       siteId: params?.siteId,
     },
     floorInfo: floorInfo
-  })
+  });
 
-  return imp
+  return imp;
 }
 
 /**
@@ -114,22 +114,22 @@ function imp(buildImp, bidRequest, context) {
  * @returns {Object} The complete oRTB request object.
  */
 function request(buildRequest, imps, bidderRequest, context) {
-  const request = buildRequest(imps, bidderRequest, context)
-  const siteId = context.bidRequests[0]?.params?.siteId
+  const request = buildRequest(imps, bidderRequest, context);
+  const siteId = context.bidRequests[0]?.params?.siteId;
 
-  deepSetValue(request, 'auctionStart', bidderRequest.auctionStart)
+  deepSetValue(request, 'auctionStart', bidderRequest.auctionStart);
   deepSetValue(request, 'ext.prebid.channel', {
     name: 'pbjs_bridgeupp',
     pbjsversion: '$prebid.version$',
     adapterversion: ADAPTER_VERSION,
     siteId: siteId
-  })
+  });
 
-  return request
+  return request;
 }
 
 function bidResponse(buildBidResponse, bid, context) {
-  return buildBidResponse(bid, context)
+  return buildBidResponse(bid, context);
 }
 
 /**
@@ -142,7 +142,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @returns {Object} Prebid.js compatible bid response.
  */
 function response(buildResponse, bidResponses, ortbResponse, context) {
-  return buildResponse(bidResponses, ortbResponse, context)
+  return buildResponse(bidResponses, ortbResponse, context);
 }
 
 export const spec = {
@@ -160,10 +160,10 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     if (!bid || !bid.params.siteId) {
-      logWarn('Bridgeupp - bid is not valid, reach out to support@bridgeupp.com')
-      return false
+      logWarn('Bridgeupp - bid is not valid, reach out to support@bridgeupp.com');
+      return false;
     }
-    return true
+    return true;
   },
 
   /**
@@ -174,7 +174,7 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const data = CONVERTER.toORTB({ bidderRequest: bidderRequest, bidRequests: validBidRequests, })
+    const data = CONVERTER.toORTB({ bidderRequest: bidderRequest, bidRequests: validBidRequests, });
 
     if (data) {
       return {
@@ -186,7 +186,7 @@ export const spec = {
           crossOrigin: true,
           withCredentials: true
         }
-      }
+      };
     }
   },
 
@@ -199,14 +199,14 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     if (typeof serverResponse?.body === 'undefined') {
-      return []
+      return [];
     }
 
     // reportEventsEnabled is returned from the server default false
-    spec.reportEventsEnabled = serverResponse.headers.get('reportEventsEnabled') > 0
+    spec.reportEventsEnabled = serverResponse.headers.get('reportEventsEnabled') > 0;
 
-    const interpretedResponse = CONVERTER.fromORTB({ response: serverResponse.body, request: bidRequest.data })
-    return interpretedResponse.bids || []
+    const interpretedResponse = CONVERTER.fromORTB({ response: serverResponse.body, request: bidRequest.data });
+    return interpretedResponse.bids || [];
   },
 
   /**
@@ -214,29 +214,29 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      logWarn('Bridgeupp - Bidder ConnectAd: No User-Matching allowed')
-      return []
+      logWarn('Bridgeupp - Bidder ConnectAd: No User-Matching allowed');
+      return [];
     }
 
-    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image'
-    let syncUrl = SERVER_PATH_US1_SYNC + '?'
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let syncUrl = SERVER_PATH_US1_SYNC + '?';
 
-    syncUrl = gdprConsent ? tryAppendQueryString(syncUrl, 'gdpr', gdprConsent.gdprApplies ? 1 : 0) : syncUrl
-    syncUrl = gdprConsent?.consentString ? tryAppendQueryString(syncUrl, 'gdpr_consent', gdprConsent.consentString) : syncUrl
-    syncUrl = uspConsent ? tryAppendQueryString(syncUrl, 'us_privacy', uspConsent) : syncUrl
+    syncUrl = gdprConsent ? tryAppendQueryString(syncUrl, 'gdpr', gdprConsent.gdprApplies ? 1 : 0) : syncUrl;
+    syncUrl = gdprConsent?.consentString ? tryAppendQueryString(syncUrl, 'gdpr_consent', gdprConsent.consentString) : syncUrl;
+    syncUrl = uspConsent ? tryAppendQueryString(syncUrl, 'us_privacy', uspConsent) : syncUrl;
     if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-      syncUrl = tryAppendQueryString(syncUrl, 'gpp', gppConsent.gppString)
-      syncUrl = tryAppendQueryString(syncUrl, 'gpp_sid', gppConsent.applicableSections.join(','))
+      syncUrl = tryAppendQueryString(syncUrl, 'gpp', gppConsent.gppString);
+      syncUrl = tryAppendQueryString(syncUrl, 'gpp_sid', gppConsent.applicableSections.join(','));
     }
 
     if ((syncUrl.slice(-1) === '&') || (syncUrl.slice(-1) === '?')) {
-      syncUrl = syncUrl.slice(0, -1)
+      syncUrl = syncUrl.slice(0, -1);
     }
 
     return [{
       type: pixelType,
       url: syncUrl
-    }]
+    }];
   },
 
   /**
@@ -245,7 +245,7 @@ export const spec = {
    * @param {TimedOutBid[]} timeoutData - Array of timeout details.
    */
   onTimeout: (timeoutData) => {
-    reportEvents('onTimeout', timeoutData)
+    reportEvents('onTimeout', timeoutData);
   },
 
   /**
@@ -254,7 +254,7 @@ export const spec = {
    * @param {Bid} bid - The bid object
    */
   onSetTargeting: (bid) => {
-    reportEvents('onSetTargeting', bid)
+    reportEvents('onSetTargeting', bid);
   },
 
   /**
@@ -263,7 +263,7 @@ export const spec = {
    * @param {Bid} bid - The bid that successfully rendered.
    */
   onAdRenderSucceeded: (bid) => {
-    reportEvents('onAdRenderSucceeded', bid)
+    reportEvents('onAdRenderSucceeded', bid);
   },
 
   /**
@@ -272,7 +272,7 @@ export const spec = {
    * @param {Object} errorData - Details about the error.
    */
   onBidderError: (errorData) => {
-    reportEvents('onBidderError', errorData)
+    reportEvents('onBidderError', errorData);
   },
 
   /**
@@ -281,9 +281,9 @@ export const spec = {
    * @param {Bid} bid - The bid that won the auction.
    */
   onBidWon: (bid) => {
-    reportEvents('onBidWon', bid)
+    reportEvents('onBidWon', bid);
   }
 
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

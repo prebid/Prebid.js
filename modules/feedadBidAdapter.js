@@ -1,7 +1,7 @@
-import { deepAccess, isArray, logWarn } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { ajax } from '../src/ajax.js'
+import { deepAccess, isArray, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +16,7 @@ import { ajax } from '../src/ajax.js'
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = '1.0.6'
+const VERSION = '1.0.6';
 
 /**
  * @typedef {object} FeedAdUserSync
@@ -99,41 +99,41 @@ const VERSION = '1.0.6'
 /**
  * The IAB TCF 2.0 vendor ID for the FeedAd GmbH
  */
-const TCF_VENDOR_ID = 781
+const TCF_VENDOR_ID = 781;
 
 /**
  * Bidder network identity code
  * @type {string}
  */
-const BIDDER_CODE = 'feedad'
+const BIDDER_CODE = 'feedad';
 
 /**
  * The media types supported by FeedAd
  * @type {MediaType[]}
  */
-const MEDIA_TYPES = [BANNER]
+const MEDIA_TYPES = [BANNER];
 
 /**
  * Tag for logging
  * @type {string}
  */
-const TAG = '[FeedAd]'
+const TAG = '[FeedAd]';
 
 /**
  * Pattern for valid placement IDs
  * @type {RegExp}
  */
-const PLACEMENT_ID_PATTERN = /^[a-z0-9][a-z0-9_-]+[a-z0-9]$/
+const PLACEMENT_ID_PATTERN = /^[a-z0-9][a-z0-9_-]+[a-z0-9]$/;
 
-const API_ENDPOINT = 'https://api.feedad.com'
-const API_PATH_BID_REQUEST = '/1/prebid/web/bids'
-const API_PATH_TRACK_REQUEST = '/1/prebid/web/events'
+const API_ENDPOINT = 'https://api.feedad.com';
+const API_PATH_BID_REQUEST = '/1/prebid/web/bids';
+const API_PATH_TRACK_REQUEST = '/1/prebid/web/events';
 
 /**
  * Stores temporary auction metadata
  * @type {Object.<string, {referer: string, transactionId: string}>}
  */
-const BID_METADATA = {}
+const BID_METADATA = {};
 
 /**
  * Checks if the bid is compatible with FeedAd.
@@ -142,19 +142,19 @@ const BID_METADATA = {}
  * @return {boolean} true if the bid is valid
  */
 function isBidRequestValid(bid) {
-  const clientToken = deepAccess(bid, 'params.clientToken')
+  const clientToken = deepAccess(bid, 'params.clientToken');
   if (!clientToken || !isValidClientToken(clientToken)) {
-    logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken)
-    return false
+    logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken);
+    return false;
   }
 
-  const placementId = deepAccess(bid, 'params.placementId')
+  const placementId = deepAccess(bid, 'params.placementId');
   if (!placementId || !isValidPlacementId(placementId)) {
-    logWarn(TAG, "missing or invalid parameter 'placementId'. found value:", placementId)
-    return false
+    logWarn(TAG, "missing or invalid parameter 'placementId'. found value:", placementId);
+    return false;
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -163,7 +163,7 @@ function isBidRequestValid(bid) {
  * @return {boolean} true if the token is valid
  */
 function isValidClientToken(clientToken) {
-  return typeof clientToken === 'string' && clientToken.length > 0
+  return typeof clientToken === 'string' && clientToken.length > 0;
 }
 
 /**
@@ -180,7 +180,7 @@ function isValidPlacementId(placementId) {
   return typeof placementId === 'string' &&
     placementId.length > 0 &&
     placementId.length <= 256 &&
-    PLACEMENT_ID_PATTERN.test(placementId)
+    PLACEMENT_ID_PATTERN.test(placementId);
 }
 
 /**
@@ -193,7 +193,7 @@ function filterSupportedMediaTypes(mediaTypes) {
     banner: mediaTypes.banner,
     video: mediaTypes.video && mediaTypes.video.context === 'outstream' ? mediaTypes.video : undefined,
     native: undefined
-  }
+  };
 }
 
 /**
@@ -202,7 +202,7 @@ function filterSupportedMediaTypes(mediaTypes) {
  * @return {boolean} true if the types are empty
  */
 function isMediaTypesEmpty(mediaTypes) {
-  return Object.keys(mediaTypes).every(type => mediaTypes[type] === undefined)
+  return Object.keys(mediaTypes).every(type => mediaTypes[type] === undefined);
 }
 
 /**
@@ -218,7 +218,7 @@ function createApiBidRParams(request) {
     prebid_adapter_version: VERSION,
     prebid_sdk_version: '$prebid.version$',
     app_hybrid: false,
-  })
+  });
 }
 
 /**
@@ -229,27 +229,27 @@ function createApiBidRParams(request) {
  */
 function buildRequests(validBidRequests, bidderRequest) {
   if (!bidderRequest) {
-    return []
+    return [];
   }
-  const acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)))
+  const acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
   if (acceptableRequests.length === 0) {
-    return []
+    return [];
   }
   const data = Object.assign({}, bidderRequest, {
     bids: acceptableRequests.map(req => {
-      req.params = createApiBidRParams(req)
-      return req
+      req.params = createApiBidRParams(req);
+      return req;
     })
-  })
+  });
   data.bids.forEach(bid => {
     BID_METADATA[bid.bidId] = {
       referer: data.refererInfo.page,
       transactionId: bid.ortb2Imp?.ext?.tid,
-    }
-  })
+    };
+  });
   if (bidderRequest.gdprConsent) {
-    data.consentIabTcf = bidderRequest.gdprConsent.consentString
-    data.gdprApplies = bidderRequest.gdprConsent.gdprApplies
+    data.consentIabTcf = bidderRequest.gdprConsent.consentString;
+    data.gdprApplies = bidderRequest.gdprConsent.gdprApplies;
   }
   return {
     method: 'POST',
@@ -258,7 +258,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     options: {
       contentType: 'application/json'
     }
-  }
+  };
 }
 
 /**
@@ -268,16 +268,16 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @returns {Bid[]} the FeedAd bids
  */
 function interpretResponse(serverResponse, request) {
-  const response = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body
+  const response = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
   if (!isArray(response)) {
-    return []
+    return [];
   }
   return response.filter(bid => Object.prototype.hasOwnProperty.call(bid, 'ad'))
     .map(bid => {
-      const copy = Object.assign({}, bid)
-      delete copy.ext
-      return copy
-    })
+      const copy = Object.assign({}, bid);
+      delete copy.ext;
+      return copy;
+    });
 }
 
 /**
@@ -287,12 +287,12 @@ function interpretResponse(serverResponse, request) {
  * @return {FeedAdApiTrackingParams|null}
  */
 function createTrackingParams(data, klass) {
-  const bidId = data.bidId || data.requestId
+  const bidId = data.bidId || data.requestId;
   if (!BID_METADATA.hasOwnProperty(bidId)) {
-    return null
+    return null;
   }
-  const { referer, transactionId } = BID_METADATA[bidId]
-  delete BID_METADATA[bidId]
+  const { referer, transactionId } = BID_METADATA[bidId];
+  delete BID_METADATA[bidId];
   return {
     app_hybrid: false,
     client_token: data.params[0].clientToken,
@@ -304,7 +304,7 @@ function createTrackingParams(data, klass) {
     referer,
     prebid_adapter_version: VERSION,
     prebid_sdk_version: '$prebid.version$',
-  }
+  };
 }
 
 /**
@@ -315,17 +315,17 @@ function createTrackingParams(data, klass) {
 function trackingHandlerFactory(klass) {
   return (data) => {
     if (!data) {
-      return
+      return;
     }
-    const params = createTrackingParams(data, klass)
+    const params = createTrackingParams(data, klass);
     if (params) {
       ajax(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
         withCredentials: true,
         method: 'POST',
         contentType: 'application/json'
-      })
+      });
     }
-  }
+  };
 }
 
 /**
@@ -338,22 +338,22 @@ function trackingHandlerFactory(klass) {
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   return serverResponses.flatMap(response => {
     // merge all response bodies into one
-    const body = response.body
-    return isArray(body) ? body : []
+    const body = response.body;
+    return isArray(body) ? body : [];
   })
     .flatMap(/** @param {FeedAdApiBidResponse} bidResponse */ bidResponse => {
       // extract user syncs from extension
-      const pixels = (syncOptions.pixelEnabled && bidResponse?.ext?.pixels) ? bidResponse.ext.pixels : []
-      const iframes = (syncOptions.iframeEnabled && bidResponse?.ext?.iframes) ? bidResponse.ext.iframes : []
-      return pixels.concat(...iframes)
+      const pixels = (syncOptions.pixelEnabled && bidResponse?.ext?.pixels) ? bidResponse.ext.pixels : [];
+      const iframes = (syncOptions.iframeEnabled && bidResponse?.ext?.iframes) ? bidResponse.ext.iframes : [];
+      return pixels.concat(...iframes);
     })
     .reduce((syncs, sync) => {
       // remove duplicates
       if (!syncs.find(it => it.type === sync.type && it.url === sync.url)) {
-        syncs.push(sync)
+        syncs.push(sync);
       }
-      return syncs
-    }, [])
+      return syncs;
+    }, []);
 }
 
 /**
@@ -369,6 +369,6 @@ export const spec = {
   onTimeout: trackingHandlerFactory('prebid_bidTimeout'),
   onBidWon: trackingHandlerFactory('prebid_bidWon'),
   getUserSyncs
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

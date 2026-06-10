@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { spec } from 'modules/braveBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/braveBidAdapter.js';
 
 const request_native = {
   code: 'brave-native-prebid',
@@ -35,7 +35,7 @@ const request_native = {
   params: {
     placementId: 'to0QI2aPgkbBZq6vgf0oHitouZduz0qw'
   }
-}
+};
 
 const request_banner = {
   code: 'brave-prebid',
@@ -48,7 +48,7 @@ const request_banner = {
   params: {
     placementId: 'to0QI2aPgkbBZq6vgf0oHitouZduz0qw'
   }
-}
+};
 
 const bidRequest = {
   gdprConsent: {
@@ -61,7 +61,7 @@ const bidRequest = {
     referer: 'testdomain.com'
   },
   timeout: 700
-}
+};
 
 const request_video = {
   code: 'brave-video-prebid',
@@ -92,7 +92,7 @@ const request_video = {
     placementId: 'to0QI2aPgkbBZq6vgf0oHitouZduz0qw'
   }
 
-}
+};
 
 const response_banner = {
   id: 'request_id',
@@ -110,7 +110,7 @@ const response_banner = {
       }
     }]
   }]
-}
+};
 
 const response_video = {
   id: 'request_id',
@@ -128,13 +128,13 @@ const response_video = {
       }
     }],
   }],
-}
+};
 
 const imgData = {
   url: `https://example.com/image`,
   w: 1200,
   h: 627
-}
+};
 
 const response_native = {
   id: 'request_id',
@@ -167,97 +167,97 @@ const response_native = {
       }
     }],
   }],
-}
+};
 
 describe('BraveBidAdapter', function() {
   describe('isBidRequestValid', function() {
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(request_banner)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(request_banner)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, request_banner)
+      const bid = Object.assign({}, request_banner);
       bid.params = {
         'IncorrectParam': 0
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('build Native Request', function () {
-    const request = spec.buildRequests([request_native], bidRequest)
+    const request = spec.buildRequests([request_native], bidRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(request).to.exist
-      expect(request.method).to.exist
-      expect(request.url).to.exist
-      expect(request.data).to.exist
-    })
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+    });
 
     it('sends bid request to our endpoint via POST', function () {
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.method).to.equal('POST');
+    });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw')
-    })
+      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
+    });
 
     it('Returns empty data if no valid requests are passed', function () {
-      const serverRequest = spec.buildRequests([])
-      expect(serverRequest).to.be.an('array').that.is.empty
-    })
-  })
+      const serverRequest = spec.buildRequests([]);
+      expect(serverRequest).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('build Banner Request', function () {
-    const request = spec.buildRequests([request_banner], bidRequest)
+    const request = spec.buildRequests([request_banner], bidRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(request).to.exist
-      expect(request.method).to.exist
-      expect(request.url).to.exist
-      expect(request.data).to.exist
-    })
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+    });
 
     it('sends bid request to our endpoint via POST', function () {
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.method).to.equal('POST');
+    });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw')
-    })
-  })
+      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
+    });
+  });
 
   describe('build Video Request', function () {
-    const request = spec.buildRequests([request_video], bidRequest)
+    const request = spec.buildRequests([request_video], bidRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(request).to.exist
-      expect(request.method).to.exist
-      expect(request.url).to.exist
-      expect(request.data).to.exist
-    })
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+    });
 
     it('sends bid request to our endpoint via POST', function () {
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.method).to.equal('POST');
+    });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw')
-    })
-  })
+      expect(request.url).to.equal('https://point.braveglobal.tv/?t=2&partner=to0QI2aPgkbBZq6vgf0oHitouZduz0qw');
+    });
+  });
 
   describe('interpretResponse', function () {
     it('Empty response must return empty array', function() {
-      const emptyResponse = null
-      const response = spec.interpretResponse(emptyResponse)
+      const emptyResponse = null;
+      const response = spec.interpretResponse(emptyResponse);
 
-      expect(response).to.be.an('array').that.is.empty
-    })
+      expect(response).to.be.an('array').that.is.empty;
+    });
 
     it('Should interpret banner response', function () {
       const bannerResponse = {
         body: response_banner
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_banner.seatbid[0].bid[0].impid,
@@ -271,29 +271,29 @@ describe('BraveBidAdapter', function() {
         dealId: response_banner.seatbid[0].bid[0].dealid,
         mediaType: 'banner',
         ad: response_banner.seatbid[0].bid[0].adm
-      }
+      };
 
-      const bannerResponses = spec.interpretResponse(bannerResponse)
+      const bannerResponses = spec.interpretResponse(bannerResponse);
 
-      expect(bannerResponses).to.be.an('array').that.is.not.empty
-      const dataItem = bannerResponses[0]
+      expect(bannerResponses).to.be.an('array').that.is.not.empty;
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType')
-      expect(dataItem.requestId).to.equal(expectedBidResponse.requestId)
-      expect(dataItem.cpm).to.equal(expectedBidResponse.cpm)
-      expect(dataItem.ad).to.equal(expectedBidResponse.ad)
-      expect(dataItem.ttl).to.equal(expectedBidResponse.ttl)
-      expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId)
-      expect(dataItem.netRevenue).to.be.true
-      expect(dataItem.currency).to.equal(expectedBidResponse.currency)
-      expect(dataItem.width).to.equal(expectedBidResponse.width)
-      expect(dataItem.height).to.equal(expectedBidResponse.height)
-    })
+        'netRevenue', 'currency', 'dealId', 'mediaType');
+      expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
+      expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
+      expect(dataItem.ad).to.equal(expectedBidResponse.ad);
+      expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
+      expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal(expectedBidResponse.currency);
+      expect(dataItem.width).to.equal(expectedBidResponse.width);
+      expect(dataItem.height).to.equal(expectedBidResponse.height);
+    });
 
     it('Should interpret video response', function () {
       const videoResponse = {
         body: response_video
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_video.seatbid[0].bid[0].impid,
@@ -307,29 +307,29 @@ describe('BraveBidAdapter', function() {
         dealId: response_video.seatbid[0].bid[0].dealid,
         mediaType: 'video',
         vastXml: response_video.seatbid[0].bid[0].adm
-      }
+      };
 
-      const videoResponses = spec.interpretResponse(videoResponse)
+      const videoResponses = spec.interpretResponse(videoResponse);
 
-      expect(videoResponses).to.be.an('array').that.is.not.empty
-      const dataItem = videoResponses[0]
+      expect(videoResponses).to.be.an('array').that.is.not.empty;
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType')
-      expect(dataItem.requestId).to.equal(expectedBidResponse.requestId)
-      expect(dataItem.cpm).to.equal(expectedBidResponse.cpm)
-      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
-      expect(dataItem.ttl).to.equal(expectedBidResponse.ttl)
-      expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId)
-      expect(dataItem.netRevenue).to.be.true
-      expect(dataItem.currency).to.equal(expectedBidResponse.currency)
-      expect(dataItem.width).to.equal(expectedBidResponse.width)
-      expect(dataItem.height).to.equal(expectedBidResponse.height)
-    })
+        'netRevenue', 'currency', 'dealId', 'mediaType');
+      expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
+      expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml);
+      expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
+      expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal(expectedBidResponse.currency);
+      expect(dataItem.width).to.equal(expectedBidResponse.width);
+      expect(dataItem.height).to.equal(expectedBidResponse.height);
+    });
 
     it('Should interpret native response', function () {
       const nativeResponse = {
         body: response_native
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_native.seatbid[0].bid[0].impid,
@@ -343,23 +343,23 @@ describe('BraveBidAdapter', function() {
         dealId: response_native.seatbid[0].bid[0].dealid,
         mediaType: 'native',
         native: { clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url }
-      }
+      };
 
-      const nativeResponses = spec.interpretResponse(nativeResponse)
+      const nativeResponses = spec.interpretResponse(nativeResponse);
 
-      expect(nativeResponses).to.be.an('array').that.is.not.empty
-      const dataItem = nativeResponses[0]
+      expect(nativeResponses).to.be.an('array').that.is.not.empty;
+      const dataItem = nativeResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'native', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType')
-      expect(dataItem.requestId).to.equal(expectedBidResponse.requestId)
-      expect(dataItem.cpm).to.equal(expectedBidResponse.cpm)
-      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl)
-      expect(dataItem.ttl).to.equal(expectedBidResponse.ttl)
-      expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId)
-      expect(dataItem.netRevenue).to.be.true
-      expect(dataItem.currency).to.equal(expectedBidResponse.currency)
-      expect(dataItem.width).to.equal(expectedBidResponse.width)
-      expect(dataItem.height).to.equal(expectedBidResponse.height)
-    })
-  })
-})
+        'netRevenue', 'currency', 'dealId', 'mediaType');
+      expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
+      expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
+      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl);
+      expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
+      expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal(expectedBidResponse.currency);
+      expect(dataItem.width).to.equal(expectedBidResponse.width);
+      expect(dataItem.height).to.equal(expectedBidResponse.height);
+    });
+  });
+});

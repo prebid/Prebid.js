@@ -1,16 +1,16 @@
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
-import adapterManager from '../src/adapterManager.js'
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
-const relevantAnalytics = adapter({ analyticsType: 'bundle', handler: 'on' })
+const relevantAnalytics = adapter({ analyticsType: 'bundle', handler: 'on' });
 
-const { enableAnalytics: orgEnableAnalytics } = relevantAnalytics
+const { enableAnalytics: orgEnableAnalytics } = relevantAnalytics;
 
 Object.assign(relevantAnalytics, {
   /**
    * Save event in the global array that will be consumed later by the Relevant Yield library
    */
   track: ({ eventType: ev, args }) => {
-    window.relevantDigital.pbEventLog.push({ ev, args, ts: new Date() })
+    window.relevantDigital.pbEventLog.push({ ev, args, ts: new Date() });
   },
 
   /**
@@ -19,15 +19,15 @@ Object.assign(relevantAnalytics, {
    * by the 'track' function above.
    */
   enableAnalytics: function(...args) {
-    window.relevantDigital = window.relevantDigital || {}
-    window.relevantDigital.pbEventLog = window.relevantDigital.pbEventLog || []
-    return orgEnableAnalytics.call(this, ...args)
+    window.relevantDigital = window.relevantDigital || {};
+    window.relevantDigital.pbEventLog = window.relevantDigital.pbEventLog || [];
+    return orgEnableAnalytics.call(this, ...args);
   },
-})
+});
 
 adapterManager.registerAnalyticsAdapter({
   adapter: relevantAnalytics,
   code: 'relevant',
-})
+});
 
-export default relevantAnalytics
+export default relevantAnalytics;

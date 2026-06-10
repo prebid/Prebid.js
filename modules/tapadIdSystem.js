@@ -1,10 +1,10 @@
-import { logMessage } from '../src/utils.js'
-import { submodule } from '../src/hook.js'
-import { qualifiedAjaxBuilder } from '../src/ajax.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { logMessage } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-export const graphUrl = 'https://rtga.tapad.com/v1/graph'
-const MODULE_NAME = 'tapadId'
+export const graphUrl = 'https://rtga.tapad.com/v1/graph';
+const MODULE_NAME = 'tapadId';
 
 export const tapadIdSubmodule = {
   name: MODULE_NAME,
@@ -14,7 +14,7 @@ export const tapadIdSubmodule = {
    * @returns {{tapadId: string} | undefined}
    */
   decode(id) {
-    return { tapadId: id }
+    return { tapadId: id };
   },
   /*
    * @function
@@ -24,14 +24,14 @@ export const tapadIdSubmodule = {
    * @returns {IdResponse }}
    */
   getId(config, consentData) {
-    const uspData = consentData?.usp
+    const uspData = consentData?.usp;
     if (uspData && uspData !== '1---') {
-      return { id: undefined }
+      return { id: undefined };
     }
-    const configParams = config.params || {}
+    const configParams = config.params || {};
 
     if (configParams.companyId === null || configParams.companyId === undefined || isNaN(Number(configParams.companyId))) {
-      logMessage('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.')
+      logMessage('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
     }
 
     return {
@@ -40,23 +40,23 @@ export const tapadIdSubmodule = {
           `${graphUrl}?company_id=${configParams.companyId}&tapad_id_type=TAPAD_ID`,
           {
             success: (response) => {
-              const responseJson = JSON.parse(response)
+              const responseJson = JSON.parse(response);
               if (responseJson.hasOwnProperty('tapadId')) {
-                complete(responseJson.tapadId)
+                complete(responseJson.tapadId);
               }
             },
             error: (_, e) => {
               if (e.status === 404) {
-                complete(undefined)
+                complete(undefined);
               }
               if (e.status === 403) {
-                logMessage('Invalid Company Id. Contact prebid@tapad.com for assistance.')
+                logMessage('Invalid Company Id. Contact prebid@tapad.com for assistance.');
               }
             }
           }
-        )
+        );
       }
-    }
+    };
   },
   eids: {
     'tapadId': {
@@ -64,5 +64,5 @@ export const tapadIdSubmodule = {
       atype: 1
     },
   }
-}
-submodule('userId', tapadIdSubmodule)
+};
+submodule('userId', tapadIdSubmodule);

@@ -1,47 +1,47 @@
-import { expect } from 'chai'
-import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js'
-import * as utils from 'src/utils.js'
-import sinon from 'sinon'
-import { getGlobal } from '../../../src/prebidGlobal.js'
+import { expect } from 'chai';
+import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
+import * as utils from 'src/utils.js';
+import sinon from 'sinon';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const BIDDER_CODE = 'impactify'
-const BIDDER_ALIAS = ['imp']
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_VIDEO_WIDTH = 640
-const DEFAULT_VIDEO_HEIGHT = 360
-const ORIGIN = 'https://sonic.impactify.media'
-const LOGGER_URI = 'https://logger.impactify.media'
-const AUCTIONURI = '/bidder'
-const COOKIESYNCURI = '/static/cookie_sync.html'
-const GVLID = 606
+const BIDDER_CODE = 'impactify';
+const BIDDER_ALIAS = ['imp'];
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_VIDEO_WIDTH = 640;
+const DEFAULT_VIDEO_HEIGHT = 360;
+const ORIGIN = 'https://sonic.impactify.media';
+const LOGGER_URI = 'https://logger.impactify.media';
+const AUCTIONURI = '/bidder';
+const COOKIESYNCURI = '/static/cookie_sync.html';
+const GVLID = 606;
 
 var gdprData = {
   'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
   'gdprApplies': true
-}
+};
 
 describe('ImpactifyAdapter', function () {
-  let getLocalStorageStub
-  let localStorageIsEnabledStub
-  let sandbox
+  let getLocalStorageStub;
+  let localStorageIsEnabledStub;
+  let sandbox;
 
   beforeEach(function () {
     getGlobal().bidderSettings = {
       impactify: {
         storageAllowed: true
       }
-    }
-    sinon.stub(document.body, 'appendChild')
-    sandbox = sinon.createSandbox()
-    getLocalStorageStub = sandbox.stub(STORAGE, 'getDataFromLocalStorage')
-    localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled')
-  })
+    };
+    sinon.stub(document.body, 'appendChild');
+    sandbox = sinon.createSandbox();
+    getLocalStorageStub = sandbox.stub(STORAGE, 'getDataFromLocalStorage');
+    localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled');
+  });
 
   afterEach(function () {
-    getGlobal().bidderSettings = {}
-    document.body.appendChild.restore()
-    sandbox.restore()
-  })
+    getGlobal().bidderSettings = {};
+    document.body.appendChild.restore();
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid', function () {
     const validBids = [
@@ -61,7 +61,7 @@ describe('ImpactifyAdapter', function () {
           style: 'static'
         }
       }
-    ]
+    ];
 
     const videoBidRequests = [
       {
@@ -97,7 +97,7 @@ describe('ImpactifyAdapter', function () {
           }
         ]
       }
-    ]
+    ];
     const videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
@@ -110,60 +110,60 @@ describe('ImpactifyAdapter', function () {
       refererInfo: {
         referer: 'https://impactify.io'
       }
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(validBids[0])).to.equal(true)
-      expect(spec.isBidRequestValid(validBids[1])).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(validBids[0])).to.equal(true);
+      expect(spec.isBidRequestValid(validBids[1])).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, validBids[0])
-      delete bid.params
-      bid.params = {}
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      const bid = Object.assign({}, validBids[0]);
+      delete bid.params;
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
 
-      const bid2 = Object.assign({}, validBids[1])
-      delete bid2.params
-      bid2.params = {}
-      expect(spec.isBidRequestValid(bid2)).to.equal(false)
-    })
+      const bid2 = Object.assign({}, validBids[1]);
+      delete bid2.params;
+      bid2.params = {};
+      expect(spec.isBidRequestValid(bid2)).to.equal(false);
+    });
 
     it('should return false when format is not equals to screen or display', () => {
-      const bid = utils.deepClone(validBids[0])
+      const bid = utils.deepClone(validBids[0]);
       if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
       }
 
-      const bid2 = utils.deepClone(validBids[1])
+      const bid2 = utils.deepClone(validBids[1]);
       if (bid2.params.format !== 'screen' && bid2.params.format !== 'display') {
-        expect(spec.isBidRequestValid(bid2)).to.equal(false)
+        expect(spec.isBidRequestValid(bid2)).to.equal(false);
       }
-    })
+    });
 
     it('should return false when style is missing', () => {
-      const bid = utils.deepClone(validBids[0])
-      delete bid.params.style
+      const bid = utils.deepClone(validBids[0]);
+      delete bid.params.style;
 
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false when style is not a string', () => {
-      const bid = utils.deepClone(validBids[0])
+      const bid = utils.deepClone(validBids[0]);
 
-      bid.params.style = 123
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      bid.params.style = 123;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
 
-      bid.params.style = false
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      bid.params.style = false;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
 
-      bid.params.style = void (0)
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      bid.params.style = void (0);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
 
-      bid.params.style = {}
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      bid.params.style = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
   describe('buildRequests', function () {
     const videoBidRequests = [
       {
@@ -199,7 +199,7 @@ describe('ImpactifyAdapter', function () {
           }
         ]
       }
-    ]
+    ];
     const videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
@@ -212,35 +212,35 @@ describe('ImpactifyAdapter', function () {
       refererInfo: {
         referer: 'https://impactify.io'
       }
-    }
+    };
 
     it('should pass bidfloor', function () {
       videoBidRequests[0].getFloor = function () {
         return {
           currency: 'USD',
           floor: 1.23,
-        }
-      }
+        };
+      };
 
-      const res = spec.buildRequests(videoBidRequests, videoBidderRequest)
-      const resData = JSON.parse(res.data)
-      expect(resData.imp[0].bidfloor).to.equal(1.23)
-    })
+      const res = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].bidfloor).to.equal(1.23);
+    });
 
     it('sends video bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest)
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
 
-      expect(request.url).to.equal(ORIGIN + AUCTIONURI)
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.url).to.equal(ORIGIN + AUCTIONURI);
+      expect(request.method).to.equal('POST');
+    });
 
     it('should set instream context and player size for video imps', function () {
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest)
-      const payload = JSON.parse(request.data)
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const payload = JSON.parse(request.data);
 
-      expect(payload.imp[0].video.context).to.equal('instream')
-      expect(payload.imp[0].video.playerSize).to.deep.equal([DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT])
-    })
+      expect(payload.imp[0].video.context).to.equal('instream');
+      expect(payload.imp[0].video.playerSize).to.deep.equal([DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]);
+    });
 
     it('should pass supported render fields in imp ext', function () {
       videoBidRequests[0].params.render = {
@@ -252,13 +252,13 @@ describe('ImpactifyAdapter', function () {
         location: 'bottom-left',
         onAdEventName: 'on-ad-event',
         onNoAdEventName: 'on-noad-event'
-      }
+      };
 
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest)
-      const requestData = JSON.parse(request.data)
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const requestData = JSON.parse(request.data);
 
-      expect(requestData.imp[0].ext.impactify.render).to.deep.equal(videoBidRequests[0].params.render)
-    })
+      expect(requestData.imp[0].ext.impactify.render).to.deep.equal(videoBidRequests[0].params.render);
+    });
 
     it('should ignore unsupported render fields and types', function () {
       videoBidRequests[0].params.render = {
@@ -271,10 +271,10 @@ describe('ImpactifyAdapter', function () {
         onAdEventName: 'on-ad-event',
         onNoAdEventName: false,
         foo: 'bar'
-      }
+      };
 
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest)
-      const requestData = JSON.parse(request.data)
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const requestData = JSON.parse(request.data);
 
       expect(requestData.imp[0].ext.impactify.render).to.deep.equal({
         bottom: 0,
@@ -282,8 +282,8 @@ describe('ImpactifyAdapter', function () {
         expandAd: true,
         location: 'bottom-left',
         onAdEventName: 'on-ad-event'
-      })
-    })
+      });
+    });
 
     it('should include schain, eids, gdpr and usp in ortb request', function () {
       const bid = {
@@ -307,24 +307,24 @@ describe('ImpactifyAdapter', function () {
           }
         },
         userIdAsEids: [{ source: 'test.com', uids: [{ id: 'abc', atype: 1 }] }]
-      }
+      };
 
       const bidderRequest = {
         bidderRequestId: 'req-1',
         refererInfo: { page: 'https://publisher.com/page' },
         gdprConsent: { gdprApplies: true, consentString: 'consent123' },
         uspConsent: '1YNN'
-      }
+      };
 
-      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data)
+      const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
-      expect(request.source.ext.schain).to.deep.equal(bid.ortb2.source.ext.schain)
-      expect(request.user.ext.eids).to.deep.equal(bid.userIdAsEids)
-      expect(request.user.ext.consent).to.equal('consent123')
-      expect(request.regs.ext.gdpr).to.equal(1)
-      expect(request.regs.ext.us_privacy).to.equal('1YNN')
-    })
-  })
+      expect(request.source.ext.schain).to.deep.equal(bid.ortb2.source.ext.schain);
+      expect(request.user.ext.eids).to.deep.equal(bid.userIdAsEids);
+      expect(request.user.ext.consent).to.equal('consent123');
+      expect(request.regs.ext.gdpr).to.equal(1);
+      expect(request.regs.ext.us_privacy).to.equal('1YNN');
+    });
+  });
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
       const response = {
@@ -391,7 +391,7 @@ describe('ImpactifyAdapter', function () {
             auctiontimestamp: 1614587024591
           }
         }
-      }
+      };
       const bidderRequest = {
         bids: [
           {
@@ -407,7 +407,7 @@ describe('ImpactifyAdapter', function () {
             }
           },
         ]
-      }
+      };
 
       const expectedResponse = [
         {
@@ -424,10 +424,10 @@ describe('ImpactifyAdapter', function () {
           ttl: 300,
           creativeId: '97517771'
         }
-      ]
-      const result = spec.interpretResponse({ body: response }, bidderRequest)
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
+      ];
+      const result = spec.interpretResponse({ body: response }, bidderRequest);
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
 
     it('should map player responses to video bids', function () {
       const bidRequest = {
@@ -441,7 +441,7 @@ describe('ImpactifyAdapter', function () {
             }
           }]
         })
-      }
+      };
 
       const serverResponse = {
         body: {
@@ -461,16 +461,16 @@ describe('ImpactifyAdapter', function () {
             }]
           }]
         }
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)
+      const result = spec.interpretResponse(serverResponse, bidRequest);
 
-      expect(result).to.have.length(1)
-      expect(result[0].mediaType).to.equal('video')
-      expect(result[0].vastUrl).to.equal('https://example.com/vast.xml')
-      expect(result[0].vastXml).to.equal('<VAST>fallback</VAST>')
-      expect(result[0]).to.not.have.property('ad')
-    })
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('video');
+      expect(result[0].vastUrl).to.equal('https://example.com/vast.xml');
+      expect(result[0].vastXml).to.equal('<VAST>fallback</VAST>');
+      expect(result[0]).to.not.have.property('ad');
+    });
 
     it('should map banner responses to banner bids', function () {
       const bidRequest = {
@@ -484,7 +484,7 @@ describe('ImpactifyAdapter', function () {
             }
           }]
         })
-      }
+      };
 
       const serverResponse = {
         body: {
@@ -503,20 +503,20 @@ describe('ImpactifyAdapter', function () {
             }]
           }]
         }
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse, bidRequest)
+      const result = spec.interpretResponse(serverResponse, bidRequest);
 
-      expect(result).to.have.length(1)
-      expect(result[0].mediaType).to.equal('banner')
-      expect(result[0].ad).to.equal('<div>banner creative</div>')
-      expect(result[0]).to.not.have.property('vastUrl')
-      expect(result[0]).to.not.have.property('vastXml')
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('banner');
+      expect(result[0].ad).to.equal('<div>banner creative</div>');
+      expect(result[0]).to.not.have.property('vastUrl');
+      expect(result[0]).to.not.have.property('vastXml');
       expect(result[0].meta).to.deep.equal({
         advertiserDomains: ['advertiser.com']
-      })
-    })
-  })
+      });
+    });
+  });
   describe('getUserSyncs', function () {
     const videoBidRequests = [
       {
@@ -538,7 +538,7 @@ describe('ImpactifyAdapter', function () {
         auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
         transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
       }
-    ]
+    ];
     const videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
@@ -551,7 +551,7 @@ describe('ImpactifyAdapter', function () {
       refererInfo: {
         referer: 'https://impactify.io'
       }
-    }
+    };
     const validResponse = {
       id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
       seatbid: [
@@ -615,37 +615,37 @@ describe('ImpactifyAdapter', function () {
           auctiontimestamp: 1614587024591
         }
       }
-    }
+    };
     it('should return empty response if server response is false', function () {
-      const result = spec.getUserSyncs('bad', false, gdprData)
-      expect(result).to.be.empty
-    })
+      const result = spec.getUserSyncs('bad', false, gdprData);
+      expect(result).to.be.empty;
+    });
     it('should return empty response if server response is empty', function () {
-      const result = spec.getUserSyncs('bad', [], gdprData)
-      expect(result).to.be.empty
-    })
+      const result = spec.getUserSyncs('bad', [], gdprData);
+      expect(result).to.be.empty;
+    });
     it('should append the various values if they exist', function () {
-      const result = spec.getUserSyncs({ iframeEnabled: true }, validResponse, gdprData)
-      expect(result[0].url).to.include('gdpr=1')
-      expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA')
-    })
-  })
+      const result = spec.getUserSyncs({ iframeEnabled: true }, validResponse, gdprData);
+      expect(result[0].url).to.include('gdpr=1');
+      expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
+    });
+  });
 
   describe('On winning bid', function () {
     const bid = {
       ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
       cpm: '2'
-    }
-    const result = spec.onBidWon(bid)
-    assert.ok(result)
-  })
+    };
+    const result = spec.onBidWon(bid);
+    assert.ok(result);
+  });
 
   describe('On bid Time out', function () {
     const bid = {
       ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
       cpm: '2'
-    }
-    const result = spec.onTimeout(bid)
-    assert.ok(result)
-  })
-})
+    };
+    const result = spec.onTimeout(bid);
+    assert.ok(result);
+  });
+});

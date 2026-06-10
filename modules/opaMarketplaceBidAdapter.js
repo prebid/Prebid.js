@@ -1,41 +1,41 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { getStorageManager } from '../src/storageManager.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
   createInterpretResponseFn, onBidBillable
-} from '../libraries/vidazooUtils/bidderUtils.js'
+} from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
  * @typedef {import('./opaMarketplaceBidAdapter.d.ts').OpaMarketplaceBidRequestParams} OpaMarketplaceBidRequestParams
  */
 
-const DEFAULT_SUB_DOMAIN = 'exchange'
-const BIDDER_CODE = 'opamarketplace'
-const BIDDER_VERSION = '1.0.0'
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+const DEFAULT_SUB_DOMAIN = 'exchange';
+const BIDDER_CODE = 'opamarketplace';
+const BIDDER_VERSION = '1.0.0';
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
-  return `https://${subDomain}.opamarketplace.com`
+  return `https://${subDomain}.opamarketplace.com`;
 }
 
 function createUniqueRequestData(hashUrl, bid) {
-  const { auctionId, transactionId } = bid
+  const { auctionId, transactionId } = bid;
   return {
     auctionId,
     transactionId
-  }
+  };
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false)
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false)
+const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false);
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.opamarketplace.com/api/sync/iframe',
   imageSyncUrl: 'https://sync.opamarketplace.com/api/sync/image'
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -47,6 +47,6 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

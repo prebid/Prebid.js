@@ -1,8 +1,8 @@
-import { uniques, flatten, deepSetValue } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { noCredsAjax as ajax } from '../src/ajax.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { uniques, flatten, deepSetValue } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,10 +10,10 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'limelightDigital'
-const DEFAULT_NET_REVENUE = true
-const DEFAULT_TTL = 300
-const MTYPE_MAP = { 1: BANNER, 2: VIDEO }
+const BIDDER_CODE = 'limelightDigital';
+const DEFAULT_NET_REVENUE = true;
+const DEFAULT_TTL = 300;
+const MTYPE_MAP = { 1: BANNER, 2: VIDEO };
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -23,15 +23,15 @@ const MTYPE_MAP = { 1: BANNER, 2: VIDEO }
  */
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.meta.advertiserDomains) {
-    return false
+    return false;
   }
   switch (bid.mediaType) {
     case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad)
+      return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastXml || bid.vastUrl)
+      return Boolean(bid.vastXml || bid.vastUrl);
   }
-  return false
+  return false;
 }
 
 const converter = ortbConverter({
@@ -40,34 +40,34 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
+    const imp = buildImp(bidRequest, context);
     for (let i = 1; i <= 5; i++) {
-      const customValue = bidRequest.params[`custom${i}`]
+      const customValue = bidRequest.params[`custom${i}`];
       if (customValue !== undefined) {
-        deepSetValue(imp, `ext.c${i}`, customValue)
+        deepSetValue(imp, `ext.c${i}`, customValue);
       }
     }
-    deepSetValue(imp, `ext.adUnitId`, bidRequest.params.adUnitId)
-    return imp
+    deepSetValue(imp, `ext.adUnitId`, bidRequest.params.adUnitId);
+    return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    let mediaType
+    let mediaType;
     if (bid.mtype) {
-      mediaType = MTYPE_MAP[bid.mtype]
+      mediaType = MTYPE_MAP[bid.mtype];
     }
     if (!mediaType && bid.ext?.mediaType) {
-      mediaType = bid.ext.mediaType
+      mediaType = bid.ext.mediaType;
     }
     if (!mediaType && context.imp) {
-      if (context.imp.banner) mediaType = BANNER
-      else if (context.imp.video) mediaType = VIDEO
+      if (context.imp.banner) mediaType = BANNER;
+      else if (context.imp.video) mediaType = VIDEO;
     }
     if (mediaType) {
-      context.mediaType = mediaType
+      context.mediaType = mediaType;
     }
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -102,7 +102,7 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     return Boolean(bid.bidId && bid.params && bid.params.host && bid.params.adUnitType &&
-      (bid.params.adUnitId || bid.params.adUnitId === 0))
+      (bid.params.adUnitId || bid.params.adUnitId === 0));
   },
 
   /**
@@ -114,38 +114,38 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const normalizedBids = validBidRequests.map(bid => {
-      const adUnitType = bid.params.adUnitType || BANNER
+      const adUnitType = bid.params.adUnitType || BANNER;
       if (!bid.mediaTypes && bid.sizes) {
         if (adUnitType === BANNER) {
-          return { ...bid, mediaTypes: { banner: { sizes: bid.sizes } } }
+          return { ...bid, mediaTypes: { banner: { sizes: bid.sizes } } };
         } else {
-          return { ...bid, mediaTypes: { video: { playerSize: bid.sizes } } }
+          return { ...bid, mediaTypes: { video: { playerSize: bid.sizes } } };
         }
       }
       if (bid.mediaTypes && bid.sizes) {
-        const mediaTypes = { ...bid.mediaTypes }
+        const mediaTypes = { ...bid.mediaTypes };
         if (adUnitType === BANNER && mediaTypes.banner) {
           mediaTypes.banner = {
             ...mediaTypes.banner,
             sizes: (mediaTypes.banner.sizes || []).concat(bid.sizes)
-          }
+          };
         }
         if (adUnitType === VIDEO && mediaTypes.video) {
           mediaTypes.video = {
             ...mediaTypes.video,
             playerSize: (mediaTypes.video.playerSize || []).concat(bid.sizes)
-          }
+          };
         }
-        return { ...bid, mediaTypes }
+        return { ...bid, mediaTypes };
       }
-      return bid
-    })
+      return bid;
+    });
     const bidRequestsByHost = normalizedBids.reduce((groups, bid) => {
-      const host = bid.params.host
-      groups[host] = groups[host] || []
-      groups[host].push(bid)
-      return groups
-    }, {})
+      const host = bid.params.host;
+      groups[host] = groups[host] || [];
+      groups[host].push(bid);
+      return groups;
+    }, {});
     const enrichedBidderRequest = {
       ...bidderRequest,
       ortb2: {
@@ -155,13 +155,13 @@ export const spec = {
           page: bidderRequest.ortb2?.site?.page || bidderRequest.refererInfo?.page
         }
       }
-    }
+    };
 
     return Object.entries(bidRequestsByHost).map(([host, bids]) => ({
       method: 'POST',
       url: `https://${host}/ortbhb`,
       data: converter.toORTB({ bidRequests: bids, bidderRequest: enrichedBidderRequest })
-    }))
+    }));
   },
 
   /**
@@ -169,13 +169,13 @@ export const spec = {
    * @param {Object} bid The bid that won the auction
    */
   onBidWon: (bid) => {
-    const cpm = bid.pbMg
+    const cpm = bid.pbMg;
     if (bid.nurl !== '') {
       bid.nurl = bid.nurl.replace(
         /\$\{AUCTION_PRICE\}/,
         cpm
-      )
-      ajax(bid.nurl, null)
+      );
+      ajax(bid.nurl, null);
     }
   },
 
@@ -188,30 +188,30 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     if (!response.body) {
-      return []
+      return [];
     }
     return converter.fromORTB({
       response: response.body,
       request: request.data
-    }).bids.filter(bid => isBidResponseValid(bid))
+    }).bids.filter(bid => isBidResponseValid(bid));
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const iframeSyncs = []
-    const imageSyncs = []
+    const iframeSyncs = [];
+    const imageSyncs = [];
     for (let i = 0; i < serverResponses.length; i++) {
-      const serverResponseHeaders = serverResponses[i].headers
-      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('x-pll-usersync-image') : null
-      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('x-pll-usersync-iframe') : null
+      const serverResponseHeaders = serverResponses[i].headers;
+      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('x-pll-usersync-image') : null;
+      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('x-pll-usersync-iframe') : null;
       if (iframeSync != null) {
-        iframeSyncs.push(iframeSync)
+        iframeSyncs.push(iframeSync);
       } else if (imgSync != null) {
-        imageSyncs.push(imgSync)
+        imageSyncs.push(imgSync);
       }
     }
-    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
-      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques)
+    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it }; }),
+      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it }; })].reduce(flatten, []).filter(uniques);
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

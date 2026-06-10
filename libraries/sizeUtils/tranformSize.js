@@ -1,4 +1,4 @@
-import * as utils from '../../src/utils.js'
+import * as utils from '../../src/utils.js';
 
 /**
  * get sizes for rtb
@@ -6,28 +6,28 @@ import * as utils from '../../src/utils.js'
  * @return {Object}
  */
 export function transformSizes(requestSizes) {
-  const sizes = []
-  let sizeObj = {}
+  const sizes = [];
+  let sizeObj = {};
 
   if (
     utils.isArray(requestSizes) &&
       requestSizes.length === 2 &&
       !utils.isArray(requestSizes[0])
   ) {
-    sizeObj.width = parseInt(requestSizes[0], 10)
-    sizeObj.height = parseInt(requestSizes[1], 10)
-    sizes.push(sizeObj)
+    sizeObj.width = parseInt(requestSizes[0], 10);
+    sizeObj.height = parseInt(requestSizes[1], 10);
+    sizes.push(sizeObj);
   } else if (typeof requestSizes === 'object') {
     for (let i = 0; i < requestSizes.length; i++) {
-      const size = requestSizes[i]
-      sizeObj = {}
-      sizeObj.width = parseInt(size[0], 10)
-      sizeObj.height = parseInt(size[1], 10)
-      sizes.push(sizeObj)
+      const size = requestSizes[i];
+      sizeObj = {};
+      sizeObj.width = parseInt(size[0], 10);
+      sizeObj.height = parseInt(size[1], 10);
+      sizes.push(sizeObj);
     }
   }
 
-  return sizes
+  return sizes;
 }
 
 export const normalAdSize = [
@@ -40,4 +40,4 @@ export const normalAdSize = [
   { w: 320, h: 180 },
   { w: 320, h: 100 },
   { w: 336, h: 280 },
-]
+];

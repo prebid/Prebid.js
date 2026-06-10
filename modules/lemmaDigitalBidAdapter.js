@@ -1,8 +1,8 @@
-import * as utils from '../src/utils.js'
-import { config } from '../src/config.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { getDNT } from '../libraries/dnt/index.js'
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,18 +13,18 @@ import { getDNT } from '../libraries/dnt/index.js'
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-var BIDDER_CODE = 'lemmadigital'
-var LOG_WARN_PREFIX = 'LEMMADIGITAL: '
-var ENDPOINT = 'https://pbidj.lemmamedia.com/lemma/servad'
-var USER_SYNC = 'https://sync.lemmadigital.com/js/usersync.html?'
-var DEFAULT_CURRENCY = 'USD'
-var AUCTION_TYPE = 2
-var DEFAULT_TMAX = 300
-var DEFAULT_NET_REVENUE = false
-var DEFAULT_SECURE = 1
-var RESPONSE_TTL = 300
-var pubId = 0
-var adunitId = 0
+var BIDDER_CODE = 'lemmadigital';
+var LOG_WARN_PREFIX = 'LEMMADIGITAL: ';
+var ENDPOINT = 'https://pbidj.lemmamedia.com/lemma/servad';
+var USER_SYNC = 'https://sync.lemmadigital.com/js/usersync.html?';
+var DEFAULT_CURRENCY = 'USD';
+var AUCTION_TYPE = 2;
+var DEFAULT_TMAX = 300;
+var DEFAULT_NET_REVENUE = false;
+var DEFAULT_SECURE = 1;
+var RESPONSE_TTL = 300;
+var pubId = 0;
+var adunitId = 0;
 
 export var spec = {
 
@@ -39,25 +39,25 @@ export var spec = {
    */
   isBidRequestValid: (bid) => {
     if (!bid || !bid.params) {
-      utils.logError(LOG_WARN_PREFIX, 'nil/empty bid object')
-      return false
+      utils.logError(LOG_WARN_PREFIX, 'nil/empty bid object');
+      return false;
     }
     if (!utils.isEmpty(bid.params.pubId) || !utils.isNumber(bid.params.pubId)) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be string. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid))
-      return false
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be string. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+      return false;
     }
     if (!bid.params.adunitId) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: adUnitId is mandatory. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid))
-      return false
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: adUnitId is mandatory. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+      return false;
     }
     // video bid request validation
     if (bid.params.hasOwnProperty('video')) {
       if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid))
-        return false
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+        return false;
       }
     }
-    return true
+    return true;
   },
 
   /**
@@ -69,24 +69,24 @@ export var spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests.length === 0) {
-      return
+      return;
     }
-    var refererInfo
+    var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
-      refererInfo = bidderRequest.refererInfo
+      refererInfo = bidderRequest.refererInfo;
     }
-    var conf = spec._setRefURL(refererInfo)
-    const request = spec._createoRTBRequest(validBidRequests, conf)
+    var conf = spec._setRefURL(refererInfo);
+    const request = spec._createoRTBRequest(validBidRequests, conf);
     if (request && request.imp.length === 0) {
-      return
+      return;
     }
-    spec._setOtherParams(bidderRequest, request)
-    const endPoint = spec._endPointURL(validBidRequests)
+    spec._setOtherParams(bidderRequest, request);
+    const endPoint = spec._endPointURL(validBidRequests);
     return {
       method: 'POST',
       url: endPoint,
       data: JSON.stringify(request),
-    }
+    };
   },
 
   /**
@@ -96,7 +96,7 @@ export var spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (response, request) => {
-    return spec._parseRTBResponse(request, response.body)
+    return spec._parseRTBResponse(request, response.body);
   },
 
   /**
@@ -106,14 +106,14 @@ export var spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses) => {
-    const syncurl = USER_SYNC + 'pid=' + pubId
+    const syncurl = USER_SYNC + 'pid=' + pubId;
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
         url: syncurl
-      }]
+      }];
     } else {
-      utils.logWarn(LOG_WARN_PREFIX + 'Please enable iframe based user sync.')
+      utils.logWarn(LOG_WARN_PREFIX + 'Please enable iframe based user sync.');
     }
   },
 
@@ -121,7 +121,7 @@ export var spec = {
    * Generate UUID
    */
   _createUUID: () => {
-    return new Date().getTime().toString()
+    return new Date().getTime().toString();
   },
 
   /**
@@ -130,12 +130,12 @@ export var spec = {
   _parseJSON: function (rawPayload) {
     try {
       if (rawPayload) {
-        return JSON.parse(rawPayload)
+        return JSON.parse(rawPayload);
       }
     } catch (ex) {
-      utils.logError(LOG_WARN_PREFIX, 'Exception: ', ex)
+      utils.logError(LOG_WARN_PREFIX, 'Exception: ', ex);
     }
-    return null
+    return null;
   },
 
   /**
@@ -143,24 +143,24 @@ export var spec = {
    * set referal url
    */
   _setRefURL: (refererInfo) => {
-    var conf = {}
-    conf.pageURL = (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href
+    var conf = {};
+    conf.pageURL = (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href;
     if (refererInfo && refererInfo.referer) {
-      conf.refURL = refererInfo.referer
+      conf.refURL = refererInfo.referer;
     } else {
-      conf.refURL = ''
+      conf.refURL = '';
     }
-    return conf
+    return conf;
   },
 
   /**
    * set other params into oRTB request
    */
   _setOtherParams: (request, ortbRequest) => {
-    var params = request && request.params ? request.params : null
+    var params = request && request.params ? request.params : null;
     if (params) {
-      ortbRequest.tmax = params.tmax
-      ortbRequest.bcat = params.bcat
+      ortbRequest.tmax = params.tmax;
+      ortbRequest.bcat = params.bcat;
     }
   },
 
@@ -168,7 +168,7 @@ export var spec = {
    * create IAB standard OpenRTB bid request
    */
   _createoRTBRequest: (bidRequests, conf) => {
-    var oRTBObject = {}
+    var oRTBObject = {};
     try {
       oRTBObject = {
         id: spec._createUUID(),
@@ -178,36 +178,36 @@ export var spec = {
         imp: spec._getImpressionArray(bidRequests),
         user: {},
         ext: {}
-      }
-      var bid = bidRequests[0]
+      };
+      var bid = bidRequests[0];
 
-      var site = spec._getSiteObject(bid, conf)
+      var site = spec._getSiteObject(bid, conf);
       if (site) {
-        oRTBObject.site = site
+        oRTBObject.site = site;
         // add the content object from config in request
         if (typeof config.getConfig('content') === 'object') {
-          oRTBObject.site.content = config.getConfig('content')
+          oRTBObject.site.content = config.getConfig('content');
         }
       }
-      var app = spec._getAppObject(bid)
+      var app = spec._getAppObject(bid);
       if (app) {
-        oRTBObject.app = app
+        oRTBObject.app = app;
         if (typeof oRTBObject.app.content !== 'object' && typeof config.getConfig('content') === 'object') {
           oRTBObject.app.content =
-            config.getConfig('content') || undefined
+            config.getConfig('content') || undefined;
         }
       }
-      var device = spec._getDeviceObject(bid)
+      var device = spec._getDeviceObject(bid);
       if (device) {
-        oRTBObject.device = device
+        oRTBObject.device = device;
       }
-      var source = spec._getSourceObject(bid)
+      var source = spec._getSourceObject(bid);
       if (source) {
-        oRTBObject.source = source
+        oRTBObject.source = source;
       }
-      return oRTBObject
+      return oRTBObject;
     } catch (ex) {
-      utils.logError(LOG_WARN_PREFIX, 'ERROR ', ex)
+      utils.logError(LOG_WARN_PREFIX, 'ERROR ', ex);
     }
   },
 
@@ -215,53 +215,53 @@ export var spec = {
    * create impression array objects
    */
   _getImpressionArray: (request) => {
-    var impArray = []
-    var map = request.map(bid => spec._getImpressionObject(bid))
+    var impArray = [];
+    var map = request.map(bid => spec._getImpressionObject(bid));
     if (map) {
       map.forEach(o => {
         if (o) {
-          impArray.push(o)
+          impArray.push(o);
         }
-      })
+      });
     }
-    return impArray
+    return impArray;
   },
 
   /**
    * create impression (single) object
    */
   _getImpressionObject: (bid) => {
-    var impression = {}
-    var bObj
-    var vObj
-    var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : []
-    var mediaTypes = ''
-    var format = []
-    var params = bid && bid.params ? bid.params : null
+    var impression = {};
+    var bObj;
+    var vObj;
+    var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+    var mediaTypes = '';
+    var format = [];
+    var params = bid && bid.params ? bid.params : null;
     impression = {
       id: bid.bidId,
       tagid: params.adunitId ? params.adunitId.toString() : undefined,
       secure: DEFAULT_SECURE,
       bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
-    }
+    };
     if (params.bidFloor) {
-      impression.bidfloor = params.bidFloor
+      impression.bidfloor = params.bidFloor;
     }
     if (bid.hasOwnProperty('mediaTypes')) {
       for (mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {
           case BANNER:
-            bObj = spec._getBannerRequest(bid)
+            bObj = spec._getBannerRequest(bid);
             if (bObj) {
-              impression.banner = bObj
+              impression.banner = bObj;
             }
-            break
+            break;
           case VIDEO:
-            vObj = spec._getVideoRequest(bid)
+            vObj = spec._getVideoRequest(bid);
             if (vObj) {
-              impression.video = vObj
+              impression.video = vObj;
             }
-            break
+            break;
         }
       }
     } else {
@@ -269,64 +269,64 @@ export var spec = {
         pos: 0,
         w: sizes && sizes[0] ? sizes[0][0] : 0,
         h: sizes && sizes[0] ? sizes[0][1] : 0,
-      }
+      };
       if (utils.isArray(sizes) && sizes.length > 1) {
-        sizes = sizes.splice(1, sizes.length - 1)
+        sizes = sizes.splice(1, sizes.length - 1);
         sizes.forEach(size => {
           format.push({
             w: size[0],
             h: size[1]
-          })
-        })
-        bObj.format = format
+          });
+        });
+        bObj.format = format;
       }
-      impression.banner = bObj
+      impression.banner = bObj;
     }
-    spec._setFloor(impression, bid)
+    spec._setFloor(impression, bid);
     return impression.hasOwnProperty(BANNER) ||
-      impression.hasOwnProperty(VIDEO) ? impression : undefined
+      impression.hasOwnProperty(VIDEO) ? impression : undefined;
   },
 
   /**
    * set bid floor
    */
   _setFloor: (impObj, bid) => {
-    let bidFloor = -1
+    let bidFloor = -1;
     // get lowest floor from floorModule
     if (typeof bid.getFloor === 'function') {
       [BANNER, VIDEO].forEach(mediaType => {
         if (impObj.hasOwnProperty(mediaType)) {
-          const floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' })
+          const floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
           if (utils.isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
-            const mediaTypeFloor = parseFloat(floorInfo.floor)
-            bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+            const mediaTypeFloor = parseFloat(floorInfo.floor);
+            bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
           }
         }
-      })
+      });
     }
     // get highest from impObj.bidfllor and floor from floor module
     // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
     if (impObj.bidfloor) {
-      bidFloor = Math.max(bidFloor, impObj.bidfloor)
+      bidFloor = Math.max(bidFloor, impObj.bidfloor);
     }
 
     // assign value only if bidFloor is > 0
-    impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : undefined)
+    impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : undefined);
   },
 
   /**
    * parse Open RTB response
    */
   _parseRTBResponse: (request, response) => {
-    var bidResponses = []
+    var bidResponses = [];
     try {
       if (response.seatbid) {
-        var currency = response.curr || DEFAULT_CURRENCY
-        var seatbid = response.seatbid
+        var currency = response.curr || DEFAULT_CURRENCY;
+        var seatbid = response.seatbid;
         seatbid.forEach(seatbidder => {
-          var bidder = seatbidder.bid
+          var bidder = seatbidder.bid;
           bidder.forEach(bid => {
-            var req = spec._parseJSON(request.data)
+            var req = spec._parseJSON(request.data);
             var newBid = {
               requestId: bid.impid,
               cpm: parseFloat(bid.price).toFixed(2),
@@ -338,67 +338,67 @@ export var spec = {
               ttl: RESPONSE_TTL,
               referrer: req.site.ref,
               ad: bid.adm
-            }
+            };
             if (bid.dealid) {
-              newBid.dealId = bid.dealid
+              newBid.dealId = bid.dealid;
             }
             if (req.imp && req.imp.length > 0) {
               req.imp.forEach(robj => {
                 if (bid.impid === robj.id) {
-                  spec._checkMediaType(bid.adm, newBid)
+                  spec._checkMediaType(bid.adm, newBid);
                   switch (newBid.mediaType) {
                     case BANNER:
-                      break
+                      break;
                     case VIDEO:
-                      newBid.width = bid.hasOwnProperty('w') ? bid.w : robj.video.w
-                      newBid.height = bid.hasOwnProperty('h') ? bid.h : robj.video.h
-                      newBid.vastXml = bid.adm
-                      break
+                      newBid.width = bid.hasOwnProperty('w') ? bid.w : robj.video.w;
+                      newBid.height = bid.hasOwnProperty('h') ? bid.h : robj.video.h;
+                      newBid.vastXml = bid.adm;
+                      break;
                   }
                 }
-              })
+              });
             }
-            bidResponses.push(newBid)
-          })
-        })
+            bidResponses.push(newBid);
+          });
+        });
       }
     } catch (error) {
-      utils.logError(LOG_WARN_PREFIX, 'ERROR ', error)
+      utils.logError(LOG_WARN_PREFIX, 'ERROR ', error);
     }
-    return bidResponses
+    return bidResponses;
   },
 
   /**
    * get bid request api end point url
    */
   _endPointURL: (request) => {
-    var params = request && request[0].params ? request[0].params : null
+    var params = request && request[0].params ? request[0].params : null;
     if (params) {
-      pubId = params.pubId ? params.pubId : 0
-      adunitId = params.adunitId ? params.adunitId : 0
-      return ENDPOINT + '?pid=' + pubId + '&aid=' + adunitId
+      pubId = params.pubId ? params.pubId : 0;
+      adunitId = params.adunitId ? params.adunitId : 0;
+      return ENDPOINT + '?pid=' + pubId + '&aid=' + adunitId;
     }
-    return null
+    return null;
   },
 
   /**
    * get domain name from url
    */
   _getDomain: (url) => {
-    var a = document.createElement('a')
-    a.setAttribute('href', url)
-    return a.hostname
+    var a = document.createElement('a');
+    a.setAttribute('href', url);
+    return a.hostname;
   },
 
   /**
    * create the site object
    */
   _getSiteObject: (request, conf) => {
-    var params = request && request.params ? request.params : null
+    var params = request && request.params ? request.params : null;
     if (params) {
-      pubId = params.pubId ? params.pubId : '0'
-      var siteId = params.siteId ? params.siteId : '0'
-      var appParams = params.app
+      pubId = params.pubId ? params.pubId : '0';
+      var siteId = params.siteId ? params.siteId : '0';
+      var appParams = params.app;
       if (!appParams) {
         return {
           publisher: {
@@ -410,20 +410,20 @@ export var spec = {
           page: conf.pageURL,
           cat: params.category,
           pagecat: params.page_category
-        }
+        };
       }
     }
-    return null
+    return null;
   },
 
   /**
    * create the app object
    */
   _getAppObject: (request) => {
-    var params = request && request.params ? request.params : null
+    var params = request && request.params ? request.params : null;
     if (params) {
-      pubId = params.pubId ? params.pubId : 0
-      var appParams = params.app
+      pubId = params.pubId ? params.pubId : 0;
+      var appParams = params.app;
       if (appParams) {
         return {
           publisher: {
@@ -436,17 +436,17 @@ export var spec = {
           domain: appParams.domain,
           cat: appParams.cat || params.category,
           pagecat: appParams.pagecat || params.page_category
-        }
+        };
       }
     }
-    return null
+    return null;
   },
 
   /**
    * create the device object
    */
   _getDeviceObject: (request) => {
-    var params = request && request.params ? request.params : null
+    var params = request && request.params ? request.params : null;
     if (params) {
       return {
         dnt: getDNT() ? 1 : 0,
@@ -470,25 +470,25 @@ export var spec = {
         carrier: params.carrier,
         devicetype: params.device_type,
         ifa: params.ifa,
-      }
+      };
     }
-    return null
+    return null;
   },
 
   /**
    * create source object
    */
   _getSourceObject: (request) => {
-    var params = request && request.params ? request.params : null
+    var params = request && request.params ? request.params : null;
     if (params) {
       return {
         pchain: params.pchain,
         ext: {
           schain: request?.ortb2?.source?.ext?.schain
         },
-      }
+      };
     }
-    return null
+    return null;
   },
 
   /**
@@ -496,72 +496,72 @@ export var spec = {
    */
   _getSizes: (request) => {
     if (request && request.sizes && utils.isArray(request.sizes[0]) && request.sizes[0].length > 0) {
-      return request.sizes[0]
+      return request.sizes[0];
     }
-    return null
+    return null;
   },
 
   /**
    * create the banner object
    */
   _getBannerRequest: (bid) => {
-    var bObj
-    var adFormat = []
+    var bObj;
+    var adFormat = [];
     if (utils.deepAccess(bid, 'mediaTypes.banner')) {
-      var params = bid ? bid.params : null
-      var bannerData = params && params.banner
-      var sizes = spec._getSizes(bid) || []
+      var params = bid ? bid.params : null;
+      var bannerData = params && params.banner;
+      var sizes = spec._getSizes(bid) || [];
       if (sizes && sizes.length === 0) {
-        sizes = bid.mediaTypes.banner.sizes[0]
+        sizes = bid.mediaTypes.banner.sizes[0];
       }
       if (sizes && sizes.length > 0) {
-        bObj = {}
-        bObj.w = sizes[0]
-        bObj.h = sizes[1]
-        bObj.pos = 0
+        bObj = {};
+        bObj.w = sizes[0];
+        bObj.h = sizes[1];
+        bObj.pos = 0;
         if (bannerData) {
-          bObj = utils.deepClone(bannerData)
+          bObj = utils.deepClone(bannerData);
         }
-        sizes = bid.mediaTypes.banner.sizes
+        sizes = bid.mediaTypes.banner.sizes;
         if (sizes.length > 0) {
-          adFormat = []
+          adFormat = [];
           sizes.forEach(function (size) {
             if (size.length > 1) {
-              adFormat.push({ w: size[0], h: size[1] })
+              adFormat.push({ w: size[0], h: size[1] });
             }
-          })
+          });
           if (adFormat.length > 0) {
-            bObj.format = adFormat
+            bObj.format = adFormat;
           }
         }
       } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.sizes missing for adunit: ' + bid.params.adunitId)
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.sizes missing for adunit: ' + bid.params.adunitId);
       }
     }
-    return bObj
+    return bObj;
   },
 
   /**
    * create the video object
    */
   _getVideoRequest: (bid) => {
-    var vObj
+    var vObj;
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
-      var params = bid ? bid.params : null
-      var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video)
-      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : []
+      var params = bid ? bid.params : null;
+      var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
+      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : [];
       if (sizes && sizes.length > 0) {
-        vObj = {}
+        vObj = {};
         if (videoData) {
-          vObj = utils.deepClone(videoData)
+          vObj = utils.deepClone(videoData);
         }
-        vObj.w = sizes[0]
-        vObj.h = sizes[1]
+        vObj.w = sizes[0];
+        vObj.h = sizes[1];
       } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.video.sizes missing for adunit: ' + bid.params.adunitId)
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.video.sizes missing for adunit: ' + bid.params.adunitId);
       }
     }
-    return vObj
+    return vObj;
   },
 
   /**
@@ -569,13 +569,13 @@ export var spec = {
    */
   _checkMediaType: (adm, newBid) => {
     // Create a regex here to check the strings
-    var videoRegex = new RegExp(/VAST.*version/)
+    var videoRegex = new RegExp(/VAST.*version/);
     if (videoRegex.test(adm)) {
-      newBid.mediaType = VIDEO
+      newBid.mediaType = VIDEO;
     } else {
-      newBid.mediaType = BANNER
+      newBid.mediaType = BANNER;
     }
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

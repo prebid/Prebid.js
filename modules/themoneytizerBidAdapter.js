@@ -1,9 +1,9 @@
-import { logInfo, logWarn } from '../src/utils.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { logInfo, logWarn } from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const BIDDER_CODE = 'themoneytizer'
-const ENDPOINT_URL = 'https://ads.biddertmz.com/m/'
+const BIDDER_CODE = 'themoneytizer';
+const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 
 export const spec = {
   aliases: [BIDDER_CODE],
@@ -12,11 +12,11 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (!(bid && bid.params.pid)) {
-      logWarn('Invalid bid request - missing required bid params')
-      return false
+      logWarn('Invalid bid request - missing required bid params');
+      return false;
     }
 
-    return true
+    return true;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -34,67 +34,67 @@ export const spec = {
         schain: bidRequest?.ortb2?.source?.ext?.schain,
         version: '$prebid.version$',
         excl_sync: window.tmzrBidderExclSync
-      }
+      };
 
-      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL
+      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        payload.referer = bidderRequest.refererInfo.topmostLocation
-        payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl
+        payload.referer = bidderRequest.refererInfo.topmostLocation;
+        payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.consent_string = bidderRequest.gdprConsent.consentString
-        payload.consent_required = bidderRequest.gdprConsent.gdprApplies
+        payload.consent_string = bidderRequest.gdprConsent.consentString;
+        payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
 
       if (bidRequest.params.test) {
-        payload.test = bidRequest.params.test
+        payload.test = bidRequest.params.test;
       }
 
-      payload.userEids = bidRequest.userIdAsEids || []
+      payload.userEids = bidRequest.userIdAsEids || [];
 
       return {
         method: 'POST',
         url: baseUrl,
         data: JSON.stringify(payload),
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = []
-    const response = serverResponse.body
+    const bidResponses = [];
+    const response = serverResponse.body;
 
     if (response && response.bid && !response.timeout && !!response.bid.ad) {
-      bidResponses.push(response.bid)
+      bidResponses.push(response.bid);
     }
 
-    return bidResponses
+    return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return []
+      return [];
     }
 
-    const s = []
+    const s = [];
     serverResponses.forEach((c) => {
       if (c.body.c_sync) {
         c.body.c_sync.bidder_status.forEach((p) => {
           if (p.usersync.type === 'redirect') {
-            p.usersync.type = 'image'
+            p.usersync.type = 'image';
           }
-          s.push(p.usersync)
-        })
+          s.push(p.usersync);
+        });
       }
-    })
+    });
 
-    return s
+    return s;
   },
 
   onTimeout: function onTimeout(timeoutData) {
-    logInfo('The Moneytizer - Timeout from adapter', timeoutData)
+    logInfo('The Moneytizer - Timeout from adapter', timeoutData);
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

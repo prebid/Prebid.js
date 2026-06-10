@@ -1,9 +1,9 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { type AdapterRequest, type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js'
-import { type Bid } from '../src/bidfactory.js'
-import { Renderer } from '../src/Renderer.js'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import { deepAccess, deepSetValue, isStr, logError, triggerPixel } from '../src/utils.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { type AdapterRequest, type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { type Bid } from '../src/bidfactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, isStr, logError, triggerPixel } from '../src/utils.js';
 
 /**
  * Prebid.js adapter for goadserver — a self-hosted, multi-tenant ad
@@ -23,9 +23,9 @@ import { deepAccess, deepSetValue, isStr, logError, triggerPixel } from '../src/
  * multiple goadserver instances just pass different `params.host` values.
  */
 
-const BIDDER_CODE = 'goadserver'
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_TTL = 300
+const BIDDER_CODE = 'goadserver';
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_TTL = 300;
 
 type GoadserverDealParam = {
   id: string | number;
@@ -34,7 +34,7 @@ type GoadserverDealParam = {
   at?: number;
   wseat?: string[];
   wadomain?: string[];
-}
+};
 
 export type GoadserverBidParams = {
   host: string;
@@ -43,7 +43,7 @@ export type GoadserverBidParams = {
   subid?: string | number;
   outstreamRendererUrl?: string;
   deals?: GoadserverDealParam[];
-}
+};
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -57,7 +57,7 @@ declare module '../src/adUnits' {
 type GoadserverAdapterRequest = AdapterRequest & {
   bidRequests: any[];
   host: string;
-}
+};
 
 /**
  * Outstream video renderer — delegates to the goadserver-hosted player
@@ -73,14 +73,14 @@ type GoadserverAdapterRequest = AdapterRequest & {
 function outstreamRender(bid: Bid): void {
   bid.renderer.push(function () {
     try {
-      const w = window as unknown as { goadserverOutstream?: { render: (bid: Bid) => void } }
+      const w = window as unknown as { goadserverOutstream?: { render: (bid: Bid) => void } };
       if (w.goadserverOutstream && typeof w.goadserverOutstream.render === 'function') {
-        w.goadserverOutstream.render(bid)
+        w.goadserverOutstream.render(bid);
       }
     } catch (e) {
-      logError('goadserver: outstream render failed', e)
+      logError('goadserver: outstream render failed', e);
     }
-  })
+  });
 }
 
 /**
@@ -92,19 +92,19 @@ function outstreamRender(bid: Bid): void {
 function newOutstreamRenderer(bid: Bid, host: string, custom?: string): Renderer {
   const url = (isStr(custom) && custom.length > 0)
     ? custom
-    : `https://${host}/prebid-outstream.js`
+    : `https://${host}/prebid-outstream.js`;
   const renderer = Renderer.install({
     id: bid.requestId,
     url,
     loaded: false,
     adUnitCode: bid.adUnitCode,
-  })
+  });
   try {
-    renderer.setRender(outstreamRender)
+    renderer.setRender(outstreamRender);
   } catch (e) {
-    logError('goadserver: renderer.setRender failed', e)
+    logError('goadserver: renderer.setRender failed', e);
   }
-  return renderer
+  return renderer;
 }
 // GVL ID: not yet registered with IAB Europe. File a TCF registration at
 // https://iabeurope.eu/tcf/ and populate this field before EU traffic
@@ -124,14 +124,14 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   // `params.subid` into the imp's goadserver extension so the server
   // can attribute the auction result to the right sub-identifier.
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
-    const params = bidRequest.params
+    const imp = buildImp(bidRequest, context);
+    const params = bidRequest.params;
     if (params?.floor != null && !imp.bidfloor) {
-      imp.bidfloor = Number(params.floor)
-      imp.bidfloorcur = DEFAULT_CURRENCY
+      imp.bidfloor = Number(params.floor);
+      imp.bidfloorcur = DEFAULT_CURRENCY;
     }
     if (params?.subid) {
-      deepSetValue(imp, 'ext.goadserver.subid', String(params.subid))
+      deepSetValue(imp, 'ext.goadserver.subid', String(params.subid));
     }
     // Private marketplace deals — publishers list them in params.deals[].
     // Each entry is an OpenRTB imp.pmp.deal object (id required, optional
@@ -148,29 +148,29 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
           at: typeof d.at === 'number' ? d.at : 0,
           wseat: Array.isArray(d.wseat) ? d.wseat : undefined,
           wadomain: Array.isArray(d.wadomain) ? d.wadomain : undefined,
-        }))
+        }));
       if (deals.length > 0) {
-        imp.pmp = { private_auction: 0, deals }
+        imp.pmp = { private_auction: 0, deals };
       }
     }
-    return imp
+    return imp;
   },
 
   // Request-level hook: inject the publisher token into
   // `site.publisher.id`, which is where goadserver's /openrtb2/auction
   // handler resolves the SSP campaign from.
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context)
+    const request = buildRequest(imps, bidderRequest, context);
     if (!request.cur || request.cur.length === 0) {
-      request.cur = [DEFAULT_CURRENCY]
+      request.cur = [DEFAULT_CURRENCY];
     }
-    const token = context.bidRequests?.[0]?.params?.token
+    const token = context.bidRequests?.[0]?.params?.token;
     if (token) {
-      deepSetValue(request, 'site.publisher.id', token)
+      deepSetValue(request, 'site.publisher.id', token);
     }
-    return request
+    return request;
   },
-})
+});
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
@@ -183,11 +183,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * the auction can't be authenticated or routed.
    */
   isBidRequestValid: function (bid) {
-    const params = bid?.params
+    const params = bid?.params;
     return Boolean(params?.host) &&
       typeof params.host === 'string' &&
       Boolean(params?.token) &&
-      typeof params.token === 'string'
+      typeof params.token === 'string';
   },
 
   /**
@@ -200,25 +200,25 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0) {
-      return []
+      return [];
     }
-    const groups = new Map<string, typeof validBidRequests>()
+    const groups = new Map<string, typeof validBidRequests>();
     validBidRequests.forEach(function (bid) {
-      const key = `${bid.params.host}||${bid.params.token}`
-      let group = groups.get(key)
+      const key = `${bid.params.host}||${bid.params.token}`;
+      let group = groups.get(key);
       if (!group) {
-        group = [] as unknown as typeof validBidRequests
-        groups.set(key, group)
+        group = [] as unknown as typeof validBidRequests;
+        groups.set(key, group);
       }
-      group.push(bid)
-    })
-    const requests: GoadserverAdapterRequest[] = []
+      group.push(bid);
+    });
+    const requests: GoadserverAdapterRequest[] = [];
     groups.forEach(function (group) {
-      const host = group[0].params.host
+      const host = group[0].params.host;
       const data = converter.toORTB({
         bidRequests: group,
         bidderRequest,
-      })
+      });
       requests.push({
         method: 'POST',
         url: `https://${host}/openrtb2/auction`,
@@ -233,9 +233,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         // round-trip instead of two. goadserver's /openrtb2/auction
         // parses the body irrespective of the declared content type.
         options: { contentType: 'text/plain', withCredentials: true },
-      })
-    })
-    return requests
+      });
+    });
+    return requests;
   },
 
   /**
@@ -245,12 +245,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   interpretResponse: function (serverResponse, request) {
     if (!serverResponse?.body) {
-      return []
+      return [];
     }
     const bids: Bid[] = (converter.fromORTB({
       response: serverResponse.body,
       request: request.data,
-    }) as { bids: Bid[] }).bids
+    }) as { bids: Bid[] }).bids;
 
     // Post-process: attach an outstream renderer to video bids whose
     // original ad unit requested video.context = 'outstream'. Without
@@ -258,31 +258,31 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     // creative. Also prefer the Prebid Cache URL (hb_cache_url) over
     // the raw VAST XML when both are present, so large VAST blobs
     // don't have to live in Prebid's in-memory targeting store.
-    const stashed = request as GoadserverAdapterRequest
-    const originalBids = stashed.bidRequests || []
-    const host = stashed.host
+    const stashed = request as GoadserverAdapterRequest;
+    const originalBids = stashed.bidRequests || [];
+    const host = stashed.host;
     bids.forEach(function (bid) {
-      if (bid.mediaType !== VIDEO) return
+      if (bid.mediaType !== VIDEO) return;
 
       // vastUrl fallback to the server-cached URL emitted in targeting.
-      const cacheUrl = deepAccess(bid, 'adserverTargeting.hb_cache_url')
+      const cacheUrl = deepAccess(bid, 'adserverTargeting.hb_cache_url');
       if (cacheUrl && !bid.vastUrl) {
-        bid.vastUrl = cacheUrl
+        bid.vastUrl = cacheUrl;
       }
 
       // Look up the originating bid request by requestId and check
       // whether it declared outstream context.
-      const origBid = originalBids.find(function (b) { return b.bidId === bid.requestId })
-      if (!origBid) return
-      const context = deepAccess(origBid, 'mediaTypes.video.context')
-      if (context !== 'outstream') return
+      const origBid = originalBids.find(function (b) { return b.bidId === bid.requestId; });
+      if (!origBid) return;
+      const context = deepAccess(origBid, 'mediaTypes.video.context');
+      if (context !== 'outstream') return;
 
-      bid.adUnitCode = origBid.adUnitCode
-      const customUrl = deepAccess(origBid, 'params.outstreamRendererUrl')
-      bid.renderer = newOutstreamRenderer(bid, host, customUrl)
-    })
+      bid.adUnitCode = origBid.adUnitCode;
+      const customUrl = deepAccess(origBid, 'params.outstreamRendererUrl');
+      bid.renderer = newOutstreamRenderer(bid, host, customUrl);
+    });
 
-    return bids
+    return bids;
   },
 
   /**
@@ -291,9 +291,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    * pixel here unifies win notification with the rest of the platform.
    */
   onBidWon: function (bid) {
-    const nurl = deepAccess(bid, 'nurl')
+    const nurl = deepAccess(bid, 'nurl');
     if (nurl && isStr(nurl)) {
-      triggerPixel(nurl)
+      triggerPixel(nurl);
     }
   },
 
@@ -306,21 +306,21 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses || serverResponses.length === 0) {
-      return []
+      return [];
     }
-    const syncs: { type: 'iframe' | 'image'; url: string }[] = []
+    const syncs: { type: 'iframe' | 'image'; url: string }[] = [];
     serverResponses.forEach(function (rsp) {
-      const entry = rsp?.body?.ext?.goadserver?.usersync
-      if (!entry || !entry.url) return
-      const type = entry.type || 'image'
+      const entry = rsp?.body?.ext?.goadserver?.usersync;
+      if (!entry || !entry.url) return;
+      const type = entry.type || 'image';
       if (type === 'iframe' && syncOptions.iframeEnabled) {
-        syncs.push({ type: 'iframe', url: entry.url })
+        syncs.push({ type: 'iframe', url: entry.url });
       } else if (type === 'image' && syncOptions.pixelEnabled) {
-        syncs.push({ type: 'image', url: entry.url })
+        syncs.push({ type: 'image', url: entry.url });
       }
-    })
-    return syncs
+    });
+    return syncs;
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

@@ -1,12 +1,12 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
-import { deepSetValue } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import { deepSetValue } from '../src/utils.js';
 
-const BIDDER_CODE = 'loopme'
-const url = 'https://prebid.loopmertb.com/'
-const GVLID = 109
+const BIDDER_CODE = 'loopme';
+const url = 'https://prebid.loopmertb.com/';
+const GVLID = 109;
 
 export const converter = ortbConverter({
   processors: pbsExtensions,
@@ -15,16 +15,16 @@ export const converter = ortbConverter({
     ttl: 30
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
-    deepSetValue(imp, 'ext.bidder', { ...bidRequest.params })
-    return imp
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'ext.bidder', { ...bidRequest.params });
+    return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context)
-    req.at = 1
-    return req
+    const req = buildRequest(imps, bidderRequest, context);
+    req.at = 1;
+    return req;
   }
-})
+});
 
 export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -45,5 +45,5 @@ export const spec = {
         .filter(({ url }) => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')))
         .filter(({ type }) => (type === 'image' && syncOptions.pixelEnabled) || (type === 'iframe' && syncOptions.iframeEnabled))
     )
-}
-registerBidder(spec)
+};
+registerBidder(spec);

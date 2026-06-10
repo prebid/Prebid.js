@@ -1,12 +1,12 @@
-import { expect } from 'chai'
-import { spec, __storage } from 'modules/beopBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { config } from 'src/config.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
-import { addFPDToBidderRequest } from '../../helpers/fpd.js'
-const utils = require('src/utils')
+import { expect } from 'chai';
+import { spec, __storage } from 'modules/beopBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+const utils = require('src/utils');
 
-const ENDPOINT = 'https://hb.collectiveaudience.co/bid'
+const ENDPOINT = 'https://hb.collectiveaudience.co/bid';
 
 const validBid = {
   'bidder': 'beop',
@@ -23,102 +23,102 @@ const validBid = {
     return {
       currency: 'USD',
       floor: 10,
-    }
+    };
   },
   'bidId': '30b31c1838de1e',
   'bidderRequestId': '22edbae2733bf6',
   'auctionId': '1d1a030790a475',
   'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843',
   'creativeId': 'er2ee'
-}
+};
 
 describe('BeOp Bid Adapter tests', () => {
   afterEach(function () {
-    config.setConfig({})
-  })
+    config.setConfig({});
+  });
 
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function() {
     it('should return true when accountId params found', function () {
-      expect(spec.isBidRequestValid(validBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(validBid)).to.equal(true);
+    });
 
     it('should return true if no accountId but networkId', function () {
-      const bid = Object.assign({}, validBid)
-      delete bid.params
+      const bid = Object.assign({}, validBid);
+      delete bid.params;
       bid.params = {
         'networkId': '5a8af500c9e77c00017e4aaa'
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false if neither account or network id param found', function () {
-      const bid = Object.assign({}, validBid)
-      delete bid.params
+      const bid = Object.assign({}, validBid);
+      delete bid.params;
       bid.params = {
         'someId': '5a8af500c9e77c00017e4aaa'
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false if account Id param is not an ObjectId', function () {
-      const bid = Object.assign({}, validBid)
-      delete bid.params
+      const bid = Object.assign({}, validBid);
+      delete bid.params;
       bid.params = {
         'someId': '12345'
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false if there is no banner media type', function () {
-      const bid = Object.assign({}, validBid)
-      delete bid.mediaTypes
+      const bid = Object.assign({}, validBid);
+      delete bid.mediaTypes;
       bid.mediaTypes = {
         'native': {
           'sizes': [[1, 1]]
         }
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
-    const bidRequests = []
-    bidRequests.push(validBid)
+    const bidRequests = [];
+    bidRequests.push(validBid);
 
     it('should build the request', function () {
       const bidderRequest = {
         refererInfo: {
           page: 'https://example.com'
         }
-      }
-      setCurrencyConfig({ adServerCurrency: 'USD' })
+      };
+      setCurrencyConfig({ adServerCurrency: 'USD' });
 
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const request = spec.buildRequests(bidRequests, res)
-        const payload = JSON.parse(request.data)
-        const url = request.url
-        expect(url).to.equal(ENDPOINT)
-        expect(payload.pid).to.exist
-        expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad')
-        expect(payload.gdpr_applies).to.exist
-        expect(payload.gdpr_applies).to.equals(false)
-        expect(payload.slts[0].name).to.exist
-        expect(payload.slts[0].name).to.equal('bellow-article')
-        expect(payload.slts[0].flr).to.equal(10)
-        setCurrencyConfig({})
-      })
-    })
+        const request = spec.buildRequests(bidRequests, res);
+        const payload = JSON.parse(request.data);
+        const url = request.url;
+        expect(url).to.equal(ENDPOINT);
+        expect(payload.pid).to.exist;
+        expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad');
+        expect(payload.gdpr_applies).to.exist;
+        expect(payload.gdpr_applies).to.equals(false);
+        expect(payload.slts[0].name).to.exist;
+        expect(payload.slts[0].name).to.equal('bellow-article');
+        expect(payload.slts[0].flr).to.equal(10);
+        setCurrencyConfig({});
+      });
+    });
 
     it('should call the endpoint with GDPR consent and pageURL info if found', function () {
-      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       const bidderRequest =
       {
         'gdprConsent':
@@ -130,18 +130,18 @@ describe('BeOp Bid Adapter tests', () => {
         {
           'canonicalUrl': 'test.te'
         }
-      }
+      };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.gdpr_applies).to.exist
-      expect(payload.gdpr_applies).to.equals(true)
-      expect(payload.tc_string).to.exist
-      expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==')
-      expect(payload.url).to.exist
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gdpr_applies).to.exist;
+      expect(payload.gdpr_applies).to.equals(true);
+      expect(payload.tc_string).to.exist;
+      expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
+      expect(payload.url).to.exist;
       // check that the protocol is added correctly
-      expect(payload.url).to.equal('http://test.te')
-    })
+      expect(payload.url).to.equal('http://test.te');
+    });
 
     it('should call the endpoint with bpsegs (stringified) data if any or [] if none', function () {
       const bidderRequest =
@@ -156,42 +156,42 @@ describe('BeOp Bid Adapter tests', () => {
             }
           }
         }
-      }
+      };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.bpsegs).to.exist
-      expect(payload.bpsegs).to.include('axed')
-      expect(payload.bpsegs).to.include('axec')
-      expect(payload.bpsegs).to.include('1234')
-      expect(payload.bpsegs).to.include('1234')
-      expect(payload.bpsegs).to.include('5678')
-      expect(payload.bpsegs).to.include('910')
-      expect(payload.bpsegs).to.not.include('1')
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.bpsegs).to.exist;
+      expect(payload.bpsegs).to.include('axed');
+      expect(payload.bpsegs).to.include('axec');
+      expect(payload.bpsegs).to.include('1234');
+      expect(payload.bpsegs).to.include('1234');
+      expect(payload.bpsegs).to.include('5678');
+      expect(payload.bpsegs).to.include('910');
+      expect(payload.bpsegs).to.not.include('1');
 
       const bidderRequest2 =
       {
         'ortb2': {}
-      }
+      };
 
-      const request2 = spec.buildRequests(bidRequests, bidderRequest2)
-      const payload2 = JSON.parse(request2.data)
-      expect(payload2.bpsegs).to.exist
-      expect(payload2.bpsegs).to.be.empty
-    })
+      const request2 = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload2 = JSON.parse(request2.data);
+      expect(payload2.bpsegs).to.exist;
+      expect(payload2.bpsegs).to.be.empty;
+    });
 
     it('should not prepend the protocol in page url if already present', function () {
       const bidderRequest = {
         'refererInfo': {
           'canonicalUrl': 'https://test.te'
         }
-      }
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
-      expect(payload.url).to.exist
-      expect(payload.url).to.equal('https://test.te')
-    })
-  })
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.url).to.exist;
+      expect(payload.url).to.equal('https://test.te');
+    });
+  });
 
   describe('interpretResponse', function() {
     const serverResponse = {
@@ -212,33 +212,33 @@ describe('BeOp Bid Adapter tests', () => {
           }
         ]
       }
-    }
+    };
     it('should interpret the response by pushing it in the bids elem', function () {
-      const response = spec.interpretResponse(serverResponse, validBid)
+      const response = spec.interpretResponse(serverResponse, validBid);
 
-      expect(response[0].ad).to.exist
-      expect(response[0].requestId).to.exist
-      expect(response[0].requestId).to.equal('aaaa')
-    })
-  })
+      expect(response[0].ad).to.exist;
+      expect(response[0].requestId).to.exist;
+      expect(response[0].requestId).to.equal('aaaa');
+    });
+  });
 
   describe('timeout and bid won pixel trigger', function () {
-    let triggerPixelStub
+    let triggerPixelStub;
 
     beforeEach(function () {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel')
-    })
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    });
 
     afterEach(function () {
-      utils.triggerPixel.restore()
-    })
+      utils.triggerPixel.restore();
+    });
 
     it('should call triggerPixel utils function when timed out is filled', function () {
-      spec.onTimeout({})
-      spec.onTimeout()
-      spec.onTimeout(null)
-      spec.onTimeout([])
-      expect(triggerPixelStub.getCall(0)).to.be.null
+      spec.onTimeout({});
+      spec.onTimeout();
+      spec.onTimeout(null);
+      spec.onTimeout([]);
+      expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onTimeout([{
         bidder: 'beop',
         bidId: 'abc123',
@@ -246,13 +246,13 @@ describe('BeOp Bid Adapter tests', () => {
         adUnitCode: 'div-1',
         timeout: 2000,
         auctionId: 'some-auction-id'
-      }])
-      expect(triggerPixelStub.getCall(0)).to.not.be.null
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=timeout')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('pid=5a8af500c9e77c00017e4cad')
-    })
+      }]);
+      expect(triggerPixelStub.getCall(0)).to.not.be.null;
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=timeout');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('pid=5a8af500c9e77c00017e4cad');
+    });
 
     it('should call triggerPixel for each entry in the timeout array', function () {
       const timeoutData = [
@@ -272,337 +272,337 @@ describe('BeOp Bid Adapter tests', () => {
           timeout: 3000,
           auctionId: 'auction-2'
         }
-      ]
+      ];
 
-      spec.onTimeout(timeoutData)
+      spec.onTimeout(timeoutData);
 
-      expect(triggerPixelStub.callCount).to.equal(2)
-      const firstCall = triggerPixelStub.getCall(0).args[0]
-      const secondCall = triggerPixelStub.getCall(1).args[0]
+      expect(triggerPixelStub.callCount).to.equal(2);
+      const firstCall = triggerPixelStub.getCall(0).args[0];
+      const secondCall = triggerPixelStub.getCall(1).args[0];
 
-      expect(firstCall).to.include('se_ac=timeout')
-      expect(firstCall).to.include('bid=abc123')
-      expect(secondCall).to.include('bid=def456')
-    })
+      expect(firstCall).to.include('se_ac=timeout');
+      expect(firstCall).to.include('bid=abc123');
+      expect(secondCall).to.include('bid=def456');
+    });
     it('should call triggerPixel utils function on bid won', function () {
-      spec.onBidWon({})
-      spec.onBidWon()
-      expect(triggerPixelStub.getCall(0)).to.be.null
-      spec.onBidWon({ params: { accountId: '5a8af500c9e77c00017e4cad' }, cpm: 1.2 })
-      expect(triggerPixelStub.getCall(0)).to.not.be.null
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won')
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad')
-    })
+      spec.onBidWon({});
+      spec.onBidWon();
+      expect(triggerPixelStub.getCall(0)).to.be.null;
+      spec.onBidWon({ params: { accountId: '5a8af500c9e77c00017e4cad' }, cpm: 1.2 });
+      expect(triggerPixelStub.getCall(0)).to.not.be.null;
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
+    });
     it('should call triggerPixel utils function on bid won and work even if params is an array', function () {
-      spec.onBidWon({})
-      spec.onBidWon()
-      expect(triggerPixelStub.getCall(0)).to.be.null
-      spec.onBidWon({ params: [{ accountId: '5a8af500c9e77c00017e4cad' }], cpm: 1.2 })
-      expect(triggerPixelStub.getCall(0)).to.not.be.null
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid')
-      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won')
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad')
-    })
-  })
+      spec.onBidWon({});
+      spec.onBidWon();
+      expect(triggerPixelStub.getCall(0)).to.be.null;
+      spec.onBidWon({ params: [{ accountId: '5a8af500c9e77c00017e4cad' }], cpm: 1.2 });
+      expect(triggerPixelStub.getCall(0)).to.not.be.null;
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
+    });
+  });
 
   describe('Ensure keywords is always array of string', function () {
-    let bidRequests = []
+    let bidRequests = [];
     afterEach(function () {
-      bidRequests = []
-    })
+      bidRequests = [];
+    });
 
     it('should work with keywords as an array', function () {
-      const bid = Object.assign({}, validBid)
-      bid.params.keywords = ['a', 'b']
-      bidRequests.push(bid)
+      const bid = Object.assign({}, validBid);
+      bid.params.keywords = ['a', 'b'];
+      bidRequests.push(bid);
       config.setConfig({
         currency: { adServerCurrency: 'USD' }
-      })
-      const request = spec.buildRequests(bidRequests, {})
-      const payload = JSON.parse(request.data)
-      const url = request.url
-      expect(payload.kwds).to.exist
-      expect(payload.kwds).to.include('a')
-      expect(payload.kwds).to.include('b')
-    })
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('a');
+      expect(payload.kwds).to.include('b');
+    });
 
     it('should work with keywords as a string', function () {
-      const bid = Object.assign({}, validBid)
-      bid.params.keywords = 'list of keywords'
-      bidRequests.push(bid)
+      const bid = Object.assign({}, validBid);
+      bid.params.keywords = 'list of keywords';
+      bidRequests.push(bid);
       config.setConfig({
         currency: { adServerCurrency: 'USD' }
-      })
-      const request = spec.buildRequests(bidRequests, {})
-      const payload = JSON.parse(request.data)
-      const url = request.url
-      expect(payload.kwds).to.exist
-      expect(payload.kwds).to.include('list of keywords')
-    })
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('list of keywords');
+    });
 
     it('should work with keywords as a string containing a comma', function () {
-      const bid = Object.assign({}, validBid)
-      bid.params.keywords = 'list, of, keywords'
-      bidRequests.push(bid)
+      const bid = Object.assign({}, validBid);
+      bid.params.keywords = 'list, of, keywords';
+      bidRequests.push(bid);
       config.setConfig({
         currency: { adServerCurrency: 'USD' }
-      })
-      const request = spec.buildRequests(bidRequests, {})
-      const payload = JSON.parse(request.data)
-      const url = request.url
-      expect(payload.kwds).to.exist
-      expect(payload.kwds).to.include('list')
-      expect(payload.kwds).to.include('of')
-      expect(payload.kwds).to.include('keywords')
-    })
-  })
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('list');
+      expect(payload.kwds).to.include('of');
+      expect(payload.kwds).to.include('keywords');
+    });
+  });
 
   describe('Ensure eids are get', function() {
-    let bidRequests = []
+    let bidRequests = [];
     afterEach(function () {
-      bidRequests = []
-    })
+      bidRequests = [];
+    });
 
     it(`should get eids from bid`, function () {
-      const bid = Object.assign({}, validBid)
-      bid.userIdAsEids = [{ source: 'provider.com', uids: [{ id: 'someid', atype: 1, ext: { whatever: true } }] }]
-      bidRequests.push(bid)
+      const bid = Object.assign({}, validBid);
+      bid.userIdAsEids = [{ source: 'provider.com', uids: [{ id: 'someid', atype: 1, ext: { whatever: true } }] }];
+      bidRequests.push(bid);
 
-      const request = spec.buildRequests(bidRequests, {})
-      const payload = JSON.parse(request.data)
-      expect(payload.eids).to.exist
-      expect(payload.eids[0].source).to.equal('provider.com')
-    })
-  })
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.eids).to.exist;
+      expect(payload.eids[0].source).to.equal('provider.com');
+    });
+  });
 
   describe('Ensure first party cookie is well managed', function () {
-    const bidRequests = []
-    let sandbox
+    const bidRequests = [];
+    let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox()
-    })
+      sandbox = sinon.createSandbox();
+    });
 
     afterEach(function () {
-      sandbox.restore()
-    })
+      sandbox.restore();
+    });
 
     it('should set fg to a 24-char hex ObjectID (caudid) when no cookie present', function () {
-      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true)
-      sandbox.stub(__storage, 'getCookie').returns(undefined)
-      const bid = Object.assign({}, validBid)
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.fg).to.exist
-      expect(payload.fg).to.match(/^[0-9a-f]{24}$/)
-    })
+      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true);
+      sandbox.stub(__storage, 'getCookie').returns(undefined);
+      const bid = Object.assign({}, validBid);
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.fg).to.exist;
+      expect(payload.fg).to.match(/^[0-9a-f]{24}$/);
+    });
 
     it('should set both caudid and caudid_date cookies when generating a new id', function () {
-      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true)
-      sandbox.stub(__storage, 'getCookie').returns(undefined)
-      const setCookieSpy = sandbox.stub(__storage, 'setCookie')
+      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true);
+      sandbox.stub(__storage, 'getCookie').returns(undefined);
+      const setCookieSpy = sandbox.stub(__storage, 'setCookie');
 
-      const bid = Object.assign({}, validBid)
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
+      const bid = Object.assign({}, validBid);
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
 
-      expect(setCookieSpy.calledTwice).to.be.true
-      expect(setCookieSpy.firstCall.args[0]).to.equal('caudid')
-      expect(setCookieSpy.firstCall.args[1]).to.match(/^[0-9a-f]{24}$/)
-      expect(setCookieSpy.secondCall.args[0]).to.equal('caudid_date')
-      expect(setCookieSpy.secondCall.args[1]).to.match(/^\d+$/)
-      expect(Number(setCookieSpy.secondCall.args[1])).to.be.closeTo(Date.now(), 5000)
-      expect(payload.fg).to.equal(setCookieSpy.firstCall.args[1])
-    })
+      expect(setCookieSpy.calledTwice).to.be.true;
+      expect(setCookieSpy.firstCall.args[0]).to.equal('caudid');
+      expect(setCookieSpy.firstCall.args[1]).to.match(/^[0-9a-f]{24}$/);
+      expect(setCookieSpy.secondCall.args[0]).to.equal('caudid_date');
+      expect(setCookieSpy.secondCall.args[1]).to.match(/^\d+$/);
+      expect(Number(setCookieSpy.secondCall.args[1])).to.be.closeTo(Date.now(), 5000);
+      expect(payload.fg).to.equal(setCookieSpy.firstCall.args[1]);
+    });
 
     it('should always produce 24-char caudid when clock is in the past (timestamp padding)', function () {
-      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true)
-      sandbox.stub(__storage, 'getCookie').returns(undefined)
-      const setCookieSpy = sandbox.stub(__storage, 'setCookie')
+      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true);
+      sandbox.stub(__storage, 'getCookie').returns(undefined);
+      const setCookieSpy = sandbox.stub(__storage, 'setCookie');
       // Unix epoch 0 → hex "0"; without padding that would yield 1 + 16 = 17 chars and fail validIdRegExp
-      sandbox.stub(Date, 'now').returns(0)
+      sandbox.stub(Date, 'now').returns(0);
 
-      const bid = Object.assign({}, validBid)
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
+      const bid = Object.assign({}, validBid);
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
 
-      const caudid = setCookieSpy.firstCall.args[1]
-      expect(caudid).to.have.lengthOf(24)
-      expect(caudid).to.match(/^[0-9a-f]{24}$/)
-      expect(caudid.substring(0, 8)).to.equal('00000000')
-      expect(payload.fg).to.equal(caudid)
-    })
+      const caudid = setCookieSpy.firstCall.args[1];
+      expect(caudid).to.have.lengthOf(24);
+      expect(caudid).to.match(/^[0-9a-f]{24}$/);
+      expect(caudid.substring(0, 8)).to.equal('00000000');
+      expect(payload.fg).to.equal(caudid);
+    });
 
     it('should not set cookies when a valid caudid cookie already exists', function () {
-      const existingCaudid = '674a1b2c3d4e5f6789abcdef'
-      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true)
+      const existingCaudid = '674a1b2c3d4e5f6789abcdef';
+      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true);
       sandbox.stub(__storage, 'getCookie').callsFake((name) =>
         name === 'caudid' ? existingCaudid : undefined
-      )
-      const setCookieSpy = sandbox.stub(__storage, 'setCookie')
+      );
+      const setCookieSpy = sandbox.stub(__storage, 'setCookie');
 
-      const bid = Object.assign({}, validBid)
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
+      const bid = Object.assign({}, validBid);
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
 
-      expect(setCookieSpy.called).to.be.false
-      expect(payload.fg).to.equal(existingCaudid)
-    })
+      expect(setCookieSpy.called).to.be.false;
+      expect(payload.fg).to.equal(existingCaudid);
+    });
 
     it('should regenerate caudid and set both cookies when existing caudid is invalid format', function () {
-      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true)
+      sandbox.stub(__storage, 'cookiesAreEnabled').returns(true);
       sandbox.stub(__storage, 'getCookie').callsFake((name) =>
         name === 'caudid' ? 'invalid-uuid-format' : undefined
-      )
-      const setCookieSpy = sandbox.stub(__storage, 'setCookie')
+      );
+      const setCookieSpy = sandbox.stub(__storage, 'setCookie');
 
-      const bid = Object.assign({}, validBid)
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
+      const bid = Object.assign({}, validBid);
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
 
-      expect(setCookieSpy.calledTwice).to.be.true
-      expect(setCookieSpy.firstCall.args[0]).to.equal('caudid')
-      expect(setCookieSpy.firstCall.args[1]).to.match(/^[0-9a-f]{24}$/)
-      expect(setCookieSpy.secondCall.args[0]).to.equal('caudid_date')
-      expect(payload.fg).to.equal(setCookieSpy.firstCall.args[1])
-    })
+      expect(setCookieSpy.calledTwice).to.be.true;
+      expect(setCookieSpy.firstCall.args[0]).to.equal('caudid');
+      expect(setCookieSpy.firstCall.args[1]).to.match(/^[0-9a-f]{24}$/);
+      expect(setCookieSpy.secondCall.args[0]).to.equal('caudid_date');
+      expect(payload.fg).to.equal(setCookieSpy.firstCall.args[1]);
+    });
 
     it('should clear both caudid and caudid_date when cookies are disabled', function () {
-      sandbox.stub(__storage, 'cookiesAreEnabled').returns(false)
-      const setCookieSpy = sandbox.stub(__storage, 'setCookie')
+      sandbox.stub(__storage, 'cookiesAreEnabled').returns(false);
+      const setCookieSpy = sandbox.stub(__storage, 'setCookie');
 
-      const bid = Object.assign({}, validBid)
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
+      const bid = Object.assign({}, validBid);
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
 
-      expect(setCookieSpy.calledTwice).to.be.true
-      expect(setCookieSpy.firstCall.args[0]).to.equal('caudid')
-      expect(setCookieSpy.firstCall.args[1]).to.equal('')
-      expect(setCookieSpy.firstCall.args[2]).to.equal(0)
-      expect(setCookieSpy.secondCall.args[0]).to.equal('caudid_date')
-      expect(setCookieSpy.secondCall.args[1]).to.equal('')
-      expect(setCookieSpy.secondCall.args[2]).to.equal(0)
-      expect(payload.fg).to.equal('')
-    })
-  })
+      expect(setCookieSpy.calledTwice).to.be.true;
+      expect(setCookieSpy.firstCall.args[0]).to.equal('caudid');
+      expect(setCookieSpy.firstCall.args[1]).to.equal('');
+      expect(setCookieSpy.firstCall.args[2]).to.equal(0);
+      expect(setCookieSpy.secondCall.args[0]).to.equal('caudid_date');
+      expect(setCookieSpy.secondCall.args[1]).to.equal('');
+      expect(setCookieSpy.secondCall.args[2]).to.equal(0);
+      expect(payload.fg).to.equal('');
+    });
+  });
   describe('slot name normalization', function () {
     it('should preserve non-GPT adUnitCode unchanged (case-sensitive)', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = '/Network/TopBanner'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('/Network/TopBanner')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = '/Network/TopBanner';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('/Network/TopBanner');
+    });
 
     it('should preserve mixed-case custom adUnitCode unchanged', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'InArticleSlot'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('InArticleSlot')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'InArticleSlot';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('InArticleSlot');
+    });
 
     it('should normalize GPT auto-generated adUnitCode by removing prefix', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-article_top'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('article_top')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-article_top';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('article_top');
+    });
 
     it('should remove long numeric suffix from GPT adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-sidebar_123456'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('sidebar')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-sidebar_123456';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('sidebar');
+    });
 
     it('should remove timestamp-like suffix from GPT adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-header-1678459238475'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('header')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-header-1678459238475';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('header');
+    });
 
     it('should preserve short numeric suffix in GPT adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-topbanner-1'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('topbanner-1')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-topbanner-1';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('topbanner-1');
+    });
 
     it('should preserve short numeric suffix like -2 in GPT adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-article_slot-2'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('article_slot-2')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-article_slot-2';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('article_slot-2');
+    });
 
     it('should handle GPT adUnitCode with underscore separator', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad_content_main'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('content_main')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad_content_main';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('content_main');
+    });
 
     it('should return undefined for too short GPT slot names', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-ab'
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.be.undefined
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-ab';
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.be.undefined;
+    });
 
     it('should prefer gpid over adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-fallback'
-      bid.ortb2Imp = { ext: { gpid: '/123/preferred-slot' } }
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('/123/preferred-slot')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-fallback';
+      bid.ortb2Imp = { ext: { gpid: '/123/preferred-slot' } };
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('/123/preferred-slot');
+    });
 
     it('should prefer adslot over adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-fallback'
-      bid.ortb2Imp = { ext: { data: { adslot: '/456/adslot-name' } } }
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('/456/adslot-name')
-    })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-fallback';
+      bid.ortb2Imp = { ext: { data: { adslot: '/456/adslot-name' } } };
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('/456/adslot-name');
+    });
 
     it('should prefer tagid over normalized adUnitCode', function () {
-      const bid = Object.assign({}, validBid)
-      bid.adUnitCode = 'div-gpt-ad-fallback'
-      bid.ortb2Imp = { tagid: 'custom-tagid' }
-      const request = spec.buildRequests([bid], {})
-      const payload = JSON.parse(request.data)
-      expect(payload.slts[0].name).to.equal('custom-tagid')
-    })
-  })
+      const bid = Object.assign({}, validBid);
+      bid.adUnitCode = 'div-gpt-ad-fallback';
+      bid.ortb2Imp = { tagid: 'custom-tagid' };
+      const request = spec.buildRequests([bid], {});
+      const payload = JSON.parse(request.data);
+      expect(payload.slts[0].name).to.equal('custom-tagid');
+    });
+  });
 
   describe('getUserSyncs', function () {
     it('should return iframe sync when iframeEnabled and syncFrame provided', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: false }
-      const serverResponses = [{ body: { sync_frames: ['https://example.com/sync_frame', 'https://example2.com/sync_second'] } }]
+      const syncOptions = { iframeEnabled: true, pixelEnabled: false };
+      const serverResponses = [{ body: { sync_frames: ['https://example.com/sync_frame', 'https://example2.com/sync_second'] } }];
 
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses)
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
 
-      expect(syncs).to.have.length(2)
-      expect(syncs[0].type).to.equal('iframe')
-      expect(syncs[0].url).to.equal('https://example.com/sync_frame')
-    })
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://example.com/sync_frame');
+    });
 
     it('should return pixel syncs when pixelEnabled and syncPixels provided', function () {
-      const syncOptions = { iframeEnabled: false, pixelEnabled: true }
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
       const serverResponses = [{
         body: {
           sync_pixels: [
@@ -610,43 +610,43 @@ describe('BeOp Bid Adapter tests', () => {
             'https://example.com/pixel2'
           ]
         }
-      }]
+      }];
 
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses)
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
 
-      expect(syncs).to.have.length(2)
-      expect(syncs[0].type).to.equal('image')
-      expect(syncs[0].url).to.equal('https://example.com/pixel1')
-      expect(syncs[1].url).to.equal('https://example.com/pixel2')
-    })
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal('https://example.com/pixel1');
+      expect(syncs[1].url).to.equal('https://example.com/pixel2');
+    });
 
     it('should return both iframe and pixel syncs when both options are enabled', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true }
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
       const serverResponses = [{
         body: {
           sync_frames: ['https://example.com/sync_frame'],
           sync_pixels: ['https://example.com/pixel1']
         }
-      }]
+      }];
 
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses)
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
 
-      expect(syncs).to.have.length(2)
-      expect(syncs[0].type).to.equal('iframe')
-      expect(syncs[1].type).to.equal('image')
-    })
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[1].type).to.equal('image');
+    });
 
     it('should return empty array when no serverResponses', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true }
-      const syncs = spec.getUserSyncs(syncOptions, [])
-      expect(syncs).to.be.an('array').that.is.empty
-    })
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
 
     it('should return empty array when no syncFrame or syncPixels provided', function () {
-      const syncOptions = { iframeEnabled: true, pixelEnabled: true }
-      const serverResponses = [{ body: {} }]
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses)
-      expect(syncs).to.be.an('array').that.is.empty
-    })
-  })
-})
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{ body: {} }];
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+  });
+});

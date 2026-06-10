@@ -1,4 +1,4 @@
-export type TeadsIdSystemModuleName = 'teadsId'
+export type TeadsIdSystemModuleName = 'teadsId';
 
 declare module './userId/spec' {
   interface UserId {
@@ -16,4 +16,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

@@ -1,11 +1,11 @@
-'use strict'
+'use strict';
 
-import { deepAccess, _each, triggerPixel, getBidIdParameter } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { deepAccess, _each, triggerPixel, getBidIdParameter } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const BIDDER_CODE = 'growads'
+const BIDDER_CODE = 'growads';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,85 +13,85 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
-    return bid.params && !!bid.params.zoneId
+    return bid.params && !!bid.params.zoneId;
   },
 
   buildRequests: function (validBidRequests) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let zoneId
-    let domain
-    let requestURI
-    let data = {}
-    const zoneCounters = {}
+    let zoneId;
+    let domain;
+    let requestURI;
+    let data = {};
+    const zoneCounters = {};
 
     return validBidRequests.map(bidRequest => {
-      zoneId = getBidIdParameter('zoneId', bidRequest.params)
-      domain = getBidIdParameter('domain', bidRequest.params)
+      zoneId = getBidIdParameter('zoneId', bidRequest.params);
+      domain = getBidIdParameter('domain', bidRequest.params);
 
       if (!(zoneId in zoneCounters)) {
-        zoneCounters[zoneId] = 0
+        zoneCounters[zoneId] = 0;
       }
 
       if (typeof domain === 'undefined' || domain.length === 0) {
-        domain = 'portal.growadvertising.com'
+        domain = 'portal.growadvertising.com';
       }
 
-      requestURI = 'https://' + domain + '/adserve/bid'
+      requestURI = 'https://' + domain + '/adserve/bid';
       data = {
         type: 'prebidjs',
         zoneId: zoneId,
         i: zoneCounters[zoneId]
-      }
-      zoneCounters[zoneId]++
+      };
+      zoneCounters[zoneId]++;
 
       return {
         method: 'GET',
         url: requestURI,
         data: data,
         bidRequest: bidRequest
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const request = bidRequest.bidRequest
-    const bidResponses = []
-    let CPM
-    let width
-    let height
-    let response
-    let isCorrectSize = false
-    let isCorrectCPM = true
-    let minCPM
-    let maxCPM
-    let bid = {}
+    const request = bidRequest.bidRequest;
+    const bidResponses = [];
+    let CPM;
+    let width;
+    let height;
+    let response;
+    let isCorrectSize = false;
+    let isCorrectCPM = true;
+    let minCPM;
+    let maxCPM;
+    let bid = {};
 
-    const body = serverResponse.body
+    const body = serverResponse.body;
 
     try {
-      response = JSON.parse(body)
+      response = JSON.parse(body);
     } catch (ex) {
-      response = body
+      response = body;
     }
 
     if (response && response.status === 'success' && request) {
-      CPM = parseFloat(response.cpm)
-      width = parseInt(response.width)
-      height = parseInt(response.height)
+      CPM = parseFloat(response.cpm);
+      width = parseInt(response.width);
+      height = parseInt(response.height);
 
-      minCPM = getBidIdParameter('minCPM', request.params)
-      maxCPM = getBidIdParameter('maxCPM', request.params)
-      width = parseInt(response.width)
-      height = parseInt(response.height)
+      minCPM = getBidIdParameter('minCPM', request.params);
+      maxCPM = getBidIdParameter('maxCPM', request.params);
+      width = parseInt(response.width);
+      height = parseInt(response.height);
 
       // Ensure response CPM is within the given bounds
       if (minCPM !== '' && CPM < parseFloat(minCPM)) {
-        isCorrectCPM = false
+        isCorrectCPM = false;
       }
       if (maxCPM !== '' && CPM > parseFloat(maxCPM)) {
-        isCorrectCPM = false
+        isCorrectCPM = false;
       }
 
       if (isCorrectCPM) {
@@ -108,7 +108,7 @@ export const spec = {
           adUnitCode: request.adUnitCode,
           // TODO: is 'page' the right value here?
           referrer: deepAccess(request, 'refererInfo.page')
-        }
+        };
 
         if (response.hasOwnProperty(NATIVE)) {
           bid[NATIVE] = {
@@ -119,14 +119,14 @@ export const spec = {
             sponsoredBy: response[NATIVE].sponsoredBy,
             clickUrl: response[NATIVE].clickUrl,
             impressionTrackers: response[NATIVE].impressionTrackers,
-          }
+          };
 
           if (response[NATIVE].image) {
             bid[NATIVE].image = {
               url: response[NATIVE].image.url,
               height: response[NATIVE].image.height,
               width: response[NATIVE].image.width
-            }
+            };
           }
 
           if (response[NATIVE].icon) {
@@ -134,35 +134,35 @@ export const spec = {
               url: response[NATIVE].icon.url,
               height: response[NATIVE].icon.height,
               width: response[NATIVE].icon.width
-            }
+            };
           }
-          bid.mediaType = NATIVE
-          isCorrectSize = true
+          bid.mediaType = NATIVE;
+          isCorrectSize = true;
         } else {
-          bid.ad = response.ad
-          bid.mediaType = BANNER
+          bid.ad = response.ad;
+          bid.mediaType = BANNER;
           // Ensure that response ad matches one of the placement sizes.
           _each(deepAccess(request, 'mediaTypes.banner.sizes', []), function (size) {
             if (width === size[0] && height === size[1]) {
-              isCorrectSize = true
+              isCorrectSize = true;
             }
-          })
+          });
         }
 
         if (isCorrectSize) {
-          bidResponses.push(bid)
+          bidResponses.push(bid);
         }
       }
     }
 
-    return bidResponses
+    return bidResponses;
   },
 
   onBidWon: function (bid) {
     if (bid.vurl) {
-      triggerPixel(bid.vurl)
+      triggerPixel(bid.vurl);
     }
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

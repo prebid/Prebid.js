@@ -1,43 +1,43 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { config } from '../src/config.js'
-import { generateUUID, getWindowTop, getWindowSelf } from '../src/utils.js'
-import { getStorageManager } from '../src/storageManager.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { generateUUID, getWindowTop, getWindowSelf } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-export const BIDDER_CODE = 'aseal'
-export const SUPPORTED_AD_TYPES = [BANNER]
-export const API_ENDPOINT = 'https://tkprebid.aotter.net/prebid/adapter'
-export const WEB_SESSION_ID_KEY = '__tkwsid'
-export const HEADER_AOTTER_VERSION = 'prebid_0.0.2'
+export const BIDDER_CODE = 'aseal';
+export const SUPPORTED_AD_TYPES = [BANNER];
+export const API_ENDPOINT = 'https://tkprebid.aotter.net/prebid/adapter';
+export const WEB_SESSION_ID_KEY = '__tkwsid';
+export const HEADER_AOTTER_VERSION = 'prebid_0.0.2';
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const getTrekWebSessionId = () => {
   let wsid =
     storage.localStorageIsEnabled() &&
-    storage.getDataFromLocalStorage(WEB_SESSION_ID_KEY)
+    storage.getDataFromLocalStorage(WEB_SESSION_ID_KEY);
 
   if (!wsid) {
-    wsid = generateUUID()
-    setTrekWebSessionId(wsid)
+    wsid = generateUUID();
+    setTrekWebSessionId(wsid);
   }
 
-  return wsid
-}
+  return wsid;
+};
 
 const setTrekWebSessionId = (wsid) => {
   if (storage.localStorageIsEnabled()) {
-    storage.setDataInLocalStorage(WEB_SESSION_ID_KEY, wsid)
+    storage.setDataInLocalStorage(WEB_SESSION_ID_KEY, wsid);
   }
-}
+};
 
 const canAccessTopWindow = () => {
   try {
-    return !!getWindowTop().location.href
+    return !!getWindowTop().location.href;
   } catch (errro) {
-    return false
+    return false;
   }
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -47,15 +47,15 @@ export const spec = {
     !!bid.params.placeUid && typeof bid.params.placeUid === 'string',
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests.length === 0) {
-      return []
+      return [];
     }
 
-    const clientId = config.getConfig('aseal.clientId') || ''
+    const clientId = config.getConfig('aseal.clientId') || '';
 
-    const windowTop = getWindowTop()
-    const windowSelf = getWindowSelf()
+    const windowTop = getWindowTop();
+    const windowSelf = getWindowSelf();
 
-    const w = canAccessTopWindow() ? windowTop : windowSelf
+    const w = canAccessTopWindow() ? windowTop : windowSelf;
 
     const data = {
       bids: validBidRequests,
@@ -73,7 +73,7 @@ export const spec = {
           dl: w.location.href,
         },
       },
-    }
+    };
 
     const options = {
       contentType: 'application/json',
@@ -82,7 +82,7 @@ export const spec = {
         'x-aotter-clientid': clientId,
         'x-aotter-version': HEADER_AOTTER_VERSION,
       },
-    }
+    };
 
     return [
       {
@@ -91,17 +91,17 @@ export const spec = {
         data,
         options,
       },
-    ]
+    ];
   },
   interpretResponse: (serverResponse, bidRequest) => {
     if (!Array.isArray(serverResponse.body)) {
-      return []
+      return [];
     }
 
-    const bidResponses = serverResponse.body
+    const bidResponses = serverResponse.body;
 
-    return bidResponses
+    return bidResponses;
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

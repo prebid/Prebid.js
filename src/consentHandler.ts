@@ -1,7 +1,7 @@
-import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp } from './utils.js'
-import { defer, PbPromise } from './utils/promise.js'
-import { config } from './config.js'
-import type { ModuleType } from "./activities/modules.ts"
+import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp } from './utils.js';
+import { defer, PbPromise } from './utils/promise.js';
+import { config } from './config.js';
+import type { ModuleType } from "./activities/modules.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -9,12 +9,12 @@ import type { ModuleType } from "./activities/modules.ts"
  *
  * see https://github.com/prebid/Prebid.js/issues/8161
  */
-export const VENDORLESS_GVLID = Object.freeze({})
-export const CONSENT_GDPR = 'gdpr'
-export const CONSENT_GPP = 'gpp'
-export const CONSENT_USP = 'usp'
-export const CONSENT_COPPA = 'coppa'
-export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA
+export const VENDORLESS_GVLID = Object.freeze({});
+export const CONSENT_GDPR = 'gdpr';
+export const CONSENT_GPP = 'gpp';
+export const CONSENT_USP = 'usp';
+export const CONSENT_COPPA = 'coppa';
+export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA;
 
 export interface ConsentData {
   // with just core, only coppa is defined - everything else will be null.
@@ -23,9 +23,9 @@ export interface ConsentData {
 }
 
 /** Resolves to ConsentData[K] when module has augmented that key, else unknown (core-only build). */
-export type ConsentDataForKey<K extends ConsentType> = K extends keyof ConsentData ? ConsentData[K] : unknown
+export type ConsentDataForKey<K extends ConsentType> = K extends keyof ConsentData ? ConsentData[K] : unknown;
 
-type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null
+type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ConsentManagementConfig {
@@ -82,96 +82,96 @@ export function consentHandler<T, M>(
     hashFields?: string[]
   } = {}
 ): ConsentHandler<T, M> {
-  let enabled
-  let dirty
-  let df
-  let generatedTime
-  let consentData
-  let ready
-  let hash
-  let error
-  let hasError
-  let listeners
+  let enabled;
+  let dirty;
+  let df;
+  let generatedTime;
+  let consentData;
+  let ready;
+  let hash;
+  let error;
+  let hasError;
+  let listeners;
   function reset() {
-    df = defer()
-    enabled = false
-    consentData = null
-    ready = false
-    generatedTime = null
-    dirty = true
-    hash = null
-    error = null
-    hasError = false
-    listeners = []
+    df = defer();
+    enabled = false;
+    consentData = null;
+    ready = false;
+    generatedTime = null;
+    dirty = true;
+    hash = null;
+    error = null;
+    hasError = false;
+    listeners = [];
   }
 
   function getHashData(consentData) {
-    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData
+    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData;
   }
 
   function hasConsentChanged(newConsentData) {
-    return !deepEqual(getHashData(consentData), getHashData(newConsentData))
+    return !deepEqual(getHashData(consentData), getHashData(newConsentData));
   }
 
   function notifyListeners() {
     if (dirty) {
-      listeners.forEach(l => l(consentData))
+      listeners.forEach(l => l(consentData));
     }
   }
 
   function resolve(data) {
-    dirty = hasConsentChanged(data)
-    consentData = data
-    hasError = false
-    error = null
-    ready = true
-    df.resolve(data)
-    notifyListeners()
+    dirty = hasConsentChanged(data);
+    consentData = data;
+    hasError = false;
+    error = null;
+    ready = true;
+    df.resolve(data);
+    notifyListeners();
   }
   function reject(err) {
-    dirty = hasConsentChanged(null)
-    consentData = null
-    ready = true
-    error = err
-    hasError = true
-    df.reject(err)
-    notifyListeners()
+    dirty = hasConsentChanged(null);
+    consentData = null;
+    ready = true;
+    error = err;
+    hasError = true;
+    df.reject(err);
+    notifyListeners();
   }
-  reset()
+  reset();
 
   return {
     reset,
     get generatedTime() {
-      return generatedTime
+      return generatedTime;
     },
     enable() {
-      enabled = true
+      enabled = true;
     },
     get enabled() {
-      return enabled
+      return enabled;
     },
     get ready() {
-      return ready
+      return ready;
     },
     get promise() {
       if (ready) {
-        return hasError ? PbPromise.reject(error) : PbPromise.resolve(consentData)
+        return hasError ? PbPromise.reject(error) : PbPromise.resolve(consentData);
       }
       if (!enabled) {
-        resolve(null)
+        resolve(null);
       }
-      return df.promise
+      return df.promise;
     },
     setConsentData(data: T, time = timestamp()) {
-      generatedTime = time
-      resolve(data)
+      generatedTime = time;
+      resolve(data);
     },
     getConsentData(): T {
-      return enabled ? consentData : null
+      return enabled ? consentData : null;
     },
     getConsentMeta(): M {
       if (generatedTime != null && consentData != null) {
-        return getMeta(consentData, generatedTime)
+        return getMeta(consentData, generatedTime);
       }
     },
     error: reject,
@@ -179,18 +179,18 @@ export function consentHandler<T, M>(
       if (dirty) {
         hash = cyrb53Hash(
           JSON.stringify(getHashData(consentData))
-        )
-        dirty = false
+        );
+        dirty = false;
       }
-      return hash
+      return hash;
     },
     onChange(listener) {
-      listeners.push(listener)
+      listeners.push(listener);
     }
-  }
+  };
 }
 
-export const uspDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_USP>, DefaultConsentMeta>()
+export const uspDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_USP>, DefaultConsentMeta>();
 
 export const gdprDataHandler = consentHandler({
   getMeta(consentData: ConsentDataFor<typeof CONSENT_GDPR>, generatedAt) {
@@ -202,37 +202,37 @@ export const gdprDataHandler = consentHandler({
           : 0,
         generatedAt,
         apiVersion: consentData.apiVersion,
-      }
+      };
     }
   },
   hashFields: ['gdprApplies', 'consentString']
-})
+});
 
 export const gppDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GPP>, DefaultConsentMeta>({
   hashFields: ['applicableSections', 'gppString'],
-})
+});
 
 export const coppaDataHandler = (() => {
   const handler = ((handler) => Object.assign(handler, {
     getCoppa() {
-      return handler.getConsentData()
+      return handler.getConsentData();
     },
     reset() {}
   }))(consentHandler<boolean, boolean>({
     getMeta(consentData, generatedAt) {
-      return consentData
+      return consentData;
     }
-  }))
-  handler.enable()
-  handler.setConsentData(!!config.getConfig('coppa'))
+  }));
+  handler.enable();
+  handler.setConsentData(!!config.getConfig('coppa'));
   config.getConfig('coppa', (cfg) => {
     // on resetConfig cfg.coppa comes in as an empty object
-    handler.setConsentData(typeof cfg.coppa === 'object' && isEmpty(cfg.coppa) ? false : !!cfg.coppa)
-  })
-  return handler
-})()
+    handler.setConsentData(typeof cfg.coppa === 'object' && isEmpty(cfg.coppa) ? false : !!cfg.coppa);
+  });
+  return handler;
+})();
 
-export type GVLID = number | typeof VENDORLESS_GVLID
+export type GVLID = number | typeof VENDORLESS_GVLID;
 type GVLIDResult = {
   /**
    * A map from module type to that module's GVL ID.
@@ -244,12 +244,12 @@ type GVLIDResult = {
    * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
    */
   gvlid?: GVLID;
-}
+};
 
 export function gvlidRegistry() {
-  const registry = {}
-  const flat = {}
-  const none = {}
+  const registry = {};
+  const flat = {};
+  const none = {};
   return {
     /**
      * Register a module's GVL ID.
@@ -259,11 +259,11 @@ export function gvlidRegistry() {
      */
     register(moduleType: ModuleType, moduleName: string, gvlid: GVLID) {
       if (gvlid) {
-        (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid
+        (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
         if (flat.hasOwnProperty(moduleName)) {
-          if (flat[moduleName] !== gvlid) flat[moduleName] = none
+          if (flat[moduleName] !== gvlid) flat[moduleName] = none;
         } else {
-          flat[moduleName] = gvlid
+          flat[moduleName] = gvlid;
         }
       }
     },
@@ -277,13 +277,13 @@ export function gvlidRegistry() {
      *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName: string) {
-      const result: GVLIDResult = { modules: registry[moduleName] || {} }
+      const result: GVLIDResult = { modules: registry[moduleName] || {} };
       if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
-        result.gvlid = flat[moduleName]
+        result.gvlid = flat[moduleName];
       }
-      return result
+      return result;
     }
-  }
+  };
 }
 
 declare module './config' {
@@ -295,62 +295,62 @@ declare module './config' {
   }
 }
 
-export const GDPR_GVLIDS = gvlidRegistry()
+export const GDPR_GVLIDS = gvlidRegistry();
 
 const ALL_HANDLERS = {
   [CONSENT_GDPR]: gdprDataHandler,
   [CONSENT_USP]: uspDataHandler,
   [CONSENT_GPP]: gppDataHandler,
   [CONSENT_COPPA]: coppaDataHandler,
-} as const
+} as const;
 
 export type AllConsentData = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
-}
+};
 
 export type AllConsentMeta = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>
-}
+};
 
-type MultiHandler = Pick<ConsentHandler<AllConsentData, AllConsentMeta>, 'promise' | 'hash' | 'getConsentData' | 'reset' | 'getConsentMeta' | 'onChange'>
+type MultiHandler = Pick<ConsentHandler<AllConsentData, AllConsentMeta>, 'promise' | 'hash' | 'getConsentData' | 'reset' | 'getConsentMeta' | 'onChange'>;
 
 export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
-  const entries = Object.entries(handlers)
+  const entries = Object.entries(handlers);
   function collector(method): any {
     return function () {
-      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]))
-    }
+      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]));
+    };
   }
-  const getConsentData = collector('getConsentData')
-  const resetAll = collector('reset')
-  let listeners
+  const getConsentData = collector('getConsentData');
+  const resetAll = collector('reset');
+  let listeners;
   function reset() {
-    listeners = []
+    listeners = [];
     Object.values(handlers).forEach(handler => handler.onChange(() => {
-      listeners.forEach((listener) => listener(getConsentData()))
-    }))
+      listeners.forEach((listener) => listener(getConsentData()));
+    }));
   }
-  reset()
+  reset();
 
   return {
     getConsentData,
     onChange(listener) {
-      listeners.push(listener)
+      listeners.push(listener);
     },
     get promise() {
       return PbPromise.all(entries.map(([name, handler]) => handler.promise.then(val => [name, val])))
-        .then(entries => Object.fromEntries(entries))
+        .then(entries => Object.fromEntries(entries));
     },
     get hash() {
-      return cyrb53Hash(entries.map(([_, handler]) => handler.hash).join(':'))
+      return cyrb53Hash(entries.map(([_, handler]) => handler.hash).join(':'));
     },
     getConsentMeta: collector('getConsentMeta'),
     reset() {
-      resetAll()
-      reset()
+      resetAll();
+      reset();
     }
-  }
+  };
 }
 
-export const allConsent = multiHandler()
-export const GVL_PURPOSES = {} // this is populated by plugins/gvlPurposes.js
+export const allConsent = multiHandler();
+export const GVL_PURPOSES = {}; // this is populated by plugins/gvlPurposes.js

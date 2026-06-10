@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { spec } from 'modules/innityBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/innityBidAdapter.js';
 
 describe('innityAdapterTest', () => {
   describe('bidRequestValidity', () => {
@@ -10,17 +10,17 @@ describe('innityAdapterTest', () => {
           'pub': 267,
           'zone': 62546
         },
-      })).to.equal(true)
-    })
+      })).to.equal(true);
+    });
 
     it('bidRequest with no required params', () => {
       expect(spec.isBidRequestValid({
         bidder: 'innity',
         params: {
         },
-      })).to.equal(false)
-    })
-  })
+      })).to.equal(false);
+    });
+  });
 
   describe('bidRequest', () => {
     const bidRequests = [{
@@ -35,37 +35,37 @@ describe('innityAdapterTest', () => {
       'bidId': '51ef8751f9aead',
       'bidderRequestId': '418b37f85e772c',
       'auctionId': '18fd8b8b0bd757'
-    }]
+    }];
 
     const bidderRequest = {
       refererInfo: {
         page: 'https://refererExample.com'
       }
-    }
+    };
 
     it('bidRequest HTTP method', () => {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       requests.forEach(function(requestItem) {
-        expect(requestItem.method).to.equal('GET')
-      })
-    })
+        expect(requestItem.method).to.equal('GET');
+      });
+    });
 
     it('bidRequest with complete data', () => {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].data.pub).to.equal(267)
-      expect(requests[0].data.zone).to.equal(62546)
-      expect(requests[0].data.width).to.equal('300')
-      expect(requests[0].data.height).to.equal('250')
-      expect(requests[0].data.url).to.equal(encodeURIComponent('https://refererExample.com'))
-      expect(requests[0].data.callback_uid).to.equal('51ef8751f9aead')
-    })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.pub).to.equal(267);
+      expect(requests[0].data.zone).to.equal(62546);
+      expect(requests[0].data.width).to.equal('300');
+      expect(requests[0].data.height).to.equal('250');
+      expect(requests[0].data.url).to.equal(encodeURIComponent('https://refererExample.com'));
+      expect(requests[0].data.callback_uid).to.equal('51ef8751f9aead');
+    });
 
     it('bidRequest without referer URL', () => {
-      delete bidderRequest.refererInfo
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].data.url).to.equal('')
-    })
-  })
+      delete bidderRequest.refererInfo;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.url).to.equal('');
+    });
+  });
 
   describe('interpretResponse', () => {
     const bidRequest = {
@@ -84,9 +84,9 @@ describe('innityAdapterTest', () => {
         'url': 'https://refererExample.com',
         'cb': '',
       }
-    }
+    };
 
-    const advDomains = ['advertiserExample.com']
+    const advDomains = ['advertiserExample.com'];
 
     const bidResponse = {
       body: {
@@ -99,32 +99,32 @@ describe('innityAdapterTest', () => {
         'adomain': advDomains,
       },
       headers: {}
-    }
+    };
 
     it('result is correct', () => {
-      const result = spec.interpretResponse(bidResponse, bidRequest)
-      expect(result[0].requestId).to.equal('51ef8751f9aead')
-      expect(result[0].cpm).to.equal(1)
-      expect(result[0].width).to.equal('300')
-      expect(result[0].height).to.equal('250')
-      expect(result[0].creativeId).to.equal('148186')
-      expect(result[0].currency).to.equal('USD')
-      expect(result[0].ttl).to.equal(60)
-      expect(result[0].ad).to.equal('<script src="https://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>')
-      expect(result[0].meta.advertiserDomains).to.equal(advDomains)
-    })
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result[0].requestId).to.equal('51ef8751f9aead');
+      expect(result[0].cpm).to.equal(1);
+      expect(result[0].width).to.equal('300');
+      expect(result[0].height).to.equal('250');
+      expect(result[0].creativeId).to.equal('148186');
+      expect(result[0].currency).to.equal('USD');
+      expect(result[0].ttl).to.equal(60);
+      expect(result[0].ad).to.equal('<script src="https://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>');
+      expect(result[0].meta.advertiserDomains).to.equal(advDomains);
+    });
 
     it('result with no advertiser domain', () => {
-      bidResponse.body.adomain = []
-      const result = spec.interpretResponse(bidResponse, bidRequest)
-      expect(result[0].meta.advertiserDomains.length).to.equal(0)
-      expect(result[0].meta.advertiserDomains).to.deep.equal([])
-    })
+      bidResponse.body.adomain = [];
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result[0].meta.advertiserDomains.length).to.equal(0);
+      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
+    });
 
     it('result with no bids', () => {
-      bidResponse.body = {}
-      const result = spec.interpretResponse(bidResponse, bidRequest)
-      expect(result).to.deep.equal([])
-    })
-  })
-})
+      bidResponse.body = {};
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result).to.deep.equal([]);
+    });
+  });
+});

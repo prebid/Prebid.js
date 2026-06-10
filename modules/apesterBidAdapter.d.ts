@@ -1,6 +1,6 @@
-import { VidazooBaseBidderParams } from "../libraries/vidazooUtils/vidazooTypes.ts"
+import { VidazooBaseBidderParams } from "../libraries/vidazooUtils/vidazooTypes.ts";
 
-export type ApesterBidRequestParams = VidazooBaseBidderParams
+export type ApesterBidRequestParams = VidazooBaseBidderParams;
 
 declare module '../src/adUnits' {
   interface BidderParams {

@@ -1,8 +1,8 @@
-import { assert, expect } from 'chai'
-import * as utils from 'src/utils.js'
-import { spec } from 'modules/unicornBidAdapter.js'
-import * as _ from 'lodash'
-import { getGlobal } from '../../../src/prebidGlobal.js'
+import { assert, expect } from 'chai';
+import * as utils from 'src/utils.js';
+import { spec } from 'modules/unicornBidAdapter.js';
+import * as _ from 'lodash';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const bidRequests = [
   {
@@ -86,7 +86,7 @@ const bidRequests = [
     bidderRequestsCount: 1,
     bidderWinsCount: 0
   }
-]
+];
 
 const validBidRequests = [
   {
@@ -176,7 +176,7 @@ const validBidRequests = [
     bidderRequestsCount: 1,
     bidderWinsCount: 0
   }
-]
+];
 
 const bidderRequest = {
   bidderCode: 'unicorn',
@@ -278,7 +278,7 @@ const bidderRequest = {
     stack: ['https://uni-corn.net/']
   },
   start: 1581064124177
-}
+};
 
 const openRTBRequest = {
   id: '5ebea288-f13a-4754-be6d-4ade66c68877',
@@ -362,7 +362,7 @@ const openRTBRequest = {
       prebid_version: '1.1'
     }
   }
-}
+};
 
 const serverResponse = {
   body: {
@@ -441,13 +441,13 @@ const serverResponse = {
     units: 0
   },
   headers: {}
-}
+};
 
 const request = {
   method: 'POST',
   url: 'https://ds.uncn.jp/pb/0/bid.json',
   data: '{"id":"5ebea288-f13a-4754-be6d-4ade66c68877","at":1,"imp":[{"id":"216255f234b602","banner":{"w":300,"h":250},"format":[{"w":300,"h":250},{"w":336,"h":280}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-0"},{"id":"31e2b28ced2475","banner":{"w":"300","h":"250"},"format":[{"w":"300","h":"250"}],"secure":1,"bidfloor":0"tagid":"/19968336/header-bid-tag-1"},{"id":"40a333e047a9bd","banner":{"w":300,"h":250},"format":[{"w":300,"h":250}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-2"}],"cur":"JPY","site":{"id":"uni-corn.net","publisher":{"id":12345},"domain":"uni-corn.net","page":"https://uni-corn.net/","ref":"https://uni-corn.net/"},"device":{"language":"ja","ua":"Mozilla/5.0 (Linux; Android 8.0.0; ONEPLUS A5000) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36"},"user":{"id":"69d9e1c2-801e-4901-a665-fad467550fec"},"bcat":[],"source":{"ext":{"stype":"prebid_uncn","bidder":"unicorn","prebid_version":"1.1"}}}'
-}
+};
 
 const interpretedBids = [
   {
@@ -486,59 +486,59 @@ const interpretedBids = [
     netRevenue: true,
     currency: 'JPY'
   }
-]
+];
 
 describe('unicornBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
     it('isBidRequestValid', () => {
-      expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true)
-      expect(spec.isBidRequestValid(bidRequests[1])).to.equal(false)
-      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(false)
-    })
-  })
+      expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
+      expect(spec.isBidRequestValid(bidRequests[1])).to.equal(false);
+      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(false);
+    });
+  });
 
   describe('buildBidRequest', () => {
     const removeUntestableAttrs = data => {
-      delete data['device']
-      delete data['site']['domain']
-      delete data['site']['page']
-      delete data['id']
+      delete data['device'];
+      delete data['site']['domain'];
+      delete data['site']['page'];
+      delete data['id'];
       data['imp'].forEach(imp => {
-        delete imp['id']
-      })
-      delete data['user']['id']
-      return data
-    }
+        delete imp['id'];
+      });
+      delete data['user']['id'];
+      return data;
+    };
     before(function () {
       getGlobal().bidderSettings = {
         unicorn: {
           storageAllowed: true
         }
-      }
-    })
+      };
+    });
     after(function () {
-      getGlobal().bidderSettings = {}
-    })
+      getGlobal().bidderSettings = {};
+    });
     it('buildBidRequest', () => {
-      const req = spec.buildRequests(validBidRequests, bidderRequest)
-      const uid = JSON.parse(req.data)['user']['id']
-      const reqData = removeUntestableAttrs(JSON.parse(req.data))
-      const openRTBRequestData = removeUntestableAttrs(openRTBRequest)
-      assert.deepStrictEqual(reqData, openRTBRequestData)
-      const req2 = spec.buildRequests(validBidRequests, bidderRequest)
-      const uid2 = JSON.parse(req2.data)['user']['id']
-      assert.deepStrictEqual(uid, uid2)
-    })
+      const req = spec.buildRequests(validBidRequests, bidderRequest);
+      const uid = JSON.parse(req.data)['user']['id'];
+      const reqData = removeUntestableAttrs(JSON.parse(req.data));
+      const openRTBRequestData = removeUntestableAttrs(openRTBRequest);
+      assert.deepStrictEqual(reqData, openRTBRequestData);
+      const req2 = spec.buildRequests(validBidRequests, bidderRequest);
+      const uid2 = JSON.parse(req2.data)['user']['id'];
+      assert.deepStrictEqual(uid, uid2);
+    });
     it('test if contains ID5', () => {
-      const _validBidRequests = utils.deepClone(validBidRequests)
+      const _validBidRequests = utils.deepClone(validBidRequests);
       _validBidRequests[0].userId = {
         id5id: {
           uid: 'id5_XXXXX'
         }
-      }
-      const req = spec.buildRequests(_validBidRequests, bidderRequest)
-      const reqData = removeUntestableAttrs(JSON.parse(req.data))
-      const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest))
+      };
+      const req = spec.buildRequests(_validBidRequests, bidderRequest);
+      const reqData = removeUntestableAttrs(JSON.parse(req.data));
+      const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest));
       openRTBRequestData.user.eids = [
         {
           source: 'id5-sync.com',
@@ -548,23 +548,23 @@ describe('unicornBidAdapterTest', () => {
             }
           ]
         }
-      ]
-      assert.deepStrictEqual(reqData, openRTBRequestData)
-    })
-  })
+      ];
+      assert.deepStrictEqual(reqData, openRTBRequestData);
+    });
+  });
 
   describe('interpretResponse', () => {
     it('interpretResponse', () => {
-      const bids = spec.interpretResponse(serverResponse, request)
-      assert.deepStrictEqual(bids, interpretedBids)
-    })
+      const bids = spec.interpretResponse(serverResponse, request);
+      assert.deepStrictEqual(bids, interpretedBids);
+    });
     it('interpretResponseEmptyString', () => {
-      const bids = spec.interpretResponse('', request)
-      assert.deepStrictEqual(bids, [])
-    })
+      const bids = spec.interpretResponse('', request);
+      assert.deepStrictEqual(bids, []);
+    });
     it('interpretResponseEmptyArray', () => {
-      const bids = spec.interpretResponse([], request)
-      assert.deepStrictEqual(bids, [])
-    })
-  })
-})
+      const bids = spec.interpretResponse([], request);
+      assert.deepStrictEqual(bids, []);
+    });
+  });
+});

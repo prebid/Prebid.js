@@ -1,7 +1,7 @@
-import { VIDEO, BANNER } from '../src/mediaTypes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { Renderer } from '../src/Renderer.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
   deepAccess,
   mergeDeep,
@@ -9,15 +9,15 @@ import {
   isStr,
   isPlainObject,
   getUniqueIdentifierStr
-} from '../src/utils.js'
+} from '../src/utils.js';
 
-const BIDDER_CODE = 'aniview'
-const GVLID = 780
-const TTL = 600
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_PLAYER_DOMAIN = 'player.aniview.com'
-const SSP_ENDPOINT = 'https://rtb.aniview.com/sspRTB2'
-const RENDERER_FILENAME = 'prebidRenderer.js'
+const BIDDER_CODE = 'aniview';
+const GVLID = 780;
+const TTL = 600;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_PLAYER_DOMAIN = 'player.aniview.com';
+const SSP_ENDPOINT = 'https://rtb.aniview.com/sspRTB2';
+const RENDERER_FILENAME = 'prebidRenderer.js';
 
 const converter = ortbConverter({
   context: {
@@ -27,28 +27,28 @@ const converter = ortbConverter({
   },
 
   imp(buildImp, bidRequest, context) {
-    const { mediaType } = context
-    const imp = buildImp(bidRequest, context)
-    const { width, height } = getSize(mediaType, bidRequest)
-    const floor = getFloor(bidRequest, { width, height }, mediaType)
+    const { mediaType } = context;
+    const imp = buildImp(bidRequest, context);
+    const { width, height } = getSize(mediaType, bidRequest);
+    const floor = getFloor(bidRequest, { width, height }, mediaType);
 
-    imp.tagid = deepAccess(bidRequest, 'params.AV_CHANNELID')
+    imp.tagid = deepAccess(bidRequest, 'params.AV_CHANNELID');
 
     if (floor) {
-      imp.bidfloor = floor
-      imp.bidfloorcur = DEFAULT_CURRENCY
+      imp.bidfloor = floor;
+      imp.bidfloorcur = DEFAULT_CURRENCY;
     }
 
     if (isBannerType(mediaType)) {
-      mergeDeep(imp.banner, { w: width, h: height })
+      mergeDeep(imp.banner, { w: width, h: height });
     }
 
-    return imp
+    return imp;
   },
 
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context)
-    const replacements = context.bidRequests[0]?.params?.replacements
+    const request = buildRequest(imps, bidderRequest, context);
+    const replacements = context.bidRequests[0]?.params?.replacements;
 
     mergeDeep(request, {
       ext: {
@@ -57,42 +57,42 @@ const converter = ortbConverter({
           pbv: '$prebid.version$',
         }
       }
-    })
+    });
 
     if (isPlainObject(replacements)) {
-      mergeDeep(request, { ext: { [BIDDER_CODE]: { replacements } } })
+      mergeDeep(request, { ext: { [BIDDER_CODE]: { replacements } } });
     }
 
-    return request
+    return request;
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    const { bidRequest, mediaType } = context
-    const { width, height } = getSize(mediaType, bidRequest)
+    const { bidRequest, mediaType } = context;
+    const { width, height } = getSize(mediaType, bidRequest);
 
     if (!bid.w || !bid.h) {
-      bid.w = width
-      bid.h = height
+      bid.w = width;
+      bid.h = height;
     }
 
-    bid.crid ??= getUniqueIdentifierStr()
-    bid.adid ??= getUniqueIdentifierStr()
-    bid.bidid ??= getUniqueIdentifierStr()
+    bid.crid ??= getUniqueIdentifierStr();
+    bid.adid ??= getUniqueIdentifierStr();
+    bid.bidid ??= getUniqueIdentifierStr();
 
-    const prebidBid = buildBidResponse(bid, context)
+    const prebidBid = buildBidResponse(bid, context);
 
     if (!bid.adm || prebidBid.cpm <= 0) {
-      return prebidBid
+      return prebidBid;
     }
 
-    mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } })
+    mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } });
 
     if (bid.ext?.aniview) {
-      prebidBid.meta.aniview = bid.ext.aniview
+      prebidBid.meta.aniview = bid.ext.aniview;
 
       if (prebidBid.meta.aniview.tag) {
         try {
-          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag)
+          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag);
         } catch {
           // Ignore the error
         }
@@ -101,19 +101,19 @@ const converter = ortbConverter({
 
     if (isVideoType(mediaType)) {
       if (bidRequest.mediaTypes.video.context === 'outstream') {
-        prebidBid.renderer = createRenderer(bidRequest)
+        prebidBid.renderer = createRenderer(bidRequest);
       }
     } else if (isBannerType(mediaType)) {
       if (bid.adm?.trim().startsWith('<VAST')) {
-        prebidBid.renderer = createRenderer(bidRequest)
+        prebidBid.renderer = createRenderer(bidRequest);
       } else {
-        prebidBid.ad = bid.adm
+        prebidBid.ad = bid.adm;
       }
     }
 
-    return prebidBid
+    return prebidBid;
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -122,15 +122,15 @@ export const spec = {
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid(bid) {
-    return !!(bid.params?.AV_PUBLISHERID && bid.params?.AV_CHANNELID)
+    return !!(bid.params?.AV_PUBLISHERID && bid.params?.AV_CHANNELID);
   },
 
   buildRequests(bidRequests, bidderRequest) {
-    const requests = []
+    const requests = [];
 
     bidRequests.forEach((bidRequest) => {
       Object.keys(bidRequest.mediaTypes).forEach((mediaType) => {
-        const endpoint = bidRequest.params.dev?.endpoint || SSP_ENDPOINT
+        const endpoint = bidRequest.params.dev?.endpoint || SSP_ENDPOINT;
 
         requests.push({
           method: 'POST',
@@ -142,25 +142,25 @@ export const spec = {
             bidRequests: [bidRequest],
             context: { mediaType },
           }),
-        })
-      })
-    })
+        });
+      });
+    });
 
-    return requests
+    return requests;
   },
 
   interpretResponse(serverResponse, bidderRequest) {
-    const { body } = serverResponse
-    const bids = body?.seatbid?.flatMap(seatbid => seatbid?.bid || []) || []
+    const { body } = serverResponse;
+    const bids = body?.seatbid?.flatMap(seatbid => seatbid?.bid || []) || [];
 
     if (!bidderRequest.data || bids.length <= 0) {
-      return []
+      return [];
     }
 
     return converter.fromORTB({ response: body, request: bidderRequest.data }).bids
       .filter((prebidBid, index) => !!bids[index].adm || !!bids[index].nurl)
       .map((prebidBid, index) => {
-        const bid = bids[index]
+        const bid = bids[index];
         const replacements = {
           auctionPrice: prebidBid.cpm,
           auctionId: prebidBid.requestId,
@@ -168,98 +168,98 @@ export const spec = {
           auctionImpId: bid.impid,
           auctionSeatId: prebidBid.seatBidId,
           auctionAdId: bid.adid,
-        }
+        };
 
-        const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements)
+        const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements);
 
         if (isVideoType(prebidBid.mediaType)) {
           if (bidAdmWithReplacedMacros) {
-            prebidBid.vastXml = bidAdmWithReplacedMacros
+            prebidBid.vastXml = bidAdmWithReplacedMacros;
           }
 
           if (bid.nurl) {
             if (!prebidBid.vastXml) {
-              prebidBid.vastUrl = replaceMacros(bid.nurl, replacements)
+              prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
             } else {
               // We do not want to use the vastUrl if we have the vastXml
-              delete prebidBid.vastUrl
+              delete prebidBid.vastUrl;
             }
           }
         } else {
-          prebidBid.ad = bidAdmWithReplacedMacros
+          prebidBid.ad = bidAdmWithReplacedMacros;
         }
 
-        return prebidBid
-      })
+        return prebidBid;
+      });
   },
 
   getUserSyncs(syncOptions, serverResponses) {
     if (!serverResponses?.[0]?.body || serverResponses.error) {
-      return []
+      return [];
     }
 
     try {
-      const syncs = serverResponses[0].body.ext?.[BIDDER_CODE]?.sync
+      const syncs = serverResponses[0].body.ext?.[BIDDER_CODE]?.sync;
 
       if (syncs) {
-        return getValidSyncs(syncs, syncOptions)
+        return getValidSyncs(syncs, syncOptions);
       }
     } catch (error) {}
 
-    return []
+    return [];
   },
-}
+};
 
 function isVideoType(mediaType) {
-  return mediaType === VIDEO
+  return mediaType === VIDEO;
 }
 
 function isBannerType(mediaType) {
-  return mediaType === BANNER
+  return mediaType === BANNER;
 }
 
 function getValidSyncs(syncs, options) {
   return syncs
     .filter(sync => isSyncValid(sync, options))
-    .map(sync => processSync(sync)) || []
+    .map(sync => processSync(sync)) || [];
 }
 
 function isSyncValid(sync, options) {
   return isPlainObject(sync) &&
     isStr(sync.url) &&
     (sync.e === 'inventory' || sync.e === 'sync') &&
-    ((sync.t === 1 && options?.pixelEnabled) || (sync.t === 3 && options?.iframeEnabled))
+    ((sync.t === 1 && options?.pixelEnabled) || (sync.t === 3 && options?.iframeEnabled));
 }
 
 function processSync(sync) {
-  return { url: sync.url, type: sync.t === 1 ? 'image' : 'iframe' }
+  return { url: sync.url, type: sync.t === 1 ? 'image' : 'iframe' };
 }
 
 function getSize(mediaType, bidRequest) {
-  const { mediaTypes, sizes } = bidRequest
-  const videoSizes = mediaTypes?.video?.playerSize
-  const bannerSizes = mediaTypes?.banner?.sizes
+  const { mediaTypes, sizes } = bidRequest;
+  const videoSizes = mediaTypes?.video?.playerSize;
+  const bannerSizes = mediaTypes?.banner?.sizes;
 
-  let size = [640, 480]
+  let size = [640, 480];
 
   if (isVideoType(mediaType) && videoSizes?.length > 0) {
-    size = videoSizes[0]
+    size = videoSizes[0];
   } else if (isBannerType(mediaType) && bannerSizes?.length > 0) {
-    size = bannerSizes[0]
+    size = bannerSizes[0];
   } else if (sizes?.length > 0) {
-    size = sizes[0]
+    size = sizes[0];
   }
 
   return {
     width: size[0],
     height: size[1],
-  }
+  };
 }
 
 // https://docs.prebid.org/dev-docs/modules/floors.html#example-getfloor-scenarios
 function getFloor(bidRequest, size, mediaType) {
   if (!isFn(bidRequest?.getFloor)) {
-    return null
+    return null;
   }
 
   try {
@@ -267,19 +267,19 @@ function getFloor(bidRequest, size, mediaType) {
       currency: DEFAULT_CURRENCY,
       mediaType, // or '*' for all media types
       size: [size.width, size.height], // or '*' for all sizes
-    })
+    });
 
     if (isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === DEFAULT_CURRENCY) {
-      return bidFloor.floor
+      return bidFloor.floor;
     }
   } catch {}
 
-  return null
+  return null;
 }
 
 function replaceMacros(str, replacements) {
   if (!replacements || !isStr(str)) {
-    return str
+    return str;
   }
 
   return str
@@ -288,39 +288,39 @@ function replaceMacros(str, replacements) {
     .replaceAll(`\${AUCTION_BID_ID}`, replacements.auctionBidId || '')
     .replaceAll(`\${AUCTION_IMP_ID}`, replacements.auctionImpId || '')
     .replaceAll(`\${AUCTION_SEAT_ID}`, replacements.auctionSeatId || '')
-    .replaceAll(`\${AUCTION_AD_ID}`, replacements.auctionAdId || '')
+    .replaceAll(`\${AUCTION_AD_ID}`, replacements.auctionAdId || '');
 }
 
 function createRenderer(bidRequest) {
-  const config = {}
-  const { params = {} } = bidRequest
-  const playerDomain = params.playerDomain || DEFAULT_PLAYER_DOMAIN
+  const config = {};
+  const { params = {} } = bidRequest;
+  const playerDomain = params.playerDomain || DEFAULT_PLAYER_DOMAIN;
 
   if (params.AV_PUBLISHERID) {
-    config.AV_PUBLISHERID = params.AV_PUBLISHERID
+    config.AV_PUBLISHERID = params.AV_PUBLISHERID;
   }
 
   if (params.AV_CHANNELID) {
-    config.AV_CHANNELID = params.AV_CHANNELID
+    config.AV_CHANNELID = params.AV_CHANNELID;
   }
 
   const renderer = Renderer.install({
     url: `https://${playerDomain}/script/6.1/${RENDERER_FILENAME}`,
     config,
     loaded: false,
-  })
+  });
 
   try {
-    renderer.setRender(avRenderer)
+    renderer.setRender(avRenderer);
   } catch (error) {}
 
-  return renderer
+  return renderer;
 }
 
 function avRenderer(bid) {
   bid.renderer.push(function() {
-    const eventsCallback = bid?.renderer?.handleVideoEvent ?? null
-    const { ad, adId, adUnitCode, vastUrl, vastXml, width, height, params = [] } = bid
+    const eventsCallback = bid?.renderer?.handleVideoEvent ?? null;
+    const { ad, adId, adUnitCode, vastUrl, vastXml, width, height, params = [] } = bid;
 
     window.aniviewRenderer.renderAd({
       id: adUnitCode + '_' + adId,
@@ -333,8 +333,8 @@ function avRenderer(bid) {
       vastXml: vastXml || ad,
       eventsCallback,
       bid,
-    })
-  })
+    });
+  });
 }
 
-registerBidder(spec)
+registerBidder(spec);

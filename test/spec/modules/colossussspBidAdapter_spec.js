@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { spec } from '../../../modules/colossussspBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from '../../../modules/colossussspBidAdapter.js';
 
 describe('ColossussspAdapter', function () {
   const bid = {
@@ -45,7 +45,7 @@ describe('ColossussspAdapter', function () {
         }
       }
     }
-  }
+  };
   const bidderRequest = {
     bidderCode: 'colossus',
     auctionId: 'fffffff-ffff-ffff-ffff-ffffffffffff',
@@ -150,63 +150,63 @@ describe('ColossussspAdapter', function () {
       }
     },
     bids: [bid]
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('Should return true when placement_id can be cast to a number', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true
-    })
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
     it('Should return false when placement_id is not a number', function () {
-      bid.params.placement_id = 'aaa'
-      delete bid.params.group_id
-      expect(spec.isBidRequestValid(bid)).to.be.false
-    })
-  })
+      bid.params.placement_id = 'aaa';
+      delete bid.params.group_id;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+  });
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid], bidderRequest)
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist
-      expect(serverRequest.method).to.exist
-      expect(serverRequest.url).to.exist
-      expect(serverRequest.data).to.exist
-    })
+      expect(serverRequest).to.exist;
+      expect(serverRequest.method).to.exist;
+      expect(serverRequest.url).to.exist;
+      expect(serverRequest.data).to.exist;
+    });
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST')
-    })
+      expect(serverRequest.method).to.equal('POST');
+    });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://colossusssp.com/?c=o&m=multi')
-    })
+      expect(serverRequest.url).to.equal('https://colossusssp.com/?c=o&m=multi');
+    });
     it('Should contain ccpa', function () {
-      expect(serverRequest.data.ccpa).to.be.an('string')
-    })
+      expect(serverRequest.data.ccpa).to.be.an('string');
+    });
 
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data
-      expect(data).to.be.an('object')
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'userObj', 'siteObj', 'appObj')
-      expect(data.deviceWidth).to.be.a('number')
-      expect(data.deviceHeight).to.be.a('number')
-      expect(data.language).to.be.a('string')
-      expect(data.secure).to.be.within(0, 1)
-      expect(data.host).to.be.a('string')
-      expect(data.page).to.be.a('string')
-      const placements = data['placements']
+      const data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'userObj', 'siteObj', 'appObj');
+      expect(data.deviceWidth).to.be.a('number');
+      expect(data.deviceHeight).to.be.a('number');
+      expect(data.language).to.be.a('string');
+      expect(data.secure).to.be.within(0, 1);
+      expect(data.host).to.be.a('string');
+      expect(data.page).to.be.a('string');
+      const placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
-        const placement = placements[i]
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid', 'battr')
-        expect(placement.schain).to.be.an('object')
-        expect(placement.placementId).to.be.a('number')
-        expect(placement.groupId).to.be.a('number')
-        expect(placement.bidId).to.be.a('string')
-        expect(placement.traffic).to.be.a('string')
-        expect(placement.sizes).to.be.an('array')
-        expect(placement.floor).to.be.an('object')
-        expect(placement.gpid).to.be.an('string')
-        expect(placement.tid).to.be.an('string')
-        expect(placement.battr).to.deep.equal([1, 3])
+        const placement = placements[i];
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid', 'battr');
+        expect(placement.schain).to.be.an('object');
+        expect(placement.placementId).to.be.a('number');
+        expect(placement.groupId).to.be.a('number');
+        expect(placement.bidId).to.be.a('string');
+        expect(placement.traffic).to.be.a('string');
+        expect(placement.sizes).to.be.an('array');
+        expect(placement.floor).to.be.an('object');
+        expect(placement.gpid).to.be.an('string');
+        expect(placement.tid).to.be.an('string');
+        expect(placement.battr).to.deep.equal([1, 3]);
       }
-    })
+    });
 
     it('Returns valid video data if array of bids is valid', function () {
       const videoBid = {
@@ -222,53 +222,53 @@ describe('ColossussspAdapter', function () {
             battr: [1, 3]
           }
         }
-      }
-      const serverRequest = spec.buildRequests([videoBid], bidderRequest)
+      };
+      const serverRequest = spec.buildRequests([videoBid], bidderRequest);
 
-      const data = serverRequest.data
-      expect(data).to.be.an('object')
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'userObj', 'siteObj', 'appObj')
-      expect(data.deviceWidth).to.be.a('number')
-      expect(data.deviceHeight).to.be.a('number')
-      expect(data.language).to.be.a('string')
-      expect(data.secure).to.be.within(0, 1)
-      expect(data.host).to.be.a('string')
-      expect(data.page).to.be.a('string')
-      const placements = data['placements']
+      const data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'userObj', 'siteObj', 'appObj');
+      expect(data.deviceWidth).to.be.a('number');
+      expect(data.deviceHeight).to.be.a('number');
+      expect(data.language).to.be.a('string');
+      expect(data.secure).to.be.within(0, 1);
+      expect(data.host).to.be.a('string');
+      expect(data.page).to.be.a('string');
+      const placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
-        const placement = placements[i]
+        const placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
           'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid', 'battr'
-        )
-        expect(placement.schain).to.be.an('object')
-        expect(placement.placementId).to.be.a('number')
-        expect(placement.bidId).to.be.a('string')
-        expect(placement.traffic).to.be.a('string')
-        expect(placement.floor).to.be.an('object')
-        expect(placement.gpid).to.be.an('string')
-        expect(placement.sizes).to.be.an('array')
-        expect(placement.playerSize).to.be.an('array')
-        expect(placement.minduration).to.be.an('number')
-        expect(placement.maxduration).to.be.an('number')
-        expect(placement.tid).to.be.an('string')
+        );
+        expect(placement.schain).to.be.an('object');
+        expect(placement.placementId).to.be.a('number');
+        expect(placement.bidId).to.be.a('string');
+        expect(placement.traffic).to.be.a('string');
+        expect(placement.floor).to.be.an('object');
+        expect(placement.gpid).to.be.an('string');
+        expect(placement.sizes).to.be.an('array');
+        expect(placement.playerSize).to.be.an('array');
+        expect(placement.minduration).to.be.an('number');
+        expect(placement.maxduration).to.be.an('number');
+        expect(placement.tid).to.be.an('string');
       }
-    })
+    });
 
     it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([], bidderRequest)
-      const data = serverRequest.data
-      expect(data.placements).to.be.an('array').that.is.empty
-    })
-  })
+      serverRequest = spec.buildRequests([], bidderRequest);
+      const data = serverRequest.data;
+      expect(data.placements).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('buildRequests with user ids', function () {
-    var clonedBid = JSON.parse(JSON.stringify(bid))
-    clonedBid.userId = {}
-    clonedBid.userId.idl_env = 'idl_env123'
-    clonedBid.userId.tdid = 'tdid123'
-    clonedBid.userId.id5id = { uid: 'id5id123' }
-    clonedBid.userId.uid2 = { id: 'uid2id123' }
+    var clonedBid = JSON.parse(JSON.stringify(bid));
+    clonedBid.userId = {};
+    clonedBid.userId.idl_env = 'idl_env123';
+    clonedBid.userId.tdid = 'tdid123';
+    clonedBid.userId.id5id = { uid: 'id5id123' };
+    clonedBid.userId.uid2 = { id: 'uid2id123' };
     clonedBid.userIdAsEids = [
       {
         'source': 'pubcid.org',
@@ -300,57 +300,57 @@ describe('ColossussspAdapter', function () {
           }
         ]
       }
-    ]
-    const serverRequest = spec.buildRequests([clonedBid], bidderRequest)
+    ];
+    const serverRequest = spec.buildRequests([clonedBid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data
-      const placements = data['placements']
-      expect(data).to.be.an('object')
+      const data = serverRequest.data;
+      const placements = data['placements'];
+      expect(data).to.be.an('object');
       for (let i = 0; i < placements.length; i++) {
-        const placement = placements[i]
-        expect(placement).to.have.property('eids')
-        expect(placement.eids).to.be.an('array')
-        expect(placement.eids.length).to.be.equal(7)
+        const placement = placements[i];
+        expect(placement).to.have.property('eids');
+        expect(placement.eids).to.be.an('array');
+        expect(placement.eids.length).to.be.equal(7);
         for (const index in placement.eids) {
-          const v = placement.eids[index]
-          expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
-          expect(v.uids).to.be.an('array')
-          expect(v.uids.length).to.be.equal(1)
-          expect(v.uids[0]).to.have.property('id')
+          const v = placement.eids[index];
+          expect(v).to.have.all.keys('source', 'uids');
+          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com']);
+          expect(v.uids).to.be.an('array');
+          expect(v.uids.length).to.be.equal(1);
+          expect(v.uids[0]).to.have.property('id');
         }
       }
-    })
-  })
+    });
+  });
 
   describe('gpp consent', function () {
     it('bidderRequest.gppConsent', () => {
       bidderRequest.gppConsent = {
         gppString: 'abc123',
         applicableSections: [8]
-      }
+      };
 
-      const serverRequest = spec.buildRequests([bid], bidderRequest)
-      const data = serverRequest.data
-      expect(data).to.be.an('object')
-      expect(data).to.have.property('gpp')
-      expect(data).to.have.property('gpp_sid')
+      const serverRequest = spec.buildRequests([bid], bidderRequest);
+      const data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
 
-      delete bidderRequest.gppConsent
-    })
+      delete bidderRequest.gppConsent;
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
-      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {}
-      bidderRequest.ortb2.regs.gpp = 'abc123'
-      bidderRequest.ortb2.regs.gpp_sid = [8]
+      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
+      bidderRequest.ortb2.regs.gpp = 'abc123';
+      bidderRequest.ortb2.regs.gpp_sid = [8];
 
-      const serverRequest = spec.buildRequests([bid], bidderRequest)
-      const data = serverRequest.data
-      expect(data).to.be.an('object')
-      expect(data).to.have.property('gpp')
-      expect(data).to.have.property('gpp_sid')
-    })
-  })
+      const serverRequest = spec.buildRequests([bid], bidderRequest);
+      const data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+    });
+  });
 
   describe('interpretResponse', function () {
     const resObject = {
@@ -370,31 +370,31 @@ describe('ColossussspAdapter', function () {
           advertiserId: 1234
         }
       }]
-    }
-    let serverResponses = spec.interpretResponse(resObject)
+    };
+    let serverResponses = spec.interpretResponse(resObject);
     it('Returns an array of valid server responses if response object is valid', function () {
-      expect(serverResponses).to.be.an('array').that.is.not.empty
+      expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        const dataItem = serverResponses[i]
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'mediaType', 'meta')
-        expect(dataItem.requestId).to.be.a('string')
-        expect(dataItem.cpm).to.be.a('number')
-        expect(dataItem.width).to.be.a('number')
-        expect(dataItem.height).to.be.a('number')
-        expect(dataItem.ad).to.be.a('string')
-        expect(dataItem.ttl).to.be.a('number')
-        expect(dataItem.creativeId).to.be.a('string')
-        expect(dataItem.netRevenue).to.be.a('boolean')
-        expect(dataItem.currency).to.be.a('string')
-        expect(dataItem.mediaType).to.be.a('string')
-        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains')
+          'netRevenue', 'currency', 'mediaType', 'meta');
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.ad).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
       it('Returns an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response')
-        expect(serverResponses).to.be.an('array').that.is.empty
-      })
-    })
+        serverResponses = spec.interpretResponse('invalid_response');
+        expect(serverResponses).to.be.an('array').that.is.empty;
+      });
+    });
 
     const videoResObject = {
       body: [{
@@ -413,50 +413,50 @@ describe('ColossussspAdapter', function () {
           advertiserId: 1234
         }
       }]
-    }
-    let videoServerResponses = spec.interpretResponse(videoResObject)
+    };
+    let videoServerResponses = spec.interpretResponse(videoResObject);
     it('Returns an array of valid server video responses if response object is valid', function () {
-      expect(videoServerResponses).to.be.an('array').that.is.not.empty
+      expect(videoServerResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < videoServerResponses.length; i++) {
-        const dataItem = videoServerResponses[i]
+        const dataItem = videoServerResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastUrl', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'mediaType', 'meta')
-        expect(dataItem.requestId).to.be.a('string')
-        expect(dataItem.cpm).to.be.a('number')
-        expect(dataItem.width).to.be.a('number')
-        expect(dataItem.height).to.be.a('number')
-        expect(dataItem.vastUrl).to.be.a('string')
-        expect(dataItem.ttl).to.be.a('number')
-        expect(dataItem.creativeId).to.be.a('string')
-        expect(dataItem.netRevenue).to.be.a('boolean')
-        expect(dataItem.currency).to.be.a('string')
-        expect(dataItem.mediaType).to.be.a('string')
-        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains')
+          'netRevenue', 'currency', 'mediaType', 'meta');
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.vastUrl).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
       it('Returns an empty array if invalid response is passed', function () {
-        videoServerResponses = spec.interpretResponse('invalid_response')
-        expect(videoServerResponses).to.be.an('array').that.is.empty
-      })
-    })
-  })
+        videoServerResponses = spec.interpretResponse('invalid_response');
+        expect(videoServerResponses).to.be.an('array').that.is.empty;
+      });
+    });
+  });
 
   describe('onBidWon', function () {
     it('should make an ajax call', function () {
       const bid = {
         nurl: 'http://example.com/win',
-      }
-      expect(spec.onBidWon(bid)).to.equals(undefined)
-    })
-  })
+      };
+      expect(spec.onBidWon(bid)).to.equals(undefined);
+    });
+  });
 
   describe('getUserSyncs', function () {
-    const userSync = spec.getUserSyncs({ pixelEnabled: true }, {}, { consentString: 'xxx', gdprApplies: 1 }, '1YN-')
+    const userSync = spec.getUserSyncs({ pixelEnabled: true }, {}, { consentString: 'xxx', gdprApplies: 1 }, '1YN-');
     it('Returns valid URL and type', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1)
-      expect(userSync[0].type).to.exist
-      expect(userSync[0].url).to.exist
-      expect(userSync[0].type).to.be.equal('image')
-      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/image?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0')
-    })
-  })
-})
+      expect(userSync).to.be.an('array').with.lengthOf(1);
+      expect(userSync[0].type).to.exist;
+      expect(userSync[0].url).to.exist;
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/image?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
+    });
+  });
+});

@@ -7,13 +7,13 @@ export const JSON_MAPPING = {
   BD_PL_ID: 'placementId',
   ADSERVER_TARGETING: 'adserverTargeting',
   BD_SETTING_STANDARD: 'standard'
-} as const
+} as const;
 
-export const DEBUG_MODE = 'pbjs_debug'
+export const DEBUG_MODE = 'pbjs_debug';
 
 export const STATUS = {
   GOOD: 1
-}
+};
 
 export const EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -46,7 +46,7 @@ export const EVENTS = {
   BROWSI_INIT: 'browsiInit',
   BROWSI_DATA: 'browsiData',
   BROWSER_INTERVENTION: 'browserIntervention'
-} as const
+} as const;
 
 export const AD_RENDER_FAILED_REASON = {
   PREVENT_WRITING_ON_MAIN_DOCUMENT: 'preventWritingOnMainDocument',
@@ -54,11 +54,11 @@ export const AD_RENDER_FAILED_REASON = {
   EXCEPTION: 'exception',
   CANNOT_FIND_AD: 'cannotFindAd',
   MISSING_DOC_OR_ADID: 'missingDocOrAdid'
-} as const
+} as const;
 
 export const EVENT_ID_PATHS = {
   bidWon: 'adUnitCode'
-} as const
+} as const;
 
 export const GRANULARITY_OPTIONS = {
   LOW: 'low',
@@ -67,7 +67,7 @@ export const GRANULARITY_OPTIONS = {
   AUTO: 'auto',
   DENSE: 'dense',
   CUSTOM: 'custom'
-} as const
+} as const;
 
 export const TARGETING_KEYS = {
   BIDDER: 'hb_bidder',
@@ -85,7 +85,7 @@ export const TARGETING_KEYS = {
   CRID: 'hb_crid',
   DSP: 'hb_dsp',
   VERSION: 'hb_ver'
-} as const
+} as const;
 
 export const DEFAULT_TARGETING_KEYS = {
   BIDDER: 'hb_bidder',
@@ -97,7 +97,7 @@ export const DEFAULT_TARGETING_KEYS = {
   UUID: 'hb_uuid',
   CACHE_HOST: 'hb_cache_host',
   VERSION: 'hb_ver'
-}
+};
 
 export const NATIVE_KEYS = {
   title: 'hb_native_title',
@@ -120,19 +120,19 @@ export const NATIVE_KEYS = {
   salePrice: 'hb_native_saleprice',
   rendererUrl: 'hb_renderer_url',
   adTemplate: 'hb_adTemplate'
-}
+};
 
 export const S2S = {
   SRC: 's2s',
   DEFAULT_ENDPOINT: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
   SYNCED_BIDDERS_KEY: 'pbjsSyncs'
-} as const
+} as const;
 
 export const BID_STATUS = {
   BID_TARGETING_SET: 'targetingSet',
   RENDERED: 'rendered',
   BID_REJECTED: 'bidRejected'
-} as const
+} as const;
 
 export const REJECTION_REASON = {
   INVALID: 'Bid has missing or invalid properties',
@@ -143,7 +143,7 @@ export const REJECTION_REASON = {
   DSA_REQUIRED: 'Bid does not provide required DSA transparency info',
   DSA_MISMATCH: 'Bid indicates inappropriate DSA rendering method',
   PRICE_TOO_HIGH: 'Bid price exceeds maximum value'
-}
+};
 
 export const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
   body: 'desc',
@@ -158,7 +158,7 @@ export const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
   price: 'price',
   salePrice: 'saleprice',
   displayUrl: 'displayurl'
-} as const
+} as const;
 
 export const NATIVE_ASSET_TYPES = {
   sponsored: 1,
@@ -173,12 +173,12 @@ export const NATIVE_ASSET_TYPES = {
   desc2: 10,
   displayurl: 11,
   ctatext: 12
-}
+};
 
 export const NATIVE_IMAGE_TYPES = {
   ICON: 1,
   MAIN: 3
-}
+};
 
 export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'privacyIcon',
@@ -186,7 +186,7 @@ export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'adTemplate',
   'rendererUrl',
   'type'
-] as const
+] as const;
 
 export const MESSAGES = {
   REQUEST: 'Prebid Request',
@@ -194,6 +194,6 @@ export const MESSAGES = {
   NATIVE: 'Prebid Native',
   EVENT: 'Prebid Event',
   INTERVENTION: 'Prebid Intervention'
-}
+};
 
-export const PB_LOCATOR = '__pb_locator__'
+export const PB_LOCATOR = '__pb_locator__';

@@ -1,11 +1,11 @@
-import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js'
-import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js'
-import { setPageTargeting } from '../../src/utils/gptTargeting.js'
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
+import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+import { setPageTargeting } from '../../src/utils/gptTargeting.js';
 
-const slotInfoCache = new Map()
+const slotInfoCache = new Map();
 
 export function clearSlotInfoCache() {
-  slotInfoCache.clear()
+  slotInfoCache.clear();
 }
 
 /**
@@ -15,40 +15,40 @@ export function clearSlotInfoCache() {
  */
 export function isSlotMatchingAdUnitCode(adUnitCode) {
   return (slot) => {
-    const match = isAdUnitCodeMatchingSlot(slot)
-    return match(adUnitCode)
-  }
+    const match = isAdUnitCodeMatchingSlot(slot);
+    return match(adUnitCode);
+  };
 }
 
 /**
  * @summary Export a k-v pair to GAM
  */
 export function setKeyValue(key, value) {
-  if (!key || typeof key !== 'string') return false
-  window.googletag = window.googletag || { cmd: [] }
-  setKeyValueOn(key, value, window.googletag)
+  if (!key || typeof key !== 'string') return false;
+  window.googletag = window.googletag || { cmd: [] };
+  setKeyValueOn(key, value, window.googletag);
 }
 
 export function setKeyValueOn(key, value, gpt = window.googletag) {
-  gpt.cmd = gpt.cmd || []
+  gpt.cmd = gpt.cmd || [];
   gpt.cmd.push(() => {
-    setPageTargeting(key, value, gpt)
-  })
+    setPageTargeting(key, value, gpt);
+  });
 }
 
 /**
  * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
 export function getGptSlotForAdUnitCode(adUnitCode) {
-  let matchingSlot
+  let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
     matchingSlot = window.googletag.pubads().getSlots().find(slot => {
-      const match = isAdUnitCodeMatchingSlot(slot)
-      return match(adUnitCode)
-    })
+      const match = isAdUnitCodeMatchingSlot(slot);
+      return match(adUnitCode);
+    });
   }
-  return matchingSlot
+  return matchingSlot;
 }
 
 /**
@@ -56,30 +56,30 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
  */
 export function getGptSlotInfoForAdUnitCode(adUnitCode) {
   if (slotInfoCache.has(adUnitCode)) {
-    return slotInfoCache.get(adUnitCode)
+    return slotInfoCache.get(adUnitCode);
   }
-  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode)
-  let info = {}
+  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
+  let info = {};
   if (matchingSlot) {
     info = {
       gptSlot: matchingSlot.getAdUnitPath(),
       divId: matchingSlot.getSlotElementId()
-    }
+    };
   }
-  !isEmpty(info) && slotInfoCache.set(adUnitCode, info)
-  return info
+  !isEmpty(info) && slotInfoCache.set(adUnitCode, info);
+  return info;
 }
 
-export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2']
+export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
 
 export function getSignals(fpd) {
   const signals = Object.entries({
     [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
     [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
   }).map(([taxonomy, values]) => values.length ? { taxonomy, values } : null)
-    .filter(ob => ob)
+    .filter(ob => ob);
 
-  return signals
+  return signals;
 }
 
 export function getSegments(fpd, sections, segtax) {
@@ -88,7 +88,7 @@ export function getSegments(fpd, sections, segtax) {
     .filter(datum => datum.ext?.segtax === segtax)
     .flatMap(datum => datum.segment?.map(seg => seg.id))
     .filter(ob => ob)
-    .filter(uniques)
+    .filter(uniques);
 }
 
 /**
@@ -98,14 +98,14 @@ export function getSegments(fpd, sections, segtax) {
  * @param {Function} callback
  */
 export function subscribeToGamEvent(event, callback) {
-  const register = () => window.googletag.pubads().addEventListener(event, callback)
+  const register = () => window.googletag.pubads().addEventListener(event, callback);
   if (isGptPubadsDefined()) {
-    register()
-    return
+    register();
+    return;
   }
-  window.googletag = window.googletag || {}
-  window.googletag.cmd = window.googletag.cmd || []
-  window.googletag.cmd.push(register)
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(register);
 }
 
 /**
@@ -152,5 +152,5 @@ export function subscribeToGamEvent(event, callback) {
  * @param {SlotRenderEndedEventCallback} callback
  */
 export function subscribeToGamSlotRenderEndedEvent(callback) {
-  subscribeToGamEvent('slotRenderEnded', callback)
+  subscribeToGamEvent('slotRenderEnded', callback);
 }

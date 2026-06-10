@@ -1,26 +1,26 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { deepAccess, deepSetValue, isNumber, logInfo, logWarn, logError, triggerPixel } from '../src/utils.js'
-import { getBidFloor } from '../libraries/currencyUtils/floor.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { Renderer } from '../src/Renderer.js'
-import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js'
-import { getAdUnitElement } from '../src/utils/adUnits.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, deepSetValue, isNumber, logInfo, logWarn, logError, triggerPixel } from '../src/utils.js';
+import { getBidFloor } from '../libraries/currencyUtils/floor.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { Renderer } from '../src/Renderer.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
-const BIDDER_CODE = 'freedomadnetwork'
-const BIDDER_VERSION = '0.2.0'
+const BIDDER_CODE = 'freedomadnetwork';
+const BIDDER_VERSION = '0.2.0';
 const NETWORK_ENDPOINTS = {
   'fan': 'https://srv.freedomadnetwork.com/ortb',
   'armanet': 'https://srv.armanet.us/ortb',
   'test': 'http://localhost:8001/ortb',
-}
+};
 
-const DEFAULT_ENDPOINT = NETWORK_ENDPOINTS['fan']
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_TTL = 300
+const DEFAULT_ENDPOINT = NETWORK_ENDPOINTS['fan'];
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_TTL = 300;
 
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
   context: {
@@ -30,104 +30,104 @@ const converter = ortbConverter({
   },
 
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
+    const imp = buildImp(bidRequest, context);
 
     // Add custom fields to impression
     if (bidRequest.params.placementId) {
-      imp.tagid = bidRequest.params.placementId
+      imp.tagid = bidRequest.params.placementId;
     }
 
     // There is no default floor. bidfloor is set only
     // if the priceFloors module is activated and returns a valid floor.
-    const floor = getBidFloor(bidRequest)
+    const floor = getBidFloor(bidRequest);
     if (isNumber(floor)) {
-      imp.bidfloor = floor
+      imp.bidfloor = floor;
     }
 
     // Add floor currency
     if (bidRequest.params.bidFloorCur) {
-      imp.bidfloorcur = bidRequest.params.bidFloorCur || DEFAULT_CURRENCY
+      imp.bidfloorcur = bidRequest.params.bidFloorCur || DEFAULT_CURRENCY;
     }
 
     // Add custom extensions
-    deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.placementId)
+    deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.placementId);
     deepSetValue(imp, 'ext.bidder', {
       network: bidRequest.params.network || 'fan',
       placementId: bidRequest.params.placementId
-    })
+    });
 
-    return imp
+    return imp;
   },
 
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context)
+    const request = buildRequest(imps, bidderRequest, context);
 
     // First price auction
-    request.at = 1
-    request.cur = [DEFAULT_CURRENCY]
+    request.at = 1;
+    request.cur = [DEFAULT_CURRENCY];
 
     // Add source information
-    deepSetValue(request, 'source.tid', bidderRequest.auctionId)
+    deepSetValue(request, 'source.tid', bidderRequest.auctionId);
 
     // Add custom extensions
-    deepSetValue(request, 'ext.prebid.channel', BIDDER_CODE)
-    deepSetValue(request, 'ext.prebid.version', BIDDER_VERSION)
+    deepSetValue(request, 'ext.prebid.channel', BIDDER_CODE);
+    deepSetValue(request, 'ext.prebid.version', BIDDER_VERSION);
 
     // Add user extensions
-    const firstBid = imps[0]
-    request.user = request.user || {}
-    request.user.ext = request.user.ext || {}
+    const firstBid = imps[0];
+    request.user = request.user || {};
+    request.user.ext = request.user.ext || {};
 
     if (firstBid.userIdAsEids) {
-      request.user.ext.eids = firstBid.userIdAsEids
+      request.user.ext.eids = firstBid.userIdAsEids;
     }
 
     if (window.geck) {
-      request.user.ext.adi = window.geck
+      request.user.ext.adi = window.geck;
     }
 
-    return request
+    return request;
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    const { bidRequest } = context
-    const bidResponse = buildBidResponse(bid, context)
+    const { bidRequest } = context;
+    const bidResponse = buildBidResponse(bid, context);
 
     // Add custom bid response fields
-    bidResponse.meta = bidResponse.meta || {}
-    bidResponse.meta.networkName = BIDDER_CODE
-    bidResponse.meta.advertiserDomains = bid.adomain || []
+    bidResponse.meta = bidResponse.meta || {};
+    bidResponse.meta.networkName = BIDDER_CODE;
+    bidResponse.meta.advertiserDomains = bid.adomain || [];
 
     if (bid.ext && bid.ext.libertas) {
-      bidResponse.meta.libertas = bid.ext.libertas
+      bidResponse.meta.libertas = bid.ext.libertas;
     }
 
     // Add tracking URLs
     if (bid.nurl) {
-      bidResponse.nurl = bid.nurl
+      bidResponse.nurl = bid.nurl;
     }
 
     // Handle different ad formats
     if (bidResponse.mediaType === BANNER) {
-      bidResponse.ad = bid.adm
-      bidResponse.width = bid.w
-      bidResponse.height = bid.h
+      bidResponse.ad = bid.adm;
+      bidResponse.width = bid.w;
+      bidResponse.height = bid.h;
     } else if (bidResponse.mediaType === VIDEO) {
-      bidResponse.vastXml = bid.adm
-      bidResponse.width = bid.w
-      bidResponse.height = bid.h
+      bidResponse.vastXml = bid.adm;
+      bidResponse.width = bid.w;
+      bidResponse.height = bid.h;
     }
 
     // Add renderer if needed for outstream video
     if (bidResponse.mediaType === VIDEO && bid.ext.libertas.ovp) {
-      bidResponse.width = bid.w
-      bidResponse.height = bid.h
-      bidResponse.renderer = createRenderer(bidRequest, bid.ext.libertas.vp)
+      bidResponse.width = bid.w;
+      bidResponse.height = bid.h;
+      bidResponse.renderer = createRenderer(bidRequest, bid.ext.libertas.vp);
     }
 
-    return bidResponse
+    return bidResponse;
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -136,49 +136,49 @@ export const spec = {
   isBidRequestValid(bid) {
     // Validate minimum required parameters
     if (!bid.params) {
-      logError(`${BIDDER_CODE}: bid.params is required`)
+      logError(`${BIDDER_CODE}: bid.params is required`);
 
-      return false
+      return false;
     }
 
     // Validate placement ID
     if (!bid.params.placementId) {
-      logError(`${BIDDER_CODE}: placementId is required`)
+      logError(`${BIDDER_CODE}: placementId is required`);
 
-      return false
+      return false;
     }
 
     // Validate network parameter
     if (bid.params.network && !NETWORK_ENDPOINTS[bid.params.network]) {
-      logError(`${BIDDER_CODE}: Invalid network: ${bid.params.network}`)
+      logError(`${BIDDER_CODE}: Invalid network: ${bid.params.network}`);
 
-      return false
+      return false;
     }
 
     // Validate media types
     if (!bid.mediaTypes || (!bid.mediaTypes.banner && !bid.mediaTypes.video)) {
-      logError(`${BIDDER_CODE}: Only banner and video mediaTypes are supported`)
+      logError(`${BIDDER_CODE}: Only banner and video mediaTypes are supported`);
 
-      return false
+      return false;
     }
 
     // Validate video parameters if video mediaType is present
     if (bid.mediaTypes.video) {
-      const video = bid.mediaTypes.video
+      const video = bid.mediaTypes.video;
       if (!video.mimes || !Array.isArray(video.mimes) || video.mimes.length === 0) {
-        logError(`${BIDDER_CODE}: video.mimes is required for video ads`)
+        logError(`${BIDDER_CODE}: video.mimes is required for video ads`);
 
-        return false
+        return false;
       }
 
       if (!video.playerSize || !Array.isArray(video.playerSize)) {
-        logError(`${BIDDER_CODE}: video.playerSize is required for video ads`)
+        logError(`${BIDDER_CODE}: video.playerSize is required for video ads`);
 
-        return false
+        return false;
       }
     }
 
-    return true
+    return true;
   },
 
   /**
@@ -186,21 +186,21 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const requestsByNetwork = validBidRequests.reduce((acc, bid) => {
-      const network = bid.params.network || 'fan'
+      const network = bid.params.network || 'fan';
       if (!acc[network]) {
-        acc[network] = []
+        acc[network] = [];
       }
-      acc[network].push(bid)
+      acc[network].push(bid);
 
-      return acc
-    }, {})
+      return acc;
+    }, {});
 
     return Object.entries(requestsByNetwork).map(([network, bids]) => {
       const data = converter.toORTB({
         bidRequests: bids,
         bidderRequest,
         context: { network }
-      })
+      });
 
       return {
         method: 'POST',
@@ -211,8 +211,8 @@ export const spec = {
           withCredentials: false
         },
         bids
-      }
-    })
+      };
+    });
   },
 
   /**
@@ -220,22 +220,22 @@ export const spec = {
    */
   interpretResponse(serverResponse, bidRequest) {
     if (!serverResponse.body) {
-      return []
+      return [];
     }
 
     const response = converter.fromORTB({
       response: serverResponse.body,
       request: bidRequest.data,
-    })
+    });
 
-    return response.bids || []
+    return response.bids || [];
   },
 
   /**
    * Handle bidder errors
    */
   onBidderError: function(error) {
-    logError(`${BIDDER_CODE} bidder error`, error)
+    logError(`${BIDDER_CODE} bidder error`, error);
   },
 
   /**
@@ -243,98 +243,98 @@ export const spec = {
    */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return []
+      return [];
     }
 
-    const syncs = []
-    const seenUrls = new Set()
+    const syncs = [];
+    const seenUrls = new Set();
 
     serverResponses.forEach(response => {
-      const userSync = deepAccess(response.body, 'ext.sync')
+      const userSync = deepAccess(response.body, 'ext.sync');
       if (!userSync) {
-        return
+        return;
       }
 
       if (syncOptions.iframeEnabled && userSync.iframe) {
         userSync.iframe.forEach(sync => {
-          const url = buildSyncUrl(sync.url, gdprConsent, uspConsent, gppConsent)
+          const url = buildSyncUrl(sync.url, gdprConsent, uspConsent, gppConsent);
           if (!seenUrls.has(url)) {
-            seenUrls.add(url)
+            seenUrls.add(url);
             syncs.push({
               type: 'iframe',
               url
-            })
+            });
           }
-        })
+        });
       }
 
       if (syncOptions.pixelEnabled && userSync.image) {
         userSync.image.forEach(sync => {
-          const url = buildSyncUrl(sync.url, gdprConsent, uspConsent, gppConsent)
+          const url = buildSyncUrl(sync.url, gdprConsent, uspConsent, gppConsent);
           if (!seenUrls.has(url)) {
-            seenUrls.add(url)
+            seenUrls.add(url);
             syncs.push({
               type: 'image',
               url
-            })
+            });
           }
-        })
+        });
       }
-    })
+    });
 
-    return syncs
+    return syncs;
   },
 
   /**
    * Handle bid won event
    */
   onBidWon(bid) {
-    logInfo(`${BIDDER_CODE}: Bid won`, bid)
+    logInfo(`${BIDDER_CODE}: Bid won`, bid);
 
     if (bid.nurl) {
-      triggerPixel(bid.nurl)
+      triggerPixel(bid.nurl);
     }
 
     if (bid.meta.libertas.pxl && bid.meta.libertas.pxl.length > 0) {
       for (var i = 0; i < bid.meta.libertas.pxl.length; i++) {
         if (Number(bid.meta.libertas.pxl[i].type) === 0) {
-          triggerPixel(bid.meta.libertas.pxl[i].url)
+          triggerPixel(bid.meta.libertas.pxl[i].url);
         }
       }
     }
   },
-}
+};
 
 /**
  * Build sync URL with privacy parameters
  */
 function buildSyncUrl(baseUrl, gdprConsent, uspConsent, gppConsent) {
   try {
-    const url = new URL(baseUrl)
+    const url = new URL(baseUrl);
 
     if (gdprConsent) {
-      url.searchParams.set('gdpr', gdprConsent.gdprApplies ? '1' : '0')
+      url.searchParams.set('gdpr', gdprConsent.gdprApplies ? '1' : '0');
       if (gdprConsent.consentString) {
-        url.searchParams.set('gdpr_consent', gdprConsent.consentString)
+        url.searchParams.set('gdpr_consent', gdprConsent.consentString);
       }
     }
 
     if (uspConsent) {
-      url.searchParams.set('us_privacy', uspConsent)
+      url.searchParams.set('us_privacy', uspConsent);
     }
 
     if (gppConsent?.gppString) {
-      url.searchParams.set('gpp', gppConsent.gppString)
+      url.searchParams.set('gpp', gppConsent.gppString);
       if (gppConsent.applicableSections?.length) {
-        url.searchParams.set('gpp_sid', gppConsent.applicableSections.join(','))
+        url.searchParams.set('gpp_sid', gppConsent.applicableSections.join(','));
       }
     }
 
-    return url.toString()
+    return url.toString();
   } catch (e) {
-    logWarn(`${BIDDER_CODE}: Invalid sync URL: ${baseUrl}`)
+    logWarn(`${BIDDER_CODE}: Invalid sync URL: ${baseUrl}`);
 
-    return baseUrl
+    return baseUrl;
   }
 }
 
@@ -346,25 +346,25 @@ function createRenderer(bid, videoPlayerUrl) {
     url: videoPlayerUrl,
     loaded: false,
     adUnitCode: bid.adUnitCode,
-  })
+  });
 
   try {
     renderer.setRender(function (bidResponse) {
-      const adUnit = getAdUnitElement(bidResponse) ?? document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId)
+      const adUnit = getAdUnitElement(bidResponse) ?? document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId);
 
       if (!window.createOutstreamPlayer) {
-        logWarn('Renderer error: outstream player is not available')
+        logWarn('Renderer error: outstream player is not available');
 
-        return
+        return;
       }
 
-      window.createOutstreamPlayer(adUnit, bidResponse.vastXml, bid.width, bid.height)
-    })
+      window.createOutstreamPlayer(adUnit, bidResponse.vastXml, bid.width, bid.height);
+    });
   } catch (error) {
-    logWarn('Renderer error: setRender() failed', error)
+    logWarn('Renderer error: setRender() failed', error);
   }
 
-  return renderer
+  return renderer;
 }
 
-registerBidder(spec)
+registerBidder(spec);

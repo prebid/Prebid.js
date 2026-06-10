@@ -1,19 +1,19 @@
-import { getUniqueIdentifierStr } from './utils.js'
-import type { BidderCode, BidSource, ContextIdentifiers, Currency, Identifier } from "./types/common.d.ts"
-import { MediaType } from "./mediaTypes.ts"
-import type { DSAResponse } from "./types/ortb/ext/dsa.d.ts"
-import type { EventTrackerResponse } from "./types/ortb/native.d.ts"
-import { Metrics } from "./utils/perfMetrics.ts"
-import { Renderer } from './Renderer.js'
-import { type BID_STATUS } from "./constants.ts"
-import type { DemandChain } from "./types/ortb/ext/dchain.d.ts"
-import type { SafeRendererConfig } from "./adUnits.ts"
+import { getUniqueIdentifierStr } from './utils.js';
+import type { BidderCode, BidSource, ContextIdentifiers, Currency, Identifier } from "./types/common.d.ts";
+import { MediaType } from "./mediaTypes.ts";
+import type { DSAResponse } from "./types/ortb/ext/dsa.d.ts";
+import type { EventTrackerResponse } from "./types/ortb/native.d.ts";
+import { Metrics } from "./utils/perfMetrics.ts";
+import { Renderer } from './Renderer.js';
+import { type BID_STATUS } from "./constants.ts";
+import type { DemandChain } from "./types/ortb/ext/dchain.d.ts";
+import type { SafeRendererConfig } from "./adUnits.ts";
 
 type BidIdentifiers = ContextIdentifiers & {
   src: BidSource;
   bidder: BidderCode;
   bidId: Identifier;
-}
+};
 
 /**
  * Bid metadata.
@@ -124,12 +124,12 @@ export interface AudioBidResponseProperties {
   mediaType: 'audio';
 }
 
-export type BannerBidResponse = BaseBidResponse & BannerBidResponseProperties
-export type VideoBidResponse = BaseBidResponse & VideoBidResponseProperties
-export type NativeBidResponse = BaseBidResponse & NativeBidResponseProperties
-export type AudioBidResponse = BaseBidResponse & AudioBidResponseProperties
+export type BannerBidResponse = BaseBidResponse & BannerBidResponseProperties;
+export type VideoBidResponse = BaseBidResponse & VideoBidResponseProperties;
+export type NativeBidResponse = BaseBidResponse & NativeBidResponseProperties;
+export type AudioBidResponse = BaseBidResponse & AudioBidResponseProperties;
 
-export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse | AudioBidResponse
+export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse | AudioBidResponse;
 
 export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidResponse, 'meta' | 'deferRendering'>> {
   /**
@@ -177,32 +177,32 @@ export interface VideoBidProperties {
   videoCacheKey?: string;
 }
 
-type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS
+type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;
 
-type _BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>
-type _VideoBid = BidFrom<VideoBidResponse, VideoBidProperties>
-type _NativeBid = BidFrom<NativeBidResponse, NativeBidProperties>
-type _AudioBid = _VideoBid
+type _BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>;
+type _VideoBid = BidFrom<VideoBidResponse, VideoBidProperties>;
+type _NativeBid = BidFrom<NativeBidResponse, NativeBidProperties>;
+type _AudioBid = _VideoBid;
 
-type AnyBid = _BannerBid | _VideoBid | _NativeBid | _AudioBid
+type AnyBid = _BannerBid | _VideoBid | _NativeBid | _AudioBid;
 
 // the following adds `property?: undefined` declarations for each property
 // that is in some other format, to avoid requiring type casts
 // every time that property is used
-type NullProps<T> = { [K in keyof T]?: undefined }
-type NullBid = NullProps<_BannerBid> & NullProps<_VideoBid> & NullProps<_NativeBid>
-type ExtendBid<B extends AnyBid> = B & Omit<NullBid, keyof B>
+type NullProps<T> = { [K in keyof T]?: undefined };
+type NullBid = NullProps<_BannerBid> & NullProps<_VideoBid> & NullProps<_NativeBid>;
+type ExtendBid<B extends AnyBid> = B & Omit<NullBid, keyof B>;
 
-export type BannerBid = ExtendBid<_BannerBid>
-export type VideoBid = ExtendBid<_VideoBid>
-export type NativeBid = ExtendBid<_NativeBid>
-export type AudioBid = VideoBid
+export type BannerBid = ExtendBid<_BannerBid>;
+export type VideoBid = ExtendBid<_VideoBid>;
+export type NativeBid = ExtendBid<_NativeBid>;
+export type AudioBid = VideoBid;
 
-export type Bid = BannerBid | VideoBid | NativeBid | AudioBid
+export type Bid = BannerBid | VideoBid | NativeBid | AudioBid;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 function Bid({ src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId }: Partial<BidIdentifiers> = {}) {
-  var _bidSrc = src
+  var _bidSrc = src;
 
   Object.assign(this, {
     bidderCode: bidder,
@@ -215,14 +215,14 @@ function Bid({ src = 'client', bidder = '', bidId, transactionId, adUnitId, auct
     auctionId,
     mediaType: 'banner',
     source: _bidSrc
-  })
+  });
 
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {
-    return this.width + 'x' + this.height
-  }
+    return this.width + 'x' + this.height;
+  };
 }
 
 export function createBid(identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
-  return new Bid(identifiers)
+  return new Bid(identifiers);
 }

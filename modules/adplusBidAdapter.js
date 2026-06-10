@@ -1,38 +1,38 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { cleanObj, isArray, isArrayOfNums, logError, logInfo, } from '../src/utils.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { cleanObj, isArray, isArrayOfNums, logError, logInfo, } from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 // #region Constants
-export const BIDDER_CODE = 'adplus'
-export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding'
+export const BIDDER_CODE = 'adplus';
+export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding';
 // #endregion
 
 // #region Bid request validation
 function isBidRequestValid(bid) {
   if (!bid) {
-    logError(BIDDER_CODE, 'bid, can not be empty', bid)
-    return false
+    logError(BIDDER_CODE, 'bid, can not be empty', bid);
+    return false;
   }
 
   if (!bid.params) {
-    logError(BIDDER_CODE, 'bid.params is required.')
-    return false
+    logError(BIDDER_CODE, 'bid.params is required.');
+    return false;
   }
 
   if (!bid.params.adUnitId || typeof bid.params.adUnitId !== 'string') {
     logError(
       BIDDER_CODE,
       'bid.params.adUnitId is missing or has wrong type.'
-    )
-    return false
+    );
+    return false;
   }
 
   if (!bid.params.inventoryId || typeof bid.params.inventoryId !== 'string') {
     logError(
       BIDDER_CODE,
       'bid.params.inventoryId is missing or has wrong type.'
-    )
-    return false
+    );
+    return false;
   }
 
   if (
@@ -42,11 +42,11 @@ function isBidRequestValid(bid) {
     bid.mediaTypes[BANNER].sizes.length <= 0 ||
     !isArrayOfNums(bid.mediaTypes[BANNER].sizes[0])
   ) {
-    logError(BIDDER_CODE, 'Wrong or missing size parameters.')
-    return false
+    logError(BIDDER_CODE, 'Wrong or missing size parameters.');
+    return false;
   }
 
-  return true
+  return true;
 }
 // #endregion
 
@@ -68,7 +68,7 @@ function createBidRequest(bid, bidderRequest) {
     latitude,
     longitude,
     sdkVersion,
-  } = bid.params
+  } = bid.params;
 
   return {
     method: 'POST',
@@ -99,11 +99,11 @@ function createBidRequest(bid, bidderRequest) {
       adplusUid: bid?.userId?.adplusId,
       eids: bid?.userIdAsEids,
     }),
-  }
+  };
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  return validBidRequests.map((req) => createBidRequest(req, bidderRequest))
+  return validBidRequests.map((req) => createBidRequest(req, bidderRequest));
 }
 // #endregion
 
@@ -133,7 +133,7 @@ function createAdResponse(responseData, bidParams) {
         ? responseData.categoryIDs[0] : undefined,
       secondaryCatIds: responseData.categoryIDs,
     },
-  }
+  };
 }
 
 function interpretResponse(response, request) {
@@ -143,10 +143,10 @@ function interpretResponse(response, request) {
     !isArray(response.body) ||
     response.body.length === 0
   ) {
-    return []
+    return [];
   }
-  const bids = response.body.map((bid) => createAdResponse(bid))
-  return bids
+  const bids = response.body.map((bid) => createAdResponse(bid));
+  return bids;
 }
 // #endregion
 
@@ -158,14 +158,14 @@ export const spec = {
   buildRequests,
   interpretResponse,
   onTimeout(timeoutData) {
-    logError('Adplus adapter timed out for the auction.', timeoutData)
+    logError('Adplus adapter timed out for the auction.', timeoutData);
   },
   onBidWon(bid) {
     logInfo(
       `Adplus adapter won the auction. Bid id: ${bid.bidId}, Ad Unit Id: ${bid.adUnitId}, Inventory Id: ${bid.inventoryId}`
-    )
+    );
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 // #endregion

@@ -11,7 +11,7 @@
  * @returns {State}
  */
 export default function stateFactory() {
-  let state = {}
+  let state = {};
 
   /**
    * @function State#updateState
@@ -19,7 +19,7 @@ export default function stateFactory() {
    * @param {Object} stateUpdate
    */
   function updateState(stateUpdate) {
-    Object.assign(state, stateUpdate)
+    Object.assign(state, stateUpdate);
   }
 
   /**
@@ -28,7 +28,7 @@ export default function stateFactory() {
    * @returns {Object} the current state
    */
   function getState() {
-    return state
+    return state;
   }
 
   /**
@@ -36,12 +36,12 @@ export default function stateFactory() {
    * @summary erases the current state
    */
   function clearState() {
-    state = {}
+    state = {};
   }
 
   return {
     updateState,
     getState,
     clearState
-  }
+  };
 }

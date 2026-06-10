@@ -1,5 +1,5 @@
-import { oneKeyDataSubmodule } from 'modules/oneKeyRtdProvider.js'
-import { getAdUnits } from '../../fixtures/fixtures.js'
+import { oneKeyDataSubmodule } from 'modules/oneKeyRtdProvider.js';
+import { getAdUnits } from '../../fixtures/fixtures.js';
 
 const defaultSeed = {
   version: '0.1',
@@ -14,7 +14,7 @@ const defaultSeed = {
     signature: '6OmdrSGwagPpugGFuQ4VGjzqYadHxWIXPaLItk0vA1lmi/EQyRvNF5seXStfwKWRnC7HZlOIGSjA6g7HAuofWw=='
 
   }
-}
+};
 
 const defaultOrb2WithTransmission = {
   user: {
@@ -26,52 +26,52 @@ const defaultOrb2WithTransmission = {
       }
     }
   }
-}
+};
 
 const defaultRtdConfig = {
   params: {
     proxyHostName: 'host'
   }
-}
+};
 
 describe('oneKeyDataSubmodule', () => {
-  var bidsConfig
+  var bidsConfig;
   beforeEach(() => {
     // Fresh bidsConfig because it can be altered
     // during the tests.
-    bidsConfig = getReqBidsConfig()
-    setUpOneKey()
-  })
+    bidsConfig = getReqBidsConfig();
+    setUpOneKey();
+  });
 
   it('successfully instantiates', () => {
-    expect(oneKeyDataSubmodule.init()).to.equal(true)
-  })
+    expect(oneKeyDataSubmodule.init()).to.equal(true);
+  });
 
   it('call OneKey API once it is loaded', () => {
-    const done = sinon.spy()
+    const done = sinon.spy();
 
-    oneKeyDataSubmodule.getBidRequestData(bidsConfig, done, defaultRtdConfig)
+    oneKeyDataSubmodule.getBidRequestData(bidsConfig, done, defaultRtdConfig);
 
-    expect(bidsConfig).to.eql(getReqBidsConfig())
-    expect(done.callCount).to.equal(0)
-    expect(window.OneKey.queue.length).to.equal(1)
-  })
+    expect(bidsConfig).to.eql(getReqBidsConfig());
+    expect(done.callCount).to.equal(0);
+    expect(window.OneKey.queue.length).to.equal(1);
+  });
 
   it('don\'t change anything without a seed', () => {
     window.OneKey.generateSeed = (_transactionIds) => {
-      return Promise.resolve(undefined)
-    }
+      return Promise.resolve(undefined);
+    };
 
     // Act
     return new Promise(resolve => {
-      oneKeyDataSubmodule.getBidRequestData(bidsConfig, resolve, defaultRtdConfig)
-      executeOneKeyQueue()
+      oneKeyDataSubmodule.getBidRequestData(bidsConfig, resolve, defaultRtdConfig);
+      executeOneKeyQueue();
     })
 
     // Assert
       .then(() => {
-        expect(bidsConfig).to.eql(getReqBidsConfig())
-      })
+        expect(bidsConfig).to.eql(getReqBidsConfig());
+      });
   });
 
   [ // Test cases
@@ -110,8 +110,8 @@ describe('oneKeyDataSubmodule', () => {
     it(`update adUnits with transaction-ids and transmission in ${testCase.description}`, () => {
       // Act
       return new Promise(resolve => {
-        oneKeyDataSubmodule.getBidRequestData(bidsConfig, resolve, testCase.rtdConfig)
-        executeOneKeyQueue()
+        oneKeyDataSubmodule.getBidRequestData(bidsConfig, resolve, testCase.rtdConfig);
+        executeOneKeyQueue();
       })
 
       // Assert
@@ -119,13 +119,13 @@ describe('oneKeyDataSubmodule', () => {
         // Verify transaction-ids without equality
         // because they are generated UUID.
           bidsConfig.adUnits.forEach((adUnit) => {
-            expect(adUnit.ortb2Imp.ext.data.paf.transaction_id).to.not.be.undefined
-          })
-          expect(bidsConfig.ortb2Fragments).to.eql(testCase.expectedFragment)
-        })
-    })
-  })
-})
+            expect(adUnit.ortb2Imp.ext.data.paf.transaction_id).to.not.be.undefined;
+          });
+          expect(bidsConfig.ortb2Fragments).to.eql(testCase.expectedFragment);
+        });
+    });
+  });
+});
 
 const getReqBidsConfig = () => {
   return {
@@ -134,19 +134,19 @@ const getReqBidsConfig = () => {
       global: {},
       bidder: {}
     }
-  }
-}
+  };
+};
 
 const setUpOneKey = () => {
-  window.OneKey.queue = []
+  window.OneKey.queue = [];
   OneKey.generateSeed = (_transactionIds) => {
-    return Promise.resolve(defaultSeed)
-  }
-}
+    return Promise.resolve(defaultSeed);
+  };
+};
 
 const executeOneKeyQueue = () => {
   while (window.OneKey.queue.length > 0) {
-    window.OneKey.queue[0]()
-    window.OneKey.queue.shift()
+    window.OneKey.queue[0]();
+    window.OneKey.queue.shift();
   }
-}
+};

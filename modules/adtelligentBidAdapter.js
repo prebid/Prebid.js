@@ -1,42 +1,42 @@
-import { _map, deepAccess, flatten, isArray, parseSizesInput } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { config } from '../src/config.js'
-import { Renderer } from '../src/Renderer.js'
-import { chunk } from '../libraries/chunk/chunk.js'
+import { _map, deepAccess, flatten, isArray, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { chunk } from '../libraries/chunk/chunk.js';
 import {
   createTag, getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
-} from '../libraries/adtelligentUtils/adtelligentUtils.js'
-import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js"
+} from '../libraries/adtelligentUtils/adtelligentUtils.js';
+import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/placementPositionInfo.js";
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
-const subdomainSuffixes = ['', 1, 2]
-const AUCTION_PATH = '/v2/auction/'
-const PROTOCOL = 'https://'
+const subdomainSuffixes = ['', 1, 2];
+const AUCTION_PATH = '/v2/auction/';
+const PROTOCOL = 'https://';
 const HOST_GETTERS = {
   default: (function () {
-    let num = 0
+    let num = 0;
     return function () {
-      return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com'
-    }
+      return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
+    };
   }()),
   indicue: () => 'ghb.console.indicue.com',
-}
+};
 const getUri = function (bidderCode) {
-  const bidderWithoutSuffix = bidderCode.split('_')[0]
-  const getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default']
-  return PROTOCOL + getter() + AUCTION_PATH
-}
-const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js'
-const BIDDER_CODE = 'adtelligent'
-const OUTSTREAM = 'outstream'
-const DISPLAY = 'display'
-const syncsCache = {}
+  const bidderWithoutSuffix = bidderCode.split('_')[0];
+  const getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
+  return PROTOCOL + getter() + AUCTION_PATH;
+};
+const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
+const BIDDER_CODE = 'adtelligent';
+const OUTSTREAM = 'outstream';
+const DISPLAY = 'display';
+const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -47,7 +47,7 @@ export const spec = {
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache);
   },
   /**
    * Make a server request from the list of BidRequests
@@ -55,10 +55,10 @@ export const spec = {
    * @param adapterRequest
    */
   buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10)
-    const { tag, bids } = bidToTag(bidRequests, adapterRequest)
-    const bidChunks = chunk(bids, chunkSize)
+    const adapterSettings = config.getConfig(adapterRequest.bidderCode);
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+    const { tag, bids } = bidToTag(bidRequests, adapterRequest);
+    const bidChunks = chunk(bids, chunkSize);
 
     return _map(bidChunks, (bids) => {
       return {
@@ -66,8 +66,8 @@ export const spec = {
         adapterRequest,
         method: 'POST',
         url: getUri(adapterRequest.bidderCode)
-      }
-    })
+      };
+    });
   },
 
   /**
@@ -78,75 +78,75 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, { adapterRequest }) {
-    serverResponse = serverResponse.body
-    let bids = []
+    serverResponse = serverResponse.body;
+    let bids = [];
 
     if (!isArray(serverResponse)) {
-      return parseRTBResponse(serverResponse, adapterRequest)
+      return parseRTBResponse(serverResponse, adapterRequest);
     }
 
     serverResponse.forEach(serverBidResponse => {
-      bids = flatten(bids, parseRTBResponse(serverBidResponse, adapterRequest))
-    })
+      bids = flatten(bids, parseRTBResponse(serverBidResponse, adapterRequest));
+    });
 
-    return bids
+    return bids;
   },
 
-}
+};
 
 function parseRTBResponse(serverResponse, adapterRequest) {
-  const isEmptyResponse = !serverResponse || !isArray(serverResponse.bids)
-  const bids = []
+  const isEmptyResponse = !serverResponse || !isArray(serverResponse.bids);
+  const bids = [];
 
   if (isEmptyResponse) {
-    return bids
+    return bids;
   }
 
   serverResponse.bids.forEach(serverBid => {
     const request = ((adapterRequest.bids) || []).find((bidRequest) => {
-      return bidRequest.bidId === serverBid.requestId
-    })
+      return bidRequest.bidId === serverBid.requestId;
+    });
 
     if (serverBid.cpm !== 0 && request !== undefined) {
-      const bid = createBid(serverBid, request)
+      const bid = createBid(serverBid, request);
 
-      bids.push(bid)
+      bids.push(bid);
     }
-  })
+  });
 
-  return bids
+  return bids;
 }
 
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
-  const tag = createTag(bidRequests, adapterRequest)
+  const tag = createTag(bidRequests, adapterRequest);
 
   if (window.adtDmp && window.adtDmp.ready) {
-    tag.DMPId = window.adtDmp.getUID()
+    tag.DMPId = window.adtDmp.getUID();
   }
   if (adapterRequest.gppConsent) {
-    tag.GPP = adapterRequest.gppConsent.gppString
-    tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString()
+    tag.GPP = adapterRequest.gppConsent.gppString;
+    tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString();
   } else if (adapterRequest.ortb2?.regs?.gpp) {
-    tag.GPP = adapterRequest.ortb2.regs.gpp
-    tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid
+    tag.GPP = adapterRequest.ortb2.regs.gpp;
+    tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
   }
-  const ageVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification')
+  const ageVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
 
   if (ageVerification) {
-    tag.AgeVerification = ageVerification
+    tag.AgeVerification = ageVerification;
   }
 
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
-    const bid = prepareBidRequests(bidRequests[i])
+    const bid = prepareBidRequests(bidRequests[i]);
 
-    bids.push(bid)
+    bids.push(bid);
   }
 
-  return { tag, bids }
+  return { tag, bids };
 }
 
 /**
@@ -155,31 +155,31 @@ function bidToTag(bidRequests, adapterRequest) {
  * @returns {object}
  */
 function prepareBidRequests(bidReq) {
-  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY
-  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes')
-  const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid')
-  const placementInfo = getPlacementPositionUtils().getPlacementInfo(bidReq)
+  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
+  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
+  const placementInfo = getPlacementPositionUtils().getPlacementInfo(bidReq);
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
     'AdType': mediaType,
     'Sizes': parseSizesInput(sizes).join(','),
     ...placementInfo
-  }
+  };
 
-  bidReqParams.PlacementId = bidReq.adUnitCode
+  bidReqParams.PlacementId = bidReq.adUnitCode;
   if (bidReq.params.iframe) {
-    bidReqParams.AdmType = 'iframe'
+    bidReqParams.AdmType = 'iframe';
   }
   if (bidReq.params.vpb_placement_id) {
-    bidReqParams.PlacementId = bidReq.params.vpb_placement_id
+    bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
   }
 
   if (gpid) {
-    bidReqParams.GPID = gpid
+    bidReqParams.GPID = gpid;
   }
 
-  return bidReqParams
+  return bidReqParams;
 }
 
 /**
@@ -188,7 +188,7 @@ function prepareBidRequests(bidReq) {
  * @returns {object}
  */
 function getMediaType(bidderRequest) {
-  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER
+  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
 }
 
 /**
@@ -198,8 +198,8 @@ function getMediaType(bidderRequest) {
  * @returns {object}
  */
 function createBid(bidResponse, bidRequest) {
-  const mediaType = getMediaType(bidRequest)
-  const context = deepAccess(bidRequest, 'mediaTypes.video.context')
+  const mediaType = getMediaType(bidRequest);
+  const context = deepAccess(bidRequest, 'mediaTypes.video.context');
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
@@ -213,26 +213,26 @@ function createBid(bidResponse, bidRequest) {
     meta: {
       advertiserDomains: bidResponse.adomain || []
     }
-  }
+  };
 
   if (mediaType === BANNER) {
     return Object.assign(bid, {
       ad: bidResponse.ad,
       adUrl: bidResponse.adUrl,
-    })
+    });
   }
   Object.assign(bid, {
     vastUrl: bidResponse.vastUrl
-  })
+  });
 
   if (context === OUTSTREAM) {
     Object.assign(bid, {
       adResponse: bidResponse,
       renderer: newRenderer(bidResponse.requestId, bidRequest.params)
-    })
+    });
   }
 
-  return bid
+  return bid;
 }
 
 /**
@@ -247,11 +247,11 @@ function newRenderer(requestId, bidderParams) {
     url: OUTSTREAM_SRC,
     config: bidderParams.outstream || {},
     loaded: false
-  })
+  });
 
-  renderer.setRender(outstreamRender)
+  renderer.setRender(outstreamRender);
 
-  return renderer
+  return renderer;
 }
 
 /**
@@ -265,9 +265,9 @@ function outstreamRender(bid) {
       height: bid.height,
       vastUrl: bid.vastUrl,
       elId: bid.adUnitCode
-    })
-    window.VOutstreamAPI.initOutstreams([opts])
-  })
+    });
+    window.VOutstreamAPI.initOutstreams([opts]);
+  });
 }
 
-registerBidder(spec)
+registerBidder(spec);

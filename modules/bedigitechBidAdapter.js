@@ -1,12 +1,12 @@
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { _each, isArray } from '../src/utils.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { _each, isArray } from '../src/utils.js';
 
-const BEDIGITECH_CODE = 'bedigitech'
-const BEDIGITECH_ENDPOINT = 'https://bid.bedigitech.com/bid/pub_bid.php'
-const BEDIGITECH_REQUEST_METHOD = 'GET'
-const BEDIGITECH_CURRENCY = 'USD'
-let requestId = ''
+const BEDIGITECH_CODE = 'bedigitech';
+const BEDIGITECH_ENDPOINT = 'https://bid.bedigitech.com/bid/pub_bid.php';
+const BEDIGITECH_REQUEST_METHOD = 'GET';
+const BEDIGITECH_CURRENCY = 'USD';
+let requestId = '';
 function interpretResponse(placementResponse, bids) {
   const bid = {
     id: placementResponse.id,
@@ -25,23 +25,23 @@ function interpretResponse(placementResponse, bids) {
     meta: {
       mediaType: BANNER,
     },
-  }
-  bids.push(bid)
+  };
+  bids.push(bid);
 }
 
 export const spec = {
   code: BEDIGITECH_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: bid => {
-    requestId = ''
-    requestId = bid.bidId
-    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'bedigitech'
+    requestId = '';
+    requestId = bid.bidId;
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'bedigitech';
   },
 
   buildRequests: (bidRequests) => {
     return bidRequests.map(bid => {
-      const url = BEDIGITECH_ENDPOINT
-      const data = { 'pid': bid.params.placementId }
+      const url = BEDIGITECH_ENDPOINT;
+      const data = { 'pid': bid.params.placementId };
       return {
         method: BEDIGITECH_REQUEST_METHOD,
         url,
@@ -51,20 +51,20 @@ export const spec = {
           withCredentials: false,
           crossOrigin: true,
         },
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: function(serverResponse) {
-    const bids = []
+    const bids = [];
     if (isArray(serverResponse.body)) {
       _each(serverResponse.body, function(placementResponse) {
-        interpretResponse(placementResponse, bids)
-      })
+        interpretResponse(placementResponse, bids);
+      });
     }
-    return bids
+    return bids;
   },
 
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

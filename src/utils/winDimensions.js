@@ -1,7 +1,7 @@
-import { canAccessWindowTop, internal as utilsInternals } from '../utils.js'
-import { CachedApiWrapper } from './cachedApiWrapper.js'
+import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
+import { CachedApiWrapper } from './cachedApiWrapper.js';
 
-const CHECK_INTERVAL_MS = 20
+const CHECK_INTERVAL_MS = 20;
 
 const winDimensions = new CachedApiWrapper(
   () => canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf(),
@@ -31,36 +31,36 @@ const winDimensions = new CachedApiWrapper(
       }
     }
   }
-)
+);
 
 export const internal = {
   winDimensions,
-}
+};
 
 export const getWinDimensions = (() => {
-  let lastCheckTimestamp
+  let lastCheckTimestamp;
   return function () {
     if (!lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.winDimensions.reset()
-      lastCheckTimestamp = Date.now()
+      internal.winDimensions.reset();
+      lastCheckTimestamp = Date.now();
     }
-    return internal.winDimensions.obj
-  }
-})()
+    return internal.winDimensions.obj;
+  };
+})();
 
 export function resetWinDimensions() {
-  internal.winDimensions.reset()
+  internal.winDimensions.reset();
 }
 
 export function getScreenOrientation(win) {
-  const fallbackWin = win ?? (canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf())
-  const screenData = fallbackWin?.screen ?? utilsInternals.getWindowSelf()?.screen ?? window?.screen
-  const width = Number(screenData?.width)
-  const height = Number(screenData?.height)
+  const fallbackWin = win ?? (canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf());
+  const screenData = fallbackWin?.screen ?? utilsInternals.getWindowSelf()?.screen ?? window?.screen;
+  const width = Number(screenData?.width);
+  const height = Number(screenData?.height);
 
   if (!Number.isFinite(width) || !Number.isFinite(height)) {
-    return
+    return;
   }
 
-  return height >= width ? 'portrait' : 'landscape'
+  return height >= width ? 'portrait' : 'landscape';
 }

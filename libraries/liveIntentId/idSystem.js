@@ -4,14 +4,14 @@
  * @module modules/idSystem
  * @requires module:modules/userId
  */
-import { triggerPixel, logError } from '../../src/utils.js'
-import { qualifiedAjaxBuilder } from '../../src/ajax.js'
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js'
-import { submodule } from '../../src/hook.js'
-import { LiveConnect } from 'live-connect-js' // eslint-disable-line prebid/validate-imports
-import { getStorageManager } from '../../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js'
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js'
+import { triggerPixel, logError } from '../../src/utils.js';
+import { qualifiedAjaxBuilder } from '../../src/ajax.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
+import { submodule } from '../../src/hook.js';
+import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
+import { getStorageManager } from '../../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js';
 
 /**
  * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
@@ -21,9 +21,9 @@ import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_
  * @typedef {import('../../modules/liveIntentIdSystem.d.ts').LiveIntentIdSystemModuleName} LiveIntentIdSystemModuleName
  */
 
-const EVENTS_TOPIC = 'pre_lips'
+const EVENTS_TOPIC = 'pre_lips';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout, headers) => {
     qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME, timeout)(
@@ -38,43 +38,43 @@ const calls = {
         withCredentials: true,
         customHeaders: headers
       }
-    )
+    );
   },
   pixelGet: (url, onload) => triggerPixel(url, onload)
-}
+};
 
-let eventFired = false
-let liveConnect = null
+let eventFired = false;
+let liveConnect = null;
 
 /**
  * This function is used in tests.
  */
 export function reset() {
   if (window && window.liQ_instances) {
-    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
-    window.liQ_instances = []
+    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag));
+    window.liQ_instances = [];
   }
-  liveIntentIdSubmodule.setModuleMode(null)
-  eventFired = false
-  liveConnect = null
+  liveIntentIdSubmodule.setModuleMode(null);
+  eventFired = false;
+  liveConnect = null;
 }
 
 /**
  * This function is used in tests.
  */
 export function setEventFiredFlag() {
-  eventFired = true
+  eventFired = true;
 }
 
 function parseLiveIntentCollectorConfig(collectConfig) {
-  const config = {}
-  collectConfig = collectConfig || {}
-  collectConfig.appId && (config.appId = collectConfig.appId)
-  collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy)
-  collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays)
-  collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl)
-  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT
-  return config
+  const config = {};
+  collectConfig = collectConfig || {};
+  collectConfig.appId && (config.appId = collectConfig.appId);
+  collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
+  collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
+  collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
+  return config;
 }
 
 /**
@@ -86,12 +86,12 @@ function parseLiveIntentCollectorConfig(collectConfig) {
 
 function initializeLiveConnect(configParams) {
   if (liveConnect) {
-    return liveConnect
+    return liveConnect;
   }
 
-  configParams = configParams || {}
+  configParams = configParams || {};
 
-  const publisherId = configParams.publisherId || 'any'
+  const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     publisherId: publisherId,
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides),
@@ -99,63 +99,63 @@ function initializeLiveConnect(configParams) {
       ipv4: configParams.ipv4,
       ipv6: configParams.ipv6
     }
-  }
+  };
   if (configParams.url) {
-    identityResolutionConfig.url = configParams.url
+    identityResolutionConfig.url = configParams.url;
   };
 
-  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
-  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig)
+  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
   if (!liveConnectConfig.appId && configParams.distributorId) {
-    liveConnectConfig.distributorId = configParams.distributorId
-    identityResolutionConfig.source = configParams.distributorId
+    liveConnectConfig.distributorId = configParams.distributorId;
+    identityResolutionConfig.source = configParams.distributorId;
   } else {
-    identityResolutionConfig.source = configParams.partner || 'prebid'
+    identityResolutionConfig.source = configParams.partner || 'prebid';
   }
 
-  liveConnectConfig.wrapperName = 'prebid'
-  liveConnectConfig.trackerVersion = '$prebid.version$'
-  liveConnectConfig.identityResolutionConfig = identityResolutionConfig
-  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || []
-  liveConnectConfig.fireEventDelay = configParams.fireEventDelay
+  liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.trackerVersion = '$prebid.version$';
+  liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
+  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
 
-  const usPrivacyString = uspDataHandler.getConsentData()
+  const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
-    liveConnectConfig.usPrivacyString = usPrivacyString
+    liveConnectConfig.usPrivacyString = usPrivacyString;
   }
-  const gdprConsent = gdprDataHandler.getConsentData()
+  const gdprConsent = gdprDataHandler.getConsentData();
   if (gdprConsent) {
-    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies
-    liveConnectConfig.gdprConsent = gdprConsent.consentString
+    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
+    liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
-  const gppConsent = gppDataHandler.getConsentData()
+  const gppConsent = gppDataHandler.getConsentData();
   if (gppConsent) {
-    liveConnectConfig.gppString = gppConsent.gppString
-    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections
+    liveConnectConfig.gppString = gppConsent.gppString;
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
   }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS.
   // The third param is the ajax and pixel object, the AJAX and pixel use PBJS.
-  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls)
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
 
-  const sourceEvent = makeSourceEventToSend(configParams)
+  const sourceEvent = makeSourceEventToSend(configParams);
   if (sourceEvent != null) {
-    liveConnect.push(sourceEvent)
+    liveConnect.push(sourceEvent);
   }
-  return liveConnect
+  return liveConnect;
 }
 
 function tryFireEvent() {
   if (!eventFired && liveConnect) {
-    const eventDelay = liveConnect.config.fireEventDelay || DEFAULT_DELAY
+    const eventDelay = liveConnect.config.fireEventDelay || DEFAULT_DELAY;
     setTimeout(() => {
-      const instances = window.liQ_instances
-      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
+      const instances = window.liQ_instances;
+      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag));
       if (!eventFired && liveConnect) {
-        liveConnect.fire()
+        liveConnect.fire();
       }
-    }, eventDelay)
+    }, eventDelay);
   }
 }
 
@@ -169,10 +169,10 @@ export const liveIntentIdSubmodule = {
   name: MODULE_NAME,
   gvlid: GVLID,
   setModuleMode(mode) {
-    this.moduleMode = mode
+    this.moduleMode = mode;
   },
   getInitializer() {
-    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
+    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode);
   },
 
   /**
@@ -187,15 +187,15 @@ export const liveIntentIdSubmodule = {
    * @returns {{lipb:Object}}
    */
   decode(value, config) {
-    const configParams = (config && config.params) || {}
-    setUpTreatment(configParams)
+    const configParams = (config && config.params) || {};
+    setUpTreatment(configParams);
 
     if (!liveConnect) {
-      initializeLiveConnect(configParams)
+      initializeLiveConnect(configParams);
     }
-    tryFireEvent()
+    tryFireEvent();
 
-    return composeResult(value, configParams)
+    return composeResult(value, configParams);
   },
 
   /**
@@ -205,30 +205,30 @@ export const liveIntentIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    const configParams = (config && config.params) || {}
-    setUpTreatment(configParams)
+    const configParams = (config && config.params) || {};
+    setUpTreatment(configParams);
 
-    const liveConnect = initializeLiveConnect(configParams)
+    const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
-      return
+      return;
     }
-    tryFireEvent()
+    tryFireEvent();
     const result = function(callback) {
       liveConnect.resolve(
         response => {
-          callback(response)
+          callback(response);
         },
         error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error: `, error)
-          callback()
+          logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          callback();
         }
-      )
-    }
+      );
+    };
 
-    return { callback: result }
+    return { callback: result };
   },
   primaryIds: PRIMARY_IDS,
   eids
-}
+};
 
-submodule('userId', liveIntentIdSubmodule)
+submodule('userId', liveIntentIdSubmodule);

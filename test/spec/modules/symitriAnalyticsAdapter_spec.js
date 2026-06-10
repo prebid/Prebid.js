@@ -1,26 +1,26 @@
-import symitriAnalyticsAdapter from 'modules/symitriAnalyticsAdapter.js'
-import { expect } from 'chai'
-import adapterManager from 'src/adapterManager.js'
-import { server } from 'test/mocks/xhr.js'
-import { EVENTS } from 'src/constants.js'
+import symitriAnalyticsAdapter from 'modules/symitriAnalyticsAdapter.js';
+import { expect } from 'chai';
+import adapterManager from 'src/adapterManager.js';
+import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events')
+const events = require('src/events');
 
 describe('symitri analytics adapter', function () {
   beforeEach(function () {
-    sinon.stub(events, 'getEvents').returns([])
-  })
+    sinon.stub(events, 'getEvents').returns([]);
+  });
 
   afterEach(function () {
-    events.getEvents.restore()
-  })
+    events.getEvents.restore();
+  });
 
   describe('track', function () {
     const initOptionsValid = {
       apiAuthToken: 'TOKEN1234'
-    }
+    };
     const initOptionsInValid = {
-    }
+    };
 
     const bidWon = {
       'bidderCode': 'appnexus',
@@ -44,46 +44,46 @@ describe('symitri analytics adapter', function () {
       'bidder': 'appnexus',
       'timeToRespond': 212,
       'status': 'rendered'
-    }
+    };
 
     adapterManager.registerAnalyticsAdapter({
       code: 'symitri',
       adapter: symitriAnalyticsAdapter
-    })
+    });
 
     afterEach(function () {
-      symitriAnalyticsAdapter.disableAnalytics()
-    })
+      symitriAnalyticsAdapter.disableAnalytics();
+    });
 
     it('Test with valid apiAuthToken', function () {
       adapterManager.enableAnalytics({
         provider: 'symitri',
         options: initOptionsValid
-      })
-      events.emit(EVENTS.BID_WON, bidWon)
-      expect(server.requests.length).to.equal(1)
-    })
+      });
+      events.emit(EVENTS.BID_WON, bidWon);
+      expect(server.requests.length).to.equal(1);
+    });
 
     it('Test with missing apiAuthToken', function () {
       adapterManager.enableAnalytics({
         provider: 'symitri',
         options: initOptionsInValid
-      })
-      events.emit(EVENTS.BID_WON, bidWon)
-      expect(server.requests.length).to.equal(0)
-    })
+      });
+      events.emit(EVENTS.BID_WON, bidWon);
+      expect(server.requests.length).to.equal(0);
+    });
 
     it('Test correct winning bid is sent to server', function () {
       adapterManager.enableAnalytics({
         provider: 'symitri',
         options: initOptionsValid
-      })
-      events.emit(EVENTS.BID_WON, bidWon)
-      expect(server.requests.length).to.equal(1)
-      const winEventData = JSON.parse(server.requests[0].requestBody)
-      expect(winEventData).to.deep.equal(bidWon)
-      const authToken = server.requests[0].requestHeaders['Authorization']
-      expect(authToken).to.equal(initOptionsValid.apiAuthToken)
-    })
-  })
-})
+      });
+      events.emit(EVENTS.BID_WON, bidWon);
+      expect(server.requests.length).to.equal(1);
+      const winEventData = JSON.parse(server.requests[0].requestBody);
+      expect(winEventData).to.deep.equal(bidWon);
+      const authToken = server.requests[0].requestHeaders['Authorization'];
+      expect(authToken).to.equal(initOptionsValid.apiAuthToken);
+    });
+  });
+});

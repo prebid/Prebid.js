@@ -1,9 +1,9 @@
-import { ajax } from '../src/ajax.js'
-import { config } from '../src/config.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js'
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -14,12 +14,12 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-const BIDDER_CODE = 'prisma'
-const BIDDER_URL = 'https://prisma.nexx360.io/prebid'
-const CACHE_URL = 'https://prisma.nexx360.io/cache'
-const METRICS_TRACKER_URL = 'https://prisma.nexx360.io/track-imp'
+const BIDDER_CODE = 'prisma';
+const BIDDER_URL = 'https://prisma.nexx360.io/prebid';
+const CACHE_URL = 'https://prisma.nexx360.io/cache';
+const METRICS_TRACKER_URL = 'https://prisma.nexx360.io/track-imp';
 
-const GVLID = 965
+const GVLID = 965;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -33,7 +33,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.account && bid.params.tagId)
+    return !!(bid.params.account && bid.params.tagId);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -43,12 +43,12 @@ export const spec = {
    * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const adUnits = []
-    const test = config.getConfig('debug') ? 1 : 0
-    let adunitValue = null
-    let userEids = null
+    const adUnits = [];
+    const test = config.getConfig('debug') ? 1 : 0;
+    let adunitValue = null;
+    let userEids = null;
     Object.keys(validBidRequests).forEach(key => {
-      adunitValue = validBidRequests[key]
+      adunitValue = validBidRequests[key];
       const foo = {
         account: adunitValue.params.account,
         tagId: adunitValue.params.tagId,
@@ -61,37 +61,37 @@ export const spec = {
         bidfloor: 0,
         bidfloorCurrency: 'USD',
         keywords: getANKeywordParam(bidderRequest.ortb2, adunitValue.params.keywords)
-      }
-      adUnits.push(foo)
-      if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids
-    })
+      };
+      adUnits.push(foo);
+      if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
+    });
     const payload = {
       adUnits,
       // TODO: does the fallback make sense here?
       href: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation)
-    }
+    };
     if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)
       if (bidderRequest.gdprConsent) {
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-        payload.gdprConsent = bidderRequest.gdprConsent.consentString
+        payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+        payload.gdprConsent = bidderRequest.gdprConsent.consentString;
       } else {
-        payload.gdpr = 0
-        payload.gdprConsent = ''
+        payload.gdpr = 0;
+        payload.gdprConsent = '';
       }
-      if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent }
-      const schain = bidderRequest?.ortb2?.source?.ext?.schain
-      if (schain) { payload.schain = schain }
-      if (userEids !== null) payload.userEids = userEids
+      if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
+      const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+      if (schain) { payload.schain = schain; }
+      if (userEids !== null) payload.userEids = userEids;
     };
-    payload.connectionType = getConnectionType()
+    payload.connectionType = getConnectionType();
 
-    if (test) payload.test = 1
-    const payloadString = JSON.stringify(payload)
+    if (test) payload.test = 1;
+    const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: BIDDER_URL,
       data: payloadString,
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -100,14 +100,14 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const serverBody = serverResponse.body
-    const bidResponses = []
-    let bidResponse = null
-    let value = null
+    const serverBody = serverResponse.body;
+    const bidResponses = [];
+    let bidResponse = null;
+    let value = null;
     if (serverBody.hasOwnProperty('responses')) {
       Object.keys(serverBody['responses']).forEach(key => {
-        value = serverBody['responses'][key]
-        const url = `${CACHE_URL}?uuid=${value['uuid']}`
+        value = serverBody['responses'][key];
+        const url = `${CACHE_URL}?uuid=${value['uuid']}`;
         bidResponse = {
           requestId: value['bidId'],
           cpm: value['cpm'],
@@ -125,8 +125,8 @@ export const spec = {
           meta: {
             'advertiserDomains': value['adomain'] || []
           }
-        }
-        if (value.type === 'banner') bidResponse.adUrl = url
+        };
+        if (value.type === 'banner') bidResponse.adUrl = url;
         if (value.type === 'video') {
           const params = {
             type: 'prebid',
@@ -135,18 +135,18 @@ export const spec = {
             tag_id: value.tagId,
             consent: value.consent,
             price: value.cpm,
-          }
-          bidResponse.cpm = value.cpm
-          bidResponse.mediaType = 'video'
-          bidResponse.vastUrl = url
+          };
+          bidResponse.cpm = value.cpm;
+          bidResponse.mediaType = 'video';
+          bidResponse.vastUrl = url;
           bidResponse.vastTrackers = {
             impression: [`${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`]
-          }
+          };
         }
-        bidResponses.push(bidResponse)
-      })
+        bidResponses.push(bidResponse);
+      });
     }
-    return bidResponses
+    return bidResponses;
   },
 
   /**
@@ -159,9 +159,9 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
-      return serverResponses[0].body.cookies.slice(0, 5)
+      return serverResponses[0].body.cookies.slice(0, 5);
     } else {
-      return []
+      return [];
     }
   },
 
@@ -171,17 +171,17 @@ export const spec = {
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    const params = { type: 'prebid', mediatype: 'banner' }
+    const params = { type: 'prebid', mediatype: 'banner' };
     if (bid.hasOwnProperty('prisma')) {
-      if (bid.prisma.hasOwnProperty('ssp')) params.ssp = bid.prisma.ssp
-      if (bid.prisma.hasOwnProperty('tagId')) params.tag_id = bid.prisma.tagId
-      if (bid.prisma.hasOwnProperty('consent')) params.consent = bid.prisma.consent
+      if (bid.prisma.hasOwnProperty('ssp')) params.ssp = bid.prisma.ssp;
+      if (bid.prisma.hasOwnProperty('tagId')) params.tag_id = bid.prisma.tagId;
+      if (bid.prisma.hasOwnProperty('consent')) params.consent = bid.prisma.consent;
     };
-    params.price = bid.cpm
-    const url = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`
-    ajax(url, null, undefined, { method: 'GET', withCredentials: true })
-    return true
+    params.price = bid.cpm;
+    const url = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`;
+    ajax(url, null, undefined, { method: 'GET', withCredentials: true });
+    return true;
   }
 
-}
-registerBidder(spec)
+};
+registerBidder(spec);

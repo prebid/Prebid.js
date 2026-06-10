@@ -1,4 +1,4 @@
-import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from '../../../src/eventTrackers.js'
+import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from '../../../src/eventTrackers.js';
 
 export function addEventTrackers(bidResponse, bid) {
   bidResponse.eventtrackers = bidResponse.eventtrackers || [];
@@ -13,6 +13,6 @@ export function addEventTrackers(bidResponse, bid) {
         method: TRACKER_METHOD_IMG,
         event,
         url
-      })
-    })
+      });
+    });
 }

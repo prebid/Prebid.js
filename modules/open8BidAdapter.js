@@ -1,52 +1,52 @@
-import { Renderer } from '../src/Renderer.js'
-import { ajax } from '../src/ajax.js'
-import { createTrackPixelHtml, getBidIdParameter, logError, logWarn } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { VIDEO, BANNER } from '../src/mediaTypes.js'
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
+import { Renderer } from '../src/Renderer.js';
+import { ajax } from '../src/ajax.js';
+import { createTrackPixelHtml, getBidIdParameter, logError, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
-const BIDDER_CODE = 'open8'
-const URL = 'https://as.vt.open8.com/v1/control/prebid'
+const BIDDER_CODE = 'open8';
+const URL = 'https://as.vt.open8.com/v1/control/prebid';
 const AD_TYPE = {
   VIDEO: 1,
   BANNER: 2
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.slotKey)
+    return !!(bid.params.slotKey);
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    var requests = []
+    var requests = [];
     for (var i = 0; i < validBidRequests.length; i++) {
-      var bid = validBidRequests[i]
-      var queryString = ''
-      var slotKey = getBidIdParameter('slotKey', bid.params)
-      queryString = tryAppendQueryString(queryString, 'slot_key', slotKey)
-      queryString = tryAppendQueryString(queryString, 'imp_id', generateImpId())
-      queryString += ('bid_id=' + bid.bidId)
+      var bid = validBidRequests[i];
+      var queryString = '';
+      var slotKey = getBidIdParameter('slotKey', bid.params);
+      queryString = tryAppendQueryString(queryString, 'slot_key', slotKey);
+      queryString = tryAppendQueryString(queryString, 'imp_id', generateImpId());
+      queryString += ('bid_id=' + bid.bidId);
 
       requests.push({
         method: 'GET',
         url: URL,
         data: queryString
-      })
+      });
     }
-    return requests
+    return requests;
   },
 
   interpretResponse: function(serverResponse, request) {
-    var bidderResponse = serverResponse.body
+    var bidderResponse = serverResponse.body;
 
     if (!bidderResponse.isAdReturn) {
-      return []
+      return [];
     }
 
-    var ad = bidderResponse.ad
+    var ad = bidderResponse.ad;
 
     const bid = {
       slotKey: bidderResponse.slotKey,
@@ -69,10 +69,10 @@ export const spec = {
       meta: {
         advertiserDomains: ad.adomain || []
       }
-    }
+    };
 
     if (ad.adType === AD_TYPE.VIDEO) {
-      const videoAd = bidderResponse.ad.video
+      const videoAd = bidderResponse.ad.video;
       Object.assign(bid, {
         vastXml: videoAd.vastXml,
         width: videoAd.w,
@@ -80,74 +80,74 @@ export const spec = {
         renderer: newRenderer(bidderResponse),
         adResponse: bidderResponse,
         mediaType: VIDEO
-      })
+      });
     } else if (ad.adType === AD_TYPE.BANNER) {
-      const bannerAd = bidderResponse.ad.banner
+      const bannerAd = bidderResponse.ad.banner;
       Object.assign(bid, {
         width: bannerAd.w,
         height: bannerAd.h,
         ad: bannerAd.adm,
         mediaType: BANNER
-      })
+      });
       if (bannerAd.imps) {
         try {
           bannerAd.imps.forEach(impTrackUrl => {
-            const tracker = createTrackPixelHtml(impTrackUrl)
-            bid.ad += tracker
-          })
+            const tracker = createTrackPixelHtml(impTrackUrl);
+            bid.ad += tracker;
+          });
         } catch (error) {
-          logError('Error appending imp tracking pixel', error)
+          logError('Error appending imp tracking pixel', error);
         }
       }
     }
-    return [bid]
+    return [bid];
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = []
+    const syncs = [];
     if (syncOptions.iframeEnabled && serverResponses.length) {
-      const syncIFs = serverResponses[0].body.syncIFs
+      const syncIFs = serverResponses[0].body.syncIFs;
       if (syncIFs) {
         syncIFs.forEach(sync => {
           syncs.push({
             type: 'iframe',
             url: sync
-          })
-        })
+          });
+        });
       }
     }
     if (syncOptions.pixelEnabled && serverResponses.length) {
-      const syncPixs = serverResponses[0].body.syncPixels
+      const syncPixs = serverResponses[0].body.syncPixels;
       if (syncPixs) {
         syncPixs.forEach(sync => {
           syncs.push({
             type: 'image',
             url: sync
-          })
-        })
+          });
+        });
       }
     }
-    return syncs
+    return syncs;
   },
   onBidWon: function(bid) {
-    if (!bid.nurl) { return }
+    if (!bid.nurl) { return; }
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       bid.cpm
-    )
-    ajax(winUrl, null)
+    );
+    ajax(winUrl, null);
   }
-}
+};
 
 function generateImpId() {
-  var l = 16
-  var c = 'abcdefghijklmnopqrstuvwsyz0123456789'
-  var cl = c.length
-  var r = ''
+  var l = 16;
+  var c = 'abcdefghijklmnopqrstuvwsyz0123456789';
+  var cl = c.length;
+  var r = '';
   for (var i = 0; i < l; i++) {
-    r += c[Math.floor(Math.random() * cl)]
+    r += c[Math.floor(Math.random() * cl)];
   }
-  return r
+  return r;
 }
 
 function newRenderer(bidderResponse) {
@@ -155,15 +155,15 @@ function newRenderer(bidderResponse) {
     id: bidderResponse.ad.bidId,
     url: bidderResponse.ad.video.purl,
     loaded: false,
-  })
+  });
 
   try {
-    renderer.setRender(outstreamRender)
+    renderer.setRender(outstreamRender);
   } catch (err) {
-    logWarn('Prebid Error calling setRender on newRenderer', err)
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
 
-  return renderer
+  return renderer;
 }
 
 function outstreamRender(bid) {
@@ -182,8 +182,8 @@ function outstreamRender(bid) {
       mr: bid.mr,
       adResponse: bid.adResponse,
       mediaType: bid.mediaType
-    })
-  })
+    });
+  });
 }
 
-registerBidder(spec)
+registerBidder(spec);

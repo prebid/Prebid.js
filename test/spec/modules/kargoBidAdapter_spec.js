@@ -1,17 +1,17 @@
-import { expect } from 'chai'
-import { spec } from 'modules/kargoBidAdapter.js'
-import { config } from 'src/config.js'
-import { getStorageManager } from 'src/storageManager.js'
-import { getGlobal } from '../../../src/prebidGlobal.js'
-const utils = require('src/utils')
-const STORAGE = getStorageManager({ bidderCode: 'kargo' })
+import { expect } from 'chai';
+import { spec } from 'modules/kargoBidAdapter.js';
+import { config } from 'src/config.js';
+import { getStorageManager } from 'src/storageManager.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+const utils = require('src/utils');
+const STORAGE = getStorageManager({ bidderCode: 'kargo' });
 
 describe('kargo adapter tests', function() {
-  let bid; let outstreamBid; let testBids; let sandbox; let clock; let frozenNow = new Date(); let oldBidderSettings
+  let bid; let outstreamBid; let testBids; let sandbox; let clock; let frozenNow = new Date(); let oldBidderSettings;
 
-  const topUrl = 'https://random.com/this/is/a/url'
-  const domain = 'random.com'
-  const referer = 'https://random.com/'
+  const topUrl = 'https://random.com/this/is/a/url';
+  const domain = 'random.com';
+  const referer = 'https://random.com/';
 
   const defaultBidParams = Object.freeze({
     bidRequestsCount: 1,
@@ -89,7 +89,7 @@ describe('kargo adapter tests', function() {
         }]
       }
     },
-  })
+  });
 
   const minimumBidParams = Object.freeze({
     params: {
@@ -98,7 +98,7 @@ describe('kargo adapter tests', function() {
     mediaTypes: {
       banner: { sizes: [[1, 1]] }
     }
-  })
+  });
 
   const validCrbIds = {
     2: '82fa2555-5969-4614-b4ce-4dcf1080e9f9',
@@ -108,7 +108,7 @@ describe('kargo adapter tests', function() {
     25: '5ee24138-5e03-4b9d-a953-38e833f2849f',
     '2_80': 'd2a855a5-1b1c-4300-940e-a708fa1f1bde',
     '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
-  }
+  };
   const validCrbIdsLs = {
     2: '82fa2555-5969-4614-b4ce-4dcf1080e9f9',
     16: 'VoxIk8AoJz0AAEdCeyAAAAC2&502',
@@ -116,44 +116,44 @@ describe('kargo adapter tests', function() {
     25: '5ee24138-5e03-4b9d-a953-38e833f2849f',
     '2_80': 'd2a855a5-1b1c-4300-940e-a708fa1f1bde',
     '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
-  }
+  };
   function buildCrbValue(isCookie, withIds, withTdid, withLexId, withClientId, optOut) {
     const value = {
       expireTime: Date.now() + 60000,
       lastSyncedAt: Date.now() - 60000,
       optOut,
-    }
-    const locationString = isCookie ? 'cookie' : 'localstorage'
+    };
+    const locationString = isCookie ? 'cookie' : 'localstorage';
 
     if (withIds) {
       if (isCookie) {
-        value.syncIds = validCrbIds
+        value.syncIds = validCrbIds;
       } else {
-        value.syncIds = validCrbIdsLs
+        value.syncIds = validCrbIdsLs;
       }
     }
     if (withTdid) {
-      value.tdID = `test-tdid-cerberus-${locationString}`
+      value.tdID = `test-tdid-cerberus-${locationString}`;
     }
     if (withLexId) {
-      value.lexId = `test-lexid-cerberus-${locationString}`
+      value.lexId = `test-lexid-cerberus-${locationString}`;
     }
     if (withClientId) {
-      value.clientId = `test-clientid-cerberus-${locationString}`
+      value.clientId = `test-clientid-cerberus-${locationString}`;
     }
 
-    const b64Value = btoa(JSON.stringify(value))
+    const b64Value = btoa(JSON.stringify(value));
     if (isCookie) {
-      return JSON.stringify({ v: b64Value })
+      return JSON.stringify({ v: b64Value });
     }
-    return b64Value
+    return b64Value;
   }
 
   beforeEach(function() {
-    oldBidderSettings = getGlobal().bidderSettings
+    oldBidderSettings = getGlobal().bidderSettings;
     getGlobal().bidderSettings = {
       kargo: { storageAllowed: true }
-    }
+    };
 
     bid = {
       ...defaultBidParams,
@@ -171,7 +171,7 @@ describe('kargo adapter tests', function() {
       bidId: 'randomBidId',
       bidderRequestId: 'randomBidderRequestId',
       auctionId: 'randomAuctionId'
-    }
+    };
 
     outstreamBid = {
       ...defaultBidParams,
@@ -200,97 +200,97 @@ describe('kargo adapter tests', function() {
       bidId: 'randomBidId2',
       bidderRequestId: 'randomBidderRequestId2',
       auctionId: 'randomAuctionId2'
-    }
+    };
 
-    testBids = [{ ...minimumBidParams }]
+    testBids = [{ ...minimumBidParams }];
 
-    sandbox = sinon.createSandbox()
-    clock = sinon.useFakeTimers(frozenNow.getTime())
-  })
+    sandbox = sinon.createSandbox();
+    clock = sinon.useFakeTimers(frozenNow.getTime());
+  });
 
   afterEach(function() {
-    sandbox.restore()
-    clock.restore()
-    getGlobal().bidderSettings = oldBidderSettings
-  })
+    sandbox.restore();
+    clock.restore();
+    getGlobal().bidderSettings = oldBidderSettings;
+  });
 
   describe('gvlid', function() {
     it('exposes the gvlid (global vendor list ID) of 972', function() {
-      expect(spec.gvlid).to.exist.and.equal(972)
-    })
-  })
+      expect(spec.gvlid).to.exist.and.equal(972);
+    });
+  });
 
   describe('code', function() {
     it('exposes the code kargo', function() {
-      expect(spec.code).to.exist.and.equal('kargo')
-    })
-  })
+      expect(spec.code).to.exist.and.equal('kargo');
+    });
+  });
 
   describe('isBidRequestValid', function() {
     it('fails when the bid object is undefined', function() {
-      expect(spec.isBidRequestValid()).to.equal(false)
-    })
+      expect(spec.isBidRequestValid()).to.equal(false);
+    });
 
     it('fails when the bid object has no keys at all', function() {
-      expect(spec.isBidRequestValid({})).to.equal(false)
-    })
+      expect(spec.isBidRequestValid({})).to.equal(false);
+    });
 
     it('fails when the bid includes params but not a placement ID', function() {
-      expect(spec.isBidRequestValid({ params: {} })).to.equal(false)
-    })
+      expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
+    });
 
     it('passes when the bid includes a placement ID', function () {
-      expect(spec.isBidRequestValid({ params: { placementId: 'foo' } })).to.equal(true)
-    })
+      expect(spec.isBidRequestValid({ params: { placementId: 'foo' } })).to.equal(true);
+    });
 
     it('passes when the bid includes a placement ID and other keys', function() {
-      expect(spec.isBidRequestValid({ params: { placementId: 'foo', other: 'value' } })).to.equal(true)
-    })
+      expect(spec.isBidRequestValid({ params: { placementId: 'foo', other: 'value' } })).to.equal(true);
+    });
 
     it('passes when the full bid information is provided', function() {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-      expect(spec.isBidRequestValid(outstreamBid)).to.equal(true)
-    })
-  })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(outstreamBid)).to.equal(true);
+    });
+  });
 
   describe('buildRequests', function() {
-    let bids
-    let bidderRequest
-    let undefinedCurrency
-    let noAdServerCurrency
-    let nonUSDAdServerCurrency
-    let cookies = []
-    let localStorageItems = []
-    let session_id = null
+    let bids;
+    let bidderRequest;
+    let undefinedCurrency;
+    let noAdServerCurrency;
+    let nonUSDAdServerCurrency;
+    let cookies = [];
+    let localStorageItems = [];
+    let session_id = null;
 
     before(function() {
-      sinon.spy(spec, 'buildRequests')
-    })
+      sinon.spy(spec, 'buildRequests');
+    });
 
     beforeEach(function() {
-      undefinedCurrency = false
-      noAdServerCurrency = false
-      nonUSDAdServerCurrency = false
+      undefinedCurrency = false;
+      noAdServerCurrency = false;
+      nonUSDAdServerCurrency = false;
       sandbox.stub(config, 'getConfig').callsFake(function (key) {
         if (key === 'currency') {
-          if (undefinedCurrency) return undefined
+          if (undefinedCurrency) return undefined;
 
-          if (noAdServerCurrency) return {}
+          if (noAdServerCurrency) return {};
 
-          if (nonUSDAdServerCurrency) return { adServerCurrency: 'EUR' }
+          if (nonUSDAdServerCurrency) return { adServerCurrency: 'EUR' };
 
-          return { adServerCurrency: 'USD' }
+          return { adServerCurrency: 'USD' };
         }
 
-        if (key === 'debug') return true
-        if (key === 'deviceAccess') return true
-        throw new Error(`Config stub incomplete, missing key "${key}"`)
-      })
+        if (key === 'debug') return true;
+        if (key === 'deviceAccess') return true;
+        throw new Error(`Config stub incomplete, missing key "${key}"`);
+      });
 
       bids = [
         bid,
         outstreamBid
-      ]
+      ];
 
       bidderRequest = {
         bidderCode: 'kargo',
@@ -312,37 +312,37 @@ describe('kargo adapter tests', function() {
         },
         start: Date.now(),
         timeout: 2500,
-      }
-    })
+      };
+    });
     afterEach(function() {
-      cookies.forEach(key => document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`)
-      cookies = []
+      cookies.forEach(key => document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`);
+      cookies = [];
 
-      localStorageItems.forEach(key => localStorage.removeItem(key))
-      localStorageItems = []
-    })
+      localStorageItems.forEach(key => localStorage.removeItem(key));
+      localStorageItems = [];
+    });
 
     function getPayloadFromTestBids(testBids) {
-      const request = spec.buildRequests(testBids, { ...bidderRequest, bids: testBids })
-      const payload = request.data
-      if (session_id === null) session_id = spec._getSessionId()
+      const request = spec.buildRequests(testBids, { ...bidderRequest, bids: testBids });
+      const payload = request.data;
+      if (session_id === null) session_id = spec._getSessionId();
 
-      expect(payload).to.exist
-      expect(payload.imp).to.have.length(testBids.length)
-      expect(payload.requestCount).to.equal(spec.buildRequests.callCount - 1)
-      expect(payload.sid).to.equal(session_id)
+      expect(payload).to.exist;
+      expect(payload.imp).to.have.length(testBids.length);
+      expect(payload.requestCount).to.equal(spec.buildRequests.callCount - 1);
+      expect(payload.sid).to.equal(session_id);
 
-      return payload
+      return payload;
     }
 
     function setCookieValue(name, value) {
-      cookies.push(name)
-      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; max-age-in-seconds=1000; path=/`
+      cookies.push(name);
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; max-age-in-seconds=1000; path=/`;
     }
 
     function setLocalStorageValue(name, value) {
-      localStorageItems.push(name)
-      localStorage.setItem(name, value)
+      localStorageItems.push(name);
+      localStorage.setItem(name, value);
     }
 
     const crbValues = {
@@ -352,77 +352,77 @@ describe('kargo adapter tests', function() {
       invalidB64Ls: 'crbValueLs',
       invalidJson: 'eyJ0ZXN0OiJ2YWx1ZSJ9',
       invalidJsonLs: 'eyJ0ZXN0OiJ2YWx1ZSJ9',
-    }
+    };
     function setCrb(
       setCookie = 'valid',
       setLocalStorage = 'valid'
     ) {
       if (crbValues.hasOwnProperty(setCookie)) {
-        setCookieValue('krg_crb', crbValues[setCookie])
+        setCookieValue('krg_crb', crbValues[setCookie]);
       }
       if (crbValues.hasOwnProperty(`${setLocalStorage}Ls`)) {
-        setLocalStorageValue('krg_crb', crbValues[`${setLocalStorage}Ls`])
+        setLocalStorageValue('krg_crb', crbValues[`${setLocalStorage}Ls`]);
       }
     }
 
     it('exists and produces an object', function() {
-      const request = spec.buildRequests(bids, bidderRequest)
-      expect(request).to.exist.and.to.be.an('object')
-    })
+      const request = spec.buildRequests(bids, bidderRequest);
+      expect(request).to.exist.and.to.be.an('object');
+    });
 
     it('produces a POST request with a payload', function() {
-      const request = spec.buildRequests(bids, bidderRequest)
-      expect(request.method).to.exist.and.equal('POST')
-      expect(request.url).to.exist.and.equal('https://krk2.kargo.com/api/v1/prebid')
+      const request = spec.buildRequests(bids, bidderRequest);
+      expect(request.method).to.exist.and.equal('POST');
+      expect(request.url).to.exist.and.equal('https://krk2.kargo.com/api/v1/prebid');
 
-      const payload = request.data
-      expect(payload).to.exist
-      expect(payload.imp).to.have.length(2)
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.imp).to.have.length(2);
 
       // Display bid
-      const bidImp = payload.imp[0]
-      expect(bidImp.id).to.equal('randomBidId')
-      expect(bidImp.banner).to.deep.equal({ sizes: [[970, 250], [1, 1]] })
-      expect(bidImp.video).to.be.undefined
-      expect(bidImp.bidRequestCount).to.equal(1)
-      expect(bidImp.bidderRequestCount).to.equal(1)
-      expect(bidImp.code).to.equal('displayAdunitCode')
-      expect(bidImp.ext.ortb2Imp).to.deep.equal(defaultBidParams.ortb2Imp)
-      expect(bidImp.fpd).to.deep.equal({ gpid: '/1234/prebid/slot/path' })
-      expect(bidImp.pid).to.equal('displayPlacement')
+      const bidImp = payload.imp[0];
+      expect(bidImp.id).to.equal('randomBidId');
+      expect(bidImp.banner).to.deep.equal({ sizes: [[970, 250], [1, 1]] });
+      expect(bidImp.video).to.be.undefined;
+      expect(bidImp.bidRequestCount).to.equal(1);
+      expect(bidImp.bidderRequestCount).to.equal(1);
+      expect(bidImp.code).to.equal('displayAdunitCode');
+      expect(bidImp.ext.ortb2Imp).to.deep.equal(defaultBidParams.ortb2Imp);
+      expect(bidImp.fpd).to.deep.equal({ gpid: '/1234/prebid/slot/path' });
+      expect(bidImp.pid).to.equal('displayPlacement');
 
       // Video bid
-      const videoBidImp = payload.imp[1]
-      expect(videoBidImp.id).to.equal('randomBidId2')
-      expect(videoBidImp.banner).to.be.undefined
-      expect(videoBidImp.video).to.deep.equal(outstreamBid.mediaTypes.video)
-      expect(videoBidImp.bidRequestCount).to.equal(1)
-      expect(videoBidImp.bidderRequestCount).to.equal(1)
-      expect(videoBidImp.code).to.equal('instreamAdunitCode')
-      expect(videoBidImp.ext.ortb2Imp).to.deep.equal(defaultBidParams.ortb2Imp)
-      expect(videoBidImp.fpd).to.deep.equal({ gpid: '/1234/prebid/slot/path' })
-      expect(videoBidImp.pid).to.equal('instreamPlacement')
+      const videoBidImp = payload.imp[1];
+      expect(videoBidImp.id).to.equal('randomBidId2');
+      expect(videoBidImp.banner).to.be.undefined;
+      expect(videoBidImp.video).to.deep.equal(outstreamBid.mediaTypes.video);
+      expect(videoBidImp.bidRequestCount).to.equal(1);
+      expect(videoBidImp.bidderRequestCount).to.equal(1);
+      expect(videoBidImp.code).to.equal('instreamAdunitCode');
+      expect(videoBidImp.ext.ortb2Imp).to.deep.equal(defaultBidParams.ortb2Imp);
+      expect(videoBidImp.fpd).to.deep.equal({ gpid: '/1234/prebid/slot/path' });
+      expect(videoBidImp.pid).to.equal('instreamPlacement');
 
       // User
-      expect(payload.user).to.be.an('object')
-      expect(payload.user.crbIDs).to.deep.equal({})
-      expect(payload.user.data).to.deep.equal([])
-      expect(payload.user.sharedIDEids).to.deep.equal(defaultBidParams.userIdAsEids)
+      expect(payload.user).to.be.an('object');
+      expect(payload.user.crbIDs).to.deep.equal({});
+      expect(payload.user.data).to.deep.equal([]);
+      expect(payload.user.sharedIDEids).to.deep.equal(defaultBidParams.userIdAsEids);
 
       // General keys
-      expect(payload.aid).to.equal('randomAuctionId')
-      expect(payload.device).to.deep.equal({ size: [window.screen.width, window.screen.height] })
-      expect(payload.ext.ortb2).to.deep.equal(defaultBidParams.ortb2)
-      expect(payload.pbv).to.equal('$prebid.version$')
-      expect(payload.requestCount).to.equal(spec.buildRequests.callCount - 1)
-      expect(payload.sid).to.be.a('string').with.length(36)
-      expect(payload.timeout).to.equal(2500)
-      expect(payload.url).to.equal(topUrl)
-      expect(payload.ts).to.be.a('number')
-    })
+      expect(payload.aid).to.equal('randomAuctionId');
+      expect(payload.device).to.deep.equal({ size: [window.screen.width, window.screen.height] });
+      expect(payload.ext.ortb2).to.deep.equal(defaultBidParams.ortb2);
+      expect(payload.pbv).to.equal('$prebid.version$');
+      expect(payload.requestCount).to.equal(spec.buildRequests.callCount - 1);
+      expect(payload.sid).to.be.a('string').with.length(36);
+      expect(payload.timeout).to.equal(2500);
+      expect(payload.url).to.equal(topUrl);
+      expect(payload.ts).to.be.a('number');
+    });
 
     it('copies the ortb2 object from the first bid request if present', function() {
-      let payload
+      let payload;
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
         ortb2: {
@@ -430,13 +430,13 @@ describe('kargo adapter tests', function() {
             key: 'value'
           }
         }
-      }])
+      }]);
       expect(payload.ext.ortb2).to.deep.equal({
         user: { key: 'value' }
-      })
+      });
 
-      payload = getPayloadFromTestBids(testBids)
-      expect(payload.ext.ortb2).to.be.undefined
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.ext.ortb2).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -452,12 +452,12 @@ describe('kargo adapter tests', function() {
             key2: 'value2'
           }
         }
-      }])
+      }]);
       expect(payload.ext.ortb2).to.deep.equal({
         user: { key: 'value' }
       }
-      )
-    })
+      );
+    });
 
     it('clones ortb2 and removes user.ext.eids without mutating original input', function () {
       const ortb2WithEids = {
@@ -475,7 +475,7 @@ describe('kargo adapter tests', function() {
         source: {
           tid: 'test-tid'
         }
-      }
+      };
 
       const expectedClonedOrtb2 = {
         user: {
@@ -491,28 +491,28 @@ describe('kargo adapter tests', function() {
         source: {
           tid: 'test-tid'
         }
-      }
+      };
 
       const testBid = {
         ...minimumBidParams,
         ortb2: utils.deepClone(ortb2WithEids)
-      }
+      };
 
-      const payload = getPayloadFromTestBids([testBid])
+      const payload = getPayloadFromTestBids([testBid]);
 
       // Confirm eids were removed from the payload
-      expect(payload.ext.ortb2.user.ext.eids).to.be.undefined
+      expect(payload.ext.ortb2.user.ext.eids).to.be.undefined;
 
       // Confirm original object was not mutated
-      expect(testBid.ortb2.user.ext.eids).to.exist.and.be.an('array')
+      expect(testBid.ortb2.user.ext.eids).to.exist.and.be.an('array');
 
       // Confirm the rest of the ortb2 object is intact
-      expect(payload.ext.ortb2).to.deep.equal(expectedClonedOrtb2)
-    })
+      expect(payload.ext.ortb2).to.deep.equal(expectedClonedOrtb2);
+    });
 
     it('copies the refererInfo object from bidderRequest if present', function() {
-      let payload
-      payload = getPayloadFromTestBids(testBids)
+      let payload;
+      payload = getPayloadFromTestBids(testBids);
       expect(payload.ext.refererInfo).to.deep.equal({
         canonicalUrl: 'https://random.com/this/is/a/url',
         domain: 'random.com',
@@ -526,23 +526,23 @@ describe('kargo adapter tests', function() {
           'https://random.com/this/is/a/url'
         ],
         topmostLocation: 'https://random.com/this/is/a/url'
-      })
+      });
 
-      delete bidderRequest.refererInfo
-      payload = getPayloadFromTestBids(testBids)
-      expect(payload.ext).to.be.undefined
-    })
+      delete bidderRequest.refererInfo;
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.ext).to.be.undefined;
+    });
 
     it('pulls the site category from the first bids ortb2 object', function() {
-      let payload
+      let payload;
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
         ortb2: { site: { cat: 'test-cat' } }
-      }])
-      expect(payload.site).to.deep.equal({ cat: 'test-cat' })
+      }]);
+      expect(payload.site).to.deep.equal({ cat: 'test-cat' });
 
-      payload = getPayloadFromTestBids(testBids)
-      expect(payload.site).to.be.undefined
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.site).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -550,14 +550,14 @@ describe('kargo adapter tests', function() {
       }, {
         ...minimumBidParams,
         ortb2: { site: { cat: 'test-cat-2' } }
-      }])
-      expect(payload.site).to.deep.equal({ cat: 'test-cat' })
-    })
+      }]);
+      expect(payload.site).to.deep.equal({ cat: 'test-cat' });
+    });
 
     it('pulls the schain from the first bid if it is populated', function() {
-      let payload
-      payload = getPayloadFromTestBids(testBids)
-      expect(payload.schain).to.be.undefined
+      let payload;
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.schain).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -579,8 +579,8 @@ describe('kargo adapter tests', function() {
             }
           }
         }
-      }])
-      expect(payload.schain).to.be.undefined
+      }]);
+      expect(payload.schain).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -616,7 +616,7 @@ describe('kargo adapter tests', function() {
             }
           }
         }
-      }])
+      }]);
       expect(payload.schain).to.deep.equal({
         complete: 1,
         nodes: [{
@@ -625,34 +625,34 @@ describe('kargo adapter tests', function() {
           rid: '57bdd953-6e57-4d5b-9351-ed67ca238890',
           sid: '8190248274'
         }]
-      })
-    })
+      });
+    });
 
     it('does not send currency if it is not defined', function() {
-      undefinedCurrency = true
-      const payload = getPayloadFromTestBids(testBids)
-      expect(payload.cur).to.be.undefined
-    })
+      undefinedCurrency = true;
+      const payload = getPayloadFromTestBids(testBids);
+      expect(payload.cur).to.be.undefined;
+    });
 
     it('does not send currency if it is missing', function() {
-      noAdServerCurrency = true
-      const payload = getPayloadFromTestBids(testBids)
-      expect(payload.cur).to.be.undefined
-    })
+      noAdServerCurrency = true;
+      const payload = getPayloadFromTestBids(testBids);
+      expect(payload.cur).to.be.undefined;
+    });
 
     it('does not send currency if it is USD', function() {
-      const payload = getPayloadFromTestBids(testBids)
-      expect(payload.cur).to.be.undefined
-    })
+      const payload = getPayloadFromTestBids(testBids);
+      expect(payload.cur).to.be.undefined;
+    });
 
     it('provides the currency if it is not USD', function() {
-      nonUSDAdServerCurrency = true
-      const payload = getPayloadFromTestBids(testBids)
-      expect(payload.cur).to.equal('EUR')
-    })
+      nonUSDAdServerCurrency = true;
+      const payload = getPayloadFromTestBids(testBids);
+      expect(payload.cur).to.equal('EUR');
+    });
 
     it('provides the social canvas segments and URL if provided', function() {
-      let payload
+      let payload;
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
       }, {
@@ -664,8 +664,8 @@ describe('kargo adapter tests', function() {
             url: 'https://socan.url'
           }
         }
-      }])
-      expect(payload.socan).to.be.undefined
+      }]);
+      expect(payload.socan).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -682,8 +682,8 @@ describe('kargo adapter tests', function() {
             url: 'https://socan.url'
           }
         }
-      }])
-      expect(payload.socan).to.be.undefined
+      }]);
+      expect(payload.socan).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -703,12 +703,12 @@ describe('kargo adapter tests', function() {
             url: 'https://socan.url/new'
           }
         }
-      }])
+      }]);
       expect(payload.socan).to.deep.equal({
         segments: ['segment_1', 'segment_2', 'segment_3'],
         url: 'https://socan.url'
-      })
-    })
+      });
+    });
 
     describe('imp', function() {
       it('handles slots with different combinations of formats', function() {
@@ -825,39 +825,39 @@ describe('kargo adapter tests', function() {
             bidderRequestId: 'kargo-request-id',
             auctionId: 'kargo-auction-id',
           },
-        ]
+        ];
 
-        const payload = getPayloadFromTestBids(testBids)
+        const payload = getPayloadFromTestBids(testBids);
 
         const bannerImp = {
           sizes: [[970, 250], [1, 1]]
-        }
+        };
         const videoImp = {
           context: 'outstream',
           playerSize: [640, 380]
-        }
-        const nativeImp = {}
+        };
+        const nativeImp = {};
 
         // Banner and Outstream
-        expect(payload.imp[0].banner).to.deep.equal(bannerImp)
-        expect(payload.imp[0].video).to.deep.equal(videoImp)
-        expect(payload.imp[0].native).to.be.undefined
+        expect(payload.imp[0].banner).to.deep.equal(bannerImp);
+        expect(payload.imp[0].video).to.deep.equal(videoImp);
+        expect(payload.imp[0].native).to.be.undefined;
         // Banner and Native
-        expect(payload.imp[1].banner).to.deep.equal(bannerImp)
-        expect(payload.imp[1].video).to.be.undefined
-        expect(payload.imp[1].native).to.deep.equal(nativeImp)
+        expect(payload.imp[1].banner).to.deep.equal(bannerImp);
+        expect(payload.imp[1].video).to.be.undefined;
+        expect(payload.imp[1].native).to.deep.equal(nativeImp);
         // Native and Outstream
-        expect(payload.imp[2].banner).to.be.undefined
-        expect(payload.imp[2].video).to.deep.equal(videoImp)
-        expect(payload.imp[2].native).to.deep.equal(nativeImp)
+        expect(payload.imp[2].banner).to.be.undefined;
+        expect(payload.imp[2].video).to.deep.equal(videoImp);
+        expect(payload.imp[2].native).to.deep.equal(nativeImp);
         // Banner and Native and Outstream
-        expect(payload.imp[3].banner).to.deep.equal(bannerImp)
-        expect(payload.imp[3].video).to.deep.equal(videoImp)
-        expect(payload.imp[3].native).to.deep.equal(nativeImp)
-      })
+        expect(payload.imp[3].banner).to.deep.equal(bannerImp);
+        expect(payload.imp[3].video).to.deep.equal(videoImp);
+        expect(payload.imp[3].native).to.deep.equal(nativeImp);
+      });
 
       it('pulls gpid from ortb2Imp.ext.gpid', function () {
-        const gpidGpid = 'ortb2Imp.ext.gpid-gpid'
+        const gpidGpid = 'ortb2Imp.ext.gpid-gpid';
         const testBids = [
           {
             ...minimumBidParams,
@@ -897,18 +897,18 @@ describe('kargo adapter tests', function() {
             }
           },
           { ...minimumBidParams }
-        ]
+        ];
 
-        const payload = getPayloadFromTestBids(testBids)
+        const payload = getPayloadFromTestBids(testBids);
 
         // Both present
-        expect(payload.imp[0].fpd).to.deep.equal({ gpid: gpidGpid })
+        expect(payload.imp[0].fpd).to.deep.equal({ gpid: gpidGpid });
         // Only ext.gpid
-        expect(payload.imp[1].fpd).to.deep.equal({ gpid: gpidGpid })
+        expect(payload.imp[1].fpd).to.deep.equal({ gpid: gpidGpid });
         // Neither present
-        expect(payload.imp[3].fpd).to.be.undefined
-        expect(payload.imp[4].fpd).to.be.undefined
-      })
+        expect(payload.imp[3].fpd).to.be.undefined;
+        expect(payload.imp[4].fpd).to.be.undefined;
+      });
 
       it('includes bidRequestCount, bidderRequestCount, and bidderWinsCount if they are greater than 0', function() {
         const testBids = [
@@ -943,33 +943,33 @@ describe('kargo adapter tests', function() {
           bidRequestsCount: value,
           bidderRequestsCount: value,
           bidderWinsCount: value
-        }))
+        }));
 
-        const payload = getPayloadFromTestBids(testBids)
+        const payload = getPayloadFromTestBids(testBids);
 
         // bidRequestCount
-        expect(payload.imp[0].bidRequestCount).to.equal(1)
-        expect(payload.imp[0].bidderRequestCount).to.be.undefined
-        expect(payload.imp[0].bidderWinCount).to.be.undefined
+        expect(payload.imp[0].bidRequestCount).to.equal(1);
+        expect(payload.imp[0].bidderRequestCount).to.be.undefined;
+        expect(payload.imp[0].bidderWinCount).to.be.undefined;
         // bidderRequestCount
-        expect(payload.imp[1].bidRequestCount).to.be.undefined
-        expect(payload.imp[1].bidderRequestCount).to.equal(2)
-        expect(payload.imp[1].bidderWinCount).to.be.undefined
+        expect(payload.imp[1].bidRequestCount).to.be.undefined;
+        expect(payload.imp[1].bidderRequestCount).to.equal(2);
+        expect(payload.imp[1].bidderWinCount).to.be.undefined;
         // bidderWinCount
-        expect(payload.imp[2].bidRequestCount).to.be.undefined
-        expect(payload.imp[2].bidderRequestCount).to.be.undefined
-        expect(payload.imp[2].bidderWinCount).to.equal(3)
+        expect(payload.imp[2].bidRequestCount).to.be.undefined;
+        expect(payload.imp[2].bidderRequestCount).to.be.undefined;
+        expect(payload.imp[2].bidderWinCount).to.equal(3);
         // all
-        expect(payload.imp[3].bidRequestCount).to.equal(4)
-        expect(payload.imp[3].bidderRequestCount).to.equal(1)
-        expect(payload.imp[3].bidderWinCount).to.equal(3)
+        expect(payload.imp[3].bidRequestCount).to.equal(4);
+        expect(payload.imp[3].bidderRequestCount).to.equal(1);
+        expect(payload.imp[3].bidderWinCount).to.equal(3);
         // none
         for (let i = 4; i < payload.imp.length; i++) {
-          expect(payload.imp[i].bidRequestCount).to.be.undefined
-          expect(payload.imp[i].bidderRequestCount).to.be.undefined
-          expect(payload.imp[i].bidderWinCount).to.be.undefined
+          expect(payload.imp[i].bidRequestCount).to.be.undefined;
+          expect(payload.imp[i].bidderRequestCount).to.be.undefined;
+          expect(payload.imp[i].bidderWinCount).to.be.undefined;
         }
-      })
+      });
 
       it('queries the getFloor function to retrieve the floor and validates it', function() {
         const testBids = [];
@@ -987,21 +987,21 @@ describe('kargo adapter tests', function() {
         ].forEach(floorValue => testBids.push({
           ...minimumBidParams,
           getFloor: () => floorValue
-        }))
+        }));
 
-        const payload = getPayloadFromTestBids(testBids)
+        const payload = getPayloadFromTestBids(testBids);
 
         // Valid floor
-        expect(payload.imp[0].floor).to.equal(1.99)
+        expect(payload.imp[0].floor).to.equal(1.99);
         // Valid floor but string
-        expect(payload.imp[1].floor).to.equal('1.99') // @TODO - convert this to a number?
+        expect(payload.imp[1].floor).to.equal('1.99'); // @TODO - convert this to a number?
         // Non-USD valid floor
-        expect(payload.imp[2].floor).to.be.undefined
+        expect(payload.imp[2].floor).to.be.undefined;
         // Invalid floor
         for (let i = 3; i < payload.imp.length; i++) {
-          expect(payload.imp[i].floor).to.be.undefined
+          expect(payload.imp[i].floor).to.be.undefined;
         }
-      })
+      });
 
       it('calls getFloor with the right values', function() {
         const testBids = [
@@ -1009,117 +1009,117 @@ describe('kargo adapter tests', function() {
             ...minimumBidParams,
             getFloor: () => ({ currency: 'USD', value: 0.5 })
           }
-        ]
-        sinon.spy(testBids[0], 'getFloor')
+        ];
+        sinon.spy(testBids[0], 'getFloor');
 
-        getPayloadFromTestBids(testBids)
+        getPayloadFromTestBids(testBids);
 
         expect(testBids[0].getFloor.calledWith({
           currency: 'USD',
           mediaType: '*',
           size: '*'
-        })).to.be.true
-      })
-    })
+        })).to.be.true;
+      });
+    });
 
     describe('cerberus', function() {
       it('retrieves CRB from localStorage and cookies', function() {
-        setCrb('valid', 'valid')
+        setCrb('valid', 'valid');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.equal(crbValues.valid)
-        expect(payload.rawCRBLocalStorage).to.equal(crbValues.validLs)
-        expect(payload.user.crbIDs).to.deep.equal(validCrbIdsLs)
-        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage')
-        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage')
-        expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage')
-        expect(payload.user.optOut).to.equal(false)
-      })
+        expect(payload.rawCRB).to.equal(crbValues.valid);
+        expect(payload.rawCRBLocalStorage).to.equal(crbValues.validLs);
+        expect(payload.user.crbIDs).to.deep.equal(validCrbIdsLs);
+        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage');
+        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage');
+        expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage');
+        expect(payload.user.optOut).to.equal(false);
+      });
 
       it('retrieves CRB from localStorage if cookie is missing', function() {
-        setCrb(false, 'valid')
+        setCrb(false, 'valid');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.be.undefined
-        expect(payload.rawCRBLocalStorage).to.equal(crbValues.validLs)
-        expect(payload.user.crbIDs).to.deep.equal(validCrbIdsLs)
-        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage')
-        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage')
-        expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage')
-        expect(payload.user.optOut).to.equal(false)
-      })
+        expect(payload.rawCRB).to.be.undefined;
+        expect(payload.rawCRBLocalStorage).to.equal(crbValues.validLs);
+        expect(payload.user.crbIDs).to.deep.equal(validCrbIdsLs);
+        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage');
+        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage');
+        expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage');
+        expect(payload.user.optOut).to.equal(false);
+      });
 
       it('retrieves CRB from cookies if localstorage is missing', function() {
-        setCrb('valid', false)
+        setCrb('valid', false);
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.equal(crbValues.valid)
-        expect(payload.rawCRBLocalStorage).to.be.undefined
-        expect(payload.user.crbIDs).to.deep.equal(validCrbIds)
-        expect(payload.user.tdID).to.equal('test-tdid-cerberus-cookie')
-        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-cookie')
-        expect(payload.user.clientID).to.equal('test-clientid-cerberus-cookie')
-        expect(payload.user.optOut).to.equal(false)
-      })
+        expect(payload.rawCRB).to.equal(crbValues.valid);
+        expect(payload.rawCRBLocalStorage).to.be.undefined;
+        expect(payload.user.crbIDs).to.deep.equal(validCrbIds);
+        expect(payload.user.tdID).to.equal('test-tdid-cerberus-cookie');
+        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-cookie');
+        expect(payload.user.clientID).to.equal('test-clientid-cerberus-cookie');
+        expect(payload.user.optOut).to.equal(false);
+      });
 
       it('retrieves CRB from cookies if localstorage is not functional', function() {
         // Safari does not allow stubbing localStorage methods directly.
         // Stub the storage manager instead so all browsers behave consistently.
-        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws()
-        setCrb('valid', 'invalid')
+        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
+        setCrb('valid', 'invalid');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.equal(crbValues.valid)
-        expect(payload.rawCRBLocalStorage).to.be.undefined
-        expect(payload.user.crbIDs).to.deep.equal(validCrbIds)
-        expect(payload.user.tdID).to.equal('test-tdid-cerberus-cookie')
-        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-cookie')
-        expect(payload.user.clientID).to.equal('test-clientid-cerberus-cookie')
-        expect(payload.user.optOut).to.equal(false)
-      })
+        expect(payload.rawCRB).to.equal(crbValues.valid);
+        expect(payload.rawCRBLocalStorage).to.be.undefined;
+        expect(payload.user.crbIDs).to.deep.equal(validCrbIds);
+        expect(payload.user.tdID).to.equal('test-tdid-cerberus-cookie');
+        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-cookie');
+        expect(payload.user.clientID).to.equal('test-clientid-cerberus-cookie');
+        expect(payload.user.optOut).to.equal(false);
+      });
 
       it('does not fail if CRB is missing', function() {
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.be.undefined
-        expect(payload.rawCRBLocalStorage).to.be.undefined
-        expect(payload.user.crbIDs).to.deep.equal({})
-        expect(payload.user.tdID).to.be.undefined
-        expect(payload.user.kargoID).to.be.undefined
-        expect(payload.user.clientID).to.be.undefined
-        expect(payload.user.optOut).to.be.undefined
-      })
+        expect(payload.rawCRB).to.be.undefined;
+        expect(payload.rawCRBLocalStorage).to.be.undefined;
+        expect(payload.user.crbIDs).to.deep.equal({});
+        expect(payload.user.tdID).to.be.undefined;
+        expect(payload.user.kargoID).to.be.undefined;
+        expect(payload.user.clientID).to.be.undefined;
+        expect(payload.user.optOut).to.be.undefined;
+      });
 
       it('fails gracefully if the CRB is invalid base 64 cookie', function() {
-        setCrb('invalidB64', false)
+        setCrb('invalidB64', false);
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.equal(crbValues.invalidB64)
-        expect(payload.rawCRBLocalStorage).to.be.undefined
-        expect(payload.user.crbIDs).to.deep.equal({})
-        expect(payload.user.tdID).to.be.undefined
-        expect(payload.user.kargoID).to.be.undefined
-        expect(payload.user.clientID).to.be.undefined
-        expect(payload.user.optOut).to.be.undefined
-      })
+        expect(payload.rawCRB).to.equal(crbValues.invalidB64);
+        expect(payload.rawCRBLocalStorage).to.be.undefined;
+        expect(payload.user.crbIDs).to.deep.equal({});
+        expect(payload.user.tdID).to.be.undefined;
+        expect(payload.user.kargoID).to.be.undefined;
+        expect(payload.user.clientID).to.be.undefined;
+        expect(payload.user.optOut).to.be.undefined;
+      });
 
       it('fails gracefully if the CRB is invalid base 64 localStorage', function() {
-        setCrb(false, 'invalidB64')
+        setCrb(false, 'invalidB64');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.rawCRB).to.be.undefined
-        expect(payload.rawCRBLocalStorage).to.equal(crbValues.invalidB64Ls)
-        expect(payload.user.crbIDs).to.deep.equal({})
-        expect(payload.user.tdID).to.be.undefined
-        expect(payload.user.kargoID).to.be.undefined
-        expect(payload.user.clientID).to.be.undefined
-        expect(payload.user.optOut).to.be.undefined
+        expect(payload.rawCRB).to.be.undefined;
+        expect(payload.rawCRBLocalStorage).to.equal(crbValues.invalidB64Ls);
+        expect(payload.user.crbIDs).to.deep.equal({});
+        expect(payload.user.tdID).to.be.undefined;
+        expect(payload.user.kargoID).to.be.undefined;
+        expect(payload.user.clientID).to.be.undefined;
+        expect(payload.user.optOut).to.be.undefined;
       });
 
       [
@@ -1133,67 +1133,67 @@ describe('kargo adapter tests', function() {
         ['invalidJson', 'valid', 'localStorage'],
       ].forEach(config => {
         it(`uses ${config[2]} if the cookie is ${config[0]} and localStorage is ${config[1]}`, function() {
-          setCrb(config[0], config[1])
-          const payload = getPayloadFromTestBids(testBids, bidderRequest)
+          setCrb(config[0], config[1]);
+          const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-          expect(payload.rawCRB).to.equal(crbValues[config[0]])
-          expect(payload.rawCRBLocalStorage).to.equal(crbValues[`${config[1]}Ls`])
+          expect(payload.rawCRB).to.equal(crbValues[config[0]]);
+          expect(payload.rawCRBLocalStorage).to.equal(crbValues[`${config[1]}Ls`]);
           if (config[2] === 'cookie') {
-            expect(payload.user.crbIDs).to.deep.equal(validCrbIds)
-            expect(payload.user.tdID).to.equal('test-tdid-cerberus-cookie')
-            expect(payload.user.kargoID).to.equal('test-lexid-cerberus-cookie')
-            expect(payload.user.clientID).to.equal('test-clientid-cerberus-cookie')
-            expect(payload.user.optOut).to.equal(false)
+            expect(payload.user.crbIDs).to.deep.equal(validCrbIds);
+            expect(payload.user.tdID).to.equal('test-tdid-cerberus-cookie');
+            expect(payload.user.kargoID).to.equal('test-lexid-cerberus-cookie');
+            expect(payload.user.clientID).to.equal('test-clientid-cerberus-cookie');
+            expect(payload.user.optOut).to.equal(false);
           } else if (config[2] === 'localStorage') {
-            expect(payload.user.crbIDs).to.deep.equal(validCrbIdsLs)
-            expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage')
-            expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage')
-            expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage')
-            expect(payload.user.optOut).to.equal(false)
+            expect(payload.user.crbIDs).to.deep.equal(validCrbIdsLs);
+            expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage');
+            expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage');
+            expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage');
+            expect(payload.user.optOut).to.equal(false);
           } else {
-            expect(payload.user.crbIDs).to.deep.equal({})
-            expect(payload.user.tdID).to.be.undefined
-            expect(payload.user.kargoID).to.be.undefined
-            expect(payload.user.clientID).to.be.undefined
-            expect(payload.user.optOut).to.be.undefined
+            expect(payload.user.crbIDs).to.deep.equal({});
+            expect(payload.user.tdID).to.be.undefined;
+            expect(payload.user.kargoID).to.be.undefined;
+            expect(payload.user.clientID).to.be.undefined;
+            expect(payload.user.optOut).to.be.undefined;
           }
-        })
-      })
+        });
+      });
 
       it('uses the tdID from cerberus to populate the tdID field', function() {
-        setCrb('valid', 'valid')
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        setCrb('valid', 'valid');
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage')
-      })
+        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage');
+      });
 
       it('uses the lexId from cerberus to populate the kargoID field', function() {
-        setCrb('valid', 'valid')
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        setCrb('valid', 'valid');
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage')
-      })
+        expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage');
+      });
 
       it('uses the clientId from cerberus to populate the clientID field', function() {
-        setCrb('valid', 'valid')
-        const payload = getPayloadFromTestBids(testBids, bidderRequest)
+        setCrb('valid', 'valid');
+        const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage')
-      })
+        expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage');
+      });
 
       it('uses the optOut from cerberus to populate the clientID field', function() {
-        setCrb('valid', 'valid')
-        let payload
-        payload = getPayloadFromTestBids(testBids, bidderRequest)
+        setCrb('valid', 'valid');
+        let payload;
+        payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.user.optOut).to.equal(false)
+        expect(payload.user.optOut).to.equal(false);
 
-        setLocalStorageValue('krg_crb', buildCrbValue(false, true, true, true, true, true))
-        payload = getPayloadFromTestBids(testBids, bidderRequest)
+        setLocalStorageValue('krg_crb', buildCrbValue(false, true, true, true, true, true));
+        payload = getPayloadFromTestBids(testBids, bidderRequest);
 
-        expect(payload.user.optOut).to.equal(true)
-      })
-    })
+        expect(payload.user.optOut).to.equal(true);
+      });
+    });
 
     describe('user', function() {
       it('fetches the trade desk id from the adapter if present', function() {
@@ -1202,90 +1202,90 @@ describe('kargo adapter tests', function() {
           userId: {
             tdid: 'test-tdid-module'
           }
-        }])
+        }]);
 
-        expect(payload.user.tdID).to.equal('test-tdid-module')
-      })
+        expect(payload.user.tdID).to.equal('test-tdid-module');
+      });
 
       it('fetches the trade desk id from cerberus if present', function() {
-        setLocalStorageValue('krg_crb', btoa(JSON.stringify({ tdID: 'test-tdid-crb' })))
+        setLocalStorageValue('krg_crb', btoa(JSON.stringify({ tdID: 'test-tdid-crb' })));
 
         const payload = getPayloadFromTestBids([{
           ...minimumBidParams,
-        }])
+        }]);
 
-        expect(payload.user.tdID).to.equal('test-tdid-crb')
-      })
+        expect(payload.user.tdID).to.equal('test-tdid-crb');
+      });
 
       it('fetches the trade desk id from the adapter if adapter and cerberus are present', function() {
-        setLocalStorageValue('krg_crb', buildCrbValue(false, true, true, true, true, false))
+        setLocalStorageValue('krg_crb', buildCrbValue(false, true, true, true, true, false));
 
         const payload = getPayloadFromTestBids([{
           ...minimumBidParams,
           userId: {
             tdid: 'test-tdid-module'
           }
-        }])
+        }]);
 
-        expect(payload.user.tdID).to.equal('test-tdid-module')
-      })
+        expect(payload.user.tdID).to.equal('test-tdid-module');
+      });
 
       it('does not set kargoId if it is not present', function() {
-        const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+        const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
 
-        expect(payload.user.lexId).to.be.undefined
-      })
+        expect(payload.user.lexId).to.be.undefined;
+      });
 
       it('does not populate usp, gdpr, or gpp if they are not present', function() {
-        const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+        const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
 
-        expect(payload.user.usp).to.be.undefined
-        expect(payload.user.gdpr).to.be.undefined
-        expect(payload.user.gpp).to.be.undefined
-      })
+        expect(payload.user.usp).to.be.undefined;
+        expect(payload.user.gdpr).to.be.undefined;
+        expect(payload.user.gpp).to.be.undefined;
+      });
 
       it('fetches usp from the bidder request if present', function() {
-        bidderRequest.uspConsent = '1---'
-        const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+        bidderRequest.uspConsent = '1---';
+        const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
 
-        expect(payload.user.usp).to.equal('1---')
-      })
+        expect(payload.user.usp).to.equal('1---');
+      });
 
       it('fetches gpp from the bidder request if present', function() {
         bidderRequest.gppConsent = {
           gppString: 'gppString',
           applicableSections: [-1]
-        }
-        const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+        };
+        const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
 
         expect(payload.user.gpp).to.deep.equal({
           gppString: 'gppString',
           applicableSections: [-1]
-        })
-      })
+        });
+      });
 
       it('does not send empty gpp values', function() {
         bidderRequest.gppConsent = {
           gppString: '',
           applicableSections: ''
-        }
-        const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+        };
+        const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
 
-        expect(payload.user.gpp).to.be.undefined
-      })
+        expect(payload.user.gpp).to.be.undefined;
+      });
 
       it('fetches gdpr consent from the bidder request if present', function() {
         bidderRequest.gdprConsent = {
           consentString: 'gdpr-consent-string',
           gdprApplies: true
-        }
-        const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+        };
+        const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
 
         expect(payload.user.gdpr).to.deep.equal({
           consent: 'gdpr-consent-string',
           applies: true
-        })
-      })
+        });
+      });
 
       it('handles malformed gdpr applies from the bidder request', function() {
         [
@@ -1302,24 +1302,24 @@ describe('kargo adapter tests', function() {
           [null, false],
           [{}, true],
         ].forEach(testValue => {
-          bidderRequest.gdprConsent = { gdprApplies: testValue[0] }
-          const payload = getPayloadFromTestBids([{ ...minimumBidParams }])
+          bidderRequest.gdprConsent = { gdprApplies: testValue[0] };
+          const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
           expect(payload.user.gdpr, `Value - ${JSON.stringify(testValue[0])}`).to.deep.equal({
             consent: '',
             applies: testValue[1]
-          })
-        })
-      })
+          });
+        });
+      });
 
       it('passes the user.data from the first bid request if availabale', function() {
-        let payload
+        let payload;
         payload = getPayloadFromTestBids([{
           ...minimumBidParams,
         }, {
           ...minimumBidParams,
           ortb2: { user: { data: { test: 'value' } } }
-        }])
-        expect(payload.user.data).to.deep.equal([])
+        }]);
+        expect(payload.user.data).to.deep.equal([]);
 
         payload = getPayloadFromTestBids([{
           ...minimumBidParams,
@@ -1327,23 +1327,23 @@ describe('kargo adapter tests', function() {
         }, {
           ...minimumBidParams,
           ortb2: { user: { data: { test2: 'value2' } } }
-        }])
+        }]);
         expect(payload.user.data).to.deep.equal({
           test: 'value'
-        })
-      })
+        });
+      });
 
       it('fails gracefully if there is no localStorage', function() {
-        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws()
-        localStorage.removeItem('krg_crb')
-        document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-        const payload = getPayloadFromTestBids(testBids)
+        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
+        localStorage.removeItem('krg_crb');
+        document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.user).to.deep.equal({
           crbIDs: {},
           data: []
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('sua', function() {
       it('is not provided if not present in the first valid bid', function() {
@@ -1379,9 +1379,9 @@ describe('kargo adapter tests', function() {
               }
             }
           }
-        ])
-        expect(payload.device.sua).to.be.undefined
-      })
+        ]);
+        expect(payload.device.sua).to.be.undefined;
+      });
 
       it('is provided if present in the first valid bid', function() {
         const payload = getPayloadFromTestBids([
@@ -1445,7 +1445,7 @@ describe('kargo adapter tests', function() {
               }
             }
           }
-        ])
+        ]);
         expect(payload.device.sua).to.deep.equal({
           platform: {
             brand: 'macOS',
@@ -1468,8 +1468,8 @@ describe('kargo adapter tests', function() {
           mobile: 1,
           model: 'model',
           source: 1,
-        })
-      })
+        });
+      });
 
       it('does not send non-mapped attributes', function() {
         const payload = getPayloadFromTestBids([{
@@ -1505,7 +1505,7 @@ describe('kargo adapter tests', function() {
               }
             }
           }
-        }])
+        }]);
         expect(payload.device.sua).to.deep.equal({
           platform: {
             brand: 'macOS',
@@ -1528,8 +1528,8 @@ describe('kargo adapter tests', function() {
           mobile: 1,
           model: 'model',
           source: 1,
-        })
-      })
+        });
+      });
 
       it('does not send non-truthy values or empty strings', function() {
         [
@@ -1566,7 +1566,7 @@ describe('kargo adapter tests', function() {
                 }
               }
             }
-          }])
+          }]);
           expect(payload.device.sua, `Value - ${JSON.stringify(value)}`).to.deep.equal({
             browsers: [
               {
@@ -1585,9 +1585,9 @@ describe('kargo adapter tests', function() {
             mobile: 1,
             model: 'model',
             source: 1,
-          })
-        })
-      })
+          });
+        });
+      });
 
       it('does not send 0 for mobile or source', function() {
         const payload = getPayloadFromTestBids([{
@@ -1619,7 +1619,7 @@ describe('kargo adapter tests', function() {
               }
             }
           }
-        }])
+        }]);
         expect(payload.device.sua).to.deep.equal({
           platform: {
             brand: 'macOS',
@@ -1640,56 +1640,56 @@ describe('kargo adapter tests', function() {
             }
           ],
           model: 'model',
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('page', function() {
       it('pulls the page ID from localStorage', function() {
-        setLocalStorageValue('pageViewId', 'test-page-id')
-        const payload = getPayloadFromTestBids(testBids)
+        setLocalStorageValue('pageViewId', 'test-page-id');
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           id: 'test-page-id'
-        })
-      })
+        });
+      });
 
       it('pulls the page timestamp from localStorage', function() {
-        setLocalStorageValue('pageViewTimestamp', '123456789')
-        const payload = getPayloadFromTestBids(testBids)
+        setLocalStorageValue('pageViewTimestamp', '123456789');
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           timestamp: 123456789
-        })
-      })
+        });
+      });
 
       it('pulls the page ID from localStorage', function() {
-        setLocalStorageValue('pageViewUrl', 'https://test-url.com')
-        const payload = getPayloadFromTestBids(testBids)
+        setLocalStorageValue('pageViewUrl', 'https://test-url.com');
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           url: 'https://test-url.com'
-        })
-      })
+        });
+      });
 
       it('pulls all 3 together', function() {
-        setLocalStorageValue('pageViewId', 'test-page-id')
-        setLocalStorageValue('pageViewTimestamp', '123456789')
-        setLocalStorageValue('pageViewUrl', 'https://test-url.com')
-        const payload = getPayloadFromTestBids(testBids)
+        setLocalStorageValue('pageViewId', 'test-page-id');
+        setLocalStorageValue('pageViewTimestamp', '123456789');
+        setLocalStorageValue('pageViewUrl', 'https://test-url.com');
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           id: 'test-page-id',
           timestamp: 123456789,
           url: 'https://test-url.com'
-        })
-      })
+        });
+      });
 
       it('fails gracefully without localStorage', function() {
-        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws()
-        localStorage.removeItem('krg_crb')
-        document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-        const payload = getPayloadFromTestBids(testBids)
-        expect(payload.page).to.be.undefined
-      })
-    })
-  })
+        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
+        localStorage.removeItem('krg_crb');
+        document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+        const payload = getPayloadFromTestBids(testBids);
+        expect(payload.page).to.be.undefined;
+      });
+    });
+  });
 
   describe('interpretResponse', function() {
     const response = Object.freeze({
@@ -1758,7 +1758,7 @@ describe('kargo adapter tests', function() {
           currency: 'EUR'
         }
       }
-    })
+    });
     const bidderRequest = Object.freeze({
       currency: 'USD',
       bids: [{
@@ -1792,7 +1792,7 @@ describe('kargo adapter tests', function() {
           placementId: 'bar'
         }
       }]
-    })
+    });
 
     it('returns an empty array if the response body is empty or not an object', function() {
       [
@@ -1805,14 +1805,14 @@ describe('kargo adapter tests', function() {
         {},
         1234,
       ].forEach(value => {
-        const bids = spec.interpretResponse({ body: value }, bidderRequest)
-        expect(bids, `Value - ${JSON.stringify(value)}`).to.deep.equal([])
-      })
-    })
+        const bids = spec.interpretResponse({ body: value }, bidderRequest);
+        expect(bids, `Value - ${JSON.stringify(value)}`).to.deep.equal([]);
+      });
+    });
 
     it('returns bid response for various objects', function() {
-      const bids = spec.interpretResponse(response, bidderRequest)
-      expect(bids).to.have.length(Object.keys(response.body).length)
+      const bids = spec.interpretResponse(response, bidderRequest);
+      expect(bids).to.have.length(Object.keys(response.body).length);
       expect(bids[0]).to.deep.equal({
         ad: '<div id="1"></div>',
         cpm: 3,
@@ -1828,7 +1828,7 @@ describe('kargo adapter tests', function() {
         requestId: '1',
         ttl: 300,
         width: 320,
-      })
+      });
       expect(bids[1]).to.deep.equal({
         requestId: '2',
         ad: '<div id="2"></div>',
@@ -1846,7 +1846,7 @@ describe('kargo adapter tests', function() {
           clickUrl: 'https://foobar.com',
           advertiserDomains: ['https://foobar.com']
         }
-      })
+      });
       expect(bids[2]).to.deep.equal({
         requestId: '3',
         ad: '<div id="2"></div>',
@@ -1862,7 +1862,7 @@ describe('kargo adapter tests', function() {
         meta: {
           mediaType: 'banner'
         }
-      })
+      });
       expect(bids[3]).to.deep.equal({
         requestId: '4',
         ad: '<div id="4"></div>',
@@ -1878,7 +1878,7 @@ describe('kargo adapter tests', function() {
         meta: {
           mediaType: 'banner'
         }
-      })
+      });
       expect(bids[4]).to.deep.equal({
         requestId: '5',
         cpm: 2.5,
@@ -1894,7 +1894,7 @@ describe('kargo adapter tests', function() {
         meta: {
           mediaType: 'video'
         }
-      })
+      });
       expect(bids[5]).to.deep.equal({
         requestId: '6',
         cpm: 2.5,
@@ -1910,8 +1910,8 @@ describe('kargo adapter tests', function() {
         meta: {
           mediaType: 'video'
         }
-      })
-    })
+      });
+    });
 
     it('adds landingPageDomain data', function() {
       const response = spec.interpretResponse({
@@ -1925,29 +1925,29 @@ describe('kargo adapter tests', function() {
             }
           }
         }
-      }, {})
+      }, {});
       expect(response[0].meta).to.deep.equal({
         mediaType: 'banner',
         clickUrl: 'https://foo.com',
         advertiserDomains: ['https://foo.com', 'https://bar.com']
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('getUserSyncs', function() {
-    let crb = {}
-    const clientId = 'random-client-id-string'
-    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid='
+    let crb = {};
+    const clientId = 'random-client-id-string';
+    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
 
     function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
-      const syncs = []
+      const syncs = [];
 
       syncs.push({
         type: 'iframe',
         url: baseUrl
-      })
+      });
 
-      return syncs
+      return syncs;
     }
 
     function getUserSyncs(gdpr, usp, gpp) {
@@ -1957,36 +1957,36 @@ describe('kargo adapter tests', function() {
         gdpr,
         usp,
         gpp
-      )
+      );
     }
 
     beforeEach(function() {
-      crb = { clientId }
-      sandbox.stub(spec, '_getCrb').callsFake(function() { return crb })
+      crb = { clientId };
+      sandbox.stub(spec, '_getCrb').callsFake(function() { return crb; });
 
       // Makes the seed in the URLs predictable
-      sandbox.stub(utils, 'generateUUID').returns('3205e885-8d37-4139-b47e-f82cff268000')
-    })
+      sandbox.stub(utils, 'generateUUID').returns('3205e885-8d37-4139-b47e-f82cff268000');
+    });
 
     it('returns user syncs when an ID is present', function() {
-      expect(getUserSyncs()).to.deep.equal(buildSyncUrls())
-    })
+      expect(getUserSyncs()).to.deep.equal(buildSyncUrls());
+    });
 
     it('returns no syncs if there is no user ID', function() {
-      delete crb.clientId
-      expect(getUserSyncs()).to.deep.equal([])
-    })
+      delete crb.clientId;
+      expect(getUserSyncs()).to.deep.equal([]);
+    });
 
     it('returns no syncs if there is no usp consent', function() {
-      expect(getUserSyncs(undefined, '1YYY')).to.deep.equal([])
-    })
+      expect(getUserSyncs(undefined, '1YYY')).to.deep.equal([]);
+    });
 
     it('returns no syncs if iframe syncing is not allowed', function() {
       expect(spec.getUserSyncs({ iframeEnabled: false }, null, undefined, undefined, undefined))
-        .to.deep.equal([])
+        .to.deep.equal([]);
       expect(spec.getUserSyncs({}, null, undefined, undefined, undefined))
-        .to.deep.equal([])
-    })
+        .to.deep.equal([]);
+    });
 
     it('includes the US privacy string in the sync URL if present', function() {
       [
@@ -1996,8 +1996,8 @@ describe('kargo adapter tests', function() {
         'invalid',
         1234,
       ].forEach(value => expect(getUserSyncs(undefined, value), `Value - ${value}`)
-        .to.deep.equal(buildSyncUrls(baseUrl.replace(/us_privacy=/, `us_privacy=${value}`))))
-    })
+        .to.deep.equal(buildSyncUrls(baseUrl.replace(/us_privacy=/, `us_privacy=${value}`))));
+    });
 
     it('includes gdpr information if provided', function() {
       [
@@ -2009,8 +2009,8 @@ describe('kargo adapter tests', function() {
       ].forEach(value => expect(getUserSyncs(value), `Value - ${value}`)
         .to.deep.equal(buildSyncUrls(baseUrl
           .replace(/gdpr=\d/, `gdpr=${value.ga}`)
-          .replace(/gdpr_consent=/, `gdpr_consent=${value.cs}`))))
-    })
+          .replace(/gdpr_consent=/, `gdpr_consent=${value.cs}`))));
+    });
 
     it('handles malformed gdpr information', function() {
       [
@@ -2023,8 +2023,8 @@ describe('kargo adapter tests', function() {
         [],
         {}
       ].forEach(value => expect(getUserSyncs(value), `Value - ${JSON.stringify(value)}`)
-        .to.deep.equal(buildSyncUrls(baseUrl)))
-    })
+        .to.deep.equal(buildSyncUrls(baseUrl)));
+    });
 
     it('includes gpp information if provided', function() {
       [
@@ -2039,8 +2039,8 @@ describe('kargo adapter tests', function() {
       ].forEach(value => expect(getUserSyncs(undefined, undefined, value), `Value - ${value}`)
         .to.deep.equal(buildSyncUrls(baseUrl
           .replace(/gpp=/, `gpp=${value.cs}`)
-          .replace(/gpp_sid=/, `gpp_sid=${value.as}`))))
-    })
+          .replace(/gpp_sid=/, `gpp_sid=${value.as}`))));
+    });
 
     it('handles malformed gpp information', function() {
       [
@@ -2053,8 +2053,8 @@ describe('kargo adapter tests', function() {
         [],
         {}
       ].forEach(value => expect(getUserSyncs(undefined, undefined, value), `Value - ${JSON.stringify(value)}`)
-        .to.deep.equal(buildSyncUrls(baseUrl)))
-    })
+        .to.deep.equal(buildSyncUrls(baseUrl)));
+    });
 
     it('includes all 3 if provided', function() {
       expect(getUserSyncs(
@@ -2066,31 +2066,31 @@ describe('kargo adapter tests', function() {
         .replace(/gdpr_consent=/, 'gdpr_consent=test-gdpr-consent')
         .replace(/us_privacy=/, 'us_privacy=1---')
         .replace(/gpp=/, 'gpp=test-gpp-consent')
-        .replace(/gpp_sid=/, 'gpp_sid=1,2,3')))
-    })
-  })
+        .replace(/gpp_sid=/, 'gpp_sid=1,2,3')));
+    });
+  });
 
   describe('supportedMediaTypes', function() {
     it('exposes video and banner', function() {
-      expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video'])
-    })
-  })
+      expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video']);
+    });
+  });
 
   describe('onTimeout', function () {
-    let fetchStub
+    let fetchStub;
 
     beforeEach(function () {
-      fetchStub = sinon.stub(global, 'fetch').resolves() // Stub fetch globally
-    })
+      fetchStub = sinon.stub(global, 'fetch').resolves(); // Stub fetch globally
+    });
 
     afterEach(function () {
-      fetchStub.restore() // Restore the original fetch function
-    })
+      fetchStub.restore(); // Restore the original fetch function
+    });
 
     it('does not call fetch if timeout data is not provided', function () {
-      spec.onTimeout(null)
-      expect(fetchStub.callCount).to.equal(0)
-    })
+      spec.onTimeout(null);
+      expect(fetchStub.callCount).to.equal(0);
+    });
 
     it('calls fetch with the correct URLs if timeout data is provided', function () {
       spec.onTimeout([
@@ -2098,27 +2098,27 @@ describe('kargo adapter tests', function() {
         { auctionId: 'test-auction-id-2', timeout: 100 },
         { auctionId: 'test-auction-id-3', timeout: 450 },
         { auctionId: 'test-auction-id-4', timeout: 500 },
-      ])
+      ]);
 
       expect(fetchStub.calledWith(
         'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400',
         { method: 'GET', keepalive: true }
-      )).to.be.true
+      )).to.be.true;
 
       expect(fetchStub.calledWith(
         'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100',
         { method: 'GET', keepalive: true }
-      )).to.be.true
+      )).to.be.true;
 
       expect(fetchStub.calledWith(
         'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450',
         { method: 'GET', keepalive: true }
-      )).to.be.true
+      )).to.be.true;
 
       expect(fetchStub.calledWith(
         'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500',
         { method: 'GET', keepalive: true }
-      )).to.be.true
-    })
-  })
-})
+      )).to.be.true;
+    });
+  });
+});

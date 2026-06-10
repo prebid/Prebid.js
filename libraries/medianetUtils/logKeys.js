@@ -5,11 +5,11 @@ import {
   getTopWindowReferrer,
   getWindowSize,
   pick,
-} from './utils.js'
-import { config } from '../../src/config.js'
-import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS } from '../../src/auction.js'
-import { safeJSONEncode, deepAccess } from '../../src/utils.js'
-import { getProcessedParams, mergeFieldsToLog } from './logger.js'
+} from './utils.js';
+import { config } from '../../src/config.js';
+import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS } from '../../src/auction.js';
+import { safeJSONEncode, deepAccess } from '../../src/utils.js';
+import { getProcessedParams, mergeFieldsToLog } from './logger.js';
 import {
   ANALYTICS_VERSION,
   AUCTION_OPTIONS, LOG_APPR, LOG_RA,
@@ -17,7 +17,7 @@ import {
   PREBID_VERSION,
   TIMEOUT_AFTER_AUCTION,
   VIDEO_PLACEMENT,
-} from './constants.js'
+} from './constants.js';
 
 export const KeysMap = {
   Pick: {
@@ -185,4 +185,4 @@ export const KeysMap = {
       'coppa', () => (config.getConfig('coppa') === true ? 1 : 0)
     ]
   }
-}
+};

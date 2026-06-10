@@ -1,8 +1,8 @@
-import { expect } from 'chai'
-import { spec } from 'modules/videoreachBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/videoreachBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT_URL = 'https://a.videoreach.com/hb/'
+const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
 describe('videoreachBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -14,21 +14,21 @@ describe('videoreachBidAdapter', function () {
       'bidderRequestId': '1893a2136a84a2',
       'auctionId': '8fb7b1c7-317b-4edf-83f0-c4669a318522',
       'transactionId': '85a2e190-0684-4f95-ad32-6c90757ed622'
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
       invalidBid.params = {
         'TagId': ''
-      }
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -49,32 +49,32 @@ describe('videoreachBidAdapter', function () {
           },
         }
       }
-    ]
+    ];
 
     it('send bid request to endpoint', function () {
-      const request = spec.buildRequests(bidRequests)
+      const request = spec.buildRequests(bidRequests);
 
-      expect(request.url).to.equal(ENDPOINT_URL)
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.method).to.equal('POST');
+    });
 
     it('send bid request with GDPR to endpoint', function () {
-      const consentString = 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
+      const consentString = 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA';
 
       const bidderRequest = {
         'gdprConsent': {
           'consentString': consentString,
           'gdprApplies': true
         }
-      }
+      };
 
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      const payload = JSON.parse(request.data)
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
 
-      expect(payload.gdpr.consent_required).to.exist
-      expect(payload.gdpr.consent_string).to.equal(consentString)
-    })
-  })
+      expect(payload.gdpr.consent_required).to.exist;
+      expect(payload.gdpr.consent_string).to.equal(consentString);
+    });
+  });
 
   describe('interpretResponse', function () {
     const serverResponse =
@@ -95,7 +95,7 @@ describe('videoreachBidAdapter', function () {
             'adomain': []
           }]
         }
-      }
+      };
 
     it('should handle response', function() {
       const expectedResponse = [
@@ -113,33 +113,33 @@ describe('videoreachBidAdapter', function () {
             advertiserDomains: []
           }
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse(serverResponse)
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]))
-    })
+      const result = spec.interpretResponse(serverResponse);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
 
     it('should handles empty response', function() {
       const serverResponse = {
         'body': {
           'responses': []
         }
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse)
-      expect(result.length).to.equal(0)
-    })
+      const result = spec.interpretResponse(serverResponse);
+      expect(result.length).to.equal(0);
+    });
 
     describe('getUserSyncs', () => {
       it('should push user sync images if enabled', () => {
-        const syncOptions = { pixelEnabled: true }
-        const syncs = spec.getUserSyncs(syncOptions, [serverResponse])
+        const syncOptions = { pixelEnabled: true };
+        const syncs = spec.getUserSyncs(syncOptions, [serverResponse]);
 
         expect(syncs[0]).to.deep.equal({
           type: 'image',
           url: 'https://SYNC_URL'
-        })
-      })
-    })
-  })
-})
+        });
+      });
+    });
+  });
+});

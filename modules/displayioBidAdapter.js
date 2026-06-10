@@ -1,45 +1,45 @@
-import { getDNT } from '../libraries/dnt/index.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { Renderer } from '../src/Renderer.js'
-import { logWarn } from '../src/utils.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js'
-import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js'
+import { getDNT } from '../libraries/dnt/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { logWarn } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
-const ADAPTER_VERSION = '1.1.0'
-const BIDDER_CODE = 'displayio'
-const BID_TTL = 300
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO]
-const DEFAULT_CURRENCY = 'USD'
-const US_KEY = '_dio_us'
+const ADAPTER_VERSION = '1.1.0';
+const BIDDER_CODE = 'displayio';
+const BID_TTL = 300;
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
+const DEFAULT_CURRENCY = 'USD';
+const US_KEY = '_dio_us';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.placementId && bid.params.siteId &&
-      bid.params.adsSrvDomain && bid.params.cdnDomain)
+      bid.params.adsSrvDomain && bid.params.cdnDomain);
   },
   buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bid => {
       const url = '//' + bid.params.adsSrvDomain + '/srv?method=getPlacement&app=' +
-        bid.params.siteId + '&placement=' + bid.params.placementId
-      const data = getPayload(bid, bidderRequest)
+        bid.params.siteId + '&placement=' + bid.params.placementId;
+      const data = getPayload(bid, bidderRequest);
       return {
         method: 'POST',
         headers: { 'Content-Type': 'application/json;charset=utf-8' },
         url,
         data
-      }
-    })
+      };
+    });
   },
   interpretResponse: function (serverResponse, serverRequest) {
-    const ads = serverResponse.body.data.ads
-    const bidResponses = []
-    const { data } = serverRequest.data
+    const ads = serverResponse.body.data.ads;
+    const bidResponses = [];
+    const { data } = serverRequest.data;
     if (ads.length) {
-      const adData = ads[0].ad.data
+      const adData = ads[0].ad.data;
       const bidResponse = {
         requestId: data.id,
         cpm: adData.ecpm,
@@ -55,46 +55,46 @@ export const spec = {
         adUnitCode: data.adUnitCode,
         renderURL: data.renderURL,
         adData: adData
-      }
+      };
 
       if (bidResponse.mediaType === VIDEO) {
-        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url
+        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url;
       }
 
       if (bidResponse.renderURL) {
-        bidResponse.renderer = newRenderer(bidResponse)
+        bidResponse.renderer = newRenderer(bidResponse);
       }
-      bidResponses.push(bidResponse)
+      bidResponses.push(bidResponse);
     }
-    return bidResponses
+    return bidResponses;
   }
-}
+};
 
 function getPayload (bid, bidderRequest) {
-  const connection = getConnectionInfo()
-  const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+  const connection = getConnectionInfo();
+  const storage = getStorageManager({ bidderCode: BIDDER_CODE });
   const userSession = (() => {
-    let us = storage.getDataFromLocalStorage(US_KEY)
+    let us = storage.getDataFromLocalStorage(US_KEY);
     if (!us) {
       us = 'us_web_xxxxxxxxxxxx'.replace(/[x]/g, c => {
-        const r = Math.random() * 16 | 0
-        const v = c === 'x' ? r : (r & 0x3 | 0x8)
-        return v.toString(16)
-      })
-      storage.setDataInLocalStorage(US_KEY, us)
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      storage.setDataInLocalStorage(US_KEY, us);
     }
-    return us
-  })()
-  const { params, adUnitCode, bidId } = bid
-  const { siteId, placementId, renderURL, pageCategory, keywords } = params
-  const { refererInfo, uspConsent, gdprConsent } = bidderRequest
-  const mediation = { gdprConsent: '', gdpr: '-1' }
+    return us;
+  })();
+  const { params, adUnitCode, bidId } = bid;
+  const { siteId, placementId, renderURL, pageCategory, keywords } = params;
+  const { refererInfo, uspConsent, gdprConsent } = bidderRequest;
+  const mediation = { gdprConsent: '', gdpr: '-1' };
   if (gdprConsent && 'gdprApplies' in gdprConsent) {
     if (gdprConsent.consentString !== undefined) {
-      mediation.gdprConsent = gdprConsent.consentString
+      mediation.gdprConsent = gdprConsent.consentString;
     }
     if (gdprConsent.gdprApplies !== undefined) {
-      mediation.gdpr = gdprConsent.gdprApplies ? '1' : '0'
+      mediation.gdpr = gdprConsent.gdprApplies ? '1' : '0';
     }
   }
   return {
@@ -137,7 +137,7 @@ function getPayload (bid, bidderRequest) {
         connection_type: connection?.effectiveType || '',
       }
     }
-  }
+  };
 }
 
 function newRenderer(bid) {
@@ -145,22 +145,22 @@ function newRenderer(bid) {
     id: bid.requestId,
     url: bid.renderURL,
     adUnitCode: bid.adUnitCode
-  })
+  });
 
   try {
-    renderer.setRender(webisRender)
+    renderer.setRender(webisRender);
   } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err)
+    logWarn('Prebid Error calling setRender on renderer', err);
   }
 
-  return renderer
+  return renderer;
 }
 
 function webisRender(bid, doc) {
   bid.renderer.push(() => {
-    const win = doc?.defaultView || window
-    win.webis.init(bid.adData, bid.adUnitCode, bid.params)
-  })
+    const win = doc?.defaultView || window;
+    win.webis.init(bid.adData, bid.adUnitCode, bid.params);
+  });
 }
 
-registerBidder(spec)
+registerBidder(spec);

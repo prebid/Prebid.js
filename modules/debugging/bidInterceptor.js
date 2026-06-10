@@ -1,16 +1,16 @@
-import makeResponseResolvers from './responses.js'
+import makeResponseResolvers from './responses.js';
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
  */
 
 export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
-  const { deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep } = utils
-  const responseResolvers = makeResponseResolvers({ Renderer, BANNER, NATIVE, VIDEO })
+  const { deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep } = utils;
+  const responseResolvers = makeResponseResolvers({ Renderer, BANNER, NATIVE, VIDEO });
   function BidInterceptor(opts = {}) {
-    ({ setTimeout: this.setTimeout = window.setTimeout.bind(window) } = opts)
-    this.logger = opts.logger
-    this.rules = []
+    ({ setTimeout: this.setTimeout = window.setTimeout.bind(window) } = opts);
+    this.logger = opts.logger;
+    this.rules = [];
   }
 
   Object.assign(BidInterceptor.prototype, {
@@ -19,16 +19,16 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
     },
     serializeConfig(ruleDefs) {
       const isSerializable = (ruleDef, i) => {
-        const serializable = !hasNonSerializableProperty(ruleDef)
+        const serializable = !hasNonSerializableProperty(ruleDef);
         if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
-          this.logger.logWarn(`Bid interceptor rule definition #${i + 1} contains non-serializable properties and will be lost after a refresh. Rule definition: `, ruleDef)
+          this.logger.logWarn(`Bid interceptor rule definition #${i + 1} contains non-serializable properties and will be lost after a refresh. Rule definition: `, ruleDef);
         }
-        return serializable
-      }
-      return ruleDefs.filter(isSerializable)
+        return serializable;
+      };
+      return ruleDefs.filter(isSerializable);
     },
     updateConfig(config) {
-      this.rules = (config.intercept || []).map((ruleDef, i) => this.rule(ruleDef, i + 1))
+      this.rules = (config.intercept || []).map((ruleDef, i) => this.rule(ruleDef, i + 1));
     },
     /**
      * @typedef {Object} RuleOptions
@@ -53,7 +53,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
         match: this.matcher(ruleDef.when, ruleNo),
         replace: this.replacer(ruleDef.then, ruleNo),
         options: Object.assign({}, this.DEFAULT_RULE_OPTIONS, ruleDef.options),
-      }
+      };
     },
     /**
      * @typedef {Function} MatchPredicate
@@ -71,28 +71,28 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
      */
     matcher(matchDef, ruleNo) {
       if (typeof matchDef === 'function') {
-        return matchDef
+        return matchDef;
       }
       if (typeof matchDef !== 'object') {
-        this.logger.logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`)
-        return () => false
+        this.logger.logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
+        return () => false;
       }
       function matches(candidate, { ref = matchDef, args = [] }) {
         return Object.entries(ref).map(([key, val]) => {
-          const cVal = candidate[key]
+          const cVal = candidate[key];
           if (val instanceof RegExp) {
-            return val.exec(cVal) != null
+            return val.exec(cVal) != null;
           }
           if (typeof val === 'function') {
-            return !!val(cVal, ...args)
+            return !!val(cVal, ...args);
           }
           if (typeof val === 'object') {
-            return matches(cVal, { ref: val, args })
+            return matches(cVal, { ref: val, args });
           }
-          return cVal === val
-        }).every((i) => i)
+          return cVal === val;
+        }).every((i) => i);
       }
-      return (candidate, ...args) => matches(candidate, { args })
+      return (candidate, ...args) => matches(candidate, { args });
     },
     /**
      * @typedef {Function} ReplacerFn
@@ -110,38 +110,38 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
      */
     replacer(replDef, ruleNo) {
       if (replDef === null) {
-        return () => null
+        return () => null;
       }
-      replDef = replDef || {}
-      let replFn
+      replDef = replDef || {};
+      let replFn;
       if (typeof replDef === 'function') {
-        replFn = ({ args }) => replDef(...args)
+        replFn = ({ args }) => replDef(...args);
       } else if (typeof replDef !== 'object') {
-        this.logger.logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`)
-        replFn = () => ({})
+        this.logger.logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
+        replFn = () => ({});
       } else {
         replFn = ({ args, ref = replDef }) => {
-          const result = Array.isArray(ref) ? [] : {}
+          const result = Array.isArray(ref) ? [] : {};
           Object.entries(ref).forEach(([key, val]) => {
             if (typeof val === 'function') {
-              result[key] = val(...args)
+              result[key] = val(...args);
             } else if (val != null && typeof val === 'object') {
-              result[key] = replFn({ args, ref: val })
+              result[key] = replFn({ args, ref: val });
             } else {
-              result[key] = val
+              result[key] = val;
             }
-          })
-          return result
-        }
+          });
+          return result;
+        };
       }
       return (bid, ...args) => {
-        const response = this.responseDefaults(bid)
-        mergeDeep(response, replFn({ args: [bid, ...args] }))
-        const resolver = responseResolvers[response.mediaType]
-        resolver && resolver(bid, response)
-        response.isDebug = true
-        return response
-      }
+        const response = this.responseDefaults(bid);
+        mergeDeep(response, replFn({ args: [bid, ...args] }));
+        const resolver = responseResolvers[response.mediaType];
+        resolver && resolver(bid, response);
+        response.isDebug = true;
+        return response;
+      };
     },
     responseDefaults(bid) {
       const response = {
@@ -152,21 +152,21 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
         creativeId: 'mock-creative-id',
         netRevenue: false,
         meta: {}
-      }
+      };
 
       if (!bid.mediaType) {
-        response.mediaType = Object.keys(bid.mediaTypes ?? {})[0] ?? BANNER
+        response.mediaType = Object.keys(bid.mediaTypes ?? {})[0] ?? BANNER;
       }
-      let size
+      let size;
       if (response.mediaType === BANNER) {
-        size = bid.mediaTypes?.banner?.sizes?.[0] ?? [300, 250]
+        size = bid.mediaTypes?.banner?.sizes?.[0] ?? [300, 250];
       } else if (response.mediaType === VIDEO) {
-        size = bid.mediaTypes?.video?.playerSize?.[0] ?? [600, 500]
+        size = bid.mediaTypes?.video?.playerSize?.[0] ?? [600, 500];
       }
       if (Array.isArray(size)) {
-        ([response.width, response.height] = size)
+        ([response.width, response.height] = size);
       }
-      return response
+      return response;
     },
     /**
      * Match a candidate bid against all registered rules.
@@ -176,7 +176,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
      * @returns {Rule|undefined} the first matching rule, or undefined if no match was found.
      */
     match(candidate, ...args) {
-      return this.rules.find((rule) => rule.match(candidate, ...args))
+      return this.rules.find((rule) => rule.match(candidate, ...args));
     },
     /**
      * Match a set of bids against all registered rules.
@@ -187,16 +187,16 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
      * non-matching bids.
      */
     matchAll(bids, bidRequest) {
-      const [matches, remainder] = [[], []]
+      const [matches, remainder] = [[], []];
       bids.forEach((bid) => {
-        const rule = this.match(bid, bidRequest)
+        const rule = this.match(bid, bidRequest);
         if (rule != null) {
-          matches.push({ rule: rule, bid: bid })
+          matches.push({ rule: rule, bid: bid });
         } else {
-          remainder.push(bid)
+          remainder.push(bid);
         }
-      })
-      return [matches, remainder]
+      });
+      return [matches, remainder];
     },
     /**
      * Run a set of bids against all registered rules, filter out those that match,
@@ -211,27 +211,27 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
      */
     intercept({ bids, bidRequest, addBid, done }) {
       if (bids == null) {
-        bids = bidRequest.bids
+        bids = bidRequest.bids;
       }
-      const [matches, remainder] = this.matchAll(bids, bidRequest)
+      const [matches, remainder] = this.matchAll(bids, bidRequest);
       if (matches.length > 0) {
-        const callDone = delayExecution(done, matches.length)
+        const callDone = delayExecution(done, matches.length);
         matches.forEach((match) => {
-          const mockResponse = match.rule.replace(match.bid, bidRequest)
-          const delay = match.rule.options.delay
-          this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
+          const mockResponse = match.rule.replace(match.bid, bidRequest);
+          const delay = match.rule.options.delay;
+          this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse);
           this.setTimeout(() => {
-            mockResponse && addBid(mockResponse, match.bid)
-            callDone()
-          }, delay)
-        })
-        bidRequest = deepClone(bidRequest)
-        bids = bidRequest.bids = remainder
+            mockResponse && addBid(mockResponse, match.bid);
+            callDone();
+          }, delay);
+        });
+        bidRequest = deepClone(bidRequest);
+        bids = bidRequest.bids = remainder;
       } else {
-        this.setTimeout(done, 0)
+        this.setTimeout(done, 0);
       }
-      return { bids, bidRequest }
+      return { bids, bidRequest };
     }
-  })
-  return BidInterceptor
+  });
+  return BidInterceptor;
 }

@@ -1,11 +1,11 @@
-import { expect } from 'chai'
-import { spec } from 'modules/madsenseBidAdapter.js'
-import { BANNER, VIDEO } from 'src/mediaTypes.js'
-import { generateUUID } from '../../../src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/madsenseBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { generateUUID } from '../../../src/utils.js';
 
 const getCommonParams = () => ({
   company_id: '1234567'
-})
+});
 
 const getVideoParams = () => ({
   video: {
@@ -28,7 +28,7 @@ const getVideoParams = () => ({
     page: 'https://test.io',
     referrer: 'http://test.io',
   },
-})
+});
 
 const getBannerRequest = () => ({
   bidderCode: 'madsense',
@@ -52,7 +52,7 @@ const getBannerRequest = () => ({
   start: Date.now(),
   auctionStart: Date.now() - 1,
   timeout: 3000,
-})
+});
 
 const getVideoBid = (bidId) => ({
   mediaTypes: {
@@ -69,7 +69,7 @@ const getVideoBid = (bidId) => ({
     ...getVideoParams(),
     ...getCommonParams(),
   },
-})
+});
 
 const getVideoRequest = () => ({
   bidderCode: 'madsense',
@@ -84,7 +84,7 @@ const getVideoRequest = () => ({
     reachedTop: true,
     referer: 'test.io',
   },
-})
+});
 
 const getBidderResponse = () => ({
   headers: null,
@@ -122,55 +122,55 @@ const getBidderResponse = () => ({
       },
     ]
   },
-})
+});
 
 describe('madsenseBidAdapter', function () {
   describe('interpretResponse', function () {
     context('when mediaType is banner', function () {
       it('handles empty response', function () {
-        const bidderRequest = getBannerRequest()
-        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
-        const EMPTY_RESP = { ...getBidderResponse(), body: {} }
-        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest)
+        const bidderRequest = getBannerRequest();
+        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        const EMPTY_RESP = { ...getBidderResponse(), body: {} };
+        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
-        expect(bids).to.be.empty
-      })
+        expect(bids).to.be.empty;
+      });
 
       it('validates banner bid', function () {
-        const bidderRequest = getBannerRequest()
-        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
-        const bidderResponse = getBidderResponse()
-        const bids = spec.interpretResponse(bidderResponse, bidRequest)
+        const bidderRequest = getBannerRequest();
+        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        const bidderResponse = getBidderResponse();
+        const bids = spec.interpretResponse(bidderResponse, bidRequest);
 
-        expect(bids).to.be.an('array').that.is.not.empty
-        validateBid(bids[0], bidderResponse.body.seatbid[0].bid[0])
-      })
-    })
+        expect(bids).to.be.an('array').that.is.not.empty;
+        validateBid(bids[0], bidderResponse.body.seatbid[0].bid[0]);
+      });
+    });
 
     context('when mediaType is video', function () {
       it('handles empty response', function () {
-        const bidderRequest = getVideoRequest()
-        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
-        const EMPTY_RESP = { ...getBidderResponse(), body: {} }
-        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest)
+        const bidderRequest = getVideoRequest();
+        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        const EMPTY_RESP = { ...getBidderResponse(), body: {} };
+        const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
-        expect(bids).to.be.empty
-      })
+        expect(bids).to.be.empty;
+      });
 
       it('returns no bids if required fields are missing', function () {
-        const bidderRequest = getVideoRequest()
-        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest)
+        const bidderRequest = getVideoRequest();
+        const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
         const MISSING_FIELDS_RESP = {
           ...getBidderResponse(),
           body: { seatbid: [{ bid: [{ price: 6.01 }] }] },
-        }
-        const bids = spec.interpretResponse(MISSING_FIELDS_RESP, bidRequest)
-        expect(bids.length).to.equal(0)
-      })
-    })
-  })
-})
+        };
+        const bids = spec.interpretResponse(MISSING_FIELDS_RESP, bidRequest);
+        expect(bids.length).to.equal(0);
+      });
+    });
+  });
+});
 
 function validateBid(actualBid, expectedBid) {
   expect(actualBid).to.include({
@@ -183,6 +183,6 @@ function validateBid(actualBid, expectedBid) {
     creativeId: expectedBid.crid,
     ttl: 55,
     netRevenue: true,
-  })
-  expect(actualBid.meta).to.have.property('advertiserDomains')
+  });
+  expect(actualBid.meta).to.have.property('advertiserDomains');
 }

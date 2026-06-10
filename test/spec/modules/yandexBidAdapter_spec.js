@@ -1,71 +1,71 @@
-import { assert, expect } from 'chai'
-import { dep, NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js'
-import * as utils from 'src/utils.js'
-import { config } from 'src/config.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js'
-import { addFPDToBidderRequest } from '../../helpers/fpd.js'
-import * as webdriver from '../../../libraries/webdriver/webdriver.js'
+import { assert, expect } from 'chai';
+import { dep, NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import * as webdriver from '../../../libraries/webdriver/webdriver.js';
 
-const adUnitCode = 'adUnit-123'
-let sandbox
+const adUnitCode = 'adUnit-123';
+let sandbox;
 
 describe('Yandex adapter', function () {
   beforeEach(function () {
-    sandbox = sinon.createSandbox()
+    sandbox = sinon.createSandbox();
 
     config.setConfig({
       yandex: {
         sampling: 1.0,
       },
-    })
-  })
+    });
+  });
 
   afterEach(function () {
-    sandbox.restore()
-  })
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      const bid = getBidRequest()
-      assert(spec.isBidRequestValid(bid))
-    })
+      const bid = getBidRequest();
+      assert(spec.isBidRequestValid(bid));
+    });
 
     it('should return false when required params not found', function () {
-      expect(spec.isBidRequestValid({})).to.be.false
-    })
+      expect(spec.isBidRequestValid({})).to.be.false;
+    });
 
     it('should return false when required params.placementId are not passed', function () {
-      const bid = getBidConfig()
-      delete bid.params.placementId
+      const bid = getBidConfig();
+      delete bid.params.placementId;
 
-      expect(spec.isBidRequestValid(bid)).to.be.false
-    })
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
 
     it('should return false when required params.placementId are not valid', function () {
-      const bid = getBidConfig()
-      bid.params.placementId = '123'
+      const bid = getBidConfig();
+      bid.params.placementId = '123';
 
-      expect(spec.isBidRequestValid(bid)).to.be.false
-    })
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
 
     it('should return true when passed deprecated placement config', function () {
-      const bid = getBidConfig()
-      delete bid.params.placementId
+      const bid = getBidConfig();
+      delete bid.params.placementId;
 
-      bid.params.pageId = 123
-      bid.params.impId = 1
+      bid.params.pageId = 123;
+      bid.params.impId = 1;
 
-      expect(spec.isBidRequestValid(bid))
-    })
-  })
+      expect(spec.isBidRequestValid(bid));
+    });
+  });
 
   describe('buildRequests', function () {
-    let mockBidRequests
-    let mockBidderRequest
+    let mockBidRequests;
+    let mockBidderRequest;
 
     beforeEach(function () {
-      mockBidRequests = [getBidRequest()]
+      mockBidRequests = [getBidRequest()];
       mockBidderRequest = {
         ortb2: {
           device: {
@@ -79,71 +79,71 @@ describe('Yandex adapter', function () {
             }
           }
         }
-      }
+      };
 
       sandbox.stub(frameElement, 'getBoundingClientRect').returns({
         left: 123,
         top: 234,
-      })
-    })
+      });
+    });
 
     afterEach(function () {
-      removeElement(adUnitCode)
-    })
+      removeElement(adUnitCode);
+    });
 
     it('should set site.content.language from document language if it is not set', function () {
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.site.content.language).to.equal('en')
-    })
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.site.content.language).to.equal('en');
+    });
 
     it('should preserve existing site.content.language if it is set', function () {
-      mockBidderRequest.ortb2.site.content = { language: 'es' }
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.site.content.language).to.equal('es')
-    })
+      mockBidderRequest.ortb2.site.content = { language: 'es' };
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.site.content.language).to.equal('es');
+    });
 
     it('should do nothing when document language does not exist', function () {
-      delete mockBidderRequest.ortb2.site.ext.data.documentLang
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.site?.content?.language).to.be.undefined
-    })
+      delete mockBidderRequest.ortb2.site.ext.data.documentLang;
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.site?.content?.language).to.be.undefined;
+    });
 
     it('should return displaymanager', function () {
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js')
-      expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined
-    })
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined;
+    });
 
     it('should return banner coordinates', function () {
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.imp[0].ext.coords.x).to.equal(123)
-      expect(requests[0].data.imp[0].ext.coords.y).to.equal(234)
-    })
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].ext.coords.x).to.equal(123);
+      expect(requests[0].data.imp[0].ext.coords.y).to.equal(234);
+    });
 
     it('should return page scroll coordinates', function () {
-      createElementVisible(adUnitCode)
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.device.ext.scroll.top).to.equal(0)
-      expect(requests[0].data.device.ext.scroll.left).to.equal(0)
-    })
+      createElementVisible(adUnitCode);
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.device.ext.scroll.top).to.equal(0);
+      expect(requests[0].data.device.ext.scroll.left).to.equal(0);
+    });
 
     it('should return correct visible', function () {
-      createElementVisible(adUnitCode)
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      expect(requests[0].data.imp[0].ext.isvisible).to.equal(true)
-    })
+      createElementVisible(adUnitCode);
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(true);
+    });
 
     it('should return correct visible for hidden element', function () {
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      createElementHidden(adUnitCode)
-      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false)
-    })
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      createElementHidden(adUnitCode);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false);
+    });
 
     it('should return correct visible for invisible element', function () {
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
-      createElementInvisible(adUnitCode)
-      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false)
-    })
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      createElementInvisible(adUnitCode);
+      expect(requests[0].data.imp[0].ext.isvisible).to.equal(false);
+    });
 
     /** @type {import('../../../src/auction').BidderRequest} */
     const bidderRequest = {
@@ -190,89 +190,89 @@ describe('Yandex adapter', function () {
         consentString: 'concent-string',
         apiVersion: 1,
       },
-    }
+    };
 
     it('create a valid banner request with custom domain', function () {
       config.setConfig({
         yandex: {
           domain: 'yandex.tr',
         },
-      })
+      });
 
-      const bannerRequest = getBidRequest()
+      const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
         currency: 'EUR',
         // floor: 0.5
-      })
+      });
 
-      const requests = spec.buildRequests([bannerRequest], bidderRequest)
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
-      expect(requests).to.have.lengthOf(1)
-      const request = requests[0]
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
 
-      expect(request).to.exist
-      const { method, url } = request
+      expect(request).to.exist;
+      const { method, url } = request;
 
-      expect(method).to.equal('POST')
+      expect(method).to.equal('POST');
 
-      const parsedRequestUrl = utils.parseUrl(url)
+      const parsedRequestUrl = utils.parseUrl(url);
 
-      expect(parsedRequestUrl.hostname).to.equal('yandex.tr')
-    })
+      expect(parsedRequestUrl.hostname).to.equal('yandex.tr');
+    });
 
     it('creates a valid banner request', function () {
-      const bannerRequest = getBidRequest()
+      const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
         currency: 'EUR',
         // floor: 0.5
-      })
+      });
 
-      const requests = spec.buildRequests([bannerRequest], bidderRequest)
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
-      expect(requests).to.have.lengthOf(1)
-      const request = requests[0]
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
 
-      expect(request).to.exist
-      const { method, url, data } = request
+      expect(request).to.exist;
+      const { method, url, data } = request;
 
-      expect(method).to.equal('POST')
+      expect(method).to.equal('POST');
 
-      const parsedRequestUrl = utils.parseUrl(url)
-      const { search: query } = parsedRequestUrl
+      const parsedRequestUrl = utils.parseUrl(url);
+      const { search: query } = parsedRequestUrl;
 
-      expect(parsedRequestUrl.hostname).to.equal('yandex.com')
-      expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123')
+      expect(parsedRequestUrl.hostname).to.equal('yandex.com');
+      expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
-      expect(query['imp-id']).to.equal('1')
-      expect(query['target-ref']).to.equal('ya.ru')
-      expect(query['ssp-id']).to.equal('10500')
+      expect(query['imp-id']).to.equal('1');
+      expect(query['target-ref']).to.equal('ya.ru');
+      expect(query['ssp-id']).to.equal('10500');
 
-      expect(query['gdpr']).to.equal('1')
-      expect(query['tcf-consent']).to.equal('concent-string')
+      expect(query['gdpr']).to.equal('1');
+      expect(query['tcf-consent']).to.equal('concent-string');
 
-      expect(request.data).to.exist
-      expect(data.site).to.not.equal(null)
-      expect(data.site.page).to.equal('https://ya.ru/')
-      expect(data.site.ref).to.equal('https://ya.ru/')
-    })
+      expect(request.data).to.exist;
+      expect(data.site).to.not.equal(null);
+      expect(data.site.page).to.equal('https://ya.ru/');
+      expect(data.site.ref).to.equal('https://ya.ru/');
+    });
 
     it('should send currency if defined', function () {
       setCurrencyConfig({
         adServerCurrency: 'USD'
-      })
+      });
 
-      const bannerRequest = getBidRequest()
+      const bannerRequest = getBidRequest();
 
       return addFPDToBidderRequest(bidderRequest).then(res => {
-        const requests = spec.buildRequests([bannerRequest], res)
-        const { url } = requests[0]
-        const parsedRequestUrl = utils.parseUrl(url)
-        const { search: query } = parsedRequestUrl
+        const requests = spec.buildRequests([bannerRequest], res);
+        const { url } = requests[0];
+        const parsedRequestUrl = utils.parseUrl(url);
+        const { search: query } = parsedRequestUrl;
 
-        expect(query['ssp-cur']).to.equal('USD')
-        setCurrencyConfig({})
-      })
-    })
+        expect(query['ssp-cur']).to.equal('USD');
+        setCurrencyConfig({});
+      });
+    });
 
     it('should send eids and ortb2 user data if defined', function() {
       const bidderRequestWithUserData = {
@@ -294,51 +294,51 @@ describe('Yandex adapter', function () {
             ],
           },
         }
-      }
+      };
       const bidRequestExtra = {
         userIdAsEids: [{
           source: 'sharedid.org',
           uids: [{ id: '01', atype: 1 }],
         }],
-      }
+      };
 
       const expected = {
         ext: {
           eids: bidRequestExtra.userIdAsEids,
         },
         data: bidderRequestWithUserData.ortb2.user.data,
-      }
+      };
 
-      const bannerRequest = getBidRequest(bidRequestExtra)
-      const requests = spec.buildRequests([bannerRequest], bidderRequestWithUserData)
+      const bannerRequest = getBidRequest(bidRequestExtra);
+      const requests = spec.buildRequests([bannerRequest], bidderRequestWithUserData);
 
-      expect(requests).to.have.lengthOf(1)
-      const request = requests[0]
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
 
-      expect(request.data).to.exist
-      const { data } = request
+      expect(request.data).to.exist;
+      const { data } = request;
 
-      expect(data.user).to.exist
-      expect(data.user).to.deep.equal(expected)
-    })
+      expect(data.user).to.exist;
+      expect(data.user).to.deep.equal(expected);
+    });
 
     it('should send site', function() {
       const expected = {
         site: bidderRequest.ortb2.site
-      }
+      };
 
-      const requests = spec.buildRequests([getBidRequest()], bidderRequest)
+      const requests = spec.buildRequests([getBidRequest()], bidderRequest);
 
-      expect(requests[0].data.site).to.deep.equal(expected.site)
-    })
+      expect(requests[0].data.site).to.deep.equal(expected.site);
+    });
 
     it('should include webdriver flag when available', function () {
-      sandbox.stub(webdriver, 'isWebdriverEnabled').returns(true)
+      sandbox.stub(webdriver, 'isWebdriverEnabled').returns(true);
 
-      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest)
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
 
-      expect(requests[0].data.device.ext.webdriver).to.be.true
-    })
+      expect(requests[0].data.device.ext.webdriver).to.be.true;
+    });
 
     describe('banner', () => {
       it('should create valid banner object', () => {
@@ -351,29 +351,29 @@ describe('Yandex adapter', function () {
               ],
             },
           }
-        })
+        });
 
-        const requests = spec.buildRequests([bannerRequest], bidderRequest)
-        expect(requests[0].data.imp).to.have.lengthOf(1)
+        const requests = spec.buildRequests([bannerRequest], bidderRequest);
+        expect(requests[0].data.imp).to.have.lengthOf(1);
 
-        const imp = requests[0].data.imp[0]
-        expect(imp.banner).to.not.equal(null)
-        expect(imp.banner.w).to.equal(300)
-        expect(imp.banner.h).to.equal(250)
+        const imp = requests[0].data.imp[0];
+        expect(imp.banner).to.not.equal(null);
+        expect(imp.banner.w).to.equal(300);
+        expect(imp.banner.h).to.equal(250);
 
         expect(imp.banner.format).to.deep.equal([
           { w: 300, h: 250 },
           { w: 300, h: 600 },
-        ])
-      })
-    })
+        ]);
+      });
+    });
 
     describe('video', function() {
       function getVideoBidRequest(extra) {
-        const bannerRequest = getBidRequest(extra)
-        const requests = spec.buildRequests([bannerRequest], bidderRequest)
+        const bannerRequest = getBidRequest(extra);
+        const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
-        return requests[0].data.imp[0].video
+        return requests[0].data.imp[0].video;
       }
 
       it('should map basic video parameters', function() {
@@ -401,7 +401,7 @@ describe('Yandex adapter', function () {
               sizes: [[640, 480], [800, 600]]
             }
           }
-        })
+        });
 
         expect(bidRequest).to.deep.equal({
           context: 'instream',
@@ -426,16 +426,16 @@ describe('Yandex adapter', function () {
             { w: 640, h: 480 },
             { w: 800, h: 600 }
           ]
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('native', () => {
       function buildRequestAndGetNativeParams(extra) {
-        const bannerRequest = getBidRequest(extra)
-        const requests = spec.buildRequests([bannerRequest], bidderRequest)
+        const bannerRequest = getBidRequest(extra);
+        const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
-        return JSON.parse(requests[0].data.imp[0].native.request)
+        return JSON.parse(requests[0].data.imp[0].native.request);
       }
 
       it('should extract native params', () => {
@@ -464,8 +464,8 @@ describe('Yandex adapter', function () {
               },
             },
           },
-        })
-        const sortedAssetsList = nativeParams.assets.sort((a, b) => a.id - b.id)
+        });
+        const sortedAssetsList = nativeParams.assets.sort((a, b) => a.id - b.id);
 
         expect(sortedAssetsList).to.deep.equal([
           {
@@ -513,8 +513,8 @@ describe('Yandex adapter', function () {
               h: 250,
             },
           },
-        ])
-      })
+        ]);
+      });
 
       it('should parse multiple image sizes', () => {
         const nativeParams = buildRequestAndGetNativeParams({
@@ -525,7 +525,7 @@ describe('Yandex adapter', function () {
               },
             },
           },
-        })
+        });
 
         expect(nativeParams.assets[0]).to.deep.equal({
           id: NATIVE_ASSETS.image[0],
@@ -534,8 +534,8 @@ describe('Yandex adapter', function () {
             w: 300,
             h: 250,
           },
-        })
-      })
+        });
+      });
 
       it('should parse aspect ratios with min_width', () => {
         const nativeParams = buildRequestAndGetNativeParams({
@@ -550,7 +550,7 @@ describe('Yandex adapter', function () {
               },
             },
           },
-        })
+        });
 
         expect(nativeParams.assets[0]).to.deep.equal({
           id: NATIVE_ASSETS.image[0],
@@ -559,8 +559,8 @@ describe('Yandex adapter', function () {
             wmin: 320,
             hmin: 240,
           },
-        })
-      })
+        });
+      });
 
       it('should parse aspect ratios without min_width', () => {
         const nativeParams = buildRequestAndGetNativeParams({
@@ -574,7 +574,7 @@ describe('Yandex adapter', function () {
               },
             },
           },
-        })
+        });
 
         expect(nativeParams.assets[0]).to.deep.equal({
           id: NATIVE_ASSETS.image[0],
@@ -583,8 +583,8 @@ describe('Yandex adapter', function () {
             wmin: 100,
             hmin: 75,
           },
-        })
-      })
+        });
+      });
 
       it('should include eventtrackers in the native request', () => {
         const nativeParams = buildRequestAndGetNativeParams({
@@ -593,15 +593,15 @@ describe('Yandex adapter', function () {
               title: { required: true },
             },
           },
-        })
+        });
 
-        expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }])
-      })
-    })
-  })
+        expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
+      });
+    });
+  });
 
   describe('interpretResponse', function () {
-    const bannerRequest = getBidRequest()
+    const bannerRequest = getBidRequest();
 
     const bannerResponse = {
       body: {
@@ -626,31 +626,31 @@ describe('Yandex adapter', function () {
         }],
         cur: 'USD',
       },
-    }
+    };
 
     it('handles banner responses', function () {
       bannerRequest.bidRequest = {
         mediaType: BANNER,
         bidId: 'bidid-1',
-      }
-      const result = spec.interpretResponse(bannerResponse, bannerRequest)
+      };
+      const result = spec.interpretResponse(bannerResponse, bannerRequest);
 
-      expect(result).to.have.lengthOf(1)
-      expect(result[0]).to.exist
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.exist;
 
-      const rtbBid = result[0]
-      expect(rtbBid.width).to.equal(300)
-      expect(rtbBid.height).to.equal(250)
-      expect(rtbBid.cpm).to.be.within(0.3, 0.3)
-      expect(rtbBid.ad).to.equal('<!-- HTML/JS -->')
-      expect(rtbBid.currency).to.equal('USD')
-      expect(rtbBid.netRevenue).to.equal(true)
-      expect(rtbBid.ttl).to.equal(180)
-      expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD')
-      expect(rtbBid.lurl).to.exist
+      const rtbBid = result[0];
+      expect(rtbBid.width).to.equal(300);
+      expect(rtbBid.height).to.equal(250);
+      expect(rtbBid.cpm).to.be.within(0.3, 0.3);
+      expect(rtbBid.ad).to.equal('<!-- HTML/JS -->');
+      expect(rtbBid.currency).to.equal('USD');
+      expect(rtbBid.netRevenue).to.equal(true);
+      expect(rtbBid.ttl).to.equal(180);
+      expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
+      expect(rtbBid.lurl).to.exist;
 
-      expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com'])
-    })
+      expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
 
     describe('video', function() {
       const videoBidRequest = {
@@ -659,7 +659,7 @@ describe('Yandex adapter', function () {
           bidId: 'videoBid1',
           adUnitCode: 'videoAdUnit'
         }
-      }
+      };
 
       const sampleVideoResponse = {
         body: {
@@ -679,13 +679,13 @@ describe('Yandex adapter', function () {
           }],
           cur: 'USD'
         }
-      }
+      };
 
       it('should handle valid video response', function() {
-        const result = spec.interpretResponse(sampleVideoResponse, videoBidRequest)
+        const result = spec.interpretResponse(sampleVideoResponse, videoBidRequest);
 
-        expect(result).to.have.lengthOf(1)
-        const bid = result[0]
+        expect(result).to.have.lengthOf(1);
+        const bid = result[0];
 
         expect(bid).to.deep.include({
           requestId: 'videoBid1',
@@ -699,11 +699,11 @@ describe('Yandex adapter', function () {
           meta: {
             advertiserDomains: ['advertiser.com']
           }
-        })
+        });
 
-        expect(bid.nurl).to.equal('https://tracker.example.com/win?price=1.5')
-      })
-    })
+        expect(bid.nurl).to.equal('https://tracker.example.com/win?price=1.5');
+      });
+    });
 
     describe('native', () => {
       function getNativeAdmResponse() {
@@ -752,16 +752,16 @@ describe('Yandex adapter', function () {
               },
             ]
           }
-        }
+        };
       }
 
       it('handles native responses', function() {
         bannerRequest.bidRequest = {
           mediaType: NATIVE,
           bidId: 'bidid-1',
-        }
+        };
 
-        const nativeAdmResponce = getNativeAdmResponse()
+        const nativeAdmResponce = getNativeAdmResponse();
         const bannerResponse = {
           body: {
             seatbid: [{
@@ -779,15 +779,15 @@ describe('Yandex adapter', function () {
               ],
             }],
           },
-        }
+        };
 
-        const result = spec.interpretResponse(bannerResponse, bannerRequest)
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
 
-        expect(result).to.have.lengthOf(1)
-        expect(result[0]).to.exist
+        expect(result).to.have.lengthOf(1);
+        expect(result[0]).to.exist;
 
-        const bid = result[0]
-        expect(bid.meta.advertiserDomains).to.deep.equal(['example.com'])
+        const bid = result[0];
+        expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
         expect(bid.native).to.deep.equal({
           clickUrl: 'https://example.com',
           impressionTrackers: ['https://example.com/imptracker'],
@@ -804,16 +804,16 @@ describe('Yandex adapter', function () {
             width: 32,
             height: 32,
           },
-        })
-      })
+        });
+      });
 
       it('should add eventtrackers urls to impressionTrackers', function () {
         bannerRequest.bidRequest = {
           mediaType: NATIVE,
           bidId: 'bidid-1',
-        }
+        };
 
-        const nativeAdmResponse = getNativeAdmResponse()
+        const nativeAdmResponse = getNativeAdmResponse();
         nativeAdmResponse.native.eventtrackers = [
           {
             event: 1, // TRACKER_EVENTS.impression
@@ -825,7 +825,7 @@ describe('Yandex adapter', function () {
             method: 2,
             url: 'https://example.com/skip-me',
           },
-        ]
+        ];
 
         const bannerResponse = {
           body: {
@@ -842,33 +842,33 @@ describe('Yandex adapter', function () {
               },
             ],
           },
-        }
+        };
 
-        const result = spec.interpretResponse(bannerResponse, bannerRequest)
-        const bid = result[0]
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
 
         expect(bid.native.impressionTrackers).to.include(
           'https://example.com/imptracker'
-        )
+        );
         expect(bid.native.impressionTrackers).to.include(
           'https://example.com/imp-event-tracker'
-        )
-        expect(bid.native.impressionTrackers).to.not.include('https://example.com/skip-me')
-      })
+        );
+        expect(bid.native.impressionTrackers).to.not.include('https://example.com/skip-me');
+      });
 
       it('should handle missing imptrackers', function () {
         bannerRequest.bidRequest = {
           mediaType: NATIVE,
           bidId: 'bidid-1',
-        }
+        };
 
-        const nativeAdmResponse = getNativeAdmResponse()
-        delete nativeAdmResponse.native.imptrackers
+        const nativeAdmResponse = getNativeAdmResponse();
+        delete nativeAdmResponse.native.imptrackers;
         nativeAdmResponse.native.eventtrackers = [{
           event: 1,
           method: 1,
           url: 'https://example.com/fallback-tracker'
-        }]
+        }];
 
         const bannerResponse = {
           body: {
@@ -881,22 +881,22 @@ describe('Yandex adapter', function () {
               }]
             }]
           }
-        }
+        };
 
-        const result = spec.interpretResponse(bannerResponse, bannerRequest)
-        const bid = result[0]
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
 
         expect(bid.native.impressionTrackers)
-          .to.deep.equal(['https://example.com/fallback-tracker'])
-      })
+          .to.deep.equal(['https://example.com/fallback-tracker']);
+      });
 
       it('should handle missing eventtrackers', function () {
         bannerRequest.bidRequest = {
           mediaType: NATIVE,
           bidId: 'bidid-1',
-        }
+        };
 
-        const nativeAdmResponse = getNativeAdmResponse()
+        const nativeAdmResponse = getNativeAdmResponse();
 
         const bannerResponse = {
           body: {
@@ -909,103 +909,103 @@ describe('Yandex adapter', function () {
               }]
             }]
           }
-        }
+        };
 
-        const result = spec.interpretResponse(bannerResponse, bannerRequest)
-        const bid = result[0]
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
 
         expect(bid.native.impressionTrackers)
-          .to.deep.equal(['https://example.com/imptracker'])
-      })
-    })
-  })
+          .to.deep.equal(['https://example.com/imptracker']);
+      });
+    });
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel')
-    })
+      sinon.stub(utils, 'triggerPixel');
+    });
     afterEach(function() {
-      utils.triggerPixel.restore()
-    })
+      utils.triggerPixel.restore();
+    });
 
     it('Should not trigger pixel if bid does not contain nurl', function() {
-      spec.onBidWon({})
+      spec.onBidWon({});
 
-      expect(utils.triggerPixel.callCount).to.equal(0)
-    })
+      expect(utils.triggerPixel.callCount).to.equal(0);
+    });
 
     it('Should trigger pixel if bid has nurl', function() {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker',
         timeToRespond: 378,
-      })
+      });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378');
+    });
 
     it('Should trigger pixel if bid has nurl with path & params', function() {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2',
         timeToRespond: 378,
-      })
+      });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378');
+    });
 
     it('Should trigger pixel if bid has nurl with path & params and rtt macros', function() {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
         timeToRespond: 378,
-      })
+      });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378');
+    });
 
     it('Should trigger pixel if bid has nurl and there is no timeToRespond param, but has rtt macros in nurl', function() {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
-      })
+      });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1')
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1');
+    });
+  });
 
   describe('onTimeout callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(dep, 'ajax')
-      expect(spec.onTimeout({ forTest: true })).to.not.throw
-      expect(ajaxStub.calledOnce).to.be.true
-    })
-  })
+      const ajaxStub = sandbox.stub(dep, 'ajax');
+      expect(spec.onTimeout({ forTest: true })).to.not.throw;
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
 
   describe('on onBidderError callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(dep, 'ajax')
-      spec.onBidderError({ forTest: true })
-      expect(ajaxStub.calledOnce).to.be.true
-    })
-  })
+      const ajaxStub = sandbox.stub(dep, 'ajax');
+      spec.onBidderError({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
 
   describe('on onBidBillable callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(dep, 'ajax')
-      spec.onBidBillable({ forTest: true })
-      expect(ajaxStub.calledOnce).to.be.true
-    })
-  })
+      const ajaxStub = sandbox.stub(dep, 'ajax');
+      spec.onBidBillable({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
 
   describe('on onAdRenderSucceeded callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(dep, 'ajax')
-      spec.onAdRenderSucceeded({ forTest: true })
-      expect(ajaxStub.calledOnce).to.be.true
-    })
-  })
-})
+      const ajaxStub = sandbox.stub(dep, 'ajax');
+      spec.onAdRenderSucceeded({ forTest: true });
+      expect(ajaxStub.calledOnce).to.be.true;
+    });
+  });
+});
 
 function getBidConfig() {
   return {
@@ -1013,7 +1013,7 @@ function getBidConfig() {
     params: {
       placementId: '123-1',
     },
-  }
+  };
 }
 
 function getBidRequest(extra = {}) {
@@ -1022,7 +1022,7 @@ function getBidRequest(extra = {}) {
     bidId: 'bidid-1',
     adUnitCode,
     ...extra,
-  }
+  };
 }
 
 /**
@@ -1031,21 +1031,21 @@ function getBidRequest(extra = {}) {
  * @returns {HTMLDivElement} The created div element
  */
 function createElement(id) {
-  const div = document.createElement('div')
-  div.id = id
-  div.style.width = '50px'
-  div.style.height = '50px'
-  div.style.background = 'black'
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.width = '50px';
+  div.style.height = '50px';
+  div.style.background = 'black';
 
   // Adjust frame dimensions if running within an iframe
   if (frameElement) {
-    frameElement.style.width = '100px'
-    frameElement.style.height = '100px'
+    frameElement.style.width = '100px';
+    frameElement.style.height = '100px';
   }
 
-  window.document.body.appendChild(div)
+  window.document.body.appendChild(div);
 
-  return div
+  return div;
 }
 
 /**
@@ -1054,13 +1054,13 @@ function createElement(id) {
  * @returns {HTMLDivElement} The created div with mocked geometry
  */
 function createElementVisible(id) {
-  const element = createElement(id)
+  const element = createElement(id);
   // Mock client rect to simulate visible position in viewport
   sandbox.stub(element, 'getBoundingClientRect').returns({
     x: 10,
     y: 10,
-  })
-  return element
+  });
+  return element;
 }
 
 /**
@@ -1069,12 +1069,12 @@ function createElementVisible(id) {
  * @returns {HTMLDivElement} The created hidden div element
  */
 function createElementInvisible(id) {
-  const element = document.createElement('div')
-  element.id = id
-  element.style.display = 'none'
+  const element = document.createElement('div');
+  element.id = id;
+  element.style.display = 'none';
 
-  window.document.body.appendChild(element)
-  return element
+  window.document.body.appendChild(element);
+  return element;
 }
 
 /**
@@ -1084,14 +1084,14 @@ function createElementInvisible(id) {
  * @returns {HTMLDivElement} The created hidden div with mocked geometry
  */
 function createElementHidden(id) {
-  const element = createElement(id)
-  element.style.visibility = 'hidden'
+  const element = createElement(id);
+  element.style.visibility = 'hidden';
   // Mock client rect to simulate hidden element's geometry
   sandbox.stub(element, 'getBoundingClientRect').returns({
     x: 100,
     y: 100,
-  })
-  return element
+  });
+  return element;
 }
 
 /**
@@ -1099,8 +1099,8 @@ function createElementHidden(id) {
  * @param {string} id - The ID of the element to remove
  */
 function removeElement(id) {
-  const element = document.getElementById(id)
+  const element = document.getElementById(id);
   if (element) {
-    element.remove()
+    element.remove();
   }
 }

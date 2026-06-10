@@ -1,14 +1,14 @@
-import ascAdapter from 'modules/byDataAnalyticsAdapter'
-import { expect } from 'chai'
-import { EVENTS } from 'src/constants.js'
+import ascAdapter from 'modules/byDataAnalyticsAdapter';
+import { expect } from 'chai';
+import { EVENTS } from 'src/constants.js';
 
-const adapterManager = require('src/adapterManager').default
-const events = require('src/events')
-const auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2'
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
+const auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2';
 const initOptions = {
   clientId: 'asc00000',
   logFrequency: 1,
-}
+};
 const userData = {
   'uid': '271a8-2b86-f4a4-f59bc',
   'cid': 'asc00000',
@@ -23,13 +23,13 @@ const userData = {
   },
   'de': 'Desktop',
   'tz': 'Asia/Calcutta'
-}
+};
 const bidTimeoutArgs = [{
   auctionId,
   bidId: '12e90cb5ddc5dea',
   bidder: 'appnexus',
   adUnitCode: 'div-gpt-ad-mrec1'
-}]
+}];
 const noBidArgs = {
   adUnitCode: 'div-gpt-ad-mrec1',
   auctionId,
@@ -40,7 +40,7 @@ const noBidArgs = {
   sizes: [[300, 250], [250, 250]],
   src: 'client',
   transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
-}
+};
 const bidWonArgs = {
   auctionId,
   adUnitCode: 'div-gpt-ad-mrec1',
@@ -51,7 +51,7 @@ const bidWonArgs = {
   currency: 'USD',
   mediaType: 'display',
   cpm: 0.50
-}
+};
 
 const auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
@@ -86,7 +86,7 @@ const auctionEndArgs = {
       }
     ]
   }]
-}
+};
 const expectedDataArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
@@ -114,7 +114,7 @@ const expectedDataArgs = {
     iwb: 0,
     mt: 'display',
   }]
-}
+};
 const expectedBidWonArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
@@ -137,56 +137,56 @@ const expectedBidWonArgs = {
     iwb: 1,
     mt: 'display',
   }]
-}
+};
 
 describe('byData Analytics Adapter ', () => {
   beforeEach(() => {
-    sinon.stub(events, 'getEvents').returns([])
-  })
+    sinon.stub(events, 'getEvents').returns([]);
+  });
   afterEach(() => {
-    events.getEvents.restore()
-  })
+    events.getEvents.restore();
+  });
 
   describe('enableAnalytics ', function () {
     beforeEach(() => {
-      sinon.spy(ascAdapter, 'track')
-    })
+      sinon.spy(ascAdapter, 'track');
+    });
     afterEach(() => {
-      ascAdapter.disableAnalytics()
-      ascAdapter.track.restore()
-    })
+      ascAdapter.disableAnalytics();
+      ascAdapter.track.restore();
+    });
     it('should init with correct options', function () {
-      ascAdapter.enableAnalytics(initOptions)
+      ascAdapter.enableAnalytics(initOptions);
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
         provider: 'bydata',
         options: initOptions
-      })
-      expect(ascAdapter.initOptions).to.have.property('clientId', 'asc00000')
-      expect(ascAdapter.initOptions).to.have.property('logFrequency', 1)
-    })
-  })
+      });
+      expect(ascAdapter.initOptions).to.have.property('clientId', 'asc00000');
+      expect(ascAdapter.initOptions).to.have.property('logFrequency', 1);
+    });
+  });
 
   describe('track-events', function () {
     before(() => {
-      ascAdapter.enableAnalytics(initOptions)
+      ascAdapter.enableAnalytics(initOptions);
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
         provider: 'bydata',
         options: initOptions
-      })
-    })
+      });
+    });
     it('sends and formatted auction data ', function () {
-      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs)
-      events.emit(EVENTS.NO_BID, noBidArgs)
-      events.emit(EVENTS.BID_WON, bidWonArgs)
-      var userToken = ascAdapter.getVisitorData(userData)
-      var newAuData = ascAdapter.dataProcess(auctionEndArgs)
-      var newBwData = ascAdapter.getBidWonData(bidWonArgs)
-      newAuData['visitor_data'] = userToken
-      newBwData['visitor_data'] = userToken
-      expect(newAuData).to.deep.equal(expectedDataArgs)
-      expect(newBwData).to.deep.equal(expectedBidWonArgs)
-    })
-  })
-})
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
+      events.emit(EVENTS.NO_BID, noBidArgs);
+      events.emit(EVENTS.BID_WON, bidWonArgs);
+      var userToken = ascAdapter.getVisitorData(userData);
+      var newAuData = ascAdapter.dataProcess(auctionEndArgs);
+      var newBwData = ascAdapter.getBidWonData(bidWonArgs);
+      newAuData['visitor_data'] = userToken;
+      newBwData['visitor_data'] = userToken;
+      expect(newAuData).to.deep.equal(expectedDataArgs);
+      expect(newBwData).to.deep.equal(expectedBidWonArgs);
+    });
+  });
+});

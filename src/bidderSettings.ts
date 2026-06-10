@@ -1,10 +1,10 @@
-import { deepAccess, mergeDeep } from './utils.js'
-import { getGlobal } from './prebidGlobal.js'
-import { JSON_MAPPING } from './constants.js'
-import type { BidderCode } from "./types/common"
-import type { BidRequest } from "./adapterManager.ts"
-import type { Bid } from "./bidfactory.ts"
-import type { StorageType } from "./storageManager.ts"
+import { deepAccess, mergeDeep } from './utils.js';
+import { getGlobal } from './prebidGlobal.js';
+import { JSON_MAPPING } from './constants.js';
+import type { BidderCode } from "./types/common";
+import type { BidRequest } from "./adapterManager.ts";
+import type { Bid } from "./bidfactory.ts";
+import type { StorageType } from "./storageManager.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface BidderSettings<B extends BidderCode> {
@@ -65,11 +65,11 @@ export interface BidderScopedSettings<B extends BidderCode> extends BidderSettin
 }
 
 export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends SETTINGS> {
-  getSettings
-  defaultScope
+  getSettings;
+  defaultScope;
   constructor(getSettings, defaultScope) {
-    this.getSettings = getSettings
-    this.defaultScope = defaultScope
+    this.getSettings = getSettings;
+    this.defaultScope = defaultScope;
   }
 
   /**
@@ -77,50 +77,50 @@ export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends
    * If `scope` is `null`, get the setting's default value.
    */
   get<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
-    let value = this.getOwn(scope, path)
+    let value = this.getOwn(scope, path);
     if (typeof value === 'undefined') {
-      value = this.getOwn(null, path)
+      value = this.getOwn(null, path);
     }
-    return value
+    return value;
   }
 
   /**
    * Get the setting value at `path` *without* falling back to the default value.
    */
   getOwn<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
-    scope = this.#resolveScope(scope)
-    return deepAccess(this.getSettings(), `${scope}.${path as any}`)
+    scope = this.#resolveScope(scope);
+    return deepAccess(this.getSettings(), `${scope}.${path as any}`);
   }
 
   /**
    * @returns all existing scopes except the default one.
    */
   getScopes(): string[] {
-    return Object.keys(this.getSettings()).filter((scope) => scope !== this.defaultScope)
+    return Object.keys(this.getSettings()).filter((scope) => scope !== this.defaultScope);
   }
 
   /**
    * @returns all settings in the given scope, merged with the settings for the default scope.
    */
   settingsFor(scope): SETTINGS {
-    return mergeDeep({}, this.ownSettingsFor(null), this.ownSettingsFor(scope))
+    return mergeDeep({}, this.ownSettingsFor(null), this.ownSettingsFor(scope));
   }
 
   /**
    * @returns all settings in the given scope, *without* any of the default settings.
    */
   ownSettingsFor(scope): SCOPED {
-    scope = this.#resolveScope(scope)
-    return this.getSettings()[scope] || {}
+    scope = this.#resolveScope(scope);
+    return this.getSettings()[scope] || {};
   }
 
   #resolveScope(scope) {
     if (scope == null) {
-      return this.defaultScope
+      return this.defaultScope;
     } else {
-      return scope
+      return scope;
     }
   }
 }
 
-export const bidderSettings = new ScopedSettings<BidderSettings<BidderCode>, BidderScopedSettings<BidderCode>>(() => getGlobal().bidderSettings || {}, JSON_MAPPING.BD_SETTING_STANDARD)
+export const bidderSettings = new ScopedSettings<BidderSettings<BidderCode>, BidderScopedSettings<BidderCode>>(() => getGlobal().bidderSettings || {}, JSON_MAPPING.BD_SETTING_STANDARD);

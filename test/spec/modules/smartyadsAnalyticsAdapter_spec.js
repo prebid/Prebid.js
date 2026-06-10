@@ -1,10 +1,10 @@
-import smartyadsAnalytics from 'modules/smartyadsAnalyticsAdapter.js'
-import { expect } from 'chai'
-import { server } from 'test/mocks/xhr.js'
-import { EVENTS } from '../../../src/constants.js'
+import smartyadsAnalytics from 'modules/smartyadsAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from '../../../src/constants.js';
 
-const adapterManager = require('src/adapterManager').default
-const events = require('src/events')
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
 
 describe('SmartyAds Analytics', function () {
   const auctionEnd = {
@@ -187,7 +187,7 @@ describe('SmartyAds Analytics', function () {
 
     ],
     'timeout': 1000
-  }
+  };
 
   const bidWon = {
     'bidderCode': 'smartyads',
@@ -241,7 +241,7 @@ describe('SmartyAds Analytics', function () {
         'placementId': 123456
       }
     ]
-  }
+  };
 
   const renderData = {
     'doc': {
@@ -358,81 +358,81 @@ describe('SmartyAds Analytics', function () {
         }
       ]
     }
-  }
+  };
 
   after(function () {
-    smartyadsAnalytics.disableAnalytics()
-  })
+    smartyadsAnalytics.disableAnalytics();
+  });
 
   describe('main test', function () {
     beforeEach(function () {
-      sinon.stub(events, 'getEvents').returns([])
-      sinon.spy(smartyadsAnalytics, 'track')
-    })
+      sinon.stub(events, 'getEvents').returns([]);
+      sinon.spy(smartyadsAnalytics, 'track');
+    });
 
     afterEach(function () {
-      events.getEvents.restore()
-      smartyadsAnalytics.disableAnalytics()
-      smartyadsAnalytics.track.restore()
-    })
+      events.getEvents.restore();
+      smartyadsAnalytics.disableAnalytics();
+      smartyadsAnalytics.track.restore();
+    });
 
     it('test auctionEnd', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'smartyads',
         adapter: smartyadsAnalytics
-      })
+      });
 
       adapterManager.enableAnalytics({
         provider: 'smartyads',
-      })
+      });
 
-      events.emit(EVENTS.AUCTION_END, auctionEnd)
-      expect(server.requests.length).to.equal(1)
-      const message = JSON.parse(server.requests[0].requestBody)
-      expect(message).to.have.property('auctionData')
-      expect(message).to.have.property('eventType').and.to.equal(EVENTS.AUCTION_END)
-      expect(message.auctionData).to.have.property('auctionId')
-      expect(message.auctionData.bidderRequests).to.have.length(1)
-    })
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      expect(server.requests.length).to.equal(1);
+      const message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.have.property('auctionData');
+      expect(message).to.have.property('eventType').and.to.equal(EVENTS.AUCTION_END);
+      expect(message.auctionData).to.have.property('auctionId');
+      expect(message.auctionData.bidderRequests).to.have.length(1);
+    });
 
     it('test bidWon', function() {
       adapterManager.registerAnalyticsAdapter({
         code: 'smartyads',
         adapter: smartyadsAnalytics
-      })
+      });
 
       adapterManager.enableAnalytics({
         provider: 'smartyads',
-      })
+      });
 
-      events.emit(EVENTS.BID_WON, bidWon)
-      expect(server.requests.length).to.equal(1)
-      const message = JSON.parse(server.requests[0].requestBody)
-      expect(message).to.have.property('eventType').and.to.equal(EVENTS.BID_WON)
-      expect(message).to.have.property('bid')
-      expect(message.bid).to.have.property('bidder').and.to.equal('smartyads')
-      expect(message.bid).to.have.property('cpm').and.to.equal(bidWon.cpm)
-    })
+      events.emit(EVENTS.BID_WON, bidWon);
+      expect(server.requests.length).to.equal(1);
+      const message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.have.property('eventType').and.to.equal(EVENTS.BID_WON);
+      expect(message).to.have.property('bid');
+      expect(message.bid).to.have.property('bidder').and.to.equal('smartyads');
+      expect(message.bid).to.have.property('cpm').and.to.equal(bidWon.cpm);
+    });
 
     it('test adRender', function() {
       adapterManager.registerAnalyticsAdapter({
         code: 'smartyads',
         adapter: smartyadsAnalytics
-      })
+      });
 
       adapterManager.enableAnalytics({
         provider: 'smartyads',
-      })
+      });
 
-      events.emit(EVENTS.AD_RENDER_SUCCEEDED, renderData)
-      expect(server.requests.length).to.equal(1)
-      const message = JSON.parse(server.requests[0].requestBody)
-      expect(message).to.have.property('eventType').and.to.equal(EVENTS.AD_RENDER_SUCCEEDED)
-      expect(message).to.have.property('renderData')
-      expect(message.renderData).to.have.property('doc')
-      expect(message.renderData).to.have.property('doc')
-      expect(message.renderData).to.have.property('bid')
-      expect(message.renderData.bid).to.have.property('adId').and.to.equal(renderData.bid.adId)
-    })
-  })
-})
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, renderData);
+      expect(server.requests.length).to.equal(1);
+      const message = JSON.parse(server.requests[0].requestBody);
+      expect(message).to.have.property('eventType').and.to.equal(EVENTS.AD_RENDER_SUCCEEDED);
+      expect(message).to.have.property('renderData');
+      expect(message.renderData).to.have.property('doc');
+      expect(message.renderData).to.have.property('doc');
+      expect(message.renderData).to.have.property('bid');
+      expect(message.renderData.bid).to.have.property('adId').and.to.equal(renderData.bid.adId);
+    });
+  });
+});

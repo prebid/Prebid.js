@@ -1,7 +1,7 @@
-import { logError } from '../../src/utils.js'
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js'
-import { submodule } from '../../src/hook.js'
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeResult, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend, setUpTreatment } from './shared.js'
+import { logError } from '../../src/utils.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
+import { submodule } from '../../src/hook.js';
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeResult, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend, setUpTreatment } from './shared.js';
 
 /**
  * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
@@ -10,72 +10,72 @@ import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeRes
  */
 
 // Reference to the client for the liQHub.
-let cachedClientRef
+let cachedClientRef;
 
 /**
  * This function is used in tests.
  */
 export function resetSubmodule() {
-  cachedClientRef = undefined
+  cachedClientRef = undefined;
 }
 
-window.liQHub = window.liQHub ?? []
+window.liQHub = window.liQHub ?? [];
 
 function initializeClient(configParams) {
   // Only initialize once.
-  if (cachedClientRef != null) return cachedClientRef
+  if (cachedClientRef != null) return cachedClientRef;
 
-  const clientRef = {}
+  const clientRef = {};
 
-  const clientDetails = { name: 'prebid', version: '$prebid.version$' }
+  const clientDetails = { name: 'prebid', version: '$prebid.version$' };
 
-  const collectConfig = configParams.liCollectConfig ?? {}
+  const collectConfig = configParams.liCollectConfig ?? {};
 
-  let integration
+  let integration;
   if (collectConfig.appId != null) {
-    integration = { type: 'application', appId: collectConfig.appId, publisherId: configParams.publisherId }
+    integration = { type: 'application', appId: collectConfig.appId, publisherId: configParams.publisherId };
   } else if (configParams.distributorId != null && configParams.publisherId == null) {
-    integration = { type: 'distributor', distributorId: configParams.distributorId }
+    integration = { type: 'distributor', distributorId: configParams.distributorId };
   } else {
-    integration = { type: 'custom', publisherId: configParams.publisherId, distributorId: configParams.distributorId }
+    integration = { type: 'custom', publisherId: configParams.publisherId, distributorId: configParams.distributorId };
   }
 
-  const partnerCookies = new Set(configParams.identifiersToResolve ?? [])
+  const partnerCookies = new Set(configParams.identifiersToResolve ?? []);
 
-  const collectSettings = { timeout: collectConfig.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT }
+  const collectSettings = { timeout: collectConfig.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT };
 
-  let identityPartner
+  let identityPartner;
   if (collectConfig.appId == null && configParams.distributorId != null) {
-    identityPartner = configParams.distributorId
+    identityPartner = configParams.distributorId;
   } else if (configParams.partner != null) {
-    identityPartner = configParams.partner
+    identityPartner = configParams.partner;
   } else {
-    identityPartner = 'prebid'
+    identityPartner = 'prebid';
   }
 
   const resolveSettings = {
     identityPartner,
     timeout: configParams.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT
-  }
+  };
 
   function loadConsent() {
-    const consent = {}
-    const usPrivacyString = uspDataHandler.getConsentData()
+    const consent = {};
+    const usPrivacyString = uspDataHandler.getConsentData();
     if (usPrivacyString != null) {
-      consent.usPrivacy = { consentString: usPrivacyString }
+      consent.usPrivacy = { consentString: usPrivacyString };
     }
-    const gdprConsent = gdprDataHandler.getConsentData()
+    const gdprConsent = gdprDataHandler.getConsentData();
     if (gdprConsent != null) {
-      consent.gdpr = gdprConsent
+      consent.gdpr = gdprConsent;
     }
-    const gppConsent = gppDataHandler.getConsentData()
+    const gppConsent = gppDataHandler.getConsentData();
     if (gppConsent != null) {
-      consent.gpp = { consentString: gppConsent.gppString, applicableSections: gppConsent.applicableSections }
+      consent.gpp = { consentString: gppConsent.gppString, applicableSections: gppConsent.applicableSections };
     }
 
-    return consent
+    return consent;
   }
-  const consent = loadConsent()
+  const consent = loadConsent();
 
   window.liQHub.push({
     type: 'register_client',
@@ -86,15 +86,15 @@ function initializeClient(configParams) {
     partnerCookies,
     collectSettings,
     resolveSettings
-  })
+  });
 
-  const sourceEvent = makeSourceEventToSend(configParams)
+  const sourceEvent = makeSourceEventToSend(configParams);
   if (sourceEvent != null) {
-    window.liQHub.push({ type: 'collect', clientRef, sourceEvent })
+    window.liQHub.push({ type: 'collect', clientRef, sourceEvent });
   }
 
-  cachedClientRef = clientRef
-  return clientRef
+  cachedClientRef = clientRef;
+  return clientRef;
 }
 
 /**
@@ -106,11 +106,11 @@ function initializeClient(configParams) {
 
 function resolve(configParams, clientRef, callback) {
   function onFailure(error) {
-    logError(`${MODULE_NAME}: ID fetch encountered an error: `, error)
-    callback()
+    logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+    callback();
   }
 
-  const onSuccess = [{ type: 'callback', callback }]
+  const onSuccess = [{ type: 'callback', callback }];
 
   window.liQHub.push({
     type: 'resolve',
@@ -118,7 +118,7 @@ function resolve(configParams, clientRef, callback) {
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides),
     onFailure,
     onSuccess
-  })
+  });
 }
 
 /** @type {IdProviderSpec<LiveIntentIdSystemModuleName>} */
@@ -135,13 +135,13 @@ export const liveIntentExternalIdSubmodule = {
    * @function
    */
   decode(value, config) {
-    const configParams = config?.params ?? {}
-    setUpTreatment(configParams)
+    const configParams = config?.params ?? {};
+    setUpTreatment(configParams);
 
     // Ensure client is initialized and we fired at least one collect request.
-    initializeClient(configParams)
+    initializeClient(configParams);
 
-    return composeResult(value, configParams)
+    return composeResult(value, configParams);
   },
 
   /**
@@ -149,15 +149,15 @@ export const liveIntentExternalIdSubmodule = {
    * @function
    */
   getId(config) {
-    const configParams = config?.params ?? {}
-    setUpTreatment(configParams)
+    const configParams = config?.params ?? {};
+    setUpTreatment(configParams);
 
-    const clientRef = initializeClient(configParams)
+    const clientRef = initializeClient(configParams);
 
-    return { callback: function(cb) { resolve(configParams, clientRef, cb) } }
+    return { callback: function(cb) { resolve(configParams, clientRef, cb); } };
   },
   primaryIds: PRIMARY_IDS,
   eids
-}
+};
 
-submodule('userId', liveIntentExternalIdSubmodule)
+submodule('userId', liveIntentExternalIdSubmodule);

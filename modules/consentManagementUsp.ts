@@ -4,39 +4,39 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import { deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../src/utils.js'
-import { config } from '../src/config.js'
-import adapterManager, { uspDataHandler } from '../src/adapterManager.js'
-import { timedAuctionHook } from '../src/utils/perfMetrics.js'
-import { getHook } from '../src/hook.js'
-import { enrichFPD } from '../src/fpd/enrichment.js'
-import { cmpClient } from '../libraries/cmp/cmpClient.js'
-import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts"
-import type { CONSENT_USP } from "../src/consentHandler.ts"
+import { deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../src/utils.js';
+import { config } from '../src/config.js';
+import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
+import { timedAuctionHook } from '../src/utils/perfMetrics.js';
+import { getHook } from '../src/hook.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
+import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
+import type { CONSENT_USP } from "../src/consentHandler.ts";
 
-const DEFAULT_CONSENT_API = 'iab'
-const DEFAULT_CONSENT_TIMEOUT = 50
-const USPAPI_VERSION = 1
+const DEFAULT_CONSENT_API = 'iab';
+const DEFAULT_CONSENT_TIMEOUT = 50;
+const USPAPI_VERSION = 1;
 
-export let consentAPI = DEFAULT_CONSENT_API
-export let consentTimeout = DEFAULT_CONSENT_TIMEOUT
-export let staticConsentData
+export let consentAPI = DEFAULT_CONSENT_API;
+export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
+export let staticConsentData;
 
-type USPConsentData = string
+type USPConsentData = string;
 type BaseUSPConfig = {
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
    * Default is 50.
    */
   timeout?: number;
-}
+};
 
 type StaticUSPData = {
   getUSPData: {
     uspString: USPConsentData;
   }
-}
-type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>)
+};
+type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
 
 declare module '../src/consentHandler' {
   interface ConsentData {
@@ -47,20 +47,20 @@ declare module '../src/consentHandler' {
   }
 }
 
-let consentData
-let enabled = false
+let consentData;
+let enabled = false;
 
 // consent APIs
 const uspCallMap = {
   'iab': lookupUspConsent,
   'static': lookupStaticConsentData
-}
+};
 
 /**
  * This function reads the consent string from the config to obtain the consent information of the user.
  */
 function lookupStaticConsentData({ onSuccess, onError }) {
-  processUspData(staticConsentData, { onSuccess, onError })
+  processUspData(staticConsentData, { onSuccess, onError });
 }
 
 /**
@@ -70,57 +70,57 @@ function lookupStaticConsentData({ onSuccess, onError }) {
  */
 function lookupUspConsent({ onSuccess, onError }) {
   function handleUspApiResponseCallbacks() {
-    const uspResponse = {} as any
+    const uspResponse = {} as any;
 
     function afterEach() {
       if (uspResponse.usPrivacy) {
-        processUspData(uspResponse, { onSuccess, onError })
+        processUspData(uspResponse, { onSuccess, onError });
       } else {
-        onError('Unable to get USP consent string.')
+        onError('Unable to get USP consent string.');
       }
     }
 
     return {
       consentDataCallback: (consentResponse, success) => {
         if (success && consentResponse.uspString) {
-          uspResponse.usPrivacy = consentResponse.uspString
+          uspResponse.usPrivacy = consentResponse.uspString;
         }
-        afterEach()
+        afterEach();
       },
-    }
+    };
   }
 
-  const callbackHandler = handleUspApiResponseCallbacks()
+  const callbackHandler = handleUspApiResponseCallbacks();
 
   const cmp = cmpClient({
     apiName: '__uspapi',
     apiVersion: USPAPI_VERSION,
     apiArgs: ['command', 'version', 'callback'],
-  }) as any
+  }) as any;
 
   if (!cmp) {
-    return onError('USP CMP not found.')
+    return onError('USP CMP not found.');
   }
 
   if (cmp.isDirect) {
-    logInfo('Detected USP CMP is directly accessible, calling it now...')
+    logInfo('Detected USP CMP is directly accessible, calling it now...');
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
-    )
+    );
   }
 
   cmp({
     command: 'getUSPData',
     callback: callbackHandler.consentDataCallback
-  })
+  });
 
   cmp({
     command: 'registerDeletion',
     callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
   }).catch(e => {
-    logError('Error invoking CMP `registerDeletion`:', e)
-  })
+    logError('Error invoking CMP `registerDeletion`:', e);
+  });
 }
 
 /**
@@ -130,39 +130,39 @@ function lookupUspConsent({ onSuccess, onError }) {
  * data was retrieved successfully.
  */
 function loadConsentData(cb?) {
-  let timer = null
-  let isDone = false
+  let timer = null;
+  let isDone = false;
 
   function done(consentData, errMsg, ...extraArgs) {
     if (timer != null) {
-      clearTimeout(timer)
+      clearTimeout(timer);
     }
-    isDone = true
-    uspDataHandler.setConsentData(consentData)
+    isDone = true;
+    uspDataHandler.setConsentData(consentData);
     if (cb != null) {
-      cb(errMsg, ...extraArgs)
+      cb(errMsg, ...extraArgs);
     }
   }
 
   if (!uspCallMap[consentAPI]) {
-    done(null, `USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`)
-    return
+    done(null, `USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
+    return;
   }
 
   const callbacks = {
     onSuccess: done,
     onError: function (errMsg, ...extraArgs) {
-      done(null, `${errMsg} Resuming auction without consent data as per consentManagement config.`, ...extraArgs)
+      done(null, `${errMsg} Resuming auction without consent data as per consentManagement config.`, ...extraArgs);
     }
-  }
+  };
 
-  uspCallMap[consentAPI](callbacks)
+  uspCallMap[consentAPI](callbacks);
 
   if (!isDone) {
     if (consentTimeout === 0) {
-      processUspData(undefined, callbacks)
+      processUspData(undefined, callbacks);
     } else {
-      timer = setTimeout(callbacks.onError.bind(null, 'USPAPI workflow exceeded timeout threshold.'), consentTimeout)
+      timer = setTimeout(callbacks.onError.bind(null, 'USPAPI workflow exceeded timeout threshold.'), consentTimeout);
     }
   }
 }
@@ -177,15 +177,15 @@ function loadConsentData(cb?) {
  */
 export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(fn, reqBidsConfigObj) {
   if (!enabled) {
-    enableConsentManagement()
+    enableConsentManagement();
   }
   loadConsentData((errMsg, ...extraArgs) => {
     if (errMsg != null) {
-      logWarn(errMsg, ...extraArgs)
+      logWarn(errMsg, ...extraArgs);
     }
-    fn.call(this, reqBidsConfigObj)
-  })
-})
+    fn.call(this, reqBidsConfigObj);
+  });
+});
 
 /**
  * This function checks the consent data provided by USPAPI to ensure it's in an expected state.
@@ -198,14 +198,14 @@ export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(
  * @param {function(string, ...Object?): void} callbacks.onError - Callback accepting an error message and any extra error arguments (used purely for logging).
  */
 function processUspData(consentObject, { onSuccess, onError }) {
-  const valid = !!(consentObject && consentObject.usPrivacy)
+  const valid = !!(consentObject && consentObject.usPrivacy);
   if (!valid) {
-    onError(`USPAPI returned unexpected value during lookup process.`, consentObject)
-    return
+    onError(`USPAPI returned unexpected value during lookup process.`, consentObject);
+    return;
   }
 
-  storeUspConsentData(consentObject)
-  onSuccess(consentData)
+  storeUspConsentData(consentObject);
+  onSuccess(consentData);
 }
 
 /**
@@ -214,7 +214,7 @@ function processUspData(consentObject, { onSuccess, onError }) {
  */
 function storeUspConsentData(consentObject) {
   if (consentObject && consentObject.usPrivacy) {
-    consentData = consentObject.usPrivacy
+    consentData = consentObject.usPrivacy;
   }
 }
 
@@ -222,11 +222,11 @@ function storeUspConsentData(consentObject) {
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
 export function resetConsentData() {
-  consentData = undefined
-  consentAPI = undefined
-  consentTimeout = undefined
-  uspDataHandler.reset()
-  enabled = false
+  consentData = undefined;
+  consentAPI = undefined;
+  consentTimeout = undefined;
+  uspDataHandler.reset();
+  enabled = false;
 }
 
 /**
@@ -234,54 +234,54 @@ export function resetConsentData() {
  * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int)
  */
 export function setConsentConfig(config) {
-  config = config && config.usp
+  config = config && config.usp;
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement.usp config not defined, using defaults')
+    logWarn('consentManagement.usp config not defined, using defaults');
   }
   if (config && isStr(config.cmpApi)) {
-    consentAPI = config.cmpApi
+    consentAPI = config.cmpApi;
   } else {
-    consentAPI = DEFAULT_CONSENT_API
-    logInfo(`consentManagement.usp config did not specify cmpApi. Using system default setting (${DEFAULT_CONSENT_API}).`)
+    consentAPI = DEFAULT_CONSENT_API;
+    logInfo(`consentManagement.usp config did not specify cmpApi. Using system default setting (${DEFAULT_CONSENT_API}).`);
   }
 
   if (config && isNumber(config.timeout)) {
-    consentTimeout = config.timeout
+    consentTimeout = config.timeout;
   } else {
-    consentTimeout = DEFAULT_CONSENT_TIMEOUT
-    logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`)
+    consentTimeout = DEFAULT_CONSENT_TIMEOUT;
+    logInfo(`consentManagement.usp config did not specify timeout. Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
   if (consentAPI === 'static') {
     if (isPlainObject(config.consentData) && isPlainObject(config.consentData.getUSPData)) {
-      if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString }
-      consentTimeout = 0
+      if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
+      consentTimeout = 0;
     } else {
-      logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`)
+      logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
-  enableConsentManagement(true)
+  enableConsentManagement(true);
 }
 
 function enableConsentManagement(configFromUser = false) {
   if (!enabled) {
-    logInfo(`USPAPI consentManagement module has been activated${configFromUser ? '' : ` using default values (api: '${consentAPI}', timeout: ${consentTimeout}ms)`}`)
-    enabled = true
-    uspDataHandler.enable()
+    logInfo(`USPAPI consentManagement module has been activated${configFromUser ? '' : ` using default values (api: '${consentAPI}', timeout: ${consentTimeout}ms)`}`);
+    enabled = true;
+    uspDataHandler.enable();
   }
-  loadConsentData() // immediately look up consent data to make it available without requiring an auction
+  loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
-config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement))
+config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
-getHook('requestBids').before(requestBidsHook, 50)
+getHook('requestBids').before(requestBidsHook, 50);
 
 export function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
-    const consent = uspDataHandler.getConsentData()
+    const consent = uspDataHandler.getConsentData();
     if (consent) {
-      deepSetValue(ortb2, 'regs.ext.us_privacy', consent)
+      deepSetValue(ortb2, 'regs.ext.us_privacy', consent);
     }
-    return ortb2
-  }))
+    return ortb2;
+  }));
 }
 
-enrichFPD.before(enrichFPDHook)
+enrichFPD.before(enrichFPDHook);

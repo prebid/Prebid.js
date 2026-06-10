@@ -1,12 +1,12 @@
-import { assert, expect } from 'chai'
-import { spec } from 'modules/ablidaBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from 'src/utils.js'
+import { assert, expect } from 'chai';
+import { spec } from 'modules/ablidaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
-const ENDPOINT_URL = 'https://bidder.ablida.net/prebid'
+const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
 describe('ablidaBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     const bid = {
       adUnitCode: 'adunit-code',
@@ -26,11 +26,11 @@ describe('ablidaBidAdapter', function () {
       ],
       src: 'client',
       transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
-    }
+    };
     it('should return true where required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
-  })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+  });
   describe('buildRequests', function () {
     const bidRequests = [
       {
@@ -52,7 +52,7 @@ describe('ablidaBidAdapter', function () {
         src: 'client',
         transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
       }
-    ]
+    ];
 
     const bidderRequests = {
       refererInfo: {
@@ -62,13 +62,13 @@ describe('ablidaBidAdapter', function () {
         referer: 'http://example.com',
         stack: ['http://example.com']
       }
-    }
+    };
 
-    const request = spec.buildRequests(bidRequests, bidderRequests)
+    const request = spec.buildRequests(bidRequests, bidderRequests);
     it('sends bid request via POST', function () {
-      expect(request[0].method).to.equal('POST')
-    })
-  })
+      expect(request[0].method).to.equal('POST');
+    });
+  });
 
   describe('interpretResponse', function () {
     const bidRequest = {
@@ -87,7 +87,7 @@ describe('ablidaBidAdapter', function () {
         height: 200,
         referer: 'www.example.com'
       }
-    }
+    };
     const serverResponse = {
       body: [{
         ad: '<script>console.log("ad");</script>',
@@ -105,7 +105,7 @@ describe('ablidaBidAdapter', function () {
         ttl: 3000,
         width: 300
       }]
-    }
+    };
     it('should get the correct bid response', function () {
       const expectedResponse = [{
         ad: '<script>console.log("ad");</script>',
@@ -122,30 +122,30 @@ describe('ablidaBidAdapter', function () {
         requestId: '2b8c4de0116e54',
         ttl: 3000,
         width: 300
-      }]
-      const result = spec.interpretResponse(serverResponse, bidRequest[0])
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse))
-    })
-  })
+      }];
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+    });
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel')
-    })
+      sinon.stub(utils, 'triggerPixel');
+    });
     afterEach(function() {
-      utils.triggerPixel.restore()
-    })
+      utils.triggerPixel.restore();
+    });
 
     it('Should not trigger pixel if bid does not contain nurl', function() {
-      const result = spec.onBidWon({})
-      expect(utils.triggerPixel.callCount).to.equal(0)
-    })
+      const result = spec.onBidWon({});
+      expect(utils.triggerPixel.callCount).to.equal(0);
+    });
 
     it('Should trigger pixel if bid nurl', function() {
       const result = spec.onBidWon({
         nurl: 'https://example.com/some-tracker'
-      })
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
-})
+      });
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
+});

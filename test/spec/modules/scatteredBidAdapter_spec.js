@@ -1,7 +1,7 @@
-import { spec, converter } from 'modules/scatteredBidAdapter.js'
-import { assert } from 'chai'
-import { config } from 'src/config.js'
-import { deepClone, mergeDeep } from '../../../src/utils.js'
+import { spec, converter } from 'modules/scatteredBidAdapter.js';
+import { assert } from 'chai';
+import { config } from 'src/config.js';
+import { deepClone, mergeDeep } from '../../../src/utils.js';
 describe('Scattered adapter', function () {
   describe('isBidRequestValid', function () {
     // A valid bid
@@ -16,39 +16,39 @@ describe('Scattered adapter', function () {
         bidderDomain: 'https://prebid.scattered.eu',
         test: 0
       }
-    }
+    };
 
     // Because this valid bid is modified to create invalid bids in following tests we first check it.
     // We must be sure it is a valid one, not to get false negatives.
     it('should accept a valid bid', function () {
-      assert.isTrue(spec.isBidRequestValid(validBid))
-    })
+      assert.isTrue(spec.isBidRequestValid(validBid));
+    });
 
     it('should skip if bidderDomain info is missing', function () {
-      const bid = deepClone(validBid)
+      const bid = deepClone(validBid);
 
-      delete bid.params.bidderDomain
-      assert.isFalse(spec.isBidRequestValid(bid))
-    })
+      delete bid.params.bidderDomain;
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
 
     it('should expect at least one banner size', function () {
-      const bid = deepClone(validBid)
+      const bid = deepClone(validBid);
 
-      delete bid.mediaTypes.banner
-      assert.isFalse(spec.isBidRequestValid(bid))
+      delete bid.mediaTypes.banner;
+      assert.isFalse(spec.isBidRequestValid(bid));
 
       // empty sizes array
       bid.mediaTypes = {
         banner: {
           sizes: []
         }
-      }
-      assert.isFalse(spec.isBidRequestValid(bid))
-    })
-  })
+      };
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
+  });
 
   describe('buildRequests', function () {
-    let arrayOfValidBidRequests, validBidderRequest
+    let arrayOfValidBidRequests, validBidderRequest;
 
     beforeEach(function () {
       arrayOfValidBidRequests = [{
@@ -67,7 +67,7 @@ describe('Scattered adapter', function () {
           bidderRequestId: '130728f7662afc',
           auctionId: 'b4a45a23-8371-4d87-9308-39146b29ca32',
         },
-      }]
+      }];
 
       validBidderRequest = {
         bidderCode: 'scattered',
@@ -84,28 +84,28 @@ describe('Scattered adapter', function () {
             }
           }
         }
-      }
-    })
+      };
+    });
 
     it('should validate request format', function () {
-      const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest)
-      assert.equal(request.method, 'POST')
-      assert.deepEqual(request.options, { contentType: 'application/json' })
-      assert.ok(request.data)
-    })
+      const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
+      assert.equal(request.method, 'POST');
+      assert.deepEqual(request.options, { contentType: 'application/json' });
+      assert.ok(request.data);
+    });
 
     it('has the right fields filled', function () {
-      const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest)
-      const bidderRequest = request.data
-      assert.ok(bidderRequest.site)
-      assert.lengthOf(bidderRequest.imp, 1)
-    })
+      const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
+      const bidderRequest = request.data;
+      assert.ok(bidderRequest.site);
+      assert.lengthOf(bidderRequest.imp, 1);
+    });
 
     it('should configure the site object', function () {
-      const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest)
-      const site = request.data.site
-      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name)
-    })
+      const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
+      const site = request.data.site;
+      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name);
+    });
 
     it('should configure site with ortb2', function () {
       const req = mergeDeep({}, validBidderRequest, {
@@ -117,34 +117,34 @@ describe('Scattered adapter', function () {
             }
           }
         }
-      })
+      });
 
-      const request = spec.buildRequests(arrayOfValidBidRequests, req)
-      const site = request.data.site
+      const request = spec.buildRequests(arrayOfValidBidRequests, req);
+      const site = request.data.site;
       assert.deepEqual(site, {
         id: '876',
         publisher: {
           domain: 'publisher1.eu',
           name: 'publisher1 INC.'
         }
-      })
-    })
+      });
+    });
 
     it('should send device info', function () {
       it('should send info about device', function () {
         config.setConfig({
           device: { w: 375, h: 273 }
-        })
+        });
 
-        const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest)
+        const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
 
-        assert.equal(request.device.ua, navigator.userAgent)
-        assert.equal(request.device.w, 375)
-        assert.equal(request.device.h, 273)
-      })
-    })
-  })
-})
+        assert.equal(request.device.ua, navigator.userAgent);
+        assert.equal(request.device.w, 375);
+        assert.equal(request.device.h, 273);
+      });
+    });
+  });
+});
 
 describe('interpretResponse', function () {
   const serverResponse = {
@@ -168,7 +168,7 @@ describe('interpretResponse', function () {
         ]
       }],
     }
-  }
+  };
 
   const bidderRequest = {
     bids: [
@@ -178,19 +178,19 @@ describe('interpretResponse', function () {
       }
     ]
 
-  }
+  };
 
-  let request
+  let request;
   beforeEach(() => {
-    request = { data: converter.toORTB({ bidderRequest }) }
-  })
+    request = { data: converter.toORTB({ bidderRequest }) };
+  });
 
   it('should return if no body in response', function () {
-    assert.ok(!spec.interpretResponse({}, request))
-  })
+    assert.ok(!spec.interpretResponse({}, request));
+  });
 
   it('should set proper values', function () {
-    const results = spec.interpretResponse(serverResponse, request)
+    const results = spec.interpretResponse(serverResponse, request);
     const expected = {
       ad: '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="https://scattered.eu/nurl"></div><html><img src="https://some_banner.jpeg></img></html>',
       cpm: '34.2',
@@ -201,8 +201,8 @@ describe('interpretResponse', function () {
       mediaType: 'banner',
       requestId: '123',
       ttl: 360,
-    }
-    expect(results.length).to.equal(1)
-    sinon.assert.match(results[0], expected)
-  })
-})
+    };
+    expect(results.length).to.equal(1);
+    sinon.assert.match(results[0], expected);
+  });
+});

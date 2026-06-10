@@ -1,12 +1,12 @@
-import { logError, logInfo } from '../../src/utils.js'
-import { SUPPORTED_TYPES, FIRST_PARTY_KEY } from '../../libraries/intentIqConstants/intentIqConstants.js'
-import { getStorageManager } from '../../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js'
+import { logError, logInfo } from '../../src/utils.js';
+import { SUPPORTED_TYPES, FIRST_PARTY_KEY } from '../../libraries/intentIqConstants/intentIqConstants.js';
+import { getStorageManager } from '../../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 
-const MODULE_NAME = 'intentIqId'
-const PCID_EXPIRY = 365
+const MODULE_NAME = 'intentIqId';
+const PCID_EXPIRY = 365;
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * Detects partner-data keys of the form `_iiq_fdata_<partnerId>`.
@@ -14,11 +14,11 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
  * @returns {boolean}
  */
 export function isPartnerDataKey(key) {
-  if (typeof key !== 'string') return false
-  const parts = key.split('_fdata_')
-  if (parts.length < 2) return false
-  const partnerId = parts[1]
-  return !!partnerId && !Number.isNaN(Number(partnerId))
+  if (typeof key !== 'string') return false;
+  const parts = key.split('_fdata_');
+  if (parts.length < 2) return false;
+  const partnerId = parts[1];
+  return !!partnerId && !Number.isNaN(Number(partnerId));
 }
 
 /**
@@ -30,15 +30,15 @@ export function isPartnerDataKey(key) {
 export function readData(key, allowedStorage) {
   try {
     if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-      return storage.getDataFromLocalStorage(key)
+      return storage.getDataFromLocalStorage(key);
     }
     if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-      return storage.getCookie(key)
+      return storage.getCookie(key);
     }
   } catch (error) {
-    logError(`${MODULE_NAME}: Error reading data`, error)
+    logError(`${MODULE_NAME}: Error reading data`, error);
   }
-  return null
+  return null;
 }
 
 /**
@@ -57,33 +57,33 @@ export function storeData(key, value, allowedStorage, firstPartyData) {
       // - Partner data (_iiq_fdata_<partnerId>): persist only terminationCause.
       // - Anything else: do not persist.
       if (key === FIRST_PARTY_KEY) {
-        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? { ...value } : null)
+        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? { ...value } : null);
         if (parsed) {
-          delete parsed.pcid
-          delete parsed.pcidDate
-          delete parsed.pid
-          delete parsed.abTestUuid
-          value = JSON.stringify(parsed)
+          delete parsed.pcid;
+          delete parsed.pcidDate;
+          delete parsed.pid;
+          delete parsed.abTestUuid;
+          value = JSON.stringify(parsed);
         }
       } else if (isPartnerDataKey(key)) {
-        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? value : null)
-        value = JSON.stringify({ terminationCause: parsed ? parsed.terminationCause : undefined })
+        const parsed = typeof value === 'string' ? tryParse(value) : (value && typeof value === 'object' ? value : null);
+        value = JSON.stringify({ terminationCause: parsed ? parsed.terminationCause : undefined });
       } else {
-        return
+        return;
       }
     }
-    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value)
+    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
     if (value) {
       if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-        storage.setDataInLocalStorage(key, value)
+        storage.setDataInLocalStorage(key, value);
       }
       if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-        const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString()
-        storage.setCookie(key, value, expiresStr, 'LAX')
+        const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
+        storage.setCookie(key, value, expiresStr, 'LAX');
       }
     }
   } catch (error) {
-    logError(error)
+    logError(error);
   }
 }
 
@@ -95,14 +95,14 @@ export function storeData(key, value, allowedStorage, firstPartyData) {
 export function removeDataByKey(key, allowedStorage) {
   try {
     if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-      storage.removeDataFromLocalStorage(key)
+      storage.removeDataFromLocalStorage(key);
     }
     if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-      const expiredDate = new Date(0).toUTCString()
-      storage.setCookie(key, '', expiredDate, 'LAX')
+      const expiredDate = new Date(0).toUTCString();
+      storage.setCookie(key, '', expiredDate, 'LAX');
     }
   } catch (error) {
-    logError(error)
+    logError(error);
   }
 }
 
@@ -114,9 +114,9 @@ export function removeDataByKey(key, allowedStorage) {
  * @return {Array<string>} - Returns an array with allowed storage types. Defaults to ['html5'] if no valid options are provided.
  */
 export function defineStorageType(params) {
-  if (!params || !Array.isArray(params)) return ['html5'] // use locale storage be default
-  const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item))
-  return filteredArr.length ? filteredArr : ['html5']
+  if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
+  const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
+  return filteredArr.length ? filteredArr : ['html5'];
 }
 
 /**
@@ -125,9 +125,9 @@ export function defineStorageType(params) {
  */
 export function tryParse(data) {
   try {
-    return JSON.parse(data)
+    return JSON.parse(data);
   } catch (err) {
-    logError(err)
-    return null
+    logError(err);
+    return null;
   }
 }

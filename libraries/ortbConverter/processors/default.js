@@ -1,11 +1,11 @@
-import { generateUUID, mergeDeep } from '../../../src/utils.js'
-import { bannerResponseProcessor, fillBannerImp } from './banner.js'
-import { fillVideoImp, fillVideoResponse } from './video.js'
-import { setResponseMediaType } from './mediaType.js'
-import { fillNativeImp, fillNativeResponse } from './native.js'
-import { BID_RESPONSE, IMP, REQUEST } from '../../../src/pbjsORTB.js'
-import { clientSectionChecker } from '../../../src/fpd/oneClient.js'
-import { fillAudioImp, fillAudioResponse } from './audio.js'
+import { generateUUID, mergeDeep } from '../../../src/utils.js';
+import { bannerResponseProcessor, fillBannerImp } from './banner.js';
+import { fillVideoImp, fillVideoResponse } from './video.js';
+import { setResponseMediaType } from './mediaType.js';
+import { fillNativeImp, fillNativeResponse } from './native.js';
+import { BID_RESPONSE, IMP, REQUEST } from '../../../src/pbjsORTB.js';
+import { clientSectionChecker } from '../../../src/fpd/oneClient.js';
+import { fillAudioImp, fillAudioResponse } from './audio.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -13,7 +13,7 @@ export const DEFAULT_PROCESSORS = {
       // sets initial request to bidderRequest.ortb2
       priority: 99,
       fn(ortbRequest, bidderRequest) {
-        mergeDeep(ortbRequest, bidderRequest.ortb2)
+        mergeDeep(ortbRequest, bidderRequest.ortb2);
       }
     },
     onlyOneClient: {
@@ -27,10 +27,10 @@ export const DEFAULT_PROCESSORS = {
         Object.assign(ortbRequest, {
           id: ortbRequest.id || generateUUID(),
           test: ortbRequest.test || 0
-        })
-        const timeout = parseInt(bidderRequest.timeout, 10)
+        });
+        const timeout = parseInt(bidderRequest.timeout, 10);
         if (!isNaN(timeout)) {
-          ortbRequest.tmax = timeout
+          ortbRequest.tmax = timeout;
         }
       }
     }
@@ -40,13 +40,13 @@ export const DEFAULT_PROCESSORS = {
       // sets initial imp to bidRequest.ortb2Imp
       priority: 99,
       fn(imp, bidRequest) {
-        mergeDeep(imp, bidRequest.ortb2Imp)
+        mergeDeep(imp, bidRequest.ortb2Imp);
       }
     },
     id: {
       // sets imp.id
       fn(imp, bidRequest) {
-        imp.id = bidRequest.bidId
+        imp.id = bidRequest.bidId;
       }
     },
     banner: {
@@ -56,7 +56,7 @@ export const DEFAULT_PROCESSORS = {
     secure: {
       // should set imp.secure to 1 unless publisher has set it
       fn(imp, bidRequest) {
-        imp.secure = imp.secure ?? 1
+        imp.secure = imp.secure ?? 1;
       }
     }
   },
@@ -91,64 +91,64 @@ export const DEFAULT_PROCESSORS = {
           duration: bid.dur,
         }).filter(([k, v]) => typeof v !== 'undefined')
           .forEach(([k, v]) => {
-            bidResponse[k] = v
-          })
+            bidResponse[k] = v;
+          });
         if (!bidResponse.meta) {
-          bidResponse.meta = {}
+          bidResponse.meta = {};
         }
         if (bid.adomain) {
-          bidResponse.meta.advertiserDomains = bid.adomain
+          bidResponse.meta.advertiserDomains = bid.adomain;
         }
         if (bid.ext?.dsa) {
-          bidResponse.meta.dsa = bid.ext.dsa
+          bidResponse.meta.dsa = bid.ext.dsa;
         }
         if (bid.cat) {
-          bidResponse.meta.primaryCatId = bid.cat[0]
-          bidResponse.meta.secondaryCatIds = bid.cat.slice(1)
+          bidResponse.meta.primaryCatId = bid.cat[0];
+          bidResponse.meta.secondaryCatIds = bid.cat.slice(1);
         }
         if (bid.attr) {
-          bidResponse.meta.attr = bid.attr
+          bidResponse.meta.attr = bid.attr;
         }
         if (bid.ext?.eventtrackers) {
-          bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers)
+          bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers);
         }
         if (bid.cattax) {
-          bidResponse.meta.cattax = bid.cattax
+          bidResponse.meta.cattax = bid.cattax;
         }
       }
     }
   }
-}
+};
 
 if (FEATURES.NATIVE) {
   DEFAULT_PROCESSORS[IMP].native = {
     // populates imp.native
     fn: fillNativeImp
-  }
+  };
   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
     // populates bidResponse.native if bidResponse.mediaType === NATIVE
     fn: fillNativeResponse
-  }
+  };
 }
 
 if (FEATURES.VIDEO) {
   DEFAULT_PROCESSORS[IMP].video = {
     // populates imp.video
     fn: fillVideoImp
-  }
+  };
   DEFAULT_PROCESSORS[BID_RESPONSE].video = {
     // sets video response attributes if bidResponse.mediaType === VIDEO
     fn: fillVideoResponse
-  }
+  };
 }
 
 if (FEATURES.AUDIO) {
   DEFAULT_PROCESSORS[IMP].audio = {
     // populates imp.audio
     fn: fillAudioImp
-  }
+  };
   DEFAULT_PROCESSORS[BID_RESPONSE].audio = {
     // sets video response attributes if bidResponse.mediaType === AUDIO
     fn: fillAudioResponse
-  }
+  };
 }

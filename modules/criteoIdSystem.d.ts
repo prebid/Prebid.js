@@ -1,4 +1,4 @@
-export type CriteoIdSystemModuleName = 'criteo'
+export type CriteoIdSystemModuleName = 'criteo';
 
 declare module './userId/spec' {
   interface UserId {
@@ -14,4 +14,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

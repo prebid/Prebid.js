@@ -1,9 +1,9 @@
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
-import adapterManager from '../src/adapterManager.js'
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
-const pianoDmpAnalytics = adapter({ analyticsType: 'bundle', handler: 'on' })
+const pianoDmpAnalytics = adapter({ analyticsType: 'bundle', handler: 'on' });
 
-const { enableAnalytics: _enableAnalytics } = pianoDmpAnalytics
+const { enableAnalytics: _enableAnalytics } = pianoDmpAnalytics;
 
 Object.assign(pianoDmpAnalytics, {
   /**
@@ -13,7 +13,7 @@ Object.assign(pianoDmpAnalytics, {
     window.cX.callQueue.push([
       'prebid',
       { eventType, params, time: Date.now() },
-    ])
+    ]);
   },
 
   /**
@@ -22,17 +22,17 @@ Object.assign(pianoDmpAnalytics, {
    * by the 'track' function above.
    */
   enableAnalytics: function (...args) {
-    window.cX = window.cX || {}
-    window.cX.callQueue = window.cX.callQueue || []
+    window.cX = window.cX || {};
+    window.cX.callQueue = window.cX.callQueue || [];
 
-    return _enableAnalytics.call(this, ...args)
+    return _enableAnalytics.call(this, ...args);
   },
-})
+});
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pianoDmpAnalytics,
   code: 'pianoDmp',
   gvlid: 412,
-})
+});
 
-export default pianoDmpAnalytics
+export default pianoDmpAnalytics;

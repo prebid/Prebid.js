@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js'
-import { logInfo, isArray } from '../src/utils.js'
-import { VENDORLESS_GVLID } from '../src/consentHandler.js'
+import { submodule } from '../src/hook.js';
+import { logInfo, isArray } from '../src/utils.js';
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -20,7 +20,7 @@ import { VENDORLESS_GVLID } from '../src/consentHandler.js'
 /**
  * @type {PubProvidedIdSystemModuleName}
  */
-const MODULE_NAME = 'pubProvidedId'
+const MODULE_NAME = 'pubProvidedId';
 
 /** @type {IdProviderSpec<PubProvidedIdSystemModuleName>} */
 export const pubProvidedIdSubmodule = {
@@ -39,9 +39,9 @@ export const pubProvidedIdSubmodule = {
    * @returns {{pubProvidedId: Array}} or undefined if value doesn't exists
    */
   decode(value) {
-    const res = value ? { pubProvidedId: value } : undefined
-    logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res))
-    return res
+    const res = value ? { pubProvidedId: value } : undefined;
+    logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res));
+    return res;
   },
 
   /**
@@ -51,17 +51,17 @@ export const pubProvidedIdSubmodule = {
    * @returns {{id: Array}}
    */
   getId(config) {
-    const configParams = (config && config.params) || {}
-    let res = []
+    const configParams = (config && config.params) || {};
+    let res = [];
     if (isArray(configParams.eids)) {
-      res = res.concat(configParams.eids)
+      res = res.concat(configParams.eids);
     }
     if (typeof configParams.eidsFunction === 'function') {
-      res = res.concat(configParams.eidsFunction())
+      res = res.concat(configParams.eidsFunction());
     }
-    return { id: res }
+    return { id: res };
   }
-}
+};
 
 // Register submodule for userId
-submodule('userId', pubProvidedIdSubmodule)
+submodule('userId', pubProvidedIdSubmodule);

@@ -1,24 +1,24 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { config } from '../src/config.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-export const ADAPTER_VERSION = '1.0.0'
-const GVLID = 728
-const SUPPORTED_AD_TYPES = [BANNER]
+export const ADAPTER_VERSION = '1.0.0';
+const GVLID = 728;
+const SUPPORTED_AD_TYPES = [BANNER];
 
 // we have different servers for different regions / farms
 export const API_SERVERS_MAP = {
   'default': 'ad2.apx.appier.net',
   'tw': 'ad2.apx.appier.net',
   'jp': 'ad-jp.apx.appier.net'
-}
+};
 
-const BIDDER_API_ENDPOINT = '/v1/prebid/bid'
+const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
 
 export const spec = {
   code: 'appier',
@@ -33,7 +33,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid.params.hzid === 'string'
+    return typeof bid.params.hzid === 'string';
   },
 
   /**
@@ -44,23 +44,23 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
-      return []
+      return [];
     }
-    const server = this.getApiServer()
-    const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
+    const server = this.getApiServer();
+    const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`;
     const payload = {
       'bids': bidRequests,
       // TODO: please do not pass internal data structures over to the network
       'refererInfo': bidderRequest.refererInfo.legacy,
       'version': ADAPTER_VERSION
-    }
+    };
     return [{
       method: 'POST',
       url: bidderApiUrl,
       data: payload,
       // keep the bidder request object for later use
       bidderRequest: bidderRequest
-    }]
+    }];
   },
 
   /**
@@ -71,13 +71,13 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, serverRequest) {
     if (!Array.isArray(serverResponse.body)) {
-      return []
+      return [];
     }
     // server response body is an array of bid results
-    const bidResults = serverResponse.body
+    const bidResults = serverResponse.body;
     // our server directly returns the format needed by prebid.js so no more
     // transformation is needed here.
-    return bidResults
+    return bidResults;
   },
 
   /**
@@ -86,13 +86,13 @@ export const spec = {
   getApiServer() {
     // we may use different servers for different farms (geographical regions)
     // if a server is specified explicitly, use it. otherwise, use farm specific server.
-    let server = config.getConfig('appier.server')
+    let server = config.getConfig('appier.server');
     if (!server) {
-      const farm = config.getConfig('appier.farm')
-      server = API_SERVERS_MAP[farm] || API_SERVERS_MAP['default']
+      const farm = config.getConfig('appier.farm');
+      server = API_SERVERS_MAP[farm] || API_SERVERS_MAP['default'];
     }
-    return server
+    return server;
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

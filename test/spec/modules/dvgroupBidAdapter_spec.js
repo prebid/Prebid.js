@@ -1,6 +1,6 @@
-import { expect } from 'chai'
-import { spec } from 'modules/dvgroupBidAdapter.js'
-import { deepClone } from 'src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/dvgroupBidAdapter.js';
+import { deepClone } from 'src/utils.js';
 
 describe('dvgroupBidAdapterTests', function () {
   const bidRequestData = {
@@ -23,7 +23,7 @@ describe('dvgroupBidAdapterTests', function () {
         requestId: 'request-123',
       }
     ]
-  }
+  };
 
   it('validate_pub_params', function () {
     expect(
@@ -33,15 +33,15 @@ describe('dvgroupBidAdapterTests', function () {
           sspId: 'prebidssp',
         }
       })
-    ).to.equal(true)
-  })
+    ).to.equal(true);
+  });
 
   it('validate_generated_url', function () {
-    const request = spec.buildRequests(deepClone(bidRequestData.bids), { timeout: 1234 })
-    const req_url = request[0].url
+    const request = spec.buildRequests(deepClone(bidRequestData.bids), { timeout: 1234 });
+    const req_url = request[0].url;
 
-    expect(req_url).to.equal('https://rtb.dvgroup.com/bid?sspuid=prebidssp')
-  })
+    expect(req_url).to.equal('https://rtb.dvgroup.com/bid?sspuid=prebidssp');
+  });
 
   it('validate_response_params', function () {
     const serverResponse = {
@@ -73,9 +73,9 @@ describe('dvgroupBidAdapterTests', function () {
         ],
         cur: 'EUR',
       }
-    }
+    };
 
-    const bidRequest = deepClone(bidRequestData.bids)
+    const bidRequest = deepClone(bidRequestData.bids);
     bidRequest[0].mediaTypes = {
       banner: {
         sizes: [
@@ -83,28 +83,28 @@ describe('dvgroupBidAdapterTests', function () {
           [300, 600],
         ],
       }
-    }
+    };
 
-    const request = spec.buildRequests(bidRequest)
-    const bids = spec.interpretResponse(serverResponse, request[0])
-    expect(bids).to.have.lengthOf(1)
+    const request = spec.buildRequests(bidRequest);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
+    expect(bids).to.have.lengthOf(1);
 
-    const bid = bids[0]
-    expect(bid.ad).to.equal('<h1>AD</h1>')
-    expect(bid.cpm).to.equal(0.9899)
-    expect(bid.currency).to.equal('EUR')
-    expect(bid.width).to.equal(300)
-    expect(bid.height).to.equal(600)
-    expect(bid.creativeId).to.equal('654231')
-    expect(bid.meta.advertiserDomains).to.deep.equal(['adomain.com'])
-  })
+    const bid = bids[0];
+    expect(bid.ad).to.equal('<h1>AD</h1>');
+    expect(bid.cpm).to.equal(0.9899);
+    expect(bid.currency).to.equal('EUR');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(600);
+    expect(bid.creativeId).to.equal('654231');
+    expect(bid.meta.advertiserDomains).to.deep.equal(['adomain.com']);
+  });
 
   it('validate_invalid_response', function () {
     const serverResponse = {
       body: {}
-    }
+    };
 
-    const bidRequest = deepClone(bidRequestData.bids)
+    const bidRequest = deepClone(bidRequestData.bids);
     bidRequest[0].mediaTypes = {
       banner: {
         sizes: [
@@ -112,24 +112,24 @@ describe('dvgroupBidAdapterTests', function () {
           [300, 600],
         ],
       }
-    }
+    };
 
-    const request = spec.buildRequests(bidRequest)
-    const bids = spec.interpretResponse(serverResponse, request[0])
-    expect(bids).to.have.lengthOf(0)
-  })
+    const request = spec.buildRequests(bidRequest);
+    const bids = spec.interpretResponse(serverResponse, request[0]);
+    expect(bids).to.have.lengthOf(0);
+  });
 
   if (FEATURES.VIDEO) {
     it('video_bid', function () {
-      const bidRequest = deepClone(bidRequestData.bids)
+      const bidRequest = deepClone(bidRequestData.bids);
       bidRequest[0].mediaTypes = {
         video: {
           playerSize: [234, 765]
         }
-      }
+      };
 
-      const request = spec.buildRequests(bidRequest, { timeout: 1234 })
-      const vastXml = '<VAST></VAST>'
+      const request = spec.buildRequests(bidRequest, { timeout: 1234 });
+      const vastXml = '<VAST></VAST>';
       const serverResponse = {
         body: {
           id: 'bid123',
@@ -159,38 +159,38 @@ describe('dvgroupBidAdapterTests', function () {
           ],
           cur: 'EUR',
         }
-      }
+      };
 
-      const bids = spec.interpretResponse(serverResponse, request[0])
-      expect(bids).to.have.lengthOf(1)
+      const bids = spec.interpretResponse(serverResponse, request[0]);
+      expect(bids).to.have.lengthOf(1);
 
-      const bid = bids[0]
-      expect(bid.mediaType).to.equal('video')
-      expect(bid.vastXml).to.equal(vastXml)
-      expect(bid.width).to.equal(300)
-      expect(bid.height).to.equal(600)
-    })
+      const bid = bids[0];
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.vastXml).to.equal(vastXml);
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(600);
+    });
   }
-})
+});
 
 describe('getUserSyncs', function() {
   it('returns empty sync array', function() {
-    const syncOptions = {}
+    const syncOptions = {};
 
-    expect(spec.getUserSyncs(syncOptions)).to.deep.equal([])
-  })
+    expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
+  });
 
   it('Should return array of objects with proper sync config , include CCPA', function() {
     const syncData = spec.getUserSyncs({
       pixelEnabled: true,
-    }, {}, {}, '1---')
-    expect(syncData).to.be.an('array').which.is.not.empty
-    expect(syncData[0]).to.be.an('object')
-    expect(syncData[0].type).to.be.a('string')
-    expect(syncData[0].type).to.equal('image')
-    expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=1---&gdpr_consent=')
-  })
+    }, {}, {}, '1---');
+    expect(syncData).to.be.an('array').which.is.not.empty;
+    expect(syncData[0]).to.be.an('object');
+    expect(syncData[0].type).to.be.a('string');
+    expect(syncData[0].type).to.equal('image');
+    expect(syncData[0].url).to.be.a('string');
+    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=1---&gdpr_consent=');
+  });
 
   it('Should return array of objects with proper sync config , include GDPR', function() {
     const syncData = spec.getUserSyncs({
@@ -205,14 +205,14 @@ describe('getUserSyncs', function() {
           },
         },
       }
-    }, '')
-    expect(syncData).to.be.an('array').which.is.not.empty
-    expect(syncData[0]).to.be.an('object')
-    expect(syncData[0].type).to.be.a('string')
-    expect(syncData[0].type).to.equal('image')
-    expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1')
-  })
+    }, '');
+    expect(syncData).to.be.an('array').which.is.not.empty;
+    expect(syncData[0]).to.be.an('object');
+    expect(syncData[0].type).to.be.a('string');
+    expect(syncData[0].type).to.equal('image');
+    expect(syncData[0].url).to.be.a('string');
+    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1');
+  });
 
   it('Should return array of objects with proper sync config , include GDPR, no purpose', function() {
     const syncData = spec.getUserSyncs({
@@ -227,9 +227,9 @@ describe('getUserSyncs', function() {
           },
         },
       }
-    }, '')
-    expect(syncData).is.empty
-  })
+    }, '');
+    expect(syncData).is.empty;
+  });
 
   it('Should return array of objects with proper sync config , GDPR not applies', function() {
     const syncData = spec.getUserSyncs({
@@ -237,12 +237,12 @@ describe('getUserSyncs', function() {
     }, {}, {
       gdprApplies: false,
       consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
-    }, '')
-    expect(syncData).to.be.an('array').which.is.not.empty
-    expect(syncData[0]).to.be.an('object')
-    expect(syncData[0].type).to.be.a('string')
-    expect(syncData[0].type).to.equal('image')
-    expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=0')
-  })
-})
+    }, '');
+    expect(syncData).to.be.an('array').which.is.not.empty;
+    expect(syncData[0]).to.be.an('object');
+    expect(syncData[0].type).to.be.a('string');
+    expect(syncData[0].type).to.equal('image');
+    expect(syncData[0].url).to.be.a('string');
+    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=0');
+  });
+});

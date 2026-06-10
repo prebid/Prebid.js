@@ -1,12 +1,12 @@
-import { loadExternalScript } from './adloader.js'
+import { loadExternalScript } from './adloader.js';
 import {
   logError, logWarn, logMessage
-} from './utils.js'
-import { getGlobal } from './prebidGlobal.js'
-import { MODULE_TYPE_PREBID } from './activities/modules.js'
+} from './utils.js';
+import { getGlobal } from './prebidGlobal.js';
+import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
-const pbjsInstance = getGlobal()
-const moduleCode = 'outstream'
+const pbjsInstance = getGlobal();
+const moduleCode = 'outstream';
 
 /**
  * @typedef {object} Renderer
@@ -17,55 +17,55 @@ const moduleCode = 'outstream'
  */
 
 export function Renderer(options) {
-  const { url, config, id, callback, loaded, adUnitCode, renderNow } = options
-  this.url = url
-  this.config = config
-  this.handlers = {}
-  this.id = id
-  this.renderNow = renderNow
-  this.adUnitCode = adUnitCode
+  const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
+  this.url = url;
+  this.config = config;
+  this.handlers = {};
+  this.id = id;
+  this.renderNow = renderNow;
+  this.adUnitCode = adUnitCode;
 
   // a renderer may push to the command queue to delay rendering until the
   // render function is loaded by loadExternalScript, at which point the the command
   // queue will be processed
-  this.loaded = loaded
-  this.cmd = []
+  this.loaded = loaded;
+  this.cmd = [];
   this.push = func => {
     if (typeof func !== 'function') {
-      logError('Commands given to Renderer.push must be wrapped in a function')
-      return
+      logError('Commands given to Renderer.push must be wrapped in a function');
+      return;
     }
-    this.loaded ? func.call() : this.cmd.push(func)
-  }
+    this.loaded ? func.call() : this.cmd.push(func);
+  };
 
   // bidders may override this with the `callback` property given to `install`
   this.callback = callback || (() => {
-    this.loaded = true
-    this.process()
-  })
+    this.loaded = true;
+    this.process();
+  });
 
   // use a function, not an arrow, in order to be able to pass "arguments" through
   this.render = function () {
-    const renderArgs = arguments
+    const renderArgs = arguments;
     const runRender = () => {
       if (this._render) {
-        this._render.apply(this, renderArgs)
+        this._render.apply(this, renderArgs);
       } else {
-        logWarn(`No render function was provided, please use .setRender on the renderer`)
+        logWarn(`No render function was provided, please use .setRender on the renderer`);
       }
-    }
+    };
 
     if (isRendererPreferredFromAdUnit(adUnitCode)) {
-      logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`)
-      runRender()
+      logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
+      runRender();
     } else if (renderNow) {
-      runRender()
+      runRender();
     } else {
       // we expect to load a renderer url once only so cache the request to load script
-      this.cmd.unshift(runRender) // should render run first ?
-      loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, this.callback, this.documentContext)
+      this.cmd.unshift(runRender); // should render run first ?
+      loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, this.callback, this.documentContext);
     }
-  }.bind(this) // bind the function to this object to avoid 'this' errors
+  }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
 /**
@@ -73,28 +73,28 @@ export function Renderer(options) {
  * @return {Renderer}
  */
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
-  return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow })
-}
+  return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
+};
 
 Renderer.prototype.getConfig = function() {
-  return this.config
-}
+  return this.config;
+};
 
 Renderer.prototype.setRender = function(fn) {
-  this._render = fn
-}
+  this._render = fn;
+};
 
 Renderer.prototype.setEventHandlers = function(handlers) {
-  this.handlers = handlers
-}
+  this.handlers = handlers;
+};
 
 Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
   if (typeof this.handlers[eventName] === 'function') {
-    this.handlers[eventName]()
+    this.handlers[eventName]();
   }
 
-  logMessage(`Prebid Renderer event for id ${id} type ${eventName}`)
-}
+  logMessage(`Prebid Renderer event for id ${id} type ${eventName}`);
+};
 
 /*
  * Calls functions that were pushed to the command queue before the
@@ -103,12 +103,12 @@ Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
 Renderer.prototype.process = function() {
   while (this.cmd.length > 0) {
     try {
-      this.cmd.shift().call()
+      this.cmd.shift().call();
     } catch (error) {
-      logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, error)
+      logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, error);
     }
   }
-}
+};
 
 /**
  * Checks whether creative rendering should be done by Renderer or not.
@@ -116,7 +116,7 @@ Renderer.prototype.process = function() {
  * @returns {Boolean}
  */
 export function isRendererRequired(renderer) {
-  return !!(renderer && (renderer.url || renderer.renderNow))
+  return !!(renderer && (renderer.url || renderer.renderNow));
 }
 
 /**
@@ -126,37 +126,37 @@ export function isRendererRequired(renderer) {
  * @param {Document} doc context document of bid
  */
 export function executeRenderer(renderer, bid, doc) {
-  let docContext = null
+  let docContext = null;
   if (renderer.config && renderer.config.documentResolver) {
-    docContext = renderer.config.documentResolver(bid, document, doc)// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
+    docContext = renderer.config.documentResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
   }
   if (!docContext) {
-    docContext = document
+    docContext = document;
   }
-  renderer.documentContext = docContext
-  renderer.render(bid, renderer.documentContext)
+  renderer.documentContext = docContext;
+  renderer.render(bid, renderer.documentContext);
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
-  const adUnits = pbjsInstance.adUnits
+  const adUnits = pbjsInstance.adUnits;
   const adUnit = adUnits.find(adUnit => {
-    return adUnit.code === adUnitCode
-  })
+    return adUnit.code === adUnitCode;
+  });
 
   if (!adUnit) {
-    return false
+    return false;
   }
 
   // renderer defined at adUnit level
-  const adUnitRenderer = adUnit?.renderer
-  const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render)
+  const adUnitRenderer = adUnit?.renderer;
+  const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = adUnit?.mediaTypes?.video?.renderer
-  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
+  const mediaTypeRenderer = adUnit?.mediaTypes?.video?.renderer;
+  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render);
 
   return !!(
     (hasValidAdUnitRenderer && !(adUnitRenderer.backupOnly === true)) ||
     (hasValidMediaTypeRenderer && !(mediaTypeRenderer.backupOnly === true))
-  )
+  );
 }

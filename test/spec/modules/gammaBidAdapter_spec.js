@@ -1,9 +1,9 @@
-import { expect } from 'chai'
-import { spec } from 'modules/gammaBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/gammaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('gammaBidAdapter', function() {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   const bid = {
     'bidder': 'gamma',
@@ -19,39 +19,39 @@ describe('gammaBidAdapter', function() {
     'bidId': '23beaa6af6cdde',
     'bidderRequestId': '19c0c1efdf37e7',
     'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
-  }
-  const bidArray = [bid]
+  };
+  const bidArray = [bid];
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when require params are not passed', () => {
-      const invalidBid = Object.assign({}, bid)
-      invalidBid.params = {}
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
+      const invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
 
     it('should return false when params not passed correctly', () => {
-      bid.params.siteId = ''
-      bid.params.zoneId = ''
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      bid.params.siteId = '';
+      bid.params.zoneId = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', () => {
     it('should attempt to send bid requests to the endpoint via GET', () => {
-      const requests = spec.buildRequests(bidArray)
+      const requests = spec.buildRequests(bidArray);
       requests.forEach(function(requestItem) {
-        expect(requestItem.method).to.equal('GET')
-        expect(requestItem.url).to.match(new RegExp(`hb.gammaplatform.com`))
-      })
-    })
-  })
+        expect(requestItem.method).to.equal('GET');
+        expect(requestItem.url).to.match(new RegExp(`hb.gammaplatform.com`));
+      });
+    });
+  });
 
   describe('interpretResponse', () => {
-    let serverResponse
+    let serverResponse;
 
     beforeEach(() => {
       serverResponse = {
@@ -75,8 +75,8 @@ describe('gammaBidAdapter', function() {
             }]
           }]
         }
-      }
-    })
+      };
+    });
 
     it('should get the correct bid response', () => {
       const expectedResponse = [{
@@ -91,17 +91,17 @@ describe('gammaBidAdapter', function() {
         'ttl': 300,
         'ad': '<!-- adtag -->',
         'meta': { 'advertiserDomains': ['testdomain.com'] }
-      }]
-      const result = spec.interpretResponse(serverResponse)
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse))
-    })
+      }];
+      const result = spec.interpretResponse(serverResponse);
+      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+    });
 
     it('handles empty bid response', () => {
       const response = {
         body: {}
-      }
-      const result = spec.interpretResponse(response)
-      expect(result.length).to.equal(0)
-    })
-  })
-})
+      };
+      const result = spec.interpretResponse(response);
+      expect(result.length).to.equal(0);
+    });
+  });
+});

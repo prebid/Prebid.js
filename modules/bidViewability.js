@@ -2,60 +2,60 @@
 // GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent
 // Does not work with other than GPT integration
 
-import { config } from '../src/config.js'
-import { isAdUnitCodeMatchingSlot, logWarn } from '../src/utils.js'
-import { getGlobal } from '../src/prebidGlobal.js'
-import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js'
+import { config } from '../src/config.js';
+import { isAdUnitCodeMatchingSlot, logWarn } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
 
-const MODULE_NAME = 'bidViewability'
-const CONFIG_ENABLED = 'enabled'
-const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable'
+const MODULE_NAME = 'bidViewability';
+const CONFIG_ENABLED = 'enabled';
+const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 
 export const getMatchingWinningBidForGPTSlot = (slot) => {
-  const match = isAdUnitCodeMatchingSlot(slot)
+  const match = isAdUnitCodeMatchingSlot(slot);
   return getGlobal().getAllWinningBids().find(
     // supports custom match function from config
     ({ adUnitCode }) => match(adUnitCode)
-  ) || null
-}
+  ) || null;
+};
 
 export const logWinningBidNotFound = (slot) => {
-  logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`)
-}
+  logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
+};
 
 export const impressionViewableHandler = (globalModuleConfig, event) => {
-  const slot = event.slot
-  const respectiveBid = getMatchingWinningBidForGPTSlot(slot)
+  const slot = event.slot;
+  const respectiveBid = getMatchingWinningBidForGPTSlot(slot);
 
   if (respectiveBid === null) {
-    logWinningBidNotFound(slot)
+    logWinningBidNotFound(slot);
   } else {
-    triggerBidViewable(respectiveBid)
+    triggerBidViewable(respectiveBid);
   }
-}
+};
 
 const handleSetConfig = (config) => {
-  const globalModuleConfig = config || {}
-  window.googletag = window.googletag || {}
-  window.googletag.cmd = window.googletag.cmd || []
+  const globalModuleConfig = config || {};
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
 
   // do nothing if module-config.enabled is not set to true
   // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
   const impressionViewableHandlerWrapper = (event) => {
-    impressionViewableHandler(globalModuleConfig, event)
-  }
+    impressionViewableHandler(globalModuleConfig, event);
+  };
 
   if (globalModuleConfig[CONFIG_ENABLED] !== true) {
     window.googletag.cmd.push(() => {
-      window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper)
-    })
-    return
+      window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
+    });
+    return;
   }
   // add the GPT event listener
   window.googletag.cmd.push(() => {
-    window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper)
-    window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper)
-  })
-}
+    window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
+    window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
+  });
+};
 
-config.getConfig(MODULE_NAME, config => handleSetConfig(config[MODULE_NAME]))
+config.getConfig(MODULE_NAME, config => handleSetConfig(config[MODULE_NAME]));

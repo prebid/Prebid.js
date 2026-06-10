@@ -1,15 +1,15 @@
-import { expect } from 'chai'
-import { spec } from 'modules/dasBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/dasBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('dasBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const validBid = {
@@ -19,19 +19,19 @@ describe('dasBidAdapter', function () {
         slot: 'slot1',
         network: 'network1'
       }
-    }
+    };
 
     it('should return true when required params are present', function () {
-      expect(spec.isBidRequestValid(validBid)).to.be.true
-    })
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
+    });
 
     it('should return false when required params are missing', function () {
-      expect(spec.isBidRequestValid({})).to.be.false
-      expect(spec.isBidRequestValid({ params: {} })).to.be.false
-      expect(spec.isBidRequestValid({ params: { site: 'site1' } })).to.be.false
-      expect(spec.isBidRequestValid({ params: { area: 'area1' } })).to.be.false
-      expect(spec.isBidRequestValid({ params: { slot: 'slot1' } })).to.be.false
-    })
+      expect(spec.isBidRequestValid({})).to.be.false;
+      expect(spec.isBidRequestValid({ params: {} })).to.be.false;
+      expect(spec.isBidRequestValid({ params: { site: 'site1' } })).to.be.false;
+      expect(spec.isBidRequestValid({ params: { area: 'area1' } })).to.be.false;
+      expect(spec.isBidRequestValid({ params: { slot: 'slot1' } })).to.be.false;
+    });
 
     it('should return true with additional optional params', function () {
       const bidWithOptional = {
@@ -54,13 +54,13 @@ describe('dasBidAdapter', function () {
             }
           }
         }
-      }
-      expect(spec.isBidRequestValid(bidWithOptional)).to.be.true
-    })
+      };
+      expect(spec.isBidRequestValid(bidWithOptional)).to.be.true;
+    });
 
     it('should return false when params is undefined', function () {
-      expect(spec.isBidRequestValid()).to.be.false
-    })
+      expect(spec.isBidRequestValid()).to.be.false;
+    });
 
     it('should return false when required params are empty strings', function () {
       const bidWithEmptyStrings = {
@@ -69,9 +69,9 @@ describe('dasBidAdapter', function () {
           area: '',
           slot: ''
         }
-      }
-      expect(spec.isBidRequestValid(bidWithEmptyStrings)).to.be.false
-    })
+      };
+      expect(spec.isBidRequestValid(bidWithEmptyStrings)).to.be.false;
+    });
 
     it('should return false when required params are non-string values', function () {
       const bidWithNonStringValues = {
@@ -80,16 +80,16 @@ describe('dasBidAdapter', function () {
           area: true,
           slot: {}
         }
-      }
-      expect(spec.isBidRequestValid(bidWithNonStringValues)).to.be.false
-    })
+      };
+      expect(spec.isBidRequestValid(bidWithNonStringValues)).to.be.false;
+    });
 
     it('should return false when params is null', function () {
       const bidWithNullParams = {
         params: null
-      }
-      expect(spec.isBidRequestValid(bidWithNullParams)).to.be.false
-    })
+      };
+      expect(spec.isBidRequestValid(bidWithNullParams)).to.be.false;
+    });
 
     it('should return true with minimal valid params', function () {
       const minimalBid = {
@@ -99,22 +99,22 @@ describe('dasBidAdapter', function () {
           slot: 'slot1',
           network: 'network1'
         }
-      }
-      expect(spec.isBidRequestValid(minimalBid)).to.be.true
-    })
+      };
+      expect(spec.isBidRequestValid(minimalBid)).to.be.true;
+    });
 
     it('should return false with partial required params', function () {
       const partialBids = [
         { params: { site: 'site1', area: 'area1' } },
         { params: { site: 'site1', slot: 'slot1' } },
         { params: { area: 'area1', slot: 'slot1' } }
-      ]
+      ];
 
       partialBids.forEach(bid => {
-        expect(spec.isBidRequestValid(bid)).to.be.false
-      })
-    })
-  })
+        expect(spec.isBidRequestValid(bid)).to.be.false;
+      });
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [{
@@ -138,7 +138,7 @@ describe('dasBidAdapter', function () {
           sizes: [[300, 250]]
         }
       }
-    }]
+    }];
 
     const bidderRequest = {
       bidderRequestId: 'reqId123',
@@ -154,39 +154,39 @@ describe('dasBidAdapter', function () {
       ortb2: {
         site: {}
       }
-    }
+    };
 
     it('should return proper request object', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const request = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(request.method).to.equal('GET')
-      expect(request.options.withCredentials).to.be.true
-      expect(request.options.crossOrigin).to.be.true
+      expect(request.method).to.equal('GET');
+      expect(request.options.withCredentials).to.be.true;
+      expect(request.options.crossOrigin).to.be.true;
 
-      expect(request.url).to.include('https://csr.onet.pl/network1/bid?data=')
-      const urlParts = request.url.split('?')
-      expect(urlParts.length).to.equal(2)
+      expect(request.url).to.include('https://csr.onet.pl/network1/bid?data=');
+      const urlParts = request.url.split('?');
+      expect(urlParts.length).to.equal(2);
 
-      const params = new URLSearchParams(urlParts[1])
-      expect(params.has('data')).to.be.true
+      const params = new URLSearchParams(urlParts[1]);
+      expect(params.has('data')).to.be.true;
 
-      const payload = JSON.parse(decodeURIComponent(params.get('data')))
-      expect(payload.id).to.equal('reqId123')
-      expect(payload.imp[0].id).to.equal('bid123')
-      expect(payload.imp[0].tagid).to.equal('slot1')
-      expect(payload.imp[0].banner.format[0]).to.deep.equal({ w: 300, h: 250 })
-    })
+      const payload = JSON.parse(decodeURIComponent(params.get('data')));
+      expect(payload.id).to.equal('reqId123');
+      expect(payload.imp[0].id).to.equal('bid123');
+      expect(payload.imp[0].tagid).to.equal('slot1');
+      expect(payload.imp[0].banner.format[0]).to.deep.equal({ w: 300, h: 250 });
+    });
 
     it('should use GET method when URL is under 8192 characters', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
-      expect(request.method).to.equal('GET')
-      expect(request.url).to.include('?data=')
-      expect(request.data).to.be.undefined
-    })
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.method).to.equal('GET');
+      expect(request.url).to.include('?data=');
+      expect(request.data).to.be.undefined;
+    });
 
     it('should switch to POST method when URL exceeds 8192 characters', function () {
       // Create a large bid request that will result in URL > 8k characters
-      const largeBidRequests = []
+      const largeBidRequests = [];
       for (let i = 0; i < 50; i++) {
         largeBidRequests.push({
           bidId: `bid${i}`.repeat(20), // Make bid IDs longer
@@ -214,21 +214,21 @@ describe('dasBidAdapter', function () {
               sizes: [[300, 250], [728, 90], [970, 250]]
             }
           }
-        })
+        });
       }
 
-      const request = spec.buildRequests(largeBidRequests, bidderRequest)
+      const request = spec.buildRequests(largeBidRequests, bidderRequest);
 
-      expect(request.method).to.equal('POST')
-      expect(request.url).to.equal('https://csr.onet.pl/network1/bid')
-      expect(request.data).to.be.a('string')
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://csr.onet.pl/network1/bid');
+      expect(request.data).to.be.a('string');
 
       // Check if data is valid JSON (not URL-encoded form data)
-      const payload = JSON.parse(request.data)
-      expect(payload.id).to.equal('reqId123')
-      expect(payload.imp).to.be.an('array')
-      expect(request.options.customHeaders['Content-Type']).to.equal('text/plain')
-    })
+      const payload = JSON.parse(request.data);
+      expect(payload.id).to.equal('reqId123');
+      expect(payload.imp).to.be.an('array');
+      expect(request.options.customHeaders['Content-Type']).to.equal('text/plain');
+    });
 
     it('should create valid POST data format', function () {
       // Create a request that will trigger POST
@@ -250,18 +250,18 @@ describe('dasBidAdapter', function () {
             sizes: [[300, 250]]
           }
         }
-      }))
+      }));
 
-      const request = spec.buildRequests(largeBidRequests, bidderRequest)
+      const request = spec.buildRequests(largeBidRequests, bidderRequest);
 
-      expect(request.method).to.equal('POST')
+      expect(request.method).to.equal('POST');
 
       // Parse the POST data as JSON (not URL-encoded)
-      const payload = JSON.parse(request.data)
-      expect(payload.id).to.equal('reqId123')
-      expect(payload.imp).to.be.an('array').with.length(50)
-      expect(payload.ext.network).to.equal('network1')
-    })
+      const payload = JSON.parse(request.data);
+      expect(payload.id).to.equal('reqId123');
+      expect(payload.imp).to.be.an('array').with.length(50);
+      expect(payload.ext.network).to.equal('network1');
+    });
 
     it('should set withCredentials to false when adbeta flag is present', function () {
       const bidRequestsWithAdbeta = [{
@@ -279,18 +279,18 @@ describe('dasBidAdapter', function () {
             sizes: [[300, 250]]
           }
         }
-      }]
+      }];
 
       const bidderRequestWithAdbeta = {
         bidderRequestId: 'reqId123',
         ortb2: {},
         adbeta: true
-      }
+      };
 
-      const request = spec.buildRequests(bidRequestsWithAdbeta, bidderRequestWithAdbeta)
+      const request = spec.buildRequests(bidRequestsWithAdbeta, bidderRequestWithAdbeta);
 
-      expect(request.options.withCredentials).to.be.false
-    })
+      expect(request.options.withCredentials).to.be.false;
+    });
 
     describe('interpretResponse', function () {
       const serverResponse = {
@@ -309,12 +309,12 @@ describe('dasBidAdapter', function () {
           }],
           cur: 'USD'
         }
-      }
+      };
 
       it('should return proper bid response', function () {
-        const bidResponses = spec.interpretResponse(serverResponse)
+        const bidResponses = spec.interpretResponse(serverResponse);
 
-        expect(bidResponses).to.be.an('array').with.lengthOf(1)
+        expect(bidResponses).to.be.an('array').with.lengthOf(1);
         expect(bidResponses[0]).to.deep.include({
           requestId: 'bid123',
           cpm: 3.5,
@@ -326,15 +326,15 @@ describe('dasBidAdapter', function () {
           netRevenue: true,
           ttl: 300,
           mediaType: 'banner'
-        })
-        expect(bidResponses[0].meta.advertiserDomains).to.deep.equal(['advertiser.com'])
-      })
+        });
+        expect(bidResponses[0].meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+      });
 
       it('should return empty array when no valid responses', function () {
-        expect(spec.interpretResponse({ body: null })).to.be.an('array').that.is.empty
-        expect(spec.interpretResponse({ body: {} })).to.be.an('array').that.is.empty
-        expect(spec.interpretResponse({ body: { seatbid: [] } })).to.be.an('array').that.is.empty
-      })
+        expect(spec.interpretResponse({ body: null })).to.be.an('array').that.is.empty;
+        expect(spec.interpretResponse({ body: {} })).to.be.an('array').that.is.empty;
+        expect(spec.interpretResponse({ body: { seatbid: [] } })).to.be.an('array').that.is.empty;
+      });
 
       it('should return proper bid response for native', function () {
         const nativeResponse = {
@@ -378,11 +378,11 @@ describe('dasBidAdapter', function () {
             }],
             cur: 'USD'
           }
-        }
+        };
 
-        const bidResponses = spec.interpretResponse(nativeResponse)
+        const bidResponses = spec.interpretResponse(nativeResponse);
 
-        expect(bidResponses).to.be.an('array').with.lengthOf(1)
+        expect(bidResponses).to.be.an('array').with.lengthOf(1);
         expect(bidResponses[0]).to.deep.include({
           requestId: 'bid123',
           cpm: 3.5,
@@ -414,11 +414,11 @@ describe('dasBidAdapter', function () {
           netRevenue: true,
           ttl: 300,
           mediaType: 'native'
-        })
+        });
 
-        expect(bidResponses[0]).to.not.have.property('ad')
-      })
-    })
+        expect(bidResponses[0]).to.not.have.property('ad');
+      });
+    });
 
     it('should return empty object when adm in a native response is not JSON', function () {
       const nativeResponse = {
@@ -435,11 +435,11 @@ describe('dasBidAdapter', function () {
           }],
           cur: 'USD'
         }
-      }
+      };
 
-      const bidResponses = spec.interpretResponse(nativeResponse)
-      expect(bidResponses[0].native).to.deep.equal({})
-    })
+      const bidResponses = spec.interpretResponse(nativeResponse);
+      expect(bidResponses[0].native).to.deep.equal({});
+    });
 
     it('should return empty object when adm in a native response is missing required fields/meta', function () {
       const nativeResponse = {
@@ -456,11 +456,11 @@ describe('dasBidAdapter', function () {
           }],
           cur: 'USD'
         }
-      }
+      };
 
-      const bidResponses = spec.interpretResponse(nativeResponse)
-      expect(bidResponses[0].native).to.deep.equal({})
-    })
+      const bidResponses = spec.interpretResponse(nativeResponse);
+      expect(bidResponses[0].native).to.deep.equal({});
+    });
 
     it('should return empty object when adm in a native response is empty JSON object', function () {
       const nativeResponse = {
@@ -477,11 +477,11 @@ describe('dasBidAdapter', function () {
           }],
           cur: 'USD'
         }
-      }
+      };
 
-      const bidResponses = spec.interpretResponse(nativeResponse)
-      expect(bidResponses[0].native).to.deep.equal({})
-    })
+      const bidResponses = spec.interpretResponse(nativeResponse);
+      expect(bidResponses[0].native).to.deep.equal({});
+    });
 
     it('should return empty object when adm in a native response is null or missing', function () {
       const nativeResponse = {
@@ -498,10 +498,10 @@ describe('dasBidAdapter', function () {
           }],
           cur: 'USD'
         }
-      }
+      };
 
-      const bidResponses = spec.interpretResponse(nativeResponse)
-      expect(bidResponses[0].native).to.deep.equal({})
-    })
-  })
-})
+      const bidResponses = spec.interpretResponse(nativeResponse);
+      expect(bidResponses[0].native).to.deep.equal({});
+    });
+  });
+});

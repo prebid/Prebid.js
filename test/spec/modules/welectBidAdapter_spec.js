@@ -1,18 +1,18 @@
-import { expect } from 'chai'
-import { spec as adapter } from 'modules/welectBidAdapter.js'
+import { expect } from 'chai';
+import { spec as adapter } from 'modules/welectBidAdapter.js';
 
 describe('WelectAdapter', function () {
   describe('Check methods existance', function () {
     it('exists and is a function', function () {
-      expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
+    });
     it('exists and is a function', function () {
-      expect(adapter.buildRequests).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.buildRequests).to.exist.and.to.be.a('function');
+    });
     it('exists and is a function', function () {
-      expect(adapter.interpretResponse).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.interpretResponse).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('Check method isBidRequestValid return', function () {
     const bid = {
@@ -27,7 +27,7 @@ describe('WelectAdapter', function () {
           context: 'instream'
         }
       },
-    }
+    };
     const bid2 = {
       bidder: 'welect',
       params: {
@@ -39,16 +39,16 @@ describe('WelectAdapter', function () {
           playerSize: [640, 360]
         }
       },
-    }
+    };
 
     it('should be true', function () {
-      expect(adapter.isBidRequestValid(bid)).to.be.true
-    })
+      expect(adapter.isBidRequestValid(bid)).to.be.true;
+    });
 
     it('should be false because the placementId is missing', function () {
-      expect(adapter.isBidRequestValid(bid2)).to.be.false
-    })
-  })
+      expect(adapter.isBidRequestValid(bid2)).to.be.false;
+    });
+  });
 
   describe('Check buildRequests method', function () {
     // BidderRequest, additional context info not given by our custom params
@@ -68,7 +68,7 @@ describe('WelectAdapter', function () {
           pagecat: ["IAB2-2"],
         }
       }
-    }
+    };
 
     // Bid without playerSize
     const bid1 = {
@@ -83,7 +83,7 @@ describe('WelectAdapter', function () {
         }
       },
       bidId: 'abdc'
-    }
+    };
     // Bid with playerSize
     const bid2 = {
       bidder: 'welect',
@@ -97,13 +97,13 @@ describe('WelectAdapter', function () {
         }
       },
       bidId: 'abdc'
-    }
+    };
 
     const data1 = {
       bid_id: 'abdc',
       width: 640,
       height: 360
-    }
+    };
 
     const data2 = {
       bid_id: 'abdc',
@@ -118,7 +118,7 @@ describe('WelectAdapter', function () {
         gdprApplies: 1,
         tcString: 'some_string'
       }
-    }
+    };
 
     // Formatted requets
     const request1 = {
@@ -130,7 +130,7 @@ describe('WelectAdapter', function () {
         withCredentials: false,
         crossOrigin: true,
       }
-    }
+    };
 
     const request2 = {
       method: 'POST',
@@ -141,16 +141,16 @@ describe('WelectAdapter', function () {
         withCredentials: false,
         crossOrigin: true,
       }
-    }
+    };
 
     it('defaults to www.welect.de, without gdpr object', function () {
-      expect(adapter.buildRequests([bid1])).to.deep.equal([request1])
-    })
+      expect(adapter.buildRequests([bid1])).to.deep.equal([request1]);
+    });
 
     it('must return the right formatted requests, with bidderRequest containing first party data', function () {
-      expect(adapter.buildRequests([bid2], bidderRequest)).to.deep.equal([request2])
-    })
-  })
+      expect(adapter.buildRequests([bid2], bidderRequest)).to.deep.equal([request2]);
+    });
+  });
 
   describe('Check interpretResponse method return', function () {
     // invalid server response
@@ -158,7 +158,7 @@ describe('WelectAdapter', function () {
       body: {
         available: false
       }
-    }
+    };
 
     const availableResponse = {
       body: {
@@ -182,7 +182,7 @@ describe('WelectAdapter', function () {
           mediaType: 'video'
         }
       }
-    }
+    };
     // bid Request
     const bid = {
       data: {
@@ -197,7 +197,7 @@ describe('WelectAdapter', function () {
         withCredentials: false,
         crossOrigin: true,
       }
-    }
+    };
     // Formatted reponse
     const result = {
       ad: {
@@ -216,14 +216,14 @@ describe('WelectAdapter', function () {
       vastUrl: 'some vast url',
       width: 320,
       mediaType: 'video'
-    }
+    };
 
     it('if response reflects unavailability, should be empty', function () {
-      expect(adapter.interpretResponse(unavailableResponse, bid)).to.deep.equal([])
-    })
+      expect(adapter.interpretResponse(unavailableResponse, bid)).to.deep.equal([]);
+    });
 
     it('if response reflects availability, should equal result', function () {
-      expect(adapter.interpretResponse(availableResponse, bid)).to.deep.equal([result])
-    })
-  })
-})
+      expect(adapter.interpretResponse(availableResponse, bid)).to.deep.equal([result]);
+    });
+  });
+});

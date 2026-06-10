@@ -25,13 +25,13 @@
  * @property {AuctionIndex} index
  */
 
-import { uniques, logWarn } from './utils.js'
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js'
-import { AuctionIndex } from './auctionIndex.js'
-import { BID_STATUS, JSON_MAPPING } from './constants.js'
-import { useMetrics } from './utils/perfMetrics.js'
-import { ttlCollection } from './utils/ttlCollection.js'
-import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js'
+import { uniques, logWarn } from './utils.js';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
+import { AuctionIndex } from './auctionIndex.js';
+import { BID_STATUS, JSON_MAPPING } from './constants.js';
+import { useMetrics } from './utils/perfMetrics.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -43,45 +43,45 @@ export function newAuctionManager() {
   const _auctions = ttlCollection({
     startTime: (au) => au.end.then(() => au.getAuctionEnd()),
     ttl: (au) => au.end.then(() => {
-      const bids = au.getBidsReceived()
+      const bids = au.getBidsReceived();
       if (bids.length === 0) {
-        const minTTL = getMinBidCacheTTL()
-        return minTTL == null ? null : minTTL * 1000
+        const minTTL = getMinBidCacheTTL();
+        return minTTL == null ? null : minTTL * 1000;
       }
       const ttls = bids.map(bid => {
-        const minTTL = getEffectiveMinBidCacheTTL(bid)
-        if (minTTL == null) return null
-        return Math.max(minTTL, bid.ttl)
-      })
-      if (ttls.some(t => t == null)) return null
-      return Math.max(...ttls) * 1000
+        const minTTL = getEffectiveMinBidCacheTTL(bid);
+        if (minTTL == null) return null;
+        return Math.max(minTTL, bid.ttl);
+      });
+      if (ttls.some(t => t == null)) return null;
+      return Math.max(...ttls) * 1000;
     }),
-  })
+  });
 
-  onMinBidCacheTTLChange(() => _auctions.refresh())
+  onMinBidCacheTTLChange(() => _auctions.refresh());
 
   const auctionManager = {
     onExpiry: _auctions.onExpiry
-  }
+  };
 
   function getAuction(auctionId) {
     for (const auction of _auctions) {
-      if (auction.getAuctionId() === auctionId) return auction
+      if (auction.getAuctionId() === auctionId) return auction;
     }
   }
 
   auctionManager.addWinningBid = function(bid) {
-    const metrics = useMetrics(bid.metrics)
-    metrics.checkpoint('bidWon')
-    metrics.timeBetween('auctionEnd', 'bidWon', 'adserver.pending')
-    metrics.timeBetween('requestBids', 'bidWon', 'adserver.e2e')
-    const auction = getAuction(bid.auctionId)
+    const metrics = useMetrics(bid.metrics);
+    metrics.checkpoint('bidWon');
+    metrics.timeBetween('auctionEnd', 'bidWon', 'adserver.pending');
+    metrics.timeBetween('requestBids', 'bidWon', 'adserver.e2e');
+    const auction = getAuction(bid.auctionId);
     if (auction) {
-      auction.addWinningBid(bid)
+      auction.addWinningBid(bid);
     } else {
-      logWarn(`Auction not found when adding winning bid`)
+      logWarn(`Auction not found when adding winning bid`);
     }
-  }
+  };
 
   Object.entries({
     getAllWinningBids: {
@@ -94,7 +94,7 @@ export function newAuctionManager() {
     getAdUnits: {},
     getBidsReceived: {
       pre(auction) {
-        return auction.getAuctionStatus() === AUCTION_COMPLETED
+        return auction.getAuctionStatus() === AUCTION_COMPLETED;
       }
     },
     getAdUnitCodes: {
@@ -103,68 +103,68 @@ export function newAuctionManager() {
   }).forEach(([mgrMethod, { name = mgrMethod, pre, post }]) => {
     const mapper = pre == null
       ? (auction) => auction[name]()
-      : (auction) => pre(auction) ? auction[name]() : []
+      : (auction) => pre(auction) ? auction[name]() : [];
     const filter = post == null
       ? (items) => items
-      : (items) => items.filter(post)
+      : (items) => items.filter(post);
     auctionManager[mgrMethod] = () => {
-      return filter(_auctions.toArray().flatMap(mapper))
-    }
-  })
+      return filter(_auctions.toArray().flatMap(mapper));
+    };
+  });
 
   function allBidsReceived() {
-    return _auctions.toArray().flatMap(au => au.getBidsReceived())
+    return _auctions.toArray().flatMap(au => au.getBidsReceived());
   }
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()
-      .filter(bid => bid && bid.adUnitCode === adUnitCode)
-  }
+      .filter(bid => bid && bid.adUnitCode === adUnitCode);
+  };
 
   auctionManager.createAuction = function(opts) {
-    const auction = newAuction(opts)
-    _addAuction(auction)
-    return auction
-  }
+    const auction = newAuction(opts);
+    _addAuction(auction);
+    return auction;
+  };
 
   auctionManager.findBidByAdId = function(adId) {
     return allBidsReceived()
-      .find(bid => bid.adId === adId)
-  }
+      .find(bid => bid.adId === adId);
+  };
 
   auctionManager.getStandardBidderAdServerTargeting = function() {
-    return getStandardBidderSettings()[JSON_MAPPING.ADSERVER_TARGETING]
-  }
+    return getStandardBidderSettings()[JSON_MAPPING.ADSERVER_TARGETING];
+  };
 
   auctionManager.setStatusForBids = function(adId, status) {
-    const bid = auctionManager.findBidByAdId(adId)
-    if (bid) bid.status = status
+    const bid = auctionManager.findBidByAdId(adId);
+    if (bid) bid.status = status;
 
     if (bid && status === BID_STATUS.BID_TARGETING_SET) {
-      const auction = getAuction(bid.auctionId)
+      const auction = getAuction(bid.auctionId);
       if (auction) {
-        auction.setBidTargeting(bid)
-        _auctions.refresh()
+        auction.setBidTargeting(bid);
+        _auctions.refresh();
       }
     }
-  }
+  };
 
   auctionManager.getLastAuctionId = function() {
-    const auctions = _auctions.toArray()
-    return auctions.length && auctions[auctions.length - 1].getAuctionId()
-  }
+    const auctions = _auctions.toArray();
+    return auctions.length && auctions[auctions.length - 1].getAuctionId();
+  };
 
   auctionManager.clearAllAuctions = function() {
-    _auctions.clear()
-  }
+    _auctions.clear();
+  };
 
   function _addAuction(auction) {
-    _auctions.add(auction)
+    _auctions.add(auction);
   }
 
-  auctionManager.index = new AuctionIndex(() => _auctions.toArray())
+  auctionManager.index = new AuctionIndex(() => _auctions.toArray());
 
-  return auctionManager
+  return auctionManager;
 }
 
-export const auctionManager = newAuctionManager()
+export const auctionManager = newAuctionManager();

@@ -1,5 +1,5 @@
-import { config } from "../config.ts"
+import { config } from "../config.ts";
 
 export function debugTurnedOn(): boolean {
-  return !!config.getConfig('debug')
+  return !!config.getConfig('debug');
 }

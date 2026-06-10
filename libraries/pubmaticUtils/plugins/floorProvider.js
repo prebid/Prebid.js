@@ -1,26 +1,26 @@
 // plugins/floorProvider.js
-import { logInfo, logError, logMessage, isEmpty } from '../../../src/utils.js'
-import { getDeviceType as fetchDeviceType, getOS } from '../../userAgentUtils/index.js'
-import { getBrowserType, getCurrentTimeOfDay, getUtmValue, getDayOfWeek, getHourOfDay } from '../pubmaticUtils.js'
-import { config as conf } from '../../../src/config.js'
+import { logInfo, logError, logMessage, isEmpty } from '../../../src/utils.js';
+import { getDeviceType as fetchDeviceType, getOS } from '../../userAgentUtils/index.js';
+import { getBrowserType, getCurrentTimeOfDay, getUtmValue, getDayOfWeek, getHourOfDay } from '../pubmaticUtils.js';
+import { config as conf } from '../../../src/config.js';
 
 /**
  * This RTD module has a dependency on the priceFloors module.
  * We utilize the continueAuction function from the priceFloors module to incorporate price floors data into the current auction.
  */
-import { continueAuction } from '../../../modules/priceFloors.js' // eslint-disable-line prebid/validate-imports
+import { continueAuction } from '../../../modules/priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
-let _floorConfig = null
-export const getFloorConfig = () => _floorConfig
-export const setFloorsConfig = (config) => { _floorConfig = config }
+let _floorConfig = null;
+export const getFloorConfig = () => _floorConfig;
+export const setFloorsConfig = (config) => { _floorConfig = config; };
 
-let _configJsonManager = null
-export const getConfigJsonManager = () => _configJsonManager
-export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager }
+let _configJsonManager = null;
+export const getConfigJsonManager = () => _configJsonManager;
+export const setConfigJsonManager = (configJsonManager) => { _configJsonManager = configJsonManager; };
 
 export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Floor-Provider: '
-})
+});
 
 /**
  * Initialize the floor provider
@@ -30,29 +30,29 @@ export const CONSTANTS = Object.freeze({
  */
 export async function init(pluginName, configJsonManager) {
   // Process floor-specific configuration
-  const config = configJsonManager.getConfigByName(pluginName)
+  const config = configJsonManager.getConfigByName(pluginName);
   if (!config) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration not found`)
-    return false
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration not found`);
+    return false;
   }
-  setFloorsConfig(config)
+  setFloorsConfig(config);
 
   if (!getFloorConfig()?.enabled) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration is disabled`)
-    return false
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration is disabled`);
+    return false;
   }
 
-  setConfigJsonManager(configJsonManager)
+  setConfigJsonManager(configJsonManager);
   try {
-    conf.setConfig(prepareFloorsConfig())
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicFloors config set successfully`)
+    conf.setConfig(prepareFloorsConfig());
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicFloors config set successfully`);
   } catch (error) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicFloors config: ${error}`)
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicFloors config: ${error}`);
   }
 
-  logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration loaded`)
+  logInfo(`${CONSTANTS.LOG_PRE_FIX} Floor configuration loaded`);
 
-  return true
+  return true;
 }
 
 /**
@@ -68,16 +68,16 @@ export function processBidRequest(reqBidsConfigObj) {
       nextFn: () => true,
       haveExited: false,
       timer: null
-    }
+    };
 
     // Apply floor configuration
-    continueAuction(hookConfig)
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} Applied floor configuration to auction`)
+    continueAuction(hookConfig);
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} Applied floor configuration to auction`);
 
-    return reqBidsConfigObj
+    return reqBidsConfigObj;
   } catch (error) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} Error applying floor configuration: ${error}`)
-    return reqBidsConfigObj
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error applying floor configuration: ${error}`);
+    return reqBidsConfigObj;
   }
 }
 
@@ -98,7 +98,7 @@ export const FloorProvider = {
   init,
   processBidRequest,
   getTargeting
-}
+};
 
 // Helper Functions
 
@@ -108,42 +108,42 @@ export const defaultValueTemplate = {
   schema: {
     fields: ['mediaType', 'size']
   }
-}
+};
 
 // Getter Functions
-export const getTimeOfDay = () => getCurrentTimeOfDay()
-export const getBrowser = () => getBrowserType()
-export const getOs = () => getOS().toString()
-export const getDeviceType = () => fetchDeviceType().toString()
-export const getCountry = () => getConfigJsonManager().country
-export const getBidder = (request) => request?.bidder
-export const getUtm = () => getUtmValue()
-export const getDOW = () => getDayOfWeek()
-export const getHOD = () => getHourOfDay()
+export const getTimeOfDay = () => getCurrentTimeOfDay();
+export const getBrowser = () => getBrowserType();
+export const getOs = () => getOS().toString();
+export const getDeviceType = () => fetchDeviceType().toString();
+export const getCountry = () => getConfigJsonManager().country;
+export const getBidder = (request) => request?.bidder;
+export const getUtm = () => getUtmValue();
+export const getDOW = () => getDayOfWeek();
+export const getHOD = () => getHourOfDay();
 
 export const prepareFloorsConfig = () => {
   if (!getFloorConfig()?.enabled || !getFloorConfig()?.config) {
-    return undefined
+    return undefined;
   }
 
   // Floor configs from adunit / setconfig
-  const defaultFloorConfig = conf.getConfig('floors') ?? {}
+  const defaultFloorConfig = conf.getConfig('floors') ?? {};
   if (defaultFloorConfig?.endpoint) {
-    delete defaultFloorConfig.endpoint
+    delete defaultFloorConfig.endpoint;
   }
 
-  let ymUiConfig = { ...getFloorConfig().config }
+  let ymUiConfig = { ...getFloorConfig().config };
 
   // default values provided by publisher on YM UI
-  const defaultValues = ymUiConfig.defaultValues ?? {}
+  const defaultValues = ymUiConfig.defaultValues ?? {};
   // If floorsData is not present or is an empty object, use default values
   const ymFloorsData = isEmpty(getFloorConfig().data)
     ? { ...defaultValueTemplate, values: { ...defaultValues } }
-    : getFloorConfig().data
+    : getFloorConfig().data;
 
   delete ymUiConfig.defaultValues;
   // If skiprate is provided in configs, overwrite the value in ymFloorsData
-  (ymUiConfig.skipRate !== undefined) && (ymFloorsData.skipRate = ymUiConfig.skipRate)
+  (ymUiConfig.skipRate !== undefined) && (ymFloorsData.skipRate = ymUiConfig.skipRate);
 
   // merge default configs from page, configs
   return {
@@ -163,5 +163,5 @@ export const prepareFloorsConfig = () => {
         hourOfDay: getHOD
       },
     },
-  }
-}
+  };
+};

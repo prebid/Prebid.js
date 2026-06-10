@@ -1,25 +1,25 @@
-import { logError, _each, generateUUID, buildUrl } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { VIDEO } from '../src/mediaTypes.js'
+import { logError, _each, generateUUID, buildUrl } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'lkqd'
-const BID_TTL_DEFAULT = 300
-const MIMES_TYPES = ['application/x-mpegURL', 'video/mp4', 'video/H264']
-const PROTOCOLS = [1, 2, 3, 4, 5, 6, 7, 8]
+const BIDDER_CODE = 'lkqd';
+const BID_TTL_DEFAULT = 300;
+const MIMES_TYPES = ['application/x-mpegURL', 'video/mp4', 'video/H264'];
+const PROTOCOLS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-const PARAM_VOLUME_DEFAULT = '100'
-const DEFAULT_SIZES = [[640, 480]]
+const PARAM_VOLUME_DEFAULT = '100';
+const DEFAULT_SIZES = [[640, 480]];
 
 function calculateSizes(VIDEO_BID, bid) {
-  const userProvided = bid.sizes && Array.isArray(bid.sizes) ? (Array.isArray(bid.sizes[0]) ? bid.sizes : [bid.sizes]) : DEFAULT_SIZES
-  const preBidProvided = VIDEO_BID.playerSize && Array.isArray(VIDEO_BID.playerSize) ? (Array.isArray(VIDEO_BID.playerSize[0]) ? VIDEO_BID.playerSize : [VIDEO_BID.playerSize]) : null
+  const userProvided = bid.sizes && Array.isArray(bid.sizes) ? (Array.isArray(bid.sizes[0]) ? bid.sizes : [bid.sizes]) : DEFAULT_SIZES;
+  const preBidProvided = VIDEO_BID.playerSize && Array.isArray(VIDEO_BID.playerSize) ? (Array.isArray(VIDEO_BID.playerSize[0]) ? VIDEO_BID.playerSize : [VIDEO_BID.playerSize]) : null;
 
-  return preBidProvided || userProvided
+  return preBidProvided || userProvided;
 }
 
 function isSet(value) {
-  return value != null
+  return value != null;
 }
 
 export const spec = {
@@ -29,25 +29,25 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return bid.params && Object.keys(bid.params).length > 0 &&
       ((isSet(bid.params.publisherId) && parseInt(bid.params.publisherId) > 0) || (isSet(bid.params.placementId) && parseInt(bid.params.placementId) > 0)) &&
-      bid.params.siteId != null
+      bid.params.siteId != null;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const BIDDER_REQUEST = bidderRequest || {}
-    const serverRequestObjects = []
-    const UTC_OFFSET = new Date().getTimezoneOffset()
-    const UA = navigator.userAgent
-    const USP = BIDDER_REQUEST.uspConsent || null
+    const BIDDER_REQUEST = bidderRequest || {};
+    const serverRequestObjects = [];
+    const UTC_OFFSET = new Date().getTimezoneOffset();
+    const UA = navigator.userAgent;
+    const USP = BIDDER_REQUEST.uspConsent || null;
     // TODO: does the fallback make sense here?
-    const REFERER = BIDDER_REQUEST?.refererInfo?.domain || window.location.host
-    const BIDDER_GDPR = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.gdprApplies ? 1 : null
-    const BIDDER_GDPRS = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.consentString ? BIDDER_REQUEST.gdprConsent.consentString : null
+    const REFERER = BIDDER_REQUEST?.refererInfo?.domain || window.location.host;
+    const BIDDER_GDPR = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.gdprApplies ? 1 : null;
+    const BIDDER_GDPRS = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.consentString ? BIDDER_REQUEST.gdprConsent.consentString : null;
 
     _each(validBidRequests, (bid) => {
-      const DOMAIN = bid.params.pageurl || REFERER
-      const GDPR = BIDDER_GDPR || bid.params.gdpr || null
-      const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null
-      const BID_FLOOR = 0
-      const VIDEO_BID = bid.video ? bid.video : {}
+      const DOMAIN = bid.params.pageurl || REFERER;
+      const GDPR = BIDDER_GDPR || bid.params.gdpr || null;
+      const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null;
+      const BID_FLOOR = 0;
+      const VIDEO_BID = bid.video ? bid.video : {};
 
       const requestData = {
         id: generateUUID(),
@@ -73,15 +73,15 @@ export const spec = {
             us_privacy: USP
           }
         }
-      }
+      };
 
       if (isSet(config.getConfig('coppa'))) {
-        requestData.regs.coppa = config.getConfig('coppa') === true ? 1 : 0
+        requestData.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
       }
 
       if (isSet(GDPR)) {
-        requestData.regs.ext.gdpr = GDPR
-        requestData.regs.ext.gdprs = GDPRS
+        requestData.regs.ext.gdpr = GDPR;
+        requestData.regs.ext.gdprs = GDPRS;
       }
 
       if (isSet(bid.params.aid) || isSet(bid.params.appname) || isSet(bid.params.bundleid)) {
@@ -89,7 +89,7 @@ export const spec = {
           id: bid.params.aid,
           name: bid.params.appname,
           bundle: bid.params.bundleid
-        }
+        };
 
         if (bid.params.contentId) {
           requestData.app.content = {
@@ -97,25 +97,25 @@ export const spec = {
             title: bid.params.contentTitle,
             len: bid.params.contentLength,
             url: bid.params.contentUrl
-          }
+          };
         }
       }
 
       if (isSet(bid.params.idfa) || isSet(bid.params.aid)) {
-        requestData.device.ifa = bid.params.idfa || bid.params.aid
+        requestData.device.ifa = bid.params.idfa || bid.params.aid;
       }
 
-      const schain = bid?.ortb2?.source?.ext?.schain
+      const schain = bid?.ortb2?.source?.ext?.schain;
       if (schain) {
         requestData.source = {
           ext: {
             schain: schain
           }
-        }
+        };
       } else if (bid.params.schain) {
-        const section = bid.params.schain.split('!')
-        const verComplete = section[0].split(',')
-        const node = section[1].split(',')
+        const section = bid.params.schain.split('!');
+        const verComplete = section[0].split(',');
+        const node = section[1].split(',');
 
         requestData.source = {
           ext: {
@@ -137,7 +137,7 @@ export const spec = {
               }
             }
           }
-        }
+        };
       }
 
       _each(calculateSizes(VIDEO_BID, bid), (sizes) => {
@@ -159,16 +159,16 @@ export const spec = {
           },
           bidfloorcur: 'USD',
           secure: 1
-        }
+        };
 
         for (let k = 1; k <= 40; k++) {
           if (bid.params.hasOwnProperty(`c${k}`) && bid.params[`c${k}`]) {
-            impObj.video.ext.lkqdcustomparameters[`c${k}`] = bid.params[`c${k}`]
+            impObj.video.ext.lkqdcustomparameters[`c${k}`] = bid.params[`c${k}`];
           }
         }
 
-        requestData.imp.push(impObj)
-      })
+        requestData.imp.push(impObj);
+      });
 
       serverRequestObjects.push({
         method: 'POST',
@@ -184,14 +184,14 @@ export const spec = {
           }
         }),
         data: requestData
-      })
-    })
+      });
+    });
 
-    return serverRequestObjects
+    return serverRequestObjects;
   },
   interpretResponse: function(serverResponse, bidRequest) {
-    const serverBody = serverResponse.body
-    const bidResponses = []
+    const serverBody = serverResponse.body;
+    const bidResponses = [];
 
     if (serverBody && serverBody.seatbid) {
       _each(serverBody.seatbid, (seatbid) => {
@@ -211,18 +211,18 @@ export const spec = {
                 advertiserDomains: bid.adomain && Array.isArray(bid.adomain) ? bid.adomain : [],
                 mediaType: VIDEO
               }
-            }
+            };
 
-            bidResponses.push(bidResponse)
+            bidResponses.push(bidResponse);
           }
-        })
-      })
+        });
+      });
     } else {
-      logError('Error: No server response or server response was empty for the requested URL')
+      logError('Error: No server response or server response was empty for the requested URL');
     }
 
-    return bidResponses
+    return bidResponses;
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

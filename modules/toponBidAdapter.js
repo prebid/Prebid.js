@@ -1,18 +1,18 @@
-import { logWarn, generateUUID } from "../src/utils.js"
-import { registerBidder } from "../src/adapters/bidderFactory.js"
-import { BANNER } from "../src/mediaTypes.js"
-import { ortbConverter } from "../libraries/ortbConverter/converter.js"
+import { logWarn, generateUUID } from "../src/utils.js";
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { BANNER } from "../src/mediaTypes.js";
+import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 
-const PREBID_VERSION = "$prebid.version$"
-const BIDDER_CODE = "topon"
-const LOG_PREFIX = "TopOn"
-const GVLID = 1305
-const ENDPOINT = "https://web-rtb.anyrtb.com/ortb/prebid"
-const DEFAULT_TTL = 360
-const USER_SYNC_URL = "https://pb.anyrtb.com/pb/page/prebidUserSyncs.html"
-const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sdk_sync"
+const PREBID_VERSION = "$prebid.version$";
+const BIDDER_CODE = "topon";
+const LOG_PREFIX = "TopOn";
+const GVLID = 1305;
+const ENDPOINT = "https://web-rtb.anyrtb.com/ortb/prebid";
+const DEFAULT_TTL = 360;
+const USER_SYNC_URL = "https://pb.anyrtb.com/pb/page/prebidUserSyncs.html";
+const USER_SYNC_IMG_URL = "https://cm.anyrtb.com/cm/sdk_sync";
 
-let lastPubid
+let lastPubid;
 
 const converter = ortbConverter({
   context: {
@@ -22,27 +22,27 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const mediaType =
-      bidRequest.mediaType || Object.keys(bidRequest.mediaTypes || {})[0]
+      bidRequest.mediaType || Object.keys(bidRequest.mediaTypes || {})[0];
 
     if (mediaType === "banner") {
-      const sizes = bidRequest.mediaTypes.banner.sizes
+      const sizes = bidRequest.mediaTypes.banner.sizes;
       return {
         id: bidRequest.bidId,
         banner: {
           format: sizes.map(([w, h]) => ({ w, h })),
         },
         tagid: bidRequest.adUnitCode,
-      }
+      };
     }
 
-    return null
+    return null;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const requestId =
       bidderRequest.bidderRequestId ||
       bidderRequest.auctionId ||
-      generateUUID()
-    const ortb2 = bidderRequest.ortb2 || {}
+      generateUUID();
+    const ortb2 = bidderRequest.ortb2 || {};
 
     return {
       id: requestId,
@@ -65,13 +65,13 @@ const converter = ortbConverter({
           prebid: 1,
         },
       },
-    }
+    };
   },
   bidResponse(buildBidResponse, bid, context) {
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
-    return buildResponse(bidResponses, ortbResponse, context)
+    return buildResponse(bidResponses, ortbResponse, context);
   },
   overrides: {
     imp: {
@@ -82,7 +82,7 @@ const converter = ortbConverter({
       native: false,
     },
   },
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -90,40 +90,40 @@ export const spec = {
   supportedMediaTypes: [BANNER],
   isBidRequestValid: (bid) => {
     if (!(bid && bid.params)) {
-      return false
+      return false;
     }
-    const { pubid } = bid.params || {}
+    const { pubid } = bid.params || {};
     if (!pubid) {
-      return false
+      return false;
     } else if (typeof pubid !== "string") {
-      return false
+      return false;
     }
-    return true
+    return true;
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const { pubid } = bidderRequest?.bids?.[0]?.params || {}
-    lastPubid = pubid
-    const ortbRequest = converter.toORTB({ validBidRequests, bidderRequest })
+    const { pubid } = bidderRequest?.bids?.[0]?.params || {};
+    lastPubid = pubid;
+    const ortbRequest = converter.toORTB({ validBidRequests, bidderRequest });
 
-    const url = ENDPOINT + "?pubid=" + pubid
+    const url = ENDPOINT + "?pubid=" + pubid;
     return {
       method: "POST",
       url,
       data: ortbRequest,
-    }
+    };
   },
   interpretResponse: (response, request) => {
     if (!response.body || typeof response.body !== "object") {
-      return
+      return;
     }
 
-    const { id, seatbid: seatbids } = response.body
+    const { id, seatbid: seatbids } = response.body;
     if (id && seatbids) {
       seatbids.forEach((seatbid) => {
         seatbid.bid.forEach((bid) => {
-          let height = bid.h
-          let width = bid.w
-          const isBanner = bid.mtype === 1
+          let height = bid.h;
+          let width = bid.w;
+          const isBanner = bid.mtype === 1;
           if (
             (!height || !width) &&
             request.data &&
@@ -133,33 +133,33 @@ export const spec = {
             request.data.imp.forEach((req) => {
               if (bid.impid === req.id) {
                 if (isBanner) {
-                  let bannerHeight = 1
-                  let bannerWidth = 1
+                  let bannerHeight = 1;
+                  let bannerWidth = 1;
                   if (req.banner.format && req.banner.format.length > 0) {
-                    bannerHeight = req.banner.format[0].h
-                    bannerWidth = req.banner.format[0].w
+                    bannerHeight = req.banner.format[0].h;
+                    bannerWidth = req.banner.format[0].w;
                   }
-                  height = bannerHeight
-                  width = bannerWidth
+                  height = bannerHeight;
+                  width = bannerWidth;
                 } else {
-                  height = 1
-                  width = 1
+                  height = 1;
+                  width = 1;
                 }
               }
-            })
-            bid.w = width
-            bid.h = height
+            });
+            bid.w = width;
+            bid.h = height;
           }
-        })
-      })
+        });
+      });
     }
 
     const { bids } = converter.fromORTB({
       response: response.body,
       request: request.data,
-    })
+    });
 
-    return bids
+    return bids;
   },
   getUserSyncs: function (
     syncOptions,
@@ -168,59 +168,59 @@ export const spec = {
     uspConsent,
     gppConsent
   ) {
-    const pubid = lastPubid
-    const syncs = []
-    const params = []
+    const pubid = lastPubid;
+    const syncs = [];
+    const params = [];
 
     if (typeof pubid === "string" && pubid.length > 0) {
-      params.push(`pubid=tpn${encodeURIComponent(pubid)}`)
+      params.push(`pubid=tpn${encodeURIComponent(pubid)}`);
     }
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === "boolean") {
-        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`)
+        params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
       }
       if (typeof gdprConsent.consentString === "string") {
-        params.push(`consent=${encodeURIComponent(gdprConsent.consentString)}`)
+        params.push(`consent=${encodeURIComponent(gdprConsent.consentString)}`);
       }
     }
     if (uspConsent) {
-      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`)
+      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
     }
     if (gppConsent) {
       if (typeof gppConsent.gppString === "string") {
-        params.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`)
+        params.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`);
       }
       if (Array.isArray(gppConsent.applicableSections)) {
         params.push(
           `gpp_sid=${encodeURIComponent(
             gppConsent.applicableSections.join(",")
           )}`
-        )
+        );
       }
     }
     if (syncOptions?.iframeEnabled) {
       const syncUrl = `${USER_SYNC_URL}${
         params.length > 0 ? "?" + params.join("&") : ""
-      }`
+      }`;
 
       syncs.push({
         type: "iframe",
         url: syncUrl,
-      })
+      });
     } else if (syncOptions?.pixelEnabled) {
       const syncUrl = `${USER_SYNC_IMG_URL}${
         params.length > 0 ? "?" + params.join("&") : ""
-      }`
+      }`;
 
       syncs.push({
         type: "image",
         url: syncUrl,
-      })
+      });
     }
-    return syncs
+    return syncs;
   },
   onBidWon: (bid) => {
-    logWarn(`[${LOG_PREFIX}] Bid won: ${JSON.stringify(bid)}`)
+    logWarn(`[${LOG_PREFIX}] Bid won: ${JSON.stringify(bid)}`);
   },
-}
-registerBidder(spec)
+};
+registerBidder(spec);

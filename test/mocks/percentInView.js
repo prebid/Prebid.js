@@ -1,7 +1,7 @@
-import { dep } from 'libraries/percentInView/percentInView.js'
+import { dep } from 'libraries/percentInView/percentInView.js';
 
-let enabled = true
-let orig = dep.getElement
+let enabled = true;
+let orig = dep.getElement;
 
 dep.getElement = (el) => {
   if (enabled) {
@@ -9,16 +9,16 @@ dep.getElement = (el) => {
     // causing TypeError noise in the output.
     // Short out the .observe during tests - but only during tests, as the TypeError is legitimate
     // if it happens on a real page
-    return el instanceof Element ? el : null
+    return el instanceof Element ? el : null;
   } else {
-    return orig.call(dep, el)
+    return orig.call(dep, el);
   }
-}
+};
 
 export function enable() {
-  enabled = true
+  enabled = true;
 }
 
 export function disable() {
-  enabled = false
+  enabled = false;
 }

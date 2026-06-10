@@ -1,4 +1,4 @@
-import { PbPromise } from "./promise.ts"
+import { PbPromise } from "./promise.ts";
 
 declare module '../prebidGlobal' {
   interface PrebidJS {
@@ -10,8 +10,8 @@ declare module '../prebidGlobal' {
 }
 
 function doYield() {
-  const scheduler = (window as any).scheduler
-  return typeof scheduler?.yield === 'function' ? scheduler.yield() : PbPromise.resolve()
+  const scheduler = (window as any).scheduler;
+  return typeof scheduler?.yield === 'function' ? scheduler.yield() : PbPromise.resolve();
 }
 
 /**
@@ -19,9 +19,9 @@ function doYield() {
  */
 export function pbYield(shouldYield: () => boolean, cb: () => void) {
   if (shouldYield()) {
-    doYield().then(cb)
+    doYield().then(cb);
   } else {
-    cb()
+    cb();
   }
 }
 
@@ -31,9 +31,9 @@ export function pbYield(shouldYield: () => boolean, cb: () => void) {
 export function yieldsIf<T extends (...args: any[]) => void>(shouldYield: () => boolean, fn: T): (...args: Parameters<T>) => void {
   return function (...args) {
     pbYield(shouldYield, () => {
-      fn.apply(this, args)
-    })
-  }
+      fn.apply(this, args);
+    });
+  };
 }
 
 /**
@@ -43,21 +43,21 @@ export function yieldsIf<T extends (...args: any[]) => void>(shouldYield: () => 
 export function yieldAll(shouldYield: () => boolean, fns: (() => void)[], cb?: () => void) {
   serialize(fns.map(fn => (cb) => {
     pbYield(shouldYield, () => {
-      fn()
-      cb()
-    })
-  }), cb)
+      fn();
+      cb();
+    });
+  }), cb);
 }
 
 export function serialize(fns: ((cb: () => void) => void)[], cb?: () => void) {
-  let i = 0
+  let i = 0;
   function next() {
     if (fns.length > i) {
-      i += 1
-      fns[i - 1](next)
+      i += 1;
+      fns[i - 1](next);
     } else if (typeof cb === 'function') {
-      cb()
+      cb();
     }
   }
-  next()
+  next();
 }

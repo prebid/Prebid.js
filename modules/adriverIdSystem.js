@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import { logError, isPlainObject } from '../src/utils.js'
-import { ajax } from '../src/ajax.js'
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { logError, isPlainObject } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -18,9 +18,9 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js'
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'adriverId'
+const MODULE_NAME = 'adriverId';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /** @type {Submodule} */
 export const adriverIdSubmodule = {
@@ -36,7 +36,7 @@ export const adriverIdSubmodule = {
    * @returns {{adriverId:string}}
    */
   decode(value) {
-    return { adrcid: value }
+    return { adrcid: value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -46,46 +46,46 @@ export const adriverIdSubmodule = {
    */
   getId(config) {
     if (!isPlainObject(config.params)) {
-      config.params = {}
+      config.params = {};
     }
-    const url = 'https://ad.adriver.ru/cgi-bin/json.cgi?sid=1&ad=719473&bt=55&pid=3198680&bid=7189165&bn=7189165&tuid=1&cfa=1'
+    const url = 'https://ad.adriver.ru/cgi-bin/json.cgi?sid=1&ad=719473&bt=55&pid=3198680&bid=7189165&bn=7189165&tuid=1&cfa=1';
     const resp = function (callback) {
-      const creationDate = storage.getDataFromLocalStorage('adrcid_cd') || storage.getCookie('adrcid_cd')
-      const cookie = storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid')
+      const creationDate = storage.getDataFromLocalStorage('adrcid_cd') || storage.getCookie('adrcid_cd');
+      const cookie = storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid');
 
       if (cookie && creationDate && ((new Date().getTime() - creationDate) < 86400000)) {
-        const responseObj = cookie
-        callback(responseObj)
+        const responseObj = cookie;
+        callback(responseObj);
       } else {
         const callbacks = {
           success: response => {
-            let responseObj
+            let responseObj;
             if (response) {
               try {
-                responseObj = JSON.parse(response).adrcid
+                responseObj = JSON.parse(response).adrcid;
               } catch (error) {
-                logError(error)
+                logError(error);
               }
-              const now = new Date()
-              now.setTime(now.getTime() + 86400 * 1825 * 1000)
-              storage.setCookie('adrcid', responseObj, now.toUTCString(), 'Lax')
-              storage.setDataInLocalStorage('adrcid', responseObj)
-              storage.setCookie('adrcid_cd', new Date().getTime(), now.toUTCString(), 'Lax')
-              storage.setDataInLocalStorage('adrcid_cd', new Date().getTime())
+              const now = new Date();
+              now.setTime(now.getTime() + 86400 * 1825 * 1000);
+              storage.setCookie('adrcid', responseObj, now.toUTCString(), 'Lax');
+              storage.setDataInLocalStorage('adrcid', responseObj);
+              storage.setCookie('adrcid_cd', new Date().getTime(), now.toUTCString(), 'Lax');
+              storage.setDataInLocalStorage('adrcid_cd', new Date().getTime());
             }
-            callback(responseObj)
+            callback(responseObj);
           },
           error: error => {
-            logError(`${MODULE_NAME}: ID fetch encountered an error`, error)
-            callback()
+            logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+            callback();
           }
-        }
-        const newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'))
-        ajax(newUrl, callbacks, undefined, { method: 'GET' })
+        };
+        const newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
+        ajax(newUrl, callbacks, undefined, { method: 'GET' });
       }
-    }
-    return { callback: resp }
+    };
+    return { callback: resp };
   }
-}
+};
 
-submodule('userId', adriverIdSubmodule)
+submodule('userId', adriverIdSubmodule);

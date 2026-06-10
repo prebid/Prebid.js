@@ -1,21 +1,21 @@
-import { expect } from "chai"
-import { spec, ENDPOINT } from "modules/empowerBidAdapter.js"
-import { config } from "src/config.js"
-import { setConfig as setCurrencyConfig } from "../../../modules/currency.js"
-import * as utils from "src/utils.js"
+import { expect } from "chai";
+import { spec, ENDPOINT } from "modules/empowerBidAdapter.js";
+import { config } from "src/config.js";
+import { setConfig as setCurrencyConfig } from "../../../modules/currency.js";
+import * as utils from "src/utils.js";
 
 describe("EmpowerAdapter", function () {
-  let baseBidRequest
+  let baseBidRequest;
 
-  let bannerBidRequest
-  let bannerServerResponse
-  let bannerServerRequest
+  let bannerBidRequest;
+  let bannerServerResponse;
+  let bannerServerRequest;
 
-  let videoBidRequest
-  let videoServerResponse
-  let videoServerRequest
+  let videoBidRequest;
+  let videoServerResponse;
+  let videoServerRequest;
 
-  let bidderRequest
+  let bidderRequest;
 
   beforeEach(function () {
     bidderRequest = {
@@ -23,7 +23,7 @@ describe("EmpowerAdapter", function () {
         page: "https://publisher.com/home",
         domain: "publisher.com",
       },
-    }
+    };
 
     baseBidRequest = {
       bidder: "empower",
@@ -34,7 +34,7 @@ describe("EmpowerAdapter", function () {
       bidderRequestId: "678e3fbad375ce",
       auctionId: "c45dd708-a418-42ec-b8a7-b70a6c6fab0a",
       transactionId: "d45dd707-a418-42ec-b8a7-b70a6c6fab0b",
-    }
+    };
 
     bannerBidRequest = {
       ...baseBidRequest,
@@ -50,7 +50,7 @@ describe("EmpowerAdapter", function () {
         [640, 320],
         [300, 600],
       ],
-    }
+    };
 
     bannerServerResponse = {
       id: "678e3fbad375ce",
@@ -74,7 +74,7 @@ describe("EmpowerAdapter", function () {
           ],
         },
       ],
-    }
+    };
 
     bannerServerRequest = {
       method: "POST",
@@ -113,12 +113,12 @@ describe("EmpowerAdapter", function () {
         },
         isPrebid: true,
       }),
-    }
+    };
 
     videoBidRequest = {
       ...baseBidRequest,
       mediaTypes: { video: { playerSize: [[640, 360]] } },
-    }
+    };
 
     videoServerResponse = {
       id: "678e3fbad375ce",
@@ -142,7 +142,7 @@ describe("EmpowerAdapter", function () {
           ],
         },
       ],
-    }
+    };
 
     videoServerRequest = {
       method: "POST",
@@ -174,100 +174,100 @@ describe("EmpowerAdapter", function () {
         },
         isPrebid: true,
       }),
-    }
-  })
+    };
+  });
 
   describe("Banner", function () {
     describe("spec.isBidRequestValid", function () {
       it("should return true when the required params are passed  to banner", function () {
-        expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(true)
-      })
+        expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(true);
+      });
 
       it('should return false when the "zone" param is missing for banner', function () {
         bannerBidRequest.params = {
           bidfloor: 5.0,
-        }
-        expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(false);
+      });
 
       it("should return false when no bid params are passed to banner", function () {
-        bannerBidRequest.params = {}
-        expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(false)
-      })
-    })
+        bannerBidRequest.params = {};
+        expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(false);
+      });
+    });
 
     describe("spec.buildRequests", function () {
       it("should create a POST request for every bid", function () {
-        const request = spec.buildRequests([bannerBidRequest], bidderRequest)
-        expect(request.method).to.equal("POST")
-        expect(request.url).to.equal(ENDPOINT)
-      })
+        const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+        expect(request.method).to.equal("POST");
+        expect(request.url).to.equal(ENDPOINT);
+      });
 
       it("should attach request data to banner", function () {
         config.setConfig({
           currency: {
             adServerCurrency: "EUR",
           },
-        })
+        });
 
-        const request = spec.buildRequests([bannerBidRequest], bidderRequest)
+        const request = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        const data = JSON.parse(request.data)
+        const data = JSON.parse(request.data);
 
-        expect(data.source.ext.prebid).to.equal("$prebid.version$")
-        expect(data.id).to.equal(bannerBidRequest.bidderRequestId)
-        expect(data.imp[0].bidfloor).to.equal(0)
-        expect(data.imp[0].bidfloorcur).to.equal("EUR")
-        expect(data.imp[0].tagid).to.equal("123456")
-        expect(data.imp[0].ext.zone).to.equal(bannerBidRequest.params.zone)
-        expect(data.site.page).to.equal(bidderRequest.refererInfo.page)
-        expect(data.site.domain).to.equal(bidderRequest.refererInfo.domain)
+        expect(data.source.ext.prebid).to.equal("$prebid.version$");
+        expect(data.id).to.equal(bannerBidRequest.bidderRequestId);
+        expect(data.imp[0].bidfloor).to.equal(0);
+        expect(data.imp[0].bidfloorcur).to.equal("EUR");
+        expect(data.imp[0].tagid).to.equal("123456");
+        expect(data.imp[0].ext.zone).to.equal(bannerBidRequest.params.zone);
+        expect(data.site.page).to.equal(bidderRequest.refererInfo.page);
+        expect(data.site.domain).to.equal(bidderRequest.refererInfo.domain);
         expect(data.device).to.deep.contain({
           ua: navigator.userAgent,
           language: navigator.language,
-        })
-        expect(data.cur).to.deep.equal(["EUR"])
-      })
+        });
+        expect(data.cur).to.deep.equal(["EUR"]);
+      });
 
       describe("spec.interpretResponse", function () {
         it("should return no bids if the response is invalid request", function () {
           const bidResponse = spec.interpretResponse(
             { body: bannerServerResponse },
             {}
-          )
-          expect(bidResponse.length).to.equal(0)
-        })
+          );
+          expect(bidResponse.length).to.equal(0);
+        });
 
         it("should return no bids if the response is invalid body json", function () {
           const bidResponse = spec.interpretResponse(
             { body: bannerServerResponse },
             { data: "invalid body " }
-          )
-          expect(bidResponse.length).to.equal(0)
-        })
+          );
+          expect(bidResponse.length).to.equal(0);
+        });
 
         it("should return a valid bid a valid body", function () {
-          bannerServerRequest.data = JSON.parse(bannerServerRequest.data)
+          bannerServerRequest.data = JSON.parse(bannerServerRequest.data);
           const bidResponse = spec.interpretResponse(
             { body: bannerServerResponse },
             bannerServerRequest
-          )
-          expect(bidResponse.length).to.equal(1)
-        })
+          );
+          expect(bidResponse.length).to.equal(1);
+        });
 
         it("should return no bids if the response is not valid to banner", function () {
           const bidResponse = spec.interpretResponse(
             { body: null },
             bannerServerRequest
-          )
-          expect(bidResponse.length).to.equal(0)
-        })
+          );
+          expect(bidResponse.length).to.equal(0);
+        });
 
         it("should return a valid bid response to banner", function () {
           const bidResponse = spec.interpretResponse(
             { body: bannerServerResponse },
             bannerServerRequest
-          )[0]
+          )[0];
 
           expect(bidResponse).to.contain({
             requestId: bannerBidRequest.bidId,
@@ -282,84 +282,84 @@ describe("EmpowerAdapter", function () {
             height: bannerServerResponse.seatbid[0].bid[0].h,
             burl: bannerServerResponse.seatbid[0].bid[0].burl,
             nurl: bannerServerResponse.seatbid[0].bid[0].nurl,
-          })
+          });
           expect(bidResponse.meta).to.deep.equal({
             advertiserDomains: ["empower.net"],
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     describe("Video", function () {
       describe("spec.isBidRequestValid", function () {
         it("should return true when the required params are passed", function () {
-          expect(spec.isBidRequestValid(videoBidRequest)).to.equal(true)
-        })
+          expect(spec.isBidRequestValid(videoBidRequest)).to.equal(true);
+        });
 
         it('should return false when the "zone" param is missing', function () {
           videoBidRequest.params = {
             bidfloor: 5.0,
-          }
-          expect(spec.isBidRequestValid(videoBidRequest)).to.equal(false)
-        })
+          };
+          expect(spec.isBidRequestValid(videoBidRequest)).to.equal(false);
+        });
 
         it("should return false when no bid params are passed", function () {
-          videoBidRequest.params = {}
-          expect(spec.isBidRequestValid(videoBidRequest)).to.equal(false)
-        })
-      })
+          videoBidRequest.params = {};
+          expect(spec.isBidRequestValid(videoBidRequest)).to.equal(false);
+        });
+      });
 
       describe("spec.buildRequests", function () {
         it("should create a POST request for every bid", function () {
-          const request = spec.buildRequests([videoBidRequest], bidderRequest)
-          expect(request.method).to.equal("POST")
-          expect(request.url).to.equal(ENDPOINT)
-        })
+          const request = spec.buildRequests([videoBidRequest], bidderRequest);
+          expect(request.method).to.equal("POST");
+          expect(request.url).to.equal(ENDPOINT);
+        });
 
         it("should attach request data to video", function () {
           config.setConfig({
             currency: {
               adServerCurrency: "EUR",
             },
-          })
+          });
 
-          const request = spec.buildRequests([videoBidRequest], bidderRequest)
+          const request = spec.buildRequests([videoBidRequest], bidderRequest);
 
-          const data = JSON.parse(request.data)
+          const data = JSON.parse(request.data);
 
-          expect(data.source.ext.prebid).to.equal("$prebid.version$")
-          expect(data.id).to.equal(videoBidRequest.bidderRequestId)
-          expect(data.imp[0].bidfloor).to.equal(0)
-          expect(data.imp[0].bidfloorcur).to.equal("EUR")
-          expect(data.imp[0].tagid).to.equal("123456")
+          expect(data.source.ext.prebid).to.equal("$prebid.version$");
+          expect(data.id).to.equal(videoBidRequest.bidderRequestId);
+          expect(data.imp[0].bidfloor).to.equal(0);
+          expect(data.imp[0].bidfloorcur).to.equal("EUR");
+          expect(data.imp[0].tagid).to.equal("123456");
 
-          expect(data.imp[0].ext.zone).to.equal(videoBidRequest.params.zone)
-          expect(data.site.page).to.equal(bidderRequest.refererInfo.page)
-          expect(data.site.domain).to.equal(bidderRequest.refererInfo.domain)
+          expect(data.imp[0].ext.zone).to.equal(videoBidRequest.params.zone);
+          expect(data.site.page).to.equal(bidderRequest.refererInfo.page);
+          expect(data.site.domain).to.equal(bidderRequest.refererInfo.domain);
           expect(data.device).to.deep.contain({
             ua: navigator.userAgent,
             language: navigator.language,
-          })
-          expect(data.cur).to.deep.equal(["EUR"])
-        })
+          });
+          expect(data.cur).to.deep.equal(["EUR"]);
+        });
 
         it("should get bid floor from module", function () {
           const floorModuleData = {
             currency: "USD",
             floor: 3.2,
-          }
+          };
           videoBidRequest.getFloor = function () {
-            return floorModuleData
-          }
-          const request = spec.buildRequests([videoBidRequest], bidderRequest)
+            return floorModuleData;
+          };
+          const request = spec.buildRequests([videoBidRequest], bidderRequest);
 
-          const data = JSON.parse(request.data)
+          const data = JSON.parse(request.data);
 
-          expect(data.source.ext.prebid).to.equal("$prebid.version$")
-          expect(data.id).to.equal(videoBidRequest.bidderRequestId)
-          expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor)
-          expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency)
-        })
+          expect(data.source.ext.prebid).to.equal("$prebid.version$");
+          expect(data.id).to.equal(videoBidRequest.bidderRequestId);
+          expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor);
+          expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
+        });
 
         it("should send gdpr data when gdpr does not apply", function () {
           const gdprData = {
@@ -367,68 +367,68 @@ describe("EmpowerAdapter", function () {
               gdprApplies: false,
               consentString: undefined,
             },
-          }
+          };
           const request = spec.buildRequests([videoBidRequest], {
             ...bidderRequest,
             ...gdprData,
-          })
+          });
 
-          const data = JSON.parse(request.data)
+          const data = JSON.parse(request.data);
 
           expect(data.user).to.deep.equal({
             ext: {
               consent: "",
             },
-          })
+          });
           expect(data.regs).to.deep.equal({
             ext: {
               gdpr: false,
             },
-          })
-        })
+          });
+        });
 
         it("should send gdpr data when gdpr applies", function () {
-          const tcString = "sometcstring"
+          const tcString = "sometcstring";
           const gdprData = {
             gdprConsent: {
               gdprApplies: true,
               consentString: tcString,
             },
-          }
+          };
           const request = spec.buildRequests([videoBidRequest], {
             ...bidderRequest,
             ...gdprData,
-          })
+          });
 
-          const data = JSON.parse(request.data)
+          const data = JSON.parse(request.data);
 
           expect(data.user).to.deep.equal({
             ext: {
               consent: tcString,
             },
-          })
+          });
           expect(data.regs).to.deep.equal({
             ext: {
               gdpr: true,
             },
-          })
-        })
-      })
+          });
+        });
+      });
 
       describe("spec.interpretResponse", function () {
         it("should return no bids if the response is not valid", function () {
           const bidResponse = spec.interpretResponse(
             { body: null },
             videoServerRequest
-          )
-          expect(bidResponse.length).to.equal(0)
-        })
+          );
+          expect(bidResponse.length).to.equal(0);
+        });
 
         it("should return a valid bid response to video", function () {
           const bidResponse = spec.interpretResponse(
             { body: videoServerResponse },
             videoServerRequest
-          )[0]
+          )[0];
 
           expect(bidResponse).to.contain({
             requestId: videoBidRequest.bidId,
@@ -439,13 +439,13 @@ describe("EmpowerAdapter", function () {
             mediaType: "video",
             currency: videoServerResponse.cur,
             vastXml: videoServerResponse.seatbid[0].bid[0].adm,
-          })
+          });
           expect(bidResponse.meta).to.deep.equal({
             advertiserDomains: ["empower.net"],
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     describe("Modules", function () {
       it("should attach user Ids", function () {
@@ -470,34 +470,34 @@ describe("EmpowerAdapter", function () {
               ],
             },
           ],
-        }
-        bannerBidRequest = { ...bannerBidRequest, ...userIdAsEids }
-        const request = spec.buildRequests([bannerBidRequest], bidderRequest)
-        const data = JSON.parse(request.data)
+        };
+        bannerBidRequest = { ...bannerBidRequest, ...userIdAsEids };
+        const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+        const data = JSON.parse(request.data);
 
-        expect(data.user.eids.length).to.equal(2)
-        expect(data.user.eids[0].source).to.equal("pubcid.org")
-        expect(data.user.eids[1].uids.length).to.equal(1)
-        expect(data.user.eids[1].uids[0].id).to.equal("qwertyu")
-      })
+        expect(data.user.eids.length).to.equal(2);
+        expect(data.user.eids[0].source).to.equal("pubcid.org");
+        expect(data.user.eids[1].uids.length).to.equal(1);
+        expect(data.user.eids[1].uids[0].id).to.equal("qwertyu");
+      });
 
       it("should get bid floor from module", function () {
         const floorModuleData = {
           currency: "USD",
           floor: 3.2,
-        }
+        };
         bannerBidRequest.getFloor = function () {
-          return floorModuleData
-        }
-        const request = spec.buildRequests([bannerBidRequest], bidderRequest)
+          return floorModuleData;
+        };
+        const request = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        const data = JSON.parse(request.data)
+        const data = JSON.parse(request.data);
 
-        expect(data.source.ext.prebid).to.equal("$prebid.version$")
-        expect(data.id).to.equal(bannerBidRequest.bidderRequestId)
-        expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor)
-        expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency)
-      })
+        expect(data.source.ext.prebid).to.equal("$prebid.version$");
+        expect(data.id).to.equal(bannerBidRequest.bidderRequestId);
+        expect(data.imp[0].bidfloor).to.equal(floorModuleData.floor);
+        expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
+      });
 
       it("should send gdpr data when gdpr does not apply", function () {
         const gdprData = {
@@ -505,53 +505,53 @@ describe("EmpowerAdapter", function () {
             gdprApplies: false,
             consentString: undefined,
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...gdprData,
-        })
+        });
 
-        const data = JSON.parse(request.data)
+        const data = JSON.parse(request.data);
 
         expect(data.user).to.deep.equal({
           ext: {
             consent: "",
           },
-        })
+        });
         expect(data.regs).to.deep.equal({
           ext: {
             gdpr: false,
           },
-        })
-      })
+        });
+      });
 
       it("should send gdpr data when gdpr applies", function () {
-        const tcString = "sometcstring"
+        const tcString = "sometcstring";
         const gdprData = {
           gdprConsent: {
             gdprApplies: true,
             consentString: tcString,
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...gdprData,
-        })
+        });
 
-        const data = JSON.parse(request.data)
+        const data = JSON.parse(request.data);
 
         expect(data.user).to.deep.equal({
           ext: {
             consent: tcString,
           },
-        })
+        });
         expect(data.regs).to.deep.equal({
           ext: {
             gdpr: true,
           },
-        })
-      })
-    })
+        });
+      });
+    });
     describe("Ortb2", function () {
       it("should attach schain", function () {
         const schain = {
@@ -572,43 +572,43 @@ describe("EmpowerAdapter", function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...schain,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.schain.ver).to.equal("1.0")
-        expect(data.schain.nodes.length).to.equal(1)
-        expect(data.schain.nodes[0].sid).to.equal("111222333")
-        expect(data.schain.nodes[0].asi).to.equal("empower.net")
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.schain.ver).to.equal("1.0");
+        expect(data.schain.nodes.length).to.equal(1);
+        expect(data.schain.nodes[0].sid).to.equal("111222333");
+        expect(data.schain.nodes[0].asi).to.equal("empower.net");
+      });
 
       it("should attach badv", function () {
         const badv = {
           ortb2: { badv: ["bad.example.com"] },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...badv,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.badv.length).to.equal(1)
-        expect(data.badv[0]).to.equal("bad.example.com")
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.badv.length).to.equal(1);
+        expect(data.badv[0]).to.equal("bad.example.com");
+      });
 
       it("should attach bcat", function () {
         const bcat = {
           ortb2: { bcat: ["IAB-1-2", "IAB-1-2"] },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...bcat,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.bcat.length).to.equal(2)
-        expect(data.bcat).to.deep.equal(bcat.ortb2.bcat)
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.bcat.length).to.equal(2);
+        expect(data.bcat).to.deep.equal(bcat.ortb2.bcat);
+      });
 
       it("should override initial device", function () {
         const device = {
@@ -630,15 +630,15 @@ describe("EmpowerAdapter", function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...device,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.device.ua).to.equal(device.ortb2.device.ua)
-        expect(data.device.sua.mobile).to.equal(device.ortb2.device.sua.mobile)
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.device.ua).to.equal(device.ortb2.device.ua);
+        expect(data.device.sua.mobile).to.equal(device.ortb2.device.sua.mobile);
+      });
 
       it("should override initial site", function () {
         const site = {
@@ -661,15 +661,15 @@ describe("EmpowerAdapter", function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...site,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.site.page).to.equal(site.ortb2.site.page)
-        expect(data.site.domain).to.equal("publisher.com")
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.site.page).to.equal(site.ortb2.site.page);
+        expect(data.site.domain).to.equal("publisher.com");
+      });
 
       it("should attach device and user geo via device", function () {
         const device = {
@@ -681,15 +681,15 @@ describe("EmpowerAdapter", function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...device,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.device.geo.lat).to.equal(device.ortb2.device.geo.lat)
-        expect(data.user.geo.lat).to.equal(device.ortb2.device.geo.lat)
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.device.geo.lat).to.equal(device.ortb2.device.geo.lat);
+        expect(data.user.geo.lat).to.equal(device.ortb2.device.geo.lat);
+      });
 
       it("should attach device and user geo via user", function () {
         const ortb2 = {
@@ -701,15 +701,15 @@ describe("EmpowerAdapter", function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...ortb2,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.device.geo.lat).to.equal(ortb2.ortb2.user.geo.lat)
-        expect(data.user.geo.lat).to.equal(ortb2.ortb2.user.geo.lat)
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.device.geo.lat).to.equal(ortb2.ortb2.user.geo.lat);
+        expect(data.user.geo.lat).to.equal(ortb2.ortb2.user.geo.lat);
+      });
 
       it("should attach device and user geo both device/user", function () {
         const ortb2 = {
@@ -727,15 +727,15 @@ describe("EmpowerAdapter", function () {
               },
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...ortb2,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.device.geo.lat).to.equal(ortb2.ortb2.device.geo.lat)
-        expect(data.user.geo.lat).to.equal(ortb2.ortb2.user.geo.lat)
-      })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.device.geo.lat).to.equal(ortb2.ortb2.device.geo.lat);
+        expect(data.user.geo.lat).to.equal(ortb2.ortb2.user.geo.lat);
+      });
 
       it("should override initial user", function () {
         const user = {
@@ -744,55 +744,55 @@ describe("EmpowerAdapter", function () {
               gender: "F",
             },
           },
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], {
           ...bidderRequest,
           ...user,
-        })
-        const data = JSON.parse(request.data)
-        expect(data.user.gender).to.equal(user.ortb2.user.gender)
-      })
-    })
-  })
+        });
+        const data = JSON.parse(request.data);
+        expect(data.user.gender).to.equal(user.ortb2.user.gender);
+      });
+    });
+  });
 
   describe("onBidWon", function () {
     beforeEach(function () {
-      sinon.stub(utils, "triggerPixel")
-    })
+      sinon.stub(utils, "triggerPixel");
+    });
     afterEach(function () {
-      utils.triggerPixel.restore()
-    })
+      utils.triggerPixel.restore();
+    });
 
     it("Should not trigger pixel if bid does not contain nurl", function () {
-      spec.onBidWon({})
+      spec.onBidWon({});
 
-      expect(utils.triggerPixel.called).to.be.false
-    })
+      expect(utils.triggerPixel.called).to.be.false;
+    });
 
     it("Should not trigger pixel if nurl is empty", function () {
       spec.onBidWon({
         nurl: "",
-      })
+      });
 
-      expect(utils.triggerPixel.called).to.be.false
-    })
+      expect(utils.triggerPixel.called).to.be.false;
+    });
 
     it("Should trigger pixel with replaced nurl if nurl is not empty", function () {
       const bidResponse = spec.interpretResponse(
         { body: bannerServerResponse },
         bannerServerRequest
-      )
-      const bidToWon = bidResponse[0]
+      );
+      const bidToWon = bidResponse[0];
       bidToWon.adserverTargeting = {
         hb_pb: 0.1,
-      }
-      spec.onBidWon(bidToWon)
+      };
+      spec.onBidWon(bidToWon);
 
-      expect(utils.triggerPixel.callCount).to.be.equal(1)
+      expect(utils.triggerPixel.callCount).to.be.equal(1);
       expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
         "https://ng.virgul.com/i_wu?a=fac123456&ext=,ap0.12,acUSD,sp0.1,scUSD"
-      )
-      setCurrencyConfig({})
-    })
-  })
-})
+      );
+      setCurrencyConfig({});
+    });
+  });
+});

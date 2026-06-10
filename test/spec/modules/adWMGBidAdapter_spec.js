@@ -1,10 +1,10 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adWMGBidAdapter.js'
-import { config } from 'src/config.js'
+import { expect } from 'chai';
+import { spec } from 'modules/adWMGBidAdapter.js';
+import { config } from 'src/config.js';
 
 describe('adWMGBidAdapter', function () {
   describe('isBidRequestValid', function () {
-    let bid
+    let bid;
     beforeEach(function() {
       bid = {
         bidder: 'adWMG',
@@ -16,61 +16,61 @@ describe('adWMGBidAdapter', function () {
             size: [[300, 250]]
           }
         }
-      }
-    })
+      };
+    });
 
     it('should return true when valid bid request is set', function() {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when \'publisherId\' param are not set', function() {
-      delete bid.params.publisherId
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      delete bid.params.publisherId;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('parseUserAgent', function() {
-    let ua_desktop, ua_mobile, ua_tv, ua_tablet
+    let ua_desktop, ua_mobile, ua_tv, ua_tablet;
     beforeEach(function() {
-      ua_desktop = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36'
-      ua_tv = 'Mozilla/5.0 (Linux; NetCast; U) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/38.0.2125.122 Safari/537.31 SmartTV/7.0'
-      ua_mobile = 'Mozilla/5.0 (Linux; Android 7.0; SAMSUNG SM-G610M Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/7.2 Chrome/59.0.3071.125 Mobile Safari/537.36'
-      ua_tablet = 'Mozilla/5.0 (iPad; CPU OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53'
-    })
+      ua_desktop = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36';
+      ua_tv = 'Mozilla/5.0 (Linux; NetCast; U) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/38.0.2125.122 Safari/537.31 SmartTV/7.0';
+      ua_mobile = 'Mozilla/5.0 (Linux; Android 7.0; SAMSUNG SM-G610M Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/7.2 Chrome/59.0.3071.125 Mobile Safari/537.36';
+      ua_tablet = 'Mozilla/5.0 (iPad; CPU OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53';
+    });
 
     it('should return correct device type: desktop', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_desktop)
-      expect(userDeviceInfo.devicetype).to.equal(2)
-    })
+      const userDeviceInfo = spec.parseUserAgent(ua_desktop);
+      expect(userDeviceInfo.devicetype).to.equal(2);
+    });
 
     it('should return correct device type: TV', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_tv)
-      expect(userDeviceInfo.devicetype).to.equal(3)
-    })
+      const userDeviceInfo = spec.parseUserAgent(ua_tv);
+      expect(userDeviceInfo.devicetype).to.equal(3);
+    });
 
     it('should return correct device type: mobile', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_mobile)
-      expect(userDeviceInfo.devicetype).to.equal(4)
-    })
+      const userDeviceInfo = spec.parseUserAgent(ua_mobile);
+      expect(userDeviceInfo.devicetype).to.equal(4);
+    });
 
     it('should return correct device type: tablet', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_tablet)
-      expect(userDeviceInfo.devicetype).to.equal(5)
-    })
+      const userDeviceInfo = spec.parseUserAgent(ua_tablet);
+      expect(userDeviceInfo.devicetype).to.equal(5);
+    });
 
     it('should return correct OS name', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_desktop)
-      expect(userDeviceInfo.os).to.equal('Windows')
-    })
+      const userDeviceInfo = spec.parseUserAgent(ua_desktop);
+      expect(userDeviceInfo.os).to.equal('Windows');
+    });
 
     it('should return correct OS version', function() {
-      const userDeviceInfo = spec.parseUserAgent(ua_desktop)
-      expect(userDeviceInfo.osv).to.equal('10.0')
-    })
-  })
+      const userDeviceInfo = spec.parseUserAgent(ua_desktop);
+      expect(userDeviceInfo.osv).to.equal('10.0');
+    });
+  });
 
   describe('buildRequests', function () {
-    let bidRequests
+    let bidRequests;
     beforeEach(function() {
       bidRequests = [
         {
@@ -118,8 +118,8 @@ describe('adWMGBidAdapter', function () {
             pubcid: 'pubc-id-456'
           }
         }
-      ]
-    })
+      ];
+    });
 
     const bidderRequest = {
       refererInfo: {
@@ -131,68 +131,68 @@ describe('adWMGBidAdapter', function () {
         gdprApplies: true,
         apiVersion: 2
       }
-    }
+    };
 
     it('should not contain a sizes when sizes is not set', function() {
-      delete bidRequests[0].sizes
-      delete bidRequests[1].sizes
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(JSON.parse(requests[0].data).sizes).to.be.an('undefined')
-      expect(JSON.parse(requests[1].data).sizes).to.be.an('undefined')
-    })
+      delete bidRequests[0].sizes;
+      delete bidRequests[1].sizes;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(JSON.parse(requests[0].data).sizes).to.be.an('undefined');
+      expect(JSON.parse(requests[1].data).sizes).to.be.an('undefined');
+    });
 
     it('should not contain a userId when userId is not set', function() {
-      delete bidRequests[0].userId
-      delete bidRequests[1].userId
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(JSON.parse(requests[0].data).userId).to.be.an('undefined')
-      expect(JSON.parse(requests[1].data).userId).to.be.an('undefined')
-    })
+      delete bidRequests[0].userId;
+      delete bidRequests[1].userId;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(JSON.parse(requests[0].data).userId).to.be.an('undefined');
+      expect(JSON.parse(requests[1].data).userId).to.be.an('undefined');
+    });
 
     it('should have a post method', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].method).to.equal('POST')
-      expect(requests[1].method).to.equal('POST')
-    })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[1].method).to.equal('POST');
+    });
 
     it('should contain a request id equals to the bid id', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(JSON.parse(requests[0].data).requestId).to.equal(bidRequests[0].bidId)
-      expect(JSON.parse(requests[1].data).requestId).to.equal(bidRequests[1].bidId)
-    })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(JSON.parse(requests[0].data).requestId).to.equal(bidRequests[0].bidId);
+      expect(JSON.parse(requests[1].data).requestId).to.equal(bidRequests[1].bidId);
+    });
 
     it('should have an url that match the default endpoint', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].url).to.equal('https://hb.adwmg.com/hb')
-      expect(requests[1].url).to.equal('https://hb.adwmg.com/hb')
-    })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.equal('https://hb.adwmg.com/hb');
+      expect(requests[1].url).to.equal('https://hb.adwmg.com/hb');
+    });
 
     it('should contain GDPR consent data if GDPR set', function() {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(JSON.parse(requests[0].data).gdpr.applies).to.be.true
-      expect(JSON.parse(requests[0].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString)
-      expect(JSON.parse(requests[1].data).gdpr.applies).to.be.true
-      expect(JSON.parse(requests[1].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString)
-    })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(JSON.parse(requests[0].data).gdpr.applies).to.be.true;
+      expect(JSON.parse(requests[0].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(JSON.parse(requests[1].data).gdpr.applies).to.be.true;
+      expect(JSON.parse(requests[1].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+    });
 
     it('should not contain GDPR consent data if GDPR not set', function() {
-      delete bidderRequest.gdprConsent
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(JSON.parse(requests[0].data).gdpr).to.be.an('undefined')
-      expect(JSON.parse(requests[1].data).gdpr).to.be.an('undefined')
-    })
+      delete bidderRequest.gdprConsent;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(JSON.parse(requests[0].data).gdpr).to.be.an('undefined');
+      expect(JSON.parse(requests[1].data).gdpr).to.be.an('undefined');
+    });
 
     it('should set debug mode in requests if enabled', function() {
-      sinon.stub(config, 'getConfig').withArgs('debug').returns(true)
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(JSON.parse(requests[0].data).debug).to.be.true
-      expect(JSON.parse(requests[1].data).debug).to.be.true
-      config.getConfig.restore()
-    })
-  })
+      sinon.stub(config, 'getConfig').withArgs('debug').returns(true);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(JSON.parse(requests[0].data).debug).to.be.true;
+      expect(JSON.parse(requests[1].data).debug).to.be.true;
+      config.getConfig.restore();
+    });
+  });
 
   describe('interpretResponse', function () {
-    let serverResponse
+    let serverResponse;
     beforeEach(function() {
       serverResponse = {
         body: {
@@ -207,124 +207,124 @@ describe('adWMGBidAdapter', function () {
           'currency': 'USD',
           'adomain': ['testdomain.com']
         }
-      }
-    })
+      };
+    });
 
     it('should return a valid response', () => {
-      var responses = spec.interpretResponse(serverResponse)
-      expect(responses).to.be.an('array').that.is.not.empty
+      var responses = spec.interpretResponse(serverResponse);
+      expect(responses).to.be.an('array').that.is.not.empty;
 
-      const response = responses[0]
+      const response = responses[0];
       expect(response).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'meta', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency')
-      expect(response.requestId).to.equal('request-id')
-      expect(response.cpm).to.equal(100)
-      expect(response.width).to.equal(300)
-      expect(response.height).to.equal(250)
-      expect(response.ad).to.equal('<div>ad</div>')
-      expect(response.ttl).to.equal(300)
-      expect(response.creativeId).to.equal('creative-id')
-      expect(response.netRevenue).to.be.true
-      expect(response.currency).to.equal('USD')
-      expect(response.meta.advertiserDomains[0]).to.equal('testdomain.com')
-      expect(response.meta.mediaType).to.equal('banner')
-    })
+        'netRevenue', 'currency');
+      expect(response.requestId).to.equal('request-id');
+      expect(response.cpm).to.equal(100);
+      expect(response.width).to.equal(300);
+      expect(response.height).to.equal(250);
+      expect(response.ad).to.equal('<div>ad</div>');
+      expect(response.ttl).to.equal(300);
+      expect(response.creativeId).to.equal('creative-id');
+      expect(response.netRevenue).to.be.true;
+      expect(response.currency).to.equal('USD');
+      expect(response.meta.advertiserDomains[0]).to.equal('testdomain.com');
+      expect(response.meta.mediaType).to.equal('banner');
+    });
 
     it('should return an empty array when serverResponse is empty', () => {
-      serverResponse = {}
-      var responses = spec.interpretResponse(serverResponse)
-      expect(responses).to.deep.equal([])
-    })
-  })
+      serverResponse = {};
+      var responses = spec.interpretResponse(serverResponse);
+      expect(responses).to.deep.equal([]);
+    });
+  });
 
   describe('getUserSyncs', function () {
     it('should return nothing when sync is disabled', function () {
       const syncOptions = {
         'iframeEnabled': false,
         'pixelEnabled': false
-      }
+      };
 
-      const syncs = spec.getUserSyncs(syncOptions)
-      expect(syncs).to.deep.equal([])
-    })
+      const syncs = spec.getUserSyncs(syncOptions);
+      expect(syncs).to.deep.equal([]);
+    });
 
     it('should register iframe sync when only iframe is enabled', function () {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': false
-      }
+      };
 
-      const syncs = spec.getUserSyncs(syncOptions)
-      expect(syncs[0].type).to.equal('iframe')
-      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?')
-    })
+      const syncs = spec.getUserSyncs(syncOptions);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
+    });
 
     it('should register iframe sync when iframe and image are enabled', function () {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true
-      }
+      };
 
-      const syncs = spec.getUserSyncs(syncOptions)
-      expect(syncs[0].type).to.equal('iframe')
-      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?')
-    })
+      const syncs = spec.getUserSyncs(syncOptions);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).includes('https://hb.adwmg.com/cphb.html?');
+    });
 
     it('should send GDPR consent if enabled', function() {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true
-      }
+      };
       const gdprConsent = {
         consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
         vendorData: {},
         gdprApplies: true,
         apiVersion: 2
-      }
-      const serverResponse = {}
-      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent)
-      expect(syncs[0].url).includes('gdpr=1')
-      expect(syncs[0].url).includes(`gdpr_consent=${gdprConsent.consentString}`)
-    })
+      };
+      const serverResponse = {};
+      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      expect(syncs[0].url).includes('gdpr=1');
+      expect(syncs[0].url).includes(`gdpr_consent=${gdprConsent.consentString}`);
+    });
 
     it('should not add GDPR consent params twice', function() {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true
-      }
+      };
       const gdprConsent = {
         consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
         vendorData: {},
         gdprApplies: true,
         apiVersion: 2
-      }
+      };
       const gdprConsent2 = {
         consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_7_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
         vendorData: {},
         gdprApplies: true,
         apiVersion: 2
-      }
-      const serverResponse = {}
-      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent)
-      syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2)
-      expect(syncs[0].url.match(/gdpr/g).length).to.equal(2) // gdpr + gdpr_consent
-      expect(syncs[0].url.match(/gdpr_consent/g).length).to.equal(1)
-    })
+      };
+      const serverResponse = {};
+      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
+      expect(syncs[0].url.match(/gdpr/g).length).to.equal(2); // gdpr + gdpr_consent
+      expect(syncs[0].url.match(/gdpr_consent/g).length).to.equal(1);
+    });
 
     it('should delete \'&\' symbol at the end of usersync URL', function() {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true
-      }
+      };
       const gdprConsent = {
         consentString: 'CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA',
         vendorData: {},
         gdprApplies: true,
         apiVersion: 2
-      }
-      const serverResponse = {}
-      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent)
-      expect(syncs[0].url.slice(-1)).to.not.equal('&')
-    })
-  })
-})
+      };
+      const serverResponse = {};
+      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      expect(syncs[0].url.slice(-1)).to.not.equal('&');
+    });
+  });
+});

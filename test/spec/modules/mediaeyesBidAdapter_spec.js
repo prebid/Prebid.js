@@ -1,11 +1,11 @@
-import { expect } from 'chai'
-import { spec } from '../../../modules/mediaeyesBidAdapter.js'
-import * as utils from '../../../src/utils.js'
+import { expect } from 'chai';
+import { spec } from '../../../modules/mediaeyesBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('mediaeyes adapter', function () {
-  let request
-  let bannerResponse, invalidResponse
-  let videoRequest, videoResponse
+  let request;
+  let bannerResponse, invalidResponse;
+  let videoRequest, videoResponse;
 
   beforeEach(function () {
     request = [
@@ -21,7 +21,7 @@ describe('mediaeyes adapter', function () {
           bidFloor: 0.1
         }
       }
-    ]
+    ];
     bannerResponse = {
       'body': {
         "id": "3c51f851-56d8-4513-b4bb-e5a1612cede3",
@@ -48,12 +48,12 @@ describe('mediaeyes adapter', function () {
           }
         ]
       }
-    }
+    };
     invalidResponse = {
       'body': {
 
       }
-    }
+    };
     videoRequest = [
       {
         bidder: 'mediaeyes',
@@ -69,7 +69,7 @@ describe('mediaeyes adapter', function () {
           bidFloor: 0.01
         }
       }
-    ]
+    ];
     videoResponse = {
       body: {
         id: "3c51f851-56d8-4515-b4bb-e5a1612cede3",
@@ -85,8 +85,8 @@ describe('mediaeyes adapter', function () {
           }]
         }]
       }
-    }
-  })
+    };
+  });
 
   describe('validations', function () {
     it('isBidValid : itemId is passed', function () {
@@ -95,44 +95,44 @@ describe('mediaeyes adapter', function () {
         params: {
           itemId: 'ec1d7389a4a5afa28a23c4',
         }
-      }
-      const isValid = spec.isBidRequestValid(bid)
-      expect(isValid).to.equals(true)
-    })
+      };
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equals(true);
+    });
     it('isBidValid : itemId is not passed', function () {
       const bid = {
         bidder: 'mediaeyes',
         params: {
 
         }
-      }
-      const isValid = spec.isBidRequestValid(bid)
-      expect(isValid).to.equals(false)
-    })
-  })
+      };
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equals(false);
+    });
+  });
   describe('Validate Request', function () {
     it('Immutable bid request validate', function () {
-      const _Request = utils.deepClone(request)
-      const bidRequest = spec.buildRequests(request)
-      expect(request).to.deep.equal(_Request)
-    })
-  })
+      const _Request = utils.deepClone(request);
+      const bidRequest = spec.buildRequests(request);
+      expect(request).to.deep.equal(_Request);
+    });
+  });
 
   describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', function () {
-      const bidRequest = spec.buildRequests(request)
+      const bidRequest = spec.buildRequests(request);
 
-      const resp = spec.interpretResponse(bannerResponse, bidRequest[0])[0]
-      expect(resp).to.have.property('requestId')
-      expect(resp).to.have.property('cpm')
-      expect(resp).to.have.property('width')
-      expect(resp).to.have.property('height')
-      expect(resp).to.have.property('creativeId')
-      expect(resp).to.have.property('currency')
-      expect(resp).to.have.property('ttl')
-      expect(resp).to.have.property('ad')
-      expect(resp).to.have.property('meta')
-    })
+      const resp = spec.interpretResponse(bannerResponse, bidRequest[0])[0];
+      expect(resp).to.have.property('requestId');
+      expect(resp).to.have.property('cpm');
+      expect(resp).to.have.property('width');
+      expect(resp).to.have.property('height');
+      expect(resp).to.have.property('creativeId');
+      expect(resp).to.have.property('currency');
+      expect(resp).to.have.property('ttl');
+      expect(resp).to.have.property('ad');
+      expect(resp).to.have.property('meta');
+    });
 
     it('no ads returned', function () {
       const response = {
@@ -144,20 +144,20 @@ describe('mediaeyes adapter', function () {
             }
           ]
         }
-      }
-      let bidderRequest
+      };
+      let bidderRequest;
 
-      const result = spec.interpretResponse(response, { bidderRequest })
-      expect(result.length).to.equal(0)
-    })
-  })
+      const result = spec.interpretResponse(response, { bidderRequest });
+      expect(result.length).to.equal(0);
+    });
+  });
 
   describe('setting imp.floor using floorModule', function () {
-    let newRequest
-    let floorModuleTestData
+    let newRequest;
+    let floorModuleTestData;
     const getFloor = function (req) {
-      return floorModuleTestData['banner']
-    }
+      return floorModuleTestData['banner'];
+    };
 
     beforeEach(() => {
       floorModuleTestData = {
@@ -165,54 +165,54 @@ describe('mediaeyes adapter', function () {
           'currency': 'USD',
           'floor': 1,
         },
-      }
-      newRequest = utils.deepClone(request)
-      newRequest[0].getFloor = getFloor
-    })
+      };
+      newRequest = utils.deepClone(request);
+      newRequest[0].getFloor = getFloor;
+    });
 
     it('params bidfloor undefined', function () {
-      floorModuleTestData.banner.floor = 0
-      newRequest[0].params.bidFloor = undefined
-      const request = spec.buildRequests(newRequest)
-      let data = JSON.parse(request[0].data)
-      data = data.imp[0]
-      expect(data.bidfloor).to.equal(0)
-    })
+      floorModuleTestData.banner.floor = 0;
+      newRequest[0].params.bidFloor = undefined;
+      const request = spec.buildRequests(newRequest);
+      let data = JSON.parse(request[0].data);
+      data = data.imp[0];
+      expect(data.bidfloor).to.equal(0);
+    });
 
     it('floormodule if floor is not number', function () {
-      floorModuleTestData.banner.floor = 'INR'
-      newRequest[0].params.bidFloor = undefined
-      const request = spec.buildRequests(newRequest)
-      let data = JSON.parse(request[0].data)
-      data = data.imp[0]
-      expect(data.bidfloor).to.equal(0)
-    })
+      floorModuleTestData.banner.floor = 'INR';
+      newRequest[0].params.bidFloor = undefined;
+      const request = spec.buildRequests(newRequest);
+      let data = JSON.parse(request[0].data);
+      data = data.imp[0];
+      expect(data.bidfloor).to.equal(0);
+    });
 
     it('floormodule if currency is not matched', function () {
-      floorModuleTestData.banner.currency = 'INR'
-      newRequest[0].params.bidFloor = undefined
-      const request = spec.buildRequests(newRequest)
-      let data = JSON.parse(request[0].data)
-      data = data.imp[0]
-      expect(data.bidfloor).to.equal(1)
-    })
+      floorModuleTestData.banner.currency = 'INR';
+      newRequest[0].params.bidFloor = undefined;
+      const request = spec.buildRequests(newRequest);
+      let data = JSON.parse(request[0].data);
+      data = data.imp[0];
+      expect(data.bidfloor).to.equal(1);
+    });
 
     it('bidFloor is not passed, use minimum from floorModule', function () {
-      newRequest[0].params.bidFloor = undefined
-      const request = spec.buildRequests(newRequest)
-      let data = JSON.parse(request[0].data)
-      data = data.imp[0]
-      expect(data.bidfloor).to.equal(1)
-    })
+      newRequest[0].params.bidFloor = undefined;
+      const request = spec.buildRequests(newRequest);
+      let data = JSON.parse(request[0].data);
+      data = data.imp[0];
+      expect(data.bidfloor).to.equal(1);
+    });
 
     it('if params bidFloor is passed, priority use it', function () {
-      newRequest[0].params.bidFloor = 1
-      const request = spec.buildRequests(newRequest)
-      let data = JSON.parse(request[0].data)
-      data = data.imp[0]
-      expect(data.bidfloor).to.equal(1)
-    })
-  })
+      newRequest[0].params.bidFloor = 1;
+      const request = spec.buildRequests(newRequest);
+      let data = JSON.parse(request[0].data);
+      data = data.imp[0];
+      expect(data.bidfloor).to.equal(1);
+    });
+  });
 
   describe('video validations', function () {
     it('isBidValid : video itemId is passed', function () {
@@ -226,40 +226,40 @@ describe('mediaeyes adapter', function () {
         params: {
           itemId: '4d27f3cc8bbd5bd153045e'
         }
-      }
+      };
 
-      const isValid = spec.isBidRequestValid(bid)
-      expect(isValid).to.equals(true)
-    })
-  })
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equals(true);
+    });
+  });
 
   describe('video request building', function () {
     it('should build video request correctly', function () {
-      const bidRequest = spec.buildRequests(videoRequest)
+      const bidRequest = spec.buildRequests(videoRequest);
 
-      const data = JSON.parse(bidRequest[0].data)
+      const data = JSON.parse(bidRequest[0].data);
 
-      expect(data.imp[0]).to.have.property('video')
-      expect(data.imp[0].video).to.have.property('w')
-      expect(data.imp[0].video).to.have.property('h')
-    })
-  })
+      expect(data.imp[0]).to.have.property('video');
+      expect(data.imp[0].video).to.have.property('w');
+      expect(data.imp[0].video).to.have.property('h');
+    });
+  });
 
   describe('video responses processing', function () {
     it('should return fully initialized video bid-response', function () {
-      const bidRequest = spec.buildRequests(videoRequest)
+      const bidRequest = spec.buildRequests(videoRequest);
 
-      const resp = spec.interpretResponse(videoResponse, bidRequest[0])[0]
+      const resp = spec.interpretResponse(videoResponse, bidRequest[0])[0];
 
-      expect(resp).to.have.property('requestId')
-      expect(resp).to.have.property('cpm')
-      expect(resp).to.have.property('width')
-      expect(resp).to.have.property('height')
-      expect(resp).to.have.property('creativeId')
-      expect(resp).to.have.property('currency')
-      expect(resp).to.have.property('ttl')
+      expect(resp).to.have.property('requestId');
+      expect(resp).to.have.property('cpm');
+      expect(resp).to.have.property('width');
+      expect(resp).to.have.property('height');
+      expect(resp).to.have.property('creativeId');
+      expect(resp).to.have.property('currency');
+      expect(resp).to.have.property('ttl');
 
-      expect(resp).to.have.property('meta')
-    })
-  })
-})
+      expect(resp).to.have.property('meta');
+    });
+  });
+});

@@ -1,6 +1,6 @@
-import { config } from '../src/config.js'
-import { getRules, setupRules } from '../libraries/mspa/activityControls.js'
-import { deepSetValue, prefixLog } from '../src/utils.js'
+import { config } from '../src/config.js';
+import { getRules, setupRules } from '../libraries/mspa/activityControls.js';
+import { deepSetValue, prefixLog } from '../src/utils.js';
 
 const FIELDS = {
   Version: 0,
@@ -20,7 +20,7 @@ const FIELDS = {
   MspaCoveredTransaction: 0,
   MspaOptOutOptionMode: 0,
   MspaServiceProviderMode: 0,
-}
+};
 
 /**
  * Generate a normalization function for converting US state strings to the usnat format.
@@ -51,39 +51,39 @@ export function normalizer({ nullify = [], move = {}, fn }: {
       .map(([k, v]) => [k, Array.isArray(v) ? v : [v]])
       .map(([k, v]: [any, any]) => [--k, v.map(el => --el)])
     )])
-  )
+  );
   return function (cd) {
     const norm = Object.fromEntries(Object.entries(fields)
       .map(([field, len]) => {
-        let val = null
+        let val = null;
         if (len > 0) {
-          val = Array(len).fill(null)
+          val = Array(len).fill(null);
           if (Array.isArray(cd[field])) {
-            const remap = (move[field] || {}) as Record<number, number[]>
-            const done = []
+            const remap = (move[field] || {}) as Record<number, number[]>;
+            const done = [];
             cd[field].forEach((el, i) => {
-              const [dest, moved] = remap.hasOwnProperty(i) ? [remap[i], true] : [[i], false]
+              const [dest, moved] = remap.hasOwnProperty(i) ? [remap[i], true] : [[i], false];
               dest.forEach(d => {
                 if (d < len && !done.includes(d)) {
-                  val[d] = el
-                  moved && done.push(d)
+                  val[d] = el;
+                  moved && done.push(d);
                 }
-              })
-            })
+              });
+            });
           }
         } else if (cd[field] != null) {
-          val = Array.isArray(cd[field]) ? null : cd[field]
+          val = Array.isArray(cd[field]) ? null : cd[field];
         }
-        return [field, val]
-      }))
-    nullify.forEach(path => deepSetValue(norm, path, null))
-    fn && fn(cd, norm)
-    return norm
-  }
+        return [field, val];
+      }));
+    nullify.forEach(path => deepSetValue(norm, path, null));
+    fn && fn(cd, norm);
+    return norm;
+  };
 }
 
 function scalarMinorsAreChildren(original, normalized) {
-  normalized.KnownChildSensitiveDataConsents = original.KnownChildSensitiveDataConsents === 0 ? [0, 0] : [1, 1]
+  normalized.KnownChildSensitiveDataConsents = original.KnownChildSensitiveDataConsents === 0 ? [0, 0] : [1, 1];
 }
 
 export const NORMALIZATIONS = {
@@ -104,7 +104,7 @@ export const NORMALIZATIONS = {
     },
     fn(original, normalized) {
       if (original.KnownChildSensitiveDataConsents.some(el => el !== 0)) {
-        normalized.KnownChildSensitiveDataConsents = [1, 1]
+        normalized.KnownChildSensitiveDataConsents = [1, 1];
       }
     }
   }),
@@ -122,19 +122,19 @@ export const NORMALIZATIONS = {
   }),
   12: normalizer({
     fn(original, normalized) {
-      const cc = original.KnownChildSensitiveDataConsents
-      let repl
+      const cc = original.KnownChildSensitiveDataConsents;
+      let repl;
       if (!cc.some(el => el !== 0)) {
-        repl = [0, 0]
+        repl = [0, 0];
       } else if (cc[1] === 2 && cc[2] === 2) {
-        repl = [2, 1]
+        repl = [2, 1];
       } else {
-        repl = [1, 1]
+        repl = [1, 1];
       }
-      normalized.KnownChildSensitiveDataConsents = repl
+      normalized.KnownChildSensitiveDataConsents = repl;
     }
   })
-}
+};
 
 export const DEFAULT_SID_MAPPING = {
   8: 'usca',
@@ -142,34 +142,34 @@ export const DEFAULT_SID_MAPPING = {
   10: 'usco',
   11: 'usut',
   12: 'usct'
-}
+};
 
 export const getSections = (() => {
-  const allSIDs = Object.keys(DEFAULT_SID_MAPPING).map(Number)
+  const allSIDs = Object.keys(DEFAULT_SID_MAPPING).map(Number);
   return function ({ sections = {}, sids = allSIDs } = {}) {
     return sids.map(sid => {
-      const logger = prefixLog(`Cannot set up MSPA controls for SID ${sid}:`)
-      const ov = sections[sid] || {}
-      const normalizeAs = ov.normalizeAs || sid
+      const logger = prefixLog(`Cannot set up MSPA controls for SID ${sid}:`);
+      const ov = sections[sid] || {};
+      const normalizeAs = ov.normalizeAs || sid;
       if (!NORMALIZATIONS.hasOwnProperty(normalizeAs)) {
-        logger.logError(`no normalization rules are known for SID ${normalizeAs}`)
-        return null
+        logger.logError(`no normalization rules are known for SID ${normalizeAs}`);
+        return null;
       }
-      const api = ov.name || DEFAULT_SID_MAPPING[sid]
+      const api = ov.name || DEFAULT_SID_MAPPING[sid];
       if (typeof api !== 'string') {
-        logger.logError(`cannot determine GPP section name`)
-        return null
+        logger.logError(`cannot determine GPP section name`);
+        return null;
       }
       return [
         api,
         [sid],
         NORMALIZATIONS[normalizeAs]
-      ]
-    }).filter(el => el != null)
-  }
-})()
+      ];
+    }).filter(el => el != null);
+  };
+})();
 
-const handles = []
+const handles = [];
 
 declare module '../libraries/mspa/activityControls' {
   interface MSPAConfig {
@@ -200,12 +200,12 @@ declare module '../libraries/mspa/activityControls' {
 }
 
 config.getConfig('consentManagement', (cfg) => {
-  const gppConf = cfg.consentManagement?.gpp
+  const gppConf = cfg.consentManagement?.gpp;
   if (gppConf) {
     while (handles.length) {
-      handles.pop()()
+      handles.pop()();
     }
     getSections(gppConf?.mspa || {})
-      .forEach(([api, sids, normalize]) => handles.push(setupRules(api, sids, getRules(gppConf.mspa?.restrictActivities), normalize)))
+      .forEach(([api, sids, normalize]) => handles.push(setupRules(api, sids, getRules(gppConf.mspa?.restrictActivities), normalize)));
   }
-})
+});

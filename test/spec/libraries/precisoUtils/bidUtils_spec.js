@@ -1,13 +1,13 @@
-import { expect } from 'chai'
-import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js'
+import { expect } from 'chai';
+import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js';
 
-const DEFAULT_PRICE = 1
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_BANNER_WIDTH = 300
-const DEFAULT_BANNER_HEIGHT = 250
-const BIDDER_CODE = 'preciso'
-const TESTDOMAIN = 'test.org'
-const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`
+const DEFAULT_PRICE = 1;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_BANNER_WIDTH = 300;
+const DEFAULT_BANNER_HEIGHT = 250;
+const BIDDER_CODE = 'preciso';
+const TESTDOMAIN = 'test.org';
+const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
 
 describe('bidUtils', function () {
   let bid = {
@@ -51,44 +51,44 @@ describe('bidUtils', function () {
 
     }
 
-  }
+  };
 
   const spec = {
     // isBidRequestValid: isBidRequestValid(),
     buildRequests: buildRequests(bidEndPoint),
     interpretResponse,
     // buildUserSyncs: buildUserSyncs(syncEndPoint)
-  }
+  };
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid])
+    let serverRequest = spec.buildRequests([bid]);
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist
-      expect(serverRequest.method).to.exist
-      expect(serverRequest.url).to.exist
-      expect(serverRequest.data).to.exist
-    })
+      expect(serverRequest).to.exist;
+      expect(serverRequest.method).to.exist;
+      expect(serverRequest.url).to.exist;
+      expect(serverRequest.data).to.exist;
+    });
     it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST')
-    })
+      expect(serverRequest.method).to.equal('POST');
+    });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(`https://${TESTDOMAIN}/bid_request/openrtb`)
-    })
+      expect(serverRequest.url).to.equal(`https://${TESTDOMAIN}/bid_request/openrtb`);
+    });
     it('Returns valid data if array of bids is valid', function () {
-      const data = serverRequest.data
-      expect(data).to.be.an('object')
-      expect(data.device).to.be.a('object')
-      expect(data.user).to.be.a('object')
-      expect(data.source).to.be.a('object')
-      expect(data.site).to.be.a('object')
-    })
+      const data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data.device).to.be.a('object');
+      expect(data.user).to.be.a('object');
+      expect(data.source).to.be.a('object');
+      expect(data.site).to.be.a('object');
+    });
     it('Returns data.device is undefined  if no valid device object is passed', function () {
-      delete bid.ortb2.device
-      serverRequest = spec.buildRequests([bid])
-      const data = serverRequest.data
-      expect(data.device).to.be.undefined
-    })
-  })
+      delete bid.ortb2.device;
+      serverRequest = spec.buildRequests([bid]);
+      const data = serverRequest.data;
+      expect(data.device).to.be.undefined;
+    });
+  });
 
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
@@ -112,7 +112,7 @@ describe('bidUtils', function () {
             seat: BIDDER_CODE
           }
         ],
-      }
+      };
       const expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
@@ -126,11 +126,11 @@ describe('bidUtils', function () {
           ttl: 300,
           meta: { advertiserDomains: [] },
         }
-      ]
-      const result = spec.interpretResponse({ body: response })
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
-  })
+      ];
+      const result = spec.interpretResponse({ body: response });
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+  });
   // describe('getUserSyncs', function () {
   //   const syncUrl = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?/iframe?pbjs=1&coppa=0`;
   //   const syncOptions = {
@@ -146,4 +146,4 @@ describe('bidUtils', function () {
   //     ]);
   //   });
   // });
-})
+});

@@ -1,5 +1,5 @@
-import { isFingerprintingApiDisabled } from '../fingerprinting/fingerprinting.js'
-import { getFallbackWindow } from '../../src/utils.js'
+import { isFingerprintingApiDisabled } from '../fingerprinting/fingerprinting.js';
+import { getFallbackWindow } from '../../src/utils.js';
 
 /**
  * Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
@@ -8,9 +8,9 @@ import { getFallbackWindow } from '../../src/utils.js'
  */
 export function isWebdriverEnabled(win) {
   if (isFingerprintingApiDisabled('webdriver')) {
-    return false
+    return false;
   }
-  return getFallbackWindow(win).navigator?.webdriver === true
+  return getFallbackWindow(win).navigator?.webdriver === true;
 }
 
 /**
@@ -21,11 +21,11 @@ export function isWebdriverEnabled(win) {
  */
 export function isSeleniumDetected(win, doc) {
   if (isFingerprintingApiDisabled('webdriver')) {
-    return false
+    return false;
   }
-  const _win = win || (typeof window !== 'undefined' ? window : undefined)
-  const _doc = doc || (_win?.document)
-  if (!_win || !_doc) return false
+  const _win = win || (typeof window !== 'undefined' ? window : undefined);
+  const _doc = doc || (_win?.document);
+  if (!_win || !_doc) return false;
   const checks = [
     'webdriver' in _win,
     '_Selenium_IDE_Recorder' in _win,
@@ -44,6 +44,6 @@ export function isSeleniumDetected(win, doc) {
     _doc.documentElement?.getAttribute('selenium') !== null,
     _doc.documentElement?.getAttribute('webdriver') !== null,
     _doc.documentElement?.getAttribute('driver') !== null
-  ]
-  return checks.some(Boolean)
+  ];
+  return checks.some(Boolean);
 }

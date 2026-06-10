@@ -1,46 +1,46 @@
-import { expect } from 'chai'
-import { spec } from 'modules/operaadsBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js'
+import { expect } from 'chai';
+import { spec } from 'modules/operaadsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
     it('undefined bid should return false', function () {
-      expect(spec.isBidRequestValid()).to.be.false
-    })
+      expect(spec.isBidRequestValid()).to.be.false;
+    });
 
     it('null bid should return false', function () {
-      expect(spec.isBidRequestValid(null)).to.be.false
-    })
+      expect(spec.isBidRequestValid(null)).to.be.false;
+    });
 
     it('bid.params should be set', function () {
-      expect(spec.isBidRequestValid({})).to.be.false
-    })
+      expect(spec.isBidRequestValid({})).to.be.false;
+    });
 
     it('bid.params.placementId should be set', function () {
       expect(spec.isBidRequestValid({
         params: { endpointId: 'ep12345678', publisherId: 'pub12345678' }
-      })).to.be.false
-    })
+      })).to.be.false;
+    });
 
     it('bid.params.publisherId should be set', function () {
       expect(spec.isBidRequestValid({
         params: { placementId: 's12345678', endpointId: 'ep12345678' }
-      })).to.be.false
-    })
+      })).to.be.false;
+    });
 
     it('bid.params.endpointId should be set', function () {
       expect(spec.isBidRequestValid({
         params: { placementId: 's12345678', publisherId: 'pub12345678' }
-      })).to.be.false
-    })
+      })).to.be.false;
+    });
 
     it('valid bid should return true', function () {
       expect(spec.isBidRequestValid({
         params: { placementId: 's12345678', endpointId: 'ep12345678', publisherId: 'pub12345678' }
-      })).to.be.true
-    })
-  })
+      })).to.be.true;
+    });
+  });
 
   describe('Test buildRequests', function () {
     const bidderRequest = {
@@ -58,7 +58,7 @@ describe('Opera Ads Bid Adapter', function () {
       },
       uspConsent: 'Oush3@jmUw82has',
       timeout: 3000
-    }
+    };
 
     it('build request object', function () {
       const bidRequests = [
@@ -202,69 +202,69 @@ describe('Opera Ads Bid Adapter', function () {
             endpointId: 'ep12345678'
           }
         }
-      ]
+      ];
 
-      let reqs
+      let reqs;
 
       expect(function () {
-        reqs = spec.buildRequests(bidRequests, bidderRequest)
-      }).to.not.throw()
+        reqs = spec.buildRequests(bidRequests, bidderRequest);
+      }).to.not.throw();
 
-      expect(reqs).to.be.an('array').that.have.lengthOf(bidRequests.length)
+      expect(reqs).to.be.an('array').that.have.lengthOf(bidRequests.length);
 
       for (let i = 0, len = reqs.length; i < len; i++) {
-        const req = reqs[i]
-        const bidRequest = bidRequests[i]
+        const req = reqs[i];
+        const bidRequest = bidRequests[i];
 
-        expect(req.method).to.equal('POST')
+        expect(req.method).to.equal('POST');
         expect(req.url).to.equal('https://s.oa.opera.com/ortb/v2/' +
-          bidRequest.params.publisherId + '?ep=' + bidRequest.params.endpointId)
+          bidRequest.params.publisherId + '?ep=' + bidRequest.params.endpointId);
 
-        expect(req.options).to.be.an('object')
-        expect(req.options.contentType).to.contain('application/json')
-        expect(req.options.customHeaders).to.be.an('object')
-        expect(req.options.customHeaders['x-openrtb-version']).to.equal(2.5)
+        expect(req.options).to.be.an('object');
+        expect(req.options.contentType).to.contain('application/json');
+        expect(req.options.customHeaders).to.be.an('object');
+        expect(req.options.customHeaders['x-openrtb-version']).to.equal(2.5);
 
-        expect(req.originalBidRequest).to.equal(bidRequest)
+        expect(req.originalBidRequest).to.equal(bidRequest);
 
-        expect(req.data).to.be.a('string')
+        expect(req.data).to.be.a('string');
 
-        let requestData
+        let requestData;
         expect(function () {
-          requestData = JSON.parse(req.data)
-        }).to.not.throw()
+          requestData = JSON.parse(req.data);
+        }).to.not.throw();
 
-        expect(requestData.id).to.exist
-        expect(requestData.tmax).to.equal(bidderRequest.timeout)
-        expect(requestData.test).to.equal(0)
-        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1)
-        expect(requestData.device).to.be.an('object')
-        expect(requestData.site).to.be.an('object')
-        expect(requestData.site.id).to.equal(bidRequest.params.publisherId)
-        expect(requestData.site.domain).to.not.be.empty
-        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page)
-        expect(requestData.at).to.equal(1)
-        expect(requestData.bcat).to.be.an('array').that.is.empty
-        expect(requestData.cur).to.be.an('array').that.not.be.empty
-        expect(requestData.user).to.be.an('object')
+        expect(requestData.id).to.exist;
+        expect(requestData.tmax).to.equal(bidderRequest.timeout);
+        expect(requestData.test).to.equal(0);
+        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
+        expect(requestData.device).to.be.an('object');
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.domain).to.not.be.empty;
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
+        expect(requestData.at).to.equal(1);
+        expect(requestData.bcat).to.be.an('array').that.is.empty;
+        expect(requestData.cur).to.be.an('array').that.not.be.empty;
+        expect(requestData.user).to.be.an('object');
 
-        const impItem = requestData.imp[0]
-        expect(impItem).to.be.an('object')
-        expect(impItem.id).to.equal(bidRequest.bidId)
-        expect(impItem.tagid).to.equal(bidRequest.params.placementId)
-        expect(impItem.bidfloor).to.be.a('number')
+        const impItem = requestData.imp[0];
+        expect(impItem).to.be.an('object');
+        expect(impItem.id).to.equal(bidRequest.bidId);
+        expect(impItem.tagid).to.equal(bidRequest.params.placementId);
+        expect(impItem.bidfloor).to.be.a('number');
 
         if (bidRequest.mediaTypes.banner) {
-          expect(impItem.banner).to.be.an('object')
+          expect(impItem.banner).to.be.an('object');
         } else if (bidRequest.mediaTypes.native) {
-          expect(impItem.native).to.be.an('object')
+          expect(impItem.native).to.be.an('object');
         } else if (bidRequest.mediaTypes.video) {
-          expect(impItem.video).to.be.an('object')
+          expect(impItem.video).to.be.an('object');
         } else {
-          expect.fail('should not happen')
+          expect.fail('should not happen');
         }
       }
-    })
+    });
 
     describe('test fulfilling inventory information', function () {
       const bidRequest = {
@@ -281,23 +281,23 @@ describe('Opera Ads Bid Adapter', function () {
           publisherId: 'pub12345678',
           endpointId: 'ep12345678'
         }
-      }
+      };
 
       const getRequest = function () {
-        let reqs
+        let reqs;
         expect(function () {
-          reqs = spec.buildRequests([bidRequest], bidderRequest)
-        }).to.not.throw()
-        return JSON.parse(reqs[0].data)
-      }
+          reqs = spec.buildRequests([bidRequest], bidderRequest);
+        }).to.not.throw();
+        return JSON.parse(reqs[0].data);
+      };
 
       it('test default case', function () {
-        const requestData = getRequest()
-        expect(requestData.site).to.be.an('object')
-        expect(requestData.site.id).to.equal(bidRequest.params.publisherId)
-        expect(requestData.site.domain).to.not.be.empty
-        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page)
-      })
+        const requestData = getRequest();
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.domain).to.not.be.empty;
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
+      });
 
       it('test a case with site information specified', function () {
         bidRequest.params = {
@@ -308,14 +308,14 @@ describe('Opera Ads Bid Adapter', function () {
             name: 'test-site-1',
             domain: 'www.test.com'
           }
-        }
-        const requestData = getRequest()
-        expect(requestData.site).to.be.an('object')
-        expect(requestData.site.id).to.equal(bidRequest.params.publisherId)
-        expect(requestData.site.name).to.equal('test-site-1')
-        expect(requestData.site.domain).to.equal('www.test.com')
-        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page)
-      })
+        };
+        const requestData = getRequest();
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.name).to.equal('test-site-1');
+        expect(requestData.site.domain).to.equal('www.test.com');
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
+      });
 
       it('test a case with app information specified', function () {
         bidRequest.params = {
@@ -325,13 +325,13 @@ describe('Opera Ads Bid Adapter', function () {
           app: {
             name: 'test-app-1'
           }
-        }
-        const requestData = getRequest()
-        expect(requestData.app).to.be.an('object')
-        expect(requestData.app.id).to.equal(bidRequest.params.publisherId)
-        expect(requestData.app.name).to.equal('test-app-1')
-        expect(requestData.app.domain).to.not.be.empty
-      })
+        };
+        const requestData = getRequest();
+        expect(requestData.app).to.be.an('object');
+        expect(requestData.app.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.app.name).to.equal('test-app-1');
+        expect(requestData.app.domain).to.not.be.empty;
+      });
 
       it('test a case with both site and app information specified', function () {
         bidRequest.params = {
@@ -345,15 +345,15 @@ describe('Opera Ads Bid Adapter', function () {
           app: {
             name: 'test-app-1'
           }
-        }
-        const requestData = getRequest()
-        expect(requestData.site).to.be.an('object')
-        expect(requestData.site.id).to.equal(bidRequest.params.publisherId)
-        expect(requestData.site.name).to.equal('test-site-2')
-        expect(requestData.site.page).to.equal('test-page')
-        expect(requestData.site.domain).to.not.be.empty
-      })
-    })
+        };
+        const requestData = getRequest();
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.name).to.equal('test-site-2');
+        expect(requestData.site.page).to.equal('test-page');
+        expect(requestData.site.domain).to.not.be.empty;
+      });
+    });
 
     it('test getBidFloor', function() {
       const bidRequests = [
@@ -371,26 +371,26 @@ describe('Opera Ads Bid Adapter', function () {
             return {
               currency: 'USD',
               floor: 0.1
-            }
+            };
           }
         }
-      ]
+      ];
 
-      const reqs = spec.buildRequests(bidRequests, bidderRequest)
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(reqs).to.be.an('array').that.have.lengthOf(1)
+      expect(reqs).to.be.an('array').that.have.lengthOf(1);
 
       for (const req of reqs) {
-        let requestData
+        let requestData;
         expect(function () {
-          requestData = JSON.parse(req.data)
-        }).to.not.throw()
+          requestData = JSON.parse(req.data);
+        }).to.not.throw();
 
-        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1)
-        expect(requestData.imp[0].bidfloor).to.be.equal(0.1)
-        expect(requestData.imp[0].bidfloorcur).to.be.equal('USD')
+        expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
+        expect(requestData.imp[0].bidfloor).to.be.equal(0.1);
+        expect(requestData.imp[0].bidfloorcur).to.be.equal('USD');
       }
-    })
+    });
 
     it('bcat in params should be used', function () {
       const bidRequests = [
@@ -406,21 +406,21 @@ describe('Opera Ads Bid Adapter', function () {
             bcat: ['IAB1-1']
           }
         }
-      ]
+      ];
 
-      const reqs = spec.buildRequests(bidRequests, bidderRequest)
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(reqs).to.be.an('array').that.have.lengthOf(1)
+      expect(reqs).to.be.an('array').that.have.lengthOf(1);
 
       for (const req of reqs) {
-        let requestData
+        let requestData;
         expect(function () {
-          requestData = JSON.parse(req.data)
-        }).to.not.throw()
+          requestData = JSON.parse(req.data);
+        }).to.not.throw();
 
-        expect(requestData.bcat).to.be.an('array').that.includes('IAB1-1')
+        expect(requestData.bcat).to.be.an('array').that.includes('IAB1-1');
       }
-    })
+    });
 
     it('sharedid should be used', function () {
       const bidRequests = [{
@@ -449,17 +449,17 @@ describe('Opera Ads Bid Adapter', function () {
             id: '01F5DEQW731Q2VKT031KBKMW5W'
           }]
         }]
-      }]
+      }];
 
-      const reqs = spec.buildRequests(bidRequests, bidderRequest)
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      let requestData
+      let requestData;
       expect(function () {
-        requestData = JSON.parse(reqs[0].data)
-      }).to.not.throw()
+        requestData = JSON.parse(reqs[0].data);
+      }).to.not.throw();
 
-      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.sharedid.id)
-    })
+      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.sharedid.id);
+    });
 
     it('pubcid should be used when sharedid is empty', function () {
       const bidRequests = [{
@@ -486,17 +486,17 @@ describe('Opera Ads Bid Adapter', function () {
             id: '21F5DEQW731Q2VKT031KBKMW5W'
           }]
         }]
-      }]
+      }];
 
-      const reqs = spec.buildRequests(bidRequests, bidderRequest)
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      let requestData
+      let requestData;
       expect(function () {
-        requestData = JSON.parse(reqs[0].data)
-      }).to.not.throw()
+        requestData = JSON.parse(reqs[0].data);
+      }).to.not.throw();
 
-      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.pubcid)
-    })
+      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.pubcid);
+    });
 
     it('random uid will be generate when userId is empty', function () {
       const bidRequests = [{
@@ -513,26 +513,26 @@ describe('Opera Ads Bid Adapter', function () {
           publisherId: 'pub12345678',
           endpointId: 'ep12345678'
         }
-      }]
+      }];
 
-      const reqs = spec.buildRequests(bidRequests, bidderRequest)
+      const reqs = spec.buildRequests(bidRequests, bidderRequest);
 
-      let requestData
+      let requestData;
       expect(function () {
-        requestData = JSON.parse(reqs[0].data)
-      }).to.not.throw()
+        requestData = JSON.parse(reqs[0].data);
+      }).to.not.throw();
 
-      expect(requestData.user.buyeruid).to.not.be.empty
-    })
-  })
+      expect(requestData.user.buyeruid).to.not.be.empty;
+    });
+  });
 
   describe('Test adapter request', function () {
-    const adapter = newBidder(spec)
+    const adapter = newBidder(spec);
 
     it('adapter.callBids exists and is a function', function () {
-      expect(adapter.callBids).to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.be.a('function');
+    });
+  });
 
   describe('Test response interpretResponse', function () {
     it('Test banner interpretResponse', function () {
@@ -571,7 +571,7 @@ describe('Opera Ads Bid Adapter', function () {
           'bidid': '003004d9c05c6bc7fec0',
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         originalBidRequest: {
@@ -589,33 +589,33 @@ describe('Opera Ads Bid Adapter', function () {
           src: 'client',
           transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
         }
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bid = serverResponse.body.seatbid[0].bid[0]
-      const bidResponse = bidResponses[0]
+      const bid = serverResponse.body.seatbid[0].bid[0];
+      const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(BANNER)
-      expect(bidResponse.requestId).to.equal(bid.impid)
-      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2))
-      expect(bidResponse.currency).to.equal(serverResponse.body.cur)
-      expect(bidResponse.creativeId).to.equal(bid.crid || bid.id)
-      expect(bidResponse.netRevenue).to.be.true
-      expect(bidResponse.nurl).to.equal(bid.nurl)
-      expect(bidResponse.lurl).to.equal(bid.lurl)
+      expect(bidResponse.mediaType).to.equal(BANNER);
+      expect(bidResponse.requestId).to.equal(bid.impid);
+      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2));
+      expect(bidResponse.currency).to.equal(serverResponse.body.cur);
+      expect(bidResponse.creativeId).to.equal(bid.crid || bid.id);
+      expect(bidResponse.netRevenue).to.be.true;
+      expect(bidResponse.nurl).to.equal(bid.nurl);
+      expect(bidResponse.lurl).to.equal(bid.lurl);
 
-      expect(bidResponse.meta).to.be.an('object')
-      expect(bidResponse.meta.mediaType).to.equal(BANNER)
-      expect(bidResponse.meta.primaryCatId).to.equal('IAB9-31')
-      expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB8'])
-      expect(bidResponse.meta.advertiserDomains).to.deep.equal(bid.adomain)
-      expect(bidResponse.meta.clickUrl).to.equal(bid.adomain[0])
+      expect(bidResponse.meta).to.be.an('object');
+      expect(bidResponse.meta.mediaType).to.equal(BANNER);
+      expect(bidResponse.meta.primaryCatId).to.equal('IAB9-31');
+      expect(bidResponse.meta.secondaryCatIds).to.deep.equal(['IAB8']);
+      expect(bidResponse.meta.advertiserDomains).to.deep.equal(bid.adomain);
+      expect(bidResponse.meta.clickUrl).to.equal(bid.adomain[0]);
 
-      expect(bidResponse.ad).to.equal(bid.adm)
-      expect(bidResponse.width).to.equal(bid.w)
-      expect(bidResponse.height).to.equal(bid.h)
-    })
+      expect(bidResponse.ad).to.equal(bid.adm);
+      expect(bidResponse.width).to.equal(bid.w);
+      expect(bidResponse.height).to.equal(bid.h);
+    });
 
     it('Test video interpretResponse', function () {
       const serverResponse = {
@@ -653,7 +653,7 @@ describe('Opera Ads Bid Adapter', function () {
           'bidid': '003004d9c05c6bc7fec0',
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         originalBidRequest: {
@@ -671,21 +671,21 @@ describe('Opera Ads Bid Adapter', function () {
           src: 'client',
           transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
         }
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bid = serverResponse.body.seatbid[0].bid[0]
-      const bidResponse = bidResponses[0]
+      const bid = serverResponse.body.seatbid[0].bid[0];
+      const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(VIDEO)
-      expect(bidResponse.vastXml).to.equal(bid.adm)
-      expect(bidResponse.width).to.equal(bid.w)
-      expect(bidResponse.height).to.equal(bid.h)
+      expect(bidResponse.mediaType).to.equal(VIDEO);
+      expect(bidResponse.vastXml).to.equal(bid.adm);
+      expect(bidResponse.width).to.equal(bid.w);
+      expect(bidResponse.height).to.equal(bid.h);
 
-      expect(bidResponse.adResponse).to.be.an('object')
-      expect(bidResponse.renderer).to.be.an('object')
-    })
+      expect(bidResponse.adResponse).to.be.an('object');
+      expect(bidResponse.renderer).to.be.an('object');
+    });
 
     it('Test native interpretResponse', function () {
       const serverResponse = {
@@ -723,7 +723,7 @@ describe('Opera Ads Bid Adapter', function () {
           'bidid': '003004d9c05c6bc7fec0',
           'cur': 'USD'
         }
-      }
+      };
 
       const bidResponses = spec.interpretResponse(serverResponse, {
         originalBidRequest: {
@@ -741,50 +741,50 @@ describe('Opera Ads Bid Adapter', function () {
           src: 'client',
           transactionId: '4781e6ac-93c4-42ba-86fe-ab5f278863cf'
         }
-      })
+      });
 
-      expect(bidResponses).to.be.an('array').that.is.not.empty
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bidResponse = bidResponses[0]
+      const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(NATIVE)
-      expect(bidResponse.native).to.be.an('object')
-      expect(bidResponse.native.clickUrl).is.not.empty
-      expect(bidResponse.native.clickTrackers).to.have.lengthOf(2)
-      expect(bidResponse.native.impressionTrackers).to.have.lengthOf(2)
-      expect(bidResponse.native.javascriptTrackers).to.have.lengthOf(1)
-    })
+      expect(bidResponse.mediaType).to.equal(NATIVE);
+      expect(bidResponse.native).to.be.an('object');
+      expect(bidResponse.native.clickUrl).is.not.empty;
+      expect(bidResponse.native.clickTrackers).to.have.lengthOf(2);
+      expect(bidResponse.native.impressionTrackers).to.have.lengthOf(2);
+      expect(bidResponse.native.javascriptTrackers).to.have.lengthOf(1);
+    });
 
     it('Test empty server response', function () {
-      const bidResponses = spec.interpretResponse({}, {})
+      const bidResponses = spec.interpretResponse({}, {});
 
-      expect(bidResponses).to.be.an('array').that.is.empty
-    })
+      expect(bidResponses).to.be.an('array').that.is.empty;
+    });
 
     it('Test empty bid response', function () {
-      const bidResponses = spec.interpretResponse({ body: { seatbid: null } }, {})
+      const bidResponses = spec.interpretResponse({ body: { seatbid: null } }, {});
 
-      expect(bidResponses).to.be.an('array').that.is.empty
-    })
-  })
+      expect(bidResponses).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('Test getUserSyncs with both iframe and pixel disabled', function () {
     it('getUserSyncs should return an empty array', function () {
-      const syncOptions = {}
-      expect(spec.getUserSyncs(syncOptions)).to.be.an('array').that.is.empty
-    })
-  })
+      const syncOptions = {};
+      expect(spec.getUserSyncs(syncOptions)).to.be.an('array').that.is.empty;
+    });
+  });
 
   describe('Test getUserSyncs with iframe enabled', function () {
     it('getUserSyncs should return array', function () {
       const syncOptions = {
         iframeEnabled: true
-      }
-      const userSyncPixels = spec.getUserSyncs(syncOptions)
-      expect(userSyncPixels).to.have.lengthOf(1)
-      expect(userSyncPixels[0].url).to.equal('https://s.oa.opera.com/usersync/page')
-    })
-  })
+      };
+      const userSyncPixels = spec.getUserSyncs(syncOptions);
+      expect(userSyncPixels).to.have.lengthOf(1);
+      expect(userSyncPixels[0].url).to.equal('https://s.oa.opera.com/usersync/page');
+    });
+  });
 
   describe('Test getUserSyncs with pixel enabled', function () {
     it('getUserSyncs should return array', function () {
@@ -795,32 +795,32 @@ describe('Opera Ads Bid Adapter', function () {
             'https://b2.com/usersync'
           ]
         }
-      }
+      };
       const syncOptions = {
         pixelEnabled: true
-      }
-      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse])
-      expect(userSyncPixels).to.have.lengthOf(2)
-      expect(userSyncPixels[0].url).to.equal('https://b1.com/usersync')
-      expect(userSyncPixels[1].url).to.equal('https://b2.com/usersync')
-    })
-  })
+      };
+      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse]);
+      expect(userSyncPixels).to.have.lengthOf(2);
+      expect(userSyncPixels[0].url).to.equal('https://b1.com/usersync');
+      expect(userSyncPixels[1].url).to.equal('https://b2.com/usersync');
+    });
+  });
 
   describe('Test onTimeout', function () {
     it('onTimeout should not throw', function () {
-      expect(spec.onTimeout()).to.not.throw
-    })
-  })
+      expect(spec.onTimeout()).to.not.throw;
+    });
+  });
 
   describe('Test onBidWon', function () {
     it('onBidWon should not throw', function () {
-      expect(spec.onBidWon({ nurl: '#', originalCpm: '1.04', currency: 'USD' })).to.not.throw
-    })
-  })
+      expect(spec.onBidWon({ nurl: '#', originalCpm: '1.04', currency: 'USD' })).to.not.throw;
+    });
+  });
 
   describe('Test onSetTargeting', function () {
     it('onSetTargeting should not throw', function () {
-      expect(spec.onSetTargeting()).to.not.throw
-    })
-  })
-})
+      expect(spec.onSetTargeting()).to.not.throw;
+    });
+  });
+});

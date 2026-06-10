@@ -1,26 +1,26 @@
-let outOfFocusStart = null // enforce null otherwise it could be undefined and the callback wouldn't execute
-let timeOutOfFocus = 0
-let suspendedTimeouts = []
+let outOfFocusStart = null; // enforce null otherwise it could be undefined and the callback wouldn't execute
+let timeOutOfFocus = 0;
+let suspendedTimeouts = [];
 
 function trackTimeOutOfFocus() {
   if (document.hidden) {
-    outOfFocusStart = Date.now()
+    outOfFocusStart = Date.now();
   } else {
-    timeOutOfFocus += Date.now() - (outOfFocusStart ?? 0) // when the page is loaded in hidden state outOfFocusStart is undefined, which results in timeoutOffset being NaN
-    outOfFocusStart = null
-    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()))
-    suspendedTimeouts = []
+    timeOutOfFocus += Date.now() - (outOfFocusStart ?? 0); // when the page is loaded in hidden state outOfFocusStart is undefined, which results in timeoutOffset being NaN
+    outOfFocusStart = null;
+    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()));
+    suspendedTimeouts = [];
   }
 }
 
-document.addEventListener('visibilitychange', trackTimeOutOfFocus)
+document.addEventListener('visibilitychange', trackTimeOutOfFocus);
 
 export function reset() {
-  outOfFocusStart = null
-  timeOutOfFocus = 0
-  suspendedTimeouts = []
-  document.removeEventListener('visibilitychange', trackTimeOutOfFocus)
-  document.addEventListener('visibilitychange', trackTimeOutOfFocus)
+  outOfFocusStart = null;
+  timeOutOfFocus = 0;
+  suspendedTimeouts = [];
+  document.removeEventListener('visibilitychange', trackTimeOutOfFocus);
+  document.addEventListener('visibilitychange', trackTimeOutOfFocus);
 }
 
 /**
@@ -31,22 +31,22 @@ export function reset() {
  * @returns {function(): number} - Getter function for current timer id
  */
 export function setFocusTimeout(callback, milliseconds) {
-  const startTime = timeOutOfFocus
+  const startTime = timeOutOfFocus;
   let timerId = setTimeout(() => {
     if (timeOutOfFocus === startTime && outOfFocusStart == null) {
-      callback()
+      callback();
     } else if (outOfFocusStart != null) {
       // case when timeout ended during page is out of focus
       suspendedTimeouts.push({
         callback,
         startTime,
         setTimerId(newId) {
-          timerId = newId
+          timerId = newId;
         }
-      })
+      });
     } else {
-      timerId = setFocusTimeout(callback, timeOutOfFocus - startTime)()
+      timerId = setFocusTimeout(callback, timeOutOfFocus - startTime)();
     }
-  }, milliseconds)
-  return () => timerId
+  }, milliseconds);
+  return () => timerId;
 }

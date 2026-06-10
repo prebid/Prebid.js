@@ -1,7 +1,7 @@
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
@@ -11,7 +11,7 @@ import {
   isFn,
   logError,
   triggerPixel,
-} from '../src/utils.js'
+} from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,14 +22,14 @@ import {
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDDER_CODE = 'audiencerun'
-const BASE_URL = 'https://d.audiencerun.com'
-const AUCTION_URL = `${BASE_URL}/prebid`
-const TIMEOUT_EVENT_URL = `${BASE_URL}/ps/pbtimeout`
-const ERROR_EVENT_URL = `${BASE_URL}/js_log`
-const DEFAULT_CURRENCY = 'USD'
+const BIDDER_CODE = 'audiencerun';
+const BASE_URL = 'https://d.audiencerun.com';
+const AUCTION_URL = `${BASE_URL}/prebid`;
+const TIMEOUT_EVENT_URL = `${BASE_URL}/ps/pbtimeout`;
+const ERROR_EVENT_URL = `${BASE_URL}/js_log`;
+const DEFAULT_CURRENCY = 'USD';
 
-let requestedBids = []
+let requestedBids = [];
 
 /**
  * Returns bidfloor through floors module if available.
@@ -39,7 +39,7 @@ let requestedBids = []
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0)
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -47,10 +47,10 @@ function getBidFloor(bid) {
       currency: DEFAULT_CURRENCY,
       mediaType: BANNER,
       size: '*',
-    })
-    return bidFloor?.floor
+    });
+    return bidFloor?.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }
 
@@ -60,16 +60,16 @@ function getBidFloor(bid) {
  * @returns {string}
  */
 function getPageReferer() {
-  let t, e
+  let t, e;
   do {
-    t = t ? t.parent : window
+    t = t ? t.parent : window;
     try {
-      e = t.document.referrer
+      e = t.document.referrer;
     } catch (_) {
-      break
+      break;
     }
-  } while (t !== window.top)
-  return e
+  } while (t !== window.top);
+  return e;
 }
 
 /**
@@ -79,7 +79,7 @@ function getPageReferer() {
  * @return {string}
  */
 function getPageUrl(bidderRequest) {
-  return bidderRequest?.refererInfo?.page
+  return bidderRequest?.refererInfo?.page;
 }
 
 export const spec = {
@@ -95,12 +95,12 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    let isValid = true
+    let isValid = true;
     if (!deepAccess(bid, 'params.zoneId')) {
-      logError('AudienceRun zoneId parameter is required. Bid aborted.')
-      isValid = false
+      logError('AudienceRun zoneId parameter is required. Bid aborted.');
+      isValid = false;
     }
-    return isValid
+    return isValid;
   },
 
   /**
@@ -112,7 +112,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const bids = bidRequests.map((bid) => {
-      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', [])
+      const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', []);
       return {
         zoneId: getValue(bid.params, 'zoneId'),
         sizes: sizes.map((size) => ({
@@ -126,8 +126,8 @@ export const spec = {
         // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: getBidIdParameter('auctionId', bid),
         transactionId: bid.ortb2Imp?.ext?.tid || '',
-      }
-    })
+      };
+    });
 
     const payload = {
       libVersion: this.version,
@@ -140,25 +140,25 @@ export const spec = {
       currencyCode: getCurrencyFromBidderRequest(bidderRequest),
       timeout: config.getConfig('bidderTimeout'),
       bids,
-    }
+    };
 
-    payload.uspConsent = deepAccess(bidderRequest, 'uspConsent')
-    payload.schain = deepAccess(bidRequests, '0.ortb2.source.ext.schain')
-    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
+    payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
+    payload.schain = deepAccess(bidRequests, '0.ortb2.source.ext.schain');
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || [];
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {
         consent: bidderRequest.gdprConsent.consentString,
         applies: bidderRequest.gdprConsent.gdprApplies,
         version: bidderRequest.gdprConsent.apiVersion,
-      }
+      };
     } else {
       payload.gdpr = {
         consent: '',
-      }
+      };
     }
 
-    requestedBids = bids
+    requestedBids = bids;
 
     return {
       method: 'POST',
@@ -167,7 +167,7 @@ export const spec = {
       options: {
         withCredentials: true,
       },
-    }
+    };
   },
 
   /**
@@ -177,39 +177,39 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = []
+    const bids = [];
     _each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.cpm || bidObject.cpm === null || !bidObject.adm) {
-        return
+        return;
       }
 
-      const bid = {}
+      const bid = {};
 
-      bid.ad = bidObject.adm
-      bid.mediaType = BANNER
+      bid.ad = bidObject.adm;
+      bid.mediaType = BANNER;
 
       // Common properties
-      bid.requestId = bidObject.bidId
-      bid.cpm = parseFloat(bidObject.cpm)
-      bid.creativeId = bidObject.crid
+      bid.requestId = bidObject.bidId;
+      bid.cpm = parseFloat(bidObject.cpm);
+      bid.creativeId = bidObject.crid;
       bid.currency = bidObject.currency
         ? bidObject.currency.toUpperCase()
-        : DEFAULT_CURRENCY
+        : DEFAULT_CURRENCY;
 
-      bid.height = bidObject.h
-      bid.width = bidObject.w
-      bid.netRevenue = bidObject.isNet ? bidObject.isNet : false
-      bid.ttl = 300
+      bid.height = bidObject.h;
+      bid.width = bidObject.w;
+      bid.netRevenue = bidObject.isNet ? bidObject.isNet : false;
+      bid.ttl = 300;
       bid.meta = {
         advertiserDomains:
           bidObject.adomain && Array.isArray(bidObject.adomain)
             ? bidObject.adomain
             : [],
-      }
+      };
 
-      bids.push(bid)
-    })
-    return bids
+      bids.push(bid);
+    });
+    return bids;
   },
 
   /**
@@ -220,19 +220,19 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    if (!serverResponses || !serverResponses.length) return []
+    if (!serverResponses || !serverResponses.length) return [];
 
-    const syncs = []
+    const syncs = [];
     serverResponses.forEach((response) => {
       response.body.bid.forEach((bidObject) => {
         syncs.push({
           type: 'iframe',
           url: bidObject.syncUrl,
-        })
-      })
-    })
+        });
+      });
+    });
 
-    return syncs
+    return syncs;
   },
 
   /**
@@ -242,20 +242,20 @@ export const spec = {
    */
   onTimeout: function (timeoutData) {
     if (!isArray(timeoutData)) {
-      return
+      return;
     }
 
     timeoutData.forEach((bid) => {
       const bidOnTimeout = requestedBids.find(
         (requestedBid) => requestedBid.bidId === bid.bidId
-      )
+      );
 
       if (bidOnTimeout) {
         triggerPixel(
           `${TIMEOUT_EVENT_URL}/${bidOnTimeout.zoneId}/${bidOnTimeout.bidId}`
-        )
+        );
       }
-    })
+    });
   },
 
   /**
@@ -266,9 +266,9 @@ export const spec = {
     const queryString = formatQS({
       message: `Prebid.js: Server call for ${bidderRequest.bidderCode} failed.`,
       url: encodeURIComponent(getPageUrl(bidderRequest)),
-    })
-    triggerPixel(`${ERROR_EVENT_URL}/?${queryString}`)
+    });
+    triggerPixel(`${ERROR_EVENT_URL}/?${queryString}`);
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

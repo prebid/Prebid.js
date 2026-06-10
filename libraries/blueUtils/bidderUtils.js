@@ -1,4 +1,4 @@
-import { isFn, isPlainObject, deepSetValue, replaceAuctionPrice, triggerPixel } from '../../src/utils.js'
+import { isFn, isPlainObject, deepSetValue, replaceAuctionPrice, triggerPixel } from '../../src/utils.js';
 
 export function getBidFloor(bid, mediaType, defaultCurrency) {
   if (isFn(bid.getFloor)) {
@@ -6,43 +6,43 @@ export function getBidFloor(bid, mediaType, defaultCurrency) {
       currency: defaultCurrency,
       mediaType: mediaType,
       size: '*',
-    })
+    });
     if (
       isPlainObject(floor) &&
       !isNaN(floor.floor) &&
       floor.currency === defaultCurrency
     ) {
-      return floor.floor
+      return floor.floor;
     }
   }
-  return null
+  return null;
 }
 
 export function buildOrtbRequest(bidRequests, bidderRequest, context, gvlid, ortbConverterInstance) {
-  const ortbRequest = ortbConverterInstance.toORTB({ bidRequests, bidderRequest, context })
-  ortbRequest.ext = ortbRequest.ext || {}
-  deepSetValue(ortbRequest, 'ext.gvlid', gvlid)
-  return ortbRequest
+  const ortbRequest = ortbConverterInstance.toORTB({ bidRequests, bidderRequest, context });
+  ortbRequest.ext = ortbRequest.ext || {};
+  deepSetValue(ortbRequest, 'ext.gvlid', gvlid);
+  return ortbRequest;
 }
 
 export function ortbConverterRequest(buildRequest, imps, bidderRequest, context) {
-  const request = buildRequest(imps, bidderRequest, context)
-  deepSetValue(request, 'site.publisher.id', context.publisherId)
-  return request
+  const request = buildRequest(imps, bidderRequest, context);
+  deepSetValue(request, 'site.publisher.id', context.publisherId);
+  return request;
 }
 
 export function ortbConverterImp(buildImp, bidRequest, context) {
-  const imp = buildImp(bidRequest, context)
+  const imp = buildImp(bidRequest, context);
   // context.mediaTypes is expected to be set by the adapter calling this function
-  const floor = getBidFloor(bidRequest, context.mediaTypes.banner, context.mediaTypes.defaultCurrency)
-  imp.tagid = bidRequest.params.placementId
+  const floor = getBidFloor(bidRequest, context.mediaTypes.banner, context.mediaTypes.defaultCurrency);
+  imp.tagid = bidRequest.params.placementId;
 
   if (floor) {
-    imp.bidfloor = floor
-    imp.bidfloorcur = context.mediaTypes.defaultCurrency
+    imp.bidfloor = floor;
+    imp.bidfloorcur = context.mediaTypes.defaultCurrency;
   }
 
-  return imp
+  return imp;
 }
 
 export function buildBidObjectBase(bid, serverResponseBody, bidderCode, defaultCurrency) {
@@ -61,23 +61,23 @@ export function buildBidObjectBase(bid, serverResponseBody, bidderCode, defaultC
     originalCurrency: serverResponseBody.cur || defaultCurrency,
     requestId: bid.impid,
     seatBidId: bid.id
-  }
+  };
 }
 
 export function commonOnBidWonHandler(bid, processUrl = (url, bidData) => url) {
-  const { burl, nurl } = bid || {}
+  const { burl, nurl } = bid || {};
 
   if (nurl) {
-    triggerPixel(processUrl(nurl, bid))
+    triggerPixel(processUrl(nurl, bid));
   }
 
   if (burl) {
-    triggerPixel(processUrl(burl, bid))
+    triggerPixel(processUrl(burl, bid));
   }
 }
 
 export function commonIsBidRequestValid(bid) {
-  return !!bid.params.placementId && !!bid.params.publisherId
+  return !!bid.params.placementId && !!bid.params.publisherId;
 }
 
 export function createOrtbConverter(ortbConverterFunc, bannerMediaType, defaultCurrencyConst, impFunc, requestFunc) {
@@ -92,13 +92,13 @@ export function createOrtbConverter(ortbConverterFunc, bannerMediaType, defaultC
     },
     imp: impFunc,
     request: requestFunc,
-  })
+  });
 }
 
 export function getPublisherIdFromBids(validBidRequests) {
   return validBidRequests.find(
     (bidRequest) => bidRequest.params?.publisherId
-  )?.params.publisherId
+  )?.params.publisherId;
 }
 
 export function packageOrtbRequest(ortbRequest, endpointUrl, dataProcessor, requestOptions) {
@@ -109,5 +109,5 @@ export function packageOrtbRequest(ortbRequest, endpointUrl, dataProcessor, requ
       data: dataProcessor(ortbRequest),
       options: requestOptions,
     }
-  ]
+  ];
 }

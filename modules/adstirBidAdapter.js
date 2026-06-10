@@ -1,21 +1,21 @@
-import * as utils from '../src/utils.js'
-import { config } from '../src/config.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'adstir'
-const ENDPOINT = 'https://ad.ad-stir.com/prebid'
+const BIDDER_CODE = 'adstir';
+const ENDPOINT = 'https://ad.ad-stir.com/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(utils.isStr(bid.params.appId) && !utils.isEmptyStr(bid.params.appId) && utils.isInteger(bid.params.adSpaceNo))
+    return !!(utils.isStr(bid.params.appId) && !utils.isEmptyStr(bid.params.appId) && utils.isInteger(bid.params.adSpaceNo));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const sua = utils.deepAccess(validBidRequests[0], 'ortb2.device.sua', null)
+    const sua = utils.deepAccess(validBidRequests[0], 'ortb2.device.sua', null);
 
     const requests = validBidRequests.map((r) => {
       return {
@@ -43,50 +43,50 @@ export const spec = {
           schain: serializeSchain(utils.deepAccess(r, 'ortb2.source.ext.schain', null)),
           pbVersion: '$prebid.version$',
         }),
-      }
-    })
+      };
+    });
 
-    return requests
+    return requests;
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const seatbid = serverResponse.body.seatbid
+    const seatbid = serverResponse.body.seatbid;
     if (!utils.isArray(seatbid)) {
-      return []
+      return [];
     }
-    const bids = []
+    const bids = [];
     seatbid.forEach((b) => {
-      const bid = b.bid || null
+      const bid = b.bid || null;
       if (!bid) {
-        return
+        return;
       }
-      bids.push(bid)
-    })
-    return bids
+      bids.push(bid);
+    });
+    return bids;
   },
-}
+};
 
 function serializeSchain(schain) {
   if (!schain) {
-    return null
+    return null;
   }
 
-  let serializedSchain = `${schain.ver},${schain.complete}`
+  let serializedSchain = `${schain.ver},${schain.complete}`;
 
   schain.nodes.forEach(node => {
-    serializedSchain += `!${encodeURIComponentForRFC3986(node.asi || '')},`
-    serializedSchain += `${encodeURIComponentForRFC3986(node.sid || '')},`
-    serializedSchain += `${encodeURIComponentForRFC3986(node.hp || '')},`
-    serializedSchain += `${encodeURIComponentForRFC3986(node.rid || '')},`
-    serializedSchain += `${encodeURIComponentForRFC3986(node.name || '')},`
-    serializedSchain += `${encodeURIComponentForRFC3986(node.domain || '')}`
-  })
+    serializedSchain += `!${encodeURIComponentForRFC3986(node.asi || '')},`;
+    serializedSchain += `${encodeURIComponentForRFC3986(node.sid || '')},`;
+    serializedSchain += `${encodeURIComponentForRFC3986(node.hp || '')},`;
+    serializedSchain += `${encodeURIComponentForRFC3986(node.rid || '')},`;
+    serializedSchain += `${encodeURIComponentForRFC3986(node.name || '')},`;
+    serializedSchain += `${encodeURIComponentForRFC3986(node.domain || '')}`;
+  });
 
-  return serializedSchain
+  return serializedSchain;
 }
 
 function encodeURIComponentForRFC3986(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, c => `%${c.charCodeAt(0).toString(16)}`)
+  return encodeURIComponent(str).replace(/[!'()*]/g, c => `%${c.charCodeAt(0).toString(16)}`);
 }
 
-registerBidder(spec)
+registerBidder(spec);

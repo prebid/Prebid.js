@@ -1,22 +1,22 @@
-import { logError } from '../../src/utils.js'
+import { logError } from '../../src/utils.js';
 
 export function interpretResponseUtil(serverResponse, { bidderRequest }, eachBidCallback) {
-  const bids = []
+  const bids = [];
   if (!serverResponse.body || serverResponse.body.error) {
-    let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`
-    if (serverResponse.body && serverResponse.body.error) { errorMessage += `: ${serverResponse.body.error}` }
-    logError(errorMessage)
-    return bids
+    let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+    if (serverResponse.body && serverResponse.body.error) { errorMessage += `: ${serverResponse.body.error}`; }
+    logError(errorMessage);
+    return bids;
   }
   (serverResponse.body.tags || []).forEach(serverBid => {
     try {
-      const bid = eachBidCallback(serverBid)
+      const bid = eachBidCallback(serverBid);
       if (bid) {
-        bids.push(bid)
+        bids.push(bid);
       }
     } catch (e) {
       // Do nothing
     }
-  })
-  return bids
+  });
+  return bids;
 }

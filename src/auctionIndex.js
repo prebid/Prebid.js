@@ -23,39 +23,39 @@ export function AuctionIndex(getAuctions) {
     getAuction({ auctionId }) {
       if (auctionId != null) {
         return getAuctions()
-          .find(auction => auction.getAuctionId() === auctionId)
+          .find(auction => auction.getAuctionId() === auctionId);
       }
     },
     getAdUnit({ adUnitId }) {
       if (adUnitId != null) {
         return getAuctions()
           .flatMap(a => a.getAdUnits())
-          .find(au => au.adUnitId === adUnitId)
+          .find(au => au.adUnitId === adUnitId);
       }
     },
     getMediaTypes({ adUnitId, requestId }) {
       if (requestId != null) {
-        const req = this.getBidRequest({ requestId })
+        const req = this.getBidRequest({ requestId });
         if (req != null && (adUnitId == null || req.adUnitId === adUnitId)) {
-          return req.mediaTypes
+          return req.mediaTypes;
         }
       } else if (adUnitId != null) {
-        const au = this.getAdUnit({ adUnitId })
+        const au = this.getAdUnit({ adUnitId });
         if (au != null) {
-          return au.mediaTypes
+          return au.mediaTypes;
         }
       }
     },
     getBidderRequest({ requestId, bidderRequestId }) {
       if (requestId != null || bidderRequestId != null) {
-        let bers = getAuctions().flatMap(a => a.getBidRequests())
+        let bers = getAuctions().flatMap(a => a.getBidRequests());
         if (bidderRequestId != null) {
-          bers = bers.filter(ber => ber.bidderRequestId === bidderRequestId)
+          bers = bers.filter(ber => ber.bidderRequestId === bidderRequestId);
         }
         if (requestId == null) {
-          return bers[0]
+          return bers[0];
         } else {
-          return bers.find(ber => ber.bids && ber.bids.find(br => br.bidId === requestId) != null)
+          return bers.find(ber => ber.bids && ber.bids.find(br => br.bidId === requestId) != null);
         }
       }
     },
@@ -64,11 +64,11 @@ export function AuctionIndex(getAuctions) {
         return getAuctions()
           .flatMap(a => a.getBidRequests())
           .flatMap(ber => ber.bids)
-          .find(br => br && br.bidId === requestId)
+          .find(br => br && br.bidId === requestId);
       }
     },
     getOrtb2(bid) {
-      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2
+      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2;
     }
-  })
+  });
 }

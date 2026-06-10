@@ -1,10 +1,10 @@
-import { expect } from 'chai'
+import { expect } from 'chai';
 import {
   spec, STORAGE, getRevnewLocalStorage,
-} from 'modules/revnewBidAdapter.js'
-import sinon from 'sinon'
-import { getAmxId } from '../../../libraries/nexx360Utils/index.js'
-const sandbox = sinon.createSandbox()
+} from 'modules/revnewBidAdapter.js';
+import sinon from 'sinon';
+import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
+const sandbox = sinon.createSandbox();
 
 describe('Revnew bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -31,10 +31,10 @@ describe('Revnew bid adapter tests', () => {
         domain: 'publisher.com',
       }],
     },
-  }
+  };
 
   describe('isBidRequestValid()', () => {
-    let bannerBid
+    let bannerBid;
     beforeEach(() => {
       bannerBid = {
         bidder: 'revnew',
@@ -45,116 +45,116 @@ describe('Revnew bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
-    })
+      };
+    });
 
     it('We verify isBidRequestValid with incorrect tagid', () => {
-      bannerBid.params = { 'tagid': 'luvxjvgn' }
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false)
-    })
+      bannerBid.params = { 'tagid': 'luvxjvgn' };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
+    });
 
     it('We verify isBidRequestValid with correct tagId', () => {
-      bannerBid.params = { 'tagId': 'luvxjvgn' }
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true)
-    })
+      bannerBid.params = { 'tagId': 'luvxjvgn' };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
+    });
 
     it('We verify isBidRequestValid with correct placement', () => {
-      bannerBid.params = { 'placement': 'testad' }
-      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true)
-    })
-  })
+      bannerBid.params = { 'placement': 'testad' };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(true);
+    });
+  });
 
   describe('getRevnewLocalStorage disabled', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false)
-    })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false);
+    });
     it('We test if we get the revnewId', () => {
-      const output = getRevnewLocalStorage()
-      expect(output).to.be.eql(null)
-    })
+      const output = getRevnewLocalStorage();
+      expect(output).to.be.eql(null);
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('getRevnewLocalStorage enabled but nothing', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
-      sandbox.stub(STORAGE, 'setDataInLocalStorage')
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => null)
-    })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => null);
+    });
     it('We test if we get the revnewId', () => {
-      const output = getRevnewLocalStorage()
-      expect(typeof output.revnewId).to.be.eql('string')
-    })
+      const output = getRevnewLocalStorage();
+      expect(typeof output.revnewId).to.be.eql('string');
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('getRevnewLocalStorage enabled but wrong payload', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
-      sandbox.stub(STORAGE, 'setDataInLocalStorage')
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => '{"revnewId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}')
-    })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => '{"revnewId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
+    });
     it('We test if we get the revnewId', () => {
-      const output = getRevnewLocalStorage()
-      expect(output).to.be.eql(null)
-    })
+      const output = getRevnewLocalStorage();
+      expect(output).to.be.eql(null);
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('getRevnewLocalStorage enabled', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
-      sandbox.stub(STORAGE, 'setDataInLocalStorage')
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => '{"revnewId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}')
-    })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => '{"revnewId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
+    });
     it('We test if we get the revnewId', () => {
-      const output = getRevnewLocalStorage()
-      expect(output.revnewId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4')
-    })
+      const output = getRevnewLocalStorage();
+      expect(output.revnewId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('getAmxId() with localStorage enabled and data not set', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
-      sandbox.stub(STORAGE, 'setDataInLocalStorage')
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => null)
-    })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => null);
+    });
     it('We test if we get the amxId', () => {
-      const output = getAmxId(STORAGE, 'revnew')
-      expect(output).to.be.eql(null)
-    })
+      const output = getAmxId(STORAGE, 'revnew');
+      expect(output).to.be.eql(null);
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('getAmxId() with localStorage enabled and data set', () => {
     before(() => {
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
-      sandbox.stub(STORAGE, 'setDataInLocalStorage')
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => 'abcdef')
-    })
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => 'abcdef');
+    });
     it('We test if we get the amxId', () => {
-      const output = getAmxId(STORAGE, 'revnew')
-      expect(output).to.be.eql('abcdef')
-    })
+      const output = getAmxId(STORAGE, 'revnew');
+      expect(output).to.be.eql('abcdef');
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('buildRequests()', () => {
     before(() => {
-      const documentStub = sandbox.stub(document, 'getElementById')
+      const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('div-1').returns({
         offsetWidth: 200,
         offsetHeight: 250,
@@ -162,12 +162,12 @@ describe('Revnew bid adapter tests', () => {
           maxWidth: '400px',
           maxHeight: '350px',
         },
-        getBoundingClientRect() { return { width: 200, height: 250 } }
-      })
-      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true)
-      sandbox.stub(STORAGE, 'setDataInLocalStorage')
-      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => 'abcdef')
-    })
+        getBoundingClientRect() { return { width: 200, height: 250 }; }
+      });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake(() => 'abcdef');
+    });
     describe('We test with a multiple display bids', () => {
       const sampleBids = [
         {
@@ -209,7 +209,7 @@ describe('Revnew bid adapter tests', () => {
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         }
-      ]
+      ];
       const bidderRequest = {
         bidderCode: 'revnew',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
@@ -242,26 +242,26 @@ describe('Revnew bid adapter tests', () => {
           gdprApplies: true,
           consentString: 'CPhdLUAPhdLUAAKAsAENCmCsAP_AAE7AAAqIJFNd_H__bW9r-f5_aft0eY1P9_r37uQzDhfNk-8F3L_W_LwX52E7NF36tq4KmR4ku1LBIUNlHMHUDUmwaokVryHsak2cpzNKJ7BEknMZOydYGF9vmxtj-QKY7_5_d3bx2D-t_9v239z3z81Xn3d53-_03LCdV5_9Dfn9fR_bc9KPt_58v8v8_____3_e__3_7997BIiAaADgAJYBnwEeAJXAXmAwQBj4DtgHcgPBAeKBIgAA.YAAAAAAAAAAA',
         }
-      }
+      };
       it('We perform a test with 2 display adunits', () => {
-        const displayBids = structuredClone(sampleBids)
+        const displayBids = structuredClone(sampleBids);
         displayBids[0].mediaTypes = {
           banner: {
             sizes: [[300, 250], [300, 600]]
           }
-        }
-        const request = spec.buildRequests(displayBids, bidderRequest)
-        const requestContent = request.data
-        expect(request).to.have.property('method').and.to.equal('POST')
-        expect(requestContent.imp[0].ext.revnew.tagId).to.be.eql('luvxjvgn')
-        expect(requestContent.imp[0].ext.revnew.divId).to.be.eql('div-1')
-        expect(requestContent.imp[1].ext.revnew.placement).to.be.eql('testPlacement')
-        expect(requestContent.ext.bidderVersion).to.be.eql('1.0')
-      })
+        };
+        const request = spec.buildRequests(displayBids, bidderRequest);
+        const requestContent = request.data;
+        expect(request).to.have.property('method').and.to.equal('POST');
+        expect(requestContent.imp[0].ext.revnew.tagId).to.be.eql('luvxjvgn');
+        expect(requestContent.imp[0].ext.revnew.divId).to.be.eql('div-1');
+        expect(requestContent.imp[1].ext.revnew.placement).to.be.eql('testPlacement');
+        expect(requestContent.ext.bidderVersion).to.be.eql('1.0');
+      });
 
       if (FEATURES.VIDEO) {
         it('We perform a test with a multiformat adunit', () => {
-          const multiformatBids = structuredClone(sampleBids)
+          const multiformatBids = structuredClone(sampleBids);
           multiformatBids[0].mediaTypes = {
             banner: {
               sizes: [[300, 250], [300, 600]]
@@ -275,9 +275,9 @@ describe('Revnew bid adapter tests', () => {
               skip: 1,
               playback_method: ['auto_play_sound_off']
             }
-          }
-          const request = spec.buildRequests(multiformatBids, bidderRequest)
-          const video = request.data.imp[0].video
+          };
+          const request = spec.buildRequests(multiformatBids, bidderRequest);
+          const video = request.data.imp[0].video;
           const expectedVideo = {
             mimes: ['video/mp4'],
             protocols: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -289,12 +289,12 @@ describe('Revnew bid adapter tests', () => {
               playerSize: [640, 480],
               context: 'outstream',
             },
-          }
-          expect(video).to.eql(expectedVideo)
-        })
+          };
+          expect(video).to.eql(expectedVideo);
+        });
 
         it('We perform a test with a instream adunit', () => {
-          const videoBids = structuredClone(sampleBids)
+          const videoBids = structuredClone(sampleBids);
           videoBids[0].mediaTypes = {
             video: {
               context: 'instream',
@@ -304,28 +304,28 @@ describe('Revnew bid adapter tests', () => {
               playbackmethod: [2],
               skip: 1
             }
-          }
-          const request = spec.buildRequests(videoBids, bidderRequest)
-          const requestContent = request.data
-          expect(request).to.have.property('method').and.to.equal('POST')
-          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream')
-          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2)
-        })
+          };
+          const request = spec.buildRequests(videoBids, bidderRequest);
+          const requestContent = request.data;
+          expect(request).to.have.property('method').and.to.equal('POST');
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
+        });
       }
-    })
+    });
     after(() => {
-      sandbox.restore()
-    })
-  })
+      sandbox.restore();
+    });
+  });
 
   describe('We test interpretResponse', () => {
     it('empty response', () => {
       const response = {
         body: ''
-      }
-      const output = spec.interpretResponse(response)
-      expect(output.length).to.be.eql(0)
-    })
+      };
+      const output = spec.interpretResponse(response);
+      expect(output.length).to.be.eql(0);
+    });
     it('banner responses with adm', () => {
       const response = {
         body: {
@@ -365,8 +365,8 @@ describe('Revnew bid adapter tests', () => {
             cookies: [],
           },
         },
-      }
-      const output = spec.interpretResponse(response)
+      };
+      const output = spec.interpretResponse(response);
       const expectedOutput = [{
         requestId: '226175918ebeda',
         cpm: 1.5,
@@ -384,9 +384,9 @@ describe('Revnew bid adapter tests', () => {
           demandSource: 'appnexus',
         },
         ad: '<div>TestAd</div>',
-      }]
-      expect(output).to.eql(expectedOutput)
-    })
+      }];
+      expect(output).to.eql(expectedOutput);
+    });
 
     it('instream responses', () => {
       const response = {
@@ -421,9 +421,9 @@ describe('Revnew bid adapter tests', () => {
             cookies: [],
           },
         },
-      }
+      };
 
-      const output = spec.interpretResponse(response)
+      const output = spec.interpretResponse(response);
       const expectedOutput = [{
         requestId: '263cba3b8bfb72',
         cpm: 5,
@@ -436,9 +436,9 @@ describe('Revnew bid adapter tests', () => {
         mediaType: 'video',
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
         vastXml: '<VAST>vast</VAST>',
-      }]
-      expect(output).to.eql(expectedOutput)
-    })
+      }];
+      expect(output).to.eql(expectedOutput);
+    });
 
     it('outstream responses', () => {
       const response = {
@@ -474,9 +474,9 @@ describe('Revnew bid adapter tests', () => {
             cookies: [],
           },
         },
-      }
+      };
 
-      const output = spec.interpretResponse(response)
+      const output = spec.interpretResponse(response);
       const expectedOutut = [{
         requestId: '4ce809b61a3928',
         cpm: 5,
@@ -491,9 +491,9 @@ describe('Revnew bid adapter tests', () => {
         meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
         vastXml: '<VAST>vast</VAST>',
         renderer: output[0].renderer,
-      }]
-      expect(output).to.eql(expectedOutut)
-    })
+      }];
+      expect(output).to.eql(expectedOutut);
+    });
 
     it('native responses', () => {
       const response = {
@@ -531,9 +531,9 @@ describe('Revnew bid adapter tests', () => {
             cookies: [],
           },
         },
-      }
+      };
 
-      const output = spec.interpretResponse(response)
+      const output = spec.interpretResponse(response);
       const expectOutput = [{
         requestId: '23e11d845514bb',
         cpm: 10,
@@ -592,34 +592,34 @@ describe('Revnew bid adapter tests', () => {
             ],
           },
         },
-      }]
-      expect(output).to.eql(expectOutput)
-    })
-  })
+      }];
+      expect(output).to.eql(expectOutput);
+    });
+  });
 
   describe('getUserSyncs()', () => {
-    const response = { body: { cookies: [] } }
+    const response = { body: { cookies: [] } };
     it('Verifies user sync without cookie in bid response', () => {
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
-      expect(syncs).to.eql([])
-    })
+      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.eql([]);
+    });
     it('Verifies user sync with cookies in bid response', () => {
       response.body.ext = {
         cookies: [{ 'type': 'image', 'url': 'http://www.cookie.sync.org/' }]
-      }
-      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent)
-      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }]
-      expect(syncs).to.eql(expectedSyncs)
-    })
+      };
+      const syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
+      const expectedSyncs = [{ type: 'image', url: 'http://www.cookie.sync.org/' }];
+      expect(syncs).to.eql(expectedSyncs);
+    });
     it('Verifies user sync with no bid response', () => {
-      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
-      expect(syncs).to.eql([])
-    })
+      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.eql([]);
+    });
     it('Verifies user sync with no bid body response', () => {
-      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
-      expect(syncs).to.eql([])
-      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent)
-      expect(syncs).to.eql([])
-    })
-  })
-})
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.eql([]);
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.eql([]);
+    });
+  });
+});

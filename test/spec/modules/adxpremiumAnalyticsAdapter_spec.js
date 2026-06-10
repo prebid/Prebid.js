@@ -1,26 +1,26 @@
-import adxpremiumAnalyticsAdapter, { testSend } from 'modules/adxpremiumAnalyticsAdapter.js'
+import adxpremiumAnalyticsAdapter, { testSend } from 'modules/adxpremiumAnalyticsAdapter.js';
 
-import { expect } from 'chai'
-import adapterManager from 'src/adapterManager.js'
-import { server } from 'test/mocks/xhr.js'
-import { EVENTS } from 'src/constants.js'
+import { expect } from 'chai';
+import adapterManager from 'src/adapterManager.js';
+import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
-const events = require('src/events')
+const events = require('src/events');
 
 describe('AdxPremium analytics adapter', function () {
   beforeEach(function () {
-    sinon.stub(events, 'getEvents').returns([])
-  })
+    sinon.stub(events, 'getEvents').returns([]);
+  });
 
   afterEach(function () {
-    events.getEvents.restore()
-  })
+    events.getEvents.restore();
+  });
 
   describe('track', function () {
     const initOptions = {
       pubId: 123,
       sid: 's2'
-    }
+    };
 
     const auctionInit = {
       'auctionId': 'c4f0cce0-264c-483a-b2f4-8ac2248a896b',
@@ -140,7 +140,7 @@ describe('AdxPremium analytics adapter', function () {
         'pubId': 4444,
         'sid': 's2'
       }
-    }
+    };
 
     // requests & responses
     const bidRequest = {
@@ -230,7 +230,7 @@ describe('AdxPremium analytics adapter', function () {
         ]
       },
       'start': 1589707613908
-    }
+    };
 
     const bidResponse = {
       'bidderCode': 'luponmedia',
@@ -270,27 +270,27 @@ describe('AdxPremium analytics adapter', function () {
         'hb_source': 'client',
         'hb_format': 'banner'
       }
-    }
+    };
 
     // what we expect after general auction
 
-    let expectedAfterBidData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19XX0='))
-    expectedAfterBidData['screen_resolution'] = window.screen.width + 'x' + window.screen.height
-    expectedAfterBidData = btoa(JSON.stringify(expectedAfterBidData))
+    let expectedAfterBidData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19XX0='));
+    expectedAfterBidData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
+    expectedAfterBidData = btoa(JSON.stringify(expectedAfterBidData));
 
     const expectedAfterBid = {
       'query': 'mutation {createEvent(input: {event: {eventData: "' + expectedAfterBidData + '"}}) {event {createTime } } }'
-    }
+    };
 
     // what we expect after timeout
 
-    let expectedAfterTimeoutData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19XX0='))
-    expectedAfterTimeoutData['screen_resolution'] = window.screen.width + 'x' + window.screen.height
-    expectedAfterTimeoutData = btoa(JSON.stringify(expectedAfterTimeoutData))
+    let expectedAfterTimeoutData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19XX0='));
+    expectedAfterTimeoutData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
+    expectedAfterTimeoutData = btoa(JSON.stringify(expectedAfterTimeoutData));
 
     const expectedAfterTimeout = {
       'query': 'mutation {createEvent(input: {event: {eventData: "' + expectedAfterTimeoutData + '"}}) {event {createTime } } }'
-    }
+    };
 
     // lets simulate that some bidders timeout
     const bidTimeoutArgsV1 = [
@@ -300,7 +300,7 @@ describe('AdxPremium analytics adapter', function () {
         'adUnitCode': 'div-gpt-ad-1533155193780-3',
         'auctionId': 'c4f0cce0-264c-483a-b2f4-8ac2248a896b'
       }
-    ]
+    ];
 
     // now simulate some WIN and RENDERING
     const wonRequest = {
@@ -348,66 +348,66 @@ describe('AdxPremium analytics adapter', function () {
           'keyId': '4o2c4'
         }
       ]
-    }
+    };
 
-    let wonExpectData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19LHsidHlwZSI6IlJFU1BPTlNFIiwiYmlkZGVyX2NvZGUiOiJsdXBvbm1lZGlhIiwiZXZlbnRfdGltZXN0YW1wIjoxNTg5NzA3NjE1MTg4LCJzaXplIjoiMzAweDI1MCIsImdwdF9jb2RlIjoiZGl2LWdwdC1hZC0xNTMzMTU1MTkzNzgwLTIiLCJjdXJyZW5jeSI6IlVTRCIsImNyZWF0aXZlX2lkIjoiNDQzODAxMDEwIiwidGltZV90b19yZXNwb25kIjoxMjgwLCJjcG0iOjAuNDMsImlzX3dpbm5pbmciOmZhbHNlfV19'))
-    wonExpectData['screen_resolution'] = window.screen.width + 'x' + window.screen.height
-    wonExpectData = btoa(JSON.stringify(wonExpectData))
+    let wonExpectData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19LHsidHlwZSI6IlJFU1BPTlNFIiwiYmlkZGVyX2NvZGUiOiJsdXBvbm1lZGlhIiwiZXZlbnRfdGltZXN0YW1wIjoxNTg5NzA3NjE1MTg4LCJzaXplIjoiMzAweDI1MCIsImdwdF9jb2RlIjoiZGl2LWdwdC1hZC0xNTMzMTU1MTkzNzgwLTIiLCJjdXJyZW5jeSI6IlVTRCIsImNyZWF0aXZlX2lkIjoiNDQzODAxMDEwIiwidGltZV90b19yZXNwb25kIjoxMjgwLCJjcG0iOjAuNDMsImlzX3dpbm5pbmciOmZhbHNlfV19'));
+    wonExpectData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
+    wonExpectData = btoa(JSON.stringify(wonExpectData));
 
     const wonExpect = {
       'query': 'mutation {createEvent(input: {event: {eventData: "' + wonExpectData + '"}}) {event {createTime } } }'
-    }
+    };
 
     adapterManager.registerAnalyticsAdapter({
       code: 'adxpremium',
       adapter: adxpremiumAnalyticsAdapter
-    })
+    });
 
     beforeEach(function () {
       adapterManager.enableAnalytics({
         provider: 'adxpremium',
         options: initOptions
-      })
-    })
+      });
+    });
 
     afterEach(function () {
-      adxpremiumAnalyticsAdapter.disableAnalytics()
-    })
+      adxpremiumAnalyticsAdapter.disableAnalytics();
+    });
 
     it('builds and sends auction data', function () {
       // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, auctionInit)
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
 
       // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, bidRequest)
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
       // Step 3: Send bid response event
-      events.emit(EVENTS.BID_RESPONSE, bidResponse)
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 4: Send bid time out event
-      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgsV1)
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
 
       // Step 5: Send auction end event
-      events.emit(EVENTS.AUCTION_END, {})
+      events.emit(EVENTS.AUCTION_END, {});
 
-      testSend()
+      testSend();
 
-      expect(server.requests.length).to.equal(2)
+      expect(server.requests.length).to.equal(2);
 
-      const realAfterBid = JSON.parse(server.requests[0].requestBody)
+      const realAfterBid = JSON.parse(server.requests[0].requestBody);
 
-      expect(realAfterBid).to.deep.equal(expectedAfterBid)
+      expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
       // expect after timeout
-      expect(realAfterBid).to.deep.equal(expectedAfterTimeout)
+      expect(realAfterBid).to.deep.equal(expectedAfterTimeout);
 
       // Step 6: Send auction bid won event
-      events.emit(EVENTS.BID_WON, wonRequest)
+      events.emit(EVENTS.BID_WON, wonRequest);
 
-      expect(server.requests.length).to.equal(3)
-      const winEventData = JSON.parse(server.requests[1].requestBody)
+      expect(server.requests.length).to.equal(3);
+      const winEventData = JSON.parse(server.requests[1].requestBody);
 
-      expect(winEventData).to.deep.equal(wonExpect)
-    })
-  })
-})
+      expect(winEventData).to.deep.equal(wonExpect);
+    });
+  });
+});

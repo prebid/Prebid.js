@@ -1,7 +1,7 @@
-import { getGlobal } from './prebidGlobal.js'
-import { logWarn } from './utils.js'
+import { getGlobal } from './prebidGlobal.js';
+import { logWarn } from './utils.js';
 
-const prebid = getGlobal()
+const prebid = getGlobal();
 
 /**
  * This file defines the plugin points in prebid-core for AdServer-specific functionality.
@@ -44,13 +44,13 @@ const prebid = getGlobal()
  * @property {VideoSupport} videoSupport An object with the functions needed to support video in Prebid.
  */
 export function registerVideoSupport(name, videoSupport) {
-  prebid.adServers = prebid.adServers || { }
-  prebid.adServers[name] = prebid.adServers[name] || { }
+  prebid.adServers = prebid.adServers || { };
+  prebid.adServers[name] = prebid.adServers[name] || { };
   Object.keys(videoSupport).forEach((key) => {
     if (prebid.adServers[name][key]) {
-      logWarn(`Attempting to add an already registered function property ${key} for AdServer ${name}.`)
-      return
+      logWarn(`Attempting to add an already registered function property ${key} for AdServer ${name}.`);
+      return;
     }
-    prebid.adServers[name][key] = videoSupport[key]
-  })
+    prebid.adServers[name][key] = videoSupport[key];
+  });
 }

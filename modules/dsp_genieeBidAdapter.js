@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { deepAccess, deepSetValue } from '../src/utils.js'
-import { config } from '../src/config.js'
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -14,39 +14,39 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDDER_CODE = 'dsp_geniee'
-const ENDPOINT_URL = 'https://rt.gsspat.jp/prebid_auction'
-const ENDPOINT_URL_UNCOMFORTABLE = 'https://rt.gsspat.jp/prebid_uncomfortable'
-const ENDPOINT_USERSYNC = 'https://rt.gsspat.jp/prebid_cs'
-const VALID_CURRENCIES = ['USD', 'JPY']
+const BIDDER_CODE = 'dsp_geniee';
+const ENDPOINT_URL = 'https://rt.gsspat.jp/prebid_auction';
+const ENDPOINT_URL_UNCOMFORTABLE = 'https://rt.gsspat.jp/prebid_uncomfortable';
+const ENDPOINT_USERSYNC = 'https://rt.gsspat.jp/prebid_cs';
+const VALID_CURRENCIES = ['USD', 'JPY'];
 const converter = ortbConverter({
   context: { ttl: 300, netRevenue: true },
   // set optional parameters
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
-    deepSetValue(imp, 'ext', bidRequest.params)
-    return imp
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'ext', bidRequest.params);
+    return imp;
   }
-})
+});
 
 function USPConsent(consent) {
-  return typeof consent === 'string' && consent[0] === '1' && consent.toUpperCase()[2] === 'Y'
+  return typeof consent === 'string' && consent[0] === '1' && consent.toUpperCase()[2] === 'Y';
 }
 
 function invalidCurrency(currency) {
-  return typeof currency === 'string' && VALID_CURRENCIES.indexOf(currency.toUpperCase()) === -1
+  return typeof currency === 'string' && VALID_CURRENCIES.indexOf(currency.toUpperCase()) === -1;
 }
 
 function hasTest(imp) {
   if (typeof imp !== 'object') {
-    return false
+    return false;
   }
   for (let i = 0; i < imp.length; i++) {
     if (deepAccess(imp[i], 'ext.test') === 1) {
-      return true
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 export const spec = {
@@ -59,7 +59,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (_) {
-    return true
+    return true;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -77,22 +77,22 @@ export const spec = {
       return {
         method: 'GET',
         url: ENDPOINT_URL_UNCOMFORTABLE
-      }
+      };
     }
 
-    const payload = converter.toORTB({ validBidRequests, bidderRequest })
+    const payload = converter.toORTB({ validBidRequests, bidderRequest });
 
     if (hasTest(deepAccess(payload, 'imp'))) {
-      deepSetValue(payload, 'test', 1)
+      deepSetValue(payload, 'test', 1);
     }
 
-    deepSetValue(payload, 'at', 1) // first price auction only
+    deepSetValue(payload, 'at', 1); // first price auction only
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payload
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -103,10 +103,10 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) { // empty response (no bids)
-      return []
+      return [];
     }
-    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids
-    return bids
+    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
+    return bids;
   },
 
   /**
@@ -117,18 +117,18 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
     // gdpr & usp
     if (deepAccess(gdprConsent, 'gdprApplies') || USPConsent(uspConsent)) {
-      return syncs
+      return syncs;
     }
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
         url: ENDPOINT_USERSYNC
-      })
+      });
     }
-    return syncs
+    return syncs;
   }
-}
-registerBidder(spec)
+};
+registerBidder(spec);

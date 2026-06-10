@@ -1,6 +1,6 @@
-import type { AdUnitDefinition } from '../src/adUnits.ts'
-import type { Bid } from '../src/bidfactory.ts'
-import type { RequireAtLeastOne } from '../src/types/objects'
+import type { AdUnitDefinition } from '../src/adUnits.ts';
+import type { Bid } from '../src/bidfactory.ts';
+import type { RequireAtLeastOne } from '../src/types/objects';
 
 /**
  * This method extends the behavior of `buildVideoUrl` by not only constructing the Google Ad Manager video ad tag URL,
@@ -13,7 +13,7 @@ import type { RequireAtLeastOne } from '../src/types/objects'
 export function getVastXml(
   options: RequireAtLeastOne<GamVideoOptions, 'params' | 'url'>,
   localCacheMap?: Map<string, string>
-): Promise<string>
+): Promise<string>;
 
 /**
  * Options passed to {@link buildGamVideoUrl} and {@link getVastXml}.
@@ -46,7 +46,7 @@ export interface GamVideoOptions {
 
 export type GamVideoCustParams = {
   [key: string]: string | string[] | number | boolean | undefined;
-}
+};
 export interface GamVideoParams {
   /**
    * Google Ad Manager ad unit ID.
@@ -75,7 +75,7 @@ export interface GamVideoParams {
  *
  * @returns A URL string, or `undefined` when neither `params` nor `url` is provided.
  */
-export function buildGamVideoUrl(options: RequireAtLeastOne<GamVideoOptions, 'params' | 'url'>): string | undefined
+export function buildGamVideoUrl(options: RequireAtLeastOne<GamVideoOptions, 'params' | 'url'>): string | undefined;
 
 declare module '../src/prebidGlobal' {
   interface PrebidJS {
@@ -88,4 +88,4 @@ declare module '../src/prebidGlobal' {
   }
 }
 
-export {}
+export {};

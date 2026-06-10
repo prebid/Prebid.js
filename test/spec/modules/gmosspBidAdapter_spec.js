@@ -1,18 +1,18 @@
-import { expect } from 'chai'
-import { spec } from 'modules/gmosspBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from 'src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/gmosspBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad'
+const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
 
 describe('GmosspAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -20,19 +20,19 @@ describe('GmosspAdapter', function () {
       params: {
         sid: '123456'
       }
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
-      invalidBid.params = {}
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -61,35 +61,35 @@ describe('GmosspAdapter', function () {
           idl_env: '1111',
         }
       }
-    ]
+    ];
 
     it('sends bid request to ENDPOINT via GET', function () {
       const bidderRequest = {
         refererInfo: {
           topmostLocation: 'https://hoge.com'
         }
-      }
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].url).to.equal(ENDPOINT)
-      expect(requests[0].method).to.equal('GET')
-      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&im_uid=h.0a4749e7ffe09fa6&shared_id=1111&idl_env=1111&url=https%3A%2F%2Fhoge.com' + '&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&')
-    })
+      };
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.equal(ENDPOINT);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].data).to.equal('tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&im_uid=h.0a4749e7ffe09fa6&shared_id=1111&idl_env=1111&url=https%3A%2F%2Fhoge.com' + '&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&');
+    });
 
     it('should use fallback if refererInfo.referer in bid request is empty and im_uid ,shared_id, idl_env cookie is empty', function () {
       const bidderRequest = {
         refererInfo: {
           topmostLocation: ''
         },
-      }
-      bidRequests[0].userId.imuid = ''
-      bidRequests[0].userId.pubcid = ''
-      bidRequests[0].userId.idl_env = ''
+      };
+      bidRequests[0].userId.imuid = '';
+      bidRequests[0].userId.pubcid = '';
+      bidRequests[0].userId.idl_env = '';
 
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&'
-      expect(requests[0].data).to.equal(result)
-    })
-  })
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const result = 'tid=791e9d84-af92-4903-94da-24c7426d9d0c&bid=2b84475b5b636e&ver=$prebid.version$&sid=123456&ref=' + encodeURIComponent(document.referrer) + '&cur=JPY&';
+      expect(requests[0].data).to.equal(result);
+    });
+  });
 
   describe('interpretResponse', function () {
     const bidderRequests = [
@@ -109,7 +109,7 @@ describe('GmosspAdapter', function () {
         auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
         transactionId: '791e9d84-af92-4903-94da-24c7426d9d0c'
       }
-    ]
+    ];
 
     it('should get correct banner bid response', function () {
       const response = {
@@ -131,7 +131,7 @@ describe('GmosspAdapter', function () {
           'https://sync.dsp.reemo-ad.jp'
         ],
         ttl: 300
-      }
+      };
 
       const expectedResponse = [
         {
@@ -150,26 +150,26 @@ describe('GmosspAdapter', function () {
           netRevenue: true,
           ttl: 300
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse({ body: response }, bidderRequests)
-      expect(result).to.have.lengthOf(1)
+      const result = spec.interpretResponse({ body: response }, bidderRequests);
+      expect(result).to.have.lengthOf(1);
 
       response.imps.forEach(impTracker => {
-        const tracker = utils.createTrackPixelHtml(impTracker)
-        expectedResponse[0].ad += tracker
-      })
+        const tracker = utils.createTrackPixelHtml(impTracker);
+        expectedResponse[0].ad += tracker;
+      });
 
-      expect(result).to.deep.have.same.members(expectedResponse)
-    })
+      expect(result).to.deep.have.same.members(expectedResponse);
+    });
 
     it('handles nobid responses', function () {
-      const response = ''
+      const response = '';
 
-      const result = spec.interpretResponse({ body: response }, bidderRequests)
-      expect(result.length).to.equal(0)
-    })
-  })
+      const result = spec.interpretResponse({ body: response }, bidderRequests);
+      expect(result.length).to.equal(0);
+    });
+  });
 
   describe('getUserSyncs', function () {
     const bidResponse = {
@@ -179,15 +179,15 @@ describe('GmosspAdapter', function () {
           'https://hoge.com'
         ]
       }
-    }
+    };
     it('should return returns pixel syncs', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse])
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse]);
       expect(syncs).to.deep.equal([
         {
           type: 'image',
           url: 'https://hoge.com'
         }
-      ])
-    })
-  })
-})
+      ]);
+    });
+  });
+});

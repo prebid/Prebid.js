@@ -9,31 +9,31 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js'
-import { config } from '../src/config.js'
-import { ajaxBuilder } from '../src/ajax.js'
-import { deepAccess, logError, logWarn } from '../src/utils.js'
-import { getGlobal } from '../src/prebidGlobal.js'
+import { submodule } from '../src/hook.js';
+import { config } from '../src/config.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
  */
 
-const SUBMODULE_NAME = 'jwplayer'
-const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com'
-const ENRICH_ALWAYS = 'always'
-const ENRICH_WHEN_EMPTY = 'whenEmpty'
-const ENRICH_NEVER = 'never'
-const overrideValidationRegex = /^(always|never|whenEmpty)$/
-const playlistItemCache = {}
-const pendingRequests = {}
-let activeRequestCount = 0
-let resumeBidRequest
-let overrideContentId = ENRICH_WHEN_EMPTY
-let overrideContentUrl = ENRICH_WHEN_EMPTY
-let overrideContentTitle = ENRICH_WHEN_EMPTY
-let overrideContentDescription = ENRICH_WHEN_EMPTY
+const SUBMODULE_NAME = 'jwplayer';
+const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
+const ENRICH_ALWAYS = 'always';
+const ENRICH_WHEN_EMPTY = 'whenEmpty';
+const ENRICH_NEVER = 'never';
+const overrideValidationRegex = /^(always|never|whenEmpty)$/;
+const playlistItemCache = {};
+const pendingRequests = {};
+let activeRequestCount = 0;
+let resumeBidRequest;
+let overrideContentId = ENRICH_WHEN_EMPTY;
+let overrideContentUrl = ENRICH_WHEN_EMPTY;
+let overrideContentTitle = ENRICH_WHEN_EMPTY;
+let overrideContentDescription = ENRICH_WHEN_EMPTY;
 
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
@@ -50,123 +50,123 @@ export const jwplayerSubmodule = {
    */
   getBidRequestData: enrichBidRequest,
   init
-}
+};
 
 config.getConfig('realTimeData', ({ realTimeData }) => {
-  const providers = realTimeData.dataProviders
-  const jwplayerProvider = providers && ((providers) || []).find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME)
-  const params = jwplayerProvider && jwplayerProvider.params
+  const providers = realTimeData.dataProviders;
+  const jwplayerProvider = providers && ((providers) || []).find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
+  const params = jwplayerProvider && jwplayerProvider.params;
   if (!params) {
-    return
+    return;
   }
-  fetchTargetingInformation(params)
-  setOverrides(params)
-})
+  fetchTargetingInformation(params);
+  setOverrides(params);
+});
 
-submodule('realTimeData', jwplayerSubmodule)
+submodule('realTimeData', jwplayerSubmodule);
 
 function init(provider, userConsent) {
-  return true
+  return true;
 }
 
 export function fetchTargetingInformation(jwTargeting) {
-  const mediaIDs = jwTargeting.mediaIDs
+  const mediaIDs = jwTargeting.mediaIDs;
   if (!mediaIDs) {
-    return
+    return;
   }
   mediaIDs.forEach(mediaID => {
-    fetchTargetingForMediaId(mediaID)
-  })
+    fetchTargetingForMediaId(mediaID);
+  });
 }
 
 export function setOverrides(params) {
-  overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_WHEN_EMPTY)
-  overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY)
-  overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY)
-  overrideContentDescription = sanitizeOverrideParam(params.overrideContentDescription, ENRICH_WHEN_EMPTY)
+  overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_WHEN_EMPTY);
+  overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY);
+  overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY);
+  overrideContentDescription = sanitizeOverrideParam(params.overrideContentDescription, ENRICH_WHEN_EMPTY);
 }
 
 function sanitizeOverrideParam(overrideParam, defaultValue) {
   if (overrideValidationRegex.test(overrideParam)) {
-    return overrideParam
+    return overrideParam;
   }
 
-  return defaultValue
+  return defaultValue;
 }
 
 export function fetchTargetingForMediaId(mediaId) {
-  const ajax = ajaxBuilder()
+  const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
-  pendingRequests[mediaId] = null
+  pendingRequests[mediaId] = null;
   ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
-      const item = parsePlaylistItem(response)
-      cachePlaylistItem(item, mediaId)
-      onRequestCompleted(mediaId, !!item)
+      const item = parsePlaylistItem(response);
+      cachePlaylistItem(item, mediaId);
+      onRequestCompleted(mediaId, !!item);
     },
     error: function () {
-      logError('failed to retrieve targeting information')
-      onRequestCompleted(mediaId, false)
+      logError('failed to retrieve targeting information');
+      onRequestCompleted(mediaId, false);
     }
-  })
+  });
 }
 
 function parsePlaylistItem(response) {
-  let item
+  let item;
   try {
-    const data = JSON.parse(response)
+    const data = JSON.parse(response);
     if (!data) {
-      const msg = 'Empty response'
-      logError(msg)
-      return item
+      const msg = 'Empty response';
+      logError(msg);
+      return item;
     }
 
-    const playlist = data.playlist
+    const playlist = data.playlist;
     if (!playlist || !playlist.length) {
-      const msg = 'Empty playlist'
-      logError(msg)
-      return item
+      const msg = 'Empty playlist';
+      logError(msg);
+      return item;
     }
 
-    item = playlist[0]
+    item = playlist[0];
   } catch (err) {
-    logError(err)
+    logError(err);
   }
-  return item
+  return item;
 }
 
 function cachePlaylistItem(playlistItem, mediaId) {
   if (playlistItem && mediaId) {
-    playlistItemCache[mediaId] = playlistItem
+    playlistItemCache[mediaId] = playlistItem;
   }
 }
 
 function onRequestCompleted(mediaID, success) {
-  const callback = pendingRequests[mediaID]
+  const callback = pendingRequests[mediaID];
   if (callback) {
-    callback(success ? getVatFromCache(mediaID) : { mediaID })
-    activeRequestCount--
+    callback(success ? getVatFromCache(mediaID) : { mediaID });
+    activeRequestCount--;
   }
-  delete pendingRequests[mediaID]
+  delete pendingRequests[mediaID];
 
   if (activeRequestCount > 0) {
-    return
+    return;
   }
 
   if (resumeBidRequest) {
-    resumeBidRequest()
-    resumeBidRequest = null
+    resumeBidRequest();
+    resumeBidRequest = null;
   }
 }
 
 function enrichBidRequest(bidReqConfig, onDone) {
-  activeRequestCount = 0
-  const adUnits = bidReqConfig.adUnits || getGlobal().adUnits
-  enrichAdUnits(adUnits, bidReqConfig.ortb2Fragments)
+  activeRequestCount = 0;
+  const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
+  enrichAdUnits(adUnits, bidReqConfig.ortb2Fragments);
   if (activeRequestCount <= 0) {
-    onDone()
+    onDone();
   } else {
-    resumeBidRequest = onDone
+    resumeBidRequest = onDone;
   }
 }
 
@@ -177,80 +177,80 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * @param ortb2Fragments
  */
 export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
-  const fpdFallback = deepAccess(ortb2Fragments.global, 'site.ext.data.jwTargeting')
+  const fpdFallback = deepAccess(ortb2Fragments.global, 'site.ext.data.jwTargeting');
   adUnits.forEach(adUnit => {
-    const jwTargeting = extractPublisherParams(adUnit, fpdFallback)
+    const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
     if (!jwTargeting || !Object.keys(jwTargeting).length) {
-      return
+      return;
     }
 
     const onVatResponse = function (vat) {
       if (!vat) {
-        return
+        return;
       }
-      const mediaId = vat.mediaID
-      const contentId = getContentId(mediaId)
-      const contentSegments = getContentSegments(vat.segments)
-      const contentData = getContentData(mediaId, contentSegments)
-      const targeting = formatTargetingResponse(vat)
-      enrichBids(adUnit.bids, targeting, contentId, contentData)
-      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData, vat.title, vat.description, vat.mediaUrl)
-    }
-    loadVat(jwTargeting, onVatResponse)
-  })
+      const mediaId = vat.mediaID;
+      const contentId = getContentId(mediaId);
+      const contentSegments = getContentSegments(vat.segments);
+      const contentData = getContentData(mediaId, contentSegments);
+      const targeting = formatTargetingResponse(vat);
+      enrichBids(adUnit.bids, targeting, contentId, contentData);
+      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData, vat.title, vat.description, vat.mediaUrl);
+    };
+    loadVat(jwTargeting, onVatResponse);
+  });
 }
 
 function supportsInstreamVideo(mediaTypes) {
-  const video = mediaTypes && mediaTypes.video
-  return video && video.context === 'instream'
+  const video = mediaTypes && mediaTypes.video;
+  return video && video.context === 'instream';
 }
 
 export function extractPublisherParams(adUnit, fallback) {
-  let adUnitTargeting
+  let adUnitTargeting;
   try {
-    adUnitTargeting = adUnit.ortb2Imp.ext.data.jwTargeting
+    adUnitTargeting = adUnit.ortb2Imp.ext.data.jwTargeting;
   } catch (e) {}
 
   if (!adUnitTargeting && !supportsInstreamVideo(adUnit.mediaTypes)) {
-    return
+    return;
   }
 
-  return Object.assign({}, fallback, adUnitTargeting)
+  return Object.assign({}, fallback, adUnitTargeting);
 }
 
 function loadVat(params, onCompletion) {
-  let { playerID, playerDivId, mediaID } = params
+  let { playerID, playerDivId, mediaID } = params;
   if (!playerDivId) {
-    playerDivId = playerID
+    playerDivId = playerID;
   }
 
   if (pendingRequests[mediaID] !== undefined) {
-    loadVatForPendingRequest(playerDivId, mediaID, onCompletion)
-    return
+    loadVatForPendingRequest(playerDivId, mediaID, onCompletion);
+    return;
   }
 
-  const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerDivId, mediaID) || { mediaID }
-  onCompletion(vat)
+  const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerDivId, mediaID) || { mediaID };
+  onCompletion(vat);
 }
 
 function loadVatForPendingRequest(playerDivId, mediaID, callback) {
-  const vat = getVatFromPlayer(playerDivId, mediaID)
+  const vat = getVatFromPlayer(playerDivId, mediaID);
   if (vat) {
-    callback(vat)
+    callback(vat);
   } else {
-    activeRequestCount++
-    pendingRequests[mediaID] = callback
+    activeRequestCount++;
+    pendingRequests[mediaID] = callback;
   }
 }
 
 export function getVatFromCache(mediaID) {
-  const item = playlistItemCache[mediaID]
+  const item = playlistItemCache[mediaID];
 
   if (!item) {
-    return null
+    return null;
   }
 
-  const mediaUrl = item.file ?? getFileFromSources(item)
+  const mediaUrl = item.file ?? getFileFromSources(item);
 
   return {
     segments: item.jwpseg,
@@ -258,30 +258,30 @@ export function getVatFromCache(mediaID) {
     description: item.description,
     mediaUrl,
     mediaID
-  }
+  };
 }
 
 function getFileFromSources(playlistItem) {
-  return playlistItem.sources?.find?.(source => !!source.file)?.file
+  return playlistItem.sources?.find?.(source => !!source.file)?.file;
 }
 
 export function getVatFromPlayer(playerDivId, mediaID) {
-  const player = getPlayer(playerDivId)
+  const player = getPlayer(playerDivId);
   if (!player) {
-    return null
+    return null;
   }
 
-  const item = mediaID ? ((player.getPlaylist()) || []).find(item => item.mediaid === mediaID) : player.getPlaylistItem()
+  const item = mediaID ? ((player.getPlaylist()) || []).find(item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
-    return null
+    return null;
   }
 
-  mediaID = mediaID || item.mediaid
-  const title = item.title
-  const description = item.description
-  const mediaUrl = item.file
-  const segments = item.jwpseg
-  cachePlaylistItem(item, mediaID)
+  mediaID = mediaID || item.mediaid;
+  const title = item.title;
+  const description = item.description;
+  const mediaUrl = item.file;
+  const segments = item.jwpseg;
+  cachePlaylistItem(item, mediaID);
 
   return {
     segments,
@@ -289,133 +289,133 @@ export function getVatFromPlayer(playerDivId, mediaID) {
     title,
     mediaUrl,
     description
-  }
+  };
 }
 
 /*
   deprecated
  */
 export function formatTargetingResponse(vat) {
-  const { segments, mediaID } = vat
-  const targeting = {}
+  const { segments, mediaID } = vat;
+  const targeting = {};
   if (segments && segments.length) {
-    targeting.segments = segments
+    targeting.segments = segments;
   }
 
   if (mediaID) {
     targeting.content = {
       id: getContentId(mediaID)
-    }
+    };
   }
-  return targeting
+  return targeting;
 }
 
 export function getContentId(mediaID) {
   if (!mediaID) {
-    return
+    return;
   }
 
-  return 'jw_' + mediaID
+  return 'jw_' + mediaID;
 }
 
 export function getContentSegments(segments) {
   if (!segments || !segments.length) {
-    return
+    return;
   }
 
   const formattedSegments = segments.reduce((convertedSegments, rawSegment) => {
     convertedSegments.push({
       id: rawSegment
-    })
-    return convertedSegments
-  }, [])
+    });
+    return convertedSegments;
+  }, []);
 
-  return formattedSegments
+  return formattedSegments;
 }
 
 export function getContentData(mediaId, segments) {
   if (!mediaId && !segments) {
-    return
+    return;
   }
 
   const contentData = {
     name: JWPLAYER_DOMAIN,
     ext: {}
-  }
+  };
 
   if (mediaId) {
-    contentData.ext.cids = contentData.cids = [mediaId]
+    contentData.ext.cids = contentData.cids = [mediaId];
   }
 
   if (segments) {
-    contentData.segment = segments
-    contentData.ext.segtax = 502
+    contentData.segment = segments;
+    contentData.ext.segtax = 502;
   }
 
-  return contentData
+  return contentData;
 }
 
 export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, contentDescription, contentUrl) {
   if (ortb2 == null) {
-    ortb2 = {}
+    ortb2 = {};
   }
 
-  const site = ortb2.site = ortb2.site || {}
-  const content = site.content = site.content || {}
+  const site = ortb2.site = ortb2.site || {};
+  const content = site.content = site.content || {};
 
   if (shouldOverride(content.id, contentId, overrideContentId)) {
-    content.id = contentId
+    content.id = contentId;
   }
 
   if (shouldOverride(content.url, contentUrl, overrideContentUrl)) {
-    content.url = contentUrl
+    content.url = contentUrl;
   }
 
   if (shouldOverride(content.title, contentTitle, overrideContentTitle)) {
-    content.title = contentTitle
+    content.title = contentTitle;
   }
 
   if (shouldOverride(content.ext && content.ext.description, contentDescription, overrideContentDescription)) {
-    content.ext = content.ext || {}
-    content.ext.description = contentDescription
+    content.ext = content.ext || {};
+    content.ext.description = contentDescription;
   }
 
-  const currentData = content.data || []
+  const currentData = content.data || [];
   // remove old jwplayer data
-  const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN)
+  const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
 
   if (contentData) {
-    data.push(contentData)
+    data.push(contentData);
   }
 
   if (data.length) {
-    content.data = data
+    content.data = data;
   }
 
-  return ortb2
+  return ortb2;
 }
 
 function shouldOverride(currentValue, newValue, configValue) {
   switch (configValue) {
     case ENRICH_ALWAYS:
-      return !!newValue
+      return !!newValue;
     case ENRICH_NEVER:
-      return false
+      return false;
     case ENRICH_WHEN_EMPTY:
-      return !!newValue && currentValue === undefined
+      return !!newValue && currentValue === undefined;
     default:
-      return false
+      return false;
   }
 }
 
 function enrichBids(bids, targeting, contentId, contentData) {
   if (!bids) {
-    return
+    return;
   }
 
   bids.forEach(bid => {
-    addTargetingToBid(bid, targeting)
-  })
+    addTargetingToBid(bid, targeting);
+  });
 }
 
 /*
@@ -423,46 +423,46 @@ function enrichBids(bids, targeting, contentId, contentData) {
  */
 export function addTargetingToBid(bid, targeting) {
   if (!targeting) {
-    return
+    return;
   }
 
-  const rtd = bid.rtd || {}
-  const jwRtd = {}
-  jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting })
-  bid.rtd = Object.assign({}, rtd, jwRtd)
+  const rtd = bid.rtd || {};
+  const jwRtd = {};
+  jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
+  bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
 export function getPlayer(playerDivId) {
-  const jwplayer = window.jwplayer
+  const jwplayer = window.jwplayer;
   if (!jwplayer) {
-    logError(SUBMODULE_NAME + '.js was not found on page')
-    return
+    logError(SUBMODULE_NAME + '.js was not found on page');
+    return;
   }
 
-  let player = jwplayer(playerDivId)
+  let player = jwplayer(playerDivId);
   if (player && player.getPlaylist) {
-    return player
+    return player;
   }
 
-  const playerOnPageCount = document.getElementsByClassName('jwplayer').length
+  const playerOnPageCount = document.getElementsByClassName('jwplayer').length;
   if (playerOnPageCount === 0) {
-    logError('No JWPlayer instances have been detected on the page')
-    return
+    logError('No JWPlayer instances have been detected on the page');
+    return;
   }
 
-  const errorMessage = `player Div ID ${playerDivId} did not match any players.`
+  const errorMessage = `player Div ID ${playerDivId} did not match any players.`;
 
   // If there are multiple instances on the page, we cannot guess which one should be targeted.
   if (playerOnPageCount > 1) {
-    logError(errorMessage)
-    return
+    logError(errorMessage);
+    return;
   }
 
-  player = jwplayer()
+  player = jwplayer();
   if (player && player.getPlaylist) {
-    logWarn(`${errorMessage} Targeting player Div ID ${player.id} instead`)
-    return player
+    logWarn(`${errorMessage} Targeting player Div ID ${player.id} instead`);
+    return player;
   }
 
-  logError(errorMessage)
+  logError(errorMessage);
 }

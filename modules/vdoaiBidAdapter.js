@@ -1,7 +1,7 @@
-import { logMessage, groupBy, flatten, uniques } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { ajax } from '../src/ajax.js'
+import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -9,7 +9,7 @@ import { ajax } from '../src/ajax.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
-const BIDDER_CODE = 'vdoai'
+const BIDDER_CODE = 'vdoai';
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -19,15 +19,15 @@ const BIDDER_CODE = 'vdoai'
  */
 function vdoIsBidResponseValid(vdoresponse) {
   if (!vdoresponse.requestId || !vdoresponse.cpm || !vdoresponse.creativeId || !vdoresponse.ttl || !vdoresponse.currency || !vdoresponse.meta.advertiserDomains) {
-    return false
+    return false;
   }
   switch (vdoresponse.meta.mediaType) {
     case BANNER:
-      return Boolean(vdoresponse.width && vdoresponse.height && vdoresponse.ad)
+      return Boolean(vdoresponse.width && vdoresponse.height && vdoresponse.ad);
     case VIDEO:
-      return Boolean(vdoresponse.vastXml || vdoresponse.vastUrl)
+      return Boolean(vdoresponse.vastXml || vdoresponse.vastUrl);
   }
-  return false
+  return false;
 }
 
 export const spec = {
@@ -41,9 +41,9 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (vdobid) => {
-    logMessage('vdobid', vdobid)
+    logMessage('vdobid', vdobid);
     return Boolean(vdobid.bidId && vdobid.params && vdobid.params.host && vdobid.params.adUnitType &&
-      (vdobid.params.adUnitId || vdobid.params.adUnitId === 0))
+      (vdobid.params.adUnitId || vdobid.params.adUnitId === 0));
   },
 
   /**
@@ -52,17 +52,17 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (vdoValidBidRequests, bidderRequest) => {
-    let winTop
+    let winTop;
     try {
-      winTop = window.top
-      winTop.location.toString()
+      winTop = window.top;
+      winTop.location.toString();
     } catch (e) {
-      logMessage(e)
-      winTop = window
+      logMessage(e);
+      winTop = window;
     }
-    const placements = groupBy(vdoValidBidRequests.map(bidRequest => vdoBuildPlacement(bidRequest)), 'host')
+    const placements = groupBy(vdoValidBidRequests.map(bidRequest => vdoBuildPlacement(bidRequest)), 'host');
     return Object.keys(placements)
-      .map(host => vdoBuildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest))
+      .map(host => vdoBuildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest));
   },
 
   /**
@@ -70,13 +70,13 @@ export const spec = {
    * @param {Bid} vdobid The bid that won the auction
    */
   onBidWon: (vdobid) => {
-    const cpm = vdobid.pbMg
+    const cpm = vdobid.pbMg;
     if (vdobid.nurl !== '') {
       vdobid.nurl = vdobid.nurl.replace(
         /\$\{AUCTION_PRICE\}/,
         cpm
-      )
-      ajax(vdobid.nurl, null)
+      );
+      ajax(vdobid.nurl, null);
     }
   },
 
@@ -87,37 +87,37 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (vdoServerResponse, vdoBidRequest) => {
-    const bidResponses = []
-    const serverBody = vdoServerResponse.body
-    const len = serverBody.length
+    const bidResponses = [];
+    const serverBody = vdoServerResponse.body;
+    const len = serverBody.length;
     for (let i = 0; i < len; i++) {
-      const bidResponse = serverBody[i]
+      const bidResponse = serverBody[i];
       if (vdoIsBidResponseValid(bidResponse)) {
-        bidResponses.push(bidResponse)
+        bidResponses.push(bidResponse);
       }
     }
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: (userSyncOptions, vdoServerResponses, userGdprConsent, UserUspConsent) => {
-    const allIframeSyncs = []
-    const allImageSyncs = []
+    const allIframeSyncs = [];
+    const allImageSyncs = [];
     for (let i = 0; i < vdoServerResponses.length; i++) {
-      const serverResponseHeaders = vdoServerResponses[i].headers
-      const vdoImgSync = (serverResponseHeaders != null && userSyncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
-      const vdoIframeSync = (serverResponseHeaders != null && userSyncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
+      const serverResponseHeaders = vdoServerResponses[i].headers;
+      const vdoImgSync = (serverResponseHeaders != null && userSyncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null;
+      const vdoIframeSync = (serverResponseHeaders != null && userSyncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null;
       if (vdoIframeSync != null) {
-        allIframeSyncs.push(vdoIframeSync)
+        allIframeSyncs.push(vdoIframeSync);
       } else if (vdoImgSync != null) {
-        allImageSyncs.push(vdoImgSync)
+        allImageSyncs.push(vdoImgSync);
       }
     }
-    return [allIframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
-      allImageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques)
+    return [allIframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it }; }),
+      allImageSyncs.filter(uniques).map(it => { return { type: 'image', url: it }; })].reduce(flatten, []).filter(uniques);
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 
 function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
   return {
@@ -133,26 +133,26 @@ function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
       sua: bidderRequest?.ortb2?.device?.sua,
       page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
-  }
+  };
 }
 
 function vdoBuildPlacement(vdoBidRequest) {
-  let sizes
+  let sizes;
   if (vdoBidRequest.mediaTypes) {
     switch (vdoBidRequest.params.adUnitType) {
       case BANNER:
         if (vdoBidRequest.mediaTypes.banner && vdoBidRequest.mediaTypes.banner.sizes) {
-          sizes = vdoBidRequest.mediaTypes.banner.sizes
+          sizes = vdoBidRequest.mediaTypes.banner.sizes;
         }
-        break
+        break;
       case VIDEO:
         if (vdoBidRequest.mediaTypes.video && vdoBidRequest.mediaTypes.video.playerSize) {
-          sizes = [vdoBidRequest.mediaTypes.video.playerSize]
+          sizes = [vdoBidRequest.mediaTypes.video.playerSize];
         }
-        break
+        break;
     }
   }
-  sizes = (sizes || []).concat(vdoBidRequest.sizes || [])
+  sizes = (sizes || []).concat(vdoBidRequest.sizes || []);
   return {
     host: vdoBidRequest.params.host,
     adUnit: {
@@ -163,7 +163,7 @@ function vdoBuildPlacement(vdoBidRequest) {
         return {
           width: size[0],
           height: size[1]
-        }
+        };
       }),
       type: vdoBidRequest.params.adUnitType.toUpperCase(),
       ortb2Imp: vdoBidRequest.ortb2Imp,
@@ -176,5 +176,5 @@ function vdoBuildPlacement(vdoBidRequest) {
       custom4: vdoBidRequest.params.custom4,
       custom5: vdoBidRequest.params.custom5
     }
-  }
+  };
 }

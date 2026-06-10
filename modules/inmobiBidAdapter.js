@@ -1,9 +1,9 @@
-import { deepAccess, deepSetValue, isFn } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js'
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
+import { deepAccess, deepSetValue, isFn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,16 +13,16 @@ import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
-const GVLID = 333
-export const ADAPTER_VERSION = 1.0
-const BIDDER_CODE = 'inmobi'
-const BID_ENDPOINT = 'https://api.w.inmobi.com/openrtb/bidder/prebidjs'
-export const EVENT_ENDPOINT = 'https://sync.inmobi.com'
-export const SYNC_ENDPOINT = 'https://sync.inmobi.com/prebidjs?'
-const TRANSLATOR = ortb25Translator()
-const CURRENCY = 'USD'
-const POST_METHOD = 'POST'
-const PLAIN_CONTENT_TYPE = 'text/plain'
+const GVLID = 333;
+export const ADAPTER_VERSION = 1.0;
+const BIDDER_CODE = 'inmobi';
+const BID_ENDPOINT = 'https://api.w.inmobi.com/openrtb/bidder/prebidjs';
+export const EVENT_ENDPOINT = 'https://sync.inmobi.com';
+export const SYNC_ENDPOINT = 'https://sync.inmobi.com/prebidjs?';
+const TRANSLATOR = ortb25Translator();
+const CURRENCY = 'USD';
+const POST_METHOD = 'POST';
+const PLAIN_CONTENT_TYPE = 'text/plain';
 
 /**
  * Defines the core oRTB converter inherited from converter library and all customization functions.
@@ -37,7 +37,7 @@ const CONVERTER = ortbConverter({
   request,
   bidResponse,
   response
-})
+});
 
 /**
  * Builds an impression object for oRTB 2.5 requests based on the bid request.
@@ -48,24 +48,24 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The constructed impression object.
  */
 function imp(buildImp, bidRequest, context) {
-  const imp = buildImp(bidRequest, context)
-  const params = bidRequest.params
+  const imp = buildImp(bidRequest, context);
+  const params = bidRequest.params;
 
-  imp.tagid = bidRequest.adUnitCode
-  let floorInfo = {}
+  imp.tagid = bidRequest.adUnitCode;
+  let floorInfo = {};
 
   if (isFn(bidRequest.getFloor)) {
     floorInfo = bidRequest.getFloor({
       currency: CURRENCY,
       size: '*',
       mediaType: '*'
-    })
+    });
   }
 
   // if floor price module is not set reading from bidRequest.params
   if (!imp.bidfloor && bidRequest.params.bidfloor) {
-    imp.bidfloor = bidRequest.params.bidfloor
-    imp.bidfloorcur = CURRENCY
+    imp.bidfloor = bidRequest.params.bidfloor;
+    imp.bidfloorcur = CURRENCY;
   }
 
   deepSetValue(imp, 'ext', {
@@ -75,10 +75,10 @@ function imp(buildImp, bidRequest, context) {
       plc: params?.plc,
     },
     moduleFloors: floorInfo
-  })
-  imp.secure = Number(window.location.protocol === 'https:')
+  });
+  imp.secure = Number(window.location.protocol === 'https:');
 
-  return imp
+  return imp;
 }
 
 /**
@@ -91,14 +91,14 @@ function imp(buildImp, bidRequest, context) {
  * @returns {Object} The complete oRTB request object.
  */
 function request(buildRequest, imps, bidderRequest, context) {
-  let request = buildRequest(imps, bidderRequest, context)
+  let request = buildRequest(imps, bidderRequest, context);
 
-  deepSetValue(request, 'ext.prebid.channel.name', 'pbjs_InMobi')
-  deepSetValue(request, 'ext.prebid.channel.pbjsversion', '$prebid.version$')
-  deepSetValue(request, 'ext.prebid.channel.adapterversion', ADAPTER_VERSION)
+  deepSetValue(request, 'ext.prebid.channel.name', 'pbjs_InMobi');
+  deepSetValue(request, 'ext.prebid.channel.pbjsversion', '$prebid.version$');
+  deepSetValue(request, 'ext.prebid.channel.adapterversion', ADAPTER_VERSION);
 
-  request = TRANSLATOR(request)
-  return request
+  request = TRANSLATOR(request);
+  return request;
 }
 
 /**
@@ -110,21 +110,21 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @returns {Object} Formatted bid response.
  */
 function bidResponse(buildBidResponse, bid, context) {
-  context.mtype = deepAccess(bid, 'mtype')
+  context.mtype = deepAccess(bid, 'mtype');
   if (context.mtype === 4) {
-    const admJson = JSON.parse(bid.adm)
-    bid.adm = JSON.stringify(admJson.native)
+    const admJson = JSON.parse(bid.adm);
+    bid.adm = JSON.stringify(admJson.native);
   }
-  const bidResponse = buildBidResponse(bid, context)
+  const bidResponse = buildBidResponse(bid, context);
 
   if (typeof deepAccess(bid, 'ext') !== 'undefined') {
     deepSetValue(bidResponse, 'meta', {
       ...bidResponse.meta,
       ...bid.ext,
-    })
+    });
   }
 
-  return bidResponse
+  return bidResponse;
 }
 
 /**
@@ -137,9 +137,9 @@ function bidResponse(buildBidResponse, bid, context) {
  * @returns {Object} Prebid.js compatible bid response.
  */
 function response(buildResponse, bidResponses, ortbResponse, context) {
-  const response = buildResponse(bidResponses, ortbResponse, context)
+  const response = buildResponse(bidResponses, ortbResponse, context);
 
-  return response
+  return response;
 }
 
 /** @type {BidderSpec} */
@@ -159,55 +159,55 @@ export const spec = {
    * @returns {Array} List of user sync URLs.
    */
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
-    const urls = []
+    const urls = [];
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      return urls
+      return urls;
     }
-    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image'
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
 
-    let query = ''
+    let query = '';
     if (gdprConsent) {
-      query = tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0))
+      query = tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
     }
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      query = tryAppendQueryString(query, 'gdpr_consent', gdprConsent.consentString)
+      query = tryAppendQueryString(query, 'gdpr_consent', gdprConsent.consentString);
     }
     if (uspConsent) {
-      query = tryAppendQueryString(query, 'us_privacy', uspConsent)
+      query = tryAppendQueryString(query, 'us_privacy', uspConsent);
     }
     if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-      query = tryAppendQueryString(query, 'gpp', gppConsent.gppString)
-      query = tryAppendQueryString(query, 'gpp_sid', gppConsent?.applicableSections?.join(','))
+      query = tryAppendQueryString(query, 'gpp', gppConsent.gppString);
+      query = tryAppendQueryString(query, 'gpp_sid', gppConsent?.applicableSections?.join(','));
     }
     if (query.slice(-1) === '&') {
-      query = query.slice(0, -1)
+      query = query.slice(0, -1);
     }
 
     if (pixelType === 'iframe' || (!responses || responses.length === 0)) {
       return [{
         type: pixelType,
         url: SYNC_ENDPOINT + query
-      }]
+      }];
     } else {
       responses.forEach(resp => {
-        const userSyncs = deepAccess(resp, 'body.ext.prebidjs.urls')
+        const userSyncs = deepAccess(resp, 'body.ext.prebidjs.urls');
         if (!userSyncs) {
-          return
+          return;
         }
 
         userSyncs.forEach(us => {
-          let url = us.url
+          let url = us.url;
           if (query) {
-            url = url + (url.indexOf('?') === -1 ? '?' : '&') + query
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + query;
           }
 
           urls.push({
             type: pixelType,
             url: url
-          })
-        })
-      })
-      return urls
+          });
+        });
+      });
+      return urls;
     }
   },
 
@@ -219,10 +219,10 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     if (!(bid && bid.params && bid.params.plc)) {
-      return false
+      return false;
     }
 
-    return true
+    return true;
   },
 
   /**
@@ -233,7 +233,7 @@ export const spec = {
    * @returns {ServerRequest} The server request for bidding.
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    const data = CONVERTER.toORTB({ bidderRequest, bidRequests })
+    const data = CONVERTER.toORTB({ bidderRequest, bidRequests });
 
     if (data) {
       const requestPayload = {
@@ -245,8 +245,8 @@ export const spec = {
           crossOrigin: true,
           withCredentials: true
         }
-      }
-      return requestPayload
+      };
+      return requestPayload;
     }
   },
 
@@ -259,13 +259,13 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     if (typeof response?.body === 'undefined') {
-      return []
+      return [];
     }
 
-    const interpretedResponse = CONVERTER.fromORTB({ response: response.body, request: request.data })
-    const bids = interpretedResponse.bids || []
+    const interpretedResponse = CONVERTER.fromORTB({ response: response.body, request: request.data });
+    const bids = interpretedResponse.bids || [];
 
-    return bids
+    return bids;
   },
 
   /**
@@ -274,7 +274,7 @@ export const spec = {
    * @param {TimedOutBid[]} timeoutData - Array of timeout details.
    */
   onTimeout: (timeoutData) => {
-    report('onTimeout', timeoutData)
+    report('onTimeout', timeoutData);
   },
 
   /**
@@ -283,7 +283,7 @@ export const spec = {
    * @param {Bid} bid - The bid object
    */
   onSetTargeting: (bid) => {
-    report('onSetTargeting', bid?.meta)
+    report('onSetTargeting', bid?.meta);
   },
 
   /**
@@ -292,7 +292,7 @@ export const spec = {
    * @param {Bid} bid - The bid that successfully rendered.
    */
   onAdRenderSucceeded: (bid) => {
-    report('onAdRenderSucceeded', bid?.meta)
+    report('onAdRenderSucceeded', bid?.meta);
   },
 
   /**
@@ -301,7 +301,7 @@ export const spec = {
    * @param {Object} errorData - Details about the error.
    */
   onBidderError: (errorData) => {
-    report('onBidderError', errorData)
+    report('onBidderError', errorData);
   },
 
   /**
@@ -310,26 +310,26 @@ export const spec = {
    * @param {Bid} bid - The bid that won the auction.
    */
   onBidWon: (bid) => {
-    report('onBidWon', bid?.meta)
+    report('onBidWon', bid?.meta);
   }
 
-}
+};
 
 function isReportingAllowed(loggingPercentage) {
-  return loggingPercentage !== 0
+  return loggingPercentage !== 0;
 }
 
 function report(type, data) {
   if (!data) {
-    return
+    return;
   }
   if (['onBidWon', 'onAdRenderSucceeded', 'onSetTargeting'].includes(type) && !isReportingAllowed(data.loggingPercentage)) {
-    return
+    return;
   }
   const payload = JSON.stringify({
     domain: location.hostname,
     eventPayload: data
-  })
+  });
 
   fetch(`${EVENT_ENDPOINT}/report/${type}`, {
     body: payload,
@@ -341,7 +341,7 @@ function report(type, data) {
     }
   }).catch((_e) => {
     // do nothing; ignore errors
-  })
+  });
 }
 
-registerBidder(spec)
+registerBidder(spec);

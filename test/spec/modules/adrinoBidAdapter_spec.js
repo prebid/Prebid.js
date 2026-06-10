@@ -1,12 +1,12 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adrinoBidAdapter.js'
-import { config } from '../../../src/config.js'
-import * as utils from '../../../src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/adrinoBidAdapter.js';
+import { config } from '../../../src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('adrinoBidAdapter', function () {
   afterEach(() => {
-    config.resetConfig()
-  })
+    config.resetConfig();
+  });
 
   describe('isBidRequestValid', function () {
     const validBid = {
@@ -29,30 +29,30 @@ describe('adrinoBidAdapter', function () {
       bidId: '12345678901234',
       bidderRequestId: '98765432109876',
       auctionId: '01234567891234',
-    }
+    };
 
     it('should return true when all mandatory parameters are there', function () {
-      expect(spec.isBidRequestValid(validBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(validBid)).to.equal(true);
+    });
 
     it('should return false when there are no params', function () {
-      const bid = { ...validBid }
-      delete bid.params
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      const bid = { ...validBid };
+      delete bid.params;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false when unsupported media type is requested', function () {
-      const bid = { ...validBid }
-      bid.mediaTypes = { video: {} }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      const bid = { ...validBid };
+      bid.mediaTypes = { video: {} };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false when hash is not a string', function () {
-      const bid = { ...validBid }
-      bid.params.hash = 123
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      const bid = { ...validBid };
+      bid.params.hash = 123;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('buildBannerRequest', function () {
     const bidRequest = {
@@ -74,35 +74,35 @@ describe('adrinoBidAdapter', function () {
       bidId: '12345678901234',
       bidderRequestId: '98765432109876',
       auctionId: '01234567891234',
-    }
+    };
 
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
-      )
-      expect(result.length).to.equal(1)
-      expect(result[0].method).to.equal('POST')
-      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/')
-      expect(result[0].data[0].adUnitCode).to.equal('adunit-code-2')
-      expect(result[0].data[0].bidId).to.equal('12345678901234')
-      expect(result[0].data[0].placementHash).to.equal('abcdef123456')
-      expect(result[0].data[0].referer).to.equal('http://example.com/')
-      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent)
-      expect(result[0].data[0]).to.have.property('bannerParams')
-      expect(result[0].data[0].bannerParams.sizes.length).to.equal(2)
-      expect(result[0].data[0]).to.have.property('eids')
-      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2)
+      );
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code-2');
+      expect(result[0].data[0].bidId).to.equal('12345678901234');
+      expect(result[0].data[0].placementHash).to.equal('abcdef123456');
+      expect(result[0].data[0].referer).to.equal('http://example.com/');
+      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent);
+      expect(result[0].data[0]).to.have.property('bannerParams');
+      expect(result[0].data[0].bannerParams.sizes.length).to.equal(2);
+      expect(result[0].data[0]).to.have.property('eids');
+      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
         uids: [{ id: '1234', atype: 1 }]
-      })
+      });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
         uids: [{ id: '5678', atype: 1 }]
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('buildNativeRequest', function () {
     const bidRequest = {
@@ -138,90 +138,90 @@ describe('adrinoBidAdapter', function () {
       bidId: '12345678901234',
       bidderRequestId: '98765432109876',
       auctionId: '01234567891234',
-    }
+    };
 
     it('should build the request correctly with custom domain', function () {
-      config.setConfig({ adrino: { host: 'https://stg-prebid-bidder.adrino.io' } })
+      config.setConfig({ adrino: { host: 'https://stg-prebid-bidder.adrino.io' } });
       const result = spec.buildRequests(
         [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
-      )
-      expect(result.length).to.equal(1)
-      expect(result[0].method).to.equal('POST')
-      expect(result[0].url).to.equal('https://stg-prebid-bidder.adrino.io/bidder/bids/')
-      expect(result[0].data[0].adUnitCode).to.equal('adunit-code')
-      expect(result[0].data[0].bidId).to.equal('12345678901234')
-      expect(result[0].data[0].placementHash).to.equal('abcdef123456')
-      expect(result[0].data[0].referer).to.equal('http://example.com/')
-      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent)
-      expect(result[0].data[0]).to.have.property('nativeParams')
-      expect(result[0].data[0]).not.to.have.property('gdprConsent')
-      expect(result[0].data[0]).to.have.property('eids')
-      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2)
+      );
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://stg-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code');
+      expect(result[0].data[0].bidId).to.equal('12345678901234');
+      expect(result[0].data[0].placementHash).to.equal('abcdef123456');
+      expect(result[0].data[0].referer).to.equal('http://example.com/');
+      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent);
+      expect(result[0].data[0]).to.have.property('nativeParams');
+      expect(result[0].data[0]).not.to.have.property('gdprConsent');
+      expect(result[0].data[0]).to.have.property('eids');
+      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
         uids: [{ id: '1234', atype: 1 }]
-      })
+      });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
         uids: [{ id: '5678', atype: 1 }]
-      })
-    })
+      });
+    });
 
     it('should build the request correctly with gdpr', function () {
       const result = spec.buildRequests(
         [bidRequest],
         { gdprConsent: { gdprApplies: true, consentString: 'abc123' }, refererInfo: { page: 'http://example.com/' } }
-      )
-      expect(result.length).to.equal(1)
-      expect(result[0].method).to.equal('POST')
-      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/')
-      expect(result[0].data[0].adUnitCode).to.equal('adunit-code')
-      expect(result[0].data[0].bidId).to.equal('12345678901234')
-      expect(result[0].data[0].placementHash).to.equal('abcdef123456')
-      expect(result[0].data[0].referer).to.equal('http://example.com/')
-      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent)
-      expect(result[0].data[0]).to.have.property('nativeParams')
-      expect(result[0].data[0]).to.have.property('gdprConsent')
-      expect(result[0].data[0]).to.have.property('eids')
-      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2)
+      );
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code');
+      expect(result[0].data[0].bidId).to.equal('12345678901234');
+      expect(result[0].data[0].placementHash).to.equal('abcdef123456');
+      expect(result[0].data[0].referer).to.equal('http://example.com/');
+      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent);
+      expect(result[0].data[0]).to.have.property('nativeParams');
+      expect(result[0].data[0]).to.have.property('gdprConsent');
+      expect(result[0].data[0]).to.have.property('eids');
+      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
         uids: [{ id: '1234', atype: 1 }]
-      })
+      });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
         uids: [{ id: '5678', atype: 1 }]
-      })
-    })
+      });
+    });
 
     it('should build the request correctly without gdpr', function () {
       const result = spec.buildRequests(
         [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
-      )
-      expect(result.length).to.equal(1)
-      expect(result[0].method).to.equal('POST')
-      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/')
-      expect(result[0].data[0].adUnitCode).to.equal('adunit-code')
-      expect(result[0].data[0].bidId).to.equal('12345678901234')
-      expect(result[0].data[0].placementHash).to.equal('abcdef123456')
-      expect(result[0].data[0].referer).to.equal('http://example.com/')
-      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent)
-      expect(result[0].data[0]).to.have.property('nativeParams')
-      expect(result[0].data[0]).not.to.have.property('gdprConsent')
-      expect(result[0].data[0]).to.have.property('eids')
-      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2)
+      );
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code');
+      expect(result[0].data[0].bidId).to.equal('12345678901234');
+      expect(result[0].data[0].placementHash).to.equal('abcdef123456');
+      expect(result[0].data[0].referer).to.equal('http://example.com/');
+      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent);
+      expect(result[0].data[0]).to.have.property('nativeParams');
+      expect(result[0].data[0]).not.to.have.property('gdprConsent');
+      expect(result[0].data[0]).to.have.property('eids');
+      expect(result[0].data[0].eids).to.be.an('array').with.lengthOf(2);
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src1.org',
         uids: [{ id: '1234', atype: 1 }]
-      })
+      });
       expect(result[0].data[0].eids).to.deep.include({
         source: 'src2.org',
         uids: [{ id: '5678', atype: 1 }]
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('interpretResponse', function () {
     it('should interpret the response correctly', function () {
@@ -251,7 +251,7 @@ describe('adrinoBidAdapter', function () {
             'https://prd-impression-tracker-producer.adrino.io/impression/eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ7XCJpbXByZXNzaW9uSWRcIjpcIjMxNjYyYzY5NzI4ODExXCIsXCJkYXRlXCI6WzIwMjIsMiwzXSxcInBsYWNlbWVudEhhc2hcIjpcIjk0NTVjMDQxYzlkMTI1ZmIwNDE4MWVhMGVlZTJmMmFlXCIsXCJjYW1wYWlnbklkXCI6MTc5MjUsXCJhZHZlcnRpc2VtZW50SWRcIjo5MjA3OSxcInZpc3VhbGlzYXRpb25JZFwiOjg1OTExNSxcImNwbVwiOjUzLjB9IiwiZXhwIjoxNjQzOTE2MjUxLCJpYXQiOjE2NDM5MTU2NTF9.0Y_HvInGl6Xo5xP6rDLC8lzQRGvy-wKe0blk1o8ebWyVRFiUY1JGLUeE0k3sCsPNxgdHAv-o6EcbogpUuqlMJA'
           ]
         }
-      }
+      };
 
       const response2 = {
         requestId: '31662c69728812',
@@ -279,43 +279,43 @@ describe('adrinoBidAdapter', function () {
             'https://prd-impression-tracker-producer.adrino.io/impression/eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ7XCJpbXByZXNzaW9uSWRcIjpcIjMxNjYyYzY5NzI4ODExXCIsXCJkYXRlXCI6WzIwMjIsMiwzXSxcInBsYWNlbWVudEhhc2hcIjpcIjk0NTVjMDQxYzlkMTI1ZmIwNDE4MWVhMGVlZTJmMmFlXCIsXCJjYW1wYWlnbklkXCI6MTc5MjUsXCJhZHZlcnRpc2VtZW50SWRcIjo5MjA3OSxcInZpc3VhbGlzYXRpb25JZFwiOjg1OTExNSxcImNwbVwiOjUzLjB9IiwiZXhwIjoxNjQzOTE2MjUxLCJpYXQiOjE2NDM5MTU2NTF9.0Y_HvInGl6Xo5xP6rDLC8lzQRGvy-wKe0blk1o8ebWyVRFiUY1JGLUeE0k3sCsPNxgdHAv-o6EcbogpUuqlMJA'
           ]
         }
-      }
+      };
 
       const serverResponse = {
         body: { bidResponses: [response1, response2] }
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse, {})
-      expect(result.length).to.equal(2)
-      expect(result[0]).to.equal(response1)
-      expect(result[0].requestId).to.equal('31662c69728811')
-      expect(result[1]).to.equal(response2)
-      expect(result[1].requestId).to.equal('31662c69728812')
-    })
+      const result = spec.interpretResponse(serverResponse, {});
+      expect(result.length).to.equal(2);
+      expect(result[0]).to.equal(response1);
+      expect(result[0].requestId).to.equal('31662c69728811');
+      expect(result[1]).to.equal(response2);
+      expect(result[1].requestId).to.equal('31662c69728812');
+    });
 
     it('should return empty array of responses', function () {
       const response = {
         requestId: '31662c69728811',
         noAd: true,
         testAd: false
-      }
+      };
 
       const serverResponse = {
         body: response
-      }
+      };
 
-      const result = spec.interpretResponse(serverResponse, {})
-      expect(result.length).to.equal(0)
-    })
-  })
+      const result = spec.interpretResponse(serverResponse, {});
+      expect(result.length).to.equal(0);
+    });
+  });
 
   describe('onBidWon', function () {
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel')
-    })
+      sinon.stub(utils, 'triggerPixel');
+    });
     afterEach(function() {
-      utils.triggerPixel.restore()
-    })
+      utils.triggerPixel.restore();
+    });
 
     it('should trigger pixel', function () {
       const response = {
@@ -344,10 +344,10 @@ describe('adrinoBidAdapter', function () {
             'https://prd-impression-tracker-producer.adrino.io/impression/eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ7XCJpbXByZXNzaW9uSWRcIjpcIjMxNjYyYzY5NzI4ODExXCIsXCJkYXRlXCI6WzIwMjIsMiwzXSxcInBsYWNlbWVudEhhc2hcIjpcIjk0NTVjMDQxYzlkMTI1ZmIwNDE4MWVhMGVlZTJmMmFlXCIsXCJjYW1wYWlnbklkXCI6MTc5MjUsXCJhZHZlcnRpc2VtZW50SWRcIjo5MjA3OSxcInZpc3VhbGlzYXRpb25JZFwiOjg1OTExNSxcImNwbVwiOjUzLjB9IiwiZXhwIjoxNjQzOTE2MjUxLCJpYXQiOjE2NDM5MTU2NTF9.0Y_HvInGl6Xo5xP6rDLC8lzQRGvy-wKe0blk1o8ebWyVRFiUY1JGLUeE0k3sCsPNxgdHAv-o6EcbogpUuqlMJA'
           ]
         }
-      }
+      };
 
-      spec.onBidWon(response)
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
-})
+      spec.onBidWon(response);
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
+});

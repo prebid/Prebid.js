@@ -1,10 +1,10 @@
-import { submodule } from '../src/hook.js'
-import { logError, mergeDeep, isPlainObject, isEmpty } from '../src/utils.js'
+import { submodule } from '../src/hook.js';
+import { logError, mergeDeep, isPlainObject, isEmpty } from '../src/utils.js';
 
-import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js'
-import { FloorProvider } from '../libraries/pubmaticUtils/plugins/floorProvider.js'
-import { UnifiedPricingRule } from '../libraries/pubmaticUtils/plugins/unifiedPricingRule.js'
-import { DynamicTimeout } from '../libraries/pubmaticUtils/plugins/dynamicTimeout.js'
+import { PluginManager } from '../libraries/pubmaticUtils/plugins/pluginManager.js';
+import { FloorProvider } from '../libraries/pubmaticUtils/plugins/floorProvider.js';
+import { UnifiedPricingRule } from '../libraries/pubmaticUtils/plugins/unifiedPricingRule.js';
+import { DynamicTimeout } from '../libraries/pubmaticUtils/plugins/dynamicTimeout.js';
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -22,17 +22,17 @@ export const CONSTANTS = Object.freeze({
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     CONFIGS: 'config.json'
   }
-})
+});
 
-let _ymConfigPromise
-export const getYmConfigPromise = () => _ymConfigPromise
-export const setYmConfigPromise = (promise) => { _ymConfigPromise = promise }
+let _ymConfigPromise;
+export const getYmConfigPromise = () => _ymConfigPromise;
+export const setYmConfigPromise = (promise) => { _ymConfigPromise = promise; };
 
 export function ConfigJsonManager() {
-  let _ymConfig = {}
-  const getYMConfig = () => _ymConfig
-  const setYMConfig = (config) => { _ymConfig = config }
-  let country
+  let _ymConfig = {};
+  const getYMConfig = () => _ymConfig;
+  const setYMConfig = (config) => { _ymConfig = config; };
+  let country;
 
   /**
    * Fetch configuration from the server
@@ -42,33 +42,33 @@ export function ConfigJsonManager() {
    */
   async function fetchConfig(publisherId, profileId) {
     try {
-      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`
-      const response = await fetch(url)
+      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
+      const response = await fetch(url);
 
       if (!response.ok) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: Not ok`)
-        return null
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: Not ok`);
+        return null;
       }
 
       // Extract country code if available
-      const cc = response.headers?.get('country_code')
-      country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined
+      const cc = response.headers?.get('country_code');
+      country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
 
       // Parse the JSON response
-      const ymConfigs = await response.json()
+      const ymConfigs = await response.json();
 
       if (!isPlainObject(ymConfigs) || isEmpty(ymConfigs)) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`)
-        return null
+        logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
+        return null;
       }
 
       // Store the configuration
-      setYMConfig(ymConfigs)
+      setYMConfig(ymConfigs);
 
-      return true
+      return true;
     } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`)
-      return null
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`);
+      return null;
     }
   }
 
@@ -78,26 +78,26 @@ export function ConfigJsonManager() {
    * @returns {Object} - Plugin configuration
    */
   const getConfigByName = (name) => {
-    return getYMConfig()?.plugins?.[name]
-  }
+    return getYMConfig()?.plugins?.[name];
+  };
 
   return {
     fetchConfig,
     getYMConfig,
     setYMConfig,
     getConfigByName,
-    get country() { return country }
-  }
+    get country() { return country; }
+  };
 }
 
 // Create core components
-export const pluginManager = PluginManager()
-export const configJsonManager = ConfigJsonManager()
+export const pluginManager = PluginManager();
+export const configJsonManager = ConfigJsonManager();
 
 // Register plugins
-pluginManager.register('dynamicFloors', FloorProvider)
-pluginManager.register('unifiedPricingRule', UnifiedPricingRule)
-pluginManager.register('dynamicTimeout', DynamicTimeout)
+pluginManager.register('dynamicFloors', FloorProvider);
+pluginManager.register('unifiedPricingRule', UnifiedPricingRule);
+pluginManager.register('dynamicTimeout', DynamicTimeout);
 
 /**
  * Initialize the Pubmatic RTD Module.
@@ -106,26 +106,26 @@ pluginManager.register('dynamicTimeout', DynamicTimeout)
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-  let { publisherId, profileId } = config?.params || {}
+  let { publisherId, profileId } = config?.params || {};
 
   if (!publisherId || !profileId) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`)
-    return false
+    logError(`${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.' : 'Missing profile Id.'}`);
+    return false;
   }
 
-  publisherId = String(publisherId).trim()
-  profileId = String(profileId).trim()
+  publisherId = String(publisherId).trim();
+  profileId = String(profileId).trim();
 
   // Fetch configuration and initialize plugins
   _ymConfigPromise = configJsonManager.fetchConfig(publisherId, profileId)
     .then(success => {
       if (!success) {
-        return Promise.reject(new Error('Failed to fetch configuration'))
+        return Promise.reject(new Error('Failed to fetch configuration'));
       }
-      return pluginManager.initialize(configJsonManager)
-    })
-  return true
-}
+      return pluginManager.initialize(configJsonManager);
+    });
+  return true;
+};
 
 /**
  * @param {Object} reqBidsConfigObj
@@ -133,9 +133,9 @@ const init = (config, _userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   _ymConfigPromise.then(() => {
-    pluginManager.executeHook('processBidRequest', reqBidsConfigObj)
+    pluginManager.executeHook('processBidRequest', reqBidsConfigObj);
     // Apply country information if available
-    const country = configJsonManager.country
+    const country = configJsonManager.country;
     if (country) {
       const ortb2 = {
         user: {
@@ -143,20 +143,20 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
             ctr: country,
           }
         }
-      }
+      };
 
       reqBidsConfigObj.ortb2Fragments.bidder[CONSTANTS.SUBMODULE_NAME] = mergeDeep(
         reqBidsConfigObj.ortb2Fragments.bidder[CONSTANTS.SUBMODULE_NAME] || {},
         ortb2
-      )
+      );
     }
 
-    callback()
+    callback();
   }).catch(error => {
-    logError(CONSTANTS.LOG_PRE_FIX, error)
-    callback()
-  })
-}
+    logError(CONSTANTS.LOG_PRE_FIX, error);
+    callback();
+  });
+};
 
 /**
  * Returns targeting data for ad units
@@ -167,8 +167,8 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @return {Object} - Targeting data for ad units
  */
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
-  return pluginManager.executeHook('getTargeting', adUnitCodes, config, userConsent, auction)
-}
+  return pluginManager.executeHook('getTargeting', adUnitCodes, config, userConsent, auction);
+};
 
 export const pubmaticSubmodule = {
   /**
@@ -179,10 +179,10 @@ export const pubmaticSubmodule = {
   init,
   getBidRequestData,
   getTargetingData
-}
+};
 
 export const registerSubModule = () => {
-  submodule(CONSTANTS.REAL_TIME_MODULE, pubmaticSubmodule)
-}
+  submodule(CONSTANTS.REAL_TIME_MODULE, pubmaticSubmodule);
+};
 
-registerSubModule()
+registerSubModule();

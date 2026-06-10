@@ -1,16 +1,16 @@
-import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js'
-import { deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { ajax } from '../src/ajax.js'
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
-import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js'
-import { isWebdriverEnabled, isSeleniumDetected } from '../libraries/webdriver/webdriver.js'
-import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js'
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
+import { deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { isWebdriverEnabled, isSeleniumDetected } from '../libraries/webdriver/webdriver.js';
+import { buildNativeRequest, parseNativeResponse } from '../libraries/nativeAssetsUtils.js';
 
-export const storage = getStorageManager({ bidderCode: 'datablocks' })
+export const storage = getStorageManager({ bidderCode: 'datablocks' });
 
 // DEFINE THE PREBID BIDDER SPEC
 export const spec = {
@@ -22,67 +22,67 @@ export const spec = {
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
   store_dbid: function(dbid) {
-    let stored = false
+    let stored = false;
 
     // CREATE 1 YEAR EXPIRY DATE
-    const d = new Date()
-    d.setTime(Date.now() + (365 * 24 * 60 * 60 * 1000))
+    const d = new Date();
+    d.setTime(Date.now() + (365 * 24 * 60 * 60 * 1000));
 
     // TRY TO STORE IN COOKIE
     if (storage.cookiesAreEnabled) {
-      storage.setCookie('_db_dbid', dbid, d.toUTCString(), 'None', null)
-      stored = true
+      storage.setCookie('_db_dbid', dbid, d.toUTCString(), 'None', null);
+      stored = true;
     }
 
     // TRY TO STORE IN LOCAL STORAGE
     if (storage.localStorageIsEnabled) {
-      storage.setDataInLocalStorage('_db_dbid', dbid)
-      stored = true
+      storage.setDataInLocalStorage('_db_dbid', dbid);
+      stored = true;
     }
 
-    return stored
+    return stored;
   },
 
   // FETCH DATABLOCKS BUYERID FROM STORAGE
   get_dbid: function() {
-    let dbId = ''
+    let dbId = '';
     if (storage.cookiesAreEnabled) {
-      dbId = storage.getCookie('_db_dbid') || ''
+      dbId = storage.getCookie('_db_dbid') || '';
     }
 
     if (!dbId && storage.localStorageIsEnabled) {
-      dbId = storage.getDataFromLocalStorage('_db_dbid') || ''
+      dbId = storage.getDataFromLocalStorage('_db_dbid') || '';
     }
-    return dbId
+    return dbId;
   },
 
   // STORE SYNCS IN STORAGE
   store_syncs: function(syncs) {
     if (storage.localStorageIsEnabled) {
-      const syncObj = {}
+      const syncObj = {};
       syncs.forEach(sync => {
-        syncObj[sync.id] = sync.uid
-      })
+        syncObj[sync.id] = sync.uid;
+      });
 
       // FETCH EXISTING SYNCS AND MERGE NEW INTO STORAGE
-      const storedSyncs = this.get_syncs()
-      storage.setDataInLocalStorage('_db_syncs', JSON.stringify(Object.assign(storedSyncs, syncObj)))
+      const storedSyncs = this.get_syncs();
+      storage.setDataInLocalStorage('_db_syncs', JSON.stringify(Object.assign(storedSyncs, syncObj)));
 
-      return true
+      return true;
     }
   },
 
   // GET SYNCS FROM STORAGE
   get_syncs: function() {
     if (storage.localStorageIsEnabled) {
-      const syncData = storage.getDataFromLocalStorage('_db_syncs')
+      const syncData = storage.getDataFromLocalStorage('_db_syncs');
       if (syncData) {
-        return JSON.parse(syncData)
+        return JSON.parse(syncData);
       } else {
-        return {}
+        return {};
       }
     } else {
-      return {}
+      return {};
     }
   },
 
@@ -90,41 +90,41 @@ export const spec = {
   queue_metric: function(metric) {
     if (typeof metric === 'object') {
       // PUT METRICS IN THE QUEUE
-      this.db_obj.metrics.push(metric)
+      this.db_obj.metrics.push(metric);
 
       // RESET PREVIOUS TIMER
       if (this.db_obj.metrics_timer) {
-        clearTimeout(this.db_obj.metrics_timer)
+        clearTimeout(this.db_obj.metrics_timer);
       }
 
       // SETUP THE TIMER TO FIRE BACK THE DATA
-      const scope = this
+      const scope = this;
       this.db_obj.metrics_timer = setTimeout(function() {
-        scope.send_metrics()
-      }, this.db_obj.metrics_queue_time)
+        scope.send_metrics();
+      }, this.db_obj.metrics_queue_time);
 
-      return true
+      return true;
     } else {
-      return false
+      return false;
     }
   },
 
   // POST CONSOLIDATED METRICS BACK TO SERVER
   send_metrics: function() {
     // POST TO SERVER
-    ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), { method: 'POST', withCredentials: true })
+    ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), { method: 'POST', withCredentials: true });
 
     // RESET THE QUEUE OF METRIC DATA
-    this.db_obj.metrics = []
+    this.db_obj.metrics = [];
 
-    return true
+    return true;
   },
 
   // GET BASIC CLIENT INFORMATION
   get_client_info: function () {
-    const botTest = new BotClientTests()
-    const win = getWindowTop()
-    const windowDimensions = getWinDimensions()
+    const botTest = new BotClientTests();
+    const win = getWindowTop();
+    const windowDimensions = getWinDimensions();
     return {
       'wiw': windowDimensions.innerWidth,
       'wih': windowDimensions.innerHeight,
@@ -140,26 +140,26 @@ export const spec = {
       'is_bot': botTest.doTests(),
       'is_hid': win.document.hidden,
       'vs': win.document.visibilityState
-    }
+    };
   },
 
   // LISTEN FOR GPT VIEWABILITY EVENTS
   get_viewability: function(bid) {
     // ONLY RUN ONCE IF PUBLISHER HAS OPTED IN
     if (!this.db_obj.vis_optout && !this.db_obj.vis_run) {
-      this.db_obj.vis_run = true
+      this.db_obj.vis_run = true;
 
       // ADD GPT EVENT LISTENERS
-      const scope = this
+      const scope = this;
       if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener === 'function') {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
-            scope.queue_metric({ type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() })
-          })
+            scope.queue_metric({ type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
+          });
           window['googletag'].pubads().addEventListener('slotRenderEnded', function(event) {
-            scope.queue_metric({ type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() })
-          })
+            scope.queue_metric({ type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath() });
+          });
         }
       }
     }
@@ -168,25 +168,25 @@ export const spec = {
   // VALIDATE THE BID REQUEST
   isBidRequestValid: function(bid) {
     // SET GLOBAL VARS FROM BIDDER CONFIG
-    this.db_obj.source_id = bid.params.source_id
+    this.db_obj.source_id = bid.params.source_id;
     if (bid.params.vis_optout) {
-      this.db_obj.vis_optout = true
+      this.db_obj.vis_optout = true;
     }
 
-    return !!(bid.params.source_id && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native))
+    return !!(bid.params.source_id && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native));
   },
 
   // GENERATE THE RTB REQUEST
   buildRequests: function(validRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validRequests = convertOrtbRequestToProprietaryNative(validRequests)
+    validRequests = convertOrtbRequestToProprietaryNative(validRequests);
 
     // RETURN EMPTY IF THERE ARE NO VALID REQUESTS
     if (!validRequests.length) {
-      return []
+      return [];
     }
 
-    const imps = []
+    const imps = [];
     // ITERATE THE VALID REQUESTS AND GENERATE IMP OBJECT
     validRequests.forEach(bidRequest => {
       // BUILD THE IMP OBJECT
@@ -197,7 +197,7 @@ export const spec = {
         secure: window.location.protocol === 'https:',
         ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
-      }
+      };
 
       // CHECK FOR FLOORS
       if (typeof bidRequest.getFloor === 'function') {
@@ -205,32 +205,32 @@ export const spec = {
           currency: 'USD',
           mediaType: '*',
           size: '*'
-        })
+        });
       }
 
       // BUILD THE SIZES
       if (deepAccess(bidRequest, `mediaTypes.banner`)) {
-        const sizes = getAdUnitSizes(bidRequest)
+        const sizes = getAdUnitSizes(bidRequest);
         if (sizes.length) {
           imp.banner = {
             w: sizes[0][0],
             h: sizes[0][1],
             format: sizes.map(size => ({ w: size[0], h: size[1] }))
-          }
+          };
 
           // ADD TO THE LIST OF IMP REQUESTS
-          imps.push(imp)
+          imps.push(imp);
         }
       } else if (deepAccess(bidRequest, `mediaTypes.native`)) {
         // ADD TO THE LIST OF IMP REQUESTS
-        imp.native = buildNativeRequest(bidRequest.nativeParams)
-        imps.push(imp)
+        imp.native = buildNativeRequest(bidRequest.nativeParams);
+        imps.push(imp);
       }
-    })
+    });
 
     // RETURN EMPTY IF THERE WERE NO PROPER ADUNIT REQUESTS TO BE MADE
     if (!imps.length) {
-      return []
+      return [];
     }
 
     // GENERATE SITE OBJECT
@@ -246,17 +246,17 @@ export const spec = {
         stack: bidderRequest.refererInfo.stack,
         timeout: config.getConfig('bidderTimeout')
       },
-    }
+    };
 
     // ADD REF URL IF FOUND
     if (self === top && document.referrer) {
-      site.ref = document.referrer
+      site.ref = document.referrer;
     }
 
     // ADD META KEYWORDS IF FOUND
-    const keywords = document.getElementsByTagName('meta')['keywords']
+    const keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
-      site.keywords = keywords.content
+      site.keywords = keywords.content;
     }
 
     // GENERATE DEVICE OBJECT
@@ -275,10 +275,10 @@ export const spec = {
         client_info: this.get_client_info(),
         ortb2: bidderRequest.ortb2 || {}
       }
-    }
+    };
 
-    const sourceId = validRequests[0].params.source_id || 0
-    const host = validRequests[0].params.host || 'prebid.dblks.net'
+    const sourceId = validRequests[0].params.source_id || 0;
+    const host = validRequests[0].params.host || 'prebid.dblks.net';
 
     // RETURN WITH THE REQUEST AND PAYLOAD
     return {
@@ -293,134 +293,134 @@ export const spec = {
       options: {
         withCredentials: true
       }
-    }
+    };
   },
 
   // INITIATE USER SYNCING
   getUserSyncs: function(options, rtbResponse, gdprConsent) {
-    const syncs = []
-    const bidResponse = rtbResponse?.[0]?.body ?? null
-    const scope = this
+    const syncs = [];
+    const bidResponse = rtbResponse?.[0]?.body ?? null;
+    const scope = this;
 
     // LISTEN FOR SYNC DATA FROM IFRAME TYPE SYNC
     window.addEventListener('message', function (event) {
       if (event.data.sentinel && event.data.sentinel === 'dblks_syncData') {
         // STORE FOUND SYNCS
         if (event.data.syncs) {
-          scope.store_syncs(event.data.syncs)
+          scope.store_syncs(event.data.syncs);
         }
       }
-    })
+    });
 
     // POPULATE GDPR INFORMATION
     const gdprData = {
       gdpr: 0,
       gdprConsent: ''
-    }
+    };
     if (typeof gdprConsent === 'object') {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprData.gdpr = Number(gdprConsent.gdprApplies)
-        gdprData.gdprConsent = gdprConsent.consentString
+        gdprData.gdpr = Number(gdprConsent.gdprApplies);
+        gdprData.gdprConsent = gdprConsent.consentString;
       } else {
-        gdprData.gdprConsent = gdprConsent.consentString
+        gdprData.gdprConsent = gdprConsent.consentString;
       }
     }
 
     // EXTRACT BUYERID COOKIE VALUE FROM BID RESPONSE AND PUT INTO STORAGE
-    let dbBuyerId = this.get_dbid() || ''
+    let dbBuyerId = this.get_dbid() || '';
     if (bidResponse.ext && bidResponse.ext.buyerid) {
-      dbBuyerId = bidResponse.ext.buyerid
-      this.store_dbid(dbBuyerId)
+      dbBuyerId = bidResponse.ext.buyerid;
+      this.store_dbid(dbBuyerId);
     }
 
     // EXTRACT USERSYNCS FROM BID RESPONSE
     if (bidResponse.ext && bidResponse.ext.syncs) {
       bidResponse.ext.syncs.forEach(sync => {
         if (checkValid(sync)) {
-          syncs.push(addParams(sync))
+          syncs.push(addParams(sync));
         }
-      })
+      });
     }
 
     // APPEND PARAMS TO SYNC URL
     function addParams(sync) {
       // PARSE THE URL
       try {
-        const url = new URL(sync.url)
-        const urlParams = {}
+        const url = new URL(sync.url);
+        const urlParams = {};
         for (const [key, value] of url.searchParams.entries()) {
-          urlParams[key] = value
+          urlParams[key] = value;
         };
 
         // APPLY EXTRA VARS
-        urlParams.gdpr = gdprData.gdpr
-        urlParams.gdprConsent = gdprData.gdprConsent
-        urlParams.bidid = bidResponse.bidid
-        urlParams.id = bidResponse.id
-        urlParams.uid = dbBuyerId
+        urlParams.gdpr = gdprData.gdpr;
+        urlParams.gdprConsent = gdprData.gdprConsent;
+        urlParams.bidid = bidResponse.bidid;
+        urlParams.id = bidResponse.id;
+        urlParams.uid = dbBuyerId;
 
         // REBUILD URL
-        sync.url = `${url.origin}${url.pathname}?${Object.keys(urlParams).map(key => key + '=' + encodeURIComponent(urlParams[key])).join('&')}`
+        sync.url = `${url.origin}${url.pathname}?${Object.keys(urlParams).map(key => key + '=' + encodeURIComponent(urlParams[key])).join('&')}`;
       } catch (e) {};
 
       // RETURN THE REBUILT URL
-      return sync
+      return sync;
     }
 
     // ENSURE THAT THE SYNC TYPE IS VALID AND HAS PERMISSION
     function checkValid(sync) {
       if (!sync.type || !sync.url) {
-        return false
+        return false;
       }
       switch (sync.type) {
         case 'iframe':
-          return options.iframeEnabled
+          return options.iframeEnabled;
         case 'image':
-          return options.pixelEnabled
+          return options.pixelEnabled;
         default:
-          return false
+          return false;
       }
     }
-    return syncs
+    return syncs;
   },
 
   // DATABLOCKS WON THE AUCTION - REPORT SUCCESS
   onBidWon: function(bid) {
-    this.queue_metric({ type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl })
+    this.queue_metric({ type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl });
   },
 
   // TARGETING HAS BEEN SET
   onSetTargeting: function(bid) {
     // LISTEN FOR VIEWABILITY EVENTS
-    this.get_viewability(bid)
+    this.get_viewability(bid);
   },
 
   // PARSE THE RTB RESPONSE AND RETURN FINAL RESULTS
   interpretResponse: function(rtbResponse, bidRequest) {
-    const bids = []
-    const resBids = deepAccess(rtbResponse, 'body.seatbid') || []
+    const bids = [];
+    const resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
-      const resultItem = { requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: { advertiserDomains: bid.adomain } }
+      const resultItem = { requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: { advertiserDomains: bid.adomain } };
 
-      const mediaType = deepAccess(bid, 'ext.mtype') || ''
+      const mediaType = deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
         case 'banner':
-          bids.push(Object.assign({}, resultItem, { mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm }))
-          break
+          bids.push(Object.assign({}, resultItem, { mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm }));
+          break;
 
         case 'native':
-          const nativeResult = JSON.parse(bid.adm)
-          bids.push(Object.assign({}, resultItem, { mediaType: NATIVE, native: parseNativeResponse(nativeResult.native) }))
-          break
+          const nativeResult = JSON.parse(bid.adm);
+          bids.push(Object.assign({}, resultItem, { mediaType: NATIVE, native: parseNativeResponse(nativeResult.native) }));
+          break;
 
         default:
-          break
+          break;
       }
-    })
+    });
 
-    return bids
+    return bids;
   }
-}
+};
 
 // DETECT BOTS
 export class BotClientTests {
@@ -428,25 +428,25 @@ export class BotClientTests {
     this.tests = {
       headless_chrome: function() {
         // Warning: accessing navigator.webdriver may impact fingerprinting scores when this API is included in the built script.
-        return isWebdriverEnabled()
+        return isWebdriverEnabled();
       },
 
       selenium: function () {
-        return isSeleniumDetected(window, document)
+        return isSeleniumDetected(window, document);
       },
-    }
+    };
   }
 
   doTests() {
-    let response = false
+    let response = false;
     for (const i of Object.keys(this.tests)) {
       if (this.tests[i]() === true) {
-        response = true
+        response = true;
       }
     }
-    return response
+    return response;
   }
 }
 
 // INIT OUR BIDDER WITH PREBID
-registerBidder(spec)
+registerBidder(spec);

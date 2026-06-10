@@ -1,6 +1,6 @@
-import type { BidRequest } from "../../src/adapterManager"
-import type { Bid } from "../../src/bidfactory"
-import type { BidderCode } from "../../src/types/common"
+import type { BidRequest } from "../../src/adapterManager";
+import type { Bid } from "../../src/bidfactory";
+import type { BidderCode } from "../../src/types/common";
 
 export type DebugModuleConfiguration = {
   enabled?: boolean;
@@ -8,7 +8,7 @@ export type DebugModuleConfiguration = {
    * Rules are evaluated on each bid in the order they are provided: the first one that has a matching when definition takes the bid out of the normal auction flow and replaces it according to its then definition.
    */
   intercept?: InterceptRule[]
-}
+};
 
 export type InterceptRule = {
   /**
@@ -20,7 +20,7 @@ export type InterceptRule = {
    */
   then?: ReplaceRule;
   options?: RuleOptions;
-}
+};
 
   type MatchRule =
     /**
@@ -35,7 +35,7 @@ export type InterceptRule = {
      */
     | {
       [K in keyof BidRequest<BidderCode | null>]?: BidRequest<BidderCode | null>[K] | ((value: BidRequest<BidderCode | null>[K]) => boolean) | RegExp
-    }
+    };
 
   type ReplaceRule =
     /**
@@ -54,7 +54,7 @@ export type InterceptRule = {
     /**
      * Indicates no bid.
      */
-    | null
+    | null;
 
   type RuleOptions = {
     /**
@@ -64,7 +64,7 @@ export type InterceptRule = {
      * Defaults to zero.
      */
     delay?: number
-  }
+  };
 
 declare module '../../src/config' {
   interface Config {
@@ -77,4 +77,4 @@ declare module '../../src/config' {
   }
 }
 
-export {}
+export {};

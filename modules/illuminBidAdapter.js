@@ -1,31 +1,31 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { getStorageManager } from '../src/storageManager.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn, onBidWon, onBidBillable
-} from '../libraries/vidazooUtils/bidderUtils.js'
+} from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
  * @typedef {import('./illuminBidAdapter.d.ts').IlluminBidRequestParams} IlluminBidRequestParams
  */
 
-const DEFAULT_SUB_DOMAIN = 'exchange'
-const BIDDER_CODE = 'illumin'
-const BIDDER_VERSION = '1.0.0'
-const GVLID = 149
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+const DEFAULT_SUB_DOMAIN = 'exchange';
+const BIDDER_CODE = 'illumin';
+const BIDDER_VERSION = '1.0.0';
+const GVLID = 149;
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
-  return `https://${subDomain}.illumin.com`
+  return `https://${subDomain}.illumin.com`;
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_CODE, BIDDER_VERSION, false)
+const buildRequests = createBuildRequestsFn(createDomain, null, storage, BIDDER_CODE, BIDDER_VERSION, false);
 
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false)
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
 
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.illumin.com/api/sync/iframe', imageSyncUrl: 'https://sync.illumin.com/api/sync/image'
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -38,6 +38,6 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

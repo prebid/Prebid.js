@@ -1,10 +1,10 @@
-import { expect } from 'chai'
-import { spec } from 'modules/growadsBidAdapter.js'
-import * as utils from '../../../src/utils.js'
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js'
+import { expect } from 'chai';
+import { spec } from 'modules/growadsBidAdapter.js';
+import * as utils from '../../../src/utils.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('GrowAdvertising Adapter', function() {
-  const ZONE_ID = 'unique-zone-id'
+  const ZONE_ID = 'unique-zone-id';
   const serverResponseBanner = {
     body: {
       status: 'success',
@@ -17,7 +17,7 @@ describe('GrowAdvertising Adapter', function() {
       currency: 'USD',
       type: BANNER,
     }
-  }
+  };
   const serverResponseNative = {
     body: {
       status: 'success',
@@ -42,8 +42,8 @@ describe('GrowAdvertising Adapter', function() {
       },
       type: NATIVE
     }
-  }
-  let bidRequests = []
+  };
+  let bidRequests = [];
 
   beforeEach(function () {
     bidRequests = [
@@ -79,8 +79,8 @@ describe('GrowAdvertising Adapter', function() {
           },
         },
       }
-    ]
-  })
+    ];
+  });
 
   describe('implementation', function () {
     describe('for requests', function () {
@@ -90,11 +90,11 @@ describe('GrowAdvertising Adapter', function() {
           params: {
             zoneId: ZONE_ID
           }
-        }
+        };
 
-        const isValid = spec.isBidRequestValid(validBid)
-        expect(isValid).to.equal(true)
-      })
+        const isValid = spec.isBidRequestValid(validBid);
+        expect(isValid).to.equal(true);
+      });
 
       it('should reject null zoneId bid', function () {
         const zoneNullBid = {
@@ -102,11 +102,11 @@ describe('GrowAdvertising Adapter', function() {
           params: {
             zoneId: null
           }
-        }
+        };
 
-        const isValid = spec.isBidRequestValid(zoneNullBid)
-        expect(isValid).to.equal(false)
-      })
+        const isValid = spec.isBidRequestValid(zoneNullBid);
+        expect(isValid).to.equal(false);
+      });
 
       it('should reject absent zoneId bid', function () {
         const absentZoneBid = {
@@ -114,11 +114,11 @@ describe('GrowAdvertising Adapter', function() {
           params: {
             param: ZONE_ID
           }
-        }
+        };
 
-        const isValid = spec.isBidRequestValid(absentZoneBid)
-        expect(isValid).to.equal(false)
-      })
+        const isValid = spec.isBidRequestValid(absentZoneBid);
+        expect(isValid).to.equal(false);
+      });
 
       it('should use custom domain', function () {
         const validBid = {
@@ -127,11 +127,11 @@ describe('GrowAdvertising Adapter', function() {
             zoneId: ZONE_ID,
             domain: 'test.subdomain.growadvertising.com',
           },
-        }
+        };
 
-        const requests = spec.buildRequests([validBid])
-        expect(requests[0].url).to.have.string('test.subdomain.')
-      })
+        const requests = spec.buildRequests([validBid]);
+        expect(requests[0].url).to.have.string('test.subdomain.');
+      });
 
       it('should use default domain', function () {
         const validBid = {
@@ -139,11 +139,11 @@ describe('GrowAdvertising Adapter', function() {
           params: {
             zoneId: ZONE_ID,
           },
-        }
+        };
 
-        const requests = spec.buildRequests([validBid])
-        expect(requests[0].url).to.have.string('portal.growadvertising.com')
-      })
+        const requests = spec.buildRequests([validBid]);
+        expect(requests[0].url).to.have.string('portal.growadvertising.com');
+      });
 
       it('should increment zone index', function () {
         const validBids = [
@@ -159,28 +159,28 @@ describe('GrowAdvertising Adapter', function() {
               zoneId: ZONE_ID,
             },
           }
-        ]
+        ];
 
-        const requests = spec.buildRequests(validBids)
-        expect(requests[0].data).to.include({ i: 0 })
-        expect(requests[1].data).to.include({ i: 1 })
-      })
-    })
+        const requests = spec.buildRequests(validBids);
+        expect(requests[0].data).to.include({ i: 0 });
+        expect(requests[1].data).to.include({ i: 1 });
+      });
+    });
 
     describe('bid responses', function () {
       describe(BANNER, function () {
         it('should return complete bid response banner', function () {
-          const bids = spec.interpretResponse(serverResponseBanner, { bidRequest: bidRequests[0] })
+          const bids = spec.interpretResponse(serverResponseBanner, { bidRequest: bidRequests[0] });
 
-          expect(bids).to.be.lengthOf(1)
-          expect(bids[0].bidderCode).to.equal('growads')
-          expect(bids[0].cpm).to.equal(1)
-          expect(bids[0].width).to.equal(300)
-          expect(bids[0].height).to.equal(250)
-          expect(bids[0].creativeId).to.have.length.above(1)
-          expect(bids[0].ad).to.have.length.above(1)
-          expect(bids[0].mediaType).to.equal(BANNER)
-        })
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].bidderCode).to.equal('growads');
+          expect(bids[0].cpm).to.equal(1);
+          expect(bids[0].width).to.equal(300);
+          expect(bids[0].height).to.equal(250);
+          expect(bids[0].creativeId).to.have.length.above(1);
+          expect(bids[0].ad).to.have.length.above(1);
+          expect(bids[0].mediaType).to.equal(BANNER);
+        });
 
         it('should return empty bid on incorrect size', function () {
           const response = utils.mergeDeep(serverResponseBanner, {
@@ -188,41 +188,41 @@ describe('GrowAdvertising Adapter', function() {
               width: 150,
               height: 150
             }
-          })
+          });
 
-          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] })
-          expect([]).to.be.lengthOf(0)
-        })
+          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
+          expect([]).to.be.lengthOf(0);
+        });
 
         it('should return empty bid on incorrect CPM', function () {
           const response = utils.mergeDeep(serverResponseBanner, {
             body: {
               cpm: 10
             }
-          })
+          });
 
-          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] })
-          expect([]).to.be.lengthOf(0)
-        })
-      })
+          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
+          expect([]).to.be.lengthOf(0);
+        });
+      });
 
       describe(NATIVE, function () {
         it('should return complete bid response banner', function () {
-          const bids = spec.interpretResponse(serverResponseNative, { bidRequest: bidRequests[1] })
+          const bids = spec.interpretResponse(serverResponseNative, { bidRequest: bidRequests[1] });
 
-          expect(bids).to.be.lengthOf(1)
-          expect(bids[0].bidderCode).to.equal('growads')
-          expect(bids[0].cpm).to.equal(2)
-          expect(bids[0].width).to.equal(400)
-          expect(bids[0].height).to.equal(300)
-          expect(bids[0].creativeId).to.have.length.above(1)
-          expect(bids[0]).property('native')
-          expect(bids[0].native.title).to.have.length.above(1)
-          expect(bids[0].native.body).to.have.length.above(1)
-          expect(bids[0].native).property('image')
-          expect(bids[0].mediaType).to.equal(NATIVE)
-        })
-      })
-    })
-  })
-})
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].bidderCode).to.equal('growads');
+          expect(bids[0].cpm).to.equal(2);
+          expect(bids[0].width).to.equal(400);
+          expect(bids[0].height).to.equal(300);
+          expect(bids[0].creativeId).to.have.length.above(1);
+          expect(bids[0]).property('native');
+          expect(bids[0].native.title).to.have.length.above(1);
+          expect(bids[0].native.body).to.have.length.above(1);
+          expect(bids[0].native).property('image');
+          expect(bids[0].mediaType).to.equal(NATIVE);
+        });
+      });
+    });
+  });
+});

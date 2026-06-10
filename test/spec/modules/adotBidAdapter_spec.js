@@ -1,36 +1,36 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adotBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/adotBidAdapter.js';
 
-const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding/bidrequest'
+const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding/bidrequest';
 
 describe('Adot Adapter', function () {
   describe('isBidRequestValid', function () {
     it('should return false if video and !isValidVideo', function () {
-      const bid = { mediaTypes: { video: {} } }
-      const isBidRequestValid = spec.isBidRequestValid(bid)
-      expect(isBidRequestValid).to.equal(false)
-    })
+      const bid = { mediaTypes: { video: {} } };
+      const isBidRequestValid = spec.isBidRequestValid(bid);
+      expect(isBidRequestValid).to.equal(false);
+    });
 
     it('should return true if video and isValidVideo', function () {
-      const bid = { mediaTypes: { video: { 'mimes': 1, 'protocols': 1 } } }
-      const isBidRequestValid = spec.isBidRequestValid(bid)
-      expect(isBidRequestValid).to.equal(true)
-    })
+      const bid = { mediaTypes: { video: { 'mimes': 1, 'protocols': 1 } } };
+      const isBidRequestValid = spec.isBidRequestValid(bid);
+      expect(isBidRequestValid).to.equal(true);
+    });
 
     it('should return true if !video', function () {
-      const bid = { mediaTypes: { banner: {} } }
-      const isBidRequestValid = spec.isBidRequestValid(bid)
-      expect(isBidRequestValid).to.equal(true)
-    })
-  })
+      const bid = { mediaTypes: { banner: {} } };
+      const isBidRequestValid = spec.isBidRequestValid(bid);
+      expect(isBidRequestValid).to.equal(true);
+    });
+  });
 
   describe('buildRequests', function () {
     it('should build request (banner)', function () {
-      const bidderRequestId = 'bidderRequestId'
-      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { banner: { sizes: [[300, 250]] } }, params: { placementId: 'placementId', adUnitCode: 200 } }]
-      const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, ortb2: { source: { ext: { schain: { ver: '1.0' } } } } }
+      const bidderRequestId = 'bidderRequestId';
+      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { banner: { sizes: [[300, 250]] } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
+      const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, ortb2: { source: { ext: { schain: { ver: '1.0' } } } } };
 
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
       const buildBidRequestResponse = {
         id: bidderRequestId,
         imp: [{
@@ -65,21 +65,21 @@ describe('Adot Adapter', function () {
           should_use_gzip: true
         },
         at: 1
-      }
+      };
 
       expect(request).to.deep.equal([{
         method: 'POST',
         url: BIDDER_URL,
         data: buildBidRequestResponse
-      }])
-    })
+      }]);
+    });
 
     it('should build request (native)', function () {
-      const bidderRequestId = 'bidderRequestId'
-      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { native: { title: { required: true, len: 50, sizes: [[300, 250]] }, wrong: {}, image: {} } }, params: { placementId: 'placementId', adUnitCode: 200 } }]
-      const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, ortb2: { source: { ext: { schain: { ver: '1.0' } } } } }
+      const bidderRequestId = 'bidderRequestId';
+      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { native: { title: { required: true, len: 50, sizes: [[300, 250]] }, wrong: {}, image: {} } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
+      const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, ortb2: { source: { ext: { schain: { ver: '1.0' } } } } };
 
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
       const buildBidRequestResponse = {
         id: bidderRequestId,
         imp: [{
@@ -113,21 +113,21 @@ describe('Adot Adapter', function () {
           should_use_gzip: true
         },
         at: 1
-      }
+      };
 
       expect(request).to.deep.equal([{
         method: 'POST',
         url: BIDDER_URL,
         data: buildBidRequestResponse
-      }])
-    })
+      }]);
+    });
 
     it('should build request (video)', function () {
-      const bidderRequestId = 'bidderRequestId'
-      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { video: { playerSize: [[300, 250]], minduration: 1, maxduration: 2, api: 'api', linearity: 'linearity', mimes: [], plcmt: '1', playbackmethod: 'playbackmethod', protocols: 'protocol', startdelay: 'startdelay' } }, params: { placementId: 'placementId', adUnitCode: 200 } }]
-      const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, ortb2: { source: { ext: { schain: { ver: '1.0' } } } } }
+      const bidderRequestId = 'bidderRequestId';
+      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { video: { playerSize: [[300, 250]], minduration: 1, maxduration: 2, api: 'api', linearity: 'linearity', mimes: [], plcmt: '1', playbackmethod: 'playbackmethod', protocols: 'protocol', startdelay: 'startdelay' } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
+      const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, ortb2: { source: { ext: { schain: { ver: '1.0' } } } } };
 
-      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
       const buildBidRequestResponse = {
         id: bidderRequestId,
         imp: [{
@@ -173,36 +173,36 @@ describe('Adot Adapter', function () {
           should_use_gzip: true
         },
         at: 1
-      }
+      };
 
       expect(request).to.deep.equal([{
         method: 'POST',
         url: BIDDER_URL,
         data: buildBidRequestResponse
-      }])
-    })
-  })
+      }]);
+    });
+  });
 
   describe('interpretResponse', function () {
     it('should return [] if !isValidResponse', function () {
-      const serverResponse = 'response'
-      const request = 'request'
-      const interpretedResponse = spec.interpretResponse(serverResponse, request)
-      expect(interpretedResponse).to.deep.equal([])
-    })
+      const serverResponse = 'response';
+      const request = 'request';
+      const interpretedResponse = spec.interpretResponse(serverResponse, request);
+      expect(interpretedResponse).to.deep.equal([]);
+    });
 
     it('should return [] if !isValidRequest', function () {
-      const serverResponse = { body: { cur: 'EUR', seatbid: [] } }
-      const request = 'request'
-      const interpretedResponse = spec.interpretResponse(serverResponse, request)
-      expect(interpretedResponse).to.deep.equal([])
-    })
+      const serverResponse = { body: { cur: 'EUR', seatbid: [] } };
+      const request = 'request';
+      const interpretedResponse = spec.interpretResponse(serverResponse, request);
+      expect(interpretedResponse).to.deep.equal([]);
+    });
 
     it('should return bidResponse with random media type', function () {
-      const impId = 'impId'
-      const bid = { adm: 'adm', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'media_type', size: { w: 300, h: 250 } } } }
-      const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } }
-      const request = { data: { imp: [{ id: impId }] } }
+      const impId = 'impId';
+      const bid = { adm: 'adm', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'media_type', size: { w: 300, h: 250 } } } };
+      const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } };
+      const request = { data: { imp: [{ id: impId }] } };
       const bidResponse = {
         requestId: impId,
         cpm: bid.price,
@@ -220,17 +220,17 @@ describe('Adot Adapter', function () {
         vastXml: null,
         vastUrl: null,
         renderer: null
-      }
+      };
 
-      const interpretedResponse = spec.interpretResponse(serverResponse, request)
-      expect(interpretedResponse).to.deep.equal([bidResponse])
-    })
+      const interpretedResponse = spec.interpretResponse(serverResponse, request);
+      expect(interpretedResponse).to.deep.equal([bidResponse]);
+    });
 
     it('should return bidResponse with native', function () {
-      const impId = 'impId'
-      const bid = { adm: '{"native":{"assets":[{"id":1,"title":{"text":"title"}},{"id":3,"img":{"url":"url","w":300,"h":250}}],"link":{"url":"clickUrl","clicktrackers":"clicktrackers"},"imptrackers":["imptracker"],"jstracker":"jstracker"}}', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'native', size: { width: 300, height: 250 } } } }
-      const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } }
-      const request = { data: { imp: [{ id: impId }] } }
+      const impId = 'impId';
+      const bid = { adm: '{"native":{"assets":[{"id":1,"title":{"text":"title"}},{"id":3,"img":{"url":"url","w":300,"h":250}}],"link":{"url":"clickUrl","clicktrackers":"clicktrackers"},"imptrackers":["imptracker"],"jstracker":"jstracker"}}', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'native', size: { width: 300, height: 250 } } } };
+      const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } };
+      const request = { data: { imp: [{ id: impId }] } };
       const bidResponse = {
         requestId: impId,
         cpm: bid.price,
@@ -249,17 +249,17 @@ describe('Adot Adapter', function () {
           impressionTrackers: ['imptracker'],
           javascriptTrackers: ['jstracker']
         }
-      }
+      };
 
-      const interpretedResponse = spec.interpretResponse(serverResponse, request)
-      expect(interpretedResponse).to.deep.equal([bidResponse])
-    })
+      const interpretedResponse = spec.interpretResponse(serverResponse, request);
+      expect(interpretedResponse).to.deep.equal([bidResponse]);
+    });
 
     it('should return bidResponse with video', function () {
-      const impId = 'impId'
-      const bid = { nurl: 'nurl', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'video', size: { w: 300, h: 250 }, container: {}, adUnitCode: 20, video: { type: 'outstream' } } } }
-      const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } }
-      const request = { data: { imp: [{ id: impId }] } }
+      const impId = 'impId';
+      const bid = { nurl: 'nurl', impid: impId, price: 2, crid: 'crid', dealid: 'dealid', adomain: 'adomain', ext: { adot: { media_type: 'video', size: { w: 300, h: 250 }, container: {}, adUnitCode: 20, video: { type: 'outstream' } } } };
+      const serverResponse = { body: { cur: 'EUR', seatbid: [{ bid: {} }, { bid: [bid] }] } };
+      const request = { data: { imp: [{ id: impId }] } };
       const bidResponse = {
         requestId: impId,
         cpm: bid.price,
@@ -276,61 +276,61 @@ describe('Adot Adapter', function () {
         adUrl: bid.nurl,
         vastXml: null,
         vastUrl: bid.nurl
-      }
+      };
 
-      const interpretedResponse = spec.interpretResponse(serverResponse, request)
-      expect(interpretedResponse).to.be.an('array').and.to.have.lengthOf(1)
-      expect(interpretedResponse[0].requestId).to.deep.equal(bidResponse.requestId)
-      expect(interpretedResponse[0].cpm).to.deep.equal(bidResponse.cpm)
-      expect(interpretedResponse[0].currency).to.deep.equal(bidResponse.currency)
-      expect(interpretedResponse[0].ttl).to.deep.equal(bidResponse.ttl)
-      expect(interpretedResponse[0].creativeId).to.deep.equal(bidResponse.creativeId)
-      expect(interpretedResponse[0].netRevenue).to.deep.equal(bidResponse.netRevenue)
-      expect(interpretedResponse[0].mediaType).to.deep.equal(bidResponse.mediaType)
-      expect(interpretedResponse[0].dealId).to.deep.equal(bidResponse.dealId)
-      expect(interpretedResponse[0].meta).to.deep.equal(bidResponse.meta)
-      expect(interpretedResponse[0].width).to.deep.equal(bidResponse.w)
-      expect(interpretedResponse[0].height).to.deep.equal(bidResponse.h)
-      expect(interpretedResponse[0].ad).to.deep.equal(bidResponse.ad)
-      expect(interpretedResponse[0].adUrl).to.deep.equal(bidResponse.adUrl)
-      expect(interpretedResponse[0].vastXml).to.deep.equal(bidResponse.vastXml)
-      expect(interpretedResponse[0].vastUrl).to.deep.equal(bidResponse.vastUrl)
-      expect(interpretedResponse[0].renderer).to.be.an('object')
-    })
-  })
+      const interpretedResponse = spec.interpretResponse(serverResponse, request);
+      expect(interpretedResponse).to.be.an('array').and.to.have.lengthOf(1);
+      expect(interpretedResponse[0].requestId).to.deep.equal(bidResponse.requestId);
+      expect(interpretedResponse[0].cpm).to.deep.equal(bidResponse.cpm);
+      expect(interpretedResponse[0].currency).to.deep.equal(bidResponse.currency);
+      expect(interpretedResponse[0].ttl).to.deep.equal(bidResponse.ttl);
+      expect(interpretedResponse[0].creativeId).to.deep.equal(bidResponse.creativeId);
+      expect(interpretedResponse[0].netRevenue).to.deep.equal(bidResponse.netRevenue);
+      expect(interpretedResponse[0].mediaType).to.deep.equal(bidResponse.mediaType);
+      expect(interpretedResponse[0].dealId).to.deep.equal(bidResponse.dealId);
+      expect(interpretedResponse[0].meta).to.deep.equal(bidResponse.meta);
+      expect(interpretedResponse[0].width).to.deep.equal(bidResponse.w);
+      expect(interpretedResponse[0].height).to.deep.equal(bidResponse.h);
+      expect(interpretedResponse[0].ad).to.deep.equal(bidResponse.ad);
+      expect(interpretedResponse[0].adUrl).to.deep.equal(bidResponse.adUrl);
+      expect(interpretedResponse[0].vastXml).to.deep.equal(bidResponse.vastXml);
+      expect(interpretedResponse[0].vastUrl).to.deep.equal(bidResponse.vastUrl);
+      expect(interpretedResponse[0].renderer).to.be.an('object');
+    });
+  });
 
   describe('getFloor', function () {
     it('should return 0 if getFloor is not a function', function () {
-      const floor = spec.getFloor({ getFloor: 0 })
-      expect(floor).to.deep.equal(0)
-    })
+      const floor = spec.getFloor({ getFloor: 0 });
+      expect(floor).to.deep.equal(0);
+    });
 
     it('should return floor result if currency are correct', function () {
-      const currency = 'EUR'
-      const floorResult = 2
-      const fn = sinon.stub().callsFake(() => ({ currency, floor: floorResult }))
-      const adUnit = { getFloor: fn }
-      const size = {}
-      const mediaType = {}
+      const currency = 'EUR';
+      const floorResult = 2;
+      const fn = sinon.stub().callsFake(() => ({ currency, floor: floorResult }));
+      const adUnit = { getFloor: fn };
+      const size = {};
+      const mediaType = {};
 
-      const floor = spec.getFloor(adUnit, size, mediaType, currency)
-      expect(floor).to.deep.equal(floorResult)
-      expect(fn.calledOnce).to.equal(true)
-      expect(fn.calledWithExactly({ currency, mediaType, size })).to.equal(true)
-    })
+      const floor = spec.getFloor(adUnit, size, mediaType, currency);
+      expect(floor).to.deep.equal(floorResult);
+      expect(fn.calledOnce).to.equal(true);
+      expect(fn.calledWithExactly({ currency, mediaType, size })).to.equal(true);
+    });
 
     it('should return floor result if currency are not correct', function () {
-      const currency = 'EUR'
-      const floorResult = 2
-      const fn = sinon.stub().callsFake(() => ({ currency: 'wrong_currency', floor: floorResult }))
-      const adUnit = { getFloor: fn }
-      const size = {}
-      const mediaType = {}
+      const currency = 'EUR';
+      const floorResult = 2;
+      const fn = sinon.stub().callsFake(() => ({ currency: 'wrong_currency', floor: floorResult }));
+      const adUnit = { getFloor: fn };
+      const size = {};
+      const mediaType = {};
 
-      const floor = spec.getFloor(adUnit, size, mediaType, currency)
-      expect(floor).to.deep.equal(0)
-      expect(fn.calledOnce).to.equal(true)
-      expect(fn.calledWithExactly({ currency, mediaType, size })).to.equal(true)
-    })
-  })
-})
+      const floor = spec.getFloor(adUnit, size, mediaType, currency);
+      expect(floor).to.deep.equal(0);
+      expect(fn.calledOnce).to.equal(true);
+      expect(fn.calledWithExactly({ currency, mediaType, size })).to.equal(true);
+    });
+  });
+});

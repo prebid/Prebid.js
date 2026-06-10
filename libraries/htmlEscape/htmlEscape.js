@@ -18,9 +18,9 @@ export const escapeUnsafeChars = (() => {
     '\0': '\\0',
     '\u2028': '\\u2028',
     '\u2029': '\\u2029'
-  }
+  };
 
   return function (str) {
-    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
-  }
-})()
+    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x]);
+  };
+})();

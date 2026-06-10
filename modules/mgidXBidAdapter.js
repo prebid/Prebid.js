@@ -1,24 +1,24 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import { isBidRequestValid, buildRequestsBase, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.js'
-import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { isBidRequestValid, buildRequestsBase, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.js';
+import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js';
 
-const BIDDER_CODE = 'mgidX'
-const GVLID = 358
-const AD_URL = 'https://#{REGION}#.mgid.com/pbjs'
+const BIDDER_CODE = 'mgidX';
+const GVLID = 358;
+const AD_URL = 'https://#{REGION}#.mgid.com/pbjs';
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
-  const request = buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest })
-  const region = validBidRequests[0].params?.region
+  const request = buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest });
+  const region = validBidRequests[0].params?.region;
 
   if (region === 'eu') {
-    request.url = AD_URL.replace('#{REGION}#', 'eu-x')
+    request.url = AD_URL.replace('#{REGION}#', 'eu-x');
   } else {
-    request.url = AD_URL.replace('#{REGION}#', 'us-east-x')
+    request.url = AD_URL.replace('#{REGION}#', 'us-east-x');
   }
 
-  return request
-}
+  return request;
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,6 +30,6 @@ export const spec = {
   interpretResponse,
 
   getUserSyncs: getUserSyncs,
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

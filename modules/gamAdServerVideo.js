@@ -2,15 +2,15 @@
  * This module adds [GAM support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { getSignals } from '../libraries/gptUtils/gptUtils.js'
-import { registerVideoSupport } from '../src/adServerManager.js'
-import { getPPID } from '../src/adserver.js'
-import { auctionManager } from '../src/auctionManager.js'
-import { config } from '../src/config.js'
-import { EVENTS } from '../src/constants.js'
-import * as events from '../src/events.js'
-import { getRefererInfo } from '../src/refererDetection.js'
-import { targeting } from '../src/targeting.js'
+import { getSignals } from '../libraries/gptUtils/gptUtils.js';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { getPPID } from '../src/adserver.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { config } from '../src/config.js';
+import { EVENTS } from '../src/constants.js';
+import * as events from '../src/events.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { targeting } from '../src/targeting.js';
 import {
   buildUrl,
   formatQS,
@@ -20,14 +20,14 @@ import {
   logWarn,
   parseSizesInput,
   parseUrl
-} from '../src/utils.js'
-import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js'
-import { vastLocalCache } from '../src/videoCache.js'
-import { noCredsFetch as fetch } from '../src/ajax.js'
-import XMLUtil from '../libraries/xmlUtils/xmlUtils.js'
+} from '../src/utils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
+import { vastLocalCache } from '../src/videoCache.js';
+import { noCredsFetch as fetch } from '../src/ajax.js';
+import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
-import { getGlobalVarName } from '../src/buildOptions.js'
-import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js'
+import { getGlobalVarName } from '../src/buildOptions.js';
+import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('./gamAdServerVideo.d.ts').GamVideoOptions} GamVideoOptions
@@ -35,9 +35,9 @@ import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js'
 
 export const dep = {
   ri: getRefererInfo
-}
+};
 
-export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI'
+export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
@@ -52,22 +52,22 @@ export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI'
  */
 export function buildGamVideoUrl(options) {
   if (!options.params && !options.url) {
-    logError(`A params object or a url is required to use ${getGlobalVarName()}.adServers.gam.buildVideoUrl`)
-    return
+    logError(`A params object or a url is required to use ${getGlobalVarName()}.adServers.gam.buildVideoUrl`);
+    return;
   }
 
-  const adUnit = options.adUnit
-  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0]
+  const adUnit = options.adUnit;
+  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
 
-  let urlComponents = {}
+  let urlComponents = {};
 
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true })
+    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true });
 
     if (isEmpty(options.params)) {
-      return buildUrlFromAdserverUrlComponents(urlComponents, bid, options)
+      return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
     }
   }
 
@@ -75,15 +75,15 @@ export function buildGamVideoUrl(options) {
     correlator: Date.now(),
     sz: parseSizesInput(adUnit?.mediaTypes?.video?.playerSize).join('|'),
     url: encodeURIComponent(location.href),
-  }
+  };
 
-  const urlSearchComponent = urlComponents.search
-  const urlSzParam = urlSearchComponent && urlSearchComponent.sz
+  const urlSearchComponent = urlComponents.search;
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz;
   if (urlSzParam) {
-    derivedParams.sz = urlSzParam + '|' + derivedParams.sz
+    derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
   }
 
-  const encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params)
+  const encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
     DEFAULT_GAM_PARAMS,
@@ -92,86 +92,86 @@ export function buildGamVideoUrl(options) {
     options.params,
     { cust_params: encodedCustomParams },
     gdprParams()
-  )
+  );
 
   // The IMA player adds usp info, but not gpp info
   // For cases where the CMP only exposes gpp but not usp,
   // it is better to derive an usp string from the gpp info and include it in the url
   if (window.google?.ima) {
-    const usPrivacy = uspDataHandler.getConsentData?.()
-    const gpp = gppDataHandler.getConsentData?.()
+    const usPrivacy = uspDataHandler.getConsentData?.();
+    const gpp = gppDataHandler.getConsentData?.();
 
     if (!usPrivacy && gpp) {
       // Extract an usPrivacy string from the GPP string if possible
-      const uspFromGpp = retrieveUspInfoFromGpp(gpp)
+      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
       if (uspFromGpp) {
-        queryParams['us_privacy'] = uspFromGpp
+        queryParams['us_privacy'] = uspFromGpp;
       }
     }
   }
 
-  const descriptionUrl = getDescriptionUrl(bid, options, 'params')
-  if (descriptionUrl) { queryParams.description_url = descriptionUrl }
+  const descriptionUrl = getDescriptionUrl(bid, options, 'params');
+  if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
 
   if (!queryParams.ppid) {
-    const ppid = getPPID()
+    const ppid = getPPID();
     if (ppid != null) {
-      queryParams.ppid = ppid
+      queryParams.ppid = ppid;
     }
   }
 
-  const video = options.adUnit?.mediaTypes?.video
+  const video = options.adUnit?.mediaTypes?.video;
   Object.entries({
     plcmt: () => video?.plcmt,
     min_ad_duration: () => isNumber(video?.minduration) ? video.minduration * 1000 : null,
     max_ad_duration: () => isNumber(video?.maxduration) ? video.maxduration * 1000 : null,
     vpos() {
-      const startdelay = video?.startdelay
+      const startdelay = video?.startdelay;
       if (isNumber(startdelay)) {
-        if (startdelay === -2) return 'postroll'
-        if (startdelay === -1 || startdelay > 0) return 'midroll'
-        return 'preroll'
+        if (startdelay === -2) return 'postroll';
+        if (startdelay === -1 || startdelay > 0) return 'midroll';
+        return 'preroll';
       }
     },
     vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.some(m => m === 7) ? '2' : undefined,
     vpa() {
       // playbackmethod = 3 is play on click; 1, 2, 4, 5, 6 are autoplay
       if (Array.isArray(video?.playbackmethod)) {
-        const click = video.playbackmethod.some(m => m === 3)
-        const auto = video.playbackmethod.some(m => [1, 2, 4, 5, 6].includes(m))
-        if (click && !auto) return 'click'
-        if (auto && !click) return 'auto'
+        const click = video.playbackmethod.some(m => m === 3);
+        const auto = video.playbackmethod.some(m => [1, 2, 4, 5, 6].includes(m));
+        if (click && !auto) return 'click';
+        if (auto && !click) return 'auto';
       }
     },
     vpmute() {
       // playbackmethod = 2, 6 are muted; 1, 3, 4, 5 are not
       if (Array.isArray(video?.playbackmethod)) {
-        const muted = video.playbackmethod.some(m => [2, 6].includes(m))
-        const talkie = video.playbackmethod.some(m => [1, 3, 4, 5].includes(m))
-        if (muted && !talkie) return '1'
-        if (talkie && !muted) return '0'
+        const muted = video.playbackmethod.some(m => [2, 6].includes(m));
+        const talkie = video.playbackmethod.some(m => [1, 3, 4, 5].includes(m));
+        if (muted && !talkie) return '1';
+        if (talkie && !muted) return '0';
       }
     }
   }).forEach(([param, getter]) => {
     if (!queryParams.hasOwnProperty(param)) {
-      const val = getter()
+      const val = getter();
       if (val != null) {
-        queryParams[param] = val
+        queryParams[param] = val;
       }
     }
-  })
+  });
   const fpd = auctionManager.index.getBidRequest(options.bid || {})?.ortb2 ??
-    auctionManager.index.getAuction(options.bid || {})?.getFPD()?.global
+    auctionManager.index.getAuction(options.bid || {})?.getFPD()?.global;
 
-  const signals = getSignals(fpd)
+  const signals = getSignals(fpd);
 
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
       PublisherProvidedTaxonomySignals: signals
-    }))
+    }));
   }
 
-  return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }))
+  return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
 }
 
 /**
@@ -183,13 +183,13 @@ export function buildGamVideoUrl(options) {
  * @return {string} video url
  */
 function buildUrlFromAdserverUrlComponents(components, bid, options) {
-  const descriptionUrl = getDescriptionUrl(bid, components, 'search')
+  const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) {
-    components.search.description_url = descriptionUrl
+    components.search.description_url = descriptionUrl;
   }
 
-  components.search.cust_params = getCustParams(bid, options, components.search.cust_params)
-  return buildUrl(components)
+  components.search.cust_params = getCustParams(bid, options, components.search.cust_params);
+  return buildUrl(components);
 }
 
 /**
@@ -201,7 +201,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  return components?.[prop]?.description_url || encodeURIComponent(dep.ri().page)
+  return components?.[prop]?.description_url || encodeURIComponent(dep.ri().page);
 }
 
 /**
@@ -211,13 +211,13 @@ function getDescriptionUrl(bid, components, prop) {
  * @return {Object} Encoded key value pairs for cust_params
  */
 function getCustParams(bid, options, urlCustParams) {
-  const adserverTargeting = (bid && bid.adserverTargeting) || {}
+  const adserverTargeting = (bid && bid.adserverTargeting) || {};
 
-  let allTargetingData = {}
-  const adUnit = options && options.adUnit
+  let allTargetingData = {};
+  const adUnit = options && options.adUnit;
   if (adUnit) {
-    const allTargeting = targeting.getAllTargeting(adUnit.code)
-    allTargetingData = (allTargeting) ? allTargeting[adUnit.code] : {}
+    const allTargeting = targeting.getAllTargeting(adUnit.code);
+    allTargetingData = (allTargeting) ? allTargeting[adUnit.code] : {};
   }
 
   const prebidTargetingSet = Object.assign({},
@@ -227,147 +227,147 @@ function getCustParams(bid, options, urlCustParams) {
     { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,
-  )
+  );
 
   // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
-  events.emit(EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet })
+  events.emit(EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet });
 
   // merge the prebid + publisher targeting sets
-  const publisherTargetingSet = options?.params?.cust_params
-  const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet)
-  let encodedParams = encodeURIComponent(formatQS(targetingSet))
+  const publisherTargetingSet = options?.params?.cust_params;
+  const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
+  let encodedParams = encodeURIComponent(formatQS(targetingSet));
   if (urlCustParams) {
-    encodedParams = urlCustParams + '%26' + encodedParams
+    encodedParams = urlCustParams + '%26' + encodedParams;
   }
 
-  return encodedParams
+  return encodedParams;
 }
 
 async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
   try {
-    const xmlUtil = XMLUtil()
-    const xmlDoc = xmlUtil.parse(gamVastWrapper)
-    const vastAdTagUriElement = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME)[0]
+    const xmlUtil = XMLUtil();
+    const xmlDoc = xmlUtil.parse(gamVastWrapper);
+    const vastAdTagUriElement = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME)[0];
 
     if (!vastAdTagUriElement || !vastAdTagUriElement.textContent) {
-      return gamVastWrapper
+      return gamVastWrapper;
     }
 
-    const uuidExp = new RegExp(`[A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}`, 'gi')
-    const matchResult = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp))
+    const uuidExp = new RegExp(`[A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}`, 'gi');
+    const matchResult = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp));
     const uuidCandidates = matchResult
       .map(([uuid]) => uuid)
-      .filter(uuid => localCacheMap.has(uuid))
+      .filter(uuid => localCacheMap.has(uuid));
 
     if (uuidCandidates.length !== 1) {
-      logWarn(`Unable to determine unique uuid in ${VAST_TAG_URI_TAGNAME}`)
-      return gamVastWrapper
+      logWarn(`Unable to determine unique uuid in ${VAST_TAG_URI_TAGNAME}`);
+      return gamVastWrapper;
     }
-    const uuid = uuidCandidates[0]
+    const uuid = uuidCandidates[0];
 
-    const blobUrl = localCacheMap.get(uuid)
-    const base64BlobContent = await getBase64BlobContent(blobUrl)
-    const cdata = xmlDoc.createCDATASection(base64BlobContent)
-    vastAdTagUriElement.textContent = ''
-    vastAdTagUriElement.appendChild(cdata)
-    return xmlUtil.serialize(xmlDoc)
+    const blobUrl = localCacheMap.get(uuid);
+    const base64BlobContent = await getBase64BlobContent(blobUrl);
+    const cdata = xmlDoc.createCDATASection(base64BlobContent);
+    vastAdTagUriElement.textContent = '';
+    vastAdTagUriElement.appendChild(cdata);
+    return xmlUtil.serialize(xmlDoc);
   } catch (error) {
-    logWarn('Unable to process xml', error)
-    return gamVastWrapper
+    logWarn('Unable to process xml', error);
+    return gamVastWrapper;
   }
 };
 /**
  * @param {GamVideoOptions} options
  */
 export async function getVastXml(options, localCacheMap = vastLocalCache) {
-  let vastUrl = buildGamVideoUrl(options)
+  let vastUrl = buildGamVideoUrl(options);
 
-  const adUnit = options.adUnit
-  const video = adUnit?.mediaTypes?.video
-  const sdkApis = (video?.api || []).join(',')
-  const usPrivacy = uspDataHandler.getConsentData?.()
+  const adUnit = options.adUnit;
+  const video = adUnit?.mediaTypes?.video;
+  const sdkApis = (video?.api || []).join(',');
+  const usPrivacy = uspDataHandler.getConsentData?.();
   // Adding parameters required by ima
   if (config.getConfig('cache.useLocal') && window.google?.ima) {
-    vastUrl = new URL(vastUrl)
-    const imaSdkVersion = `h.${window.google.ima.VERSION}`
-    vastUrl.searchParams.set('omid_p', `Google1/${imaSdkVersion}`)
-    vastUrl.searchParams.set('sdkv', imaSdkVersion)
+    vastUrl = new URL(vastUrl);
+    const imaSdkVersion = `h.${window.google.ima.VERSION}`;
+    vastUrl.searchParams.set('omid_p', `Google1/${imaSdkVersion}`);
+    vastUrl.searchParams.set('sdkv', imaSdkVersion);
     if (sdkApis) {
-      vastUrl.searchParams.set('sdk_apis', sdkApis)
+      vastUrl.searchParams.set('sdk_apis', sdkApis);
     }
     if (usPrivacy) {
-      vastUrl.searchParams.set('us_privacy', usPrivacy)
+      vastUrl.searchParams.set('us_privacy', usPrivacy);
     }
-    vastUrl = vastUrl.toString()
+    vastUrl = vastUrl.toString();
   }
 
-  const response = await fetch(vastUrl)
+  const response = await fetch(vastUrl);
   if (!response.ok) {
-    throw new Error('Unable to fetch GAM VAST wrapper')
+    throw new Error('Unable to fetch GAM VAST wrapper');
   }
 
-  const gamVastWrapper = await response.text()
+  const gamVastWrapper = await response.text();
 
   if (config.getConfig('cache.useLocal')) {
-    const vastXml = await getVastForLocallyCachedBids(gamVastWrapper, localCacheMap)
-    return vastXml
+    const vastXml = await getVastForLocallyCachedBids(gamVastWrapper, localCacheMap);
+    return vastXml;
   }
 
-  return gamVastWrapper
+  return gamVastWrapper;
 }
 /**
  * Extract a US Privacy string from the GPP data
  */
 function retrieveUspInfoFromGpp(gpp) {
   if (!gpp) {
-    return undefined
+    return undefined;
   }
-  const parsedSections = gpp.gppData?.parsedSections
+  const parsedSections = gpp.gppData?.parsedSections;
   if (parsedSections) {
     if (parsedSections.uspv1) {
-      const usp = parsedSections.uspv1
-      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`
+      const usp = parsedSections.uspv1;
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`;
     } else {
-      let saleOptOut
-      let saleOptOutNotice
+      let saleOptOut;
+      let saleOptOutNotice;
       Object.values(parsedSections).forEach(parsedSection => {
         (Array.isArray(parsedSection) ? parsedSection : [parsedSection]).forEach(ps => {
-          const sectionSaleOptOut = ps.SaleOptOut
-          const sectionSaleOptOutNotice = ps.SaleOptOutNotice
+          const sectionSaleOptOut = ps.SaleOptOut;
+          const sectionSaleOptOutNotice = ps.SaleOptOutNotice;
           if (saleOptOut === undefined && saleOptOutNotice === undefined && sectionSaleOptOut != null && sectionSaleOptOutNotice != null) {
-            saleOptOut = sectionSaleOptOut
-            saleOptOutNotice = sectionSaleOptOutNotice
+            saleOptOut = sectionSaleOptOut;
+            saleOptOutNotice = sectionSaleOptOutNotice;
           }
-        })
-      })
+        });
+      });
       if (saleOptOut !== undefined && saleOptOutNotice !== undefined) {
-        const uspOptOutSale = saleOptOut === 0 ? '-' : saleOptOut === 1 ? 'Y' : 'N'
-        const uspOptOutNotice = saleOptOutNotice === 0 ? '-' : saleOptOutNotice === 1 ? 'Y' : 'N'
-        const uspLspa = uspOptOutSale === '-' && uspOptOutNotice === '-' ? '-' : 'Y'
-        return `1${uspOptOutNotice}${uspOptOutSale}${uspLspa}`
+        const uspOptOutSale = saleOptOut === 0 ? '-' : saleOptOut === 1 ? 'Y' : 'N';
+        const uspOptOutNotice = saleOptOutNotice === 0 ? '-' : saleOptOutNotice === 1 ? 'Y' : 'N';
+        const uspLspa = uspOptOutSale === '-' && uspOptOutNotice === '-' ? '-' : 'Y';
+        return `1${uspOptOutNotice}${uspOptOutSale}${uspLspa}`;
       }
     }
   }
-  return undefined
+  return undefined;
 }
 
 export async function getBase64BlobContent(blobUrl) {
-  const response = await fetch(blobUrl)
+  const response = await fetch(blobUrl);
   if (!response.ok) {
-    logError('Unable to fetch blob')
-    throw new Error('Blob not found')
+    logError('Unable to fetch blob');
+    throw new Error('Blob not found');
   }
   // Mechanism to handle cases where VAST tags are fetched
   // from a context where the blob resource is not accessible.
   // like IMA SDK iframe
-  const blobContent = await response.text()
-  const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`
-  return dataUrl
+  const blobContent = await response.text();
+  const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+  return dataUrl;
 }
 
-export { buildGamVideoUrl as buildDfpVideoUrl }
+export { buildGamVideoUrl as buildDfpVideoUrl };
 
 registerVideoSupport('gam', {
   buildVideoUrl: buildGamVideoUrl,
   getVastXml
-})
+});

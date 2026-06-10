@@ -1,30 +1,30 @@
-import { spec } from 'modules/lkqdBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { config } from 'src/config.js'
-import { expect } from 'chai'
+import { spec } from 'modules/lkqdBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import { expect } from 'chai';
 
 describe('lkqdBidAdapter', () => {
-  const BIDDER_CODE = 'lkqd'
-  const SITE_ID = '662921'
-  const PUBLISHER_ID = '263'
-  const END_POINT = new URL('https://rtb.lkqd.net/ad')
-  const ADAPTER = newBidder(spec)
+  const BIDDER_CODE = 'lkqd';
+  const SITE_ID = '662921';
+  const PUBLISHER_ID = '263';
+  const END_POINT = new URL('https://rtb.lkqd.net/ad');
+  const ADAPTER = newBidder(spec);
 
-  let sandbox
+  let sandbox;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-  })
+    sandbox = sinon.createSandbox();
+  });
 
   afterEach(() => {
-    sandbox.restore()
-  })
+    sandbox.restore();
+  });
 
   context('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(ADAPTER.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(ADAPTER.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   context('isBidRequestValid', () => {
     const bid = {
@@ -39,21 +39,21 @@ describe('lkqdBidAdapter', () => {
       bidderRequestId: '22edbae2733bf6',
       requestId: 'a09c66c3-53e3-4428-b296-38fc08e7cd2a',
       transactionId: 'd6f6b392-54a9-454c-85fb-a2fd882c4a2d',
-    }
+    };
 
     it('should return true when required params found', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', () => {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
       invalidBid.params = {
         wrong: 'missing zone id'
-      }
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   context('buildRequests', () => {
     const bidRequests = [
@@ -72,7 +72,7 @@ describe('lkqdBidAdapter', () => {
         'requestId': 'a09c66c3-53e3-4428-b296-38fc08e7cd2a',
         'transactionId': 'd6f6b392-54a9-454c-85fb-a2fd882c4a2d',
       }
-    ]
+    ];
     const bidRequest = [
       {
         'bidder': BIDDER_CODE,
@@ -88,99 +88,99 @@ describe('lkqdBidAdapter', () => {
         'requestId': 'a09c66c3-53e3-4428-b296-38fc08e7cd2a',
         'transactionId': 'd6f6b392-54a9-454c-85fb-a2fd882c4a2d',
       }
-    ]
+    ];
 
     it('should have correct url params, method', () => {
-      const requests = spec.buildRequests(bidRequests, {})
-      expect(requests[0].method).to.eq('POST')
+      const requests = spec.buildRequests(bidRequests, {});
+      expect(requests[0].method).to.eq('POST');
 
-      const url1 = new URL(requests[0].url)
-      expect(url1.origin).to.eq(END_POINT.origin)
+      const url1 = new URL(requests[0].url);
+      expect(url1.origin).to.eq(END_POINT.origin);
 
-      const params1 = new URLSearchParams(url1.search)
-      const object1 = Object.fromEntries(params1.entries())
-      expect(object1.pid).to.eq(PUBLISHER_ID)
-      expect(object1.sid).to.eq(SITE_ID)
-      expect(object1.output).to.eq('rtb')
-      expect(object1.prebid).to.eq('true')
-    })
+      const params1 = new URLSearchParams(url1.search);
+      const object1 = Object.fromEntries(params1.entries());
+      expect(object1.pid).to.eq(PUBLISHER_ID);
+      expect(object1.sid).to.eq(SITE_ID);
+      expect(object1.output).to.eq('rtb');
+      expect(object1.prebid).to.eq('true');
+    });
 
     it('should populate height, width, c1, c20, coppa with 2 imp', () => {
       sandbox.stub(config, 'getConfig')
         .withArgs('coppa')
-        .returns(true)
+        .returns(true);
 
-      const requests = spec.buildRequests(bidRequests, {})
-      expect(requests.length).to.equal(1)
+      const requests = spec.buildRequests(bidRequests, {});
+      expect(requests.length).to.equal(1);
 
-      const serverRequestObject = requests[0]
-      expect(serverRequestObject.data.imp.length).to.equal(2)
-      expect(serverRequestObject.data.regs.coppa).to.be.a('number')
-      expect(serverRequestObject.data.regs.coppa).to.eq(1)
+      const serverRequestObject = requests[0];
+      expect(serverRequestObject.data.imp.length).to.equal(2);
+      expect(serverRequestObject.data.regs.coppa).to.be.a('number');
+      expect(serverRequestObject.data.regs.coppa).to.eq(1);
 
-      const imp1 = serverRequestObject.data.imp[0]
-      expect(imp1.video.w).to.be.a('number')
-      expect(imp1.video.w).to.eq(300)
-      expect(imp1.video.h).to.be.a('number')
-      expect(imp1.video.h).to.eq(250)
-      expect(imp1.video.ext.lkqdcustomparameters.c1).to.be.a('string')
-      expect(imp1.video.ext.lkqdcustomparameters.c1).to.eq('newWindow')
-      expect(imp1.video.ext.lkqdcustomparameters.c20).to.be.a('string')
-      expect(imp1.video.ext.lkqdcustomparameters.c20).to.eq('lkqdCustom')
+      const imp1 = serverRequestObject.data.imp[0];
+      expect(imp1.video.w).to.be.a('number');
+      expect(imp1.video.w).to.eq(300);
+      expect(imp1.video.h).to.be.a('number');
+      expect(imp1.video.h).to.eq(250);
+      expect(imp1.video.ext.lkqdcustomparameters.c1).to.be.a('string');
+      expect(imp1.video.ext.lkqdcustomparameters.c1).to.eq('newWindow');
+      expect(imp1.video.ext.lkqdcustomparameters.c20).to.be.a('string');
+      expect(imp1.video.ext.lkqdcustomparameters.c20).to.eq('lkqdCustom');
 
-      const imp2 = serverRequestObject.data.imp[1]
-      expect(imp2.video.w).to.be.a('number')
-      expect(imp2.video.w).to.eq(640)
-      expect(imp2.video.h).to.be.a('number')
-      expect(imp2.video.h).to.eq(480)
-      expect(imp2.video.ext.lkqdcustomparameters.c1).to.be.a('string')
-      expect(imp2.video.ext.lkqdcustomparameters.c1).to.eq('newWindow')
-      expect(imp2.video.ext.lkqdcustomparameters.c20).to.be.a('string')
-      expect(imp2.video.ext.lkqdcustomparameters.c20).to.eq('lkqdCustom')
-    })
+      const imp2 = serverRequestObject.data.imp[1];
+      expect(imp2.video.w).to.be.a('number');
+      expect(imp2.video.w).to.eq(640);
+      expect(imp2.video.h).to.be.a('number');
+      expect(imp2.video.h).to.eq(480);
+      expect(imp2.video.ext.lkqdcustomparameters.c1).to.be.a('string');
+      expect(imp2.video.ext.lkqdcustomparameters.c1).to.eq('newWindow');
+      expect(imp2.video.ext.lkqdcustomparameters.c20).to.be.a('string');
+      expect(imp2.video.ext.lkqdcustomparameters.c20).to.eq('lkqdCustom');
+    });
 
     it('should not populate unspecified parameters', () => {
-      const requests = spec.buildRequests(bidRequests, { timeout: 1000 })
+      const requests = spec.buildRequests(bidRequests, { timeout: 1000 });
 
-      const serverRequestObject = requests[0]
-      expect(serverRequestObject.data.device.dnt).to.be.a('undefined')
-      expect(serverRequestObject.data.content).to.be.a('undefined')
-      expect(serverRequestObject.data.regs.coppa).to.be.a('undefined')
-      expect(serverRequestObject.data.source).to.be.a('undefined')
+      const serverRequestObject = requests[0];
+      expect(serverRequestObject.data.device.dnt).to.be.a('undefined');
+      expect(serverRequestObject.data.content).to.be.a('undefined');
+      expect(serverRequestObject.data.regs.coppa).to.be.a('undefined');
+      expect(serverRequestObject.data.source).to.be.a('undefined');
 
-      const imp1 = serverRequestObject.data.imp[0]
-      expect(imp1.video.ext.lkqdcustomparameters.c10).to.be.a('undefined')
+      const imp1 = serverRequestObject.data.imp[0];
+      expect(imp1.video.ext.lkqdcustomparameters.c10).to.be.a('undefined');
 
-      const imp2 = serverRequestObject.data.imp[1]
-      expect(imp2.video.ext.lkqdcustomparameters.c39).to.be.a('undefined')
-    })
+      const imp2 = serverRequestObject.data.imp[1];
+      expect(imp2.video.ext.lkqdcustomparameters.c39).to.be.a('undefined');
+    });
 
     it('should handle single size request', () => {
-      const requests = spec.buildRequests(bidRequest, {})
-      const serverRequestObject = requests[0]
-      expect(serverRequestObject.data.imp.length).to.equal(1)
-      expect(serverRequestObject.data.source).to.not.be.a('undefined')
-      expect(serverRequestObject.data.source.ext).to.not.be.a('undefined')
-      expect(serverRequestObject.data.source.ext.schain).to.not.be.a('undefined')
+      const requests = spec.buildRequests(bidRequest, {});
+      const serverRequestObject = requests[0];
+      expect(serverRequestObject.data.imp.length).to.equal(1);
+      expect(serverRequestObject.data.source).to.not.be.a('undefined');
+      expect(serverRequestObject.data.source.ext).to.not.be.a('undefined');
+      expect(serverRequestObject.data.source.ext.schain).to.not.be.a('undefined');
 
-      const imp1 = serverRequestObject.data.imp[0]
-      expect(imp1.video.w).to.be.a('number')
-      expect(imp1.video.w).to.eq(640)
-      expect(imp1.video.h).to.be.a('number')
-      expect(imp1.video.h).to.eq(480)
+      const imp1 = serverRequestObject.data.imp[0];
+      expect(imp1.video.w).to.be.a('number');
+      expect(imp1.video.w).to.eq(640);
+      expect(imp1.video.h).to.be.a('number');
+      expect(imp1.video.h).to.eq(480);
 
-      const schain = serverRequestObject.data.source.ext.schain
-      expect(schain.validation).to.have.string('strict')
-      expect(schain.config.ver).to.have.string('1.0')
-      expect(schain.config.complete).to.eq(1)
-      expect(schain.config.nodes[0].asi).to.have.string('exchange1.com')
-      expect(schain.config.nodes[0].sid).to.have.string('1234!abcd')
-      expect(schain.config.nodes[0].hp).to.eq(1)
-      expect(schain.config.nodes[0].rid).to.have.string('bid-request-1')
-      expect(schain.config.nodes[0].name).to.have.string('publisher, Inc.')
-      expect(schain.config.nodes[0].domain).to.have.string('publisher.com')
-    })
-  })
+      const schain = serverRequestObject.data.source.ext.schain;
+      expect(schain.validation).to.have.string('strict');
+      expect(schain.config.ver).to.have.string('1.0');
+      expect(schain.config.complete).to.eq(1);
+      expect(schain.config.nodes[0].asi).to.have.string('exchange1.com');
+      expect(schain.config.nodes[0].sid).to.have.string('1234!abcd');
+      expect(schain.config.nodes[0].hp).to.eq(1);
+      expect(schain.config.nodes[0].rid).to.have.string('bid-request-1');
+      expect(schain.config.nodes[0].name).to.have.string('publisher, Inc.');
+      expect(schain.config.nodes[0].domain).to.have.string('publisher.com');
+    });
+  });
 
   context('interpretResponse', () => {
     const bidRequest = {
@@ -255,7 +255,7 @@ describe('lkqdBidAdapter', () => {
           'us_privacy': '1NNN'
         }
       }
-    }
+    };
 
     const serverResponse = {
       body: {
@@ -278,45 +278,45 @@ describe('lkqdBidAdapter', () => {
         }],
         'cur': 'USD'
       }
-    }
+    };
 
     it('should correctly parse valid bid response', () => {
-      const bidResponses = spec.interpretResponse(serverResponse, bidRequest)
-      expect(bidResponses.length).to.equal(1)
+      const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
+      expect(bidResponses.length).to.equal(1);
 
-      const bidResponse = bidResponses[0]
-      expect(bidResponse.requestId).to.equal('5511262729333416592')
-      expect(bidResponse.ad).to.equal(serverResponse.body.seatbid[0].bid[0].adm)
-      expect(bidResponse.cpm).to.equal(5.409)
-      expect(bidResponse.width).to.equal(1920)
-      expect(bidResponse.height).to.equal(1080)
-      expect(bidResponse.ttl).to.equal(300)
-      expect(bidResponse.creativeId).to.equal('lkqd-rtb-79-1030666')
-      expect(bidResponse.currency).to.equal('USD')
-      expect(bidResponse.netRevenue).to.equal(true)
-      expect(bidResponse.meta.mediaType).to.equal('video')
-    })
+      const bidResponse = bidResponses[0];
+      expect(bidResponse.requestId).to.equal('5511262729333416592');
+      expect(bidResponse.ad).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+      expect(bidResponse.cpm).to.equal(5.409);
+      expect(bidResponse.width).to.equal(1920);
+      expect(bidResponse.height).to.equal(1080);
+      expect(bidResponse.ttl).to.equal(300);
+      expect(bidResponse.creativeId).to.equal('lkqd-rtb-79-1030666');
+      expect(bidResponse.currency).to.equal('USD');
+      expect(bidResponse.netRevenue).to.equal(true);
+      expect(bidResponse.meta.mediaType).to.equal('video');
+    });
 
     it('safely handles invalid bid response', () => {
-      const invalidServerResponse = {}
-      invalidServerResponse.body = ''
+      const invalidServerResponse = {};
+      invalidServerResponse.body = '';
 
-      const result = spec.interpretResponse(invalidServerResponse, bidRequest)
-      expect(result.length).to.equal(0)
-    })
+      const result = spec.interpretResponse(invalidServerResponse, bidRequest);
+      expect(result.length).to.equal(0);
+    });
 
     it('handles nobid responses', () => {
-      const nobidResponse = {}
+      const nobidResponse = {};
       nobidResponse.body = {
         seatbid: [
           {
             bid: []
           }
         ]
-      }
+      };
 
-      const result = spec.interpretResponse(nobidResponse, bidRequest)
-      expect(result.length).to.equal(0)
-    })
-  })
-})
+      const result = spec.interpretResponse(nobidResponse, bidRequest);
+      expect(result.length).to.equal(0);
+    });
+  });
+});

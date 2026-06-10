@@ -1,15 +1,15 @@
-import { expect } from 'chai'
-import { spec } from 'modules/clickforceBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/clickforceBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('ClickforceAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -24,21 +24,21 @@ describe('ClickforceAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475'
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
       invalidBid.params = {
         'someIncorrectParam': 0
-      }
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [{
@@ -53,14 +53,14 @@ describe('ClickforceAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475'
-    }]
+    }];
 
-    const request = spec.buildRequests(bidRequests)
+    const request = spec.buildRequests(bidRequests);
 
     it('sends bid request to our endpoint via POST', function () {
-      expect(request.method).to.equal('POST')
-    })
-  })
+      expect(request.method).to.equal('POST');
+    });
+  });
 
   describe('interpretResponse', function () {
     const response = [{
@@ -79,7 +79,7 @@ describe('ClickforceAdapter', function () {
       'adomain': [
         'www.example.com'
       ]
-    }]
+    }];
 
     const response1 = [{
       'cpm': 0.0625,
@@ -106,7 +106,7 @@ describe('ClickforceAdapter', function () {
       'ttl': 60,
       'netRevenue': true,
       'zone': '6878'
-    }]
+    }];
 
     const expectedResponse = [{
       'requestId': '220ed41385952a',
@@ -124,7 +124,7 @@ describe('ClickforceAdapter', function () {
           'www.example.com'
         ]
       }
-    }]
+    }];
 
     const expectedResponse1 = [{
       'requestId': '2e27ec595bf1a',
@@ -156,46 +156,46 @@ describe('ClickforceAdapter', function () {
       'meta': {
         'advertiserDomains': []
       }
-    }]
+    }];
 
     it('should get the correct bid response by display ad', function () {
-      let bidderRequest
-      const result = spec.interpretResponse({ body: response }, { bidderRequest })
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
+      let bidderRequest;
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
 
     it('should get the correct bid response by native ad', function () {
-      let bidderRequest
-      const result = spec.interpretResponse({ body: response1 }, { bidderRequest })
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse1[0]))
-    })
+      let bidderRequest;
+      const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse1[0]));
+    });
 
     it('handles empty bid response', function () {
       const response = {
         body: {}
-      }
-      const result = spec.interpretResponse(response)
-      expect(result.length).to.equal(0)
-    })
-  })
+      };
+      const result = spec.interpretResponse(response);
+      expect(result.length).to.equal(0);
+    });
+  });
 
   describe('getUserSyncs function', function () {
     it('should register type is iframe', function () {
       const syncOptions = {
         'iframeEnabled': 'true'
-      }
-      const userSync = spec.getUserSyncs(syncOptions)
-      expect(userSync[0].type).to.equal('iframe')
-      expect(userSync[0].url).to.equal('https://cdn.holmesmind.com/js/capmapping.htm')
-    })
+      };
+      const userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      expect(userSync[0].url).to.equal('https://cdn.holmesmind.com/js/capmapping.htm');
+    });
 
     it('should register type is image', function () {
       const syncOptions = {
         'pixelEnabled': 'true'
-      }
-      const userSync = spec.getUserSyncs(syncOptions)
-      expect(userSync[0].type).to.equal('image')
-      expect(userSync[0].url).to.equal('https://c.holmesmind.com/cm')
-    })
-  })
-})
+      };
+      const userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('image');
+      expect(userSync[0].url).to.equal('https://c.holmesmind.com/cm');
+    });
+  });
+});

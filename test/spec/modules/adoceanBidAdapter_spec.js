@@ -1,16 +1,16 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adoceanBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { deepClone } from 'src/utils.js'
+import { expect } from 'chai';
+import { spec } from 'modules/adoceanBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 describe('AdoceanAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const bannerBid = {
@@ -29,16 +29,16 @@ describe('AdoceanAdapter', function () {
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bannerBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bannerBid, { params: { masterId: 0 } })
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
+      const invalidBid = Object.assign({}, bannerBid, { params: { masterId: 0 } });
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
 
     const videoInscreenBid = {
       bidder: 'adocean',
@@ -57,11 +57,11 @@ describe('AdoceanAdapter', function () {
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
-    }
+    };
 
     it('should return true for instream video', function () {
-      expect(spec.isBidRequestValid(videoInscreenBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(videoInscreenBid)).to.equal(true);
+    });
 
     const videoOutstreamBid = {
       bidder: 'adocean',
@@ -80,37 +80,37 @@ describe('AdoceanAdapter', function () {
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
-    }
+    };
 
     it('should return false for outstream video', function () {
-      expect(spec.isBidRequestValid(videoOutstreamBid)).to.equal(false)
-    })
+      expect(spec.isBidRequestValid(videoOutstreamBid)).to.equal(false);
+    });
 
     it('should return true when emitterRequestParams is a plain object', function () {
       const bid = Object.assign({}, bannerBid, {
         params: Object.assign({}, bannerBid.params, { emitterRequestParams: { foo: 'bar' } })
-      })
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      });
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return true when emitterRequestParams is not provided', function () {
-      expect(spec.isBidRequestValid(bannerBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+    });
 
     it('should return false when emitterRequestParams is an array', function () {
       const bid = Object.assign({}, bannerBid, {
         params: Object.assign({}, bannerBid.params, { emitterRequestParams: ['foo', 'bar'] })
-      })
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      });
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should return false when emitterRequestParams is a string', function () {
       const bid = Object.assign({}, bannerBid, {
         params: Object.assign({}, bannerBid.params, { emitterRequestParams: 'foo=bar' })
-      })
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      });
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [
@@ -148,60 +148,60 @@ describe('AdoceanAdapter', function () {
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
       }
-    ]
+    ];
 
     const bidderRequest = {
       gdprConsent: {
         consentString: 'BOQHk-4OSlWKFBoABBPLBd-AAAAgWAHAACAAsAPQBSACmgFTAOkA',
         gdprApplies: true
       }
-    }
+    };
 
     it('should send two requests if slave is duplicated', function () {
-      const nrOfRequests = spec.buildRequests(bidRequests, bidderRequest).length
-      expect(nrOfRequests).to.equal(2)
-    })
+      const nrOfRequests = spec.buildRequests(bidRequests, bidderRequest).length;
+      expect(nrOfRequests).to.equal(2);
+    });
 
     it('should add bidIdMap with correct slaveId => bidId mapping', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < bidRequests.length; i++) {
-        expect(requests[i]).to.exist
-        expect(requests[i].bidIdMap).to.exist
-        expect(requests[i].bidIdMap[bidRequests[i].params.slaveId]).to.equal(bidRequests[i].bidId)
+        expect(requests[i]).to.exist;
+        expect(requests[i].bidIdMap).to.exist;
+        expect(requests[i].bidIdMap[bidRequests[i].params.slaveId]).to.equal(bidRequests[i].bidId);
       }
-    })
+    });
 
     it('sends bid request to url via GET', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
-      expect(request.method).to.equal('GET')
-      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emitter}/_[0-9]*/ad.json`))
-    })
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.method).to.equal('GET');
+      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emitter}/_[0-9]*/ad.json`));
+    });
 
     it('should attach id to url', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
-      expect(request.url).to.include('id=' + bidRequests[0].params.masterId)
-    })
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.include('id=' + bidRequests[0].params.masterId);
+    });
 
     it('should attach consent information to url', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0]
-      expect(request.url).to.include('gdpr=1')
-      expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString)
-    })
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.url).to.include('gdpr=1');
+      expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+    });
 
     it('should attach slaves information to url', function () {
-      let requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].url).to.include('slaves=zpniqismex')
-      expect(requests[1].url).to.include('slaves=zpniqismex')
-      expect(requests[0].url).to.include('aosize=300x250%2C300x600')
-      expect(requests[1].url).to.include('aosize=300x200%2C600x250')
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.include('slaves=zpniqismex');
+      expect(requests[1].url).to.include('slaves=zpniqismex');
+      expect(requests[0].url).to.include('aosize=300x250%2C300x600');
+      expect(requests[1].url).to.include('aosize=300x200%2C600x250');
 
-      const differentSlavesBids = deepClone(bidRequests)
-      differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks'
-      requests = spec.buildRequests(differentSlavesBids, bidderRequest)
-      expect(requests.length).to.equal(2)
-      expect(requests[0].url).to.include('slaves=zpniqismex')
-      expect(requests[1].url).to.include('slaves=wafpdwlrks')
-    })
+      const differentSlavesBids = deepClone(bidRequests);
+      differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
+      requests = spec.buildRequests(differentSlavesBids, bidderRequest);
+      expect(requests.length).to.equal(2);
+      expect(requests[0].url).to.include('slaves=zpniqismex');
+      expect(requests[1].url).to.include('slaves=wafpdwlrks');
+    });
 
     const videoInstreamBidRequests = [
       {
@@ -224,34 +224,34 @@ describe('AdoceanAdapter', function () {
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a476',
       }
-    ]
+    ];
 
     it('should build correct video instream request', function () {
-      const request = spec.buildRequests(videoInstreamBidRequests, bidderRequest)[0]
-      expect(request).to.exist
-      expect(request.url).to.include('id=' + videoInstreamBidRequests[0].params.masterId)
-      expect(request.url).to.include('slaves=zpniqismex')
-      expect(request.url).to.include('spots=1')
-      expect(request.url).to.include('dur=60')
-      expect(request.url).to.include('maxdur=60')
-      expect(request.url).to.include('mindur=10')
-    })
+      const request = spec.buildRequests(videoInstreamBidRequests, bidderRequest)[0];
+      expect(request).to.exist;
+      expect(request.url).to.include('id=' + videoInstreamBidRequests[0].params.masterId);
+      expect(request.url).to.include('slaves=zpniqismex');
+      expect(request.url).to.include('spots=1');
+      expect(request.url).to.include('dur=60');
+      expect(request.url).to.include('maxdur=60');
+      expect(request.url).to.include('mindur=10');
+    });
 
     it('should attach emitterRequestParams to url', function () {
-      const bidWithParams = deepClone(bidRequests[0])
-      bidWithParams.params.emitterRequestParams = { myParam: 'myValue', another: 'test' }
-      const request = spec.buildRequests([bidWithParams], bidderRequest)[0]
-      expect(request.url).to.include('myParam=myValue')
-      expect(request.url).to.include('another=test')
-    })
+      const bidWithParams = deepClone(bidRequests[0]);
+      bidWithParams.params.emitterRequestParams = { myParam: 'myValue', another: 'test' };
+      const request = spec.buildRequests([bidWithParams], bidderRequest)[0];
+      expect(request.url).to.include('myParam=myValue');
+      expect(request.url).to.include('another=test');
+    });
 
     it('should encode emitterRequestParams keys and values', function () {
-      const bidWithParams = deepClone(bidRequests[0])
-      bidWithParams.params.emitterRequestParams = { 'special key': 'special value' }
-      const request = spec.buildRequests([bidWithParams], bidderRequest)[0]
-      expect(request.url).to.include('special%20key=special%20value')
-    })
-  })
+      const bidWithParams = deepClone(bidRequests[0]);
+      bidWithParams.params.emitterRequestParams = { 'special key': 'special value' };
+      const request = spec.buildRequests([bidWithParams], bidderRequest)[0];
+      expect(request.url).to.include('special%20key=special%20value');
+    });
+  });
 
   describe('interpretResponseBanner', function () {
     const response = {
@@ -272,7 +272,7 @@ describe('AdoceanAdapter', function () {
       'headers': {
         'get': function() {}
       }
-    }
+    };
 
     const bidRequest = {
       bidder: 'adocean',
@@ -293,7 +293,7 @@ describe('AdoceanAdapter', function () {
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
-    }
+    };
 
     it('should get correct bid response', function () {
       const expectedResponse = [
@@ -312,22 +312,22 @@ describe('AdoceanAdapter', function () {
             'mediaType': 'banner'
           }
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse(response, bidRequest)
-      expect(result).to.have.lengthOf(1, 'Response should contain 1 bid')
-      let resultKeys = Object.keys(result[0])
-      expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort(), 'Response keys do not match')
+      const result = spec.interpretResponse(response, bidRequest);
+      expect(result).to.have.lengthOf(1, 'Response should contain 1 bid');
+      let resultKeys = Object.keys(result[0]);
+      expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort(), 'Response keys do not match');
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
-          expect(result[0][k]).to.match(/<!-- Creative -->$/, 'ad does not match')
+          expect(result[0][k]).to.match(/<!-- Creative -->$/, 'ad does not match');
         } else if (k === 'meta') {
-          expect(result[0][k]).to.deep.equal(expectedResponse[0][k], 'meta does not match')
+          expect(result[0][k]).to.deep.equal(expectedResponse[0][k], 'meta does not match');
         } else {
-          expect(result[0][k]).to.equal(expectedResponse[0][k], `${k} does not match`)
+          expect(result[0][k]).to.equal(expectedResponse[0][k], `${k} does not match`);
         }
-      })
-    })
+      });
+    });
 
     it('handles nobid responses', function () {
       response.body = [
@@ -335,12 +335,12 @@ describe('AdoceanAdapter', function () {
           'id': 'adoceanmyaolafpjwftbz',
           'error': 'true'
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse(response, bidRequest)
-      expect(result).to.have.lengthOf(0, 'Error response should be empty')
-    })
-  })
+      const result = spec.interpretResponse(response, bidRequest);
+      expect(result).to.have.lengthOf(0, 'Error response should be empty');
+    });
+  });
 
   describe('interpretResponseVideo', function () {
     const response = {
@@ -361,7 +361,7 @@ describe('AdoceanAdapter', function () {
       'headers': {
         'get': function() {}
       }
-    }
+    };
 
     const bidRequest = {
       bidder: 'adocean',
@@ -383,7 +383,7 @@ describe('AdoceanAdapter', function () {
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
-    }
+    };
 
     it('should get correct bid response', function () {
       const expectedResponse = [
@@ -402,22 +402,22 @@ describe('AdoceanAdapter', function () {
             'mediaType': 'video'
           }
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse(response, bidRequest)
-      expect(result).to.have.lengthOf(1, 'Response should contain 1 bid')
-      let resultKeys = Object.keys(result[0])
-      expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort(), 'Response keys do not match')
+      const result = spec.interpretResponse(response, bidRequest);
+      expect(result).to.have.lengthOf(1, 'Response should contain 1 bid');
+      let resultKeys = Object.keys(result[0]);
+      expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort(), 'Response keys do not match');
       resultKeys.forEach(function(k) {
         if (k === 'vastXml') {
-          expect(result[0][k]).to.match(/<!-- Video Creative -->$/, 'vastXml does not match')
+          expect(result[0][k]).to.match(/<!-- Video Creative -->$/, 'vastXml does not match');
         } else if (k === 'meta') {
-          expect(result[0][k]).to.deep.equal(expectedResponse[0][k], 'meta does not match')
+          expect(result[0][k]).to.deep.equal(expectedResponse[0][k], 'meta does not match');
         } else {
-          expect(result[0][k]).to.equal(expectedResponse[0][k], `${k} does not match`)
+          expect(result[0][k]).to.equal(expectedResponse[0][k], `${k} does not match`);
         }
-      })
-    })
+      });
+    });
 
     it('handles nobid responses', function () {
       response.body = [
@@ -425,10 +425,10 @@ describe('AdoceanAdapter', function () {
           'id': 'adoceanmyaolafpjwftbz',
           'error': 'true'
         }
-      ]
+      ];
 
-      const result = spec.interpretResponse(response, bidRequest)
-      expect(result).to.have.lengthOf(0, 'Error response should be empty')
-    })
-  })
-})
+      const result = spec.interpretResponse(response, bidRequest);
+      expect(result).to.have.lengthOf(0, 'Error response should be empty');
+    });
+  });
+});

@@ -2,47 +2,47 @@
  * @module modules/luceadBidAdapter
  */
 
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { getUniqueIdentifierStr, deepSetValue, logInfo } from '../src/utils.js'
-import { fetch } from '../src/ajax.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getUniqueIdentifierStr, deepSetValue, logInfo } from '../src/utils.js';
+import { fetch } from '../src/ajax.js';
 
 export const dep = {
   fetch
-}
+};
 
-const bidderCode = 'lucead'
-const defaultCurrency = 'EUR'
-const defaultTtl = 500
-const aliases = ['adliveplus']
-const defaultRegion = 'eu'
-const domain = 'lucead.com'
-let baseUrl = `https://${domain}`
-let staticUrl = `https://s.${domain}`
-let endpointUrl = baseUrl
+const bidderCode = 'lucead';
+const defaultCurrency = 'EUR';
+const defaultTtl = 500;
+const aliases = ['adliveplus'];
+const defaultRegion = 'eu';
+const domain = 'lucead.com';
+let baseUrl = `https://${domain}`;
+let staticUrl = `https://s.${domain}`;
+let endpointUrl = baseUrl;
 
 function isDevEnv() {
-  return location.hash.includes('prebid-dev')
+  return location.hash.includes('prebid-dev');
 }
 
 function isBidRequestValid(bidRequest) {
-  return !!bidRequest?.params?.placementId
+  return !!bidRequest?.params?.placementId;
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  const region = bidRequests[0]?.params?.region || defaultRegion
-  endpointUrl = `https://${region}.${domain}`
+  const region = bidRequests[0]?.params?.region || defaultRegion;
+  endpointUrl = `https://${region}.${domain}`;
 
   if (isDevEnv()) {
-    baseUrl = location.origin
-    staticUrl = baseUrl
-    endpointUrl = `${baseUrl}`
+    baseUrl = location.origin;
+    staticUrl = baseUrl;
+    endpointUrl = `${baseUrl}`;
   }
 
   logInfo('buildRequests', {
     bidRequests,
     bidderRequest,
-  })
+  });
 
   const companionData = {
     base_url: baseUrl,
@@ -57,13 +57,13 @@ function buildRequests(bidRequests, bidderRequest) {
     deepSetValue,
     is_sra: true,
     region,
-  }
+  };
 
-  window.lucead_prebid_data = companionData
-  const fn = window.lucead_prebid
+  window.lucead_prebid_data = companionData;
+  const fn = window.lucead_prebid;
 
   if (fn && typeof fn === 'function') {
-    fn(companionData)
+    fn(companionData);
   }
 
   return {
@@ -79,20 +79,20 @@ function buildRequests(bidRequests, bidderRequest) {
           media_types: bidRequest.mediaTypes,
           placement_id: bidRequest.params.placementId,
           schain: bidRequest?.ortb2?.source?.ext?.schain,
-        }
+        };
       }),
     }),
     options: {
       contentType: 'text/plain',
       withCredentials: false
     },
-  }
+  };
 }
 
 function interpretResponse(serverResponse, bidRequest) {
   // @see required fields https://docs.prebid.org/dev-docs/bidder-adaptor.html
-  const response = serverResponse?.body
-  const bidRequestData = JSON.parse(bidRequest?.data)
+  const response = serverResponse?.body;
+  const bidRequestData = JSON.parse(bidRequest?.data);
 
   const bids = (response?.bids || []).map(bid => ({
     requestId: bid?.bid_id || '1', // bid request id, the bid id
@@ -107,10 +107,10 @@ function interpretResponse(serverResponse, bidRequest) {
     meta: {
       advertiserDomains: bid?.advertiser_domains || [],
     },
-  }))
+  }));
 
-  logInfo('interpretResponse', { serverResponse, bidRequest, bidRequestData, bids })
-  return { bids }
+  logInfo('interpretResponse', { serverResponse, bidRequest, bidRequestData, bids });
+  return { bids };
 }
 
 function report(type, data) {
@@ -122,35 +122,35 @@ function report(type, data) {
     }),
     method: 'POST',
     contentType: 'text/plain',
-  })
+  });
 }
 
 function onBidWon(bid) {
-  logInfo('Bid won', bid)
+  logInfo('Bid won', bid);
 
   const data = {
     bid_id: bid?.bidId,
     placement_id: bid.params ? (bid?.params[0]?.placementId || '0') : '0',
     spent: bid?.cpm,
     currency: bid?.currency,
-  }
+  };
 
   if (bid?.creativeId) {
-    const parts = bid.creativeId.toString().split(':')
+    const parts = bid.creativeId.toString().split(':');
 
     if (parts[0] === 'ssp') {
-      data.ssp = parts[1]
+      data.ssp = parts[1];
     } else {
-      data.ad_id = parts[0]
-      data.ig_id = parts[1]
+      data.ad_id = parts[0];
+      data.ig_id = parts[1];
     }
   }
 
-  return report('impression', data)
+  return report('impression', data);
 }
 
 function onTimeout(timeoutData) {
-  logInfo('Timeout from adapter', timeoutData)
+  logInfo('Timeout from adapter', timeoutData);
 }
 
 export const spec = {
@@ -162,7 +162,7 @@ export const spec = {
   onBidWon,
   onTimeout,
   isDevEnv,
-}
+};
 
 // noinspection JSCheckFunctionSignatures
-registerBidder(spec)
+registerBidder(spec);

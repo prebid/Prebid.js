@@ -1,4 +1,4 @@
-const SORTED = new WeakMap()
+const SORTED = new WeakMap();
 
 /**
  * @typedef {Object} Component
@@ -21,23 +21,23 @@ const SORTED = new WeakMap()
  */
 export function compose(components, overrides = {}) {
   if (!SORTED.has(components)) {
-    const sorted = Object.entries(components)
+    const sorted = Object.entries(components);
     sorted.sort((a, b) => {
-      a = a[1].priority || 0
-      b = b[1].priority || 0
-      return a === b ? 0 : a > b ? -1 : 1
-    })
-    SORTED.set(components, sorted.map(([name, cmp]) => [name, cmp.fn]))
+      a = a[1].priority || 0;
+      b = b[1].priority || 0;
+      return a === b ? 0 : a > b ? -1 : 1;
+    });
+    SORTED.set(components, sorted.map(([name, cmp]) => [name, cmp.fn]));
   }
   const fns = SORTED.get(components)
     .filter(([name]) => !overrides.hasOwnProperty(name) || overrides[name])
     .map(function ([name, fn]) {
-      return overrides.hasOwnProperty(name) ? overrides[name].bind(this, fn) : fn
-    })
+      return overrides.hasOwnProperty(name) ? overrides[name].bind(this, fn) : fn;
+    });
   return function () {
-    const args = Array.from(arguments)
+    const args = Array.from(arguments);
     fns.forEach(fn => {
-      fn.apply(this, args)
-    })
-  }
+      fn.apply(this, args);
+    });
+  };
 }

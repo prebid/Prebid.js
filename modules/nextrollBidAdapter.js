@@ -7,11 +7,11 @@ import {
   isStr,
   parseUrl,
   replaceAuctionPrice
-} from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
-import { getOsVersion } from '../libraries/advangUtils/index.js'
+} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getOsVersion } from '../libraries/advangUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,10 +19,10 @@ import { getOsVersion } from '../libraries/advangUtils/index.js'
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
-const BIDDER_CODE = 'nextroll'
-const GVLID = 130
-const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/'
-const ADAPTER_VERSION = 5
+const BIDDER_CODE = 'nextroll';
+const GVLID = 130;
+const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
+const ADAPTER_VERSION = 5;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -36,7 +36,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
-    return bidRequest !== undefined && !!bidRequest.params && !!bidRequest.bidId
+    return bidRequest !== undefined && !!bidRequest.params && !!bidRequest.bidId;
   },
 
   /**
@@ -48,9 +48,9 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     // TODO: is 'page' the right value here?
-    const topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'))
+    const topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -81,8 +81,8 @@ export const spec = {
           device: _getDevice(bidRequest),
           regs: _getRegs(bidderRequest)
         }
-      }
-    })
+      };
+    });
   },
 
   /**
@@ -93,32 +93,32 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) {
-      return []
+      return [];
     } else {
-      const response = serverResponse.body
-      const bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), [])
-      return bids.map((bid) => _buildResponse(response, bid))
+      const response = serverResponse.body;
+      const bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
+      return bids.map((bid) => _buildResponse(response, bid));
     }
   }
-}
+};
 
 function _getBanner(bidRequest) {
-  const sizes = _getSizes(bidRequest)
-  if (sizes === undefined) return undefined
-  return { format: sizes }
+  const sizes = _getSizes(bidRequest);
+  if (sizes === undefined) return undefined;
+  return { format: sizes };
 }
 
 function _getNative(mediaTypeNative) {
-  if (mediaTypeNative === undefined) return undefined
-  const assets = _getNativeAssets(mediaTypeNative)
-  if (assets === undefined || assets.length === 0) return undefined
+  if (mediaTypeNative === undefined) return undefined;
+  const assets = _getNativeAssets(mediaTypeNative);
+  if (assets === undefined || assets.length === 0) return undefined;
   return {
     request: {
       native: {
         assets: assets
       }
     }
-  }
+  };
 }
 
 /*
@@ -135,44 +135,44 @@ const NATIVE_ASSET_MAP = [
   { id: 4, kind: 'img', key: 'logo', type: 2 },
   { id: 5, kind: 'data', key: 'sponsoredBy', type: 1 },
   { id: 6, kind: 'data', key: 'body', type: 2 }
-]
+];
 
 const ASSET_KIND_MAP = {
   title: _getTitleAsset,
   img: _getImageAsset,
   data: _getDataAsset,
-}
+};
 
 function _getAsset(mediaTypeNative, assetMap) {
-  const asset = mediaTypeNative[assetMap.key]
-  if (asset === undefined) return undefined
-  const assetFunc = ASSET_KIND_MAP[assetMap.kind]
+  const asset = mediaTypeNative[assetMap.key];
+  if (asset === undefined) return undefined;
+  const assetFunc = ASSET_KIND_MAP[assetMap.kind];
   return {
     id: assetMap.id,
     required: (assetMap.required || !!asset.required) ? 1 : 0,
     [assetMap.kind]: assetFunc(asset, assetMap)
-  }
+  };
 }
 
 function _getTitleAsset(title, _assetMap) {
-  return { len: title.len || 0 }
+  return { len: title.len || 0 };
 }
 
 function _getMinAspectRatio(aspectRatio, property) {
-  if (!isPlainObject(aspectRatio)) return 1
+  if (!isPlainObject(aspectRatio)) return 1;
 
-  const ratio = aspectRatio['ratio_' + property]
-  const min = aspectRatio['min_' + property]
+  const ratio = aspectRatio['ratio_' + property];
+  const min = aspectRatio['min_' + property];
 
-  if (isNumber(ratio)) return ratio
-  if (isNumber(min)) return min
+  if (isNumber(ratio)) return ratio;
+  if (isNumber(min)) return min;
 
-  return 1
+  return 1;
 }
 
 function _getImageAsset(image, assetMap) {
-  const sizes = image.sizes
-  const aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined
+  const sizes = image.sizes;
+  const aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined;
 
   return {
     type: assetMap.type,
@@ -180,37 +180,37 @@ function _getImageAsset(image, assetMap) {
     h: (sizes ? sizes[1] : undefined),
     wmin: _getMinAspectRatio(aspectRatio, 'width'),
     hmin: _getMinAspectRatio(aspectRatio, 'height'),
-  }
+  };
 }
 
 function _getDataAsset(data, assetMap) {
   return {
     type: assetMap.type,
     len: data.len || 0
-  }
+  };
 }
 
 function _getNativeAssets(mediaTypeNative) {
   return NATIVE_ASSET_MAP
     .map(assetMap => _getAsset(mediaTypeNative, assetMap))
-    .filter(asset => asset !== undefined)
+    .filter(asset => asset !== undefined);
 }
 
 function _getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
-    return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null
+    return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
   }
 
   const floor = bidRequest.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'
-  })
+  });
 
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor
+    return floor.floor;
   }
-  return null
+  return null;
 }
 
 function _buildResponse(bidResponse, bid) {
@@ -227,19 +227,19 @@ function _buildResponse(bidResponse, bid) {
     meta: {
       advertiserDomains: bidResponse.adomain || []
     }
-  }
+  };
   if (isStr(bid.adm)) {
-    response.mediaType = BANNER
-    response.ad = replaceAuctionPrice(bid.adm, bid.price)
+    response.mediaType = BANNER;
+    response.ad = replaceAuctionPrice(bid.adm, bid.price);
   } else {
-    response.mediaType = NATIVE
-    response.native = _getNativeResponse(bid.adm, bid.price)
+    response.mediaType = NATIVE;
+    response.native = _getNativeResponse(bid.adm, bid.price);
   }
-  return response
+  return response;
 }
 
-const privacyLink = 'https://app.adroll.com/optout/personalized'
-const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png'
+const privacyLink = 'https://app.adroll.com/optout/personalized';
+const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
   const baseResponse = {
@@ -249,30 +249,30 @@ function _getNativeResponse(adm, price) {
     impressionTrackers: adm.imptrackers.map(impTracker => replaceAuctionPrice(impTracker, price)),
     privacyLink: privacyLink,
     privacyIcon: privacyIcon
-  }
+  };
   return adm.assets.reduce((accResponse, asset) => {
-    const assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id === asset.id && asset[assetMap.kind] !== undefined)
-    if (assetMaps.length === 0) return accResponse
-    const assetMap = assetMaps[0]
-    accResponse[assetMap.key] = _getAssetResponse(asset, assetMap)
-    return accResponse
-  }, baseResponse)
+    const assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id === asset.id && asset[assetMap.kind] !== undefined);
+    if (assetMaps.length === 0) return accResponse;
+    const assetMap = assetMaps[0];
+    accResponse[assetMap.key] = _getAssetResponse(asset, assetMap);
+    return accResponse;
+  }, baseResponse);
 }
 
 function _getAssetResponse(asset, assetMap) {
   switch (assetMap.kind) {
     case 'title':
-      return asset.title.text
+      return asset.title.text;
 
     case 'img':
       return {
         url: asset.img.url,
         width: asset.img.w,
         height: asset.img.h
-      }
+      };
 
     case 'data':
-      return asset.data.value
+      return asset.data.value;
   }
 }
 
@@ -283,30 +283,30 @@ function _getSite(bidRequest, topLocation) {
     publisher: {
       id: getBidIdParameter('publisherId', bidRequest.params)
     }
-  }
+  };
 }
 
 function _getSeller(bidRequest) {
   return {
     id: getBidIdParameter('sellerId', bidRequest.params)
-  }
+  };
 }
 
 function _getSizes(bidRequest) {
   if (!isArray(bidRequest.sizes)) {
-    return undefined
+    return undefined;
   }
   return bidRequest.sizes.filter(_isValidSize).map(size => {
     return {
       w: size[0],
       h: size[1]
-    }
-  })
+    };
+  });
 }
 
 function _isValidSize(size) {
-  const isNumber = x => typeof x === 'number'
-  return (size.length === 2 && isNumber(size[0]) && isNumber(size[1]))
+  const isNumber = x => typeof x === 'number';
+  return (size.length === 2 && isNumber(size[0]) && isNumber(size[1]));
 }
 
 function _getDevice(_bidRequest) {
@@ -315,18 +315,18 @@ function _getDevice(_bidRequest) {
     language: navigator['language'],
     os: _getOs(navigator.userAgent.toLowerCase()),
     osv: getOsVersion()
-  }
+  };
 }
 
 function _getRegs(bidderRequest) {
   if (!bidderRequest || !bidderRequest.uspConsent) {
-    return undefined
+    return undefined;
   }
   return {
     ext: {
       us_privacy: bidderRequest.uspConsent
     }
-  }
+  };
 }
 
 function _getOs(userAgent) {
@@ -336,9 +336,9 @@ function _getOs(userAgent) {
     'mac': /mac/i,
     'linux': /linux/i,
     'windows': /windows/i
-  }
+  };
 
-  return ((Object.keys(osTable)) || []).find(os => userAgent.match(osTable[os])) || 'etc'
+  return ((Object.keys(osTable)) || []).find(os => userAgent.match(osTable[os])) || 'etc';
 }
 
-registerBidder(spec)
+registerBidder(spec);

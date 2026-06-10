@@ -1,18 +1,18 @@
-import type { DeepPartial } from "./objects.d.ts"
-import type { ORTBRequest } from "./ortb/request.d.ts"
+import type { DeepPartial } from "./objects.d.ts";
+import type { ORTBRequest } from "./ortb/request.d.ts";
 
 /**
  * Prebid-generated identifier.
  */
-export type Identifier = string
+export type Identifier = string;
 /**
  * A bidder code.
  */
-export type BidderCode = string
-export type BidSource = 's2s' | 'client'
-export type Currency = string
-export type AdUnitCode = string
-export type Size = [number, number]
+export type BidderCode = string;
+export type BidSource = 's2s' | 'client';
+export type Currency = string;
+export type AdUnitCode = string;
+export type Size = [number, number];
 export type ContextIdentifiers = {
   /**
    * Page view ID. Unique for a page view (one load of Prebid); can also be refreshed programmatically.
@@ -34,7 +34,7 @@ export type ContextIdentifiers = {
    * twin ad units will have different ad unit IDs.
    */
   adUnitId: Identifier;
-}
+};
 export type ORTBFragments = {
   /**
    * Global first party data for this auction.
@@ -46,9 +46,9 @@ export type ORTBFragments = {
   bidder?: {
     [bidderCode: BidderCode]: DeepPartial<ORTBRequest>
   }
-}
+};
 
-export type ByAdUnit<T> = { [adUnit: AdUnitCode]: T }
+export type ByAdUnit<T> = { [adUnit: AdUnitCode]: T };
 
 export type StorageDisclosure = {
   /**
@@ -56,4 +56,4 @@ export type StorageDisclosure = {
    * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md
    */
   disclosureURL?: string;
-}
+};

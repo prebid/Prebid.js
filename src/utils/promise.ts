@@ -1,5 +1,5 @@
-import { GreedyPromise, greedySetTimeout } from '../../libraries/greedy/greedyPromise.js'
-import { getGlobal } from '../prebidGlobal.js'
+import { GreedyPromise, greedySetTimeout } from '../../libraries/greedy/greedyPromise.js';
+import { getGlobal } from '../prebidGlobal.js';
 
 declare module '../prebidGlobal' {
   interface PrebidJS {
@@ -14,13 +14,13 @@ declare module '../prebidGlobal' {
   }
 }
 
-export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
-export const PbPromise: typeof Promise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise) as any
+export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout);
+export const PbPromise: typeof Promise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise) as any;
 
 export function delay(delayMs = 0): Promise<void> {
   return new PbPromise((resolve) => {
-    pbSetTimeout(resolve, delayMs)
-  })
+    pbSetTimeout(resolve, delayMs);
+  });
 }
 
 export interface Defer<T> {
@@ -29,8 +29,8 @@ export interface Defer<T> {
   reject: Parameters<ConstructorParameters<typeof Promise<T>>[0]>[1],
 }
 
-export type UnwrapPromise<T> = T extends PromiseLike<infer R> ? R : T
-export type ToPromise<T> = Promise<UnwrapPromise<T>>
+export type UnwrapPromise<T> = T extends PromiseLike<infer R> ? R : T;
+export type ToPromise<T> = Promise<UnwrapPromise<T>>;
 
 /**
  * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
@@ -39,17 +39,17 @@ export function defer<T>({ promiseFactory = (resolver) => new PbPromise(resolver
   promiseFactory?: (...args: ConstructorParameters<typeof Promise<T>>) => Promise<T>
 } = {}): Defer<T> {
   function invoker(delegate) {
-    return (val) => delegate(val)
+    return (val) => delegate(val);
   }
 
-  let resolveFn, rejectFn
+  let resolveFn, rejectFn;
 
   return {
     promise: promiseFactory((resolve, reject) => {
-      resolveFn = resolve
-      rejectFn = reject
+      resolveFn = resolve;
+      rejectFn = reject;
     }),
     resolve: invoker(resolveFn),
     reject: invoker(rejectFn)
-  }
+  };
 }

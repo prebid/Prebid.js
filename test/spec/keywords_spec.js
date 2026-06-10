@@ -1,4 +1,4 @@
-import { getAllOrtbKeywords, mergeKeywords } from '../../libraries/keywords/keywords.js'
+import { getAllOrtbKeywords, mergeKeywords } from '../../libraries/keywords/keywords.js';
 
 describe('mergeKeywords', () => {
   Object.entries({
@@ -68,10 +68,10 @@ describe('mergeKeywords', () => {
     }
   }).forEach(([t, { input, output }]) => {
     it(`can merge ${t}`, () => {
-      expect(mergeKeywords(...input)).to.have.members(output)
-    })
-  })
-})
+      expect(mergeKeywords(...input)).to.have.members(output);
+    });
+  });
+});
 
 describe('getAllOrtbKeywodrs', () => {
   const SAMPLE_ORTB = {
@@ -86,17 +86,17 @@ describe('getAllOrtbKeywodrs', () => {
     user: {
       keywords: 'four'
     }
-  }
+  };
 
   it('can extract keywords from ortb', () => {
     expect(getAllOrtbKeywords(SAMPLE_ORTB)).to.have.members([
       'one', 'two', 'three', 'four'
-    ])
-  })
+    ]);
+  });
 
   it('merges with extra comma-separated keywords', () => {
     expect(getAllOrtbKeywords(SAMPLE_ORTB, 'two,five')).to.have.members([
       'one', 'two', 'three', 'four', 'five'
-    ])
-  })
-})
+    ]);
+  });
+});

@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo } from '../src/utils.js'
-import { ajax } from '../src/ajax.js'
-import { submodule } from '../src/hook.js'
+import { logError, logInfo } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -15,20 +15,20 @@ import { submodule } from '../src/hook.js'
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  */
 
-const MODULE_NAME = 'kpuid'
-const ID_SVC = 'https://id.knsso.com/id'
+const MODULE_NAME = 'kpuid';
+const ID_SVC = 'https://id.knsso.com/id';
 // These values should NEVER change. If
 // they do, we're no longer making ulids!
-const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ' // Crockford's Base32
-const ENCODING_LEN = ENCODING.length
-const TIME_MAX = Math.pow(2, 48) - 1
-const TIME_LEN = 10
-const RANDOM_LEN = 16
-const id = factory()
+const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
+const ENCODING_LEN = ENCODING.length;
+const TIME_MAX = Math.pow(2, 48) - 1;
+const TIME_LEN = 10;
+const RANDOM_LEN = 16;
+const id = factory();
 
 export const dep = {
   ajax
-}
+};
 
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
@@ -37,14 +37,14 @@ export const dep = {
  */
 function factory(currPrng) {
   if (!currPrng) {
-    currPrng = detectPrng()
+    currPrng = detectPrng();
   }
   return function ulid(seedTime) {
     if (isNaN(seedTime)) {
-      seedTime = Date.now()
+      seedTime = Date.now();
     }
-    return encodeTime(seedTime, TIME_LEN) + encodeRandom(RANDOM_LEN, currPrng)
-  }
+    return encodeTime(seedTime, TIME_LEN) + encodeRandom(RANDOM_LEN, currPrng);
+  };
 }
 
 /**
@@ -53,11 +53,11 @@ function factory(currPrng) {
  * @returns {string}
  */
 function randomChar(prng) {
-  let rand = Math.floor(prng() * ENCODING_LEN)
+  let rand = Math.floor(prng() * ENCODING_LEN);
   if (rand === ENCODING_LEN) {
-    rand = ENCODING_LEN - 1
+    rand = ENCODING_LEN - 1;
   }
-  return ENCODING.charAt(rand)
+  return ENCODING.charAt(rand);
 }
 
 /**
@@ -67,11 +67,11 @@ function randomChar(prng) {
  * @returns {string}
  */
 function encodeRandom(len, prng) {
-  let str = ''
+  let str = '';
   for (; len > 0; len--) {
-    str = randomChar(prng) + str
+    str = randomChar(prng) + str;
   }
-  return str
+  return str;
 }
 
 /**
@@ -82,35 +82,35 @@ function encodeRandom(len, prng) {
  */
 function encodeTime(now, len) {
   if (isNaN(now)) {
-    throw new Error(now + ' must be a number')
+    throw new Error(now + ' must be a number');
   }
 
   if (Number.isInteger(now) === false) {
-    throw createError('time must be an integer')
+    throw createError('time must be an integer');
   }
 
   if (now > TIME_MAX) {
-    throw createError('cannot encode time greater than ' + TIME_MAX)
+    throw createError('cannot encode time greater than ' + TIME_MAX);
   }
   if (now < 0) {
-    throw createError('time must be positive')
+    throw createError('time must be positive');
   }
 
   if (Number.isInteger(len) === false) {
-    throw createError('length must be an integer')
+    throw createError('length must be an integer');
   }
   if (len < 0) {
-    throw createError('length must be positive')
+    throw createError('length must be positive');
   }
 
-  let mod
-  let str = ''
+  let mod;
+  let str = '';
   for (; len > 0; len--) {
-    mod = now % ENCODING_LEN
-    str = ENCODING.charAt(mod) + str
-    now = (now - mod) / ENCODING_LEN
+    mod = now % ENCODING_LEN;
+    str = ENCODING.charAt(mod) + str;
+    now = (now - mod) / ENCODING_LEN;
   }
-  return str
+  return str;
 }
 
 /**
@@ -120,10 +120,10 @@ function encodeTime(now, len) {
  * @returns {Error}
  */
 function createError(message) {
-  logError(message)
-  const err = new Error(message)
-  err.source = 'kinessoId'
-  return err
+  logError(message);
+  const err = new Error(message);
+  err.source = 'kinessoId';
+  return err;
 }
 
 /**
@@ -134,17 +134,17 @@ function createError(message) {
  */
 function detectPrng(root) {
   if (!root) {
-    root = typeof window !== 'undefined' ? window : null
+    root = typeof window !== 'undefined' ? window : null;
   }
-  const browserCrypto = root && (root.crypto || root.msCrypto)
+  const browserCrypto = root && (root.crypto || root.msCrypto);
   if (browserCrypto) {
     return () => {
-      const buffer = new Uint8Array(1)
-      browserCrypto.getRandomValues(buffer)
-      return buffer[0] / 0xff
-    }
+      const buffer = new Uint8Array(1);
+      browserCrypto.getRandomValues(buffer);
+      return buffer[0] / 0xff;
+    };
   }
-  return () => Math.random()
+  return () => Math.random();
 }
 
 /**
@@ -155,12 +155,12 @@ function detectPrng(root) {
 function syncId(storedId) {
   return {
     success: function (responseBody) {
-      logInfo('KinessoId: id to be synced: ' + storedId)
+      logInfo('KinessoId: id to be synced: ' + storedId);
     },
     error: function () {
-      logInfo('KinessoId: Sync error for id : ' + storedId)
+      logInfo('KinessoId: Sync error for id : ' + storedId);
     }
-  }
+  };
 }
 
 /**
@@ -169,14 +169,14 @@ function syncId(storedId) {
  * @returns {string|*}
  */
 function encodeId(value) {
-  const result = {}
-  const knssoId = (value && typeof value === 'string') ? value : undefined
+  const result = {};
+  const knssoId = (value && typeof value === 'string') ? value : undefined;
   if (knssoId) {
-    result.kpuid = knssoId
-    logInfo('KinessoId: Decoded value ' + JSON.stringify(result))
-    return result
+    result.kpuid = knssoId;
+    logInfo('KinessoId: Decoded value ' + JSON.stringify(result));
+    return result;
   }
-  return knssoId
+  return knssoId;
 }
 
 /**
@@ -186,15 +186,15 @@ function encodeId(value) {
  * @return {string}
  */
 function kinessoSyncUrl(accountId, consentData) {
-  const { gdpr, usp: usPrivacyString } = consentData ?? {}
-  let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`
+  const { gdpr, usp: usPrivacyString } = consentData ?? {};
+  let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
-    kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`
+    kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
   }
-  if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl
+  if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
-  kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`
-  return kinessoSyncUrl
+  kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
+  return kinessoSyncUrl;
 }
 
 /** @type {Submodule} */
@@ -213,7 +213,7 @@ export const kinessoIdSubmodule = {
    * @returns {{kpuid:{id: string}}|undefined}
    */
   decode(value) {
-    return (value) ? encodeId(value) : undefined
+    return (value) ? encodeId(value) : undefined;
   },
 
   /**
@@ -224,23 +224,23 @@ export const kinessoIdSubmodule = {
    * @returns {string|undefined}
    */
   getId(config, consentData) {
-    const configParams = (config && config.params) || {}
+    const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.accountid !== 'number') {
-      logError('User ID - KinessoId submodule requires a valid accountid to be defined')
-      return
+      logError('User ID - KinessoId submodule requires a valid accountid to be defined');
+      return;
     }
     if (consentData?.coppa) {
-      logInfo('KinessoId: IDs not provided for coppa requests, exiting KinessoId')
-      return
+      logInfo('KinessoId: IDs not provided for coppa requests, exiting KinessoId');
+      return;
     }
-    const accountId = configParams.accountid
-    const knnsoId = id()
-    logInfo('KinessoId: generated id ' + knnsoId)
-    const kinessoIdPayload = {}
-    kinessoIdPayload.id = knnsoId
-    const payloadString = JSON.stringify(kinessoIdPayload)
-    dep.ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true })
-    return { 'id': knnsoId }
+    const accountId = configParams.accountid;
+    const knnsoId = id();
+    logInfo('KinessoId: generated id ' + knnsoId);
+    const kinessoIdPayload = {};
+    kinessoIdPayload.id = knnsoId;
+    const payloadString = JSON.stringify(kinessoIdPayload);
+    dep.ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
+    return { 'id': knnsoId };
   },
   eids: {
     'kpuid': {
@@ -248,7 +248,7 @@ export const kinessoIdSubmodule = {
       atype: 3
     },
   },
-}
+};
 
 // Register submodule for userId
-submodule('userId', kinessoIdSubmodule)
+submodule('userId', kinessoIdSubmodule);

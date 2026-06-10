@@ -1,8 +1,8 @@
-import { getBidIdParameter } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js'
-import { interpretResponse } from '../libraries/uniquestUtils/uniquestUtils.js'
+import { getBidIdParameter } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { interpretResponse } from '../libraries/uniquestUtils/uniquestUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -10,8 +10,8 @@ import { interpretResponse } from '../libraries/uniquestUtils/uniquestUtils.js'
  * @typedef {import('../src/auction').BidderRequest} BidderRequest
  */
 
-const BIDDER_CODE = 'uniquest'
-const ENDPOINT = 'https://adpb.ust-ad.com/hb/prebid'
+const BIDDER_CODE = 'uniquest';
+const ENDPOINT = 'https://adpb.ust-ad.com/hb/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,7 +24,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.sid)
+    return !!(bid.params && bid.params.sid);
   },
 
   /**
@@ -35,33 +35,33 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bidRequests = []
+    const bidRequests = [];
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      let queryString = ''
-      const request = validBidRequests[i]
+      let queryString = '';
+      const request = validBidRequests[i];
 
-      const bid = request.bidId
-      const sid = getBidIdParameter('sid', request.params)
-      const widths = request.sizes.map(size => size[0]).join(',')
-      const heights = request.sizes.map(size => size[1]).join(',')
-      const timeout = bidderRequest.timeout
+      const bid = request.bidId;
+      const sid = getBidIdParameter('sid', request.params);
+      const widths = request.sizes.map(size => size[0]).join(',');
+      const heights = request.sizes.map(size => size[1]).join(',');
+      const timeout = bidderRequest.timeout;
 
-      queryString = tryAppendQueryString(queryString, 'bid', bid)
-      queryString = tryAppendQueryString(queryString, 'sid', sid)
-      queryString = tryAppendQueryString(queryString, 'widths', widths)
-      queryString = tryAppendQueryString(queryString, 'heights', heights)
-      queryString = tryAppendQueryString(queryString, 'timeout', timeout)
+      queryString = tryAppendQueryString(queryString, 'bid', bid);
+      queryString = tryAppendQueryString(queryString, 'sid', sid);
+      queryString = tryAppendQueryString(queryString, 'widths', widths);
+      queryString = tryAppendQueryString(queryString, 'heights', heights);
+      queryString = tryAppendQueryString(queryString, 'timeout', timeout);
 
       bidRequests.push({
         method: 'GET',
         url: ENDPOINT,
         data: queryString,
-      })
+      });
     }
-    return bidRequests
+    return bidRequests;
   },
   interpretResponse: interpretResponse,
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

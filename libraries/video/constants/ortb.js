@@ -64,8 +64,8 @@
  * @property {Object|undefined} ext - Placeholder for exchange-specific extensions to OpenRTB.
  */
 
-const VIDEO_PREFIX = 'video/'
-const APPLICATION_PREFIX = 'application/'
+const VIDEO_PREFIX = 'video/';
+const APPLICATION_PREFIX = 'application/';
 
 /**
  * ORTB 2.5 section 3.2.7 - Video.mimes
@@ -78,10 +78,10 @@ export const VIDEO_MIME_TYPE = {
   WEBM: VIDEO_PREFIX + 'webm',
   AAC: VIDEO_PREFIX + 'aac',
   HLS: APPLICATION_PREFIX + 'vnd.apple.mpegurl'
-}
+};
 
-export const JS_APP_MIME_TYPE = APPLICATION_PREFIX + 'javascript'
-export const VPAID_MIME_TYPE = JS_APP_MIME_TYPE
+export const JS_APP_MIME_TYPE = APPLICATION_PREFIX + 'javascript';
+export const VPAID_MIME_TYPE = JS_APP_MIME_TYPE;
 
 /**
  * ORTB 2.5 section 5.9 - Video Placement Types
@@ -96,7 +96,7 @@ export const PLACEMENT = {
   SLIDER: 5,
   FLOATING: 5,
   INTERSTITIAL_SLIDER_FLOATING: 5
-}
+};
 
 /**
  * ADCOM - https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/develop/AdCOM%20v1.0%20FINAL.md#list_plcmtsubtypesvideo
@@ -108,7 +108,7 @@ export const PLCMT = {
   INTERSTITIAL: 3,
   OUTSTREAM: 4,
   NO_CONTENT: 4
-}
+};
 
 /**
  * ORTB 2.5 section 5.4 - Ad Position
@@ -122,7 +122,7 @@ export const AD_POSITION = {
   FOOTER: 5,
   SIDEBAR: 6,
   FULL_SCREEN: 7
-}
+};
 
 /**
  * ORTB 2.5 section 5.11 - Playback Cessation Modes
@@ -132,7 +132,7 @@ export const PLAYBACK_END = {
   VIDEO_COMPLETION: 1,
   VIEWPORT_LEAVE: 2,
   FLOATING: 3
-}
+};
 
 /**
  * ORTB 2.5 section 5.10 - Playback Methods
@@ -145,7 +145,7 @@ export const PLAYBACK_METHODS = {
   CLICK_TO_PLAY_MUTED: 4,
   VIEWABLE: 5,
   VIEWABLE_MUTED: 6
-}
+};
 
 /**
  * ORTB 2.5 section 5.8 - Protocols
@@ -160,7 +160,7 @@ export const PROTOCOLS = {
   VAST_3_0_WRAPPER: 6,
   VAST_4_0: 7,
   VAST_4_0_WRAPPER: 8
-}
+};
 
 /**
  * ORTB 2.5 section 5.6 - API Frameworks
@@ -170,7 +170,7 @@ export const API_FRAMEWORKS = {
   VPAID_1_0: 1,
   VPAID_2_0: 2,
   OMID_1_0: 7
-}
+};
 
 /**
  * ORTB 2.5 section 5.18 - Content Context
@@ -179,4 +179,4 @@ export const API_FRAMEWORKS = {
 export const CONTEXT = {
   VIDEO: 1,
   AUDIO: 3
-}
+};

@@ -1,8 +1,8 @@
-import { logWarn } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'viewdeosDX'
+const BIDDER_CODE = 'viewdeosDX';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -10,21 +10,21 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
-    return true
+    return true;
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    logWarn(`Prebid.js adapter '${BIDDER_CODE}' is deprecated and no longer active.`)
-    return []
+    logWarn(`Prebid.js adapter '${BIDDER_CODE}' is deprecated and no longer active.`);
+    return [];
   },
 
   interpretResponse: function(serverResponse, bidRequest) {
-    return []
+    return [];
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    return []
+    return [];
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

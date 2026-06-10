@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect } from 'chai';
 import {
   spec,
   getPmgUID,
@@ -7,31 +7,31 @@ import {
   COOKIE_KEY_MGUID,
   getCookieTimeToUTCString,
   buildUTMTagData,
-} from 'modules/discoveryBidAdapter.js'
-import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js'
-import * as utils from 'src/utils.js'
-import { getHLen } from '../../../libraries/navigatorData/navigatorData.js'
+} from 'modules/discoveryBidAdapter.js';
+import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
+import * as utils from 'src/utils.js';
+import { getHLen } from '../../../libraries/navigatorData/navigatorData.js';
 
 describe('discovery:BidAdapterTests', function () {
-  let sandbox
+  let sandbox;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    sandbox.stub(storage, 'getCookie')
-    sandbox.stub(storage, 'setCookie')
-    sandbox.stub(storage, 'getDataFromLocalStorage')
-    sandbox.stub(utils, 'generateUUID').returns('new-uuid')
+    sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
     sandbox.stub(utils, 'parseUrl').returns({
       search: {
         utm_source: 'example.com'
       }
-    })
-    sandbox.stub(storage, 'cookiesAreEnabled')
-  })
+    });
+    sandbox.stub(storage, 'cookiesAreEnabled');
+  });
 
   afterEach(() => {
-    sandbox.restore()
-  })
+    sandbox.restore();
+  });
 
   const bidRequestData = {
     bidderCode: 'discovery',
@@ -123,8 +123,8 @@ describe('discovery:BidAdapterTests', function () {
         }
       }
     }
-  }
-  let request = []
+  };
+  let request = [];
 
   const bidRequestDataNoParams = {
     bidderCode: 'discovery',
@@ -195,7 +195,7 @@ describe('discovery:BidAdapterTests', function () {
         bidderWinsCount: 0,
       },
     ],
-  }
+  };
 
   it('discovery:validate_pub_params', function () {
     expect(
@@ -207,8 +207,8 @@ describe('discovery:BidAdapterTests', function () {
           publisher: ['test_publisher']
         },
       })
-    ).to.equal(true)
-  })
+    ).to.equal(true);
+  });
 
   it('isBidRequestValid:no_params', function () {
     expect(
@@ -216,71 +216,71 @@ describe('discovery:BidAdapterTests', function () {
         bidder: 'discovery',
         params: {},
       })
-    ).to.equal(true)
-  })
+    ).to.equal(true);
+  });
   it('discovery:validate_generated_params', function () {
-    storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}')
-    request = spec.buildRequests(bidRequestData.bids, bidRequestData)
-    const req_data = JSON.parse(request.data)
-    expect(req_data.imp).to.have.lengthOf(1)
-  })
+    storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
+    request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const req_data = JSON.parse(request.data);
+    expect(req_data.imp).to.have.lengthOf(1);
+  });
   describe('first party data', function () {
     it('should pass additional parameter in request for topics', function () {
-      const request = spec.buildRequests(bidRequestData.bids, bidRequestData)
-      const res = JSON.parse(request.data)
-      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data)
-    })
-  })
+      const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+      const res = JSON.parse(request.data);
+      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
+    });
+  });
 
   describe('discovery: buildRequests', function() {
     describe('getPmgUID function', function() {
       it('should generate new UUID and set cookie if not exists', () => {
-        storage.cookiesAreEnabled.callsFake(() => true)
-        storage.getCookie.callsFake(() => null)
-        const uid = getPmgUID()
-        expect(uid).to.equal('new-uuid')
-        expect(storage.setCookie.calledOnce).to.be.true
-      })
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        const uid = getPmgUID();
+        expect(uid).to.equal('new-uuid');
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
 
       it('should return existing UUID from cookie', () => {
-        storage.cookiesAreEnabled.callsFake(() => true)
-        storage.getCookie.callsFake(() => 'existing-uuid')
-        const uid = getPmgUID()
-        expect(uid).to.equal('existing-uuid')
-        expect(storage.setCookie.called).to.be.true
-      })
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => 'existing-uuid');
+        const uid = getPmgUID();
+        expect(uid).to.equal('existing-uuid');
+        expect(storage.setCookie.called).to.be.true;
+      });
 
       it('should not set new UUID when cookies are not enabled', () => {
-        storage.cookiesAreEnabled.callsFake(() => false)
-        storage.getCookie.callsFake(() => null)
-        getPmgUID()
-        expect(storage.setCookie.calledOnce).to.be.false
-      })
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
       it('should return other ID from storage and cookie', () => {
-        spec.buildRequests(bidRequestData.bids, bidRequestData)
-        expect(storage.getCookie.called).to.be.true
-        expect(storage.getDataFromLocalStorage.called).to.be.true
-      })
-    })
+        spec.buildRequests(bidRequestData.bids, bidRequestData);
+        expect(storage.getCookie.called).to.be.true;
+        expect(storage.getDataFromLocalStorage.called).to.be.true;
+      });
+    });
     describe('buildUTMTagData function', function() {
       it('should set UTM cookie', () => {
-        storage.cookiesAreEnabled.callsFake(() => true)
-        storage.getCookie.callsFake(() => null)
-        buildUTMTagData()
-        expect(storage.setCookie.calledOnce).to.be.true
-      })
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
 
       it('should not set UTM when cookies are not enabled', () => {
-        storage.cookiesAreEnabled.callsFake(() => false)
-        storage.getCookie.callsFake(() => null)
-        buildUTMTagData()
-        expect(storage.setCookie.calledOnce).to.be.false
-      })
-    })
-  })
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    });
+  });
 
   it('discovery:validate_response_params', function () {
-    const tempAdm = '<div class="discovery-adm">Simple discovery test creative</div>'
+    const tempAdm = '<div class="discovery-adm">Simple discovery test creative</div>';
     const serverResponse = {
       body: {
         id: 'pp_hbjs_2405029787417735524',
@@ -303,337 +303,337 @@ describe('discovery:BidAdapterTests', function () {
         ],
         cur: 'USD',
       },
-    }
+    };
 
-    const bids = spec.interpretResponse(serverResponse)
+    const bids = spec.interpretResponse(serverResponse);
 
-    expect(bids).to.have.lengthOf(1)
+    expect(bids).to.have.lengthOf(1);
 
-    const bid = bids[0]
-    expect(bid.creativeId).to.equal('1366258')
-    expect(bid.width).to.equal(300)
-    expect(bid.height).to.equal(250)
-    expect(bid.currency).to.equal('USD')
-  })
+    const bid = bids[0];
+    expect(bid.creativeId).to.equal('1366258');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.currency).to.equal('USD');
+  });
 
   describe('discovery: getUserSyncs', function() {
-    const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html'
+    const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
     const IFRAME_ENABLED = {
       iframeEnabled: true,
       pixelEnabled: false,
-    }
+    };
     const IFRAME_DISABLED = {
       iframeEnabled: false,
       pixelEnabled: false,
-    }
+    };
     const GDPR_CONSENT = {
       consentString: 'gdprConsentString',
       gdprApplies: true
-    }
+    };
     const USP_CONSENT = {
       consentString: 'uspConsentString'
-    }
+    };
 
-    let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`
-    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString'
+    let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
+    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
     const expectedIframeSyncs = [
       {
         type: 'iframe',
         url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
       }
-    ]
+    ];
 
     it('should return nothing if iframe is disabled', () => {
-      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined)
-      expect(userSyncs).to.be.undefined
-    })
+      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.be.undefined;
+    });
 
     it('should do userSyncs if iframe is enabled', () => {
-      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined)
-      expect(userSyncs).to.deep.equal(expectedIframeSyncs)
-    })
-  })
-})
+      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    });
+  });
+});
 
 describe('discovery Bid Adapter Tests', function () {
   describe('buildRequests', () => {
     describe('getPageTitle function', function() {
-      let sandbox
+      let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.createSandbox()
-      })
+        sandbox = sinon.createSandbox();
+      });
 
       afterEach(() => {
-        sandbox.restore()
-      })
+        sandbox.restore();
+      });
 
       it('should return the top document title if available', function() {
         const fakeTopDocument = {
           title: 'Top Document Title',
           querySelector: () => ({ content: 'Top Document Title test' })
-        }
+        };
         const fakeTopWindow = {
           document: fakeTopDocument
-        }
-        const result = getPageTitle({ top: fakeTopWindow })
-        expect(result).to.equal('Top Document Title')
-      })
+        };
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal('Top Document Title');
+      });
 
       it('should return the content of top og:title meta tag if title is empty', function() {
-        const ogTitleContent = 'Top OG Title Content'
+        const ogTitleContent = 'Top OG Title Content';
         const fakeTopWindow = {
           document: {
             title: '',
             querySelector: sandbox.stub().withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
           }
-        }
+        };
 
-        const result = getPageTitle({ top: fakeTopWindow })
-        expect(result).to.equal(ogTitleContent)
-      })
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal(ogTitleContent);
+      });
 
       it('should return the document title if no og:title meta tag is present', function() {
-        document.title = 'Test Page Title'
-        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null)
+        document.title = 'Test Page Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
 
-        const result = getPageTitle({ top: undefined })
-        expect(result).to.equal('Test Page Title')
-      })
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('Test Page Title');
+      });
 
       it('should return the content of og:title meta tag if present', function() {
-        document.title = ''
-        const ogTitleContent = 'Top OG Title Content'
-        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
-        const result = getPageTitle({ top: undefined })
-        expect(result).to.equal(ogTitleContent)
-      })
+        document.title = '';
+        const ogTitleContent = 'Top OG Title Content';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal(ogTitleContent);
+      });
 
       it('should return an empty string if no title or og:title meta tag is found', function() {
-        document.title = ''
-        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null)
-        const result = getPageTitle({ top: undefined })
-        expect(result).to.equal('')
-      })
+        document.title = '';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('');
+      });
 
       it('should handle exceptions when accessing top.document and fallback to current document', function() {
         const fakeWindow = {
           get top() {
-            throw new Error('Access denied')
+            throw new Error('Access denied');
           }
-        }
-        const ogTitleContent = 'Current OG Title Content'
-        document.title = 'Current Document Title'
-        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
-        const result = getPageTitle(fakeWindow)
-        expect(result).to.equal('Current Document Title')
-      })
-    })
+        };
+        const ogTitleContent = 'Current OG Title Content';
+        document.title = 'Current Document Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle(fakeWindow);
+        expect(result).to.equal('Current Document Title');
+      });
+    });
 
     describe('getPageDescription function', function() {
-      let sandbox
+      let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.createSandbox()
-      })
+        sandbox = sinon.createSandbox();
+      });
 
       afterEach(() => {
-        sandbox.restore()
-      })
+        sandbox.restore();
+      });
 
       it('should return the top document description if available', function() {
-        const descriptionContent = 'Top Document Description'
+        const descriptionContent = 'Top Document Description';
         const fakeTopDocument = {
           querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: descriptionContent })
-        }
-        const fakeTopWindow = { document: fakeTopDocument }
-        const result = getPageDescription({ top: fakeTopWindow })
-        expect(result).to.equal(descriptionContent)
-      })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(descriptionContent);
+      });
 
       it('should return the top document og:description if description is not present', function() {
-        const ogDescriptionContent = 'Top OG Description'
+        const ogDescriptionContent = 'Top OG Description';
         const fakeTopDocument = {
           querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
-        }
-        const fakeTopWindow = { document: fakeTopDocument }
-        const result = getPageDescription({ top: fakeTopWindow })
-        expect(result).to.equal(ogDescriptionContent)
-      })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(ogDescriptionContent);
+      });
 
       it('should return the current document description if top document is not accessible', function() {
-        const descriptionContent = 'Current Document Description'
+        const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
         const fakeWindow = {
           get top() {
-            throw new Error('Access denied')
+            throw new Error('Access denied');
           }
-        }
-        const result = getPageDescription(fakeWindow)
-        expect(result).to.equal(descriptionContent)
-      })
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(descriptionContent);
+      });
 
       it('should return the current document og:description if description is not present and top document is not accessible', function() {
-        const ogDescriptionContent = 'Current OG Description'
+        const ogDescriptionContent = 'Current OG Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
+          .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent });
 
         const fakeWindow = {
           get top() {
-            throw new Error('Access denied')
+            throw new Error('Access denied');
           }
-        }
-        const result = getPageDescription(fakeWindow)
-        expect(result).to.equal(ogDescriptionContent)
-      })
-    })
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(ogDescriptionContent);
+      });
+    });
 
     describe('getPageKeywords function', function() {
-      let sandbox
+      let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.createSandbox()
-      })
+        sandbox = sinon.createSandbox();
+      });
 
       afterEach(() => {
-        sandbox.restore()
-      })
+        sandbox.restore();
+      });
 
       it('should return the top document keywords if available', function() {
-        const keywordsContent = 'keyword1, keyword2, keyword3'
+        const keywordsContent = 'keyword1, keyword2, keyword3';
         const fakeTopDocument = {
           querySelector: sandbox.stub()
             .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
-        }
-        const fakeTopWindow = { document: fakeTopDocument }
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
 
-        const result = getPageKeywords({ top: fakeTopWindow })
-        expect(result).to.equal(keywordsContent)
-      })
+        const result = getPageKeywords({ top: fakeTopWindow });
+        expect(result).to.equal(keywordsContent);
+      });
 
       it('should return the current document keywords if top document is not accessible', function() {
-        const keywordsContent = 'keyword1, keyword2, keyword3'
+        const keywordsContent = 'keyword1, keyword2, keyword3';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
+          .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
 
         // 模拟顶层窗口访问异常
         const fakeWindow = {
           get top() {
-            throw new Error('Access denied')
+            throw new Error('Access denied');
           }
-        }
+        };
 
-        const result = getPageKeywords(fakeWindow)
-        expect(result).to.equal(keywordsContent)
-      })
+        const result = getPageKeywords(fakeWindow);
+        expect(result).to.equal(keywordsContent);
+      });
 
       it('should return an empty string if no keywords meta tag is found', function() {
-        sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null)
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
 
-        const result = getPageKeywords()
-        expect(result).to.equal('')
-      })
-    })
+        const result = getPageKeywords();
+        expect(result).to.equal('');
+      });
+    });
     describe('getConnectionDownLink function', function() {
-      let sandbox
+      let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.createSandbox()
-      })
+        sandbox = sinon.createSandbox();
+      });
 
       afterEach(() => {
-        sandbox.restore()
-      })
+        sandbox.restore();
+      });
 
       it('should return the downlink value as a string if available', function() {
-        const downlinkValue = 2.5
+        const downlinkValue = 2.5;
         const fakeNavigator = {
           connection: {
             downlink: downlinkValue
           }
-        }
+        };
 
-        const result = getConnectionDownLink({ navigator: fakeNavigator })
-        expect(result).to.equal(downlinkValue.toString())
-      })
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.equal(downlinkValue.toString());
+      });
 
       it('should return undefined if downlink is not available', function() {
         const fakeNavigator = {
           connection: {}
-        }
+        };
 
-        const result = getConnectionDownLink({ navigator: fakeNavigator })
-        expect(result).to.be.undefined
-      })
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
 
       it('should return undefined if connection is not available', function() {
-        const fakeNavigator = {}
+        const fakeNavigator = {};
 
-        const result = getConnectionDownLink({ navigator: fakeNavigator })
-        expect(result).to.be.undefined
-      })
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
 
       it('should handle cases where navigator is not defined', function() {
-        const result = getConnectionDownLink({})
-        expect(result).to.be.undefined
-      })
-    })
+        const result = getConnectionDownLink({});
+        expect(result).to.be.undefined;
+      });
+    });
 
     describe('getUserSyncs with message event listener', function() {
       function messageHandler(event) {
         if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) {
-          return
+          return;
         }
 
-        window.removeEventListener('message', messageHandler, true)
-        event.stopImmediatePropagation()
+        window.removeEventListener('message', messageHandler, true);
+        event.stopImmediatePropagation();
 
-        const response = event.data
+        const response = event.data;
         if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCookieTimeToUTCString())
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCookieTimeToUTCString());
         }
       }
 
-      let sandbox
+      let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.createSandbox()
-        sandbox.stub(storage, 'setCookie')
-        sandbox.stub(window, 'removeEventListener')
-      })
+        sandbox = sinon.createSandbox();
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(window, 'removeEventListener');
+      });
 
       afterEach(() => {
-        sandbox.restore()
-      })
+        sandbox.restore();
+      });
 
       it('should set a cookie when a valid message is received', () => {
         const fakeEvent = {
           data: { optout: '', mguid: '12345' },
           origin: THIRD_PARTY_COOKIE_ORIGIN,
           stopImmediatePropagation: sinon.spy()
-        }
+        };
 
-        messageHandler(fakeEvent)
+        messageHandler(fakeEvent);
 
-        expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true
-        expect(window.removeEventListener.calledWith('message', messageHandler, true)).to.be.true
-        expect(storage.setCookie.calledWith(COOKIE_KEY_MGUID, '12345', sinon.match.string)).to.be.true
-      })
+        expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
+        expect(window.removeEventListener.calledWith('message', messageHandler, true)).to.be.true;
+        expect(storage.setCookie.calledWith(COOKIE_KEY_MGUID, '12345', sinon.match.string)).to.be.true;
+      });
       it('should not do anything when an invalid message is received', () => {
         const fakeEvent = {
           data: null,
           origin: 'http://invalid-origin.com',
           stopImmediatePropagation: sinon.spy()
-        }
+        };
 
-        messageHandler(fakeEvent)
+        messageHandler(fakeEvent);
 
-        expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true
-        expect(window.removeEventListener.notCalled).to.be.true
-        expect(storage.setCookie.notCalled).to.be.true
-      })
-    })
+        expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
+        expect(window.removeEventListener.notCalled).to.be.true;
+        expect(storage.setCookie.notCalled).to.be.true;
+      });
+    });
     describe('getHLen', () => {
       it('should return the correct length of history when accessible', () => {
         const mockWindow = {
@@ -642,20 +642,20 @@ describe('discovery Bid Adapter Tests', function () {
               length: 3
             }
           }
-        }
-        const result = getHLen(mockWindow)
-        expect(result).to.equal(3)
-      })
+        };
+        const result = getHLen(mockWindow);
+        expect(result).to.equal(3);
+      });
 
       it('should return undefined when accessing win.top.history.length throws an error', () => {
         const mockWindow = {
           get top() {
-            throw new Error('Access denied')
+            throw new Error('Access denied');
           }
-        }
-        const result = getHLen(mockWindow)
-        expect(result).be.undefined
-      })
-    })
-  })
-})
+        };
+        const result = getHLen(mockWindow);
+        expect(result).be.undefined;
+      });
+    });
+  });
+});

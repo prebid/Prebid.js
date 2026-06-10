@@ -1,44 +1,44 @@
-import analyticsAdapter, { log, DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from 'modules/33acrossAnalyticsAdapter.js'
+import analyticsAdapter, { log, DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from 'modules/33acrossAnalyticsAdapter.js';
 
-import * as mockGpt from 'test/spec/integration/faker/googletag.js'
-import * as events from 'src/events.js'
-import * as faker from 'faker'
-import { EVENTS } from 'src/constants.js'
-import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager.js'
+import * as mockGpt from 'test/spec/integration/faker/googletag.js';
+import * as events from 'src/events.js';
+import * as faker from 'faker';
+import { EVENTS } from 'src/constants.js';
+import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
 
 describe('33acrossAnalyticsAdapter:', function () {
-  let sandbox
-  const assert = getLocalAssert()
+  let sandbox;
+  const assert = getLocalAssert();
 
   beforeEach(function () {
-    mockGpt.reset()
+    mockGpt.reset();
 
     sandbox = sinon.createSandbox({
       useFakeTimers: {
         now: new Date(2023, 3, 3, 0, 1, 33, 425),
         shouldClearNativeTimers: true
       },
-    })
+    });
 
-    sandbox.stub(events, 'getEvents').returns([])
+    sandbox.stub(events, 'getEvents').returns([]);
 
-    sandbox.spy(log, 'info')
-    sandbox.spy(log, 'warn')
-    sandbox.spy(log, 'error')
+    sandbox.spy(log, 'info');
+    sandbox.spy(log, 'warn');
+    sandbox.spy(log, 'error');
 
     sandbox.stub(navigator, 'sendBeacon').callsFake(function (url, data) {
-      const json = JSON.parse(data)
-      assert.isValidAnalyticsReport(json)
+      const json = JSON.parse(data);
+      assert.isValidAnalyticsReport(json);
 
-      return true
-    })
-  })
+      return true;
+    });
+  });
 
   afterEach(function () {
-    analyticsAdapter.disableAnalytics()
-    mockGpt.enable()
-    sandbox.restore()
-  })
+    analyticsAdapter.disableAnalytics();
+    mockGpt.enable();
+    sandbox.restore();
+  });
 
   describe('enableAnalytics:', function () {
     context('When pid is given', function () {
@@ -48,11 +48,11 @@ describe('33acrossAnalyticsAdapter:', function () {
             options: {
               pid: 'test-pid',
             },
-          })
+          });
 
-          assert.equal(analyticsAdapter.getUrl(), DEFAULT_ENDPOINT)
-        })
-      })
+          assert.equal(analyticsAdapter.getUrl(), DEFAULT_ENDPOINT);
+        });
+      });
 
       context('but the endpoint is invalid', function () {
         it('logs an info message', function () {
@@ -61,12 +61,12 @@ describe('33acrossAnalyticsAdapter:', function () {
               pid: 'test-pid',
               endpoint: 'foo'
             },
-          })
+          });
 
-          assert.calledWithExactly(log.info, 'Invalid endpoint provided for "options.endpoint". Using default endpoint.')
-        })
-      })
-    })
+          assert.calledWithExactly(log.info, 'Invalid endpoint provided for "options.endpoint". Using default endpoint.');
+        });
+      });
+    });
 
     context('When endpoint is given', function () {
       context('but pid is not', function () {
@@ -75,12 +75,12 @@ describe('33acrossAnalyticsAdapter:', function () {
             options: {
               endpoint: faker.internet.url()
             },
-          })
+          });
 
-          assert.calledWithExactly(log.error, 'No partnerId provided for "options.pid". No analytics will be sent.')
-        })
-      })
-    })
+          assert.calledWithExactly(log.error, 'No partnerId provided for "options.pid". No analytics will be sent.');
+        });
+      });
+    });
 
     context('When pid and endpoint are given', function () {
       context('and an invalid timeout config value is given', function () {
@@ -92,27 +92,27 @@ describe('33acrossAnalyticsAdapter:', function () {
                 endpoint: 'http://test-endpoint',
                 timeout
               },
-            })
-            analyticsAdapter.disableAnalytics()
+            });
+            analyticsAdapter.disableAnalytics();
 
-            assert.calledWithExactly(log.info, 'Invalid timeout provided for "options.timeout". Using default timeout of 10000ms.')
-            log.info.resetHistory()
-          })
-        })
-      })
-    })
-  })
+            assert.calledWithExactly(log.info, 'Invalid timeout provided for "options.timeout". Using default timeout of 10000ms.');
+            log.info.resetHistory();
+          });
+        });
+      });
+    });
+  });
 
   // check that upcoming tests are derived from a valid report
   describe('Report Mocks', function () {
     it('the report should have the correct format', function () {
-      assert.isValidAnalyticsReport(createReportWithThreeBidWonEvents())
-    })
-  })
+      assert.isValidAnalyticsReport(createReportWithThreeBidWonEvents());
+    });
+  });
 
   describe('Event Handling', function () {
     beforeEach(function () {
-      this.defaultTimeout = 10000
+      this.defaultTimeout = 10000;
       this.enableAnalytics = (options) => {
         analyticsAdapter.enableAnalytics({
           options: {
@@ -121,567 +121,567 @@ describe('33acrossAnalyticsAdapter:', function () {
             timeout: this.defaultTimeout,
             ...options
           },
-        })
-        window.googletag.cmd.forEach(cmd => cmd())
-      }
-    })
+        });
+        window.googletag.cmd.forEach(cmd => cmd());
+      };
+    });
 
     context('when an auction is complete', function () {
       context('and the AnalyticsReport is sent successfully to the given endpoint', function () {
         it('calls "sendBeacon" with all won bids', function () {
-          const endpoint = faker.internet.url()
-          this.enableAnalytics({ endpoint })
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
           navigator.sendBeacon
-            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
+            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
-          performStandardAuction()
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          const [url, jsonString] = navigator.sendBeacon.firstCall.args
-          const { auctions } = JSON.parse(jsonString)
+          const [url, jsonString] = navigator.sendBeacon.firstCall.args;
+          const { auctions } = JSON.parse(jsonString);
 
-          assert.lengthOf(mapToBids(auctions).filter(bid => bid.hasWon), 3)
-        })
+          assert.lengthOf(mapToBids(auctions).filter(bid => bid.hasWon), 3);
+        });
 
         it('calls "sendBeacon" with the correct report string', function () {
-          const endpoint = faker.internet.url()
-          this.enableAnalytics({ endpoint })
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
           navigator.sendBeacon
-            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
+            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
-          performStandardAuction()
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents())
-        })
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
+        });
 
         it('logs an info message containing the report', function () {
-          const endpoint = faker.internet.url()
-          this.enableAnalytics({ endpoint })
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
           navigator.sendBeacon
             .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
-            .returns(true)
+            .returns(true);
 
-          performStandardAuction()
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, createReportWithThreeBidWonEvents())
-        })
+          assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, createReportWithThreeBidWonEvents());
+        });
 
         it('calls "sendBeacon" as soon as all values are available (before timeout)', function () {
-          const endpoint = faker.internet.url()
-          this.enableAnalytics({ endpoint })
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
           navigator.sendBeacon
-            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
+            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
-          performStandardAuction()
-          sandbox.clock.tick(1)
+          performStandardAuction();
+          sandbox.clock.tick(1);
 
-          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents())
-        })
-      })
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
+        });
+      });
 
       context('and a valid US Privacy configuration is present', function () {
         ['1YNY', '1---', '1NY-', '1Y--', '1--Y', '1N--', '1--N', '1NNN'].forEach(consent => {
           it(`calls "sendBeacon" with a report containing the "${consent}" privacy string`, function () {
-            sandbox.stub(uspDataHandler, 'getConsentData').returns(consent)
-            this.enableAnalytics()
+            sandbox.stub(uspDataHandler, 'getConsentData').returns(consent);
+            this.enableAnalytics();
 
             const reportWithConsent = {
               ...createReportWithThreeBidWonEvents(),
               usPrivacy: consent
-            }
+            };
             navigator.sendBeacon
-              .withArgs('http://test-endpoint', reportWithConsent)
+              .withArgs('http://test-endpoint', reportWithConsent);
 
-            performStandardAuction()
-            sandbox.clock.tick(this.defaultTimeout + 1000)
+            performStandardAuction();
+            sandbox.clock.tick(this.defaultTimeout + 1000);
 
-            assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent)
-          })
-        })
-      })
+            assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
+          });
+        });
+      });
 
       context('and a GDPR Privacy configuration is present', function () {
         it('it calls "sendBeacon" with a report containing the GDPR consent string', function () {
           sandbox.stub(gdprDataHandler, 'getConsentData').returns({
             consentString: 'foo',
             gdprApplies: true
-          })
-          this.enableAnalytics()
+          });
+          this.enableAnalytics();
 
           const reportWithConsent = {
             ...createReportWithThreeBidWonEvents(),
             gdpr: 1,
             gdprConsent: 'foo'
-          }
+          };
           navigator.sendBeacon
-            .withArgs('http://test-endpoint', reportWithConsent)
+            .withArgs('http://test-endpoint', reportWithConsent);
 
-          performStandardAuction()
-          sandbox.clock.tick(this.defaultTimeout + 1)
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1);
 
-          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent)
-        })
-      })
-    })
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
+        });
+      });
+    });
 
     context('when an auction is complete and a GPP configuration is present', function () {
       it('it calls "sendBeacon" with a report containing the GPP consent string', function () {
         sandbox.stub(gppDataHandler, 'getConsentData').returns({
           gppString: 'gppString',
           applicableSections: [7]
-        })
-        this.enableAnalytics()
+        });
+        this.enableAnalytics();
 
         const reportWithConsent = {
           ...createReportWithThreeBidWonEvents(),
           gpp: 'gppString',
           gppSid: [7]
-        }
+        };
         navigator.sendBeacon
-          .withArgs('http://test-endpoint', reportWithConsent)
+          .withArgs('http://test-endpoint', reportWithConsent);
 
-        performStandardAuction()
-        sandbox.clock.tick(this.defaultTimeout + 1)
+        performStandardAuction();
+        sandbox.clock.tick(this.defaultTimeout + 1);
 
-        assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent)
-      })
-    })
+        assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
+      });
+    });
 
     context('when an error occurs while sending the AnalyticsReport', function () {
       it('logs an error', function () {
-        this.enableAnalytics()
-        navigator.sendBeacon.returns(false)
+        this.enableAnalytics();
+        navigator.sendBeacon.returns(false);
 
-        performStandardAuction()
-        sandbox.clock.tick(this.defaultTimeout + 1000)
+        performStandardAuction();
+        sandbox.clock.tick(this.defaultTimeout + 1000);
 
-        assert.calledWithExactly(log.error, 'Analytics report exceeded User-Agent data limits and was not sent.', createReportWithThreeBidWonEvents())
-      })
-    })
+        assert.calledWithExactly(log.error, 'Analytics report exceeded User-Agent data limits and was not sent.', createReportWithThreeBidWonEvents());
+      });
+    });
 
     context('when an auction report was already sent', function () {
       context('and a new bid won event is returned after the report completes', function () {
         it('finishes the auction without error', function () {
-          const incompleteAnalyticsReport = createReportWithThreeBidWonEvents()
+          const incompleteAnalyticsReport = createReportWithThreeBidWonEvents();
           incompleteAnalyticsReport.auctions.forEach(auction => {
             auction.adUnits.forEach(adUnit => {
               adUnit.bids.forEach(bid => {
-                delete bid.bidResponse
-                bid.hasWon = 0
-                bid.status = 'pending'
-              })
-            })
-          })
+                delete bid.bidResponse;
+                bid.hasWon = 0;
+                bid.status = 'pending';
+              });
+            });
+          });
 
-          this.enableAnalytics()
-          const { prebid: [auction] } = getMockEvents()
+          this.enableAnalytics();
+          const { prebid: [auction] } = getMockEvents();
 
-          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
           for (const bidRequestedEvent of auction.BID_REQUESTED) {
-            events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent)
+            events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
           };
 
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           for (const bidResponseEvent of auction.BID_RESPONSE) {
-            events.emit(EVENTS.BID_RESPONSE, bidResponseEvent)
+            events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
           };
           for (const bidWonEvent of auction.BID_WON) {
-            events.emit(EVENTS.BID_WON, bidWonEvent)
+            events.emit(EVENTS.BID_WON, bidWonEvent);
           };
 
-          events.emit(EVENTS.AUCTION_END, auction.AUCTION_END)
+          events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
 
-          sandbox.clock.tick(1)
+          sandbox.clock.tick(1);
 
-          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', incompleteAnalyticsReport)
-        })
-      })
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', incompleteAnalyticsReport);
+        });
+      });
 
       context('and another auction completes after that', function () {
         it('sends the new report', function () {
-          const endpoint = faker.internet.url()
-          this.enableAnalytics({ endpoint })
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
           navigator.sendBeacon
-            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
+            .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
-          performStandardAuction()
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          performStandardAuction()
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          assert.calledTwice(navigator.sendBeacon)
-        })
-      })
-    })
+          assert.calledTwice(navigator.sendBeacon);
+        });
+      });
+    });
 
     context('when two auctions overlap', function() {
       it('sends a report for each auction', function () {
-        const endpoint = faker.internet.url()
-        this.enableAnalytics({ endpoint })
+        const endpoint = faker.internet.url();
+        this.enableAnalytics({ endpoint });
 
         navigator.sendBeacon
-          .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
+          .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
-        performStandardAuction()
-        performStandardAuction()
-        sandbox.clock.tick(this.defaultTimeout + 1000)
+        performStandardAuction();
+        performStandardAuction();
+        sandbox.clock.tick(this.defaultTimeout + 1000);
 
-        assert.calledTwice(navigator.sendBeacon)
-      })
-    })
+        assert.calledTwice(navigator.sendBeacon);
+      });
+    });
 
     context('when an AUCTION_END event is received before BID_WON events', function () {
       it('sends a report with the bids that have won after all bids are won', function () {
-        const endpoint = faker.internet.url()
-        this.enableAnalytics({ endpoint })
+        const endpoint = faker.internet.url();
+        this.enableAnalytics({ endpoint });
 
         navigator.sendBeacon
-          .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()))
+          .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
-        const { prebid: [auction] } = getMockEvents()
+        const { prebid: [auction] } = getMockEvents();
 
-        performStandardAuction({ exclude: [EVENTS.BID_WON] })
+        performStandardAuction({ exclude: [EVENTS.BID_WON] });
 
-        assert.notCalled(navigator.sendBeacon)
+        assert.notCalled(navigator.sendBeacon);
         for (const bidWon of auction.BID_WON) {
-          events.emit(EVENTS.BID_WON, bidWon)
+          events.emit(EVENTS.BID_WON, bidWon);
         }
-        assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents())
-      })
-    })
+        assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
+      });
+    });
 
     context('when a BID_WON event is received', function () {
       context('and there is no record of that bid being requested', function () {
         it('logs a warning message', function () {
-          this.enableAnalytics()
+          this.enableAnalytics();
 
-          const mockEvents = getMockEvents()
-          const { prebid } = mockEvents
-          const [auction] = prebid
+          const mockEvents = getMockEvents();
+          const { prebid } = mockEvents;
+          const [auction] = prebid;
 
-          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
 
           const fakeBidWonEvent = Object.assign(auction.BID_WON[0], {
             transactionId: 'foo'
-          })
+          });
 
-          events.emit(EVENTS.BID_WON, fakeBidWonEvent)
+          events.emit(EVENTS.BID_WON, fakeBidWonEvent);
 
-          const { auctionId, requestId } = fakeBidWonEvent
-          assert.calledWithExactly(log.error, `Cannot find bid "${requestId}" in auction "${auctionId}".`)
-        })
-      })
-    })
+          const { auctionId, requestId } = fakeBidWonEvent;
+          assert.calledWithExactly(log.error, `Cannot find bid "${requestId}" in auction "${auctionId}".`);
+        });
+      });
+    });
 
     context('when a BID_REJECTED event is received', function () {
       it(`marks the rejected bid as "rejected"`, function () {
-        this.enableAnalytics()
+        this.enableAnalytics();
 
-        const auction = getMockEvents().prebid[0]
+        const auction = getMockEvents().prebid[0];
 
         // Start the auction
-        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
         for (const bidRequestedEvent of auction.BID_REQUESTED) {
-          events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent)
+          events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
         };
 
         // Reject first bid
-        const bidToReject = auction.BID_REQUESTED[0].bids[0]
-        events.emit(EVENTS.BID_REJECTED, auction.BID_REJECTED[0])
+        const bidToReject = auction.BID_REQUESTED[0].bids[0];
+        events.emit(EVENTS.BID_REJECTED, auction.BID_REJECTED[0]);
 
         // Accept remaining bids
         for (let i = 1; i < auction.BID_RESPONSE.length; ++i) {
-          events.emit(EVENTS.BID_RESPONSE, auction.BID_RESPONSE[i])
+          events.emit(EVENTS.BID_RESPONSE, auction.BID_RESPONSE[i]);
         };
 
         // Complete the auction
-        events.emit(EVENTS.AUCTION_END, auction.AUCTION_END)
+        events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
 
-        sandbox.clock.tick(this.defaultTimeout + 1)
+        sandbox.clock.tick(this.defaultTimeout + 1);
 
         // Verify that we detected that the first bid was rejected
-        const expectedRejectedBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0]
-        assert.strictEqual(expectedRejectedBid.status, 'rejected')
-      })
-    })
+        const expectedRejectedBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0];
+        assert.strictEqual(expectedRejectedBid.status, 'rejected');
+      });
+    });
 
     context('when a transaction does not reach its complete state', function () {
       context('and a timeout config value has been given', function () {
         context('and the timeout value has elapsed', function () {
           it('logs a warning', function () {
-            const timeout = 2000
-            this.enableAnalytics({ timeout })
+            const timeout = 2000;
+            this.enableAnalytics({ timeout });
 
-            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] })
+            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] });
 
-            sandbox.clock.tick(timeout + 1000)
+            sandbox.clock.tick(timeout + 1000);
 
-            assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.')
-          })
+            assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
+          });
 
           it(`marks timed out bids as "timeout"`, function () {
-            const timeout = 2000
-            this.enableAnalytics({ timeout })
-            const request = getMockEvents().prebid[0].BID_REQUESTED[0]
-            const bidToTimeout = request.bids[0]
+            const timeout = 2000;
+            this.enableAnalytics({ timeout });
+            const request = getMockEvents().prebid[0].BID_REQUESTED[0];
+            const bidToTimeout = request.bids[0];
 
-            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] })
-            sandbox.clock.tick(1)
+            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] });
+            sandbox.clock.tick(1);
             events.emit(EVENTS.BID_TIMEOUT, [{
               auctionId: request.auctionId,
               bidId: bidToTimeout.bidId,
               transactionId: bidToTimeout.transactionId,
-            }])
-            sandbox.clock.tick(timeout + 1000)
+            }]);
+            sandbox.clock.tick(timeout + 1000);
 
-            const timeoutBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0]
-            assert.strictEqual(timeoutBid.status, 'timeout')
-          })
-        })
-      })
+            const timeoutBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0];
+            assert.strictEqual(timeoutBid.status, 'timeout');
+          });
+        });
+      });
 
       context('and a timeout config value has not been given', function () {
         context('and the default timeout has elapsed', function () {
           it('logs an error', function () {
-            this.enableAnalytics()
+            this.enableAnalytics();
 
-            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] })
+            performStandardAuction({ exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd'] });
 
-            sandbox.clock.tick(this.defaultTimeout + 1000)
+            sandbox.clock.tick(this.defaultTimeout + 1000);
 
-            assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.')
-          })
-        })
-      })
+            assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
+          });
+        });
+      });
 
       context('and the `slotRenderEnded` event fired for all bids, but not all bids have won', function () {
         context('and the GAM slot IDs are configured as the ad unit codes', function () {
           it('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
-            const timeout = POST_GAM_TIMEOUT + 2000
-            this.enableAnalytics({ timeout })
+            const timeout = POST_GAM_TIMEOUT + 2000;
+            this.enableAnalytics({ timeout });
 
-            performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] })
-            sandbox.clock.tick(POST_GAM_TIMEOUT + 1)
+            performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
+            sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
 
-            assert.strictEqual(navigator.sendBeacon.callCount, 1)
-          })
-        })
+            assert.strictEqual(navigator.sendBeacon.callCount, 1);
+          });
+        });
 
         context('and the slot element IDs are configured as the ad unit codes', function () {
           it('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
-            const timeout = POST_GAM_TIMEOUT + 2000
-            this.enableAnalytics({ timeout })
+            const timeout = POST_GAM_TIMEOUT + 2000;
+            this.enableAnalytics({ timeout });
 
-            performStandardAuction({ exclude: ['bidWon', 'auctionEnd'], useSlotElementIds: true })
-            sandbox.clock.tick(POST_GAM_TIMEOUT + 1)
+            performStandardAuction({ exclude: ['bidWon', 'auctionEnd'], useSlotElementIds: true });
+            sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
 
-            assert.strictEqual(navigator.sendBeacon.callCount, 1)
-          })
-        })
+            assert.strictEqual(navigator.sendBeacon.callCount, 1);
+          });
+        });
 
         it('does NOT send a report if not all `slotRenderEnded` events have timed out', function () {
-          const timeout = POST_GAM_TIMEOUT + 2000
-          this.enableAnalytics({ timeout })
+          const timeout = POST_GAM_TIMEOUT + 2000;
+          this.enableAnalytics({ timeout });
 
-          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] })
-          sandbox.clock.tick(POST_GAM_TIMEOUT - 1)
+          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
+          sandbox.clock.tick(POST_GAM_TIMEOUT - 1);
 
-          assert.strictEqual(navigator.sendBeacon.callCount, 0)
-        })
-      })
+          assert.strictEqual(navigator.sendBeacon.callCount, 0);
+        });
+      });
 
       context('and the `slotRenderEnded` event has fired for an unknown slot code', function () {
         it('logs a warning message', function () {
-          this.enableAnalytics()
+          this.enableAnalytics();
 
-          const { prebid: [auction], gam } = getMockEvents()
-          auction.AUCTION_INIT.adUnits[0].code = 'INVALID_AD_UNIT_CODE'
+          const { prebid: [auction], gam } = getMockEvents();
+          auction.AUCTION_INIT.adUnits[0].code = 'INVALID_AD_UNIT_CODE';
 
-          const slotRenderEnded = gam.slotRenderEnded[0]
-          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
-          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0])
-          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded)
+          const slotRenderEnded = gam.slotRenderEnded[0];
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
 
-          sandbox.clock.tick(POST_GAM_TIMEOUT + 1)
+          sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
 
           assert.calledWithExactly(log.warn,
             'Could not find configured ad unit matching GAM render of slot:',
-            { slotName: `${adUnitCodes[0]} - ${adSlotElementIds[0]}` })
-        })
-      })
+            { slotName: `${adUnitCodes[0]} - ${adSlotElementIds[0]}` });
+        });
+      });
 
       context('and the incomplete report has been sent successfully', function () {
         it('sends a report string with any bids with rendered status set to hasWon: 1', function () {
-          navigator.sendBeacon.returns(true)
+          navigator.sendBeacon.returns(true);
 
-          this.enableAnalytics()
+          this.enableAnalytics();
 
-          performStandardAuction({ exclude: ['auctionEnd'] })
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction({ exclude: ['auctionEnd'] });
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0]
-          assert.strictEqual(incompleteSentBid.hasWon, 1)
-        })
+          const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0];
+          assert.strictEqual(incompleteSentBid.hasWon, 1);
+        });
 
         it('reports bids with only targetingSet status as hasWon: 0', function () {
-          navigator.sendBeacon.returns(true)
+          navigator.sendBeacon.returns(true);
 
-          this.enableAnalytics()
+          this.enableAnalytics();
 
-          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] })
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0]
-          assert.strictEqual(incompleteSentBid.hasWon, 0)
-        })
+          const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0];
+          assert.strictEqual(incompleteSentBid.hasWon, 0);
+        });
 
         it('logs an info message', function () {
-          navigator.sendBeacon.returns(true)
+          navigator.sendBeacon.returns(true);
 
-          const endpoint = faker.internet.url()
-          this.enableAnalytics({ endpoint })
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
-          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] })
-          sandbox.clock.tick(this.defaultTimeout + 1000)
+          performStandardAuction({ exclude: ['bidWon', 'auctionEnd'] });
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          assert.calledWith(log.info, `Analytics report sent to ${endpoint}`)
-        })
-      })
-    })
+          assert.calledWith(log.info, `Analytics report sent to ${endpoint}`);
+        });
+      });
+    });
 
     context('when the transaction manager has open transactions', function () {
       it('reports those transactions as pending', function () {
-        this.enableAnalytics()
+        this.enableAnalytics();
 
-        const { prebid: [auction] } = getMockEvents()
-        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
-        events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0])
+        const { prebid: [auction] } = getMockEvents();
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+        events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
 
-        const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId]
-        assert.equal(manager.status().pending.length, auction.BID_REQUESTED[0].bids.length)
-      })
+        const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+        assert.equal(manager.status().pending.length, auction.BID_REQUESTED[0].bids.length);
+      });
 
       context('and a single bidWon event has triggered', function () {
         it('completes the transaction', function () {
-          this.enableAnalytics()
+          this.enableAnalytics();
 
-          const { prebid: [auction] } = getMockEvents()
-          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
-          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0])
-          events.emit(EVENTS.BID_WON, auction.BID_WON[0])
+          const { prebid: [auction] } = getMockEvents();
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+          events.emit(EVENTS.BID_WON, auction.BID_WON[0]);
 
-          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId]
+          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
           assert.deepEqual({
             completed: manager.status().completed.length,
             pending: manager.status().pending.length
           }, {
             completed: 1,
             pending: auction.BID_REQUESTED[0].bids.length - 1
-          })
-        })
-      })
+          });
+        });
+      });
 
       context('and a single slotRenderEnded event has triggered', function () {
         context('and the Google Ad Manager timeout has not elapsed', function () {
           it('does NOT complete the transaction', function () {
-            this.enableAnalytics()
+            this.enableAnalytics();
 
-            const { prebid: [auction], gam } = getMockEvents()
-            const slotRenderEnded = gam.slotRenderEnded[0]
-            events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
-            events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0])
-            mockGpt.emitEvent('slotRenderEnded', slotRenderEnded)
+            const { prebid: [auction], gam } = getMockEvents();
+            const slotRenderEnded = gam.slotRenderEnded[0];
+            events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+            events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+            mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
 
-            const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId]
+            const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
             assert.deepEqual({
               completed: manager.status().completed.length,
               pending: manager.status().pending.length
             }, {
               completed: 0,
               pending: auction.BID_REQUESTED[0].bids.length
-            })
-          })
-        })
+            });
+          });
+        });
 
         context('and the Google Ad Manager timeout has elapsed', function () {
           it('completes the transaction', function () {
-            const timeout = POST_GAM_TIMEOUT + 2000
-            this.enableAnalytics({ timeout })
+            const timeout = POST_GAM_TIMEOUT + 2000;
+            this.enableAnalytics({ timeout });
 
-            const { prebid: [auction], gam } = getMockEvents()
-            const slotRenderEnded = gam.slotRenderEnded[0]
-            events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
-            events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0])
-            mockGpt.emitEvent('slotRenderEnded', slotRenderEnded)
+            const { prebid: [auction], gam } = getMockEvents();
+            const slotRenderEnded = gam.slotRenderEnded[0];
+            events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+            events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+            mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
 
-            sandbox.clock.tick(POST_GAM_TIMEOUT + 1)
-            const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId]
+            sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+            const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
             assert.deepEqual({
               completed: manager.status().completed.length,
               pending: manager.status().pending.length
             }, {
               completed: 1,
               pending: auction.BID_REQUESTED[0].bids.length - 1
-            })
-          })
-        })
-      })
-    })
-  })
-})
+            });
+          });
+        });
+      });
+    });
+  });
+});
 
-const adUnitCodes = ['/19968336/header-bid-tag-0', '/19968336/header-bid-tag-1', '/17118521/header-bid-tag-2']
-const adSlotElementIds = ['ad-slot-div-0', 'ad-slot-div-1', 'ad-slot-div-2']
+const adUnitCodes = ['/19968336/header-bid-tag-0', '/19968336/header-bid-tag-1', '/17118521/header-bid-tag-2'];
+const adSlotElementIds = ['ad-slot-div-0', 'ad-slot-div-1', 'ad-slot-div-2'];
 
 function performStandardAuction({ exclude = [], useSlotElementIds = false } = {}) {
-  const mockEvents = getMockEvents()
-  const { prebid, gam } = mockEvents
-  const [auction] = prebid
+  const mockEvents = getMockEvents();
+  const { prebid, gam } = mockEvents;
+  const [auction] = prebid;
 
   if (!exclude.includes(EVENTS.AUCTION_INIT)) {
     if (useSlotElementIds) {
       // With this option, identify the ad units by slot element IDs instead of GAM paths
       auction.AUCTION_INIT.adUnits.forEach((adUnit, i) => {
-        adUnit.code = adSlotElementIds[i]
-      })
+        adUnit.code = adSlotElementIds[i];
+      });
     }
-    events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT)
+    events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
   }
 
   if (!exclude.includes(EVENTS.BID_REQUESTED)) {
     for (const bidRequestedEvent of auction.BID_REQUESTED) {
-      events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent)
+      events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
     };
   }
 
   if (!exclude.includes(EVENTS.BID_RESPONSE)) {
     for (const bidResponseEvent of auction.BID_RESPONSE) {
-      events.emit(EVENTS.BID_RESPONSE, bidResponseEvent)
+      events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
     };
   }
 
   if (!exclude.includes(EVENTS.AUCTION_END)) {
-    events.emit(EVENTS.AUCTION_END, auction.AUCTION_END)
+    events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
   }
 
   if (!exclude.includes('slotRenderEnded')) {
     for (const gEvent of gam.slotRenderEnded) {
-      mockGpt.emitEvent('slotRenderEnded', gEvent)
+      mockGpt.emitEvent('slotRenderEnded', gEvent);
     }
   }
 
   if (!exclude.includes(EVENTS.BID_WON)) {
     for (const bidWonEvent of auction.BID_WON) {
-      events.emit(EVENTS.BID_WON, bidWonEvent)
+      events.emit(EVENTS.BID_WON, bidWonEvent);
     };
   }
 }
@@ -691,99 +691,99 @@ function mapToBids(auctions) {
     auction => auction.adUnits.flatMap(
       au => au.bids
     )
-  )
+  );
 }
 
 function getLocalAssert() {
   function isValidAnalyticsReport(report) {
-    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions'])
+    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
     if ('usPrivacy' in report) {
-      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/)
+      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
     }
     if ('gdpr' in report) {
-      assert.oneOf(report.gdpr, [0, 1])
+      assert.oneOf(report.gdpr, [0, 1]);
     }
     if (report.gdpr === 1) {
-      assert.isString(report.gdprConsent)
+      assert.isString(report.gdprConsent);
     }
     if ('gpp' in report) {
-      assert.isString(report.gpp)
-      assert.isArray(report.gppSid)
+      assert.isString(report.gpp);
+      assert.isArray(report.gppSid);
     }
     if ('coppa' in report) {
-      assert.oneOf(report.coppa, [0, 1])
+      assert.oneOf(report.coppa, [0, 1]);
     }
 
-    assert.equal(report.analyticsVersion, '1.0.0')
-    assert.isString(report.pid)
-    assert.isString(report.src)
-    assert.equal(report.pbjsVersion, '$prebid.version$')
-    assert.isArray(report.auctions)
-    assert.isAbove(report.auctions.length, 0)
-    report.auctions.forEach(isValidAuction)
+    assert.equal(report.analyticsVersion, '1.0.0');
+    assert.isString(report.pid);
+    assert.isString(report.src);
+    assert.equal(report.pbjsVersion, '$prebid.version$');
+    assert.isArray(report.auctions);
+    assert.isAbove(report.auctions.length, 0);
+    report.auctions.forEach(isValidAuction);
   }
   function isValidAuction(auction) {
-    assert.hasAllKeys(auction, ['adUnits', 'auctionId', 'userIds'])
-    assert.isArray(auction.adUnits)
-    assert.isString(auction.auctionId)
-    assert.isArray(auction.userIds)
-    auction.adUnits.forEach(isValidAdUnit)
+    assert.hasAllKeys(auction, ['adUnits', 'auctionId', 'userIds']);
+    assert.isArray(auction.adUnits);
+    assert.isString(auction.auctionId);
+    assert.isArray(auction.userIds);
+    auction.adUnits.forEach(isValidAdUnit);
   }
   function isValidAdUnit(adUnit) {
-    assert.hasAllKeys(adUnit, ['transactionId', 'adUnitCode', 'slotId', 'mediaTypes', 'sizes', 'bids'])
-    assert.isString(adUnit.transactionId)
-    assert.isString(adUnit.adUnitCode)
-    assert.isString(adUnit.slotId)
-    assert.isArray(adUnit.mediaTypes)
-    assert.isArray(adUnit.sizes)
-    assert.isArray(adUnit.bids)
-    adUnit.mediaTypes.forEach(isValidMediaType)
-    adUnit.sizes.forEach(isValidSizeString)
-    adUnit.bids.forEach(isValidBid)
+    assert.hasAllKeys(adUnit, ['transactionId', 'adUnitCode', 'slotId', 'mediaTypes', 'sizes', 'bids']);
+    assert.isString(adUnit.transactionId);
+    assert.isString(adUnit.adUnitCode);
+    assert.isString(adUnit.slotId);
+    assert.isArray(adUnit.mediaTypes);
+    assert.isArray(adUnit.sizes);
+    assert.isArray(adUnit.bids);
+    adUnit.mediaTypes.forEach(isValidMediaType);
+    adUnit.sizes.forEach(isValidSizeString);
+    adUnit.bids.forEach(isValidBid);
   }
   function isValidBid(bid) {
-    assert.containsAllKeys(bid, ['bidder', 'bidId', 'source', 'status', 'hasWon'])
+    assert.containsAllKeys(bid, ['bidder', 'bidId', 'source', 'status', 'hasWon']);
     if ('bidResponse' in bid) {
-      isValidBidResponse(bid.bidResponse)
+      isValidBidResponse(bid.bidResponse);
     }
-    assert.isString(bid.bidder)
-    assert.isString(bid.bidId)
-    assert.isString(bid.source)
-    assert.oneOf(bid.status, ['pending', 'timeout', 'targetingSet', 'rendered', 'success', 'rejected', 'no-bid', 'error'])
-    assert.oneOf(bid.hasWon, [0, 1])
+    assert.isString(bid.bidder);
+    assert.isString(bid.bidId);
+    assert.isString(bid.source);
+    assert.oneOf(bid.status, ['pending', 'timeout', 'targetingSet', 'rendered', 'success', 'rejected', 'no-bid', 'error']);
+    assert.oneOf(bid.hasWon, [0, 1]);
   }
   function isValidBidResponse(bidResponse) {
-    assert.containsAllKeys(bidResponse, ['mediaType', 'size', 'cur', 'cpm', 'cpmFloor'])
+    assert.containsAllKeys(bidResponse, ['mediaType', 'size', 'cur', 'cpm', 'cpmFloor']);
     if ('cpmOrig' in bidResponse) {
-      assert.isNumber(bidResponse.cpmOrig)
+      assert.isNumber(bidResponse.cpmOrig);
     }
-    isValidMediaType(bidResponse.mediaType)
-    isValidSizeString(bidResponse.size)
-    assert.isString(bidResponse.cur)
-    assert.isNumber(bidResponse.cpm)
-    assert.isNumber(bidResponse.cpmFloor)
+    isValidMediaType(bidResponse.mediaType);
+    isValidSizeString(bidResponse.size);
+    assert.isString(bidResponse.cur);
+    assert.isNumber(bidResponse.cpm);
+    assert.isNumber(bidResponse.cpmFloor);
   }
   function isValidMediaType(mediaType) {
-    assert.oneOf(mediaType, ['banner', 'video', 'native'])
+    assert.oneOf(mediaType, ['banner', 'video', 'native']);
   }
   function isValidSizeString(size) {
-    assert.match(size, /[0-9]+x[0-9]+/)
+    assert.match(size, /[0-9]+x[0-9]+/);
   }
 
   function calledOnceWithStringJsonEquivalent(sinonSpy, ...args) {
-    sinon.assert.calledOnce(sinonSpy)
+    sinon.assert.calledOnce(sinonSpy);
     args.forEach((arg, i) => {
-      const stubCallArgs = sinonSpy.firstCall.args[i]
+      const stubCallArgs = sinonSpy.firstCall.args[i];
 
       if (typeof arg === 'object') {
-        assert.deepEqual(JSON.parse(stubCallArgs), arg)
+        assert.deepEqual(JSON.parse(stubCallArgs), arg);
       } else {
-        assert.strictEqual(stubCallArgs, arg)
+        assert.strictEqual(stubCallArgs, arg);
       }
-    })
+    });
   }
 
-  sinon.assert.expose(assert, { prefix: '' })
+  sinon.assert.expose(assert, { prefix: '' });
   return {
     ...assert,
     calledOnceWithStringJsonEquivalent,
@@ -794,7 +794,7 @@ function getLocalAssert() {
     isValidBidResponse,
     isValidMediaType,
     isValidSizeString,
-  }
+  };
 };
 
 function createReportWithThreeBidWonEvents() {
@@ -871,16 +871,16 @@ function createReportWithThreeBidWonEvents() {
       auctionId: 'auction-000',
       userIds: ['33acrossId']
     }],
-  }
+  };
 }
 
 function getMockEvents() {
-  const auctionId = 'auction-000'
+  const auctionId = 'auction-000';
   const userId = {
     '33acrossId': {
       envelope: 'v1.0014',
     },
-  }
+  };
 
   return {
     gam: {
@@ -1156,5 +1156,5 @@ function getMockEvents() {
         auctionId,
       },
     }],
-  }
+  };
 }

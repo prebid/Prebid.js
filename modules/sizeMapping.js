@@ -1,10 +1,10 @@
-import { config } from '../src/config.js'
-import { deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn } from '../src/utils.js'
+import { config } from '../src/config.js';
+import { deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn } from '../src/utils.js';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { setupAdUnitMediaTypes } from '../src/adapterManager.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { setupAdUnitMediaTypes } from '../src/adapterManager.js';
 
-let sizeConfig = []
+let sizeConfig = [];
 
 /**
  * @typedef {object} SizeConfig
@@ -22,11 +22,11 @@ let sizeConfig = []
  * @param {Array<SizeConfig>} config
  */
 export function setSizeConfig(config) {
-  sizeConfig = config
+  sizeConfig = config;
 }
 
-setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels))
-config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig))
+setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels));
+config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
 /**
  * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
@@ -36,9 +36,9 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig))
  */
 export function getLabels(bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
-    return { labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels }
+    return { labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels };
   }
-  return { labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels }
+  return { labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels };
 }
 
 /**
@@ -48,18 +48,18 @@ export function getLabels(bidOrAdUnit, activeLabels) {
  * @returns {boolean}
  */
 export function sizeSupported(size, configs = sizeConfig) {
-  const maps = evaluateSizeConfig(configs)
+  const maps = evaluateSizeConfig(configs);
   if (!maps.shouldFilter) {
-    return true
+    return true;
   }
-  return !!maps.sizesSupported[size]
+  return !!maps.sizesSupported[size];
 }
 
 const SIZE_PROPS = {
   [BANNER]: 'banner.sizes'
-}
+};
 if (FEATURES.VIDEO) {
-  SIZE_PROPS[VIDEO] = 'video.playerSize'
+  SIZE_PROPS[VIDEO] = 'video.playerSize';
 }
 
 /**
@@ -77,31 +77,31 @@ if (FEATURES.VIDEO) {
  * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
 export function resolveStatus({ labels = [], labelAll = false, activeLabels = [] } = {}, mediaTypes, configs = sizeConfig) {
-  const maps = evaluateSizeConfig(configs)
+  const maps = evaluateSizeConfig(configs);
 
-  let filtered = false
-  let hasSize = false
-  const filterResults = { before: {}, after: {} }
+  let filtered = false;
+  let hasSize = false;
+  const filterResults = { before: {}, after: {} };
 
   if (maps.shouldFilter) {
     Object.entries(SIZE_PROPS).forEach(([mediaType, sizeProp]) => {
-      const oldSizes = deepAccess(mediaTypes, sizeProp)
+      const oldSizes = deepAccess(mediaTypes, sizeProp);
       if (oldSizes) {
         if (!filtered) {
-          mediaTypes = deepClone(mediaTypes)
-          filtered = true
+          mediaTypes = deepClone(mediaTypes);
+          filtered = true;
         }
-        const newSizes = oldSizes.filter(size => maps.sizesSupported[size])
-        deepSetValue(mediaTypes, sizeProp, newSizes)
-        hasSize = hasSize || newSizes.length > 0
+        const newSizes = oldSizes.filter(size => maps.sizesSupported[size]);
+        deepSetValue(mediaTypes, sizeProp, newSizes);
+        hasSize = hasSize || newSizes.length > 0;
         if (oldSizes.length !== newSizes.length) {
-          filterResults.before[mediaType] = oldSizes
-          filterResults.after[mediaType] = newSizes
+          filterResults.before[mediaType] = oldSizes;
+          filterResults.after[mediaType] = newSizes;
         }
       }
-    })
+    });
   } else {
-    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null
+    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null;
   }
 
   const results = {
@@ -123,12 +123,12 @@ export function resolveStatus({ labels = [], labelAll = false, activeLabels = []
       )
     ),
     mediaTypes
-  }
+  };
 
   if (Object.keys(filterResults.before).length > 0) {
-    results.filterResults = filterResults
+    results.filterResults = filterResults;
   }
-  return results
+  return results;
 }
 
 function evaluateSizeConfig(configs) {
@@ -138,37 +138,37 @@ function evaluateSizeConfig(configs) {
       typeof config.mediaQuery === 'string' &&
       config.mediaQuery.length > 0
     ) {
-      let ruleMatch = false
+      let ruleMatch = false;
 
       try {
-        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches
+        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
       } catch (e) {
-        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated')
+        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
 
-        ruleMatch = matchMedia(config.mediaQuery).matches
+        ruleMatch = matchMedia(config.mediaQuery).matches;
       }
 
       if (ruleMatch) {
         if (Array.isArray(config.sizesSupported)) {
-          results.shouldFilter = true
+          results.shouldFilter = true;
         }
         ['labels', 'sizesSupported'].forEach(
           type => (config[type] || []).forEach(
             thing => {
-              results[type][thing] = true
+              results[type][thing] = true;
             }
           )
-        )
+        );
       }
     } else {
-      logWarn('sizeConfig rule missing required property "mediaQuery"')
+      logWarn('sizeConfig rule missing required property "mediaQuery"');
     }
-    return results
+    return results;
   }, {
     labels: {},
     sizesSupported: {},
     shouldFilter: false
-  })
+  });
 }
 
 export function processAdUnitsForLabels(adUnits, activeLabels) {
@@ -180,37 +180,37 @@ export function processAdUnitsForLabels(adUnits, activeLabels) {
     } = resolveStatus(
       getLabels(adUnit, activeLabels),
       adUnit.mediaTypes,
-    )
+    );
 
     if (!active) {
-      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`)
+      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
     } else {
       if (filterResults) {
-        logInfo(`Size mapping filtered adUnit "${adUnit.code}" sizes from `, filterResults.before, 'to ', filterResults.after)
+        logInfo(`Size mapping filtered adUnit "${adUnit.code}" sizes from `, filterResults.before, 'to ', filterResults.after);
       }
 
-      adUnit.mediaTypes = mediaTypes
+      adUnit.mediaTypes = mediaTypes;
 
       adUnit.bids = adUnit.bids.reduce((bids, bid) => {
         const {
           active,
           mediaTypes,
           filterResults
-        } = resolveStatus(getLabels(bid, activeLabels), adUnit.mediaTypes)
+        } = resolveStatus(getLabels(bid, activeLabels), adUnit.mediaTypes);
 
         if (!active) {
-          logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`)
+          logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
         } else {
           if (filterResults) {
-            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" sizes from `, filterResults.before, 'to ', filterResults.after)
-            bid.mediaTypes = mediaTypes
+            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" sizes from `, filterResults.before, 'to ', filterResults.after);
+            bid.mediaTypes = mediaTypes;
           }
-          bids.push(bid)
+          bids.push(bid);
         }
-        return bids
-      }, [])
-      adUnits.push(adUnit)
+        return bids;
+      }, []);
+      adUnits.push(adUnit);
     }
-    return adUnits
-  }, [])
+    return adUnits;
+  }, []);
 }

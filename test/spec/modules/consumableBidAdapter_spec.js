@@ -1,12 +1,12 @@
-import { expect } from 'chai'
-import { spec } from 'modules/consumableBidAdapter.js'
-import { createBid } from 'src/bidfactory.js'
-import { config } from 'src/config.js'
-import { deepClone } from 'src/utils.js'
-import { createEidsArray } from 'modules/userId/eids.js'
+import { expect } from 'chai';
+import { spec } from 'modules/consumableBidAdapter.js';
+import { createBid } from 'src/bidfactory.js';
+import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
-const ENDPOINT = 'https://e.serverbid.com/api/v2'
-const SMARTSYNC_CALLBACK = 'serverbidCallBids'
+const ENDPOINT = 'https://e.serverbid.com/api/v2';
+const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
 const BIDDER_REQUEST_1 = {
   bidderCode: 'consumable',
@@ -76,7 +76,7 @@ const BIDDER_REQUEST_1 = {
       }
     }
   }
-}
+};
 
 const BIDDER_REQUEST_2 = {
   bidderCode: 'consumable',
@@ -145,7 +145,7 @@ const BIDDER_REQUEST_2 = {
       language: 'en'
     }
   }
-}
+};
 
 const BIDDER_REQUEST_VIDEO = {
   bidderCode: 'consumable',
@@ -197,7 +197,7 @@ const BIDDER_REQUEST_VIDEO = {
       language: 'en'
     }
   }
-}
+};
 
 const BIDDER_REQUEST_EMPTY = {
   bidderCode: 'consumable',
@@ -213,7 +213,7 @@ const BIDDER_REQUEST_EMPTY = {
       language: 'en'
     }
   }
-}
+};
 
 const AD_SERVER_RESPONSE = {
   'headers': null,
@@ -269,7 +269,7 @@ const AD_SERVER_RESPONSE = {
       }
     }
   }
-}
+};
 
 const AD_SERVER_RESPONSE_2 = {
   'headers': null,
@@ -332,7 +332,7 @@ const AD_SERVER_RESPONSE_2 = {
       }
     }
   }
-}
+};
 
 const AD_SERVER_RESPONSE_VIDEO_1 = {
   'headers': null,
@@ -358,7 +358,7 @@ const AD_SERVER_RESPONSE_VIDEO_1 = {
       }
     }
   }
-}
+};
 
 const AD_SERVER_RESPONSE_VIDEO_2 = {
   'headers': null,
@@ -384,7 +384,7 @@ const AD_SERVER_RESPONSE_VIDEO_2 = {
       }
     }
   }
-}
+};
 
 const BUILD_REQUESTS_OUTPUT = {
   method: 'POST',
@@ -392,7 +392,7 @@ const BUILD_REQUESTS_OUTPUT = {
   data: '',
   bidRequest: BIDDER_REQUEST_2.bidRequest,
   bidderRequest: BIDDER_REQUEST_2
-}
+};
 
 const BUILD_REQUESTS_VIDEO_OUTPUT = {
   method: 'POST',
@@ -400,10 +400,10 @@ const BUILD_REQUESTS_VIDEO_OUTPUT = {
   data: '',
   bidRequest: BIDDER_REQUEST_VIDEO.bidRequest,
   bidderRequest: BIDDER_REQUEST_VIDEO
-}
+};
 
 describe('Consumable BidAdapter', function () {
-  const adapter = spec
+  const adapter = spec;
 
   describe('bid request validation', function () {
     it('should accept valid bid requests', function () {
@@ -415,9 +415,9 @@ describe('Consumable BidAdapter', function () {
           unitId: '123456',
           unitName: 'cnsmbl-unit'
         }
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should accept valid bid requests with extra fields', function () {
       const bid = {
@@ -429,9 +429,9 @@ describe('Consumable BidAdapter', function () {
           unitName: 'cnsmbl-unit',
           zoneId: '123'
         }
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should reject bid requests without siteId', function () {
       const bid = {
@@ -441,9 +441,9 @@ describe('Consumable BidAdapter', function () {
           unitId: '123456',
           unitName: 'cnsmbl-unit'
         }
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
     it('should reject bid requests without networkId', function () {
       const bid = {
@@ -453,297 +453,297 @@ describe('Consumable BidAdapter', function () {
           unitId: '123456',
           unitName: 'cnsmbl-unit'
         }
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests validation', function () {
     it('creates request data', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
 
-      expect(request).to.exist.and.to.be.a('object')
-    })
+      expect(request).to.exist.and.to.be.a('object');
+    });
 
     it('request to consumable should contain a url', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
 
-      expect(request.url).to.have.string('serverbid.com')
-    })
+      expect(request.url).to.have.string('serverbid.com');
+    });
 
     it('requires valid bids to make request', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_EMPTY.bidRequest, BIDDER_REQUEST_EMPTY)
-      expect(request.bidRequest).to.be.empty
-    })
+      const request = spec.buildRequests(BIDDER_REQUEST_EMPTY.bidRequest, BIDDER_REQUEST_EMPTY);
+      expect(request.bidRequest).to.be.empty;
+    });
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
 
-      expect(request.method).to.have.string('POST')
-    })
+      expect(request.method).to.have.string('POST');
+    });
 
     it('passes through bidderRequest', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
 
-      expect(request.bidderRequest).to.equal(BIDDER_REQUEST_1)
-    })
+      expect(request.bidderRequest).to.equal(BIDDER_REQUEST_1);
+    });
 
     it('should contain schain if it exists in the bidRequest', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
 
-      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.ortb2.source.ext.schain)
-    })
+      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.ortb2.source.ext.schain);
+    });
 
     it('should not contain schain if it does not exist in the bidRequest', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2)
-      const data = JSON.parse(request.data)
+      const request = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2);
+      const data = JSON.parse(request.data);
 
-      expect(data.schain).to.be.undefined
-    })
+      expect(data.schain).to.be.undefined;
+    });
 
     it('should contain coppa if configured', function () {
-      config.setConfig({ coppa: true })
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
+      config.setConfig({ coppa: true });
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
 
-      expect(data.coppa).to.be.true
-    })
+      expect(data.coppa).to.be.true;
+    });
 
     it('should not contain coppa if not configured', function () {
-      config.setConfig({ coppa: false })
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
+      config.setConfig({ coppa: false });
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
 
-      expect(data.coppa).to.be.undefined
-    })
+      expect(data.coppa).to.be.undefined;
+    });
 
     it('should contain video object for video requests', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_VIDEO.bidRequest, BIDDER_REQUEST_VIDEO)
-      const data = JSON.parse(request.data)
+      const request = spec.buildRequests(BIDDER_REQUEST_VIDEO.bidRequest, BIDDER_REQUEST_VIDEO);
+      const data = JSON.parse(request.data);
 
-      expect(data.placements[0].video).to.deep.equal(BIDDER_REQUEST_VIDEO.bidRequest[0].mediaTypes.video)
-    })
+      expect(data.placements[0].video).to.deep.equal(BIDDER_REQUEST_VIDEO.bidRequest[0].mediaTypes.video);
+    });
 
     it('sets bidfloor param if present', function () {
-      const bidderRequest1 = deepClone(BIDDER_REQUEST_1)
-      const bidderRequest2 = deepClone(BIDDER_REQUEST_2)
-      bidderRequest1.bidRequest[0].params.bidFloor = 0.05
+      const bidderRequest1 = deepClone(BIDDER_REQUEST_1);
+      const bidderRequest2 = deepClone(BIDDER_REQUEST_2);
+      bidderRequest1.bidRequest[0].params.bidFloor = 0.05;
       bidderRequest2.bidRequest[0].getFloor = function() {
         return {
           currency: 'USD',
           floor: 0.15
-        }
-      }
-      const request1 = spec.buildRequests(bidderRequest1.bidRequest, BIDDER_REQUEST_1)
-      const data1 = JSON.parse(request1.data)
-      const request2 = spec.buildRequests(bidderRequest2.bidRequest, BIDDER_REQUEST_2)
-      const data2 = JSON.parse(request2.data)
+        };
+      };
+      const request1 = spec.buildRequests(bidderRequest1.bidRequest, BIDDER_REQUEST_1);
+      const data1 = JSON.parse(request1.data);
+      const request2 = spec.buildRequests(bidderRequest2.bidRequest, BIDDER_REQUEST_2);
+      const data2 = JSON.parse(request2.data);
 
-      expect(data1.placements[0].bidfloor).to.equal(0.05)
-      expect(data2.placements[0].bidfloor).to.equal(0.15)
-    })
+      expect(data1.placements[0].bidfloor).to.equal(0.05);
+      expect(data2.placements[0].bidfloor).to.equal(0.15);
+    });
     it('should contain the language param', function () {
-      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
+      const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
 
-      expect(data.lang).to.equal('en')
-    })
-  })
+      expect(data.lang).to.equal('en');
+    });
+  });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
-      const bidRequest = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2)
-      const bid = createBid(bidRequest.bidRequest[0])
+      const bidRequest = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2);
+      const bid = createBid(bidRequest.bidRequest[0]);
 
-      expect(bid.bidderCode).to.equal('consumable')
-    })
+      expect(bid.bidderCode).to.equal('consumable');
+    });
 
     it('response should include objects for all bids', function () {
-      const bids = spec.interpretResponse(AD_SERVER_RESPONSE, BUILD_REQUESTS_OUTPUT)
-      expect(bids.length).to.equal(2)
-    })
+      const bids = spec.interpretResponse(AD_SERVER_RESPONSE, BUILD_REQUESTS_OUTPUT);
+      expect(bids.length).to.equal(2);
+    });
 
     it('registers bids', function () {
-      const bids = spec.interpretResponse(AD_SERVER_RESPONSE_2, BUILD_REQUESTS_OUTPUT)
+      const bids = spec.interpretResponse(AD_SERVER_RESPONSE_2, BUILD_REQUESTS_OUTPUT);
       bids.forEach(b => {
-        expect(b).to.have.property('cpm')
-        expect(b.cpm).to.be.above(0)
-        expect(b).to.have.property('requestId')
-        expect(b).to.have.property('unitId')
-        expect(b).to.have.property('unitName')
-        expect(b).to.have.property('cpm')
-        expect(b).to.have.property('width')
-        expect(b).to.have.property('height')
-        expect(b).to.have.property('ad')
-        expect(b).to.have.property('currency', 'USD')
-        expect(b).to.have.property('creativeId')
-        expect(b).to.have.property('ttl', 30)
-        expect(b).to.have.property('netRevenue', true)
-        expect(b).to.have.property('referrer')
-        expect(b.meta).to.have.property('advertiserDomains')
-        expect(b.meta).to.have.property('primaryCatId')
-        expect(b.meta).to.have.property('secondaryCatIds')
-        expect(b.meta).to.have.property('networkId')
-        expect(b.meta).to.have.property('mediaType')
-      })
-    })
+        expect(b).to.have.property('cpm');
+        expect(b.cpm).to.be.above(0);
+        expect(b).to.have.property('requestId');
+        expect(b).to.have.property('unitId');
+        expect(b).to.have.property('unitName');
+        expect(b).to.have.property('cpm');
+        expect(b).to.have.property('width');
+        expect(b).to.have.property('height');
+        expect(b).to.have.property('ad');
+        expect(b).to.have.property('currency', 'USD');
+        expect(b).to.have.property('creativeId');
+        expect(b).to.have.property('ttl', 30);
+        expect(b).to.have.property('netRevenue', true);
+        expect(b).to.have.property('referrer');
+        expect(b.meta).to.have.property('advertiserDomains');
+        expect(b.meta).to.have.property('primaryCatId');
+        expect(b.meta).to.have.property('secondaryCatIds');
+        expect(b.meta).to.have.property('networkId');
+        expect(b.meta).to.have.property('mediaType');
+      });
+    });
 
     it('registers video bids with vastUrl', function () {
-      const bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_1, BUILD_REQUESTS_VIDEO_OUTPUT)
+      const bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_1, BUILD_REQUESTS_VIDEO_OUTPUT);
 
       bids.forEach(b => {
-        expect(b.mediaType).to.equal('video')
-        expect(b.meta).to.have.property('mediaType', 'video')
-        expect(b.vastUrl).to.equal('https://x.serverbid.com/rtb/v?auc=217c051d06b011ed9cbc72b17f01ec03&sc=1.575&s=22&a=9dcab16d340d664310c2135a76989fe946a9d46e5d5f24ff5e2f17bffbb7704a43638bd3f600951e&n=9&r=0&t=1658158906595')
-        expect(b.vastXml).to.be.undefined
-        expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a')
-      })
-    })
+        expect(b.mediaType).to.equal('video');
+        expect(b.meta).to.have.property('mediaType', 'video');
+        expect(b.vastUrl).to.equal('https://x.serverbid.com/rtb/v?auc=217c051d06b011ed9cbc72b17f01ec03&sc=1.575&s=22&a=9dcab16d340d664310c2135a76989fe946a9d46e5d5f24ff5e2f17bffbb7704a43638bd3f600951e&n=9&r=0&t=1658158906595');
+        expect(b.vastXml).to.be.undefined;
+        expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a');
+      });
+    });
 
     it('registers video bids with vastXml', function () {
-      const bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_2, BUILD_REQUESTS_VIDEO_OUTPUT)
+      const bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_2, BUILD_REQUESTS_VIDEO_OUTPUT);
 
       bids.forEach(b => {
-        expect(b.mediaType).to.equal('video')
-        expect(b.meta).to.have.property('mediaType', 'video')
-        expect(b.vastXml).to.equal('<VAST version="3.0">')
-        expect(b.vastUrl).to.be.undefined
-        expect(b.ad).to.equal('<VAST version="3.0">')
-        expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a')
-      })
-    })
+        expect(b.mediaType).to.equal('video');
+        expect(b.meta).to.have.property('mediaType', 'video');
+        expect(b.vastXml).to.equal('<VAST version="3.0">');
+        expect(b.vastUrl).to.be.undefined;
+        expect(b.ad).to.equal('<VAST version="3.0">');
+        expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a');
+      });
+    });
 
     it('handles nobid responses', function () {
-      const EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, { 'body': { 'decisions': null } })
-      const bids = spec.interpretResponse(EMPTY_RESP, BUILD_REQUESTS_OUTPUT)
+      const EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, { 'body': { 'decisions': null } });
+      const bids = spec.interpretResponse(EMPTY_RESP, BUILD_REQUESTS_OUTPUT);
 
-      expect(bids).to.be.empty
-    })
+      expect(bids).to.be.empty;
+    });
 
     it('handles no server response', function () {
-      const bids = spec.interpretResponse(null, BUILD_REQUESTS_OUTPUT)
+      const bids = spec.interpretResponse(null, BUILD_REQUESTS_OUTPUT);
 
-      expect(bids).to.be.empty
-    })
-  })
+      expect(bids).to.be.empty;
+    });
+  });
   describe('getUserSyncs', function () {
-    const syncOptions = { 'iframeEnabled': true }
+    const syncOptions = { 'iframeEnabled': true };
 
     it('handles empty sync options', function () {
-      const opts = spec.getUserSyncs({})
+      const opts = spec.getUserSyncs({});
 
-      expect(opts).to.be.undefined
-    })
+      expect(opts).to.be.undefined;
+    });
 
     it('should return a sync url if iframe syncs are enabled', function () {
-      const opts = spec.getUserSyncs(syncOptions)
+      const opts = spec.getUserSyncs(syncOptions);
 
-      expect(opts.length).to.equal(1)
-    })
+      expect(opts.length).to.equal(1);
+    });
 
     it('should return a sync url if iframe syncs are enabled and server response is empty', function () {
-      const opts = spec.getUserSyncs(syncOptions, [])
+      const opts = spec.getUserSyncs(syncOptions, []);
 
-      expect(opts.length).to.equal(1)
-    })
+      expect(opts.length).to.equal(1);
+    });
 
     it('should return a sync url if iframe syncs are enabled and server response does not contain a bdr attribute', function () {
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE])
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
 
-      expect(opts.length).to.equal(1)
-    })
+      expect(opts.length).to.equal(1);
+    });
 
     it('should return a sync url if iframe syncs are enabled and server response contains a bdr attribute that is not cx', function () {
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE_2])
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE_2]);
 
-      expect(opts.length).to.equal(1)
-    })
+      expect(opts.length).to.equal(1);
+    });
 
     it('should return a sync url if iframe syncs are enabled and GDPR applies', function () {
       const gdprConsent = {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
-      }
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent)
+      };
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent);
 
-      expect(opts.length).to.equal(1)
-      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING')
-    })
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING');
+    });
 
     it('should return a sync url if iframe syncs are enabled and GDPR is undefined', function () {
       const gdprConsent = {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: undefined,
-      }
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent)
+      };
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent);
 
-      expect(opts.length).to.equal(1)
-      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=0&gdpr_consent=GDPR_CONSENT_STRING')
-    })
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=0&gdpr_consent=GDPR_CONSENT_STRING');
+    });
 
     it('should return a sync url if iframe syncs are enabled and has GPP consent with applicable sections', function () {
       const gppConsent = {
         applicableSections: [1, 2],
         gppString: 'GPP_CONSENT_STRING'
-      }
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent)
+      };
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
 
-      expect(opts.length).to.equal(1)
-      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING&gpp_sid=1%2C2')
-    })
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING&gpp_sid=1%2C2');
+    });
 
     it('should return a sync url if iframe syncs are enabled and has GPP consent without applicable sections', function () {
       const gppConsent = {
         applicableSections: [],
         gppString: 'GPP_CONSENT_STRING'
-      }
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent)
+      };
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
 
-      expect(opts.length).to.equal(1)
-      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING')
-    })
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING');
+    });
 
     it('should return a sync url if iframe syncs are enabled and USP applies', function () {
-      const uspConsent = 'USP_CONSENT_STRING'
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, uspConsent)
+      const uspConsent = 'USP_CONSENT_STRING';
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, uspConsent);
 
-      expect(opts.length).to.equal(1)
-      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?us_privacy=USP_CONSENT_STRING')
-    })
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?us_privacy=USP_CONSENT_STRING');
+    });
 
     it('should return a sync url if iframe syncs are enabled, GDPR and USP applies', function () {
       const gdprConsent = {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
-      }
-      const uspConsent = 'USP_CONSENT_STRING'
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent, uspConsent)
+      };
+      const uspConsent = 'USP_CONSENT_STRING';
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent, uspConsent);
 
-      expect(opts.length).to.equal(1)
-      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING&us_privacy=USP_CONSENT_STRING')
-    })
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING&us_privacy=USP_CONSENT_STRING');
+    });
 
     it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
-      const syncOptions = { 'pixelEnabled': true }
-      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE])
+      const syncOptions = { 'pixelEnabled': true };
+      const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE]);
 
-      expect(opts.length).to.equal(1)
-    })
-  })
+      expect(opts.length).to.equal(1);
+    });
+  });
   describe('unifiedId from userId module', function() {
-    let sandbox, bidderRequest
+    let sandbox, bidderRequest;
     beforeEach(() => {
-      sandbox = sinon.createSandbox()
-      bidderRequest = deepClone(BIDDER_REQUEST_1)
-    })
+      sandbox = sinon.createSandbox();
+      bidderRequest = deepClone(BIDDER_REQUEST_1);
+    });
 
     afterEach(() => {
-      sandbox.restore()
-    })
+      sandbox.restore();
+    });
 
     it('Request should have EIDs', function() {
-      bidderRequest.bidRequest[0].userId = {}
-      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID'
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
       bidderRequest.bidRequest[0].userIdAsEids = [{
         'source': 'adserver.org',
         'uids': [{
@@ -753,15 +753,15 @@ describe('Consumable BidAdapter', function () {
             'rtiPartner': 'TDID'
           }
         }]
-      }]
-      const request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
-      expect(data.user.eids).to.deep.equal(bidderRequest.bidRequest[0].userIdAsEids)
-    })
+      }];
+      const request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(bidderRequest.bidRequest[0].userIdAsEids);
+    });
 
     it('Request should remove non-objects for userIdAsEids', function () {
-      bidderRequest.bidRequest[0].userId = {}
-      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID'
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
       bidderRequest.bidRequest[0].userIdAsEids = [
         {
           source: 'adserver.org',
@@ -776,7 +776,7 @@ describe('Consumable BidAdapter', function () {
           ],
         },
         'RANDOM_IDENTIFIER_STRING'
-      ]
+      ];
       const scrubbedEids = [
         {
           source: 'adserver.org',
@@ -790,30 +790,30 @@ describe('Consumable BidAdapter', function () {
             },
           ],
         },
-      ]
+      ];
       const request = spec.buildRequests(
         bidderRequest.bidRequest,
         BIDDER_REQUEST_1
-      )
-      const data = JSON.parse(request.data)
+      );
+      const data = JSON.parse(request.data);
       expect(data.user.eids).to.deep.equal(
         scrubbedEids
-      )
-    })
+      );
+    });
 
     it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
-      const request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
-      expect(data.user.eids).to.deep.equal(undefined)
-    })
+      const request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(undefined);
+    });
 
     it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
       bidderRequest.bidRequest[0].userId = {
         tdid: 1234
-      }
-      const request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1)
-      const data = JSON.parse(request.data)
-      expect(data.user.eids).to.deep.equal(undefined)
-    })
-  })
-})
+      };
+      const request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
+      const data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(undefined);
+    });
+  });
+});

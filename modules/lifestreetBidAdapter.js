@@ -1,21 +1,21 @@
-import { isInteger } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { isInteger } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  */
 
-const BIDDER_CODE = 'lifestreet'
-const ADAPTER_VERSION = '$prebid.version$'
+const BIDDER_CODE = 'lifestreet';
+const ADAPTER_VERSION = '$prebid.version$';
 
-const urlTemplate = template`https://ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adkey=${'adkey'}&ad_size=${'ad_size'}&__location=${'location'}&__referrer=${'referrer'}&__wn=${'wn'}&__sf=${'sf'}&__fif=${'fif'}&__if=${'if'}&__stamp=${'stamp'}&__pp=1&__hb=1&_prebid_json=1&__gz=1&deferred_format=vast_2_0,vast_3_0&__hbver=${'hbver'}`
+const urlTemplate = template`https://ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adkey=${'adkey'}&ad_size=${'ad_size'}&__location=${'location'}&__referrer=${'referrer'}&__wn=${'wn'}&__sf=${'sf'}&__fif=${'fif'}&__if=${'if'}&__stamp=${'stamp'}&__pp=1&__hb=1&_prebid_json=1&__gz=1&deferred_format=vast_2_0,vast_3_0&__hbver=${'hbver'}`;
 
 /**
  * A helper function for template to generate string from boolean
  */
 function boolToString(value) {
-  return value ? '1' : '0'
+  return value ? '1' : '0';
 }
 
 /**
@@ -23,14 +23,14 @@ function boolToString(value) {
  */
 function template(strings, ...keys) {
   return function(...values) {
-    const dict = values[values.length - 1] || {}
-    const result = [strings[0]]
+    const dict = values[values.length - 1] || {};
+    const result = [strings[0]];
     keys.forEach(function(key, i) {
-      const value = isInteger(key) ? values[key] : dict[key]
-      result.push(value, strings[i + 1])
-    })
-    return result.join('')
-  }
+      const value = isInteger(key) ? values[key] : dict[key];
+      result.push(value, strings[i + 1]);
+    });
+    return result.join('');
+  };
 }
 
 /**
@@ -39,8 +39,8 @@ function template(strings, ...keys) {
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
 function formatBidRequest(bid, bidderRequest = {}) {
-  const { params } = bid
-  const { referer } = (bidderRequest.refererInfo || {})
+  const { params } = bid;
+  const { referer } = (bidderRequest.refererInfo || {});
   let url = urlTemplate({
     adapter: 'prebid',
     slot: params.slot,
@@ -54,34 +54,34 @@ function formatBidRequest(bid, bidderRequest = {}) {
     if: boolToString(window !== window.top),
     stamp: new Date().getTime(),
     hbver: ADAPTER_VERSION
-  })
+  });
 
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
-      const gdpr = '&__gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0')
-      url += gdpr
+      const gdpr = '&__gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0');
+      url += gdpr;
     }
     if (bidderRequest.gdprConsent.consentString !== undefined) {
-      url += `&__consent=${bidderRequest.gdprConsent.consentString}`
+      url += `&__consent=${bidderRequest.gdprConsent.consentString}`;
     }
   }
 
   // ccpa support
   if (bidderRequest.uspConsent) {
-    url += `&__us_privacy=${bidderRequest.uspConsent}`
+    url += `&__us_privacy=${bidderRequest.uspConsent}`;
   }
 
   return {
     method: 'GET',
     url: url,
     bidId: bid.bidId
-  }
+  };
 }
 
 function isResponseValid(response) {
   return !/^\s*\{\s*"advertisementAvailable"\s*:\s*false/i.test(response.content) &&
     response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && /* (typeof response.cpm !== 'undefined') && */
-    response.status === 1
+    response.status === 1;
 }
 
 export const spec = {
@@ -90,25 +90,25 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {
-    const { params = {} } = bid
-    return !!(params.slot && params.adkey && params.ad_size)
+    const { params = {} } = bid;
+    return !!(params.slot && params.adkey && params.ad_size);
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
     return validBidRequests.map(bid => {
-      return formatBidRequest(bid, bidderRequest)
-    })
+      return formatBidRequest(bid, bidderRequest);
+    });
   },
 
   interpretResponse: (serverResponse, bidRequest) => {
-    const bidResponses = []
-    const response = serverResponse.body
+    const bidResponses = [];
+    const response = serverResponse.body;
     if (!isResponseValid(response)) {
-      return bidResponses
+      return bidResponses;
     }
 
-    const isVideo = response.content_type.indexOf('vast') > -1
-    const mediaType = isVideo ? VIDEO : BANNER
+    const isVideo = response.content_type.indexOf('vast') > -1;
+    const mediaType = isVideo ? VIDEO : BANNER;
 
     const bidResponse = {
       requestId: bidRequest.bidId,
@@ -124,24 +124,24 @@ export const spec = {
         mediaType,
         advertiserDomains: response.advertiserDomains
       }
-    }
+    };
 
     if (response.hasOwnProperty('dealId')) {
-      bidResponse.dealId = response.dealId
+      bidResponse.dealId = response.dealId;
     }
     if (isVideo) {
       if (typeof response.vastUrl !== 'undefined') {
-        bidResponse.vastUrl = response.vastUrl
+        bidResponse.vastUrl = response.vastUrl;
       } else {
-        bidResponse.vastXml = response.content
+        bidResponse.vastXml = response.content;
       }
     } else {
-      bidResponse.ad = response.content
+      bidResponse.ad = response.content;
     }
 
-    bidResponses.push(bidResponse)
-    return bidResponses
+    bidResponses.push(bidResponse);
+    return bidResponses;
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

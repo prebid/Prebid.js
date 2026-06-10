@@ -1,29 +1,29 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
-const ADMARU_ENDPOINT = 'https://p1.admaru.net/AdCall'
-const BIDDER_CODE = 'admaru'
+const ADMARU_ENDPOINT = 'https://p1.admaru.net/AdCall';
+const BIDDER_CODE = 'admaru';
 
-const DEFAULT_BID_TTL = 360
-const SYNC_URL = 'https://p2.admaru.net/UserSync/sync'
+const DEFAULT_BID_TTL = 360;
+const SYNC_URL = 'https://p2.admaru.net/UserSync/sync';
 
 function parseBid(rawBid, currency) {
-  const bid = {}
+  const bid = {};
 
-  bid.cpm = rawBid.price
-  bid.impid = rawBid.impid
-  bid.requestId = rawBid.impid
-  bid.netRevenue = true
-  bid.dealId = ''
-  bid.creativeId = rawBid.crid
-  bid.currency = currency
-  bid.ad = rawBid.adm
-  bid.width = rawBid.w
-  bid.height = rawBid.h
-  bid.mediaType = BANNER
-  bid.ttl = DEFAULT_BID_TTL
+  bid.cpm = rawBid.price;
+  bid.impid = rawBid.impid;
+  bid.requestId = rawBid.impid;
+  bid.netRevenue = true;
+  bid.dealId = '';
+  bid.creativeId = rawBid.crid;
+  bid.currency = currency;
+  bid.ad = rawBid.adm;
+  bid.width = rawBid.w;
+  bid.height = rawBid.h;
+  bid.mediaType = BANNER;
+  bid.ttl = DEFAULT_BID_TTL;
 
-  return bid
+  return bid;
 }
 
 export const spec = {
@@ -31,7 +31,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.params && bid.params.pub_id && bid.params.adspace_id)
+    return !!(bid && bid.params && bid.params.pub_id && bid.params.adspace_id);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -41,41 +41,41 @@ export const spec = {
         adspace_id: bid.params.adspace_id,
         bidderRequestId: bid.bidderRequestId,
         bidId: bid.bidId
-      }
+      };
 
       return {
         method: 'GET',
         url: ADMARU_ENDPOINT,
         data: payload,
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = []
-    let bid = null
+    const bidResponses = [];
+    let bid = null;
 
     if (!serverResponse.hasOwnProperty('body') || !serverResponse.body.hasOwnProperty('seatbid')) {
-      return bidResponses
+      return bidResponses;
     }
 
-    const serverBody = serverResponse.body
-    const seatbid = serverBody.seatbid
+    const serverBody = serverResponse.body;
+    const seatbid = serverBody.seatbid;
 
     for (let i = 0; i < seatbid.length; i++) {
       if (!seatbid[i].hasOwnProperty('bid')) {
-        continue
+        continue;
       }
 
-      const innerBids = seatbid[i].bid
+      const innerBids = seatbid[i].bid;
       for (let j = 0; j < innerBids.length; j++) {
-        bid = parseBid(innerBids[j], serverBody.cur)
+        bid = parseBid(innerBids[j], serverBody.cur);
 
-        bidResponses.push(bid)
+        bidResponses.push(bid);
       }
     }
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, responses) {
@@ -83,17 +83,17 @@ export const spec = {
       return [{
         type: 'iframe',
         url: SYNC_URL
-      }]
+      }];
     }
     if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: SYNC_URL
-      }]
+      }];
     }
 
-    return []
+    return [];
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

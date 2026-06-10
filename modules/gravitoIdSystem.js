@@ -5,14 +5,14 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { MODULE_TYPE_UID } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-const MODULE_NAME = 'gravitompId'
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+const MODULE_NAME = 'gravitompId';
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-export const cookieKey = 'gravitompId'
+export const cookieKey = 'gravitompId';
 
 export const gravitoIdSystemSubmodule = {
   /**
@@ -27,14 +27,14 @@ export const gravitoIdSystemSubmodule = {
    * @returns { {id: {gravitompId: string}} | undefined }
    */
   getId: function() {
-    const newId = storage.getCookie(cookieKey)
+    const newId = storage.getCookie(cookieKey);
     if (!newId) {
-      return undefined
+      return undefined;
     }
     const result = {
       gravitompId: newId
-    }
-    return { id: result }
+    };
+    return { id: result };
   },
 
   /**
@@ -45,13 +45,13 @@ export const gravitoIdSystemSubmodule = {
    */
   decode: function(value) {
     if (value && typeof value === 'object') {
-      var result = {}
+      var result = {};
       if (value.gravitompId) {
-        result = value.gravitompId
+        result = value.gravitompId;
       }
-      return { gravitompId: result }
+      return { gravitompId: result };
     }
-    return undefined
+    return undefined;
   },
   eids: {
     'gravitompId': {
@@ -59,6 +59,6 @@ export const gravitoIdSystemSubmodule = {
       atype: 1
     },
   }
-}
+};
 
-submodule('userId', gravitoIdSystemSubmodule)
+submodule('userId', gravitoIdSystemSubmodule);

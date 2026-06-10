@@ -1,4 +1,4 @@
-import * as utils from '../../src/utils.js'
+import * as utils from '../../src/utils.js';
 
 /**
  * get device
@@ -16,7 +16,7 @@ export function getDevice() {
         '|windows ce|xda|xiino|android|ipad|playbook|silk',
       ].join(''),
       'i'
-    )
+    );
     const reg2 = new RegExp(
       [
         '1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s-)',
@@ -40,12 +40,12 @@ export function getDevice() {
         '|your|zeto|zte-',
       ].join(''),
       'i'
-    )
+    );
     if (reg1.test(a) || reg2.test(a.substr(0, 4))) {
-      check = true
+      check = true;
     }
-  })(navigator.userAgent || navigator.vendor || window.opera)
-  return check
+  })(navigator.userAgent || navigator.vendor || window.opera);
+  return check;
 }
 
 /**
@@ -54,5 +54,5 @@ export function getDevice() {
  * @returns {Array} eg: "['widthxheight']"
  */
 export function getScreenSize() {
-  return utils.parseSizesInput([window.screen.width, window.screen.height])
+  return utils.parseSizesInput([window.screen.width, window.screen.height]);
 }

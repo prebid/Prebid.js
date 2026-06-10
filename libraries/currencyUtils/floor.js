@@ -1,4 +1,4 @@
-import * as utils from '../../src/utils.js'
+import * as utils from '../../src/utils.js';
 
 /**
  * get BidFloor
@@ -7,7 +7,7 @@ import * as utils from '../../src/utils.js'
  */
 export function getBidFloor(bid) {
   if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0)
+    return utils.deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -15,9 +15,9 @@ export function getBidFloor(bid) {
       currency: 'USD',
       mediaType: '*',
       size: '*',
-    })
-    return bidFloor?.floor
+    });
+    return bidFloor?.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }

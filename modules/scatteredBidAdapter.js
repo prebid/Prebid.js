@@ -1,19 +1,19 @@
 // jshint esversion: 6, es3: false, node: true
-'use strict'
+'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { deepAccess, logInfo } from '../src/utils.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, logInfo } from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-const BIDDER_CODE = 'scattered'
+const BIDDER_CODE = 'scattered';
 export const converter = ortbConverter({
   context: {
     mediaType: BANNER,
     ttl: 360,
     netRevenue: true
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,17 +21,17 @@ export const spec = {
 
   // 1.
   isBidRequestValid: function (bid) {
-    const bidderDomain = deepAccess(bid, 'params.bidderDomain')
+    const bidderDomain = deepAccess(bid, 'params.bidderDomain');
     if (bidderDomain === undefined || bidderDomain === '') {
-      return false
+      return false;
     }
 
-    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes')
+    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     if (sizes === undefined || sizes.length < 1) {
-      return false
+      return false;
     }
 
-    return true
+    return true;
   },
 
   // 2.
@@ -43,28 +43,28 @@ export const spec = {
       options: {
         contentType: 'application/json'
       },
-    }
+    };
   },
 
   // 3.
   interpretResponse: function (response, request) {
-    if (!response.body) return
-    return converter.fromORTB({ response: response.body, request: request.data }).bids
+    if (!response.body) return;
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
 
   // 4
   onBidWon: function (bid) {
-    logInfo('onBidWon', bid)
+    logInfo('onBidWon', bid);
   }
-}
+};
 
 function getKeyOnAny(collection, key) {
   for (let i = 0; i < collection.length; i++) {
-    const result = deepAccess(collection[i], key)
+    const result = deepAccess(collection[i], key);
     if (result) {
-      return result
+      return result;
     }
   }
 }
 
-registerBidder(spec)
+registerBidder(spec);

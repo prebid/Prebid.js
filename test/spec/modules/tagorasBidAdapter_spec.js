@@ -1,14 +1,14 @@
-import { expect } from 'chai'
+import { expect } from 'chai';
 import {
   spec as adapter,
   createDomain,
   storage
-} from 'modules/tagorasBidAdapter'
-import * as utils from 'src/utils.js'
-import { version } from 'package.json'
-import { useFakeTimers } from 'sinon'
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js'
-import { config } from '../../../src/config.js'
+} from 'modules/tagorasBidAdapter';
+import * as utils from 'src/utils.js';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import {
   hashCode,
   extractPID,
@@ -18,12 +18,12 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-} from '../../../libraries/vidazooUtils/bidderUtils.js'
-import { getGlobal } from '../../../src/prebidGlobal.js'
+} from '../../../libraries/vidazooUtils/bidderUtils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId']
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
-const SUB_DOMAIN = 'exchange'
+const SUB_DOMAIN = 'exchange';
 
 const BID = {
   'bidId': '2d52001cabd527',
@@ -53,7 +53,7 @@ const BID = {
       'tid': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf'
     }
   }
-}
+};
 
 const VIDEO_BID = {
   'bidId': '2d52001cabd527',
@@ -93,7 +93,7 @@ const VIDEO_BID = {
       'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -123,7 +123,7 @@ const ORTB2_DEVICE = {
   os: 'iOS',
   osv: '17.4',
   ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
-}
+};
 
 const BIDDER_REQUEST = {
   'gdprConsent': {
@@ -150,7 +150,7 @@ const BIDDER_REQUEST = {
     },
     'device': ORTB2_DEVICE,
   }
-}
+};
 
 const SERVER_RESPONSE = {
   body: {
@@ -172,7 +172,7 @@ const SERVER_RESPONSE = {
       }]
     }]
   }
-}
+};
 
 const VIDEO_SERVER_RESPONSE = {
   body: {
@@ -189,13 +189,13 @@ const VIDEO_SERVER_RESPONSE = {
       'cookies': []
     }]
   }
-}
+};
 
 const ORTB2_OBJ = {
   "device": ORTB2_DEVICE,
   "regs": { "coppa": 0, "gpp": "gpp_string", "gpp_sid": [7] },
   "site": { "content": { "language": "en" } }
-}
+};
 
 const REQUEST = {
   data: {
@@ -203,47 +203,47 @@ const REQUEST = {
     height: 250,
     bidId: '2d52001cabd527'
   }
-}
+};
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true })
-    return parsedUrl.search
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    return parsedUrl.search;
   } catch (e) {
-    return ''
+    return '';
   }
 }
 
 describe('TagorasBidAdapter', function () {
-  before(() => config.resetConfig())
-  after(() => config.resetConfig())
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
 
   describe('validtae spec', function () {
     it('exists and is a function', function () {
-      expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
+    });
 
     it('exists and is a function', function () {
-      expect(adapter.buildRequests).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.buildRequests).to.exist.and.to.be.a('function');
+    });
 
     it('exists and is a function', function () {
-      expect(adapter.interpretResponse).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.interpretResponse).to.exist.and.to.be.a('function');
+    });
 
     it('exists and is a function', function () {
-      expect(adapter.getUserSyncs).to.exist.and.to.be.a('function')
-    })
+      expect(adapter.getUserSyncs).to.exist.and.to.be.a('function');
+    });
 
     it('exists and is a string', function () {
-      expect(adapter.code).to.exist.and.to.be.a('string')
-    })
+      expect(adapter.code).to.exist.and.to.be.a('string');
+    });
 
     it('exists and contains media types', function () {
-      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2)
-      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO])
-    })
-  })
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+    });
+  });
 
   describe('validate bid requests', function () {
     it('should require cId', function () {
@@ -251,18 +251,18 @@ describe('TagorasBidAdapter', function () {
         params: {
           pId: 'pid'
         }
-      })
-      expect(isValid).to.be.false
-    })
+      });
+      expect(isValid).to.be.false;
+    });
 
     it('should require pId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           cId: 'cid'
         }
-      })
-      expect(isValid).to.be.false
-    })
+      });
+      expect(isValid).to.be.false;
+    });
 
     it('should validate correctly', function () {
       const isValid = adapter.isBidRequestValid({
@@ -270,30 +270,30 @@ describe('TagorasBidAdapter', function () {
           cId: 'cid',
           pId: 'pid'
         }
-      })
-      expect(isValid).to.be.true
-    })
-  })
+      });
+      expect(isValid).to.be.true;
+    });
+  });
 
   describe('build requests', function () {
-    let sandbox
+    let sandbox;
     before(function () {
       getGlobal().bidderSettings = {
         tagoras: {
           storageAllowed: true
         }
-      }
-      sandbox = sinon.createSandbox()
-      sandbox.stub(Date, 'now').returns(1000)
-    })
+      };
+      sandbox = sinon.createSandbox();
+      sandbox.stub(Date, 'now').returns(1000);
+    });
 
     it('should build video request', function () {
-      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page)
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       config.setConfig({
         bidderTimeout: 3000
-      })
-      const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST)
-      expect(requests).to.have.length(1)
+      });
+      const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`,
@@ -368,16 +368,16 @@ describe('TagorasBidAdapter', function () {
           userData: [],
           coppa: 0
         }
-      })
-    })
+      });
+    });
 
     it('should build banner request for each size', function () {
-      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page)
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       config.setConfig({
         bidderTimeout: 3000
-      })
-      const requests = adapter.buildRequests([BID], BIDDER_REQUEST)
-      expect(requests).to.have.length(1)
+      });
+      const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
@@ -438,102 +438,102 @@ describe('TagorasBidAdapter', function () {
           userData: [],
           coppa: 0
         }
-      })
-    })
+      });
+    });
 
     it('should build video request with right url domain despite params.host', function () {
-      const videoBidWithHost = VIDEO_BID
-      videoBidWithHost.params.host = "example7.com"
+      const videoBidWithHost = VIDEO_BID;
+      videoBidWithHost.params.host = "example7.com";
       config.setConfig({
         bidderTimeout: 3000
-      })
-      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST)
-      expect(requests).to.have.length(1)
-      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`)
-    })
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
 
     after(function () {
-      getGlobal().bidderSettings = {}
-      sandbox.restore()
-    })
-  })
+      getGlobal().bidderSettings = {};
+      sandbox.restore();
+    });
+  });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE])
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
-      }])
-    })
+      }]);
+    });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE])
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
-      }])
-    })
+      }]);
+    });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE])
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
-      }])
-    })
+      }]);
+    });
 
     it('should have valid user sync with coppa 1 on response', function () {
       config.setConfig({
         coppa: 1
-      })
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE])
+      });
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.tagoras.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
-      }])
-    })
+      }]);
+    });
 
     it('should generate url with consent data', function () {
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'consent_string'
-      }
-      const uspConsent = 'usp_string'
+      };
+      const uspConsent = 'usp_string';
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
-      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent)
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.tagoras.io/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
         'type': 'image'
-      }])
-    })
-  })
+      }]);
+    });
+  });
 
   describe('interpret response', function () {
     it('should return empty array when there is no response', function () {
-      const responses = adapter.interpretResponse(null)
-      expect(responses).to.be.empty
-    })
+      const responses = adapter.interpretResponse(null);
+      expect(responses).to.be.empty;
+    });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({ price: 1, ad: '' })
-      expect(responses).to.be.empty
-    })
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
+      expect(responses).to.be.empty;
+    });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' })
-      expect(responses).to.be.empty
-    })
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
+      expect(responses).to.be.empty;
+    });
 
     it('should return an array of interpreted banner responses', function () {
-      const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST)
-      expect(responses).to.have.length(1)
+      const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
+      expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
         requestId: '2d52001cabd527',
         cpm: 0.8,
@@ -547,25 +547,25 @@ describe('TagorasBidAdapter', function () {
         meta: {
           advertiserDomains: ['securepubads.g.doubleclick.net']
         }
-      })
-    })
+      });
+    });
 
     it('should get meta from response metaData', function () {
-      const serverResponse = utils.deepClone(SERVER_RESPONSE)
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
       serverResponse.body.results[0].metaData = {
         advertiserDomains: ['tagoras.io'],
         agencyName: 'Agency Name',
-      }
-      const responses = adapter.interpretResponse(serverResponse, REQUEST)
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses[0].meta).to.deep.equal({
         advertiserDomains: ['tagoras.io'],
         agencyName: 'Agency Name'
-      })
-    })
+      });
+    });
 
     it('should return an array of interpreted video responses', function () {
-      const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST)
-      expect(responses).to.have.length(1)
+      const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
+      expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
         requestId: '2d52001cabd527',
         cpm: 2,
@@ -580,57 +580,57 @@ describe('TagorasBidAdapter', function () {
         meta: {
           advertiserDomains: ['tagoras.io']
         }
-      })
-    })
+      });
+    });
 
     it('should take default TTL', function () {
-      const serverResponse = utils.deepClone(SERVER_RESPONSE)
-      delete serverResponse.body.results[0].exp
-      const responses = adapter.interpretResponse(serverResponse, REQUEST)
-      expect(responses).to.have.length(1)
-      expect(responses[0].ttl).to.equal(300)
-    })
-  })
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      delete serverResponse.body.results[0].exp;
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0].ttl).to.equal(300);
+    });
+  });
 
   describe('user id system', function () {
     TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString()
-      const bid = utils.deepClone(BID)
+      const id = Date.now().toString();
+      const bid = utils.deepClone(BID);
 
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return { lipbid: id }
+            return { lipbid: id };
           case 'id5id':
-            return { uid: id }
+            return { uid: id };
           default:
-            return id
+            return id;
         }
-      })()
+      })();
 
       bid.userId = {
         [idSystemProvider]: userId
-      }
+      };
 
       it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST)
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id)
-      })
-    })
+        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
+      });
+    });
     // testing bid.userIdAsEids handling
     it("should include user ids from bid.userIdAsEids (length=1)", function() {
-      const bid = utils.deepClone(BID)
+      const bid = utils.deepClone(BID);
       bid.userIdAsEids = [
         {
           "source": "audigent.com",
           "uids": [{ "id": "fakeidi6j6dlc6e" }]
         }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST)
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e")
-    })
+      ];
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+    });
     it("should include user ids from bid.userIdAsEids (length=2)", function() {
-      const bid = utils.deepClone(BID)
+      const bid = utils.deepClone(BID);
       bid.userIdAsEids = [
         {
           "source": "audigent.com",
@@ -640,14 +640,14 @@ describe('TagorasBidAdapter', function () {
           "source": "rwdcntrl.net",
           "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
         }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST)
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e")
-      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c")
-    })
+      ];
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
+      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
+    });
     // testing user.ext.eid handling
     it("should include user ids from user.ext.eid (length=1)", function() {
-      const bid = utils.deepClone(BID)
+      const bid = utils.deepClone(BID);
       bid.user = {
         ext: {
           eids: [
@@ -657,12 +657,12 @@ describe('TagorasBidAdapter', function () {
             }
           ]
         }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST)
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e")
-    })
+      };
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+    });
     it("should include user ids from user.ext.eid (length=2)", function() {
-      const bid = utils.deepClone(BID)
+      const bid = utils.deepClone(BID);
       bid.user = {
         ext: {
           eids: [
@@ -676,32 +676,32 @@ describe('TagorasBidAdapter', function () {
             }
           ]
         }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST)
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e")
-      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1")
-    })
-  })
+      };
+      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
+      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
+    });
+  });
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({ 'c_id': '1' })
-      const pid = extractPID({ 'p_id': '1' })
-      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' })
-      expect(cid).to.be.undefined
-      expect(pid).to.be.undefined
-      expect(subDomain).to.be.undefined
-    })
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
+      expect(cid).to.be.undefined;
+      expect(pid).to.be.undefined;
+      expect(subDomain).to.be.undefined;
+    });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({ 'cID': '1' })
-      const pid = extractPID({ 'Pid': '2' })
-      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' })
-      expect(cid).to.be.equal('1')
-      expect(pid).to.be.equal('2')
-      expect(subDomain).to.be.equal('prebid')
-    })
-  })
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
+      expect(cid).to.be.equal('1');
+      expect(pid).to.be.equal('2');
+      expect(subDomain).to.be.equal('prebid');
+    });
+  });
 
   describe('unique deal id', function () {
     before(function () {
@@ -709,34 +709,34 @@ describe('TagorasBidAdapter', function () {
         tagoras: {
           storageAllowed: true
         }
-      }
-    })
+      };
+    });
     after(function () {
-      getGlobal().bidderSettings = {}
-    })
-    const key = 'myKey'
-    let uniqueDealId
+      getGlobal().bidderSettings = {};
+    });
+    const key = 'myKey';
+    let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(storage, key, 0)
-    })
+      uniqueDealId = getUniqueDealId(storage, key, 0);
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(storage, key)
-        expect(current).to.be.equal(uniqueDealId)
-        done()
-      }, 200)
-    })
+        const current = getUniqueDealId(storage, key);
+        expect(current).to.be.equal(uniqueDealId);
+        done();
+      }, 200);
+    });
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(storage, key, 100)
-        expect(current).to.not.be.equal(uniqueDealId)
-        done()
-      }, 200)
-    })
-  })
+        const current = getUniqueDealId(storage, key, 100);
+        expect(current).to.not.be.equal(uniqueDealId);
+        done();
+      }, 200);
+    });
+  });
 
   describe('storage utils', function () {
     before(function () {
@@ -744,44 +744,44 @@ describe('TagorasBidAdapter', function () {
         tagoras: {
           storageAllowed: true
         }
-      }
-    })
+      };
+    });
     after(function () {
-      getGlobal().bidderSettings = {}
-    })
+      getGlobal().bidderSettings = {};
+    });
     it('should get value from storage with create param', function () {
-      const now = Date.now()
+      const now = Date.now();
       const clock = useFakeTimers({
         shouldAdvanceTime: true,
         now
-      })
-      setStorageItem(storage, 'myKey', 2020)
-      const { value, created } = getStorageItem(storage, 'myKey')
-      expect(created).to.be.equal(now)
-      expect(value).to.be.equal(2020)
-      expect(typeof value).to.be.equal('number')
-      expect(typeof created).to.be.equal('number')
-      clock.restore()
-    })
+      });
+      setStorageItem(storage, 'myKey', 2020);
+      const { value, created } = getStorageItem(storage, 'myKey');
+      expect(created).to.be.equal(now);
+      expect(value).to.be.equal(2020);
+      expect(typeof value).to.be.equal('number');
+      expect(typeof created).to.be.equal('number');
+      clock.restore();
+    });
 
     it('should get external stored value', function () {
-      const value = 'superman'
-      window.localStorage.setItem('myExternalKey', value)
-      const item = getStorageItem(storage, 'myExternalKey')
-      expect(item).to.be.equal(value)
-    })
+      const value = 'superman';
+      window.localStorage.setItem('myExternalKey', value);
+      const item = getStorageItem(storage, 'myExternalKey');
+      expect(item).to.be.equal(value);
+    });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({ event: 'send' })
-      const { event } = tryParseJSON(data)
-      expect(event).to.be.equal('send')
-    })
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
+      expect(event).to.be.equal('send');
+    });
 
     it('should get original value on parse fail', function () {
-      const value = 21
-      const parsed = tryParseJSON(value)
-      expect(typeof parsed).to.be.equal('number')
-      expect(parsed).to.be.equal(value)
-    })
-  })
-})
+      const value = 21;
+      const parsed = tryParseJSON(value);
+      expect(typeof parsed).to.be.equal('number');
+      expect(parsed).to.be.equal(value);
+    });
+  });
+});

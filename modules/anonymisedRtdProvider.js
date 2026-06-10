@@ -5,21 +5,21 @@
  * @module modules/anonymisedRtdProvider
  * @requires module:modules/realTimeData
  */
-import { getStorageManager } from '../src/storageManager.js'
-import { submodule } from '../src/hook.js'
-import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js'
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
-import { loadExternalScript } from '../src/adloader.js'
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 export function createRtdProvider(moduleName) {
-  const MODULE_NAME = 'realTimeData'
-  const SUBMODULE_NAME = moduleName
-  const GVLID = 1116
-  const MARKETING_TAG_URL = 'https://static.anonymised.io/light/loader.js'
+  const MODULE_NAME = 'realTimeData';
+  const SUBMODULE_NAME = moduleName;
+  const GVLID = 1116;
+  const MARKETING_TAG_URL = 'https://static.anonymised.io/light/loader.js';
 
-  const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME })
+  const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
   /**
    * Add real-time data & merge segments.
    * @param ortb2 object to merge into
@@ -27,9 +27,9 @@ export function createRtdProvider(moduleName) {
    */
   function addRealTimeData(ortb2, rtd) {
     if (isPlainObject(rtd.ortb2)) {
-      logMessage(`${SUBMODULE_NAME}RtdProvider: merging original: `, ortb2)
-      logMessage(`${SUBMODULE_NAME}RtdProvider: merging in: `, rtd.ortb2)
-      mergeDeep(ortb2, rtd.ortb2)
+      logMessage(`${SUBMODULE_NAME}RtdProvider: merging original: `, ortb2);
+      logMessage(`${SUBMODULE_NAME}RtdProvider: merging in: `, rtd.ortb2);
+      mergeDeep(ortb2, rtd.ortb2);
     }
   }
   /**
@@ -38,10 +38,10 @@ export function createRtdProvider(moduleName) {
    */
   function tryParse(data) {
     try {
-      return JSON.parse(data)
+      return JSON.parse(data);
     } catch (err) {
-      logError(`${SUBMODULE_NAME}RtdProvider: failed to parse json:`, data)
-      return null
+      logError(`${SUBMODULE_NAME}RtdProvider: failed to parse json:`, data);
+      return null;
     }
   }
   /**
@@ -49,30 +49,30 @@ export function createRtdProvider(moduleName) {
    * @param {Object} config
    */
   function tryLoadMarketingTag(config) {
-    const clientId = config?.params?.tagConfig?.clientId
+    const clientId = config?.params?.tagConfig?.clientId;
     if (typeof clientId !== 'string' || !clientId.trim()) {
-      logWarn(`${SUBMODULE_NAME}RtdProvider: clientId missing or invalid; Marketing Tag not loaded.`)
-      return
+      logWarn(`${SUBMODULE_NAME}RtdProvider: clientId missing or invalid; Marketing Tag not loaded.`);
+      return;
     }
-    logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`)
-    let tagBaseUrl = MARKETING_TAG_URL
+    logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`);
+    let tagBaseUrl = MARKETING_TAG_URL;
     if (config.params?.tagUrl) {
-      logWarn(`${SUBMODULE_NAME}RtdProvider: params.tagUrl is deprecated and will be removed in a future release.`)
-      tagBaseUrl = config.params.tagUrl
+      logWarn(`${SUBMODULE_NAME}RtdProvider: params.tagUrl is deprecated and will be removed in a future release.`);
+      tagBaseUrl = config.params.tagUrl;
     }
     // Check if the script is already loaded (match on host/path only to handle http://, https://, and protocol-relative URLs)
     if (document.querySelector(`script[src*="${tagBaseUrl.replace(/^https?:\/\//, '')}"]`)) {
-      logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`)
-      return
+      logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
+      return;
     }
-    const tagConfig = config.params?.tagConfig ? { ...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId } : {}
-    delete tagConfig.clientId
+    const tagConfig = config.params?.tagConfig ? { ...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId } : {};
+    delete tagConfig.clientId;
 
-    const tagUrl = `${tagBaseUrl}?ref=prebid&d=${window.location.hostname}`
+    const tagUrl = `${tagBaseUrl}?ref=prebid&d=${window.location.hostname}`;
 
     loadExternalScript(tagUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
-      logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`)
-    }, document, tagConfig)
+      logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`);
+    }, document, tagConfig);
   }
 
   /**
@@ -84,20 +84,20 @@ export function createRtdProvider(moduleName) {
    */
   function getRealTimeData(reqBidsConfigObj, onDone, config, userConsent) {
     if (config && isPlainObject(config.params)) {
-      const cohortStorageKey = config.params.cohortStorageKey
-      const bidders = config.params.bidders
+      const cohortStorageKey = config.params.cohortStorageKey;
+      const bidders = config.params.bidders;
 
       if (cohortStorageKey !== 'cohort_ids') {
-        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`)
-        return
+        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
+        return;
       }
 
-      const jsonData = storage.getDataFromLocalStorage(cohortStorageKey)
+      const jsonData = storage.getDataFromLocalStorage(cohortStorageKey);
       if (!jsonData) {
-        return
+        return;
       }
 
-      const segments = tryParse(jsonData)
+      const segments = tryParse(jsonData);
 
       if (segments) {
         const udSegment = {
@@ -106,9 +106,9 @@ export function createRtdProvider(moduleName) {
             segtax: config.params.segtax
           },
           segment: segments.map(x => ({ id: x }))
-        }
+        };
 
-        logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment)
+        logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
         const data = {
           rtd: {
             ortb2: {
@@ -119,13 +119,13 @@ export function createRtdProvider(moduleName) {
               }
             }
           }
-        }
+        };
 
         if (bidders?.includes('appnexus')) {
-          data.rtd.ortb2.user.keywords = segments.map(x => `perid=${x}`).join(',')
+          data.rtd.ortb2.user.keywords = segments.map(x => `perid=${x}`).join(',');
         }
 
-        addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd)
+        addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
       }
     }
   }
@@ -136,8 +136,8 @@ export function createRtdProvider(moduleName) {
    * @return {boolean}
    */
   function init(config, userConsent) {
-    tryLoadMarketingTag(config)
-    return true
+    tryLoadMarketingTag(config);
+    return true;
   }
   /** @type {RtdSubmodule} */
   const rtdSubmodule = {
@@ -145,15 +145,15 @@ export function createRtdProvider(moduleName) {
     gvlid: GVLID,
     getBidRequestData: getRealTimeData,
     init: init
-  }
+  };
 
-  submodule(MODULE_NAME, rtdSubmodule)
+  submodule(MODULE_NAME, rtdSubmodule);
 
   return {
     getRealTimeData,
     rtdSubmodule,
     storage
-  }
+  };
 }
 
-export const { getRealTimeData, rtdSubmodule: anonymisedRtdSubmodule, storage } = createRtdProvider('anonymised')
+export const { getRealTimeData, rtdSubmodule: anonymisedRtdSubmodule, storage } = createRtdProvider('anonymised');

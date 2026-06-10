@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -15,9 +15,9 @@ import { BANNER } from '../src/mediaTypes.js'
  *   NOT the publisher domain. The actual domain/page are sourced from ortb2 or refererInfo.
  */
 
-const BIDDER_CODE = 'conceptx'
-const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction'
-const GVLID = 1340
+const BIDDER_CODE = 'conceptx';
+const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction';
+const GVLID = 1340;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,14 +25,14 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
-    return !!(bid.bidId && bid.params && bid.params.adunit)
+    return !!(bid.bidId && bid.params && bid.params.adunit);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const requests = []
+    const requests = [];
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      const bid = validBidRequests[i]
+      const bid = validBidRequests[i];
       const {
         adUnitCode,
         auctionId,
@@ -40,89 +40,89 @@ export const spec = {
         bidder,
         bidderRequestId,
         ortb2 = {},
-      } = bid
-      const params = bid.params || {}
+      } = bid;
+      const params = bid.params || {};
 
       // PBS URL + GDPR query params
-      let url = ENDPOINT_URL
-      const query = []
+      let url = ENDPOINT_URL;
+      const query = [];
 
       // Only add GDPR params when gdprApplies is explicitly 0 or 1
       if (bidderRequest && bidderRequest.gdprConsent) {
-        let gdprApplies = bidderRequest.gdprConsent.gdprApplies
+        let gdprApplies = bidderRequest.gdprConsent.gdprApplies;
         if (typeof gdprApplies === 'boolean') {
-          gdprApplies = gdprApplies ? 1 : 0
+          gdprApplies = gdprApplies ? 1 : 0;
         }
         if (gdprApplies === 0 || gdprApplies === 1) {
-          query.push('gdpr_applies=' + gdprApplies)
+          query.push('gdpr_applies=' + gdprApplies);
           if (bidderRequest.gdprConsent.consentString) {
             query.push(
               'gdpr_consent=' +
               encodeURIComponent(bidderRequest.gdprConsent.consentString)
-            )
+            );
           }
         }
       }
 
       if (query.length) {
-        url += '?' + query.join('&')
+        url += '?' + query.join('&');
       }
 
       // site – params.site is our internal stored-request key, NOT the publisher domain
       const page =
         (ortb2.site && ortb2.site.page) ||
         (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) ||
-        ''
+        '';
       const domain =
         (ortb2.site && ortb2.site.domain) ||
         (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.domain) ||
-        ''
+        '';
 
       const site = {
         id: params.site || domain || adUnitCode,
         domain: domain,
         page: page,
-      }
+      };
 
       // banner sizes from mediaTypes.banner.sizes
-      const formats = []
+      const formats = [];
       if (
         bid.mediaTypes &&
         bid.mediaTypes.banner &&
         bid.mediaTypes.banner.sizes
       ) {
-        let sizes = bid.mediaTypes.banner.sizes
+        let sizes = bid.mediaTypes.banner.sizes;
         if (sizes.length && typeof sizes[0] === 'number') {
-          sizes = [sizes]
+          sizes = [sizes];
         }
         for (let j = 0; j < sizes.length; j++) {
-          const size = sizes[j]
+          const size = sizes[j];
           if (size && size.length === 2) {
-            formats.push({ w: size[0], h: size[1] })
+            formats.push({ w: size[0], h: size[1] });
           }
         }
       }
 
-      const banner = formats.length ? { format: formats } : {}
+      const banner = formats.length ? { format: formats } : {};
 
       // currency & timeout
-      let currency = 'DKK'
+      let currency = 'DKK';
       if (
         bidderRequest &&
         bidderRequest.currency &&
         bidderRequest.currency.adServerCurrency
       ) {
-        currency = bidderRequest.currency.adServerCurrency
+        currency = bidderRequest.currency.adServerCurrency;
       }
 
-      const tmax = (bidderRequest && bidderRequest.timeout) || 500
+      const tmax = (bidderRequest && bidderRequest.timeout) || 500;
 
       // device
       const ua =
         typeof navigator !== 'undefined' && navigator.userAgent
           ? navigator.userAgent
-          : 'Mozilla/5.0'
-      const device = { ua }
+          : 'Mozilla/5.0';
+      const device = { ua };
 
       // build OpenRTB request for PBS with stored requests
       const ortbRequest = {
@@ -158,36 +158,36 @@ export const spec = {
             },
           },
         },
-      }
+      };
 
       // GDPR in body
       if (bidderRequest && bidderRequest.gdprConsent) {
-        let gdprAppliesBody = bidderRequest.gdprConsent.gdprApplies
+        let gdprAppliesBody = bidderRequest.gdprConsent.gdprApplies;
         if (typeof gdprAppliesBody === 'boolean') {
-          gdprAppliesBody = gdprAppliesBody ? 1 : 0
+          gdprAppliesBody = gdprAppliesBody ? 1 : 0;
         }
 
-        if (!ortbRequest.user) ortbRequest.user = {}
-        if (!ortbRequest.user.ext) ortbRequest.user.ext = {}
+        if (!ortbRequest.user) ortbRequest.user = {};
+        if (!ortbRequest.user.ext) ortbRequest.user.ext = {};
 
         if (bidderRequest.gdprConsent.consentString) {
           ortbRequest.user.ext.consent =
-            bidderRequest.gdprConsent.consentString
+            bidderRequest.gdprConsent.consentString;
         }
 
-        if (!ortbRequest.regs) ortbRequest.regs = {}
-        if (!ortbRequest.regs.ext) ortbRequest.regs.ext = {}
+        if (!ortbRequest.regs) ortbRequest.regs = {};
+        if (!ortbRequest.regs.ext) ortbRequest.regs.ext = {};
 
         if (gdprAppliesBody === 0 || gdprAppliesBody === 1) {
-          ortbRequest.regs.ext.gdpr = gdprAppliesBody
+          ortbRequest.regs.ext.gdpr = gdprAppliesBody;
         }
       }
 
       // user IDs -> user.ext.eids
       if (bid.userIdAsEids && bid.userIdAsEids.length) {
-        if (!ortbRequest.user) ortbRequest.user = {}
-        if (!ortbRequest.user.ext) ortbRequest.user.ext = {}
-        ortbRequest.user.ext.eids = bid.userIdAsEids
+        if (!ortbRequest.user) ortbRequest.user = {};
+        if (!ortbRequest.user.ext) ortbRequest.user.ext = {};
+        ortbRequest.user.ext.eids = bid.userIdAsEids;
       }
 
       requests.push({
@@ -197,15 +197,15 @@ export const spec = {
           withCredentials: true,
         },
         data: JSON.stringify(ortbRequest),
-      })
+      });
     }
 
-    return requests
+    return requests;
   },
 
   interpretResponse: function (serverResponse, request) {
     const body =
-      serverResponse && serverResponse.body ? serverResponse.body : {}
+      serverResponse && serverResponse.body ? serverResponse.body : {};
 
     // PBS OpenRTB: seatbid[].bid[]
     if (
@@ -213,34 +213,34 @@ export const spec = {
       !Array.isArray(body.seatbid) ||
       body.seatbid.length === 0
     ) {
-      return []
+      return [];
     }
 
-    const currency = body.cur || 'DKK'
-    const bids = []
+    const currency = body.cur || 'DKK';
+    const bids = [];
 
     // recover referrer (site.page) from original request
-    let referrer = ''
+    let referrer = '';
     try {
       if (request && request.data) {
         const originalReq =
           typeof request.data === 'string'
             ? JSON.parse(request.data)
-            : request.data
+            : request.data;
         if (originalReq && originalReq.site && originalReq.site.page) {
-          referrer = originalReq.site.page
+          referrer = originalReq.site.page;
         }
       }
     } catch (_) { }
 
     for (let i = 0; i < body.seatbid.length; i++) {
-      const seatbid = body.seatbid[i]
-      if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue
+      const seatbid = body.seatbid[i];
+      if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
 
       for (let j = 0; j < seatbid.bid.length; j++) {
-        const b = seatbid.bid[j]
+        const b = seatbid.bid[j];
 
-        if (!b || typeof b.price !== 'number' || !b.adm) continue
+        if (!b || typeof b.price !== 'number' || !b.adm) continue;
 
         bids.push({
           requestId: b.impid || b.id,
@@ -254,11 +254,11 @@ export const spec = {
           ttl: 300,
           referrer,
           ad: b.adm,
-        })
+        });
       }
     }
 
-    return bids
+    return bids;
   },
 
   /**
@@ -269,8 +269,8 @@ export const spec = {
    * endpoint, not the auction response.
    */
   getUserSyncs: function () {
-    return []
+    return [];
   },
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

@@ -1,15 +1,15 @@
-import { spec } from 'modules/tealBidAdapter.js'
-import { parseUrl } from 'src/utils.js'
+import { spec } from 'modules/tealBidAdapter.js';
+import { parseUrl } from 'src/utils.js';
 
-const expect = require('chai').expect
+const expect = require('chai').expect;
 
-const PBS_HOST = 'a.bids.ws'
-const PLACEMENT = 'test-placement300x250'
-const ACCOUNT = 'test-account'
-const SUB_ACCOUNT = 'test-sub-account'
-const TEST_DOMAIN = 'example.com'
-const TEST_PAGE = `https://${TEST_DOMAIN}/page.html`
-const ADUNIT_CODE = '/1234/header-bid-tag-0'
+const PBS_HOST = 'a.bids.ws';
+const PLACEMENT = 'test-placement300x250';
+const ACCOUNT = 'test-account';
+const SUB_ACCOUNT = 'test-sub-account';
+const TEST_DOMAIN = 'example.com';
+const TEST_PAGE = `https://${TEST_DOMAIN}/page.html`;
+const ADUNIT_CODE = '/1234/header-bid-tag-0';
 
 const BID_PARAMS = {
   params: {
@@ -17,7 +17,7 @@ const BID_PARAMS = {
     account: ACCOUNT,
     testMode: true
   }
-}
+};
 
 const BID_REQUEST = {
   bidder: 'teal',
@@ -94,7 +94,7 @@ const BID_REQUEST = {
       }
     }
   }
-}
+};
 
 const BIDDER_REQUEST = {
   bidderCode: BID_REQUEST.bidder,
@@ -130,7 +130,7 @@ const BIDDER_REQUEST = {
     }
   },
   start: 1681224591375
-}
+};
 
 const BID_RESPONSE = {
   seatbid: [
@@ -187,9 +187,9 @@ const BID_RESPONSE = {
       }
     }
   }
-}
+};
 
-const S2S_RESPONSE_BIDDER = BID_RESPONSE.seatbid[0].seat
+const S2S_RESPONSE_BIDDER = BID_RESPONSE.seatbid[0].seat;
 
 const buildRequest = (params) => {
   const bidRequest = {
@@ -198,71 +198,71 @@ const buildRequest = (params) => {
       ...BID_REQUEST.params,
       ...params,
     },
-  }
-  var response = spec.buildRequests([bidRequest], BIDDER_REQUEST)
-  return response
-}
+  };
+  var response = spec.buildRequests([bidRequest], BIDDER_REQUEST);
+  return response;
+};
 
 describe('Teal Bid Adaper', function () {
   describe('buildRequests', () => {
-    const { data, url } = buildRequest()
+    const { data, url } = buildRequest();
     it('should give the correct URL', () => {
-      expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`)
-    })
+      expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`);
+    });
     it('should set the correct stored request ids', () => {
-      expect(data.ext.prebid.storedrequest.id).equal(ACCOUNT)
-      expect(data.imp[0].ext.prebid.storedrequest.id).equal(PLACEMENT)
-    })
+      expect(data.ext.prebid.storedrequest.id).equal(ACCOUNT);
+      expect(data.imp[0].ext.prebid.storedrequest.id).equal(PLACEMENT);
+    });
     it('should include bidder code in passthrough object', () => {
-      expect(data.ext.prebid.passthrough.teal.bidder).equal(spec.code)
-    })
+      expect(data.ext.prebid.passthrough.teal.bidder).equal(spec.code);
+    });
     it('should set tmax to something below the timeout', () => {
-      expect(data.tmax).be.greaterThan(0)
-      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout)
-    })
-  })
+      expect(data.tmax).be.greaterThan(0);
+      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout);
+    });
+  });
   describe('buildRequests with subAccount', () => {
-    const { data } = buildRequest({ subAccount: SUB_ACCOUNT })
+    const { data } = buildRequest({ subAccount: SUB_ACCOUNT });
     it('should set the correct stored request ids', () => {
-      expect(data.ext.prebid.storedrequest.id).equal(SUB_ACCOUNT)
-    })
-  })
+      expect(data.ext.prebid.storedrequest.id).equal(SUB_ACCOUNT);
+    });
+  });
   describe('interpreteResponse', () => {
-    const request = buildRequest()
-    const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request)
+    const request = buildRequest();
+    const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request);
     it('should not have S2S bidder\'s bidder code', () => {
-      expect(bid.bidderCode).not.equal(S2S_RESPONSE_BIDDER)
-    })
+      expect(bid.bidderCode).not.equal(S2S_RESPONSE_BIDDER);
+    });
     it('should return the right creative content', () => {
-      const respBid = BID_RESPONSE.seatbid[0].bid[0]
-      expect(bid.cpm).equal(respBid.price)
-      expect(bid.ad).equal(respBid.adm)
-      expect(bid.width).equal(respBid.w)
-      expect(bid.height).equal(respBid.h)
-    })
-  })
+      const respBid = BID_RESPONSE.seatbid[0].bid[0];
+      expect(bid.cpm).equal(respBid.price);
+      expect(bid.ad).equal(respBid.adm);
+      expect(bid.width).equal(respBid.w);
+      expect(bid.height).equal(respBid.h);
+    });
+  });
   describe('interpreteResponse with useSourceBidderCode', () => {
-    const request = buildRequest({ useSourceBidderCode: true })
-    const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request)
+    const request = buildRequest({ useSourceBidderCode: true });
+    const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request);
     it('should have S2S bidder\'s code', () => {
-      expect(bid.bidderCode).equal(S2S_RESPONSE_BIDDER)
-    })
-  })
+      expect(bid.bidderCode).equal(S2S_RESPONSE_BIDDER);
+    });
+  });
   describe('getUserSyncs with iframeEnabled', () => {
-    const allSyncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: BID_RESPONSE }], null, null)
-    const [{ url, type }] = allSyncs
-    const { bidders, endpoint } = parseUrl(url).search
+    const allSyncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: BID_RESPONSE }], null, null);
+    const [{ url, type }] = allSyncs;
+    const { bidders, endpoint } = parseUrl(url).search;
     it('should return a single sync object', () => {
-      expect(allSyncs.length).equal(1)
-    })
+      expect(allSyncs.length).equal(1);
+    });
     it('should use iframe sync when available', () => {
-      expect(type).equal('iframe')
-    })
+      expect(type).equal('iframe');
+    });
     it('should sync to the right endpoint', () => {
-      expect(endpoint).equal(`https://${PBS_HOST}/cookie_sync`)
-    })
+      expect(endpoint).equal(`https://${PBS_HOST}/cookie_sync`);
+    });
     it('should sync to at least one bidders', () => {
-      expect(bidders.split(',').length).be.greaterThan(0)
-    })
-  })
-})
+      expect(bidders.split(',').length).be.greaterThan(0);
+    });
+  });
+});

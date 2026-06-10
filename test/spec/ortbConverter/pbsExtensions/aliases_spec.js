@@ -1,57 +1,57 @@
-import { setRequestExtPrebidAliases } from '../../../../libraries/pbsExtensions/processors/aliases.js'
-import { config } from 'src/config.js'
+import { setRequestExtPrebidAliases } from '../../../../libraries/pbsExtensions/processors/aliases.js';
+import { config } from 'src/config.js';
 
 describe('PBS - ortb ext.prebid.aliases', () => {
-  let aliasRegistry, bidderRegistry
+  let aliasRegistry, bidderRegistry;
 
   function setAliases(bidderRequest) {
-    const req = {}
+    const req = {};
     setRequestExtPrebidAliases(req, bidderRequest, {}, {
       am: {
         bidderRegistry,
         aliasRegistry
       }
-    })
-    return req
+    });
+    return req;
   }
 
   beforeEach(() => {
-    aliasRegistry = {}
-    bidderRegistry = {}
-    config.resetConfig()
-  })
+    aliasRegistry = {};
+    bidderRegistry = {};
+    config.resetConfig();
+  });
   afterEach(() => {
-    config.resetConfig()
-  })
+    config.resetConfig();
+  });
 
   describe('has no effect if', () => {
     it('bidder is not an alias', () => {
-      expect(setAliases({ bidderCode: 'not-an-alias' })).to.eql({})
-    })
+      expect(setAliases({ bidderCode: 'not-an-alias' })).to.eql({});
+    });
 
     it('bidder sets skipPbsAliasing', () => {
-      aliasRegistry['alias'] = 'bidder'
+      aliasRegistry['alias'] = 'bidder';
       bidderRegistry['alias'] = {
         getSpec() {
           return {
             skipPbsAliasing: true
-          }
+          };
         }
-      }
-      expect(setAliases({ bidderCode: 'alias' })).to.eql({})
-    })
-  })
+      };
+      expect(setAliases({ bidderCode: 'alias' })).to.eql({});
+    });
+  });
 
   function initAlias(spec = {}) {
-    aliasRegistry['alias'] = 'bidder'
+    aliasRegistry['alias'] = 'bidder';
     bidderRegistry['alias'] = {
       getSpec() {
-        return spec
+        return spec;
       }
-    }
+    };
   }
   it('sets ext.prebid.aliases.BIDDER', () => {
-    initAlias()
+    initAlias();
     expect(setAliases({ bidderCode: 'alias' })).to.eql({
       ext: {
         prebid: {
@@ -60,11 +60,11 @@ describe('PBS - ortb ext.prebid.aliases', () => {
           }
         }
       }
-    })
-  })
+    });
+  });
 
   it('sets ext.prebid.aliasgvlids.BIDDER if set on spec', () => {
-    initAlias({ gvlid: 24 })
+    initAlias({ gvlid: 24 });
     expect(setAliases({ bidderCode: 'alias' })).to.eql({
       ext: {
         prebid: {
@@ -76,16 +76,16 @@ describe('PBS - ortb ext.prebid.aliases', () => {
           }
         }
       }
-    })
-  })
+    });
+  });
 
   it('sets ext.prebid.aliasgvlids.BIDDER if set on config', () => {
     config.setConfig({
       gvlMapping: {
         alias: 24
       }
-    })
-    initAlias()
+    });
+    initAlias();
     expect(setAliases({ bidderCode: 'alias' })).to.eql({
       ext: {
         prebid: {
@@ -97,16 +97,16 @@ describe('PBS - ortb ext.prebid.aliases', () => {
           }
         }
       }
-    })
-  })
+    });
+  });
 
   it('prefers ext.prebid.aliasgvlids.BIDDER set on config over spec', () => {
     config.setConfig({
       gvlMapping: {
         alias: 888
       }
-    })
-    initAlias({ gvlid: 24 })
+    });
+    initAlias({ gvlid: 24 });
     expect(setAliases({ bidderCode: 'alias' })).to.eql({
       ext: {
         prebid: {
@@ -118,6 +118,6 @@ describe('PBS - ortb ext.prebid.aliases', () => {
           }
         }
       }
-    })
-  })
-})
+    });
+  });
+});

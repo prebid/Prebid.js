@@ -11,14 +11,14 @@
  * @returns {string|null} The serialized supply chain string or null if the nodes are not present.
  */
 export function serializeSupplyChain(schain, nodesProperties) {
-  if (!schain?.nodes) return null
+  if (!schain?.nodes) return null;
 
-  const header = `${schain.ver},${schain.complete}!`
+  const header = `${schain.ver},${schain.complete}!`;
   const nodes = schain.nodes.map(
     node => nodesProperties.map(
       prop => node[prop] ? encodeURIComponent(node[prop]).replace(/!/g, '%21') : ''
     ).join(',')
-  ).join('!')
+  ).join('!');
 
-  return header + nodes
+  return header + nodes;
 }

@@ -1,21 +1,21 @@
-import { assert, expect } from 'chai'
-import { spec } from 'modules/sspBCBidAdapter.js'
-import * as utils from 'src/utils.js'
+import { assert, expect } from 'chai';
+import { spec } from 'modules/sspBCBidAdapter.js';
+import * as utils from 'src/utils.js';
 
-const BIDDER_CODE = 'sspBC'
-const BIDDER_URL = 'https://ssp.wp.pl/bidder/'
-const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync'
-const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel'
+const BIDDER_CODE = 'sspBC';
+const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
+const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 
 describe('SSPBC adapter', function () {
   function prepareTestData() {
-    const bidderRequestId = '1041bb47b0fafa'
-    const auctionId = '8eda6d06-3d7c-4a94-9b35-74e42fbb3089'
-    const transactionId = '50259989-b5c0-4edf-8f47-b1ef5fbedf39'
+    const bidderRequestId = '1041bb47b0fafa';
+    const auctionId = '8eda6d06-3d7c-4a94-9b35-74e42fbb3089';
+    const transactionId = '50259989-b5c0-4edf-8f47-b1ef5fbedf39';
     const gdprConsent = {
       consentString: 'BOtq-3dOtq-30BIABCPLC4-AAAAthr_7__7-_9_-_f__9uj3Or_v_f__30ccL59v_h_7v-_7fi_20nV4u_1vft9yfk1-5ctDztp505iakivHmqNeb9v_mz1_5pRP78k89r7337Ew_v8_v-b7JCON_Ig',
       gdprApplies: true,
-    }
+    };
     const bids = [{
       adUnitCode: 'test_wideboard',
       bidder: BIDDER_CODE,
@@ -64,7 +64,7 @@ describe('SSPBC adapter', function () {
       bidId: bidderRequestId + '2',
       transactionId,
     }
-    ]
+    ];
     const bid_OneCode = {
       adUnitCode: 'test_wideboard',
       bidder: BIDDER_CODE,
@@ -86,7 +86,7 @@ describe('SSPBC adapter', function () {
       bidderRequestId,
       bidId: bidderRequestId + '1',
       transactionId,
-    }
+    };
     const bid_native = {
       adUnitCode: 'test_native',
       bidder: BIDDER_CODE,
@@ -125,7 +125,7 @@ describe('SSPBC adapter', function () {
       bidderRequestId,
       bidId: bidderRequestId + '1',
       transactionId,
-    }
+    };
     const bid_video = {
       adUnitCode: 'test_video',
       bidder: BIDDER_CODE,
@@ -147,7 +147,7 @@ describe('SSPBC adapter', function () {
       bidderRequestId,
       bidId: bidderRequestId + '1',
       transactionId,
-    }
+    };
     const bids_timeouted = [{
       adUnitCode: 'test_wideboard',
       bidder: BIDDER_CODE,
@@ -170,7 +170,7 @@ describe('SSPBC adapter', function () {
       bidId: bidderRequestId + '2',
       timeout: 100,
     }
-    ]
+    ];
     const bids_test = [{
       adUnitCode: 'test_wideboard',
       bidder: BIDDER_CODE,
@@ -201,7 +201,7 @@ describe('SSPBC adapter', function () {
       bidderRequestId,
       bidId: bidderRequestId + '1',
       transactionId,
-    }]
+    }];
     const bidRequest = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -214,7 +214,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const bidRequestSingle = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -227,7 +227,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const bidRequestNative = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -240,7 +240,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const bidRequestVideo = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -253,7 +253,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const bidRequestOneCode = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -266,7 +266,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const bidRequestTest = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -279,7 +279,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const bidRequestTestNoGDPR = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -291,7 +291,7 @@ describe('SSPBC adapter', function () {
         domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
-    }
+    };
     const serverResponse = {
       'body': {
         'id': bidderRequestId,
@@ -331,7 +331,7 @@ describe('SSPBC adapter', function () {
         }],
         'cur': 'PLN'
       }
-    }
+    };
     const serverResponseSingle = {
       'body': {
         'id': bidderRequestId,
@@ -356,7 +356,7 @@ describe('SSPBC adapter', function () {
         }],
         'cur': 'PLN'
       }
-    }
+    };
 
     const serverResponsePaapi = {
       'body': {
@@ -387,7 +387,7 @@ describe('SSPBC adapter', function () {
           ]
         },
       }
-    }
+    };
 
     const serverResponseIncorrect = {
       'body': {
@@ -413,7 +413,7 @@ describe('SSPBC adapter', function () {
         }],
         'cur': 'PLN'
       }
-    }
+    };
     const serverResponseOneCode = {
       'body': {
         'id': bidderRequestId,
@@ -440,7 +440,7 @@ describe('SSPBC adapter', function () {
         }],
         'cur': 'PLN'
       }
-    }
+    };
     const serverResponseVideo = {
       'body': {
         'id': bidderRequestId,
@@ -468,7 +468,7 @@ describe('SSPBC adapter', function () {
         }],
         'cur': 'PLN'
       }
-    }
+    };
     const serverResponseNative = {
       'body': {
         'id': bidderRequestId,
@@ -493,12 +493,12 @@ describe('SSPBC adapter', function () {
         }],
         'cur': 'PLN'
       }
-    }
+    };
     const emptyResponse = {
       'body': {
         'id': bidderRequestId,
       }
-    }
+    };
     return {
       bid_OneCode,
       bids,
@@ -521,135 +521,135 @@ describe('SSPBC adapter', function () {
       serverResponseVideo,
       serverResponseNative,
       emptyResponse
-    }
+    };
   };
 
   describe('dependencies', function () {
     it('utils should contain required functions', function () {
-      expect(utils.parseUrl).to.be.a('function')
-      expect(utils.deepAccess).to.be.a('function')
-      expect(utils.logWarn).to.be.a('function')
-    })
-  })
+      expect(utils.parseUrl).to.be.a('function');
+      expect(utils.deepAccess).to.be.a('function');
+      expect(utils.logWarn).to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
-    const { bids } = prepareTestData()
-    const bid = bids[0]
+    const { bids } = prepareTestData();
+    const bid = bids[0];
 
     it('should always return true whether bid has params (standard) or not (OneCode)', function () {
-      assert(spec.isBidRequestValid(bid))
-      bid.params.id = undefined
-      assert(spec.isBidRequestValid(bid))
-    })
-  })
+      assert(spec.isBidRequestValid(bid));
+      bid.params.id = undefined;
+      assert(spec.isBidRequestValid(bid));
+    });
+  });
 
   describe('buildRequests', function () {
-    const { bids, bid_native, bid_video, bidRequest, bidRequestSingle, bidRequestNative, bidRequestVideo } = prepareTestData()
-    const request = spec.buildRequests(bids, bidRequest)
-    const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle)
-    const requestNative = spec.buildRequests([bid_native], bidRequestNative)
-    const requestVideo = spec.buildRequests([bid_video], bidRequestVideo)
-    const payload = request ? JSON.parse(request.data) : { site: false, imp: false }
-    const payloadSingle = requestSingle ? JSON.parse(requestSingle.data) : { site: false, imp: false }
-    const payloadNative = requestNative ? JSON.parse(requestNative.data) : { site: false, imp: false }
-    const payloadVideo = requestVideo ? JSON.parse(requestVideo.data) : { site: false, imp: false }
+    const { bids, bid_native, bid_video, bidRequest, bidRequestSingle, bidRequestNative, bidRequestVideo } = prepareTestData();
+    const request = spec.buildRequests(bids, bidRequest);
+    const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
+    const requestNative = spec.buildRequests([bid_native], bidRequestNative);
+    const requestVideo = spec.buildRequests([bid_video], bidRequestVideo);
+    const payload = request ? JSON.parse(request.data) : { site: false, imp: false };
+    const payloadSingle = requestSingle ? JSON.parse(requestSingle.data) : { site: false, imp: false };
+    const payloadNative = requestNative ? JSON.parse(requestNative.data) : { site: false, imp: false };
+    const payloadVideo = requestVideo ? JSON.parse(requestVideo.data) : { site: false, imp: false };
 
     it('should send bid request to endpoint via POST', function () {
-      expect(request.url).to.contain(BIDDER_URL)
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.url).to.contain(BIDDER_URL);
+      expect(request.method).to.equal('POST');
+    });
 
     it('should contain prebid and bidder versions', function () {
-      expect(request.url).to.contain('bdver')
-      expect(request.url).to.contain('pbver=$prebid.version$')
-    })
+      expect(request.url).to.contain('bdver');
+      expect(request.url).to.contain('pbver=$prebid.version$');
+    });
 
     it('should create one imp object per bid', function () {
-      expect(payload.imp.length).to.equal(bids.length)
-      expect(payloadSingle.imp.length).to.equal(1)
-    })
+      expect(payload.imp.length).to.equal(bids.length);
+      expect(payloadSingle.imp.length).to.equal(1);
+    });
 
     it('should save bidder request data', function () {
-      expect(request.bidderRequest).to.deep.equal(bidRequest)
-    })
+      expect(request.bidderRequest).to.deep.equal(bidRequest);
+    });
 
     it('should send site Id from bidder params', function () {
-      expect(payload.site.id).to.equal(bids[0].params.siteId)
-    })
+      expect(payload.site.id).to.equal(bids[0].params.siteId);
+    });
 
     it('should send page url from refererInfo', function () {
-      expect(payload.site.page).to.equal(bidRequest.refererInfo.page)
-    })
+      expect(payload.site.page).to.equal(bidRequest.refererInfo.page);
+    });
 
     it('should send gdpr data', function () {
-      expect(payload.regs).to.be.an('object').and.to.have.property('gdpr', 1)
-      expect(payload.user).to.be.an('object').and.to.have.property('consent', bidRequest.gdprConsent.consentString)
-    })
+      expect(payload.regs).to.be.an('object').and.to.have.property('gdpr', 1);
+      expect(payload.user).to.be.an('object').and.to.have.property('consent', bidRequest.gdprConsent.consentString);
+    });
 
     it('should send net info and pvid', function () {
-      expect(payload.user).to.be.an('object').and.to.have.property('data').that.is.an('array')
+      expect(payload.user).to.be.an('object').and.to.have.property('data').that.is.an('array');
 
-      const userData = payload.user.data
-      expect(userData.length).to.equal(2)
+      const userData = payload.user.data;
+      expect(userData.length).to.equal(2);
 
-      const netInfo = userData[0]
-      expect(netInfo.id).to.equal('12')
-      expect(netInfo.name).to.equal('NetInfo')
-      expect(netInfo).to.have.property('segment').that.is.an('array')
+      const netInfo = userData[0];
+      expect(netInfo.id).to.equal('12');
+      expect(netInfo.name).to.equal('NetInfo');
+      expect(netInfo).to.have.property('segment').that.is.an('array');
 
-      const pvid = userData[1]
-      expect(pvid.id).to.equal('7')
-      expect(pvid.name).to.equal('pvid')
-      expect(pvid).to.have.property('segment').that.is.an('array')
-      expect(pvid.segment[0]).to.have.property('value')
-    })
+      const pvid = userData[1];
+      expect(pvid.id).to.equal('7');
+      expect(pvid.name).to.equal('pvid');
+      expect(pvid).to.have.property('segment').that.is.an('array');
+      expect(pvid.segment[0]).to.have.property('value');
+    });
 
     it('pvid should be constant on a single page view', function () {
-      const userData1 = payload.user.data
-      const userData2 = payloadNative.user.data
-      const pvid1 = userData1[1]
-      const pvid2 = userData2[1]
+      const userData1 = payload.user.data;
+      const userData2 = payloadNative.user.data;
+      const pvid1 = userData1[1];
+      const pvid2 = userData2[1];
 
-      expect(pvid1.segment[0].value).to.equal(pvid2.segment[0].value)
-    })
+      expect(pvid1.segment[0].value).to.equal(pvid2.segment[0].value);
+    });
 
     it('should build correct native payload', function () {
-      const nativeAssets = payloadNative.imp && payloadNative.imp[0].native.request
+      const nativeAssets = payloadNative.imp && payloadNative.imp[0].native.request;
 
-      expect(payloadNative.imp.length).to.equal(1)
+      expect(payloadNative.imp.length).to.equal(1);
 
-      expect(nativeAssets).to.contain('{"id":0,"required":true,"title":{"len":80}}')
-      expect(nativeAssets).to.contain('{"id":2,"required":true,"img":{"type":1,"w":50,"h":50}}')
-      expect(nativeAssets).to.contain('{"id":3,"required":true,"img":{"type":3,"w":150,"h":50}}')
-      expect(nativeAssets).to.contain('{"id":4,"required":true,"data":{"type":2}')
-      expect(nativeAssets).to.contain('{"id":5,"required":true,"data":{"type":1}')
-    })
+      expect(nativeAssets).to.contain('{"id":0,"required":true,"title":{"len":80}}');
+      expect(nativeAssets).to.contain('{"id":2,"required":true,"img":{"type":1,"w":50,"h":50}}');
+      expect(nativeAssets).to.contain('{"id":3,"required":true,"img":{"type":3,"w":150,"h":50}}');
+      expect(nativeAssets).to.contain('{"id":4,"required":true,"data":{"type":2}');
+      expect(nativeAssets).to.contain('{"id":5,"required":true,"data":{"type":1}');
+    });
 
     it('should build correct video payload', function () {
-      const videoAssets = payloadVideo.imp && payloadVideo.imp[0].video
+      const videoAssets = payloadVideo.imp && payloadVideo.imp[0].video;
 
-      expect(payloadVideo.imp.length).to.equal(1)
-      expect(videoAssets).to.have.property('w').that.equals(640)
-      expect(videoAssets).to.have.property('h').that.equals(480)
-      expect(videoAssets).to.have.property('context').that.equals('instream')
-      expect(videoAssets).to.have.property('maxduration').that.equals(30)
-      expect(videoAssets).to.have.property('linearity').that.equals(1)
-      expect(videoAssets).to.have.property('mimes').that.is.an('array')
-      expect(videoAssets).to.have.property('protocols').that.is.an('array')
-      expect(videoAssets).to.have.property('api').that.is.an('array')
-    })
+      expect(payloadVideo.imp.length).to.equal(1);
+      expect(videoAssets).to.have.property('w').that.equals(640);
+      expect(videoAssets).to.have.property('h').that.equals(480);
+      expect(videoAssets).to.have.property('context').that.equals('instream');
+      expect(videoAssets).to.have.property('maxduration').that.equals(30);
+      expect(videoAssets).to.have.property('linearity').that.equals(1);
+      expect(videoAssets).to.have.property('mimes').that.is.an('array');
+      expect(videoAssets).to.have.property('protocols').that.is.an('array');
+      expect(videoAssets).to.have.property('api').that.is.an('array');
+    });
 
     it('should create auxilary placement identifier (size_numUsed), that is constant for a given adUnit', function () {
-      const extAssets1 = payload.imp && payload.imp[0].ext.data
-      const extAssets2 = payloadSingle.imp && payloadSingle.imp[0].ext.data
+      const extAssets1 = payload.imp && payload.imp[0].ext.data;
+      const extAssets2 = payloadSingle.imp && payloadSingle.imp[0].ext.data;
 
       /*
         note that payload comes from first, and payloadSingle from second auction in the test run
         also, since both have same adUnitName, value of pbsize property should be the same
       */
-      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
-      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
-    })
+      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1');
+      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1');
+    });
 
     it('should send supply chain data', function () {
       const supplyChain = {
@@ -662,167 +662,167 @@ describe('SSPBC adapter', function () {
             hp: 1
           },
         ]
-      }
-      const bidWithSupplyChain = Object.assign(bids[0], { ortb2: { source: { ext: { schain: supplyChain } } } })
-      const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest)
-      const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false }
+      };
+      const bidWithSupplyChain = Object.assign(bids[0], { ortb2: { source: { ext: { schain: supplyChain } } } });
+      const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest);
+      const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false };
 
-      expect(payloadWithSupplyChain.source).to.have.property('schain').that.has.keys('ver', 'complete', 'nodes')
-    })
-  })
+      expect(payloadWithSupplyChain.source).to.have.property('schain').that.has.keys('ver', 'complete', 'nodes');
+    });
+  });
 
   describe('interpretResponse', function () {
-    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData()
-    const request = spec.buildRequests(bids, bidRequest)
-    const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle)
-    const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode)
-    const requestVideo = spec.buildRequests([bid_video], bidRequestVideo)
-    const requestNative = spec.buildRequests([bid_native], bidRequestNative)
+    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
+    const request = spec.buildRequests(bids, bidRequest);
+    const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
+    const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);
+    const requestVideo = spec.buildRequests([bid_video], bidRequestVideo);
+    const requestNative = spec.buildRequests([bid_native], bidRequestNative);
 
     it('should handle nobid responses', function () {
-      const result = spec.interpretResponse(emptyResponse, request)
-      expect(result.length).to.equal(0)
-    })
+      const result = spec.interpretResponse(emptyResponse, request);
+      expect(result.length).to.equal(0);
+    });
 
     it('should create bids from non-empty responses', function () {
-      const result = spec.interpretResponse(serverResponse, request)
-      const resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle)
+      const result = spec.interpretResponse(serverResponse, request);
+      const resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
 
-      expect(result.length).to.equal(bids.length)
-      expect(resultSingle.length).to.equal(1)
-      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls', 'eventtrackers')
-    })
+      expect(result.length).to.equal(bids.length);
+      expect(resultSingle.length).to.equal(1);
+      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls', 'eventtrackers');
+    });
 
     it('should create bid from OneCode (parameter-less) request, if response contains siteId', function () {
-      const resultOneCode = spec.interpretResponse(serverResponseOneCode, requestOneCode)
+      const resultOneCode = spec.interpretResponse(serverResponseOneCode, requestOneCode);
 
-      expect(resultOneCode.length).to.equal(1)
-      expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls', 'eventtrackers')
-    })
+      expect(resultOneCode.length).to.equal(1);
+      expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls', 'eventtrackers');
+    });
 
     it('should not create bid from OneCode (parameter-less) request, if response does not contain siteId', function () {
-      const resultOneCodeNoMatch = spec.interpretResponse(serverResponse, requestOneCode)
+      const resultOneCodeNoMatch = spec.interpretResponse(serverResponse, requestOneCode);
 
-      expect(resultOneCodeNoMatch.length).to.equal(0)
-    })
+      expect(resultOneCodeNoMatch.length).to.equal(0);
+    });
 
     it('should handle a partial response', function () {
-      const resultPartial = spec.interpretResponse(serverResponseSingle, request)
-      expect(resultPartial.length).to.equal(1)
-    })
+      const resultPartial = spec.interpretResponse(serverResponseSingle, request);
+      expect(resultPartial.length).to.equal(1);
+    });
 
     it('should not alter HTML from response', function () {
-      const resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle)
-      const adcode = resultSingle[0].ad
+      const resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
+      const adcode = resultSingle[0].ad;
 
-      expect(adcode).to.be.equal(serverResponseSingle.body.seatbid[0].bid[0].adm)
-    })
+      expect(adcode).to.be.equal(serverResponseSingle.body.seatbid[0].bid[0].adm);
+    });
 
     it('should create a correct video bid', function () {
-      const resultVideo = spec.interpretResponse(serverResponseVideo, requestVideo)
+      const resultVideo = spec.interpretResponse(serverResponseVideo, requestVideo);
 
-      expect(resultVideo.length).to.equal(1)
+      expect(resultVideo.length).to.equal(1);
 
-      const videoBid = resultVideo[0]
-      expect(videoBid).to.have.keys('adType', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl', 'vurls', 'eventtrackers')
-      expect(videoBid.adType).to.equal('instream')
-      expect(videoBid.mediaType).to.equal('video')
-      expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/)
-      expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/)
-      expect(videoBid.vastUrl).to.equal('https://video.tag.cache')
-    })
+      const videoBid = resultVideo[0];
+      expect(videoBid).to.have.keys('adType', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl', 'vurls', 'eventtrackers');
+      expect(videoBid.adType).to.equal('instream');
+      expect(videoBid.mediaType).to.equal('video');
+      expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastUrl).to.equal('https://video.tag.cache');
+    });
 
     it('should create a correct native bid', function () {
-      const resultNative = spec.interpretResponse(serverResponseNative, requestNative)
+      const resultNative = spec.interpretResponse(serverResponseNative, requestNative);
 
-      expect(resultNative.length).to.equal(1)
+      expect(resultNative.length).to.equal(1);
 
-      const nativeBid = resultNative[0]
-      expect(nativeBid).to.have.keys('cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls', 'eventtrackers')
-      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers', 'clickTrackers')
-    })
+      const nativeBid = resultNative[0];
+      expect(nativeBid).to.have.keys('cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls', 'eventtrackers');
+      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers', 'clickTrackers');
+    });
 
     it('should reject responses that are not HTML, VATS/VPAID or native', function () {
-      const resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle)
+      const resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle);
 
-      expect(resultIncorrect.length).to.equal(0)
-    })
-  })
+      expect(resultIncorrect.length).to.equal(0);
+    });
+  });
 
   describe('getUserSyncs', function () {
-    const syncResultAll = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true })
-    const syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true })
-    const syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })
+    const syncResultAll = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+    const syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+    const syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
     it('should provide correct iframe url, if frame sync is allowed', function () {
-      expect(syncResultAll).to.have.length(1)
-      expect(syncResultAll[0].url).to.have.string(SYNC_URL_IFRAME)
-    })
+      expect(syncResultAll).to.have.length(1);
+      expect(syncResultAll[0].url).to.have.string(SYNC_URL_IFRAME);
+    });
 
     it('should provide correct image url, if image sync is allowed', function () {
-      expect(syncResultImage).to.have.length(1)
-      expect(syncResultImage[0].url).to.have.string(SYNC_URL_IMAGE)
-    })
+      expect(syncResultImage).to.have.length(1);
+      expect(syncResultImage[0].url).to.have.string(SYNC_URL_IMAGE);
+    });
 
     it('should send no syncs, if no sync is allowed', function () {
-      expect(syncResultNone).to.have.length(0)
-      expect(syncResultNone).to.have.length(0)
-    })
-  })
+      expect(syncResultNone).to.have.length(0);
+      expect(syncResultNone).to.have.length(0);
+    });
+  });
 
   describe('onBidWon', function () {
     it('should generate no notification if bid is undefined', function () {
-      const notificationPayload = spec.onBidWon()
-      expect(notificationPayload).to.be.undefined
-    })
+      const notificationPayload = spec.onBidWon();
+      expect(notificationPayload).to.be.undefined;
+    });
 
     it('should generate notification with event name and request/adUnit data, if correct bid is provided. Should also contain site/slot data as arrays.', function () {
-      const { bids } = prepareTestData()
-      const bid = bids[0]
+      const { bids } = prepareTestData();
+      const bid = bids[0];
 
-      const notificationPayload = spec.onBidWon(bid)
-      expect(notificationPayload).to.have.property('event').that.equals('bidWon')
-      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId)
-      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode])
-      expect(notificationPayload).to.have.property('siteId').that.is.an('array')
-      expect(notificationPayload).to.have.property('slotId').that.is.an('array')
-    })
-  })
+      const notificationPayload = spec.onBidWon(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('bidWon');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
+      expect(notificationPayload).to.have.property('siteId').that.is.an('array');
+      expect(notificationPayload).to.have.property('slotId').that.is.an('array');
+    });
+  });
 
   describe('onBidBillable', function () {
     it('should generate no notification if bid is undefined', function () {
-      const notificationPayload = spec.onBidBillable()
-      expect(notificationPayload).to.be.undefined
-    })
+      const notificationPayload = spec.onBidBillable();
+      expect(notificationPayload).to.be.undefined;
+    });
 
     it('should generate notification with event name and request/adUnit data, if correct bid is provided. Should also contain site/slot data as arrays.', function () {
-      const { bids } = prepareTestData()
-      const bid = bids[0]
+      const { bids } = prepareTestData();
+      const bid = bids[0];
 
-      const notificationPayload = spec.onBidBillable(bid)
-      expect(notificationPayload).to.have.property('event').that.equals('bidBillable')
-      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId)
-      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode])
-      expect(notificationPayload).to.have.property('siteId').that.is.an('array')
-      expect(notificationPayload).to.have.property('slotId').that.is.an('array')
-    })
-  })
+      const notificationPayload = spec.onBidBillable(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('bidBillable');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
+      expect(notificationPayload).to.have.property('siteId').that.is.an('array');
+      expect(notificationPayload).to.have.property('slotId').that.is.an('array');
+    });
+  });
 
   describe('onTimeout', function () {
     it('should generate no notification if timeout data is undefined / has no bids', function () {
-      const notificationPayloadUndefined = spec.onTimeout()
-      const notificationPayloadNoBids = spec.onTimeout([])
+      const notificationPayloadUndefined = spec.onTimeout();
+      const notificationPayloadNoBids = spec.onTimeout([]);
 
-      expect(notificationPayloadUndefined).to.be.undefined
-      expect(notificationPayloadNoBids).to.be.undefined
-    })
+      expect(notificationPayloadUndefined).to.be.undefined;
+      expect(notificationPayloadNoBids).to.be.undefined;
+    });
 
     it('should generate single notification for any number of timeouted bids', function () {
-      const { bids_timeouted } = prepareTestData()
-      const notificationPayload = spec.onTimeout(bids_timeouted)
+      const { bids_timeouted } = prepareTestData();
+      const notificationPayload = spec.onTimeout(bids_timeouted);
 
-      expect(notificationPayload).to.have.property('event').that.equals('timeout')
-      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode])
-    })
-  })
-})
+      expect(notificationPayload).to.have.property('event').that.equals('timeout');
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
+    });
+  });
+});

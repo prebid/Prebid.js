@@ -5,73 +5,73 @@
  * for improved ad targeting capabilities.
  */
 
-import { MODULE_TYPE_RTD } from "../src/activities/modules.js"
-import { loadExternalScript } from "../src/adloader.js"
-import { submodule } from "../src/hook.js"
-import { config as prebidConfig } from "../src/config.js"
-import { getStorageManager } from "../src/storageManager.js"
-import { prefixLog, mergeDeep, isStr } from "../src/utils.js"
+import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
+import { loadExternalScript } from "../src/adloader.js";
+import { submodule } from "../src/hook.js";
+import { config as prebidConfig } from "../src/config.js";
+import { getStorageManager } from "../src/storageManager.js";
+import { prefixLog, mergeDeep, isStr } from "../src/utils.js";
 import {
   getDeviceType,
   getOS,
   getBrowser,
-} from "../libraries/userAgentUtils/index.js"
+} from "../libraries/userAgentUtils/index.js";
 
 // Module constants
-const MODULE_NAME = "oftmedia"
-const EXTERNAL_SCRIPT_URL = "https://bidlift.152media.info/rtd"
-const DEFAULT_TIMEOUT = 1500
-const TIMEOUT_BUFFER_RATIO = 0.7
+const MODULE_NAME = "oftmedia";
+const EXTERNAL_SCRIPT_URL = "https://bidlift.152media.info/rtd";
+const DEFAULT_TIMEOUT = 1500;
+const TIMEOUT_BUFFER_RATIO = 0.7;
 
 // Device type mappings for ORTB2 compliance
 const DEVICE_TYPE_ORTB2_MAP = {
   0: 2, // Unknown -> PC
   1: 4, // Mobile -> Phone
   2: 5, // Tablet -> Tablet
-}
+};
 
 // Module setup
 export const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
-})
+});
 
-const { logError, logWarn, logInfo } = prefixLog(`${MODULE_NAME}RtdProvider:`)
+const { logError, logWarn, logInfo } = prefixLog(`${MODULE_NAME}RtdProvider:`);
 
 /**
  * Module state management
  */
 class ModuleState {
   constructor() {
-    this.initTimestamp = null
-    this.scriptLoadPromise = null
-    this.isReady = false
-    this.readyCallbacks = []
+    this.initTimestamp = null;
+    this.scriptLoadPromise = null;
+    this.isReady = false;
+    this.readyCallbacks = [];
   }
 
   markReady() {
-    this.isReady = true
-    this.readyCallbacks.forEach((callback) => callback())
-    this.readyCallbacks = []
+    this.isReady = true;
+    this.readyCallbacks.forEach((callback) => callback());
+    this.readyCallbacks = [];
   }
 
   onReady(callback) {
     if (this.isReady) {
-      callback()
+      callback();
     } else {
-      this.readyCallbacks.push(callback)
+      this.readyCallbacks.push(callback);
     }
   }
 
   reset() {
-    this.initTimestamp = null
-    this.scriptLoadPromise = null
-    this.isReady = false
-    this.readyCallbacks = []
+    this.initTimestamp = null;
+    this.scriptLoadPromise = null;
+    this.isReady = false;
+    this.readyCallbacks = [];
   }
 }
 
-const moduleState = new ModuleState()
+const moduleState = new ModuleState();
 
 /**
  * Creates a promise that resolves after specified timeout
@@ -80,8 +80,8 @@ const moduleState = new ModuleState()
  */
 function createTimeoutPromise(timeoutMs) {
   return new Promise((resolve) => {
-    setTimeout(() => resolve(undefined), timeoutMs)
-  })
+    setTimeout(() => resolve(undefined), timeoutMs);
+  });
 }
 
 /**
@@ -91,8 +91,8 @@ function createTimeoutPromise(timeoutMs) {
  * @returns {Promise} Resolves with promise result or undefined on timeout
  */
 function raceWithTimeout(promise, timeoutMs) {
-  const timeoutPromise = createTimeoutPromise(timeoutMs)
-  return Promise.race([promise, timeoutPromise])
+  const timeoutPromise = createTimeoutPromise(timeoutMs);
+  return Promise.race([promise, timeoutPromise]);
 }
 
 /**
@@ -102,9 +102,9 @@ function raceWithTimeout(promise, timeoutMs) {
  * @returns {number} Remaining time in milliseconds
  */
 function calculateRemainingTime(startTime, maxDelay) {
-  const elapsed = Date.now() - startTime
-  const allowedTime = maxDelay * TIMEOUT_BUFFER_RATIO
-  return Math.max(0, allowedTime - elapsed)
+  const elapsed = Date.now() - startTime;
+  const allowedTime = maxDelay * TIMEOUT_BUFFER_RATIO;
+  return Math.max(0, allowedTime - elapsed);
 }
 
 /**
@@ -113,28 +113,28 @@ function calculateRemainingTime(startTime, maxDelay) {
  * @returns {Promise<boolean>} Promise resolving to true on success
  */
 function loadOftmediaScript(moduleConfig) {
-  const publisherId = moduleConfig?.params?.publisherId
+  const publisherId = moduleConfig?.params?.publisherId;
 
   if (!publisherId) {
-    const error = new Error("Publisher ID is required for script loading")
-    logError(error.message)
-    return Promise.reject(error)
+    const error = new Error("Publisher ID is required for script loading");
+    logError(error.message);
+    return Promise.reject(error);
   }
 
   return new Promise((resolve, reject) => {
     // Check localStorage availability
     storageManager.localStorageIsEnabled((hasStorage) => {
       if (!hasStorage) {
-        const error = new Error("localStorage is not available")
-        logWarn(error.message + ", skipping script load")
-        return reject(error)
+        const error = new Error("localStorage is not available");
+        logWarn(error.message + ", skipping script load");
+        return reject(error);
       }
 
-      const scriptUrl = `${EXTERNAL_SCRIPT_URL}?pub_id=${publisherId}`
+      const scriptUrl = `${EXTERNAL_SCRIPT_URL}?pub_id=${publisherId}`;
       const onLoadSuccess = () => {
-        logInfo("External script loaded successfully")
-        resolve(true)
-      }
+        logInfo("External script loaded successfully");
+        resolve(true);
+      };
 
       try {
         loadExternalScript(
@@ -144,13 +144,13 @@ function loadOftmediaScript(moduleConfig) {
           onLoadSuccess,
           undefined,
           { pub_id: publisherId }
-        )
+        );
       } catch (error) {
-        logError("Failed to load external script:", error)
-        reject(error)
+        logError("Failed to load external script:", error);
+        reject(error);
       }
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -160,21 +160,21 @@ function loadOftmediaScript(moduleConfig) {
  * @returns {number} Converted device type
  */
 function convertDeviceTypeForBidder(deviceType, bidderCode) {
-  const convertibleBidders = ["oftmedia", "appnexus"]
+  const convertibleBidders = ["oftmedia", "appnexus"];
 
   if (!convertibleBidders.includes(bidderCode)) {
-    return deviceType
+    return deviceType;
   }
 
-  const convertedType = DEVICE_TYPE_ORTB2_MAP[deviceType]
+  const convertedType = DEVICE_TYPE_ORTB2_MAP[deviceType];
   if (convertedType === undefined) {
     logWarn(
       `No ORTB2 mapping found for device type ${deviceType}, using original`
-    )
-    return deviceType
+    );
+    return deviceType;
   }
 
-  return convertedType
+  return convertedType;
 }
 
 /**
@@ -183,29 +183,29 @@ function convertDeviceTypeForBidder(deviceType, bidderCode) {
  * @returns {Object|null} ORTB2 data object or null if invalid
  */
 function buildOrtb2Data(config) {
-  const deviceType = getDeviceType()
-  const deviceOS = getOS()
-  const browserType = getBrowser()
-  const bidderCode = config?.params?.bidderCode
-  const enrichRequest = config?.params?.enrichRequest
+  const deviceType = getDeviceType();
+  const deviceOS = getOS();
+  const browserType = getBrowser();
+  const bidderCode = config?.params?.bidderCode;
+  const enrichRequest = config?.params?.enrichRequest;
 
-  const configuredKeywords = config?.params?.keywords || []
+  const configuredKeywords = config?.params?.keywords || [];
 
   if (!enrichRequest) {
-    logWarn("Enrich request is not enabled, skipping ORTB2 data build")
-    return null
+    logWarn("Enrich request is not enabled, skipping ORTB2 data build");
+    return null;
   }
 
   if (!bidderCode) {
-    logError("Bidder code is required in configuration")
-    return null
+    logError("Bidder code is required in configuration");
+    return null;
   }
 
   // Convert device type if needed
-  const finalDeviceType = convertDeviceTypeForBidder(deviceType, bidderCode)
+  const finalDeviceType = convertDeviceTypeForBidder(deviceType, bidderCode);
 
   // Build keywords array
-  const allKeywords = [...configuredKeywords, `deviceBrowser=${browserType}`]
+  const allKeywords = [...configuredKeywords, `deviceBrowser=${browserType}`];
 
   return {
     bidderCode,
@@ -218,7 +218,7 @@ function buildOrtb2Data(config) {
         keywords: allKeywords.join(", "),
       },
     },
-  }
+  };
 }
 
 /**
@@ -228,48 +228,48 @@ function buildOrtb2Data(config) {
  * @returns {boolean} True if initialization started successfully
  */
 function initializeModule(config, userConsent) {
-  moduleState.reset()
-  moduleState.initTimestamp = Date.now()
+  moduleState.reset();
+  moduleState.initTimestamp = Date.now();
 
   // Validate publisher ID
   if (!isStr(config?.params?.publisherId)) {
-    logError("Publisher ID must be provided as a string")
-    return false
+    logError("Publisher ID must be provided as a string");
+    return false;
   }
 
   // Start script loading process
-  moduleState.scriptLoadPromise = loadOftmediaScript(config)
+  moduleState.scriptLoadPromise = loadOftmediaScript(config);
 
   // Handle script loading completion
   moduleState.scriptLoadPromise
     .then(async () => {
       const auctionDelay =
-        prebidConfig.getConfig("realTimeData")?.auctionDelay || DEFAULT_TIMEOUT
+        prebidConfig.getConfig("realTimeData")?.auctionDelay || DEFAULT_TIMEOUT;
       const remainingTime = calculateRemainingTime(
         moduleState.initTimestamp,
         auctionDelay
-      )
+      );
 
       // Wait for script with remaining time budget
       const result = await raceWithTimeout(
         moduleState.scriptLoadPromise,
         remainingTime
-      )
+      );
 
       if (result) {
-        logInfo("Script loaded within time budget")
+        logInfo("Script loaded within time budget");
       } else {
-        logWarn("Script loading exceeded time budget")
+        logWarn("Script loading exceeded time budget");
       }
 
-      moduleState.markReady()
+      moduleState.markReady();
     })
     .catch((error) => {
-      logError("Script loading failed:", error)
-      moduleState.markReady()
-    })
+      logError("Script loading failed:", error);
+      moduleState.markReady();
+    });
 
-  return true
+  return true;
 }
 
 /**
@@ -286,34 +286,34 @@ function processBidRequestData(bidRequestConfig, done, config) {
       if (!bidRequestConfig?.ortb2Fragments?.bidder) {
         logError(
           "Invalid bid request structure: missing ortb2Fragments.bidder"
-        )
-        return done()
+        );
+        return done();
       }
 
       if (config?.params?.enrichRequest === true) {
         // Build enrichment data
-        const enrichmentData = buildOrtb2Data(config)
+        const enrichmentData = buildOrtb2Data(config);
 
-        logInfo("Building ORTB2 enrichment data", enrichmentData)
+        logInfo("Building ORTB2 enrichment data", enrichmentData);
 
         if (!enrichmentData) {
-          logInfo("Could not build ORTB2 enrichment data")
-          return done()
+          logInfo("Could not build ORTB2 enrichment data");
+          return done();
         }
 
         // Apply enrichment to bid request
         mergeDeep(bidRequestConfig.ortb2Fragments.bidder, {
           [enrichmentData.bidderCode]: enrichmentData.ortb2Data,
-        })
+        });
 
-        logInfo("Bid request enriched successfully")
+        logInfo("Bid request enriched successfully");
       }
-      done()
+      done();
     } catch (error) {
-      logError("Error processing bid request data:", error)
-      done()
+      logError("Error processing bid request data:", error);
+      done();
     }
-  })
+  });
 }
 
 /**
@@ -327,7 +327,7 @@ function handleBidRequestEvent(bidderRequest, config, userConsent) {
     bidderRequest: JSON.stringify(bidderRequest),
     config,
     userConsent,
-  })
+  });
 }
 
 /**
@@ -338,7 +338,7 @@ export const oftmediaRtdSubmodule = {
   init: initializeModule,
   getBidRequestData: processBidRequestData,
   onBidRequestEvent: handleBidRequestEvent,
-}
+};
 
 export const __testing__ = {
   loadOftmediaScript,
@@ -347,6 +347,6 @@ export const __testing__ = {
   buildOrtb2Data,
   raceWithTimeout,
   moduleState,
-}
+};
 
-submodule("realTimeData", oftmediaRtdSubmodule)
+submodule("realTimeData", oftmediaRtdSubmodule);

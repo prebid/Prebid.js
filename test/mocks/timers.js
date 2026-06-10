@@ -3,72 +3,72 @@
  * This helps avoid functionality leaking from one test to the next.
  */
 
-let wrappersActive = false
+let wrappersActive = false;
 
 export function configureTimerInterceptors(debugLog = function() {}, generateStackTraces = false) {
-  if (wrappersActive) throw new Error(`Timer wrappers are already in place.`)
-  wrappersActive = true
-  let theseWrappersActive = true
+  if (wrappersActive) throw new Error(`Timer wrappers are already in place.`);
+  wrappersActive = true;
+  let theseWrappersActive = true;
 
-  const originalSetTimeout = globalThis.setTimeout
-  const originalSetInterval = globalThis.setInterval
-  const originalClearTimeout = globalThis.clearTimeout
-  const originalClearInterval = globalThis.clearInterval
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const originalClearInterval = globalThis.clearInterval;
 
-  let timerId = -1
-  const timers = []
+  let timerId = -1;
+  const timers = [];
 
-  const waitOnTimersResolves = []
+  const waitOnTimersResolves = [];
   function checkWaits() {
-    if (timers.length === 0) waitOnTimersResolves.forEach((r) => r())
+    if (timers.length === 0) waitOnTimersResolves.forEach((r) => r());
   }
-  const waitAllActiveTimers = () => timers.length === 0 ? Promise.resolve() : new Promise((resolve) => waitOnTimersResolves.push(resolve))
-  const clearAllActiveTimers = () => timers.forEach((timer) => timer.type === 'timeout' ? clearTimeout(timer.handle) : clearInterval(timer.handle))
+  const waitAllActiveTimers = () => timers.length === 0 ? Promise.resolve() : new Promise((resolve) => waitOnTimersResolves.push(resolve));
+  const clearAllActiveTimers = () => timers.forEach((timer) => timer.type === 'timeout' ? clearTimeout(timer.handle) : clearInterval(timer.handle));
 
   const generateInterceptor = (type, originalFunctionWrapper) => (fn, delay, ...args) => {
-    timerId++
-    debugLog(`Setting wrapped timeout ${timerId} for ${delay ?? 0}`)
-    const info = { timerId, type }
+    timerId++;
+    debugLog(`Setting wrapped timeout ${timerId} for ${delay ?? 0}`);
+    const info = { timerId, type };
     if (generateStackTraces) {
       try {
-        throw new Error()
+        throw new Error();
       } catch (ex) {
-        info.stack = ex.stack
+        info.stack = ex.stack;
       }
     }
-    info.handle = originalFunctionWrapper(info, fn, delay, ...args)
-    timers.push(info)
-    return info.handle
-  }
+    info.handle = originalFunctionWrapper(info, fn, delay, ...args);
+    timers.push(info);
+    return info.handle;
+  };
   const setTimeoutInterceptor = generateInterceptor('timeout', (info, fn, delay, ...args) => originalSetTimeout(() => {
     try {
-      debugLog(`Running timeout ${info.timerId}`)
-      fn(...args)
+      debugLog(`Running timeout ${info.timerId}`);
+      fn(...args);
     } finally {
-      const infoIndex = timers.indexOf(info)
-      if (infoIndex > -1) timers.splice(infoIndex, 1)
-      checkWaits()
+      const infoIndex = timers.indexOf(info);
+      if (infoIndex > -1) timers.splice(infoIndex, 1);
+      checkWaits();
     }
-  }, delay))
+  }, delay));
 
   const setIntervalInterceptor = generateInterceptor('interval', (info, fn, interval, ...args) => originalSetInterval(() => {
-    debugLog(`Running interval ${info.timerId}`)
-    fn(...args)
-  }, interval))
+    debugLog(`Running interval ${info.timerId}`);
+    fn(...args);
+  }, interval));
 
   const generateClearInterceptor = (type, originalClearFunction) => (handle) => {
-    originalClearFunction(handle)
-    const infoIndex = timers.findIndex((i) => i.handle === handle && i.type === type)
-    if (infoIndex > -1) timers.splice(infoIndex, 1)
-    checkWaits()
-  }
-  const clearTimeoutInterceptor = generateClearInterceptor('timeout', originalClearTimeout)
-  const clearIntervalInterceptor = generateClearInterceptor('interval', originalClearInterval)
+    originalClearFunction(handle);
+    const infoIndex = timers.findIndex((i) => i.handle === handle && i.type === type);
+    if (infoIndex > -1) timers.splice(infoIndex, 1);
+    checkWaits();
+  };
+  const clearTimeoutInterceptor = generateClearInterceptor('timeout', originalClearTimeout);
+  const clearIntervalInterceptor = generateClearInterceptor('interval', originalClearInterval);
 
-  globalThis.setTimeout = setTimeoutInterceptor
-  globalThis.setInterval = setIntervalInterceptor
-  globalThis.clearTimeout = clearTimeoutInterceptor
-  globalThis.clearInterval = clearIntervalInterceptor
+  globalThis.setTimeout = setTimeoutInterceptor;
+  globalThis.setInterval = setIntervalInterceptor;
+  globalThis.clearTimeout = clearTimeoutInterceptor;
+  globalThis.clearInterval = clearIntervalInterceptor;
 
   return {
     waitAllActiveTimers,
@@ -76,12 +76,12 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
     timers,
     restore: () => {
       if (theseWrappersActive) {
-        theseWrappersActive = false
-        globalThis.setTimeout = originalSetTimeout
-        globalThis.setInterval = originalSetInterval
-        globalThis.clearTimeout = originalClearTimeout
-        globalThis.clearInterval = originalClearInterval
+        theseWrappersActive = false;
+        globalThis.setTimeout = originalSetTimeout;
+        globalThis.setInterval = originalSetInterval;
+        globalThis.clearTimeout = originalClearTimeout;
+        globalThis.clearInterval = originalClearInterval;
       }
     }
-  }
+  };
 }

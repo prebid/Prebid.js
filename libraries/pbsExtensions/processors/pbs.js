@@ -1,13 +1,13 @@
-import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js'
-import { isPlainObject, isStr, mergeDeep } from '../../../src/utils.js'
-import { extPrebidMediaType } from './mediaType.js'
-import { setRequestExtPrebidAliases } from './aliases.js'
-import { setImpBidParams } from './params.js'
-import { setImpAdUnitCode } from './adUnitCode.js'
-import { setRequestExtPrebid, setRequestExtPrebidChannel } from './requestExtPrebid.js'
-import { setBidResponseVideoCache } from './video.js'
-import { addEventTrackers } from './eventTrackers.js'
-import { setRequestExtPrebidPageViewIds } from './pageViewIds.js'
+import { BID_RESPONSE, IMP, REQUEST, RESPONSE } from '../../../src/pbjsORTB.js';
+import { isPlainObject, isStr, mergeDeep } from '../../../src/utils.js';
+import { extPrebidMediaType } from './mediaType.js';
+import { setRequestExtPrebidAliases } from './aliases.js';
+import { setImpBidParams } from './params.js';
+import { setImpAdUnitCode } from './adUnitCode.js';
+import { setRequestExtPrebid, setRequestExtPrebidChannel } from './requestExtPrebid.js';
+import { setBidResponseVideoCache } from './video.js';
+import { addEventTrackers } from './eventTrackers.js';
+import { setRequestExtPrebidPageViewIds } from './pageViewIds.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -47,32 +47,32 @@ export const PBS_PROCESSORS = {
     bidderCode: {
       // sets bidderCode from on seatbid.seat
       fn(bidResponse, bid, context) {
-        bidResponse.bidderCode = context.seatbid.seat
-        bidResponse.adapterCode = bid?.ext?.prebid?.meta?.adaptercode || context.bidRequest?.bidder || bidResponse.bidderCode
+        bidResponse.bidderCode = context.seatbid.seat;
+        bidResponse.adapterCode = bid?.ext?.prebid?.meta?.adaptercode || context.bidRequest?.bidder || bidResponse.bidderCode;
       }
     },
     pbsBidId: {
       // sets bidResponse.pbsBidId from ext.prebid.bidid
       fn(bidResponse, bid) {
-        const bidId = bid?.ext?.prebid?.bidid
+        const bidId = bid?.ext?.prebid?.bidid;
         if (isStr(bidId)) {
-          bidResponse.pbsBidId = bidId
+          bidResponse.pbsBidId = bidId;
         }
       }
     },
     adserverTargeting: {
       // sets bidResponse.adserverTargeting from ext.prebid.targeting
       fn(bidResponse, bid) {
-        const targeting = bid?.ext?.prebid?.targeting
+        const targeting = bid?.ext?.prebid?.targeting;
         if (isPlainObject(targeting)) {
-          bidResponse.adserverTargeting = targeting
+          bidResponse.adserverTargeting = targeting;
         }
       }
     },
     extPrebidMeta: {
       // sets bidResponse.meta from ext.prebid.meta
       fn(bidResponse, bid) {
-        bidResponse.meta = mergeDeep({}, bid?.ext?.prebid?.meta, bidResponse.meta)
+        bidResponse.meta = mergeDeep({}, bid?.ext?.prebid?.meta, bidResponse.meta);
       }
     },
     pbsWinTrackers: {
@@ -86,41 +86,41 @@ export const PBS_PROCESSORS = {
       // - bidder-scoped for 'errors' and 'responsetimemillis'
       // - copy-as-is for all other fields
       fn(response, ortbResponse, context) {
-        const bidder = context.bidderRequest?.bidderCode
-        const ext = ortbResponse?.ext
-        if (!ext) return
+        const bidder = context.bidderRequest?.bidderCode;
+        const ext = ortbResponse?.ext;
+        if (!ext) return;
 
         const FIELD_MAP = {
           errors: 'serverErrors',
           responsetimemillis: 'serverResponseTimeMs'
-        }
+        };
 
         Object.entries(ext).forEach(([field, extValue]) => {
           if (FIELD_MAP[field]) {
             // Skip mapped fields if no bidder
-            if (!bidder) return
-            const value = extValue?.[bidder]
+            if (!bidder) return;
+            const value = extValue?.[bidder];
             if (value !== undefined) {
-              const clientName = FIELD_MAP[field]
-              context.bidderRequest[clientName] = value
+              const clientName = FIELD_MAP[field];
+              context.bidderRequest[clientName] = value;
               context.bidRequests?.forEach(bid => {
-                bid[clientName] = value
-              })
+                bid[clientName] = value;
+              });
             }
           } else if (extValue !== undefined) {
-            context.bidderRequest.pbsExt = context.bidderRequest.pbsExt || {}
-            context.bidderRequest.pbsExt[field] = extValue
+            context.bidderRequest.pbsExt = context.bidderRequest.pbsExt || {};
+            context.bidderRequest.pbsExt[field] = extValue;
           }
-        })
+        });
       }
     },
   }
-}
+};
 
 if (FEATURES.VIDEO) {
   PBS_PROCESSORS[BID_RESPONSE].videoCache = {
     // sets response video attributes; in addition, looks at ext.prebid.cache and .targeting to set video cache key and URL
     fn: setBidResponseVideoCache,
     priority: -10, // after 'video'
-  }
+  };
 }

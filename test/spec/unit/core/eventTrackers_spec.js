@@ -3,7 +3,7 @@ import {
   parseEventTrackers,
   TRACKER_METHOD_IMG,
   TRACKER_METHOD_JS
-} from '../../../../src/eventTrackers.js'
+} from '../../../../src/eventTrackers.js';
 
 describe('event trackers', () => {
   describe('parseEventTrackers', () => {
@@ -54,8 +54,8 @@ describe('event trackers', () => {
       },
     }).forEach(([t, { eventtrackers, expected }]) => {
       it(`can parse ${t}`, () => {
-        expect(parseEventTrackers(eventtrackers)).to.eql(expected)
-      })
-    })
-  })
-})
+        expect(parseEventTrackers(eventtrackers)).to.eql(expected);
+      });
+    });
+  });
+});

@@ -1,28 +1,28 @@
-import { submodule } from 'src/hook.js'
-import { getGlobal } from 'src/prebidGlobal.js'
-import * as utils from 'src/utils.js'
-import { subModuleObj } from 'modules/gameraRtdProvider.js'
+import { submodule } from 'src/hook.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import * as utils from 'src/utils.js';
+import { subModuleObj } from 'modules/gameraRtdProvider.js';
 
 describe('gameraRtdProvider', function () {
-  let logErrorSpy
+  let logErrorSpy;
 
   beforeEach(function () {
-    logErrorSpy = sinon.spy(utils, 'logError')
-  })
+    logErrorSpy = sinon.spy(utils, 'logError');
+  });
 
   afterEach(function () {
-    logErrorSpy.restore()
-  })
+    logErrorSpy.restore();
+  });
 
   describe('subModuleObj', function () {
     it('should have the correct module name', function () {
-      expect(subModuleObj.name).to.equal('gamera')
-    })
+      expect(subModuleObj.name).to.equal('gamera');
+    });
 
     it('successfully instantiates and returns true', function () {
-      expect(subModuleObj.init()).to.equal(true)
-    })
-  })
+      expect(subModuleObj.init()).to.equal(true);
+    });
+  });
 
   describe('getBidRequestData', function () {
     const reqBidsConfigObj = {
@@ -97,50 +97,50 @@ describe('gameraRtdProvider', function () {
           }
         }
       }
-    }
+    };
 
-    let callback
+    let callback;
 
     beforeEach(function () {
-      callback = sinon.spy()
-      window.gamera = undefined
-    })
+      callback = sinon.spy();
+      window.gamera = undefined;
+    });
 
     it('should queue command when gamera.getPrebidSegments is not available', function () {
-      subModuleObj.getBidRequestData(reqBidsConfigObj, callback)
+      subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-      expect(window.gamera).to.exist
-      expect(window.gamera.cmd).to.be.an('array')
-      expect(window.gamera.cmd.length).to.equal(1)
-      expect(callback.called).to.be.false
+      expect(window.gamera).to.exist;
+      expect(window.gamera.cmd).to.be.an('array');
+      expect(window.gamera.cmd.length).to.equal(1);
+      expect(callback.called).to.be.false;
 
       // our callback should be executed if command queue is flushed
-      window.gamera.cmd.forEach(command => command())
-      expect(callback.calledOnce).to.be.true
-    })
+      window.gamera.cmd.forEach(command => command());
+      expect(callback.calledOnce).to.be.true;
+    });
 
     it('should call enrichAuction directly when gamera.getPrebidSegments is available', function () {
       window.gamera = {
         getPrebidSegments: () => ({})
-      }
+      };
 
-      subModuleObj.getBidRequestData(reqBidsConfigObj, callback)
+      subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-      expect(callback.calledOnce).to.be.true
-    })
+      expect(callback.calledOnce).to.be.true;
+    });
 
     it('should handle errors gracefully', function () {
       window.gamera = {
         getPrebidSegments: () => {
-          throw new Error('Test error')
+          throw new Error('Test error');
         }
-      }
+      };
 
-      subModuleObj.getBidRequestData(reqBidsConfigObj, callback)
+      subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-      expect(logErrorSpy.calledWith('gameraRtdProvider', 'Error getting segments:')).to.be.true
-      expect(callback.calledOnce).to.be.true
-    })
+      expect(logErrorSpy.calledWith('gameraRtdProvider', 'Error getting segments:')).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+    });
 
     describe('segment enrichment', function () {
       const mockSegments = {
@@ -175,49 +175,49 @@ describe('gameraRtdProvider', function () {
             }
           }
         }
-      }
+      };
 
       beforeEach(function () {
         window.gamera = {
           getPrebidSegments: () => mockSegments
-        }
-      })
+        };
+      });
 
       it('should enrich ortb2Fragments with user data', function () {
-        subModuleObj.getBidRequestData(reqBidsConfigObj, callback)
+        subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.deep.include(mockSegments.user.data[0])
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.deep.include(mockSegments.user.data[0]);
 
         // check if existing attributes are not overwritten
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4)
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment[0].id).to.equal('1')
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.keywords).to.equal('a,b')
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.data.registered).to.equal(true)
-      })
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment[0].id).to.equal('1');
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.keywords).to.equal('a,b');
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.data.registered).to.equal(true);
+      });
 
       it('should enrich ortb2Fragments with site data', function () {
-        subModuleObj.getBidRequestData(reqBidsConfigObj, callback)
+        subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data).to.deep.include(mockSegments.site.content.data[0])
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.keywords).to.equal('gamera,article,keywords')
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data).to.deep.include(mockSegments.site.content.data[0]);
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.keywords).to.equal('gamera,article,keywords');
 
         // check if existing attributes are not overwritten
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].ext.segtax).to.equal(7)
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment[0].id).to.equal('687')
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.ext.data.category).to.equal('repair')
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.userrating).to.equal('4')
-      })
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].ext.segtax).to.equal(7);
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment[0].id).to.equal('687');
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.ext.data.category).to.equal('repair');
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.userrating).to.equal('4');
+      });
 
       it('should enrich adUnits with segment data', function () {
-        subModuleObj.getBidRequestData(reqBidsConfigObj, callback)
+        subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.key).to.equal('value')
-        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.gameraSegment).to.equal('ad-1')
+        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.key).to.equal('value');
+        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.gameraSegment).to.equal('ad-1');
 
         // check if existing attributes are not overwritten
-        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.adUnitSpecificAttribute).to.equal('123')
-        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.pbadslot).to.equal('homepage-top-rect')
-      })
-    })
-  })
-})
+        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.adUnitSpecificAttribute).to.equal('123');
+        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.pbadslot).to.equal('homepage-top-rect');
+      });
+    });
+  });
+});

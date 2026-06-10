@@ -3,17 +3,17 @@ import {
   PLAYLIST, PLAYBACK_REQUEST, CONTENT_LOADED, PLAY, PAUSE, TIME, SEEK_START, SEEK_END, MUTE, VOLUME, ERROR, COMPLETE,
   FULLSCREEN, PLAYER_RESIZE,
   AD_REQUEST, AD_IMPRESSION, AD_TIME, AD_COMPLETE, AD_SKIPPED, AD_CLICK, AD_STARTED, AD_ERROR, AD_LOADED, AD_PLAY, AD_PAUSE
-} from '../libraries/video/constants/events.js'
+} from '../libraries/video/constants/events.js';
 // missing events: , AD_BREAK_START, , AD_BREAK_END, VIEWABLE, BUFFER, CAST, PLAYLIST_COMPLETE, RENDITION_UPDATE, PLAY_ATTEMPT_FAILED, AUTOSTART_BLOCKED
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
-} from '../libraries/video/constants/ortb.js'
-import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js'
-import { submodule } from '../src/hook.js'
-import stateFactory from '../libraries/video/shared/state.js'
-import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js'
-import { getEventHandler } from '../libraries/video/shared/eventHandler.js'
-import { getWinDimensions } from '../src/utils.js'
+} from '../libraries/video/constants/ortb.js';
+import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+import { submodule } from '../src/hook.js';
+import stateFactory from '../libraries/video/shared/state.js';
+import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { getWinDimensions } from '../src/utils.js';
 /**
  * @typedef {import('../libraries/video/shared/state.js').State} State
  */
@@ -36,90 +36,90 @@ inspiration:
 https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module.js
  */
 
-const setupFailMessage = 'Failed to instantiate the player'
-const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED]
+const setupFailMessage = 'Failed to instantiate the player';
+const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
 export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
-  const vjs = vjs_
+  const vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
-  const callbackToHandler = {}
+  const callbackToHandler = {};
 
-  const adState = adState_
-  const timeState = timeState_
-  let player = null
-  let playerVersion = null
-  let playerIsSetup = false
-  const { playerConfig, divId } = providerConfig
-  let isMuted
-  let previousLastTimePosition = 0
-  let lastTimePosition = 0
+  const adState = adState_;
+  const timeState = timeState_;
+  let player = null;
+  let playerVersion = null;
+  let playerIsSetup = false;
+  const { playerConfig, divId } = providerConfig;
+  let isMuted;
+  let previousLastTimePosition = 0;
+  let lastTimePosition = 0;
 
-  let setupCompleteCallbacks = []
-  let setupFailedCallbacks = []
-  let setupFailedEventHandlers = []
+  let setupCompleteCallbacks = [];
+  let setupFailedCallbacks = [];
+  let setupFailedEventHandlers = [];
 
   // TODO: test with older videojs versions
-  const minimumSupportedPlayerVersion = '7.17.0'
+  const minimumSupportedPlayerVersion = '7.17.0';
 
   function init() {
     if (!vjs) {
-      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present')
-      return
+      triggerSetupFailure(-1, setupFailMessage + ': Videojs not present');
+      return;
     }
 
-    playerVersion = vjs.VERSION
+    playerVersion = vjs.VERSION;
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure(-2, setupFailMessage + ': Videojs version not supported')
-      return
+      triggerSetupFailure(-2, setupFailMessage + ': Videojs version not supported');
+      return;
     }
 
     if (!document.getElementById(divId)) {
-      triggerSetupFailure(-3, setupFailMessage + ': No div found with id ' + divId)
-      return
+      triggerSetupFailure(-3, setupFailMessage + ': No div found with id ' + divId);
+      return;
     }
 
-    const instantiatedPlayers = vjs.players
+    const instantiatedPlayers = vjs.players;
     if (instantiatedPlayers && instantiatedPlayers[divId]) {
       // already instantiated
-      player = instantiatedPlayers[divId]
-      onReady()
-      return
+      player = instantiatedPlayers[divId];
+      onReady();
+      return;
     }
 
-    setupPlayer(playerConfig)
+    setupPlayer(playerConfig);
 
     if (!player) {
-      triggerSetupFailure(-4, setupFailMessage)
+      triggerSetupFailure(-4, setupFailMessage);
     }
   }
 
   function getId() {
-    return divId
+    return divId;
   }
 
   function getOrtbVideo() {
     if (!player) {
-      return
+      return;
     }
 
-    let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY
+    let playBackMethod = PLAYBACK_METHODS.CLICK_TO_PLAY;
     // returns a boolean or a string with the autoplay strategy
-    const autoplay = player.autoplay()
-    const muted = player.muted() || autoplay === 'muted'
+    const autoplay = player.autoplay();
+    const muted = player.muted() || autoplay === 'muted';
     // check if autoplay is truthy since it may be a bool or string
     if (autoplay) {
-      playBackMethod = muted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY
+      playBackMethod = muted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     const supportedMediaTypes = Object.values(VIDEO_MIME_TYPE).filter(
       // Follows w3 spec https://www.w3.org/TR/2011/WD-html5-20110113/video.html#dom-navigator-canplaytype
       type => player.canPlayType(type) !== ''
-    )
+    );
 
     // IMA supports vpaid unless its expliclty turned off
     // TODO: needs a reference to the imaOptions used at setup to determine if vpaid can be used
     // if (imaOptions && imaOptions.vpaidMode !== 0) {
-    supportedMediaTypes.push(VPAID_MIME_TYPE)
+    supportedMediaTypes.push(VPAID_MIME_TYPE);
     // }
 
     const video = {
@@ -144,7 +144,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       playbackmethod: [playBackMethod],
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
       // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button, or a skipmin/max
-    }
+    };
 
     // TODO: Determine placement may not be in stream if videojs is only used to serve ad content
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
@@ -152,64 +152,64 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     // i.e. we can't tell if its interstitial, in article, etc.
     // update: cannot infer instream ever, always need declarations
     if (player.src()) {
-      video.plcmt = PLCMT.ACCOMPANYING_CONTENT
+      video.plcmt = PLCMT.ACCOMPANYING_CONTENT;
     }
 
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
-    const findPosition = vjs.dom.findPosition
+    const findPosition = vjs.dom.findPosition;
     if (player.isFullscreen()) {
-      video.pos = AD_POSITION.FULL_SCREEN
+      video.pos = AD_POSITION.FULL_SCREEN;
     } else if (findPosition) {
-      video.pos = utils.getPositionCode(findPosition(player.el()))
+      video.pos = utils.getPositionCode(findPosition(player.el()));
     }
 
-    return video
+    return video;
   }
 
   function getOrtbContent() {
     if (!player) {
-      return
+      return;
     }
 
     const content = {
       // id:, TODO: find a suitable id for videojs sources
       url: player.currentSrc()
-    }
+    };
     // Only include length if player is ready
     // player.readyState() returns a level of readiness from 0 to 4
     // https://docs.videojs.com/player#readyState
     if (player.readyState()) {
-      content.len = Math.round(player.duration())
+      content.len = Math.round(player.duration());
     }
 
-    const mediaItem = utils.getMedia(player)
+    const mediaItem = utils.getMedia(player);
     if (mediaItem) {
       for (const param of ['id', 'title', 'description', 'album', 'artist']) {
         if (mediaItem[param]) {
-          content[param] = mediaItem[param]
+          content[param] = mediaItem[param];
         }
       }
     }
 
-    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src)
+    const contentUrl = utils.getValidMediaUrl(mediaItem && mediaItem.src, player.src);
     if (contentUrl) {
-      content.url = contentUrl
+      content.url = contentUrl;
     }
 
-    return content
+    return content;
   }
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
   function setAdTagUrl(adTagUrl, options) {
     if (!player.ima || !adTagUrl) {
-      return
+      return;
     }
 
     // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
     try {
-      player.ima.changeAdTag(adTagUrl)
-      player.ima.requestAds()
+      player.ima.changeAdTag(adTagUrl);
+      player.ima.requestAds();
     } catch (e) {
       /*
       Handling is not required; ad errors are emitted automatically by video.js
@@ -219,13 +219,13 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
   function setAdXml(vastXml) {
     if (!player.ima || !vastXml) {
-      return
+      return;
     }
 
     // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
     try {
-      player.ima.controller.settings.adsResponse = vastXml
-      player.ima.requestAds()
+      player.ima.controller.settings.adsResponse = vastXml;
+      player.ima.requestAds();
     } catch (e) {
       /*
       Handling is not required; ad errors are emitted automatically by video.js
@@ -234,34 +234,34 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   }
 
   function onEvent(type, callback, payload) {
-    registerSetupListeners(type, callback, payload)
+    registerSetupListeners(type, callback, payload);
 
     if (!player) {
-      return
+      return;
     }
 
     player.ready(() => {
-      registerListeners(type, callback, payload)
-    })
+      registerListeners(type, callback, payload);
+    });
   }
 
   function registerSetupListeners(externalEventName, callback, basePayload) {
     // no point in registering for setup failures if already setup.
     if (playerIsSetup) {
-      return
+      return;
     }
 
     if (externalEventName === SETUP_COMPLETE) {
-      setupCompleteCallbacks.push(callback)
+      setupCompleteCallbacks.push(callback);
     } else if (externalEventName === SETUP_FAILED) {
-      setupFailedCallbacks.push(callback)
-      registerSetupErrorListener()
+      setupFailedCallbacks.push(callback);
+      registerSetupErrorListener();
     }
   }
 
   function registerSetupErrorListener() {
     if (!player) {
-      return
+      return;
     }
 
     const eventHandler = () => {
@@ -271,119 +271,119 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       handler and checking to see if the player has been setup
        */
       if (playerIsSetup) {
-        return
+        return;
       }
 
-      const error = player.error()
-      triggerSetupFailure(error.code, error.message, error)
-    }
+      const error = player.error();
+      triggerSetupFailure(error.code, error.message, error);
+    };
 
-    player.on(ERROR, eventHandler)
-    setupFailedEventHandlers.push(eventHandler)
+    player.on(ERROR, eventHandler);
+    setupFailedEventHandlers.push(eventHandler);
   }
 
   function registerListeners(externalEventName, callback, basePayload) {
     if (externalEventName === MUTE) {
       const eventHandler = () => {
         if (isMuted !== player.muted()) {
-          basePayload.mute = isMuted = !isMuted
-          callback(externalEventName, basePayload)
+          basePayload.mute = isMuted = !isMuted;
+          callback(externalEventName, basePayload);
         }
-      }
-      player.on(utils.getVideojsEventName(VOLUME), eventHandler)
-      return
+      };
+      player.on(utils.getVideojsEventName(VOLUME), eventHandler);
+      return;
     }
 
-    let getEventPayload
+    let getEventPayload;
 
     switch (externalEventName) {
       case PLAY:
       case PAUSE:
       case DESTROYED:
-        break
+        break;
 
       case PLAYBACK_REQUEST:
-        getEventPayload = e => ({ playReason: 'unknown' })
-        break
+        getEventPayload = e => ({ playReason: 'unknown' });
+        break;
 
       case AD_REQUEST:
         getEventPayload = e => {
-          const adTagUrl = e.AdsRequest.adTagUrl
-          adState.updateState({ adTagUrl })
-          return { adTagUrl }
-        }
-        break
+          const adTagUrl = e.AdsRequest.adTagUrl;
+          adState.updateState({ adTagUrl });
+          return { adTagUrl };
+        };
+        break;
 
       case AD_LOADED:
         getEventPayload = (e) => {
-          const imaAd = e.getAdData && e.getAdData()
-          adState.updateForEvent(imaAd)
-          timeState.clearState()
-          return adState.getState()
-        }
-        break
+          const imaAd = e.getAdData && e.getAdData();
+          adState.updateForEvent(imaAd);
+          timeState.clearState();
+          return adState.getState();
+        };
+        break;
 
       case AD_STARTED:
       case AD_PLAY:
       case AD_PAUSE:
-        getEventPayload = () => adState.getState()
-        break
+        getEventPayload = () => adState.getState();
+        break;
 
       case AD_IMPRESSION:
       case AD_CLICK:
-        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState())
-        break
+        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
+        break;
 
       case AD_TIME:
         getEventPayload = (e) => {
-          const adTimeEvent = e && e.getAdData && e.getAdData()
-          timeState.updateForTimeEvent(adTimeEvent)
-          return Object.assign({}, adState.getState(), timeState.getState())
-        }
-        break
+          const adTimeEvent = e && e.getAdData && e.getAdData();
+          timeState.updateForTimeEvent(adTimeEvent);
+          return Object.assign({}, adState.getState(), timeState.getState());
+        };
+        break;
 
       case AD_COMPLETE:
         getEventPayload = () => {
-          const currentState = adState.getState()
-          adState.clearState()
-          return currentState
-        }
-        break
+          const currentState = adState.getState();
+          adState.clearState();
+          return currentState;
+        };
+        break;
 
       case AD_SKIPPED:
         getEventPayload = () => {
-          const currentState = Object.assign({}, adState.getState(), timeState.getState())
-          adState.clearState()
-          return currentState
-        }
-        break
+          const currentState = Object.assign({}, adState.getState(), timeState.getState());
+          adState.clearState();
+          return currentState;
+        };
+        break;
 
       case AD_ERROR:
         getEventPayload = e => {
-          const imaAdError = e.data && e.data.AdError
+          const imaAdError = e.data && e.data.AdError;
           const extraPayload = Object.assign({
             playerErrorCode: imaAdError.getErrorCode(),
             vastErrorCode: imaAdError.getVastErrorCode(),
             errorMessage: imaAdError.getMessage(),
             sourceError: imaAdError.getInnerError()
             // timeout
-          }, adState.getState(), timeState.getState())
-          adState.clearState()
-          return extraPayload
-        }
-        break
+          }, adState.getState(), timeState.getState());
+          adState.clearState();
+          return extraPayload;
+        };
+        break;
 
       case PLAYLIST:
         getEventPayload = e => ({
           playlistItemCount: utils.getPlaylistCount(player),
           autostart: player.autoplay()
-        })
-        break
+        });
+        break;
 
       case CONTENT_LOADED:
         getEventPayload = e => {
-          const media = utils.getMedia(player)
-          const contentUrl = utils.getValidMediaUrl(media && media.src, player.src, e && e.target && e.target.currentSrc)
+          const media = utils.getMedia(player);
+          const contentUrl = utils.getValidMediaUrl(media && media.src, player.src, e && e.target && e.target.currentSrc);
           return {
             contentId: media && media.id,
             contentUrl,
@@ -391,24 +391,24 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
             description: media && media.description,
             playlistIndex: utils.getCurrentPlaylistIndex(player),
             contentTags: media && media.contentTags
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case TIME:
         // TODO: might want to check seeking() and/or scrubbing()
         getEventPayload = e => {
-          previousLastTimePosition = lastTimePosition
-          const currentTime = player.currentTime()
-          const duration = player.duration()
-          timeState.updateForTimeEvent({ currentTime, duration })
-          lastTimePosition = currentTime
+          previousLastTimePosition = lastTimePosition;
+          const currentTime = player.currentTime();
+          const duration = player.duration();
+          timeState.updateForTimeEvent({ currentTime, duration });
+          lastTimePosition = currentTime;
           return {
             position: lastTimePosition,
             duration
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case SEEK_START:
         getEventPayload = e => {
@@ -416,100 +416,100 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
             position: previousLastTimePosition,
             destination: player.currentTime(),
             duration: player.duration()
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case SEEK_END:
         getEventPayload = () => ({
           position: player.currentTime(),
           duration: player.duration()
-        })
-        break
+        });
+        break;
 
       case VOLUME:
-        getEventPayload = e => ({ volumePercentage: player.volume() * 100 })
-        break
+        getEventPayload = e => ({ volumePercentage: player.volume() * 100 });
+        break;
 
       case ERROR:
         getEventPayload = e => {
-          const error = player.error()
+          const error = player.error();
           return {
             sourceError: error,
             errorCode: error.code,
             errorMessage: error.message,
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case COMPLETE:
         getEventPayload = e => {
-          previousLastTimePosition = lastTimePosition = 0
-          timeState.clearState()
-        }
-        break
+          previousLastTimePosition = lastTimePosition = 0;
+          timeState.clearState();
+        };
+        break;
 
       case FULLSCREEN:
-        getEventPayload = e => ({ fullscreen: player.isFullscreen() })
-        break
+        getEventPayload = e => ({ fullscreen: player.isFullscreen() });
+        break;
 
       case PLAYER_RESIZE:
         getEventPayload = e => ({
           height: player.currentHeight(),
           width: player.currentWidth(),
-        })
-        break
+        });
+        break;
 
       default:
-        return
+        return;
     }
 
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
 
     if (externalEventName === PLAYLIST) {
-      registerPlaylistEventListener(eventHandler)
-      return
+      registerPlaylistEventListener(eventHandler);
+      return;
     }
 
-    const videojsEventName = utils.getVideojsEventName(externalEventName)
+    const videojsEventName = utils.getVideojsEventName(externalEventName);
 
     if (AD_MANAGER_EVENTS.includes(externalEventName)) {
-      player.on('ads-manager', () => player.ima.addEventListener(videojsEventName, eventHandler))
+      player.on('ads-manager', () => player.ima.addEventListener(videojsEventName, eventHandler));
     } else {
-      player.on(videojsEventName, eventHandler)
+      player.on(videojsEventName, eventHandler);
     }
   }
 
   function registerPlaylistEventListener(eventHandler) {
     if (player.playlist) {
       // force a playlist event on first item load
-      player.one('loadstart', eventHandler)
-      player.on('playlistchange', eventHandler)
+      player.one('loadstart', eventHandler);
+      player.on('playlistchange', eventHandler);
     } else {
       // When playlist plugin is not used, treat each media item as a single item playlist
-      player.on('loadstart', eventHandler)
+      player.on('loadstart', eventHandler);
     }
   }
 
   function offEvent(event, callback) {
-    const videojsEvent = utils.getVideojsEventName(event)
+    const videojsEvent = utils.getVideojsEventName(event);
     if (!callback) {
-      player.off(videojsEvent)
-      return
+      player.off(videojsEvent);
+      return;
     }
 
-    const eventHandler = callbackToHandler[event]// callbackStorage.getCallback(event, callback);
+    const eventHandler = callbackToHandler[event];// callbackStorage.getCallback(event, callback);
     if (eventHandler) {
-      player.off(videojsEvent, eventHandler)
+      player.off(videojsEvent, eventHandler);
     }
   }
 
   function destroy() {
     if (!player) {
-      return
+      return;
     }
-    player.remove()
-    player = null
+    player.remove();
+    player = null;
   }
 
   return {
@@ -522,36 +522,36 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     onEvent,
     offEvent,
     destroy
-  }
+  };
 
   function setupPlayer(config) {
-    const setupConfig = utils.getSetupConfig(config)
-    player = vjs(divId, setupConfig, onReady)
+    const setupConfig = utils.getSetupConfig(config);
+    player = vjs(divId, setupConfig, onReady);
   }
 
   function onReady() {
     try {
-      setupAds()
+      setupAds();
     } catch (e) {
-      triggerSetupFailure(-5, e.message)
-      return
+      triggerSetupFailure(-5, e.message);
+      return;
     }
-    triggerSetupComplete()
+    triggerSetupComplete();
   }
 
   // TODO: consider supporting https://www.npmjs.com/package/videojs-vast-vpaid as well
   function setupAds() {
     if (!player.ima) {
-      throw new Error(setupFailMessage + ': ima plugin is missing')
+      throw new Error(setupFailMessage + ': ima plugin is missing');
     }
 
     if (typeof player.ima !== 'function') {
       // when player.ima is already instantiated, it is an object. Early abort if already instantiated.
-      return
+      return;
     }
 
-    const adConfig = utils.getAdConfig(playerConfig)
-    player.ima(adConfig)
+    const adConfig = utils.getAdConfig(playerConfig);
+    player.ima(adConfig);
   }
 
   function triggerSetupFailure(errorCode, msg, sourceError) {
@@ -562,125 +562,125 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       errorCode,
       errorMessage: msg,
       sourceError: sourceError
-    }
-    setupFailedCallbacks.forEach(setupFailedCallback => setupFailedCallback(SETUP_FAILED, payload))
-    setupFailedCallbacks = []
+    };
+    setupFailedCallbacks.forEach(setupFailedCallback => setupFailedCallback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
   }
 
   function triggerSetupComplete() {
-    playerIsSetup = true
+    playerIsSetup = true;
     const payload = {
       divId,
       playerVersion,
       type: SETUP_COMPLETE,
-    }
+    };
 
-    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload))
-    setupCompleteCallbacks = []
+    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+    setupCompleteCallbacks = [];
 
-    isMuted = player.muted()
+    isMuted = player.muted();
 
-    setupFailedEventHandlers.forEach(eventHandler => player.off('error', eventHandler))
-    setupFailedEventHandlers = []
+    setupFailedEventHandlers.forEach(eventHandler => player.off('error', eventHandler));
+    setupFailedEventHandlers = [];
   }
 }
 
 export const utils = {
   getSetupConfig: function (config) {
     if (!config) {
-      return
+      return;
     }
 
-    const params = config.params || {}
-    const videojsConfig = params.vendorConfig || {}
+    const params = config.params || {};
+    const videojsConfig = params.vendorConfig || {};
 
     if (videojsConfig.autostart === undefined && config.autostart !== undefined) {
-      videojsConfig.autostart = config.autostart
+      videojsConfig.autostart = config.autostart;
     }
 
     if (videojsConfig.muted === undefined && config.mute !== undefined) {
-      videojsConfig.muted = config.mute
+      videojsConfig.muted = config.mute;
     }
 
-    return videojsConfig
+    return videojsConfig;
   },
 
   getAdConfig: function (config) {
-    const params = config && config.params
+    const params = config && config.params;
     if (!params) {
-      return {}
+      return {};
     }
 
-    return params.adPluginConfig || {} // TODO: add adPluginConfig to spec
+    return params.adPluginConfig || {}; // TODO: add adPluginConfig to spec
   },
 
   getPositionCode: function({ left, top, width, height }) {
-    const bottom = getWinDimensions().innerHeight - top - height
-    const right = getWinDimensions().innerWidth - left - width
+    const bottom = getWinDimensions().innerHeight - top - height;
+    const right = getWinDimensions().innerWidth - left - width;
 
     if (left < 0 || right < 0 || top < 0) {
-      return AD_POSITION.UNKNOWN
+      return AD_POSITION.UNKNOWN;
     }
 
-    return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD
+    return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
   },
 
   getVideojsEventName: function(eventName) {
     switch (eventName) {
       case SETUP_COMPLETE:
-        return 'ready'
+        return 'ready';
       case SETUP_FAILED:
-        return 'error'
+        return 'error';
       case DESTROYED:
-        return 'dispose'
+        return 'dispose';
       case AD_REQUEST:
-        return 'ads-request'
+        return 'ads-request';
       case AD_LOADED:
-        return 'loaded'
+        return 'loaded';
       case AD_STARTED:
-        return 'start'
+        return 'start';
       case AD_IMPRESSION:
-        return 'impression'
+        return 'impression';
       case AD_PLAY:
-        return 'resume'
+        return 'resume';
       case AD_PAUSE:
-        return PAUSE
+        return PAUSE;
       case AD_TIME:
-        return 'adProgress'
+        return 'adProgress';
       case AD_CLICK:
-        return 'click'
+        return 'click';
       case AD_COMPLETE:
-        return COMPLETE
+        return COMPLETE;
       case AD_SKIPPED:
-        return 'skip'
+        return 'skip';
       case AD_ERROR:
-        return 'adserror'
+        return 'adserror';
       case CONTENT_LOADED:
-        return 'loadstart'
+        return 'loadstart';
       case ERROR:
-        return ['error', 'aderror', 'contenterror']
+        return ['error', 'aderror', 'contenterror'];
       case PLAY:
-        return PLAY + 'ing'
+        return PLAY + 'ing';
       case PLAYBACK_REQUEST:
-        return PLAY
+        return PLAY;
       case SEEK_START:
-        return 'seeking'
+        return 'seeking';
       case SEEK_END:
-        return 'seeked'
+        return 'seeked';
       case TIME:
-        return TIME + 'update'
+        return TIME + 'update';
       case VOLUME:
-        return VOLUME + 'change'
+        return VOLUME + 'change';
       case MUTE:
-        return MUTE + 'change'
+        return MUTE + 'change';
       case PLAYER_RESIZE:
-        return 'playerresize'
+        return 'playerresize';
       case FULLSCREEN:
-        return FULLSCREEN + 'change'
+        return FULLSCREEN + 'change';
       case COMPLETE:
-        return 'ended'
+        return 'ended';
       default:
-        return eventName
+        return eventName;
     }
     /*
     The following video.js events might map to an event in our spec
@@ -702,83 +702,83 @@ export const utils = {
   },
 
   getMedia: function(player) {
-    const playlistItem = this.getCurrentPlaylistItem(player)
+    const playlistItem = this.getCurrentPlaylistItem(player);
     if (playlistItem) {
-      return playlistItem.sources[0]
+      return playlistItem.sources[0];
     }
 
-    return player.getMedia()
+    return player.getMedia();
   },
 
   getValidMediaUrl: function(mediaSrc, playerSrc, eventTargetSrc) {
-    return this.getMediaUrl(mediaSrc) || this.getMediaUrl(playerSrc) || this.getMediaUrl(eventTargetSrc)
+    return this.getMediaUrl(mediaSrc) || this.getMediaUrl(playerSrc) || this.getMediaUrl(eventTargetSrc);
   },
 
   getMediaUrl: function(source) {
     if (!source) {
-      return
+      return;
     }
 
     if (Array.isArray(source) && source.length) {
-      return this.parseSource(source[0])
+      return this.parseSource(source[0]);
     }
 
-    return this.parseSource(source)
+    return this.parseSource(source);
   },
 
   parseSource: function (source) {
-    const type = typeof source
+    const type = typeof source;
     if (type === 'string') {
-      return source
+      return source;
     } else if (type === 'object') {
-      return source.src
+      return source.src;
     }
   },
 
   getPlaylistCount: function (player) {
-    const playlist = player.playlist // has playlist plugin
+    const playlist = player.playlist; // has playlist plugin
     if (!playlist) {
-      return 1
+      return 1;
     }
-    return playlist.lastIndex && playlist.lastIndex() + 1
+    return playlist.lastIndex && playlist.lastIndex() + 1;
   },
 
   getCurrentPlaylistIndex: function (player) {
-    const playlist = player.playlist // has playlist plugin
+    const playlist = player.playlist; // has playlist plugin
     if (!playlist) {
-      return 0
+      return 0;
     }
-    return playlist.currentIndex && playlist.currentIndex()
+    return playlist.currentIndex && playlist.currentIndex();
   },
 
   getCurrentPlaylistItem: function(player) {
-    const playlist = player.playlist // has playlist plugin
+    const playlist = player.playlist; // has playlist plugin
     if (!playlist) {
-      return
+      return;
     }
 
-    const currentIndex = this.getCurrentPlaylistIndex(player)
+    const currentIndex = this.getCurrentPlaylistIndex(player);
     if (!currentIndex) {
-      return
+      return;
     }
 
-    const item = playlist()[currentIndex]
-    return item
+    const item = playlist()[currentIndex];
+    return item;
   }
-}
+};
 
 const videojsSubmoduleFactory = function (config) {
-  const adState = adStateFactory()
-  const timeState = timeStateFactory()
-  const callbackStorage = null
+  const adState = adStateFactory();
+  const timeState = timeStateFactory();
+  const callbackStorage = null;
   // videojs factory is stored to window by default
-  const vjs = window.videojs
-  return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils)
-}
+  const vjs = window.videojs;
+  return VideojsProvider(config, vjs, adState, timeState, callbackStorage, utils);
+};
 
-videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR
-submodule('video', videojsSubmoduleFactory)
-export default videojsSubmoduleFactory
+videojsSubmoduleFactory.vendorCode = VIDEO_JS_VENDOR;
+submodule('video', videojsSubmoduleFactory);
+export default videojsSubmoduleFactory;
 
 // STATE
 
@@ -786,14 +786,14 @@ export default videojsSubmoduleFactory
  * @returns {State}
  */
 export function adStateFactory() {
-  const adState = Object.assign({}, stateFactory())
+  const adState = Object.assign({}, stateFactory());
 
   function updateForEvent(event) {
     if (!event) {
-      return
+      return;
     }
 
-    const skippable = event.skippable
+    const skippable = event.skippable;
     // TODO: possibly can check traffickingParameters to determine if winning bid is passed
     const updates = {
       adId: event.adId,
@@ -821,43 +821,43 @@ export function adStateFactory() {
       // skipmin
       // adTagUrl - for now, only has request ad tag
       // adPlacementType
-    }
+    };
 
     if (skippable) {
-      updates.skipafter = event.skipTimeOffset
+      updates.skipafter = event.skipTimeOffset;
     }
 
-    this.updateState(updates)
+    this.updateState(updates);
   }
 
-  adState.updateForEvent = updateForEvent
+  adState.updateForEvent = updateForEvent;
 
-  return adState
+  return adState;
 }
 
 export function timeStateFactory() {
-  const timeState = Object.assign({}, stateFactory())
+  const timeState = Object.assign({}, stateFactory());
 
   function updateForTimeEvent(event) {
-    const { currentTime, duration } = event
+    const { currentTime, duration } = event;
     this.updateState({
       time: currentTime,
       duration,
       playbackMode: getPlaybackMode(duration)
-    })
+    });
   }
 
-  timeState.updateForTimeEvent = updateForTimeEvent
+  timeState.updateForTimeEvent = updateForTimeEvent;
 
   function getPlaybackMode(duration) {
     if (duration > 0) {
-      return PLAYBACK_MODE.VOD
+      return PLAYBACK_MODE.VOD;
     } else if (duration < 0) {
-      return PLAYBACK_MODE.DVR
+      return PLAYBACK_MODE.DVR;
     }
 
-    return PLAYBACK_MODE.LIVE
+    return PLAYBACK_MODE.LIVE;
   }
 
-  return timeState
+  return timeState;
 }

@@ -1,11 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { NATIVE, BANNER } from '../src/mediaTypes.js'
-import * as utils from '../src/utils.js'
-import { ajax } from '../src/ajax.js'
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { NATIVE, BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const CURRENCY = 'EUR'
-const BIDDER_CODE = 'talkads'
+const CURRENCY = 'EUR';
+const BIDDER_CODE = 'talkads';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -18,21 +18,21 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (poBid) {
-    utils.logInfo('isBidRequestValid : ', poBid)
+    utils.logInfo('isBidRequestValid : ', poBid);
     if (poBid.params === undefined) {
-      utils.logError('VALIDATION FAILED : the parameters must be defined')
-      return false
+      utils.logError('VALIDATION FAILED : the parameters must be defined');
+      return false;
     }
     if (poBid.params.tag_id === undefined) {
-      utils.logError('VALIDATION FAILED : the parameter "tag_id" must be defined')
-      return false
+      utils.logError('VALIDATION FAILED : the parameter "tag_id" must be defined');
+      return false;
     }
     if (poBid.params.bidder_url === undefined) {
-      utils.logError('VALIDATION FAILED : the parameter "bidder_url" must be defined')
-      return false
+      utils.logError('VALIDATION FAILED : the parameter "bidder_url" must be defined');
+      return false;
     }
 
-    return !!(poBid.nativeParams || poBid.sizes)
+    return !!(poBid.nativeParams || poBid.sizes);
   }, // isBidRequestValid
 
   /**
@@ -44,19 +44,19 @@ export const spec = {
    */
   buildRequests: function (paValidBidRequests, poBidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    paValidBidRequests = convertOrtbRequestToProprietaryNative(paValidBidRequests)
-    utils.logInfo('buildRequests : ', paValidBidRequests, poBidderRequest)
+    paValidBidRequests = convertOrtbRequestToProprietaryNative(paValidBidRequests);
+    utils.logInfo('buildRequests : ', paValidBidRequests, poBidderRequest);
     const laBids = paValidBidRequests.map((poBid, piId) => {
-      const loOne = { id: piId, ad_unit: poBid.adUnitCode, bid_id: poBid.bidId, type: '', size: [] }
+      const loOne = { id: piId, ad_unit: poBid.adUnitCode, bid_id: poBid.bidId, type: '', size: [] };
       if (poBid.nativeParams) {
-        loOne.type = 'native'
+        loOne.type = 'native';
       } else {
-        loOne.type = 'banner'
-        loOne.size = poBid.sizes
+        loOne.type = 'banner';
+        loOne.size = poBid.sizes;
       }
-      return loOne
-    })
-    const laParams = paValidBidRequests[0].params
+      return loOne;
+    });
+    const laParams = paValidBidRequests[0].params;
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
@@ -66,22 +66,22 @@ export const spec = {
       transaction_id: paValidBidRequests[0].transactionId,
       bids: laBids,
       gdpr: { applies: false, consent: false },
-    }
+    };
     if (poBidderRequest && poBidderRequest.gdprConsent) {
-      const loGdprConsent = poBidderRequest.gdprConsent
+      const loGdprConsent = poBidderRequest.gdprConsent;
       if ((typeof loGdprConsent.gdprApplies === 'boolean') && loGdprConsent.gdprApplies) {
-        loServerRequest.gdpr.applies = true
+        loServerRequest.gdpr.applies = true;
       }
       if ((typeof loGdprConsent.consentString === 'string') && loGdprConsent.consentString) {
-        loServerRequest.gdpr.consent = poBidderRequest.gdprConsent.consentString
+        loServerRequest.gdpr.consent = poBidderRequest.gdprConsent.consentString;
       }
     }
-    const lsUrl = laParams.bidder_url + '/' + laParams.tag_id
+    const lsUrl = laParams.bidder_url + '/' + laParams.tag_id;
     return {
       method: 'POST',
       url: lsUrl,
       data: JSON.stringify(loServerRequest),
-    }
+    };
   }, // buildRequests
 
   /**
@@ -92,14 +92,14 @@ export const spec = {
    * @return An array of bids which were nested inside the server.
    */
   interpretResponse: function (poServerResponse, poPidRequest) {
-    utils.logInfo('interpretResponse : ', poServerResponse)
+    utils.logInfo('interpretResponse : ', poServerResponse);
     if (!poServerResponse.body) {
-      return []
+      return [];
     }
-    const laResponse = []
+    const laResponse = [];
     if (poServerResponse.body.status !== 'ok') {
-      utils.logInfo('Error : ', poServerResponse.body.error)
-      return laResponse
+      utils.logInfo('Error : ', poServerResponse.body.error);
+      return laResponse;
     }
     poServerResponse.body.bids.forEach((poResponse) => {
       laResponse[laResponse.length] = {
@@ -113,9 +113,9 @@ export const spec = {
         creativeId: poResponse.creativeId,
         netRevenue: poResponse.netRevenue,
         pbid: poServerResponse.body.pbid,
-      }
-    })
-    return laResponse
+      };
+    });
+    return laResponse;
   }, // interpretResponse
 
   /**
@@ -124,12 +124,12 @@ export const spec = {
    * @param poBid The bid that won the auction
    */
   onBidWon: function (poBid) {
-    utils.logInfo('onBidWon : ', poBid)
-    const laParams = poBid.params[0]
+    utils.logInfo('onBidWon : ', poBid);
+    const laParams = poBid.params[0];
     if (poBid.pbid) {
-      ajax(laParams.bidder_url + 'won/' + poBid.pbid)
+      ajax(laParams.bidder_url + 'won/' + poBid.pbid);
     }
   }, // onBidWon
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

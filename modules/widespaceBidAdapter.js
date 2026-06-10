@@ -1,21 +1,21 @@
-import { config } from '../src/config.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/utils.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js'
-import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js'
-import { getAdUnitElement } from '../src/utils/adUnits.js'
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
-const BIDDER_CODE = 'widespace'
-const WS_ADAPTER_VERSION = '2.0.1'
+const BIDDER_CODE = 'widespace';
+const WS_ADAPTER_VERSION = '2.0.1';
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
   LC_UID: 'wsLcuid',
   CUST_DATA: 'wsCustomData'
-}
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE })
+};
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-let preReqTime = 0
+let preReqTime = 0;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,25 +24,25 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (bid.params && bid.params.sid) {
-      return true
+      return true;
     }
-    return false
+    return false;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const serverRequests = []
-    const REQUEST_SERVER_URL = getEngineUrl()
-    const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob']
-    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData))
-    const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0]
-    const LC_UID = getLcuid()
+    const serverRequests = [];
+    const REQUEST_SERVER_URL = getEngineUrl();
+    const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
+    const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
+    const LC_UID = getLcuid();
 
-    let isInHostileIframe = false
+    let isInHostileIframe = false;
     try {
-      window.top.location.toString()
-      isInHostileIframe = false
+      window.top.location.toString();
+      isInHostileIframe = false;
     } catch (e) {
-      isInHostileIframe = true
+      isInHostileIframe = true;
     }
 
     validBidRequests.forEach((bid, i) => {
@@ -65,53 +65,53 @@ export const spec = {
         'hb.bidId': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
         'hb.currency': bid.params.cur || bid.params.currency || ''
-      }
+      };
 
       // Include demo data
       if (bid.params.demo) {
         DEMO_DATA_PARAMS.forEach((key) => {
           if (bid.params.demo[key]) {
-            data[key] = bid.params.demo[key]
+            data[key] = bid.params.demo[key];
           }
-        })
+        });
       }
 
       // Include performance data
       if (PERF_DATA[i]) {
         Object.keys(PERF_DATA[i]).forEach((perfDataKey) => {
-          data[perfDataKey] = PERF_DATA[i][perfDataKey]
-        })
+          data[perfDataKey] = PERF_DATA[i][perfDataKey];
+        });
       }
 
       // Include connection info if available
-      const connection = getConnectionInfo()
+      const connection = getConnectionInfo();
       if (connection?.type && connection.downlinkMax != null) {
-        data['netinfo.type'] = connection.type
-        data['netinfo.downlinkMax'] = connection.downlinkMax
+        data['netinfo.type'] = connection.type;
+        data['netinfo.downlinkMax'] = connection.downlinkMax;
       }
 
       // Include debug data when available
       if (!isInHostileIframe) {
         data.forceAdId = (((window.top.location.hash.split('&')) || []).find(
           val => val.includes('WS_DEBUG_FORCEADID')
-        ) || '').split('=')[1]
+        ) || '').split('=')[1];
       }
 
       // GDPR Consent info
       if (data.gdprCmp) {
-        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent
-        const hasGlobalScope = vendorData && vendorData.hasGlobalScope
-        data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0
-        data.gdprConsentData = consentString
-        data.gdprHasGlobalScope = hasGlobalScope ? 1 : hasGlobalScope === undefined ? '' : 0
+        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
+        const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
+        data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
+        data.gdprConsentData = consentString;
+        data.gdprHasGlobalScope = hasGlobalScope ? 1 : hasGlobalScope === undefined ? '' : 0;
       }
 
       // Remove empty params
       Object.keys(data).forEach((key) => {
         if (data[key] === '' || data[key] === undefined) {
-          delete data[key]
+          delete data[key];
         }
-      })
+      });
 
       serverRequests.push({
         method: 'POST',
@@ -120,22 +120,22 @@ export const spec = {
         },
         url: REQUEST_SERVER_URL,
         data: parseQueryStringParameters(data)
-      })
-    })
-    preReqTime = Date.now()
-    return serverRequests
+      });
+    });
+    preReqTime = Date.now();
+    return serverRequests;
   },
 
   interpretResponse: function (serverResponse, request) {
-    const responseTime = Date.now() - preReqTime
-    const successBids = serverResponse.body || []
-    const bidResponses = []
+    const responseTime = Date.now() - preReqTime;
+    const successBids = serverResponse.body || [];
+    const bidResponses = [];
     successBids.forEach((bid) => {
       storeData({
         'perf_status': 'OK',
         'perf_reqid': bid.reqId,
         'perf_ms': responseTime
-      }, `${LS_KEYS.PERF_DATA}${bid.reqId}`)
+      }, `${LS_KEYS.PERF_DATA}${bid.reqId}`);
       if (bid.status === 'ad') {
         bidResponses.push({
           requestId: bid.bidId,
@@ -151,84 +151,84 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || []
           }
-        })
+        });
       }
-    })
+    });
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, serverResponses = []) {
-    let userSyncs = []
+    let userSyncs = [];
     userSyncs = serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
         (response.body[0].syncPixels || []).forEach((url) => {
-          allSyncPixels.push({ type: 'image', url })
-        })
+          allSyncPixels.push({ type: 'image', url });
+        });
       }
-      return allSyncPixels
-    }, [])
-    return userSyncs
+      return allSyncPixels;
+    }, []);
+    return userSyncs;
   }
-}
+};
 
 function storeData(data, name, stringify = true) {
-  const value = stringify ? JSON.stringify(data) : data
+  const value = stringify ? JSON.stringify(data) : data;
   if (storage.hasLocalStorage()) {
-    storage.setDataInLocalStorage(name, value)
-    return true
+    storage.setDataInLocalStorage(name, value);
+    return true;
   } else if (storage.cookiesAreEnabled()) {
-    const theDate = new Date()
-    const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString()
-    storage.setCookie(name, value, expDate)
-    return true
+    const theDate = new Date();
+    const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
+    storage.setCookie(name, value, expDate);
+    return true;
   }
 }
 
 function getData(name, remove = true) {
-  const data = []
-  return data
+  const data = [];
+  return data;
 }
 
 function pixelSyncPossibility() {
-  const userSync = config.getConfig('userSync')
-  return userSync && userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1
+  const userSync = config.getConfig('userSync');
+  return userSync && userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
 function visibleOnLoad(element) {
   if (element) {
-    const topPos = getBoundingClientRect(element).top
-    return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0
+    const topPos = getBoundingClientRect(element).top;
+    return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
   }
-  return ''
+  return '';
 }
 
 function getLcuid() {
-  let lcuid = getData(LS_KEYS.LC_UID, false)[0]
+  let lcuid = getData(LS_KEYS.LC_UID, false)[0];
   if (!lcuid) {
-    const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18)
-    storeData(random, LS_KEYS.LC_UID, false)
-    lcuid = getData(LS_KEYS.LC_UID, false)[0]
+    const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
+    storeData(random, LS_KEYS.LC_UID, false);
+    lcuid = getData(LS_KEYS.LC_UID, false)[0];
   }
-  return lcuid
+  return lcuid;
 }
 
 function encodedParamValue(value) {
-  const requiredStringify = typeof deepClone(value) === 'object'
-  return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value)
+  const requiredStringify = typeof deepClone(value) === 'object';
+  return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 
 function getEngineUrl() {
-  const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq'
-  return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL
+  const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
+  return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
 }
 
 function getTopWindowReferrer() {
   try {
-    return window.top.document.referrer
+    return window.top.document.referrer;
   } catch (e) {
-    return ''
+    return '';
   }
 }
 
-registerBidder(spec)
+registerBidder(spec);

@@ -1,30 +1,30 @@
-import { expect } from 'chai'
-import { spec, storage } from 'modules/missenaBidAdapter.js'
-import { BANNER } from '../../../src/mediaTypes.js'
-import { config } from 'src/config.js'
-import * as autoplay from 'libraries/autoplayDetection/autoplay.js'
-import { getWinDimensions } from '../../../src/utils.js'
-import { getGlobal } from '../../../src/prebidGlobal.js'
+import { expect } from 'chai';
+import { spec, storage } from 'modules/missenaBidAdapter.js';
+import { BANNER } from '../../../src/mediaTypes.js';
+import { config } from 'src/config.js';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
+import { getWinDimensions } from '../../../src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const REFERRER = 'https://referer'
-const REFERRER2 = 'https://referer2'
-const COOKIE_DEPRECATION_LABEL = 'test'
-const CONSENT_STRING = 'AAAAAAAAA=='
-const API_KEY = 'PA-XXXXXX'
-const GPID = '/11223344/AdUnit#300x250'
+const REFERRER = 'https://referer';
+const REFERRER2 = 'https://referer2';
+const COOKIE_DEPRECATION_LABEL = 'test';
+const CONSENT_STRING = 'AAAAAAAAA==';
+const API_KEY = 'PA-XXXXXX';
+const GPID = '/11223344/AdUnit#300x250';
 
 describe('Missena Adapter', function () {
   getGlobal().bidderSettings = {
     missena: {
       storageAllowed: true,
     },
-  }
-  const sandbox = sinon.createSandbox()
-  sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true)
-  sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false)
-  const viewport = { width: getWinDimensions().innerWidth, height: getWinDimensions().innerHeight }
+  };
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+  sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
+  const viewport = { width: getWinDimensions().innerWidth, height: getWinDimensions().innerHeight };
 
-  const bidId = 'abc'
+  const bidId = 'abc';
   const bid = {
     bidder: 'missena',
     bidId: bidId,
@@ -54,12 +54,12 @@ describe('Missena Adapter', function () {
         return {
           currency: 'EUR',
           floor: 3.5,
-        }
+        };
       } else {
-        return {}
+        return {};
       }
     },
-  }
+  };
   const bidWithoutFloor = {
     bidder: 'missena',
     bidId: bidId,
@@ -69,7 +69,7 @@ describe('Missena Adapter', function () {
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
-  }
+  };
 
   const bidderRequest = {
     gdprConsent: {
@@ -91,140 +91,140 @@ describe('Missena Adapter', function () {
         h: screen.height,
       },
     },
-  }
+  };
 
-  const bids = [bid, bidWithoutFloor]
+  const bids = [bid, bidWithoutFloor];
   describe('codes', function () {
     it('should return a bidder code of missena', function () {
-      expect(spec.code).to.equal('missena')
-    })
-  })
+      expect(spec.code).to.equal('missena');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true if the apiKey param is present', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false if the apiKey is missing', function () {
       expect(
         spec.isBidRequestValid(Object.assign(bid, { params: {} })),
-      ).to.equal(false)
-    })
+      ).to.equal(false);
+    });
 
     it('should return false if the apiKey is an empty string', function () {
       expect(
         spec.isBidRequestValid(Object.assign(bid, { params: { apiKey: '' } })),
-      ).to.equal(false)
-    })
-  })
+      ).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
     let getDataFromLocalStorageStub = sinon.stub(
       storage,
       'getDataFromLocalStorage',
-    )
+    );
 
-    const requests = spec.buildRequests(bids, bidderRequest)
-    const request = requests[0]
-    const payload = JSON.parse(request.data)
-    const payloadNoFloor = JSON.parse(requests[1].data)
+    const requests = spec.buildRequests(bids, bidderRequest);
+    const request = requests[0];
+    const payload = JSON.parse(request.data);
+    const payloadNoFloor = JSON.parse(requests[1].data);
 
     it('should send disabled autoplay', function () {
-      expect(payload.autoplay).to.equal(0)
-    })
+      expect(payload.autoplay).to.equal(0);
+    });
 
     it('should contain coppa', function () {
-      expect(payload.ortb2.regs.coppa).to.equal(1)
-    })
-    sandbox.restore()
+      expect(payload.ortb2.regs.coppa).to.equal(1);
+    });
+    sandbox.restore();
 
     it('should contain uspConsent', function () {
-      expect(payload.ortb2.regs.us_privacy).to.equal('IDO')
-    })
+      expect(payload.ortb2.regs.us_privacy).to.equal('IDO');
+    });
 
     it('should contain schain', function () {
-      expect(payload.schain.config.ver).to.equal('1.0')
-    })
+      expect(payload.schain.config.ver).to.equal('1.0');
+    });
 
     it('should return as many server requests as bidder requests', function () {
-      expect(requests.length).to.equal(2)
-    })
+      expect(requests.length).to.equal(2);
+    });
 
     it('should have a post method', function () {
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.method).to.equal('POST');
+    });
 
     it('should send the bidder id', function () {
-      expect(payload.request_id).to.equal(bidId)
-    })
+      expect(payload.request_id).to.equal(bidId);
+    });
 
     it('should send placement', function () {
-      expect(payload.params.placement).to.equal('sticky')
-    })
+      expect(payload.params.placement).to.equal('sticky');
+    });
 
     it('should send formats', function () {
-      expect(payload.params.formats).to.eql(['sticky-banner'])
-    })
+      expect(payload.params.formats).to.eql(['sticky-banner']);
+    });
 
     it('should send viewport', function () {
-      expect(payload.viewport.width).to.equal(viewport.width)
-      expect(payload.viewport.height).to.equal(viewport.height)
-    })
+      expect(payload.viewport.width).to.equal(viewport.width);
+      expect(payload.viewport.height).to.equal(viewport.height);
+    });
 
     it('should send gdpr consent information to the request', function () {
-      expect(payload.ortb2.user.ext.consent).to.equal(CONSENT_STRING)
-      expect(payload.ortb2.regs.ext.gdpr).to.equal(1)
-    })
+      expect(payload.ortb2.user.ext.consent).to.equal(CONSENT_STRING);
+      expect(payload.ortb2.regs.ext.gdpr).to.equal(1);
+    });
 
     it('should forward GPID from ortb2Imp into ortb2.ext', function () {
-      expect(payload.ortb2.ext.gpid).to.equal(GPID)
-    })
+      expect(payload.ortb2.ext.gpid).to.equal(GPID);
+    });
 
     it('should send floor data', function () {
-      expect(payload.floor).to.equal(3.5)
-      expect(payload.floor_currency).to.equal('EUR')
-    })
+      expect(payload.floor).to.equal(3.5);
+      expect(payload.floor_currency).to.equal('EUR');
+    });
     it('should not send floor data if not available', function () {
-      expect(payloadNoFloor.floor).to.equal(undefined)
-      expect(payloadNoFloor.floor_currency).to.equal(undefined)
-    })
+      expect(payloadNoFloor.floor).to.equal(undefined);
+      expect(payloadNoFloor.floor_currency).to.equal(undefined);
+    });
     it('should send the idempotency key', function () {
-      expect(window.msna_ik).to.not.equal(undefined)
-      expect(payload.ik).to.equal(window.msna_ik)
-    })
+      expect(window.msna_ik).to.not.equal(undefined);
+      expect(payload.ik).to.equal(window.msna_ik);
+    });
 
     it('should send screen', function () {
-      expect(payload.ortb2.device.w).to.equal(screen.width)
-      expect(payload.ortb2.device.h).to.equal(screen.height)
-    })
+      expect(payload.ortb2.device.w).to.equal(screen.width);
+      expect(payload.ortb2.device.h).to.equal(screen.height);
+    });
 
     it('should send size', function () {
-      expect(payload.sizes[0].width).to.equal(1)
-      expect(payload.sizes[0].height).to.equal(1)
-    })
+      expect(payload.sizes[0].width).to.equal(1);
+      expect(payload.sizes[0].height).to.equal(1);
+    });
 
     it('should send single size', function () {
-      expect(payloadNoFloor.sizes[0].width).to.equal(1)
-      expect(payloadNoFloor.sizes[0].height).to.equal(1)
-    })
+      expect(payloadNoFloor.sizes[0].width).to.equal(1);
+      expect(payloadNoFloor.sizes[0].height).to.equal(1);
+    });
 
-    getDataFromLocalStorageStub.restore()
+    getDataFromLocalStorageStub.restore();
     getDataFromLocalStorageStub = sinon.stub(
       storage,
       'getDataFromLocalStorage',
-    )
+    );
     const localStorageData = {
       [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
         JSON.stringify({
           expiry: new Date().getTime() + 600_000, // 10 min into the future
         }),
-    }
-    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key])
-    const cappedRequests = spec.buildRequests(bids, bidderRequest)
+    };
+    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
+    const cappedRequests = spec.buildRequests(bids, bidderRequest);
 
     it('should not participate if capped', function () {
-      expect(cappedRequests.length).to.equal(0)
-    })
+      expect(cappedRequests.length).to.equal(0);
+    });
 
     const localStorageDataSamePage = {
       [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
@@ -232,16 +232,16 @@ describe('Missena Adapter', function () {
           expiry: new Date().getTime() + 600_000, // 10 min into the future
           referer: REFERRER,
         }),
-    }
+    };
 
     getDataFromLocalStorageStub.callsFake(
       (key) => localStorageDataSamePage[key],
-    )
-    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest)
+    );
+    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
 
     it('should not participate if capped on same page', function () {
-      expect(cappedRequestsSamePage.length).to.equal(0)
-    })
+      expect(cappedRequestsSamePage.length).to.equal(0);
+    });
 
     const localStorageDataOtherPage = {
       [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
@@ -249,24 +249,24 @@ describe('Missena Adapter', function () {
           expiry: new Date().getTime() + 600_000, // 10 min into the future
           referer: REFERRER2,
         }),
-    }
+    };
 
     getDataFromLocalStorageStub.callsFake(
       (key) => localStorageDataOtherPage[key],
-    )
-    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest)
+    );
+    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
 
     it('should participate if capped on a different page', function () {
-      expect(cappedRequestsOtherPage.length).to.equal(2)
-    })
+      expect(cappedRequestsOtherPage.length).to.equal(2);
+    });
 
     it('should send the prebid version', function () {
-      expect(payload.version).to.equal('prebid.js@$prebid.version$')
-    })
+      expect(payload.version).to.equal('prebid.js@$prebid.version$');
+    });
 
     it('should send cookie deprecation', function () {
-    })
-  })
+    });
+  });
 
   describe('interpretResponse', function () {
     const serverResponse = {
@@ -277,110 +277,110 @@ describe('Missena Adapter', function () {
       meta: {
         advertiserDomains: ['missena.com'],
       },
-    }
+    };
 
     const serverTimeoutResponse = {
       requestId: bidId,
       timeout: true,
       ad: '<!-- -->',
-    }
+    };
 
     const serverEmptyAdResponse = {
       requestId: bidId,
       cpm: 0.5,
       currency: 'USD',
       ad: '',
-    }
+    };
 
     it('should return a proper bid response', function () {
-      const result = spec.interpretResponse({ body: serverResponse }, bid)
+      const result = spec.interpretResponse({ body: serverResponse }, bid);
 
-      expect(result.length).to.equal(1)
+      expect(result.length).to.equal(1);
 
       expect(Object.keys(result[0])).to.have.members(
         Object.keys(serverResponse),
-      )
-    })
+      );
+    });
 
     it('should return an empty response when the server answers with a timeout', function () {
       const result = spec.interpretResponse(
         { body: serverTimeoutResponse },
         bid,
-      )
-      expect(result).to.deep.equal([])
-    })
+      );
+      expect(result).to.deep.equal([]);
+    });
 
     it('should return an empty response when the server answers with an empty ad', function () {
       const result = spec.interpretResponse(
         { body: serverEmptyAdResponse },
         bid,
-      )
-      expect(result).to.deep.equal([])
-    })
-  })
+      );
+      expect(result).to.deep.equal([]);
+    });
+  });
 
   describe('getUserSyncs', function () {
-    const syncFrameUrl = 'https://sync.missena.io/iframe'
-    const consentString = 'sampleString'
+    const syncFrameUrl = 'https://sync.missena.io/iframe';
+    const consentString = 'sampleString';
     const iframeEnabledOptions = {
       iframeEnabled: true,
-    }
+    };
     const iframeDisabledOptions = {
       iframeEnabled: false,
-    }
+    };
 
     it('should return userSync when iframeEnabled', function () {
-      const userSync = spec.getUserSyncs(iframeEnabledOptions, [])
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, []);
 
-      expect(userSync.length).to.be.equal(1)
-      expect(userSync[0].type).to.be.equal('iframe')
-      expect(userSync[0].url).to.be.equal(`${syncFrameUrl}?t=${API_KEY}`)
-    })
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(`${syncFrameUrl}?t=${API_KEY}`);
+    });
 
     it('should return empty array when iframeEnabled is false', function () {
-      const userSync = spec.getUserSyncs(iframeDisabledOptions, [])
-      expect(userSync.length).to.be.equal(0)
-    })
+      const userSync = spec.getUserSyncs(iframeDisabledOptions, []);
+      expect(userSync.length).to.be.equal(0);
+    });
 
     it('sync frame url should contain gdpr data when present', function () {
       const userSync = spec.getUserSyncs(iframeEnabledOptions, [], {
         gdprApplies: true,
         consentString,
-      })
-      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=1&gdpr_consent=${consentString}`
-      expect(userSync.length).to.be.equal(1)
-      expect(userSync[0].type).to.be.equal('iframe')
-      expect(userSync[0].url).to.be.equal(expectedUrl)
-    })
+      });
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=1&gdpr_consent=${consentString}`;
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(expectedUrl);
+    });
     it('sync frame url should contain gdpr data when present (gdprApplies false)', function () {
       const userSync = spec.getUserSyncs(iframeEnabledOptions, [], {
         gdprApplies: false,
         consentString,
-      })
-      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=0&gdpr_consent=${consentString}`
-      expect(userSync.length).to.be.equal(1)
-      expect(userSync[0].type).to.be.equal('iframe')
-      expect(userSync[0].url).to.be.equal(expectedUrl)
-    })
+      });
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=0&gdpr_consent=${consentString}`;
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(expectedUrl);
+    });
 
     it('sync frame url should contain gpp data when present', function () {
       const gppConsent = {
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
         applicableSections: [7, 8],
-      }
+      };
       const userSync = spec.getUserSyncs(
         iframeEnabledOptions,
         [],
         {},
         undefined,
         gppConsent,
-      )
-      expect(userSync.length).to.be.equal(1)
-      expect(userSync[0].type).to.be.equal('iframe')
-      const syncUrl = new URL(userSync[0].url)
-      expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString)
-      expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7,8')
-    })
+      );
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      const syncUrl = new URL(userSync[0].url);
+      expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString);
+      expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7,8');
+    });
 
     it('sync frame url should not contain gpp data when gppConsent is undefined', function () {
       const userSync = spec.getUserSyncs(
@@ -389,10 +389,10 @@ describe('Missena Adapter', function () {
         {},
         undefined,
         undefined,
-      )
-      expect(userSync.length).to.be.equal(1)
-      expect(userSync[0].url).to.not.contain('gpp')
-    })
+      );
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].url).to.not.contain('gpp');
+    });
 
     it('sync frame url should not contain gpp data when gppString is empty', function () {
       const userSync = spec.getUserSyncs(
@@ -401,30 +401,30 @@ describe('Missena Adapter', function () {
         {},
         undefined,
         { gppString: '', applicableSections: [7] },
-      )
-      expect(userSync.length).to.be.equal(1)
-      expect(userSync[0].url).to.not.contain('gpp')
-    })
+      );
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].url).to.not.contain('gpp');
+    });
 
     it('sync frame url should contain all consent params together', function () {
       const gppConsent = {
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
         applicableSections: [7],
-      }
+      };
       const userSync = spec.getUserSyncs(
         iframeEnabledOptions,
         [],
         { gdprApplies: true, consentString },
         '1YNN',
         gppConsent,
-      )
-      expect(userSync.length).to.be.equal(1)
-      const syncUrl = new URL(userSync[0].url)
-      expect(syncUrl.searchParams.get('gdpr')).to.equal('1')
-      expect(syncUrl.searchParams.get('gdpr_consent')).to.equal(consentString)
-      expect(syncUrl.searchParams.get('us_privacy')).to.equal('1YNN')
-      expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString)
-      expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7')
-    })
-  })
-})
+      );
+      expect(userSync.length).to.be.equal(1);
+      const syncUrl = new URL(userSync[0].url);
+      expect(syncUrl.searchParams.get('gdpr')).to.equal('1');
+      expect(syncUrl.searchParams.get('gdpr_consent')).to.equal(consentString);
+      expect(syncUrl.searchParams.get('us_privacy')).to.equal('1YNN');
+      expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString);
+      expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7');
+    });
+  });
+});

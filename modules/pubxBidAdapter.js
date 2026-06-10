@@ -1,38 +1,38 @@
-import { deepSetValue, deepAccess } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { deepSetValue, deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const BIDDER_CODE = 'pubx'
-const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid'
-const USER_SYNC_URL = 'https://api.primecaster.net/primecaster_dmppv.html'
+const BIDDER_CODE = 'pubx';
+const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';
+const USER_SYNC_URL = 'https://api.primecaster.net/primecaster_dmppv.html';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
     if (!(bid.params.sid)) {
-      return false
-    } else { return true }
+      return false;
+    } else { return true; }
   },
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
-      const bidId = bidRequest.bidId
-      const params = bidRequest.params
-      const sid = params.sid
-      const pageUrl = deepAccess(bidRequest, 'ortb2.site.page').replace(/\?.*$/, '')
-      const pageEnc = encodeURIComponent(pageUrl)
+      const bidId = bidRequest.bidId;
+      const params = bidRequest.params;
+      const sid = params.sid;
+      const pageUrl = deepAccess(bidRequest, 'ortb2.site.page').replace(/\?.*$/, '');
+      const pageEnc = encodeURIComponent(pageUrl);
       const payload = {
         sid: sid,
         pu: pageEnc,
-      }
+      };
       return {
         id: bidId,
         method: 'GET',
         url: BID_ENDPOINT,
         data: payload,
-      }
-    })
+      };
+    });
   },
   interpretResponse: function(serverResponse, bidRequest) {
-    const body = serverResponse.body
-    const bidResponses = []
+    const body = serverResponse.body;
+    const bidResponses = [];
     if (body.cid) {
       const bidResponse = {
         requestId: bidRequest.id,
@@ -44,13 +44,13 @@ export const spec = {
         netRevenue: true,
         ttl: body.TTL,
         ad: body.adm
-      }
+      };
       if (body.adomains) {
-        deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains])
+        deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains]);
       }
-      bidResponses.push(bidResponse)
+      bidResponses.push(bidResponse);
     }
-    return bidResponses
+    return bidResponses;
   },
   /**
    * Determine which user syncs should occur
@@ -59,44 +59,44 @@ export const spec = {
    * @returns {Array} User sync pixels
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    const kwTag = document.getElementsByName('keywords')
-    let kwString = ''
-    let kwEnc = ''
-    let titleContent = !!document.title && document.title
-    let titleEnc = ''
-    let descContent = !!document.getElementsByName('description') && !!document.getElementsByName('description')[0] && document.getElementsByName('description')[0].content
-    let descEnc = ''
-    const pageUrl = location.href.replace(/\?.*$/, '')
-    const pageEnc = encodeURIComponent(pageUrl)
-    const refUrl = document.referrer.replace(/\?.*$/, '')
-    const refEnc = encodeURIComponent(refUrl)
+    const kwTag = document.getElementsByName('keywords');
+    let kwString = '';
+    let kwEnc = '';
+    let titleContent = !!document.title && document.title;
+    let titleEnc = '';
+    let descContent = !!document.getElementsByName('description') && !!document.getElementsByName('description')[0] && document.getElementsByName('description')[0].content;
+    let descEnc = '';
+    const pageUrl = location.href.replace(/\?.*$/, '');
+    const pageEnc = encodeURIComponent(pageUrl);
+    const refUrl = document.referrer.replace(/\?.*$/, '');
+    const refEnc = encodeURIComponent(refUrl);
     if (kwTag.length) {
-      const kwContents = kwTag[0].content
+      const kwContents = kwTag[0].content;
       if (kwContents.length > 20) {
-        const kwArray = kwContents.substr(0, 20).split(',')
-        kwArray.pop()
-        kwString = kwArray.join()
+        const kwArray = kwContents.substr(0, 20).split(',');
+        kwArray.pop();
+        kwString = kwArray.join();
       } else {
-        kwString = kwContents
+        kwString = kwContents;
       }
-      kwEnc = encodeURIComponent(kwString)
+      kwEnc = encodeURIComponent(kwString);
     }
     if (titleContent) {
       if (titleContent.length > 30) {
-        titleContent = titleContent.substr(0, 30)
+        titleContent = titleContent.substr(0, 30);
       }
-      titleEnc = encodeURIComponent(titleContent)
+      titleEnc = encodeURIComponent(titleContent);
     }
     if (descContent) {
       if (descContent.length > 60) {
-        descContent = descContent.substr(0, 60)
+        descContent = descContent.substr(0, 60);
       }
-      descEnc = encodeURIComponent(descContent)
+      descEnc = encodeURIComponent(descContent);
     }
     return (syncOptions.iframeEnabled) ? [{
       type: 'iframe',
       url: USER_SYNC_URL + '?pkw=' + kwEnc + '&pd=' + descEnc + '&pu=' + pageEnc + '&pref=' + refEnc + '&pt=' + titleEnc
-    }] : []
+    }] : [];
   }
-}
-registerBidder(spec)
+};
+registerBidder(spec);

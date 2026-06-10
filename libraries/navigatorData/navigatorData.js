@@ -1,9 +1,9 @@
 export function getHLen(win = window) {
-  let hLen
+  let hLen;
   try {
-    hLen = win.top.history.length
+    hLen = win.top.history.length;
   } catch (error) {
-    hLen = undefined
+    hLen = undefined;
   }
-  return hLen
+  return hLen;
 }

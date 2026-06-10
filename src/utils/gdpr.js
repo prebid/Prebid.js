@@ -6,7 +6,7 @@
  */
 export function hasPurpose1Consent(gdprConsent) {
   if (gdprConsent?.gdprApplies) {
-    return gdprConsent?.vendorData?.purpose?.consents?.[1] === true
+    return gdprConsent?.vendorData?.purpose?.consents?.[1] === true;
   }
-  return true
+  return true;
 }

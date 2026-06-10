@@ -1,17 +1,17 @@
 import {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION
-} from '../libraries/video/constants/ortb.js'
+} from '../libraries/video/constants/ortb.js';
 import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED, AD_REQUEST, AD_BREAK_START, AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY,
   AD_TIME, AD_PAUSE, AD_CLICK, AD_SKIPPED, AD_ERROR, AD_COMPLETE, AD_BREAK_END, PLAYLIST, PLAYBACK_REQUEST,
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
   RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
-} from '../libraries/video/constants/events.js'
-import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js'
-import stateFactory from '../libraries/video/shared/state.js'
-import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js'
-import { getEventHandler } from '../libraries/video/shared/eventHandler.js'
-import { submodule } from '../src/hook.js'
+} from '../libraries/video/constants/events.js';
+import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
+import stateFactory from '../libraries/video/shared/state.js';
+import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
+import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { submodule } from '../src/hook.js';
 /**
  * @typedef {import('../libraries/video/constants/ortb.js').OrtbVideoParams} OrtbVideoParams
  * @typedef {import('../libraries/video/shared/state.js').State} State
@@ -30,82 +30,82 @@ import { submodule } from '../src/hook.js'
  * @returns {VideoProvider}
  */
 export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils, sharedUtils) {
-  const jwplayer = jwplayer_
-  let player = null
-  let playerVersion = null
-  const playerConfig = config.playerConfig
-  const divId = config.divId
-  const adState = adState_
-  const timeState = timeState_
-  const callbackStorage = callbackStorage_
-  let pendingSeek = {}
-  let supportedMediaTypes = null
-  const minimumSupportedPlayerVersion = '8.20.1'
-  let setupCompleteCallbacks = []
-  let setupFailedCallbacks = []
+  const jwplayer = jwplayer_;
+  let player = null;
+  let playerVersion = null;
+  const playerConfig = config.playerConfig;
+  const divId = config.divId;
+  const adState = adState_;
+  const timeState = timeState_;
+  const callbackStorage = callbackStorage_;
+  let pendingSeek = {};
+  let supportedMediaTypes = null;
+  const minimumSupportedPlayerVersion = '8.20.1';
+  let setupCompleteCallbacks = [];
+  let setupFailedCallbacks = [];
   const MEDIA_TYPES = [
     VIDEO_MIME_TYPE.MP4,
     VIDEO_MIME_TYPE.OGG,
     VIDEO_MIME_TYPE.WEBM,
     VIDEO_MIME_TYPE.AAC,
     VIDEO_MIME_TYPE.HLS
-  ]
-  let height = null
-  let width = null
+  ];
+  let height = null;
+  let width = null;
 
   function init() {
     if (!jwplayer) {
-      triggerSetupFailure({ code: -1 }) // TODO: come up with error code schema- player is absent
-      return
+      triggerSetupFailure({ code: -1 }); // TODO: come up with error code schema- player is absent
+      return;
     }
 
-    playerVersion = jwplayer.version
+    playerVersion = jwplayer.version;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure({ code: -2 }) // TODO: come up with error code schema - version not supported
-      return
+      triggerSetupFailure({ code: -2 }); // TODO: come up with error code schema - version not supported
+      return;
     }
 
     if (!document.getElementById(divId)) {
-      triggerSetupFailure({ code: -3 }) // TODO: come up with error code schema - missing div id
-      return
+      triggerSetupFailure({ code: -3 }); // TODO: come up with error code schema - missing div id
+      return;
     }
 
-    player = jwplayer(divId)
+    player = jwplayer(divId);
     if (!player || !player.getState) {
-      triggerSetupFailure({ code: -4 }) // TODO: come up with error code schema - factory function failure
+      triggerSetupFailure({ code: -4 }); // TODO: come up with error code schema - factory function failure
     } else if (player.getState() === undefined) {
-      setupPlayer(playerConfig)
+      setupPlayer(playerConfig);
     } else {
-      triggerSetupComplete()
+      triggerSetupComplete();
     }
   }
 
   function getId() {
-    return divId
+    return divId;
   }
 
   function getOrtbVideo() {
     if (!player) {
-      return
+      return;
     }
 
-    const config = player.getConfig() || {}
-    const adConfig = config.advertising || {}
-    supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES)
+    const config = player.getConfig() || {};
+    const adConfig = config.advertising || {};
+    supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
 
     if (height === null) {
-      height = utils.getPlayerHeight(player, config)
+      height = utils.getPlayerHeight(player, config);
     }
 
     if (width === null) {
-      width = utils.getPlayerWidth(player, config)
+      width = utils.getPlayerWidth(player, config);
     }
 
     if (config.aspectratio && !height && !width) {
-      const size = utils.getPlayerSizeFromAspectRatio(player, config)
-      height = size.height
-      width = size.width
+      const size = utils.getPlayerSizeFromAspectRatio(player, config);
+      height = size.height;
+      width = size.width;
     }
 
     const video = {
@@ -139,33 +139,33 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       api: [
         API_FRAMEWORKS.VPAID_2_0
       ],
-    }
+    };
 
     if (utils.isOmidSupported(adConfig.adClient)) {
-      video.api.push(API_FRAMEWORKS.OMID_1_0)
+      video.api.push(API_FRAMEWORKS.OMID_1_0);
     }
 
-    Object.assign(video, utils.getSkipParams(adConfig))
+    Object.assign(video, utils.getSkipParams(adConfig));
 
     if (player.getFullscreen()) { // TODO does player call need optimization ?
       // only specify ad position when in Fullscreen since computational cost is low
       // ad position options are listed in oRTB 2.5 section 5.4
       // https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
-      video.pos = AD_POSITION.FULL_SCREEN // TODO make constant in oRTB
+      video.pos = AD_POSITION.FULL_SCREEN; // TODO make constant in oRTB
     }
 
-    return video
+    return video;
   }
 
   function getOrtbContent() {
     if (!player) {
-      return
+      return;
     }
 
-    const item = player.getPlaylistItem() || {} // TODO does player call need optimization ?
-    let { duration, playbackMode } = timeState.getState()
+    const item = player.getPlaylistItem() || {}; // TODO does player call need optimization ?
+    let { duration, playbackMode } = timeState.getState();
     if (duration === undefined) {
-      duration = player.getDuration()
+      duration = player.getDuration();
     }
 
     const content = {
@@ -175,118 +175,118 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       keywords: item.tags,
       len: duration,
       embeddable: 1
-    }
+    };
 
     if (playbackMode !== undefined) {
-      content.livestream = Math.min(playbackMode, 1)
+      content.livestream = Math.min(playbackMode, 1);
     }
 
-    const mediaId = item.mediaid
+    const mediaId = item.mediaid;
     if (mediaId) {
-      content.id = 'jw_' + mediaId
+      content.id = 'jw_' + mediaId;
     }
 
-    const jwpseg = item.jwpseg
-    const dataSegment = utils.getSegments(jwpseg)
-    const contentDatum = utils.getContentDatum(mediaId, dataSegment)
+    const jwpseg = item.jwpseg;
+    const dataSegment = utils.getSegments(jwpseg);
+    const contentDatum = utils.getContentDatum(mediaId, dataSegment);
     if (contentDatum) {
-      content.data = [contentDatum]
+      content.data = [contentDatum];
     }
 
-    const isoLanguageCode = utils.getIsoLanguageCode(player)
+    const isoLanguageCode = utils.getIsoLanguageCode(player);
     if (isoLanguageCode) {
-      content.language = isoLanguageCode
+      content.language = isoLanguageCode;
     }
 
-    return content
+    return content;
   }
 
   function setAdTagUrl(adTagUrl, options) {
     if (!player) {
-      return
+      return;
     }
 
-    player.playAd(adTagUrl || options.adXml, options)
+    player.playAd(adTagUrl || options.adXml, options);
   }
 
   function setAdXml(vastXml, options) {
     if (!player || !vastXml) {
-      return
+      return;
     }
 
-    player.loadAdXml(vastXml, options)
+    player.loadAdXml(vastXml, options);
   }
 
   function onEvent(externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
-      setupCompleteCallbacks.push(callback)
-      return
+      setupCompleteCallbacks.push(callback);
+      return;
     }
 
     if (externalEventName === SETUP_FAILED) {
-      setupFailedCallbacks.push(callback)
-      return
+      setupFailedCallbacks.push(callback);
+      return;
     }
 
     if (!player) {
-      return
+      return;
     }
 
-    let getEventPayload
+    let getEventPayload;
 
     switch (externalEventName) {
       case AD_REQUEST:
       case AD_PLAY:
       case AD_PAUSE:
-        getEventPayload = e => ({ adTagUrl: e.tag })
-        break
+        getEventPayload = e => ({ adTagUrl: e.tag });
+        break;
 
       case AD_BREAK_START:
         getEventPayload = e => {
-          timeState.clearState()
-          return { offset: e.adPosition }
-        }
-        break
+          timeState.clearState();
+          return { offset: e.adPosition };
+        };
+        break;
 
       case AD_LOADED:
         getEventPayload = e => {
-          adState.updateForEvent(e)
-          const adConfig = player.getConfig().advertising
-          adState.updateState(utils.getSkipParams(adConfig))
-          return adState.getState()
-        }
-        break
+          adState.updateForEvent(e);
+          const adConfig = player.getConfig().advertising;
+          adState.updateState(utils.getSkipParams(adConfig));
+          return adState.getState();
+        };
+        break;
 
       case AD_STARTED:
         // JW Player adImpression fires when the ad starts, regardless of viewability.
-        getEventPayload = () => adState.getState()
-        break
+        getEventPayload = () => adState.getState();
+        break;
 
       case AD_IMPRESSION:
       case AD_CLICK:
-        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState())
-        break
+        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
+        break;
 
       case AD_TIME:
         getEventPayload = e => {
-          timeState.updateForEvent(e)
+          timeState.updateForEvent(e);
           return {
             adTagUrl: e.tag,
             time: e.position,
             duration: e.duration,
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case AD_SKIPPED:
         getEventPayload = e => {
-          adState.clearState()
+          adState.clearState();
           return {
             time: e.position,
             duration: e.duration,
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case AD_ERROR:
         getEventPayload = e => {
@@ -296,44 +296,44 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             errorMessage: e.message,
             sourceError: e.sourceError
             // timeout
-          }, adState.getState(), timeState.getState())
-          adState.clearState()
-          return extraPayload
-        }
-        break
+          }, adState.getState(), timeState.getState());
+          adState.clearState();
+          return extraPayload;
+        };
+        break;
 
       case AD_COMPLETE:
         getEventPayload = e => {
-          adState.clearState()
-          return { adTagUrl: e.tag }
-        }
-        break
+          adState.clearState();
+          return { adTagUrl: e.tag };
+        };
+        break;
 
       case AD_BREAK_END:
-        getEventPayload = e => ({ offset: e.adPosition })
-        break
+        getEventPayload = e => ({ offset: e.adPosition });
+        break;
 
       case PLAYLIST:
         getEventPayload = e => {
-          const playlistItemCount = e.playlist.length
+          const playlistItemCount = e.playlist.length;
           return {
             playlistItemCount,
             autostart: player.getConfig().autostart
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case PLAYBACK_REQUEST:
-        getEventPayload = e => ({ playReason: e.playReason })
-        break
+        getEventPayload = e => ({ playReason: e.playReason });
+        break;
 
       case AUTOSTART_BLOCKED:
         getEventPayload = e => ({
           sourceError: e.error,
           errorCode: e.code,
           errorMessage: e.message
-        })
-        break
+        });
+        break;
 
       case PLAY_ATTEMPT_FAILED:
         getEventPayload = e => ({
@@ -341,12 +341,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
           sourceError: e.sourceError,
           errorCode: e.code,
           errorMessage: e.message
-        })
-        break
+        });
+        break;
 
       case CONTENT_LOADED:
         getEventPayload = e => {
-          const { item, index } = e
+          const { item, index } = e;
           return {
             contentId: item.mediaid,
             contentUrl: item.file, // cover other sources ? util ?
@@ -354,148 +354,148 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             description: item.description,
             playlistIndex: index,
             contentTags: item.tags
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case BUFFER:
-        getEventPayload = () => timeState.getState()
-        break
+        getEventPayload = () => timeState.getState();
+        break;
 
       case TIME:
         getEventPayload = e => {
-          timeState.updateForEvent(e)
+          timeState.updateForEvent(e);
           return {
             position: e.position,
             duration: e.duration
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case SEEK_START:
         getEventPayload = e => {
-          const duration = e.duration
-          const offset = e.offset
+          const duration = e.duration;
+          const offset = e.offset;
           pendingSeek = {
             duration,
             offset
-          }
+          };
           return {
             position: e.position,
             destination: offset,
             duration: duration
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case SEEK_END:
         getEventPayload = () => {
           const extraPayload = {
             position: pendingSeek.offset,
             duration: pendingSeek.duration
-          }
-          pendingSeek = {}
-          return extraPayload
-        }
-        break
+          };
+          pendingSeek = {};
+          return extraPayload;
+        };
+        break;
 
       case MUTE:
-        getEventPayload = e => ({ mute: e.mute })
-        break
+        getEventPayload = e => ({ mute: e.mute });
+        break;
 
       case VOLUME:
-        getEventPayload = e => ({ volumePercentage: e.volume })
-        break
+        getEventPayload = e => ({ volumePercentage: e.volume });
+        break;
 
       case RENDITION_UPDATE:
         getEventPayload = e => {
-          const bitrate = e.bitrate
-          const level = e.level
+          const bitrate = e.bitrate;
+          const level = e.level;
           return {
             videoReportedBitrate: bitrate,
             audioReportedBitrate: bitrate,
             encodedVideoWidth: level.width,
             encodedVideoHeight: level.height,
             videoFramerate: e.frameRate
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case ERROR:
         getEventPayload = e => ({
           sourceError: e.sourceError,
           errorCode: e.code,
           errorMessage: e.message,
-        })
-        break
+        });
+        break;
 
       case COMPLETE:
-        getEventPayload = e => timeState.clearState()
-        break
+        getEventPayload = e => timeState.clearState();
+        break;
 
       case FULLSCREEN:
-        getEventPayload = e => ({ fullscreen: e.fullscreen })
-        break
+        getEventPayload = e => ({ fullscreen: e.fullscreen });
+        break;
 
       case PLAYER_RESIZE:
         getEventPayload = e => {
-          height = e.height
-          width = e.width
+          height = e.height;
+          width = e.width;
           return {
             height,
             width
-          }
-        }
-        break
+          };
+        };
+        break;
 
       case VIEWABLE:
         getEventPayload = e => ({
           viewable: e.viewable,
           viewabilityPercentage: player.getPercentViewable() * 100,
-        })
-        break
+        });
+        break;
 
       case CAST:
-        getEventPayload = e => ({ casting: e.active })
-        break
+        getEventPayload = e => ({ casting: e.active });
+        break;
 
       case PLAY:
       case PAUSE:
       case PLAYLIST_COMPLETE:
       case DESTROYED:
-        break
+        break;
 
       default:
-        return
+        return;
     }
 
-    const jwEventName = utils.getJwEvent(externalEventName)
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
-    player.on(jwEventName, eventHandler)
-    callbackStorage.storeCallback(externalEventName, eventHandler, callback)
+    const jwEventName = utils.getJwEvent(externalEventName);
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
+    player.on(jwEventName, eventHandler);
+    callbackStorage.storeCallback(externalEventName, eventHandler, callback);
   }
 
   function offEvent(event, callback) {
-    const jwEvent = utils.getJwEvent(event)
+    const jwEvent = utils.getJwEvent(event);
     if (!callback) {
-      player.off(jwEvent)
-      return
+      player.off(jwEvent);
+      return;
     }
 
-    const eventHandler = callbackStorage.getCallback(event, callback)
+    const eventHandler = callbackStorage.getCallback(event, callback);
     if (!eventHandler) {
-      return
+      return;
     }
 
-    player.off(jwEvent, eventHandler)
+    player.off(jwEvent, eventHandler);
   }
 
   function destroy() {
     if (!player) {
-      return
+      return;
     }
-    player.remove()
-    player = null
+    player.remove();
+    player = null;
   }
 
   return {
@@ -508,23 +508,23 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     onEvent,
     offEvent,
     destroy
-  }
+  };
 
   function setupPlayer(config) {
     if (!config) {
-      return
+      return;
     }
-    player.setup(utils.getJwConfig(config)).on('ready', triggerSetupComplete).on('setupError', triggerSetupFailure)
+    player.setup(utils.getJwConfig(config)).on('ready', triggerSetupComplete).on('setupError', triggerSetupFailure);
   }
 
   function triggerSetupComplete() {
     if (!setupCompleteCallbacks.length) {
-      return
+      return;
     }
 
-    const payload = getSetupCompletePayload()
-    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload))
-    setupCompleteCallbacks = []
+    const payload = getSetupCompletePayload();
+    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+    setupCompleteCallbacks = [];
   }
 
   function getSetupCompletePayload() {
@@ -536,12 +536,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       viewabilityPercentage: player.getPercentViewable() * 100,
       mute: player.getMute(),
       volumePercentage: player.getVolume()
-    }
+    };
   }
 
   function triggerSetupFailure(e) {
     if (!setupFailedCallbacks.length) {
-      return
+      return;
     }
 
     const payload = {
@@ -551,10 +551,10 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       errorCode: e.code,
       errorMessage: e.message,
       sourceError: e.sourceError
-    }
+    };
 
-    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload))
-    setupFailedCallbacks = []
+    setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload));
+    setupFailedCallbacks = [];
   }
 }
 
@@ -564,195 +564,195 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
  * @returns {VideoProvider}
  */
 const jwplayerSubmoduleFactory = function (config, sharedUtils) {
-  const adState = adStateFactory()
-  const timeState = timeStateFactory()
-  const callbackStorage = callbackStorageFactory()
-  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils, sharedUtils)
-}
+  const adState = adStateFactory();
+  const timeState = timeStateFactory();
+  const callbackStorage = callbackStorageFactory();
+  return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils, sharedUtils);
+};
 
-jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR
-submodule('video', jwplayerSubmoduleFactory)
-export default jwplayerSubmoduleFactory
+jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
+submodule('video', jwplayerSubmoduleFactory);
+export default jwplayerSubmoduleFactory;
 
 // HELPERS
 
 export const utils = {
   getJwConfig: function(config) {
     if (!config) {
-      return
+      return;
     }
 
-    const params = config.params || {}
-    const jwConfig = params.vendorConfig || {}
+    const params = config.params || {};
+    const jwConfig = params.vendorConfig || {};
     if (jwConfig.autostart === undefined && config.autoStart !== undefined) {
-      jwConfig.autostart = config.autoStart
+      jwConfig.autostart = config.autoStart;
     }
 
     if (jwConfig.mute === undefined && config.mute !== undefined) {
-      jwConfig.mute = config.mute
+      jwConfig.mute = config.mute;
     }
 
     if (!jwConfig.key && config.licenseKey !== undefined) {
-      jwConfig.key = config.licenseKey
+      jwConfig.key = config.licenseKey;
     }
 
     if (config.setupAds === false) {
-      return jwConfig
+      return jwConfig;
     }
 
-    const advertising = jwConfig.advertising || { client: 'vast' }
+    const advertising = jwConfig.advertising || { client: 'vast' };
     if (!jwConfig.file && !jwConfig.playlist && !jwConfig.source) {
       // TODO verify accuracy
-      advertising.outstream = true
+      advertising.outstream = true;
     }
 
-    const bids = advertising.bids || {}
-    bids.prebid = true
-    advertising.bids = bids
+    const bids = advertising.bids || {};
+    bids.prebid = true;
+    advertising.bids = bids;
 
-    jwConfig.advertising = advertising
-    return jwConfig
+    jwConfig.advertising = advertising;
+    return jwConfig;
   },
 
   getPlayerHeight: function(player, config) {
-    let height
+    let height;
 
     if (player.getHeight) {
-      height = player.getHeight()
+      height = player.getHeight();
     }
 
     // Height is undefined when player has not yet rendered
     if (height !== undefined && height !== null) {
-      return height
+      return height;
     }
 
-    return config.height
+    return config.height;
   },
 
   getPlayerWidth: function(player, config) {
-    let width
+    let width;
 
     if (player.getWidth) {
-      width = player.getWidth()
+      width = player.getWidth();
     }
 
     // Width is undefined when player has not yet rendered
     if (width !== undefined && width !== null) {
-      return width
+      return width;
     }
 
     // Width can be a string when aspectratio is set
     if (typeof config.width === 'number') {
-      return config.width
+      return config.width;
     }
   },
 
   getPlayerSizeFromAspectRatio: function(player, config) {
-    const aspectRatio = config.aspectratio
-    const percentageWidth = config.width
+    const aspectRatio = config.aspectratio;
+    const percentageWidth = config.width;
 
     if (typeof aspectRatio !== 'string' || typeof percentageWidth !== 'string') {
-      return {}
+      return {};
     }
 
-    const ratios = aspectRatio.split(':')
+    const ratios = aspectRatio.split(':');
 
     if (ratios.length !== 2) {
-      return {}
+      return {};
     }
 
-    const containerElement = player.getContainer && player.getContainer()
+    const containerElement = player.getContainer && player.getContainer();
     if (!containerElement) {
-      return {}
+      return {};
     }
 
-    const containerWidth = containerElement.clientWidth
-    const containerHeight = containerElement.clientHeight
+    const containerWidth = containerElement.clientWidth;
+    const containerHeight = containerElement.clientHeight;
 
-    const xRatio = parseInt(ratios[0], 10)
-    const yRatio = parseInt(ratios[1], 10)
+    const xRatio = parseInt(ratios[0], 10);
+    const yRatio = parseInt(ratios[1], 10);
 
     if (isNaN(xRatio) || isNaN(yRatio) || xRatio === 0 || yRatio === 0) {
-      return {}
+      return {};
     }
 
-    const numericWidthPercentage = parseInt(percentageWidth, 10)
+    const numericWidthPercentage = parseInt(percentageWidth, 10);
 
     if (isNaN(numericWidthPercentage)) {
-      return {}
+      return {};
     }
 
-    const desiredWidth = containerWidth * numericWidthPercentage / 100
-    const desiredHeight = Math.min(desiredWidth * yRatio / xRatio, containerHeight)
+    const desiredWidth = containerWidth * numericWidthPercentage / 100;
+    const desiredHeight = Math.min(desiredWidth * yRatio / xRatio, containerHeight);
 
     return {
       height: desiredHeight,
       width: desiredWidth
-    }
+    };
   },
 
   getJwEvent: function(eventName) {
     switch (eventName) {
       case SETUP_COMPLETE:
-        return 'ready'
+        return 'ready';
 
       case SETUP_FAILED:
-        return 'setupError'
+        return 'setupError';
 
       case DESTROYED:
-        return 'remove'
+        return 'remove';
 
       case AD_STARTED:
-        return AD_IMPRESSION
+        return AD_IMPRESSION;
 
       case AD_IMPRESSION:
-        return 'adViewableImpression'
+        return 'adViewableImpression';
 
       case PLAYBACK_REQUEST:
-        return 'playAttempt'
+        return 'playAttempt';
 
       case AUTOSTART_BLOCKED:
-        return 'autostartNotAllowed'
+        return 'autostartNotAllowed';
 
       case CONTENT_LOADED:
-        return 'playlistItem'
+        return 'playlistItem';
 
       case SEEK_START:
-        return 'seek'
+        return 'seek';
 
       case SEEK_END:
-        return 'seeked'
+        return 'seeked';
 
       case RENDITION_UPDATE:
-        return 'visualQuality'
+        return 'visualQuality';
 
       case PLAYER_RESIZE:
-        return 'resize'
+        return 'resize';
 
       default:
-        return eventName
+        return eventName;
     }
   },
 
   getSkipParams: function(adConfig) {
-    const skipParams = {}
-    const skipoffset = adConfig.skipoffset
+    const skipParams = {};
+    const skipoffset = adConfig.skipoffset;
     if (skipoffset !== undefined) {
-      const skippable = skipoffset >= 0
-      skipParams.skip = skippable ? 1 : 0
+      const skippable = skipoffset >= 0;
+      skipParams.skip = skippable ? 1 : 0;
       if (skippable) {
-        skipParams.skipmin = skipoffset + 2
-        skipParams.skipafter = skipoffset
+        skipParams.skipmin = skipoffset + 2;
+        skipParams.skipafter = skipoffset;
       }
     }
-    return skipParams
+    return skipParams;
   },
 
   getSupportedMediaTypes: function(mediaTypes = []) {
-    const el = document.createElement('video')
+    const el = document.createElement('video');
     return mediaTypes
       .filter(mediaType => el.canPlayType(mediaType))
-      .concat(VPAID_MIME_TYPE) // Always allow VPAIDs.
+      .concat(VPAID_MIME_TYPE); // Always allow VPAIDs.
   },
 
   getStartDelay: function() {
@@ -770,26 +770,26 @@ export const utils = {
   getPlacement: function(adConfig, player) {
     if (!adConfig.outstream) {
       // https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player for more info on outstream
-      return PLACEMENT.INSTREAM
+      return PLACEMENT.INSTREAM;
     }
 
     if (player.getFloating()) {
-      return PLACEMENT.FLOATING
+      return PLACEMENT.FLOATING;
     }
 
-    const placement = adConfig.placement
+    const placement = adConfig.placement;
     if (!placement) {
-      return
+      return;
     }
 
-    return PLACEMENT[placement.toUpperCase()]
+    return PLACEMENT[placement.toUpperCase()];
   },
 
   getPlaybackMethod: function({ autoplay, mute, autoplayAdsMuted }) {
     if (autoplay) {
       // Determine whether player is going to start muted.
-      const isMuted = mute || autoplayAdsMuted // todo autoplayAdsMuted only applies to preRoll
-      return isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY
+      const isMuted = mute || autoplayAdsMuted; // todo autoplayAdsMuted only applies to preRoll
+      return isMuted ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     /*
      TODO
@@ -797,7 +797,7 @@ export const utils = {
       5 Initiates on Entering Viewport with Sound On
       6 Initiates on Entering Viewport with Sound Off by Default
      */
-    return PLAYBACK_METHODS.CLICK_TO_PLAY
+    return PLAYBACK_METHODS.CLICK_TO_PLAY;
   },
 
   /**
@@ -807,8 +807,8 @@ export const utils = {
    * @returns {boolean} - support of omid
    */
   isOmidSupported: function(adClient) {
-    const omidIsLoaded = window.OmidSessionClient !== undefined && window.OmidSessionClient !== null
-    return omidIsLoaded && adClient === 'vast'
+    const omidIsLoaded = window.OmidSessionClient !== undefined && window.OmidSessionClient !== null;
+    return omidIsLoaded && adClient === 'vast';
   },
 
   /**
@@ -817,14 +817,14 @@ export const utils = {
    * @returns {string|undefined} ISO 639 language code.
    */
   getIsoLanguageCode: function(player) {
-    const audioTracks = player.getAudioTracks()
+    const audioTracks = player.getAudioTracks();
     if (!audioTracks || !audioTracks.length) {
-      return
+      return;
     }
 
-    const currentTrackIndex = Math.max(player.getCurrentAudioTrack() || 0, 0) // returns -1 when there are no alternative tracks.
-    const audioTrack = audioTracks[currentTrackIndex]
-    return audioTrack && audioTrack.language
+    const currentTrackIndex = Math.max(player.getCurrentAudioTrack() || 0, 0); // returns -1 when there are no alternative tracks.
+    const audioTrack = audioTracks[currentTrackIndex];
+    return audioTrack && audioTrack.language;
   },
 
   /**
@@ -834,17 +834,17 @@ export const utils = {
    */
   getSegments: function (jwpsegs) {
     if (!jwpsegs || !jwpsegs.length) {
-      return
+      return;
     }
 
     const formattedSegments = jwpsegs.reduce((convertedSegments, rawSegment) => {
       convertedSegments.push({
         id: rawSegment,
-      })
-      return convertedSegments
-    }, [])
+      });
+      return convertedSegments;
+    }, []);
 
-    return formattedSegments
+    return formattedSegments;
   },
 
   /**
@@ -855,26 +855,26 @@ export const utils = {
    */
   getContentDatum: function (mediaId, segments) {
     if (!mediaId && (!segments || segments.length === 0)) {
-      return
+      return;
     }
 
     const contentData = {
       name: 'jwplayer.com',
       ext: {}
-    }
+    };
 
     if (mediaId) {
-      contentData.ext.cids = contentData.cids = [mediaId]
+      contentData.ext.cids = contentData.cids = [mediaId];
     }
 
     if (segments && segments.length > 0) {
-      contentData.segment = segments
-      contentData.ext.segtax = 502
+      contentData.segment = segments;
+      contentData.ext.segtax = 502;
     }
 
-    return contentData
+    return contentData;
   }
-}
+};
 
 /**
  * Tracks which functions are attached to events
@@ -888,37 +888,37 @@ export const utils = {
  * @returns {CallbackStorage}
  */
 export function callbackStorageFactory() {
-  let storage = {}
+  let storage = {};
 
   function storeCallback(eventType, eventHandler, callback) {
-    let eventHandlers = storage[eventType]
+    let eventHandlers = storage[eventType];
     if (!eventHandlers) {
-      eventHandlers = storage[eventType] = {}
+      eventHandlers = storage[eventType] = {};
     }
 
-    eventHandlers[callback] = eventHandler
+    eventHandlers[callback] = eventHandler;
   }
 
   function getCallback(eventType, callback) {
-    const eventHandlers = storage[eventType]
+    const eventHandlers = storage[eventType];
     if (!eventHandlers) {
-      return
+      return;
     }
 
-    const eventHandler = eventHandlers[callback]
-    delete eventHandlers[callback]
-    return eventHandler
+    const eventHandler = eventHandlers[callback];
+    delete eventHandlers[callback];
+    return eventHandler;
   }
 
   function clearStorage() {
-    storage = {}
+    storage = {};
   }
 
   return {
     storeCallback,
     getCallback,
     clearStorage
-  }
+  };
 }
 
 // STATE
@@ -927,7 +927,7 @@ export function callbackStorageFactory() {
  * @returns {State}
  */
 export function adStateFactory() {
-  const adState = Object.assign({}, stateFactory())
+  const adState = Object.assign({}, stateFactory());
 
   function updateForEvent(event) {
     const updates = {
@@ -955,84 +955,84 @@ export function adStateFactory() {
       waterfallIndex: event.witem,
       waterfallCount: event.wcount,
       wrapperAdIds: event.wrapperAdIds
-    }
+    };
 
     if (event.client === 'googima' && !updates.wrapperAdIds) {
-      updates.wrapperAdIds = parseImaAdWrapperIds(event)
+      updates.wrapperAdIds = parseImaAdWrapperIds(event);
     }
 
-    this.updateState(updates)
+    this.updateState(updates);
   }
 
-  adState.updateForEvent = updateForEvent
+  adState.updateForEvent = updateForEvent;
 
   function convertPlacementToOrtbCode(placement) {
     switch (placement) {
       case 'instream':
-        return PLACEMENT.INSTREAM
+        return PLACEMENT.INSTREAM;
 
       case 'banner':
-        return PLACEMENT.BANNER
+        return PLACEMENT.BANNER;
 
       case 'article':
-        return PLACEMENT.ARTICLE
+        return PLACEMENT.ARTICLE;
 
       case 'feed':
-        return PLACEMENT.FEED
+        return PLACEMENT.FEED;
 
       case 'interstitial':
       case 'slider':
       case 'floating':
-        return PLACEMENT.INTERSTITIAL_SLIDER_FLOATING
+        return PLACEMENT.INTERSTITIAL_SLIDER_FLOATING;
     }
   }
 
   function parseImaAdWrapperIds(adEvent) {
-    const ima = adEvent.ima
-    const ad = ima && ima.ad
+    const ima = adEvent.ima;
+    const ad = ima && ima.ad;
     if (!ad) {
-      return
+      return;
     }
 
-    const adProperties = Object.keys(ad)
+    const adProperties = Object.keys(ad);
     for (const property of adProperties) {
-      const value = ad[property]
-      const wrapperIds = value.adWrapperIds
+      const value = ad[property];
+      const wrapperIds = value.adWrapperIds;
       if (wrapperIds) {
-        return wrapperIds
+        return wrapperIds;
       }
     }
   }
 
-  return adState
+  return adState;
 }
 
 /**
  * @returns {State}
  */
 export function timeStateFactory() {
-  const timeState = Object.assign({}, stateFactory())
+  const timeState = Object.assign({}, stateFactory());
 
   function updateForEvent(event) {
-    const { position, duration } = event
+    const { position, duration } = event;
     this.updateState({
       time: position,
       duration,
       playbackMode: getPlaybackMode(duration)
-    })
+    });
   }
 
-  timeState.updateForEvent = updateForEvent
+  timeState.updateForEvent = updateForEvent;
 
   function getPlaybackMode(duration) {
     if (duration > 0) {
-      return PLAYBACK_MODE.VOD
+      return PLAYBACK_MODE.VOD;
     } else if (duration < 0) {
-      return PLAYBACK_MODE.DVR
+      return PLAYBACK_MODE.DVR;
     }
 
-    return PLAYBACK_MODE.LIVE
+    return PLAYBACK_MODE.LIVE;
   }
 
-  return timeState
+  return timeState;
 }

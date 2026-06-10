@@ -1,4 +1,4 @@
-import type { IntentIqABConfigSource } from './intentIqIdSystem'
+import type { IntentIqABConfigSource } from './intentIqIdSystem';
 
 /**
  * Payload passed to `window.intentIqAnalyticsAdapter_<partnerId>.reportExternalWin()`.

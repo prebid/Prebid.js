@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
   logError,
   logInfo,
@@ -7,9 +7,9 @@ import {
   isFn,
   isNumber,
   isPlainObject,
-} from '../src/utils.js'
-import { VIDEO } from '../src/mediaTypes.js'
-import { Renderer } from '../src/Renderer.js'
+} from '../src/utils.js';
+import { VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,50 +19,50 @@ import { Renderer } from '../src/Renderer.js'
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  */
 
-const BIDDER_CODE = 'viqeo'
+const BIDDER_CODE = 'viqeo';
 const DEFAULT_MIMES = [
   'video/3gpp',
   'video/mp4',
   'video/mpeg',
   'video/webm',
   'application/javascript',
-]
-const VIQEO_ENDPOINT = 'https://ad.vqserve.com/ads/prebid'
-const RENDERER_URL = 'https://cdn.viqeo.tv/js/vq_starter.js'
-const DEFAULT_CURRENCY = 'USD'
+];
+const VIQEO_ENDPOINT = 'https://ad.vqserve.com/ads/prebid';
+const RENDERER_URL = 'https://cdn.viqeo.tv/js/vq_starter.js';
+const DEFAULT_CURRENCY = 'USD';
 
 function getBidFloor(bid) {
-  const { floor, currency } = bid.params
-  const curr = currency || DEFAULT_CURRENCY
+  const { floor, currency } = bid.params;
+  const curr = currency || DEFAULT_CURRENCY;
   if (!isFn(bid.getFloor)) {
-    return { floor: isNumber(floor) ? floor : 0, currency: curr }
+    return { floor: isNumber(floor) ? floor : 0, currency: curr };
   }
   const floorInfo = bid.getFloor({
     currency: curr,
     mediaType: VIDEO,
     size: '*',
-  })
+  });
   if (
     isPlainObject(floorInfo) &&
     isNumber(floorInfo.floor) &&
     floorInfo.currency === curr
   ) {
-    return floorInfo
+    return floorInfo;
   }
-  return { floor: floor || 0, currency: currency || DEFAULT_CURRENCY }
+  return { floor: floor || 0, currency: currency || DEFAULT_CURRENCY };
 }
 
 function getVideoTargetingParams({ mediaTypes: { video } }) {
-  const result = {}
+  const result = {};
   Object.keys(Object(video)).forEach((key) => {
     if (key === 'playerSize') {
-      result.w = video.playerSize[0][0]
-      result.h = video.playerSize[0][1]
+      result.w = video.playerSize[0][0];
+      result.h = video.playerSize[0][1];
     } else if (key !== 'context') {
-      result[key] = video[key]
+      result[key] = video[key];
     }
-  })
-  return result
+  });
+  return result;
 }
 
 /**
@@ -77,45 +77,45 @@ export const spec = {
    */
   isBidRequestValid: ({ params }) => {
     if (!params) {
-      logError('failed validation: params not declared')
-      return false
+      logError('failed validation: params not declared');
+      return false;
     }
     if (!params.tagId) {
-      logError('failed validation: tagId not declared')
-      return false
+      logError('failed validation: tagId not declared');
+      return false;
     }
     if (!params.playerOptions) {
-      logError('failed validation: playerOptions not declared')
-      return false
+      logError('failed validation: playerOptions not declared');
+      return false;
     }
-    const { profileId, videoId, playerId } = params.playerOptions
+    const { profileId, videoId, playerId } = params.playerOptions;
     if (!profileId) {
-      logError('failed validation: profileId not declared')
-      return false
+      logError('failed validation: profileId not declared');
+      return false;
     }
     if (!videoId && !playerId) {
-      logError('failed validation: videoId or playerId not declared')
-      return false
+      logError('failed validation: videoId or playerId not declared');
+      return false;
     }
-    return true
+    return true;
   },
   /**
    * @param validBidRequests {BidRequest[]}
    * @returns {ServerRequest[]}
    */
   buildRequests: (validBidRequests) => {
-    logInfo('validBidRequests', validBidRequests)
-    const bidRequests = []
+    logInfo('validBidRequests', validBidRequests);
+    const bidRequests = [];
     _each(validBidRequests, (bid, i) => {
       const {
         params: { test, tagId, endpointUrl, bcat, badv },
         mediaTypes: { video },
-      } = bid
-      const ortb2 = bid.ortb2 || {}
-      const user = bid.params.user || {}
-      const device = bid.params.device || {}
-      const site = bid.params.site || {}
-      const floorInfo = getBidFloor(bid)
+      } = bid;
+      const ortb2 = bid.ortb2 || {};
+      const user = bid.params.user || {};
+      const device = bid.params.device || {};
+      const site = bid.params.site || {};
+      const floorInfo = getBidFloor(bid);
 
       const data = {
         id: bid.bidId,
@@ -141,15 +141,15 @@ export const spec = {
         user: mergeDeep(user, ortb2.user),
         bcat: ortb2.bcat || bcat,
         badv: ortb2.badv || badv
-      }
+      };
       bidRequests.push({
         url: endpointUrl || `${VIQEO_ENDPOINT}`,
         method: 'POST',
         data,
         bids: validBidRequests,
-      })
-    })
-    return bidRequests
+      });
+    });
+    return bidRequests;
   },
   /**
    * @param {ServerResponse} serverResponse
@@ -157,28 +157,28 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (serverResponse, bidRequests) => {
-    logInfo('serverResponse', serverResponse)
-    const bidResponses = []
+    logInfo('serverResponse', serverResponse);
+    const bidResponses = [];
     if (!serverResponse || !serverResponse.body) {
-      logError('empty response')
-      return []
+      logError('empty response');
+      return [];
     }
     try {
-      const { id, seatbid, cur } = serverResponse.body
+      const { id, seatbid, cur } = serverResponse.body;
       _each(seatbid, (sb) => {
-        const { bid } = sb
+        const { bid } = sb;
         _each(bid, (b) => {
-          const bidRequest = bidRequests.bids.find(({ bidId }) => bidId === id)
+          const bidRequest = bidRequests.bids.find(({ bidId }) => bidId === id);
           const renderer = Renderer.install({
             url: bidRequest?.params?.renderUrl || RENDERER_URL,
-          })
+          });
           renderer.setRender((bid, doc) => {
             if (window.VIQEO) {
-              window.VIQEO.renderPrebid(bid, doc)
+              window.VIQEO.renderPrebid(bid, doc);
             } else {
-              logError('failed get window.VIQEO')
+              logError('failed get window.VIQEO');
             }
-          })
+          });
           bidResponses.push({
             requestId: id,
             currency: cur || DEFAULT_CURRENCY,
@@ -197,13 +197,13 @@ export const spec = {
               attr: b.attr,
               advertiserDomains: b.adomain,
             },
-          })
-        })
-      })
+          });
+        });
+      });
     } catch (error) {
-      logError(error)
+      logError(error);
     }
-    return bidResponses
+    return bidResponses;
   },
-}
-registerBidder(spec)
+};
+registerBidder(spec);

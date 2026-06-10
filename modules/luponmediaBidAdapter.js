@@ -1,28 +1,28 @@
-import { logError, logMessage, logWarn, deepSetValue } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { config } from '../src/config.js'
+import { logError, logMessage, logWarn, deepSetValue } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'luponmedia'
-const GVLID = 1132
-const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/
+const BIDDER_CODE = 'luponmedia';
+const GVLID = 1132;
+const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
 
 const buildServerUrl = (keyId) => {
-  const match = String(keyId).match(/@([^_]+)_/)
-  let host = 'rtb'
+  const match = String(keyId).match(/@([^_]+)_/);
+  let host = 'rtb';
 
   if (match) {
-    host = match[1]
+    host = match[1];
   }
 
-  return `https://${host}.adxpremium.services/openrtb2/auction`
-}
+  return `https://${host}.adxpremium.services/openrtb2/auction`;
+};
 
 function hasRtd() {
-  const rtdConfigs = config.getConfig('realTimeData.dataProviders') || []
+  const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
 
-  return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoost'))
+  return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoost'));
 }
 
 export const converter = ortbConverter({
@@ -32,138 +32,138 @@ export const converter = ortbConverter({
     mediaType: BANNER,
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
+    const imp = buildImp(bidRequest, context);
 
-    imp.ext = imp.ext || {}
+    imp.ext = imp.ext || {};
 
-    const hasRtdEnabled = hasRtd()
+    const hasRtdEnabled = hasRtd();
 
     if (!hasRtdEnabled) {
-      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.')
+      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.');
     }
 
-    imp.ext.luponmedia = imp.ext.luponmedia || {}
-    imp.ext.luponmedia.placement_id = bidRequest.adUnitCode
-    imp.ext.luponmedia.keyId = bidRequest.params.keyId
-    imp.ext.luponmedia.siteId = bidRequest.params.siteId
-    imp.ext.luponmedia.rtd = hasRtdEnabled
+    imp.ext.luponmedia = imp.ext.luponmedia || {};
+    imp.ext.luponmedia.placement_id = bidRequest.adUnitCode;
+    imp.ext.luponmedia.keyId = bidRequest.params.keyId;
+    imp.ext.luponmedia.siteId = bidRequest.params.siteId;
+    imp.ext.luponmedia.rtd = hasRtdEnabled;
 
-    return imp
+    return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context)
+    const bidResponse = buildBidResponse(bid, context);
 
     if (!bidResponse.creativeId) {
-      bidResponse.creativeId = bid.crid || bid.id
+      bidResponse.creativeId = bid.crid || bid.id;
     }
 
     if (!bidResponse.dealId && bid.dealid) {
-      bidResponse.dealId = bid.dealid
+      bidResponse.dealId = bid.dealid;
     }
 
     if (context.bidRequest?.ortb2?.site?.ref) {
-      bidResponse.referrer = context.bidRequest.ortb2.site.ref
+      bidResponse.referrer = context.bidRequest.ortb2.site.ref;
     }
 
-    return bidResponse
+    return bidResponse;
   },
-})
+});
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return keyIdRegex.test(bid?.params?.keyId)
+    return keyIdRegex.test(bid?.params?.keyId);
   },
   buildRequests: function (bidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidderRequest, bidRequests })
+    const data = converter.toORTB({ bidderRequest, bidRequests });
 
     if (bidderRequest.gdprConsent) {
-      let gdprApplies
+      let gdprApplies;
 
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+        gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
 
-      deepSetValue(data, 'regs.ext.gdpr', gdprApplies)
-      deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
+      deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     }
 
     if (bidderRequest.uspConsent) {
-      deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    const serverUrl = buildServerUrl(bidRequests[0].params.keyId)
+    const serverUrl = buildServerUrl(bidRequests[0].params.keyId);
 
     return {
       method: 'POST',
       url: serverUrl,
       data,
-    }
+    };
   },
   interpretResponse: (response, request) => {
-    return converter.fromORTB({ response: response.body, request: request.data }).bids
+    return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
   getUserSyncs: function (syncOptions, responses) {
-    const allUserSyncs = []
+    const allUserSyncs = [];
 
     if (hasSynced) {
-      return allUserSyncs
+      return allUserSyncs;
     }
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
-      logWarn('Luponmedia: Please enable iframe/pixel based user sync.')
-      hasSynced = true
-      return allUserSyncs
+      logWarn('Luponmedia: Please enable iframe/pixel based user sync.');
+      hasSynced = true;
+      return allUserSyncs;
     }
 
     responses.forEach(csResp => {
       if (!csResp?.body?.ext?.usersyncs) {
-        return
+        return;
       }
 
       try {
-        const response = csResp.body.ext.usersyncs
-        const bidders = response.bidder_status
+        const response = csResp.body.ext.usersyncs;
+        const bidders = response.bidder_status;
 
         for (const synci in bidders) {
-          const thisSync = bidders[synci]
+          const thisSync = bidders[synci];
 
           if (!thisSync.no_cookie) {
-            continue
+            continue;
           }
 
-          const url = thisSync.usersync.url
-          const type = thisSync.usersync.type
+          const url = thisSync.usersync.url;
+          const type = thisSync.usersync.type;
 
           if (!url) {
-            logError(`No sync url for bidder luponmedia.`)
+            logError(`No sync url for bidder luponmedia.`);
           } else if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-            logMessage(`Invoking image pixel user sync for luponmedia`)
-            allUserSyncs.push({ type: 'image', url: url })
+            logMessage(`Invoking image pixel user sync for luponmedia`);
+            allUserSyncs.push({ type: 'image', url: url });
           } else if (type === 'iframe' && syncOptions.iframeEnabled) {
-            logMessage(`Invoking iframe user sync for luponmedia`)
-            allUserSyncs.push({ type: 'iframe', url: url })
+            logMessage(`Invoking iframe user sync for luponmedia`);
+            allUserSyncs.push({ type: 'iframe', url: url });
           } else {
-            logError(`User sync type "${type}" not supported for luponmedia`)
+            logError(`User sync type "${type}" not supported for luponmedia`);
           }
         }
       } catch (e) {
-        logError(e)
+        logError(e);
       }
-    })
+    });
 
-    hasSynced = true
+    hasSynced = true;
 
-    return allUserSyncs
+    return allUserSyncs;
   },
-}
+};
 
-let hasSynced = false
+let hasSynced = false;
 
 // we need this for tests
 export function resetUserSync() {
-  hasSynced = false
+  hasSynced = false;
 }
 
-registerBidder(spec)
+registerBidder(spec);

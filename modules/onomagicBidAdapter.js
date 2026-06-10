@@ -6,16 +6,16 @@ import {
   isArray,
   logError,
   logWarn
-} from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import { percentInView } from '../libraries/percentInView/percentInView.js'
-import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js'
-import { getBidFloor, isIframe } from '../libraries/omsUtils/index.js'
-import { getAdUnitElement } from '../src/utils/adUnits.js'
+} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getBidFloor, isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
-const BIDDER_CODE = 'onomagic'
-const URL = 'https://bidder.onomagic.com/hb'
+const BIDDER_CODE = 'onomagic';
+const URL = 'https://bidder.onomagic.com/hb';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,28 +24,28 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs
-}
+};
 
 function buildRequests(bidReqs, bidderRequest) {
   try {
-    let referrer = ''
+    let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.page
+      referrer = bidderRequest.refererInfo.page;
     }
-    const onomagicImps = []
-    const publisherId = getBidIdParameter('publisherId', bidReqs[0].params)
+    const onomagicImps = [];
+    const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
     _each(bidReqs, function (bid) {
-      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
-      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes])
-      bidSizes = bidSizes.filter(size => isArray(size))
-      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }))
+      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
+      bidSizes = bidSizes.filter(size => isArray(size));
+      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 
-      const element = getAdUnitElement(bid)
-      const minSize = getMinSize(processedSizes)
+      const element = getAdUnitElement(bid);
+      const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
         ? _getViewability(element, getWindowTop(), minSize)
-        : 'na'
-      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount)
+        : 'na';
+      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
 
       const imp = {
         id: bid.bidId,
@@ -56,13 +56,13 @@ function buildRequests(bidReqs, bidderRequest) {
           }
         },
         tagid: String(bid.adUnitCode)
-      }
-      const bidFloor = getBidFloor(bid)
+      };
+      const bidFloor = getBidFloor(bid);
       if (bidFloor) {
-        imp.bidfloor = bidFloor
+        imp.bidfloor = bidFloor;
       }
-      onomagicImps.push(imp)
-    })
+      onomagicImps.push(imp);
+    });
     const onomagicBidReq = {
       id: getUniqueIdentifierStr(),
       imp: onomagicImps,
@@ -80,39 +80,39 @@ function buildRequests(bidReqs, bidderRequest) {
         h: screen.height
       },
       tmax: bidderRequest?.timeout
-    }
+    };
 
     return {
       method: 'POST',
       url: URL,
       data: JSON.stringify(onomagicBidReq),
       options: { contentType: 'text/plain', withCredentials: false }
-    }
+    };
   } catch (e) {
-    logError(e, { bidReqs, bidderRequest })
+    logError(e, { bidReqs, bidderRequest });
   }
 }
 
 function isBidRequestValid(bid) {
   if (typeof bid.params === 'undefined') {
-    return false
+    return false;
   }
 
   if (typeof bid.params.publisherId === 'undefined') {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }
 
 function interpretResponse(serverResponse) {
   if (!serverResponse.body || typeof serverResponse.body !== 'object') {
-    logWarn('Onomagic server returned empty/non-json response: ' + JSON.stringify(serverResponse.body))
-    return []
+    logWarn('Onomagic server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
+    return [];
   }
-  const { body: { id, seatbid } } = serverResponse
+  const { body: { id, seatbid } } = serverResponse;
   try {
-    const onomagicBidResponses = []
+    const onomagicBidResponses = [];
     if (id &&
       seatbid &&
       seatbid.length > 0 &&
@@ -133,48 +133,48 @@ function interpretResponse(serverResponse) {
           meta: {
             advertiserDomains: onomagicBid && onomagicBid.adomain ? onomagicBid.adomain : []
           }
-        })
-      })
+        });
+      });
     }
-    return onomagicBidResponses
+    return onomagicBidResponses;
   } catch (e) {
-    logError(e, { id, seatbid })
+    logError(e, { id, seatbid });
   }
 }
 
 // Don't do user sync for now
 function getUserSyncs(syncOptions, responses, gdprConsent) {
-  return []
+  return [];
 }
 
 function _isMobile() {
-  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent)
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
 function _isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent)
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
 function _getDeviceType() {
-  return _isMobile() ? 1 : _isConnectedTV() ? 3 : 2
+  return _isMobile() ? 1 : _isConnectedTV() ? 3 : 2;
 }
 
 function _getAdMarkup(bid) {
-  let adm = bid.adm
+  let adm = bid.adm;
   if ('nurl' in bid) {
-    adm += createTrackPixelHtml(bid.nurl)
+    adm += createTrackPixelHtml(bid.nurl);
   }
-  return adm
+  return adm;
 }
 
 function _isViewabilityMeasurable(element) {
-  return !isIframe() && element !== null
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
   return getWindowTop().document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
-    : 0
+    : 0;
 }
 
-registerBidder(spec)
+registerBidder(spec);

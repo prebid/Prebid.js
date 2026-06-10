@@ -4,45 +4,45 @@
  * @module modules/startioIdSystem
  * @requires module:modules/userId
  */
-import { logError, formatQS } from '../src/utils.js'
-import { submodule } from '../src/hook.js'
-import { ajax } from '../src/ajax.js'
-import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js'
+import { logError, formatQS } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
-const MODULE_NAME = 'startioId'
-const GVLID = 1216
-const DEFAULT_ENDPOINT = 'https://cs.startappnetwork.com/get-uid-obj?p=m4b8b3y4'
+const MODULE_NAME = 'startioId';
+const GVLID = 1216;
+const DEFAULT_ENDPOINT = 'https://cs.startappnetwork.com/get-uid-obj?p=m4b8b3y4';
 
 function fetchIdFromServer(callback, consentData) {
   const consentParams = getUserSyncParams(
     consentData?.gdpr,
     consentData?.usp,
     consentData?.gpp
-  )
-  const queryString = formatQS(consentParams)
-  const url = queryString ? `${DEFAULT_ENDPOINT}&${queryString}` : DEFAULT_ENDPOINT
+  );
+  const queryString = formatQS(consentParams);
+  const url = queryString ? `${DEFAULT_ENDPOINT}&${queryString}` : DEFAULT_ENDPOINT;
 
   const callbacks = {
     success: response => {
-      let responseId
+      let responseId;
       try {
-        const responseObj = JSON.parse(response)
+        const responseObj = JSON.parse(response);
         if (responseObj && responseObj.uid) {
-          responseId = responseObj.uid
+          responseId = responseObj.uid;
         } else {
-          logError(`${MODULE_NAME}: Server response missing 'uid' field`)
+          logError(`${MODULE_NAME}: Server response missing 'uid' field`);
         }
       } catch (error) {
-        logError(`${MODULE_NAME}: Error parsing server response`, error)
+        logError(`${MODULE_NAME}: Error parsing server response`, error);
       }
-      callback(responseId)
+      callback(responseId);
     },
     error: error => {
-      logError(`${MODULE_NAME}: ID fetch encountered an error`, error)
-      callback()
+      logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+      callback();
     }
-  }
-  ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true })
+  };
+  ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
 }
 
 export const startioIdSubmodule = {
@@ -51,16 +51,16 @@ export const startioIdSubmodule = {
   decode(value) {
     return value && typeof value === 'string'
       ? { 'startioId': value }
-      : undefined
+      : undefined;
   },
   getId(config, consentData, storedId) {
     if (storedId) {
-      return { id: storedId }
+      return { id: storedId };
     }
     if (config.storage && config.storage.expires == null) {
-      config.storage.expires = 90
+      config.storage.expires = 90;
     }
-    return { callback: (cb) => fetchIdFromServer(cb, consentData) }
+    return { callback: (cb) => fetchIdFromServer(cb, consentData) };
   },
 
   eids: {
@@ -69,6 +69,6 @@ export const startioIdSubmodule = {
       atype: 1
     },
   }
-}
+};
 
-submodule('userId', startioIdSubmodule)
+submodule('userId', startioIdSubmodule);

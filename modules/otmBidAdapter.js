@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
   logInfo,
   logError,
@@ -9,12 +9,12 @@ import {
   isArray,
   isStr,
   isNumber, getBidIdParameter,
-} from '../src/utils.js'
-import { BANNER } from '../src/mediaTypes.js'
+} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'otm'
-const OTM_BID_URL = 'https://ssp.otm-r.com/adjson'
-const DEFAULT_CURRENCY = 'RUB'
+const BIDDER_CODE = 'otm';
+const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';
+const DEFAULT_CURRENCY = 'RUB';
 
 export const spec = {
 
@@ -29,7 +29,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return Boolean(bid.params.tid)
+    return Boolean(bid.params.tid);
   },
 
   /**
@@ -40,27 +40,27 @@ export const spec = {
    * @returns {[]}
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    logInfo('validBidRequests', validBidRequests)
+    logInfo('validBidRequests', validBidRequests);
 
-    const bidRequests = []
-    const tz = new Date().getTimezoneOffset()
+    const bidRequests = [];
+    const tz = new Date().getTimezoneOffset();
     // TODO: are these the right referer values?
-    const referrer = bidderRequest?.refererInfo?.page || ''
-    const topOrigin = bidderRequest?.refererInfo?.domain || ''
+    const referrer = bidderRequest?.refererInfo?.page || '';
+    const topOrigin = bidderRequest?.refererInfo?.domain || '';
 
     _each(validBidRequests, (bid) => {
-      const domain = isStr(bid.params.domain) ? bid.params.domain : topOrigin
-      const cur = getValue(bid.params, 'currency') || DEFAULT_CURRENCY
-      const bidid = getBidIdParameter('bidId', bid)
-      const transactionid = bid.ortb2Imp?.ext?.tid || ''
+      const domain = isStr(bid.params.domain) ? bid.params.domain : topOrigin;
+      const cur = getValue(bid.params, 'currency') || DEFAULT_CURRENCY;
+      const bidid = getBidIdParameter('bidId', bid);
+      const transactionid = bid.ortb2Imp?.ext?.tid || '';
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      const auctionid = getBidIdParameter('auctionId', bid)
-      const bidfloor = _getBidFloor(bid)
+      const auctionid = getBidIdParameter('auctionId', bid);
+      const bidfloor = _getBidFloor(bid);
 
       _each(bid.sizes, size => {
-        const hasSizes = isArray(size) && isNumber(size[0]) && isNumber(size[1])
-        const width = hasSizes ? size[0] : 0
-        const height = hasSizes ? size[1] : 0
+        const hasSizes = isArray(size) && isNumber(size[0]) && isNumber(size[1]);
+        const width = hasSizes ? size[0] : 0;
+        const height = hasSizes ? size[1] : 0;
 
         bidRequests.push({
           method: 'GET',
@@ -78,10 +78,10 @@ export const spec = {
             auctionid,
             bidfloor,
           },
-        })
-      })
-    })
-    return bidRequests
+        });
+      });
+    });
+    return bidRequests;
   },
 
   /**
@@ -91,13 +91,13 @@ export const spec = {
    * @returns {[]|*[]}
    */
   interpretResponse: function (serverResponse) {
-    logInfo('serverResponse', serverResponse.body)
+    logInfo('serverResponse', serverResponse.body);
 
-    const responsesBody = serverResponse ? serverResponse.body : {}
-    const bidResponses = []
+    const responsesBody = serverResponse ? serverResponse.body : {};
+    const bidResponses = [];
     try {
       if (responsesBody.length === 0) {
-        return []
+        return [];
       }
 
       _each(responsesBody, (bid) => {
@@ -115,16 +115,16 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adDomain ? [bid.adDomain] : []
             }
-          })
+          });
         }
-      })
+      });
     } catch (error) {
-      logError(error)
+      logError(error);
     }
 
-    return bidResponses
+    return bidResponses;
   }
-}
+};
 
 /**
  * Get floor value
@@ -134,18 +134,18 @@ export const spec = {
  */
 function _getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return bid.params.bidfloor ? bid.params.bidfloor : 0
+    return bid.params.bidfloor ? bid.params.bidfloor : 0;
   }
 
   const floor = bid.getFloor({
     currency: DEFAULT_CURRENCY,
     mediaType: '*',
     size: '*'
-  })
+  });
   if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) {
-    return floor.floor
+    return floor.floor;
   }
-  return 0
+  return 0;
 }
 
-registerBidder(spec)
+registerBidder(spec);

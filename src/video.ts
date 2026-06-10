@@ -1,17 +1,17 @@
-import { isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn } from './utils.js'
-import { config } from './config.js'
-import { hook } from './hook.js'
-import { auctionManager } from './auctionManager.js'
-import type { VideoBid } from "./bidfactory.ts"
-import { type BaseMediaType } from "./mediaTypes.ts"
-import type { ORTBImp } from "./types/ortb/request.d.ts"
-import type { Size } from "./types/common.d.ts"
-import type { AdUnitDefinition } from "./adUnits.ts"
+import { isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn } from './utils.js';
+import { config } from './config.js';
+import { hook } from './hook.js';
+import { auctionManager } from './auctionManager.js';
+import type { VideoBid } from "./bidfactory.ts";
+import { type BaseMediaType } from "./mediaTypes.ts";
+import type { ORTBImp } from "./types/ortb/request.d.ts";
+import type { Size } from "./types/common.d.ts";
+import type { AdUnitDefinition } from "./adUnits.ts";
 
-import { getGlobalVarName } from "./buildOptions.ts"
+import { getGlobalVarName } from "./buildOptions.ts";
 
-export const OUTSTREAM = 'outstream'
-export const INSTREAM = 'instream'
+export const OUTSTREAM = 'outstream';
+export const INSTREAM = 'instream';
 
 const ORTB_PARAMS = [
   ['mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string')],
@@ -47,20 +47,20 @@ const ORTB_PARAMS = [
   ['api', isArrayOfNums],
   ['companiontype', isArrayOfNums],
   ['poddedupe', isArrayOfNums]
-] as const
+] as const;
 
 /**
  * List of OpenRTB 2.x video object properties with simple validators.
  * Not included: `companionad`, `durfloors`, `ext`
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
-export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS)
+export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
 
 function hasRenderer(subject: { renderer?: unknown; safeRenderer?: unknown } | null | undefined): boolean {
-  return !!(subject?.renderer || subject?.safeRenderer)
+  return !!(subject?.renderer || subject?.safeRenderer);
 }
 
-export type VideoContext = typeof INSTREAM | typeof OUTSTREAM
+export type VideoContext = typeof INSTREAM | typeof OUTSTREAM;
 
 export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['video']>, (typeof ORTB_PARAMS)[number][0]>> {
   context?: VideoContext;
@@ -68,39 +68,39 @@ export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {
-  const video = adUnit?.mediaTypes?.video
+  const video = adUnit?.mediaTypes?.video;
   if (video != null) {
     if (video.plcmt == null) {
       if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
-        video.plcmt = 4
+        video.plcmt = 4;
       } else if (video.playbackmethod?.some?.(method => [2, 6].includes(method))) {
-        video.plcmt = 2
+        video.plcmt = 2;
       }
     }
     const playerSize = isArrayOfNums(video.playerSize, 2)
       ? video.playerSize
-      : Array.isArray(video.playerSize) && isArrayOfNums(video.playerSize[0]) ? video.playerSize[0] : null
-    const size: [number, number] = isNumber(video.w) && isNumber(video.h) ? [video.w, video.h] : null
-    let conflict = false
+      : Array.isArray(video.playerSize) && isArrayOfNums(video.playerSize[0]) ? video.playerSize[0] : null;
+    const size: [number, number] = isNumber(video.w) && isNumber(video.h) ? [video.w, video.h] : null;
+    let conflict = false;
     if (playerSize == null) {
       if (size != null) {
         if (video.playerSize != null) {
-          conflict = true
+          conflict = true;
         } else {
-          video.playerSize = [size]
+          video.playerSize = [size];
         }
       }
     } else {
       ['w', 'h'].forEach((prop, i) => {
         if (video[prop] != null && video[prop] !== playerSize[i]) {
-          conflict = true
+          conflict = true;
         } else {
-          video[prop] = playerSize[i]
+          video[prop] = playerSize[i];
         }
-      })
+      });
     }
     if (conflict) {
-      logWarn(`Ad unit "${adUnit.code} has conflicting playerSize and w/h`, adUnit)
+      logWarn(`Ad unit "${adUnit.code} has conflicting playerSize and w/h`, adUnit);
     }
   }
 }
@@ -109,14 +109,14 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
  * Validate that the assets required for video context are present on the bid
  */
 export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } = {}): boolean {
-  const videoMediaType = index.getMediaTypes(bid)?.video
-  const context = videoMediaType && videoMediaType?.context
-  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey
-  const adUnit = index.getAdUnit(bid)
+  const videoMediaType = index.getMediaTypes(bid)?.video;
+  const context = videoMediaType && videoMediaType?.context;
+  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  const adUnit = index.getAdUnit(bid);
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
-  return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey)
+  return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey);
 }
 
 declare module './bidfactory' {
@@ -135,27 +135,27 @@ declare module './hook' {
 export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
-    const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {}
+    const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
       if (allowVastXmlOnly === true) {
-        logWarn(`This bid contains only vastXml, and caching is disabled. Proceeding because cache.allowVastXmlOnly is enabled.`)
-        return true
+        logWarn(`This bid contains only vastXml, and caching is disabled. Proceeding because cache.allowVastXmlOnly is enabled.`);
+        return true;
       }
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
         Try enabling either prebid cache with ${getGlobalVarName()}.setConfig({ cache: {url: "..."} });
         or local cache with ${getGlobalVarName()}.setConfig({ cache: { useLocal: true }});
-      `)
-      return false
+      `);
+      return false;
     }
 
-    return !!(bid.vastUrl || bid.vastXml)
+    return !!(bid.vastUrl || bid.vastXml);
   }
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
   if (context === OUTSTREAM && !useCacheKey) {
-    return hasRenderer(bid) || hasRenderer(adUnit) || hasRenderer(videoMediaType)
+    return hasRenderer(bid) || hasRenderer(adUnit) || hasRenderer(videoMediaType);
   }
 
-  return true
-}, 'checkVideoBidSetup')
+  return true;
+}, 'checkVideoBidSetup');

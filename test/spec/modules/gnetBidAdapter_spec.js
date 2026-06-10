@@ -1,23 +1,23 @@
 import {
   expect
-} from 'chai'
+} from 'chai';
 import {
   spec
-} from 'modules/gnetBidAdapter.js'
+} from 'modules/gnetBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory.js'
+} from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = 'https://service.gnetrtb.com/api/adrequest'
+const ENDPOINT = 'https://service.gnetrtb.com/api/adrequest';
 
 describe('gnetAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -25,30 +25,30 @@ describe('gnetAdapter', function () {
       params: {
         websiteId: '1', adunitId: '1'
       }
-    }
+    };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      const invalidBid = Object.assign({}, bid)
-      delete invalidBid.params
-      invalidBid.params = {}
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('onBidWon', function () {
     const bid = {
       requestId: '29d5b1d3a520f8'
-    }
+    };
 
     it('return success adserver won bid endpoint', () => {
-      const result = spec.onBidWon(bid)
-      assert.ok(result)
-    })
-  })
+      const result = spec.onBidWon(bid);
+      assert.ok(result);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidRequests = [{
@@ -69,18 +69,18 @@ describe('gnetAdapter', function () {
         }
       },
       gftuid: null
-    }]
+    }];
 
     const bidderRequest = {
       refererInfo: {
         page: 'https://gnetrtb.com'
       }
-    }
+    };
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest)
-      expect(requests[0].url).to.equal(ENDPOINT)
-      expect(requests[0].method).to.equal('POST')
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.equal(ENDPOINT);
+      expect(requests[0].method).to.equal('POST');
       expect(requests[0].data).to.equal(JSON.stringify({
         'referer': 'https://gnetrtb.com',
         'adUnitCode': '/150790500/4_ZONA_IAB_300x250_5',
@@ -91,9 +91,9 @@ describe('gnetAdapter', function () {
         'params': {
           'websiteId': '1', 'adunitId': '1'
         }
-      }))
-    })
-  })
+      }));
+    });
+  });
 
   describe('interpretResponse', function () {
     const bidderRequests = [{
@@ -109,7 +109,7 @@ describe('gnetAdapter', function () {
       bidderRequestId: '1f4001782ac16c',
       auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
       transactionId: '894bdff6-61ec-4bec-a5a9-f36a5bfccef5'
-    }]
+    }];
 
     it('should get correct banner bid response', function () {
       const response = {
@@ -124,7 +124,7 @@ describe('gnetAdapter', function () {
             creativeId: '173560700',
           }
         ]
-      }
+      };
 
       const expectedResponse = [
         {
@@ -141,22 +141,22 @@ describe('gnetAdapter', function () {
           creativeId: '173560700',
           netRevenue: true
         }
-      ]
+      ];
 
       const result = spec.interpretResponse({
         body: response
-      }, bidderRequests)
-      expect(result).to.have.lengthOf(1)
-      expect(result).to.deep.have.same.members(expectedResponse)
-    })
+      }, bidderRequests);
+      expect(result).to.have.lengthOf(1);
+      expect(result).to.deep.have.same.members(expectedResponse);
+    });
 
     it('handles nobid responses', function () {
-      const response = ''
+      const response = '';
 
       const result = spec.interpretResponse({
         body: response
-      }, bidderRequests)
-      expect(result.length).to.equal(0)
-    })
-  })
-})
+      }, bidderRequests);
+      expect(result.length).to.equal(0);
+    });
+  });
+});

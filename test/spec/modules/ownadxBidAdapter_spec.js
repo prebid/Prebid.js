@@ -1,9 +1,9 @@
-import { expect } from 'chai'
-import { spec } from 'modules/ownadxBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/ownadxBidAdapter.js';
 
 describe('ownadx', function () {
-  const METHOD = 'POST'
-  const URL = 'https://pbs-js.prebid-ownadx.com/publisher/prebid/9/1231?token=3f2941af4f7e446f9a19ca6045f8cff4'
+  const METHOD = 'POST';
+  const URL = 'https://pbs-js.prebid-ownadx.com/publisher/prebid/9/1231?token=3f2941af4f7e446f9a19ca6045f8cff4';
 
   const bidRequest = {
     bidder: 'ownadx',
@@ -26,13 +26,13 @@ describe('ownadx', function () {
     bidderRequestId: 'bidder-request-id-123456',
     auctionId: 'auction-id-123456',
     transactionId: 'transaction-id-123456'
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('should return true where required params found', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
-  })
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+  });
 
   describe('buildRequests', function () {
     const bidderRequest = {
@@ -46,21 +46,21 @@ describe('ownadx', function () {
         ],
         canonicalUrl: null
       }
-    }
+    };
 
     it('should build correct POST request for banner bid', function () {
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0]
-      expect(request).to.be.an('object')
-      expect(request.method).to.equal('POST')
-      expect(request.url).to.equal('https://pbs-js.prebid-ownadx.com/publisher/prebid/9/1231?token=3f2941af4f7e446f9a19ca6045f8cff4')
-      const payload = request.data
-      expect(payload).to.be.an('object')
-      expect(payload.sizes).to.be.an('array')
-      expect(payload.slotBidId).to.be.a('string')
-      expect(payload.PageUrl).to.be.a('string')
-      expect(payload.mediaChannel).to.be.a('number')
-    })
-  })
+      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      expect(request).to.be.an('object');
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://pbs-js.prebid-ownadx.com/publisher/prebid/9/1231?token=3f2941af4f7e446f9a19ca6045f8cff4');
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload.sizes).to.be.an('array');
+      expect(payload.slotBidId).to.be.a('string');
+      expect(payload.PageUrl).to.be.a('string');
+      expect(payload.mediaChannel).to.be.a('number');
+    });
+  });
 
   describe('interpretResponse', function () {
     const serverResponse = {
@@ -75,7 +75,7 @@ describe('ownadx', function () {
         adType: '1',
         statusText: 'Success'
       }
-    }
+    };
 
     const expectedResponse = [{
       token: '3f2941af4f7e446f9a19ca6045f8cff4',
@@ -93,11 +93,11 @@ describe('ownadx', function () {
         mediaType: 'banner',
         advertiserDomains: []
       }
-    }]
+    }];
 
     it('should correctly interpret valid banner response', function () {
-      const result = spec.interpretResponse(serverResponse)
-      expect(result).to.deep.equal(expectedResponse)
-    })
-  })
-})
+      const result = spec.interpretResponse(serverResponse);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+  });
+});

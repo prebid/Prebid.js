@@ -1,12 +1,12 @@
-import { isArray, deepAccess, isPlainObject } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { config } from '../src/config.js'
+import { isArray, deepAccess, isPlainObject } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'kubient'
-const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs'
-const VERSION = '1.1'
-const VENDOR_ID = 794
+const BIDDER_CODE = 'kubient';
+const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
+const VERSION = '1.1';
+const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -16,41 +16,41 @@ export const spec = {
       bid.params &&
       bid.params.zoneid &&
       ((!bid.mediaTypes.video) || (bid.mediaTypes.video && bid.mediaTypes.video.playerSize && bid.mediaTypes.video.mimes && bid.mediaTypes.video.protocols))
-    )
+    );
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || !bidderRequest) {
-      return
+      return;
     }
     return validBidRequests.map(function (bid) {
       const adSlot = {
         bidId: bid.bidId,
         zoneId: bid.params.zoneid || ''
-      }
+      };
 
       if (typeof bid.getFloor === 'function') {
-        const mediaType = (Object.keys(bid.mediaTypes).length === 1) ? Object.keys(bid.mediaTypes)[0] : '*'
-        const sizes = bid.sizes || '*'
-        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: mediaType, size: sizes })
+        const mediaType = (Object.keys(bid.mediaTypes).length === 1) ? Object.keys(bid.mediaTypes)[0] : '*';
+        const sizes = bid.sizes || '*';
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: mediaType, size: sizes });
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
-          const floor = parseFloat(floorInfo.floor)
+          const floor = parseFloat(floorInfo.floor);
           if (!isNaN(floor) && floor > 0) {
-            adSlot.floor = parseFloat(floorInfo.floor)
+            adSlot.floor = parseFloat(floorInfo.floor);
           }
         }
       }
 
       if (bid.mediaTypes.banner) {
-        adSlot.banner = bid.mediaTypes.banner
+        adSlot.banner = bid.mediaTypes.banner;
       }
 
       if (bid.mediaTypes.video) {
-        adSlot.video = bid.mediaTypes.video
+        adSlot.video = bid.mediaTypes.video;
       }
 
-      const schain = bid?.ortb2?.source?.ext?.schain
+      const schain = bid?.ortb2?.source?.ext?.schain;
       if (schain) {
-        adSlot.schain = schain
+        adSlot.schain = schain;
       }
 
       const data = {
@@ -61,35 +61,35 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      }
+      };
 
       if (config.getConfig('coppa') === true) {
-        data.coppa = 1
+        data.coppa = 1;
       }
 
       if (bidderRequest?.refererInfo?.page) {
         // TODO: is 'page' the right value here?
-        data.referer = bidderRequest.refererInfo.page
+        data.referer = bidderRequest.refererInfo.page;
       }
 
       if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-        data.consent = bidderRequest.gdprConsent.consentString
+        data.consent = bidderRequest.gdprConsent.consentString;
       }
 
       return {
         method: 'POST',
         url: END_POINT,
         data: JSON.stringify(data)
-      }
-    })
+      };
+    });
   },
   interpretResponse: function interpretResponse(serverResponse, request) {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.seatbid) {
-      return []
+      return [];
     }
-    const bidResponses = []
+    const bidResponses = [];
     serverResponse.body.seatbid.forEach(seatbid => {
-      const bids = seatbid.bid || []
+      const bids = seatbid.bid || [];
       bids.forEach(bid => {
         const bidResponse = {
           requestId: bid.bidId,
@@ -102,76 +102,76 @@ export const spec = {
           ttl: bid.ttl,
           ad: bid.adm,
           meta: {}
-        }
+        };
         if (bid.meta && bid.meta.adomain && isArray(bid.meta.adomain)) {
-          bidResponse.meta.advertiserDomains = bid.meta.adomain
+          bidResponse.meta.advertiserDomains = bid.meta.adomain;
         }
         if (bid.mediaType === VIDEO) {
-          bidResponse.mediaType = VIDEO
-          bidResponse.vastXml = bid.adm
+          bidResponse.mediaType = VIDEO;
+          bidResponse.vastXml = bid.adm;
         }
-        bidResponses.push(bidResponse)
-      })
-    })
-    return bidResponses
+        bidResponses.push(bidResponse);
+      });
+    });
+    return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const kubientSync = kubientGetSyncInclude(config)
+    const kubientSync = kubientGetSyncInclude(config);
 
     if (!syncOptions.pixelEnabled || kubientSync.image === 'exclude') {
-      return []
+      return [];
     }
 
-    const values = {}
+    const values = {};
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        values['gdpr'] = Number(gdprConsent.gdprApplies)
+        values['gdpr'] = Number(gdprConsent.gdprApplies);
       }
       if (typeof gdprConsent.consentString === 'string') {
-        values['consent'] = gdprConsent.consentString
+        values['consent'] = gdprConsent.consentString;
       }
     }
 
     if (uspConsent) {
-      values['usp'] = uspConsent
+      values['usp'] = uspConsent;
     }
 
     return [{
       type: 'image',
       url: 'https://matching.kubient.net/match/sp?' + encodeQueryData(values)
-    }]
+    }];
   }
-}
+};
 
 function encodeQueryData(data) {
   return Object.keys(data).map(function(key) {
-    return [key, data[key]].map(encodeURIComponent).join('=')
-  }).join('&')
+    return [key, data[key]].map(encodeURIComponent).join('=');
+  }).join('&');
 }
 
 function kubientGetConsentGiven(gdprConsent) {
-  let consentGiven = 0
+  let consentGiven = 0;
   if (typeof gdprConsent !== 'undefined') {
-    consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0
+    consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
   }
-  return consentGiven
+  return consentGiven;
 }
 
 function kubientGetSyncInclude(config) {
   try {
-    const kubientSync = {}
+    const kubientSync = {};
     if (config.getConfig('userSync').filterSettings !== null && config.getConfig('userSync').filterSettings !== undefined) {
-      const filterSettings = config.getConfig('userSync').filterSettings
+      const filterSettings = config.getConfig('userSync').filterSettings;
       if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
-        kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude'
+        kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';
       }
       if (filterSettings.image !== null && typeof filterSettings.image !== 'undefined') {
-        kubientSync.image = ((isArray(filterSettings.image.bidders) && filterSettings.image.bidders.indexOf('kubient') !== -1) || filterSettings.image.bidders === '*') ? filterSettings.image.filter : 'exclude'
+        kubientSync.image = ((isArray(filterSettings.image.bidders) && filterSettings.image.bidders.indexOf('kubient') !== -1) || filterSettings.image.bidders === '*') ? filterSettings.image.filter : 'exclude';
       }
     }
-    return kubientSync
+    return kubientSync;
   } catch (e) {
-    return null
+    return null;
   }
 }
-registerBidder(spec)
+registerBidder(spec);

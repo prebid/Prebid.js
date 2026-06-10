@@ -5,26 +5,26 @@
  * @module modules/azerionedgeRtdProvider
  * @requires module:modules/realTimeData
  */
-import { submodule } from '../src/hook.js'
-import { mergeDeep } from '../src/utils.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { loadExternalScript } from '../src/adloader.js'
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
+import { submodule } from '../src/hook.js';
+import { mergeDeep } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const REAL_TIME_MODULE = 'realTimeData'
-const SUBREAL_TIME_MODULE = 'azerionedge'
-export const STORAGE_KEY = 'ht-pa-v1-a'
+const REAL_TIME_MODULE = 'realTimeData';
+const SUBREAL_TIME_MODULE = 'azerionedge';
+export const STORAGE_KEY = 'ht-pa-v1-a';
 
-const IMPROVEDIGITAL_GVLID = '253'
+const IMPROVEDIGITAL_GVLID = '253';
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: SUBREAL_TIME_MODULE,
-})
+});
 
 /**
  * Get script url to load
@@ -34,10 +34,10 @@ export const storage = getStorageManager({
  * @return {String}
  */
 function getScriptURL(config) {
-  const VERSION = 'v1'
-  const key = config.params?.key
-  const publisherPath = key ? `${key}/` : ''
-  return `https://edge.hyth.io/js/${VERSION}/${publisherPath}azerion-edge.min.js`
+  const VERSION = 'v1';
+  const key = config.params?.key;
+  const publisherPath = key ? `${key}/` : '';
+  return `https://edge.hyth.io/js/${VERSION}/${publisherPath}azerion-edge.min.js`;
 }
 
 /**
@@ -49,18 +49,18 @@ function getScriptURL(config) {
  * @return {void}
  */
 export function attachScript(config, userConsent) {
-  const script = getScriptURL(config)
+  const script = getScriptURL(config);
   loadExternalScript(script, MODULE_TYPE_RTD, SUBREAL_TIME_MODULE, () => {
     if (typeof window.azerionPublisherAudiences === 'function') {
-      const publisherConfig = config.params?.process || {}
+      const publisherConfig = config.params?.process || {};
       window.azerionPublisherAudiences({
         ...publisherConfig,
         gdprApplies: userConsent?.gdpr?.gdprApplies,
         gdprConsent: userConsent?.gdpr?.consentString,
         uspConsent: userConsent?.usp,
-      })
+      });
     }
-  })
+  });
 }
 
 /**
@@ -70,10 +70,10 @@ export function attachScript(config, userConsent) {
  */
 export function getAudiences() {
   try {
-    const data = storage.getDataFromLocalStorage(STORAGE_KEY)
-    return JSON.parse(data).map(({ id }) => id)
+    const data = storage.getDataFromLocalStorage(STORAGE_KEY);
+    return JSON.parse(data).map(({ id }) => id);
   } catch (_) {
-    return []
+    return [];
   }
 }
 
@@ -87,8 +87,8 @@ export function getAudiences() {
  * @return {void}
  */
 export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
-  const defaultBidders = ['improvedigital']
-  const bidders = config.params?.bidders || defaultBidders
+  const defaultBidders = ['improvedigital'];
+  const bidders = config.params?.bidders || defaultBidders;
   bidders.forEach((bidderCode) =>
     mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
       [bidderCode]: {
@@ -103,7 +103,7 @@ export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
         },
       },
     })
-  )
+  );
 }
 
 /**
@@ -115,8 +115,8 @@ export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
  * @return {boolean}
  */
 function init(config, userConsent) {
-  attachScript(config, userConsent)
-  return true
+  attachScript(config, userConsent);
+  return true;
 }
 
 /**
@@ -135,11 +135,11 @@ export function getBidRequestData(
   config,
   userConsent
 ) {
-  const audiences = getAudiences()
+  const audiences = getAudiences();
   if (audiences.length > 0) {
-    setAudiencesToBidders(reqBidsConfigObj, config, audiences)
+    setAudiencesToBidders(reqBidsConfigObj, config, audiences);
   }
-  callback()
+  callback();
 }
 
 /** @type {RtdSubmodule} */
@@ -148,6 +148,6 @@ export const azerionedgeSubmodule = {
   init: init,
   getBidRequestData: getBidRequestData,
   gvlid: IMPROVEDIGITAL_GVLID,
-}
+};
 
-submodule(REAL_TIME_MODULE, azerionedgeSubmodule)
+submodule(REAL_TIME_MODULE, azerionedgeSubmodule);

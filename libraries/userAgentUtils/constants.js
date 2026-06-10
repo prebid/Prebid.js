@@ -9,4 +9,4 @@ export const BOL_LIKE_USER_AGENTS = [
   'curl',
   'wget',
   'httpclient'
-]
+];

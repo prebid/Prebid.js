@@ -1,13 +1,13 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { logMessage } from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { logMessage } from '../src/utils.js';
 import {
   createDxConverter,
   MediaTypeUtils,
   ValidationUtils,
   UrlUtils,
   UserSyncUtils
-} from '../libraries/dxUtils/common.js'
+} from '../libraries/dxUtils/common.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -24,9 +24,9 @@ const ADAPTER_CONFIG = {
   rendererUrl: 'https://cdn.dxtech.ai/players/dxOutstreamPlayer.js',
   publisherParam: 'publisher_id',
   placementParam: 'placement_id'
-}
+};
 
-const converter = createDxConverter(ADAPTER_CONFIG)
+const converter = createDxConverter(ADAPTER_CONFIG);
 
 export const spec = {
   code: ADAPTER_CONFIG.code,
@@ -45,24 +45,24 @@ export const spec = {
       ValidationUtils.validateParams(bid, ADAPTER_CONFIG.code) &&
       ValidationUtils.validateBanner(bid) &&
       ValidationUtils.validateVideo(bid, ADAPTER_CONFIG.code)
-    )
+    );
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const contextMediaType = MediaTypeUtils.detectContext(validBidRequests)
+    const contextMediaType = MediaTypeUtils.detectContext(validBidRequests);
     const data = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
       context: { contextMediaType }
-    })
+    });
 
-    let publisherId = validBidRequests[0].params.publisherId
-    let placementId = validBidRequests[0].params.placementId
+    let publisherId = validBidRequests[0].params.publisherId;
+    let placementId = validBidRequests[0].params.placementId;
 
     if (validBidRequests[0].params.e2etest) {
-      logMessage('dxtech: E2E test mode enabled')
-      publisherId = 'e2etest'
-      placementId = null
+      logMessage('dxtech: E2E test mode enabled');
+      publisherId = 'e2etest';
+      placementId = null;
     }
 
     const url = UrlUtils.buildEndpoint(
@@ -70,21 +70,21 @@ export const spec = {
       publisherId,
       placementId,
       ADAPTER_CONFIG
-    )
+    );
 
     return {
       method: 'POST',
       url: url,
       data: data
-    }
+    };
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = converter.fromORTB({
       response: serverResponse.body,
       request: bidRequest.data
-    }).bids
-    return bids
+    }).bids;
+    return bids;
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
@@ -94,8 +94,8 @@ export const spec = {
       gdprConsent,
       uspConsent,
       ADAPTER_CONFIG.code
-    )
+    );
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

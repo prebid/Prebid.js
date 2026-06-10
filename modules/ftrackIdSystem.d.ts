@@ -1,4 +1,4 @@
-export type FtrackIdSystemModuleName = 'ftrack'
+export type FtrackIdSystemModuleName = 'ftrack';
 
 declare module './userId/spec' {
   interface UserId {
@@ -24,4 +24,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

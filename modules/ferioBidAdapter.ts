@@ -1,11 +1,11 @@
 import {
   type BidderSpec,
   registerBidder,
-} from "../src/adapters/bidderFactory.js"
-import { createFerioBidderSpec } from "../libraries/ferioUtils/bidderUtils.js"
+} from "../src/adapters/bidderFactory.js";
+import { createFerioBidderSpec } from "../libraries/ferioUtils/bidderUtils.js";
 
-const BIDDER_CODE = "ferio"
-const FERIO_ENDPOINT = "https://ferio.bid/pbjs/bid"
+const BIDDER_CODE = "ferio";
+const FERIO_ENDPOINT = "https://ferio.bid/pbjs/bid";
 
 export interface FerioBidParams {
   publisherId: string;
@@ -23,6 +23,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = createFerioBidderSpec({
   code: BIDDER_CODE,
   endpoint: FERIO_ENDPOINT,
   requiredParams: ["tenantId"],
-})
+});
 
-registerBidder(spec)
+registerBidder(spec);

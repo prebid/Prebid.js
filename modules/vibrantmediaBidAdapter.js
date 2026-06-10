@@ -1,4 +1,4 @@
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /*
  * Vibrant Media Ltd.
  *
@@ -7,10 +7,10 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js'
  * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
-import { getWinDimensions, logError, triggerPixel } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import { OUTSTREAM } from '../src/video.js'
+import { getWinDimensions, logError, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { OUTSTREAM } from '../src/video.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -20,10 +20,10 @@ import { OUTSTREAM } from '../src/video.js'
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
-const BIDDER_CODE = 'vibrantmedia'
-const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid'
-const VALID_PIXEL_URL_REGEX = /^https?:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+([/?].*)?$/
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO]
+const BIDDER_CODE = 'vibrantmedia';
+const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
+const VALID_PIXEL_URL_REGEX = /^https?:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+([/?].*)?$/;
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 
 /**
  * Returns whether the given bid request contains at least one supported media request, which has valid data. (We can
@@ -35,20 +35,20 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO]
  *                   otherwise false.
  */
 const areValidSupportedMediaTypesPresent = function(bidRequest) {
-  const mediaTypes = Object.keys(bidRequest.mediaTypes)
+  const mediaTypes = Object.keys(bidRequest.mediaTypes);
 
   return mediaTypes.some(function(mediaType) {
     if (mediaType === BANNER) {
-      return true
+      return true;
     } else if (mediaType === VIDEO) {
-      return (bidRequest.mediaTypes[VIDEO].context === OUTSTREAM)
+      return (bidRequest.mediaTypes[VIDEO].context === OUTSTREAM);
     } else if (mediaType === NATIVE) {
-      return !!bidRequest.mediaTypes[NATIVE].image
+      return !!bidRequest.mediaTypes[NATIVE].image;
     }
 
-    return false
-  })
-}
+    return false;
+  });
+};
 
 /**
  * Returns whether the given URL contains just a domain, and not (for example) a subdirectory or query parameters.
@@ -56,14 +56,14 @@ const areValidSupportedMediaTypesPresent = function(bidRequest) {
  * @returns {boolean} whether the URL contains just a domain.
  */
 const isBaseUrl = function(url) {
-  const urlMinusScheme = url.substring(url.indexOf('://') + 3)
-  const endOfDomain = urlMinusScheme.indexOf('/')
-  return (endOfDomain === -1) || (endOfDomain === (urlMinusScheme.length - 1))
-}
+  const urlMinusScheme = url.substring(url.indexOf('://') + 3);
+  const endOfDomain = urlMinusScheme.indexOf('/');
+  return (endOfDomain === -1) || (endOfDomain === (urlMinusScheme.length - 1));
+};
 
 const isValidPixelUrl = function (candidateUrl) {
-  return VALID_PIXEL_URL_REGEX.test(candidateUrl)
-}
+  return VALID_PIXEL_URL_REGEX.test(candidateUrl);
+};
 
 /**
  * Returns transformed bid requests that are in a format native to the prebid server.
@@ -73,10 +73,10 @@ const isValidPixelUrl = function (candidateUrl) {
  * @returns {*[]} the transformed bid requests.
  */
 const transformBidRequests = function(bidRequests) {
-  const transformedBidRequests = []
+  const transformedBidRequests = [];
 
   bidRequests.forEach(function(bidRequest) {
-    const params = bidRequest.params || {}
+    const params = bidRequest.params || {};
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.placementId || params.placementId || params.invCode,
@@ -85,13 +85,13 @@ const transformBidRequests = function(bidRequests) {
       mediaTypes: bidRequest.mediaTypes,
       bids: bidRequest.bids,
       sizes: bidRequest.sizes
-    }
+    };
 
-    transformedBidRequests.push(transformedBidRequest)
-  })
+    transformedBidRequests.push(transformedBidRequest);
+  });
 
-  return transformedBidRequests
-}
+  return transformedBidRequests;
+};
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -108,8 +108,8 @@ export const spec = {
    * @see SUPPORTED_MEDIA_TYPES
    */
   isBidRequestValid: function(bid) {
-    const areBidRequestParamsValid = !!(bid.params.placementId || (bid.params.member && bid.params.invCode))
-    return areBidRequestParamsValid && areValidSupportedMediaTypesPresent(bid)
+    const areBidRequestParamsValid = !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+    return areBidRequestParamsValid && areValidSupportedMediaTypesPresent(bid);
   },
 
   /**
@@ -122,17 +122,17 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests)
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    const transformedBidRequests = transformBidRequests(validBidRequests)
+    const transformedBidRequests = transformBidRequests(validBidRequests);
 
-    var url = window.parent.location.href
+    var url = window.parent.location.href;
 
     if ((window.self === window.top) && (!url || (url.substr(0, 4) !== 'http') || isBaseUrl(url))) {
-      url = document.URL
+      url = document.URL;
     }
 
-    url = encodeURIComponent(url)
+    url = encodeURIComponent(url);
 
     const prebidData = {
       url,
@@ -143,13 +143,13 @@ export const spec = {
         height: getWinDimensions().innerHeight,
       },
       biddata: transformedBidRequests,
-    }
+    };
 
     return {
       method: 'POST',
       url: VIBRANT_MEDIA_PREBID_URL,
       data: JSON.stringify(prebidData)
-    }
+    };
   },
 
   /**
@@ -161,13 +161,13 @@ export const spec = {
    * @return {Bid[]} an array of bids returned by the prebid server, translated into the expected Prebid.js format.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const bids = serverResponse.body
+    const bids = serverResponse.body;
 
     bids.forEach(function(bid) {
-      bid.adResponse = serverResponse
-    })
+      bid.adResponse = serverResponse;
+    });
 
-    return bids
+    return bids;
   },
 
   /**
@@ -189,7 +189,7 @@ export const spec = {
    * @param {{}} timeoutData data relating to the timeout.
    */
   onTimeout: function(timeoutData) {
-    logError('Timed out waiting for bids: ' + JSON.stringify(timeoutData))
+    logError('Timed out waiting for bids: ' + JSON.stringify(timeoutData));
   },
 
   /**
@@ -220,9 +220,9 @@ export const spec = {
    */
   onBidWon: function(bidData) {
     if (bidData && bidData.meta && isValidPixelUrl(bidData.meta.wp)) {
-      triggerPixel(`${bidData.meta.wp}${bidData.status}`)
+      triggerPixel(`${bidData.meta.wp}${bidData.status}`);
     }
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);

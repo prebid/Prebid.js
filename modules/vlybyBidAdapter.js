@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const ENDPOINT = '//prebid.vlyby.com/'
-const BIDDER_CODE = 'vlyby'
-const GVLID = 1009
+const ENDPOINT = '//prebid.vlyby.com/';
+const BIDDER_CODE = 'vlyby';
+const GVLID = 1009;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,13 +13,13 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.publisherId) {
-      return true
+      return true;
     }
-    return false
+    return false;
   },
 
   buildRequests: function (validBidRequests, bidderRequest = {}) {
-    const gdprConsent = bidderRequest.gdprConsent || {}
+    const gdprConsent = bidderRequest.gdprConsent || {};
     return {
       method: 'POST',
       url: `${ENDPOINT}`,
@@ -44,12 +44,12 @@ export const spec = {
         contentType: 'application/json'
       },
       validBidRequests: validBidRequests,
-    }
+    };
   },
   interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = []
+    const bidResponses = [];
     if (serverResponse.body) {
-      const vHB = serverResponse.body.bids
+      const vHB = serverResponse.body.bids;
       try {
         const bidResponse = {
           requestId: vHB.bid,
@@ -64,11 +64,11 @@ export const spec = {
           meta: {
             adomain: vHB.adomain && Array.isArray(vHB.adomain) ? vHB.adomain : []
           }
-        }
-        bidResponses.push(bidResponse)
+        };
+        bidResponses.push(bidResponse);
       } catch (e) { }
     }
-    return bidResponses
+    return bidResponses;
   }
-}
-registerBidder(spec)
+};
+registerBidder(spec);

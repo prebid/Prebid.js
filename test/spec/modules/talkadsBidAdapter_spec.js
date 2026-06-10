@@ -1,8 +1,8 @@
-import { expect } from 'chai'
-import { spec } from 'modules/talkadsBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { config } from '../../../src/config.js'
-import { server } from '../../mocks/xhr.js'
+import { expect } from 'chai';
+import { spec } from 'modules/talkadsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('TalkAds adapter', function () {
   const commonBidderRequest = {
@@ -10,7 +10,7 @@ describe('TalkAds adapter', function () {
       referer: 'https://example.com/'
     },
     timeout: 3000,
-  }
+  };
   const commonBidRequest = {
     bidder: 'talkads',
     params: {
@@ -20,13 +20,13 @@ describe('TalkAds adapter', function () {
     bidId: '1a2b3c4d56e7f0',
     auctionId: '12345678-1234-1a2b-3c4d-1a2b3c4d56e7',
     transactionId: '4f68b713-04ba-4d7f-8df9-643bcdab5efb',
-  }
+  };
   const nativeBidRequestParams = {
     nativeParams: {},
-  }
+  };
   const bannerBidRequestParams = {
     sizes: [[300, 250], [300, 600]],
-  }
+  };
 
   /**
    * isBidRequestValid
@@ -36,50 +36,50 @@ describe('TalkAds adapter', function () {
       const bidRequest = {
         ...commonBidRequest,
         ...bannerBidRequestParams,
-      }
-      bidRequest.params = Object.assign({}, bidRequest.params)
-      delete bidRequest.params
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
-  }) // isBidRequestValid1
+      };
+      bidRequest.params = Object.assign({}, bidRequest.params);
+      delete bidRequest.params;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+  }); // isBidRequestValid1
   describe('isBidRequestValid2', function() {
     it('should fail when config is invalid', function () {
       const bidRequest = {
         ...commonBidRequest,
         ...bannerBidRequestParams,
-      }
-      bidRequest.params = Object.assign({}, bidRequest.params)
-      delete bidRequest.params.bidder_url
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
-  }) // isBidRequestValid2
+      };
+      bidRequest.params = Object.assign({}, bidRequest.params);
+      delete bidRequest.params.bidder_url;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+  }); // isBidRequestValid2
   describe('isBidRequestValid3', function() {
     it('should fail when config is invalid', function () {
       const bidRequest = {
         ...commonBidRequest,
         ...bannerBidRequestParams,
-      }
-      bidRequest.params = Object.assign({}, bidRequest.params)
-      delete bidRequest.params.tag_id
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
-    })
-  }) // isBidRequestValid3
+      };
+      bidRequest.params = Object.assign({}, bidRequest.params);
+      delete bidRequest.params.tag_id;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+  }); // isBidRequestValid3
   describe('isBidRequestValid4', function() {
     let bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
-    }
+    };
     it('should succeed when a banner bid is valid', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
     bidRequest = {
       ...commonBidRequest,
       ...nativeBidRequestParams,
-    }
+    };
     it('should succeed when a native bid is valid', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
-  }) // isBidRequestValid4
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+  }); // isBidRequestValid4
 
   /**
    * buildRequests
@@ -88,7 +88,7 @@ describe('TalkAds adapter', function () {
     const bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
-    }
+    };
     const loServerRequest = {
       cur: 'EUR',
       timeout: commonBidderRequest.timeout,
@@ -96,19 +96,19 @@ describe('TalkAds adapter', function () {
       transaction_id: commonBidRequest.transactionId,
       bids: [{ id: 0, bid_id: commonBidRequest.bidId, type: 'banner', size: bannerBidRequestParams.sizes }],
       gdpr: { applies: false, consent: false },
-    }
+    };
     it('should generate a valid banner bid request', function () {
-      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest)
-      expect(laResponse.method).to.equal('POST')
-      expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999')
-      expect(laResponse.data).to.equal(JSON.stringify(loServerRequest))
-    })
-  }) // buildRequests1
+      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
+      expect(laResponse.method).to.equal('POST');
+      expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
+      expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
+    });
+  }); // buildRequests1
   describe('buildRequests2', function() {
     const bidRequest = {
       ...commonBidRequest,
       ...nativeBidRequestParams,
-    }
+    };
     const loServerRequest = {
       cur: 'EUR',
       timeout: commonBidderRequest.timeout,
@@ -116,45 +116,45 @@ describe('TalkAds adapter', function () {
       transaction_id: commonBidRequest.transactionId,
       bids: [{ id: 0, bid_id: commonBidRequest.bidId, type: 'native', size: [] }],
       gdpr: { applies: false, consent: false },
-    }
+    };
     it('should generate a valid native bid request', function () {
-      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest)
-      expect(laResponse.method).to.equal('POST')
-      expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999')
-      expect(laResponse.data).to.equal(JSON.stringify(loServerRequest))
-    })
+      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
+      expect(laResponse.method).to.equal('POST');
+      expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
+      expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
+    });
     const bidderRequest = {
       ...commonBidderRequest,
       gdprConsent: { gdprApplies: true, consentString: 'yes' }
-    }
+    };
     const loServerRequest2 = {
       ...loServerRequest,
       gdpr: { applies: true, consent: 'yes' },
-    }
+    };
     it('should generate a valid native bid request', function () {
-      const laResponse = spec.buildRequests([bidRequest], bidderRequest)
-      expect(laResponse.method).to.equal('POST')
-      expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999')
-      expect(laResponse.data).to.equal(JSON.stringify(loServerRequest2))
-    })
-  }) // buildRequests2
+      const laResponse = spec.buildRequests([bidRequest], bidderRequest);
+      expect(laResponse.method).to.equal('POST');
+      expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
+      expect(laResponse.data).to.equal(JSON.stringify(loServerRequest2));
+    });
+  }); // buildRequests2
 
   /**
    * interpretResponse
    */
   describe('interpretResponse1', function() {
     it('should return empty array if no valid bids', function () {
-      const laResult = spec.interpretResponse({}, [])
-      expect(laResult).to.be.an('array').that.is.empty
-    })
+      const laResult = spec.interpretResponse({}, []);
+      expect(laResult).to.be.an('array').that.is.empty;
+    });
     const loServerResult = {
       body: { status: 'error', error: 'aie' }
-    }
+    };
     it('should return empty array if there is an error', function () {
-      const laResult = spec.interpretResponse(loServerResult, [])
-      expect(laResult).to.be.an('array').that.is.empty
-    })
-  }) // interpretResponse1
+      const laResult = spec.interpretResponse(loServerResult, []);
+      expect(laResult).to.be.an('array').that.is.empty;
+    });
+  }); // interpretResponse1
   describe('interpretResponse2', function() {
     const loServerResult = {
       body: {
@@ -173,7 +173,7 @@ describe('TalkAds adapter', function () {
           netRevenue: false,
         }]
       }
-    }
+    };
     const loExpected = [{
       requestId: '1a2b3c4d56e7f0',
       cpm: 0.1,
@@ -185,12 +185,12 @@ describe('TalkAds adapter', function () {
       creativeId: 'c123a456',
       netRevenue: false,
       pbid: '6147833a65749742875ace47'
-    }]
+    }];
     it('should return a correct bid response', function () {
-      const laResult = spec.interpretResponse(loServerResult, [])
-      expect(JSON.stringify(laResult)).to.equal(JSON.stringify(loExpected))
-    })
-  }) // interpretResponse2
+      const laResult = spec.interpretResponse(loServerResult, []);
+      expect(JSON.stringify(laResult)).to.equal(JSON.stringify(loExpected));
+    });
+  }); // interpretResponse2
 
   /**
    * onBidWon
@@ -208,10 +208,10 @@ describe('TalkAds adapter', function () {
         creativeId: 'c123a456',
         netRevenue: false,
         params: [Object.assign({}, commonBidRequest.params)],
-      }
-      spec.onBidWon(loBid)
-      expect(server.requests.length).to.equals(0)
-    })
+      };
+      spec.onBidWon(loBid);
+      expect(server.requests.length).to.equals(0);
+    });
     it('should make an ajax call', function () {
       const loBid = {
         requestId: '1a2b3c4d56e7f0',
@@ -225,9 +225,9 @@ describe('TalkAds adapter', function () {
         netRevenue: false,
         pbid: '6147833a65749742875ace47',
         params: [Object.assign({}, commonBidRequest.params)],
-      }
-      spec.onBidWon(loBid)
-      expect(server.requests[0].url).to.equals('https://test.natexo-programmatic.com/tad/tag/prebidwon/6147833a65749742875ace47')
-    })
-  }) // onBidWon
-})
+      };
+      spec.onBidWon(loBid);
+      expect(server.requests[0].url).to.equals('https://test.natexo-programmatic.com/tad/tag/prebidwon/6147833a65749742875ace47');
+    });
+  }); // onBidWon
+});

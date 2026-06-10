@@ -1,6 +1,6 @@
-import { registerVideoSupport } from '../src/adServerManager.js'
-import { targeting } from '../src/targeting.js'
-import { buildUrl, isEmpty, isPlainObject, logError, parseUrl } from '../src/utils.js'
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { targeting } from '../src/targeting.js';
+import { buildUrl, isEmpty, isPlainObject, logError, parseUrl } from '../src/utils.js';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
@@ -13,52 +13,52 @@ import { buildUrl, isEmpty, isPlainObject, logError, parseUrl } from '../src/uti
  */
 export function buildVideoUrl(options) {
   if (!options.params || !options.params?.iu) {
-    logError('buildVideoUrl: Missing required properties.')
-    return
+    logError('buildVideoUrl: Missing required properties.');
+    return;
   }
 
   if (!isPlainObject(options.adUnit) && !isPlainObject(options.bid)) {
-    logError('buildVideoUrl: Requires either \'adUnit\' or \'bid\' options value')
-    return
+    logError('buildVideoUrl: Requires either \'adUnit\' or \'bid\' options value');
+    return;
   }
 
-  const isURL = /^(https?:\/\/)/i
+  const isURL = /^(https?:\/\/)/i;
   const defaultParameters = {
     autoplay: '[autoplay]',
     mute: '[vpmute]',
     page_url: '[page_url]',
     cachebuster: '[timestamp]',
     gdpr_consent: '[consent]',
-  }
+  };
 
-  const adUnit = options.adUnit
-  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0]
-  const allTargetingData = getAllTargetingData(options)
-  const custParams = options.params.cust_params
-  const iu = options.params.iu
+  const adUnit = options.adUnit;
+  const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
+  const allTargetingData = getAllTargetingData(options);
+  const custParams = options.params.cust_params;
+  const iu = options.params.iu;
 
   if (isURL.test(iu)) {
-    const urlComponents = parseUrl(iu, { noDecodeWholeURL: true })
+    const urlComponents = parseUrl(iu, { noDecodeWholeURL: true });
 
     for (const [key, value] of Object.entries({ ...allTargetingData, ...bid.adserverTargeting, ...defaultParameters })) {
       if (!urlComponents.search.hasOwnProperty(key)) {
-        urlComponents.search[key] = value
+        urlComponents.search[key] = value;
       }
     }
 
     if (urlComponents.search.cust_params) {
       for (const [key, value] of Object.entries(custParams)) {
         if (!urlComponents.search.cust_params.includes(key)) {
-          urlComponents.search.cust_params += '%26' + key + '%3D' + value
+          urlComponents.search.cust_params += '%26' + key + '%3D' + value;
         }
       }
     }
 
     if (!isEmpty(custParams) && !urlComponents.search.cust_params) {
-      urlComponents.search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26')
+      urlComponents.search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26');
     }
 
-    return buildUrl(urlComponents)
+    return buildUrl(urlComponents);
   }
 
   const search = {
@@ -66,10 +66,10 @@ export function buildVideoUrl(options) {
     ...defaultParameters,
     ...allTargetingData,
     ...bid.adserverTargeting,
-  }
+  };
 
   if (!isEmpty(custParams)) {
-    search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26')
+    search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26');
   }
 
   return buildUrl({
@@ -77,20 +77,20 @@ export function buildVideoUrl(options) {
     host: 'vid.tvserve.io',
     pathname: '/ads/bid',
     search
-  })
+  });
 }
 
 function getAllTargetingData(options) {
-  let allTargetingData = {}
-  const adUnit = options && options.adUnit
+  let allTargetingData = {};
+  const adUnit = options && options.adUnit;
   if (adUnit) {
-    const allTargeting = targeting.getAllTargeting(adUnit.code)
-    allTargetingData = allTargeting ? allTargeting[adUnit.code] : {}
+    const allTargeting = targeting.getAllTargeting(adUnit.code);
+    allTargetingData = allTargeting ? allTargeting[adUnit.code] : {};
   }
 
-  return allTargetingData
+  return allTargetingData;
 }
 
 registerVideoSupport('targetVideo', {
   buildVideoUrl,
-})
+});

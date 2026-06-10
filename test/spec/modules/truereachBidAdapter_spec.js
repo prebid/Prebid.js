@@ -1,5 +1,5 @@
-import { expect } from 'chai'
-import { spec } from 'modules/truereachBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/truereachBidAdapter.js';
 
 describe('truereachBidAdapterTests', function () {
   it('validate_pub_params', function () {
@@ -13,8 +13,8 @@ describe('truereachBidAdapterTests', function () {
       params: {
         site_id: '0142010a-8400-1b01-72cb-a553b9000009',
       }
-    })).to.equal(true)
-  })
+    })).to.equal(true);
+  });
 
   it('validate_generated_params', function () {
     const bidRequestData = [{
@@ -29,16 +29,16 @@ describe('truereachBidAdapterTests', function () {
         site_id: '0142010a-8400-1b01-72cb-a553b9000009'
       },
       sizes: [[300, 250]]
-    }]
+    }];
 
-    const request = spec.buildRequests(bidRequestData, {})
-    const req_data = request.data
+    const request = spec.buildRequests(bidRequestData, {});
+    const req_data = request.data;
 
-    expect(request.method).to.equal('POST')
-    expect(req_data.imp[0].id).to.equal('34ce3f3b15190a')
-    expect(req_data.imp[0].banner.w).to.equal(300)
-    expect(req_data.imp[0].banner.h).to.equal(250)
-  })
+    expect(request.method).to.equal('POST');
+    expect(req_data.imp[0].id).to.equal('34ce3f3b15190a');
+    expect(req_data.imp[0].banner.w).to.equal(300);
+    expect(req_data.imp[0].banner.h).to.equal(250);
+  });
 
   it('validate_response_params', function () {
     const serverResponse = {
@@ -62,41 +62,41 @@ describe('truereachBidAdapterTests', function () {
         'bidid': '0142010a-8400-0801-72dc-04a99e6f7fc1',
         'cur': 'USD'
       }
-    }
+    };
 
-    const bids = spec.interpretResponse(serverResponse, {})
-    expect(bids).to.have.lengthOf(1)
-    const bid = bids[0]
-    expect(bid.requestId).to.equal('34ce3f3b15190a')
-    expect(bid.cpm).to.equal(2.55)
-    expect(bid.currency).to.equal('USD')
-    expect(bid.width).to.equal(300)
-    expect(bid.height).to.equal(250)
-    expect(bid.ad).to.equal('<html></html>')
-    expect(bid.ttl).to.equal(180)
-    expect(bid.creativeId).to.equal('0142010a-8400-1b01-72cb-afb296000012')
-    expect(bid.netRevenue).to.equal(false)
-    expect(bid.meta.advertiserDomains[0]).to.equal('https://www.momagic.com/')
-  })
+    const bids = spec.interpretResponse(serverResponse, {});
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.requestId).to.equal('34ce3f3b15190a');
+    expect(bid.cpm).to.equal(2.55);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.ad).to.equal('<html></html>');
+    expect(bid.ttl).to.equal(180);
+    expect(bid.creativeId).to.equal('0142010a-8400-1b01-72cb-afb296000012');
+    expect(bid.netRevenue).to.equal(false);
+    expect(bid.meta.advertiserDomains[0]).to.equal('https://www.momagic.com/');
+  });
 
   describe('user_sync', function() {
-    const user_sync_url = 'https://ads-sg.momagic.com/jsp/usersync.jsp'
+    const user_sync_url = 'https://ads-sg.momagic.com/jsp/usersync.jsp';
     it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true }
-      )
-      expect(syncs).to.be.an('array')
-      expect(syncs.length).to.equal(1)
-      expect(syncs[0].type).to.equal('iframe')
-      expect(syncs[0].url).to.equal(user_sync_url)
-    })
+      );
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(user_sync_url);
+    });
 
     it('if_pixelEnabled_is_true', function() {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true }
-      )
-      expect(syncs).to.be.an('array')
-      expect(syncs.length).to.equal(0)
-    })
-  })
-})
+      );
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(0);
+    });
+  });
+});

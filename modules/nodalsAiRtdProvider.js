@@ -1,48 +1,48 @@
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js'
-import { loadExternalScript } from '../src/adloader.js'
-import { ajax } from '../src/ajax.js'
-import { submodule } from '../src/hook.js'
-import { getRefererInfo } from '../src/refererDetection.js'
-import { getStorageManager } from '../src/storageManager.js'
-import { mergeDeep, prefixLog } from '../src/utils.js'
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { mergeDeep, prefixLog } from '../src/utils.js';
 
-const MODULE_NAME = 'nodalsAi'
-const GVLID = 1360
-const ENGINE_VESION = '1.x.x'
-const PUB_ENDPOINT_ORIGIN = 'https://nodals.io'
-const LOCAL_STORAGE_KEY = 'signals.nodals.ai'
-const DEFAULT_STORAGE_TTL = 3600 // 1 hour in seconds
+const MODULE_NAME = 'nodalsAi';
+const GVLID = 1360;
+const ENGINE_VESION = '1.x.x';
+const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
+const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
+const DEFAULT_STORAGE_TTL = 3600; // 1 hour in seconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
     return strings.reduce((result, str, i) => {
-      const key = keys[i - 1]
-      return result + (key ? values[key] || '' : '') + str
-    })
-  }
-}
+      const key = keys[i - 1];
+      return result + (key ? values[key] || '' : '') + str;
+    });
+  };
+};
 
-const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${'propertyId'}/config?${'consentParams'}`
-const { logInfo, logWarn, logError } = prefixLog('[NodalsAiRTDProvider]')
+const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${'propertyId'}/config?${'consentParams'}`;
+const { logInfo, logWarn, logError } = prefixLog('[NodalsAiRTDProvider]');
 
 class NodalsAiRtdProvider {
   // Public properties
-  name = MODULE_NAME
-  gvlid = GVLID
+  name = MODULE_NAME;
+  gvlid = GVLID;
 
   // Exposed for testing
   storage = getStorageManager({
     moduleType: MODULE_TYPE_RTD,
     moduleName: MODULE_NAME,
-  })
+  });
 
-  STORAGE_KEY = LOCAL_STORAGE_KEY
+  STORAGE_KEY = LOCAL_STORAGE_KEY;
 
   // Private properties
-  #propertyId = null
-  #overrides = {}
-  #dataFetchInProgress = false
-  #userConsent = null
+  #propertyId = null;
+  #overrides = {};
+  #dataFetchInProgress = false;
+  #userConsent = null;
 
   // Public methods
 
@@ -52,24 +52,24 @@ class NodalsAiRtdProvider {
    * @param {Object} userConsent - User consent object for GDPR or other purposes.
    */
   init(config, userConsent) {
-    const params = config?.params || {}
+    const params = config?.params || {};
     if (
       this.#isValidConfig(params) &&
       this.#hasRequiredUserConsent(userConsent, config)
     ) {
-      this.#propertyId = params.propertyId
-      this.#userConsent = userConsent
-      this.#setOverrides(params)
-      const storedData = this.#readFromStorage()
+      this.#propertyId = params.propertyId;
+      this.#userConsent = userConsent;
+      this.#setOverrides(params);
+      const storedData = this.#readFromStorage();
       if (storedData === null) {
-        this.#fetchData()
+        this.#fetchData();
       } else {
-        this.#loadAdLibraries(storedData.deps || [])
+        this.#loadAdLibraries(storedData.deps || []);
       }
-      return true
+      return true;
     } else {
-      logWarn('Invalid configuration or missing user consent.')
-      return false
+      logWarn('Invalid configuration or missing user consent.');
+      return false;
     }
   }
 
@@ -81,42 +81,42 @@ class NodalsAiRtdProvider {
    * @returns {Object} - Targeting data.
    */
   getTargetingData(adUnitArray, config, userConsent) {
-    let targetingData = {}
+    let targetingData = {};
     if (!this.#hasRequiredUserConsent(userConsent, config)) {
-      return targetingData
+      return targetingData;
     }
-    this.#userConsent = userConsent
-    const storedData = this.#getData()
-    const engine = this.#initialiseEngine(config)
+    this.#userConsent = userConsent;
+    const storedData = this.#getData();
+    const engine = this.#initialiseEngine(config);
     if (!storedData || !engine) {
-      return targetingData
+      return targetingData;
     }
     try {
       targetingData = engine.getTargetingData(
         adUnitArray,
         userConsent,
         storedData
-      )
+      );
     } catch (error) {
-      logError(`Error determining targeting keys: ${error}`)
+      logError(`Error determining targeting keys: ${error}`);
     }
-    return targetingData
+    return targetingData;
   }
 
   getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent, config)) {
-      callback()
-      return
+      callback();
+      return;
     }
-    this.#userConsent = userConsent
-    const storedData = this.#getData()
+    this.#userConsent = userConsent;
+    const storedData = this.#getData();
     if (!storedData) {
-      callback()
-      return
+      callback();
+      return;
     }
-    const engine = this.#initialiseEngine(config)
+    const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('getBidRequestData', { config, reqBidsConfigObj, callback, userConsent, storedData })
+      this.#addToCommandQueue('getBidRequestData', { config, reqBidsConfigObj, callback, userConsent, storedData });
     } else {
       try {
         engine.getBidRequestData(
@@ -124,106 +124,106 @@ class NodalsAiRtdProvider {
           callback,
           userConsent,
           storedData
-        )
+        );
       } catch (error) {
-        logError(`Error getting bid request data: ${error}`)
-        callback()
+        logError(`Error getting bid request data: ${error}`);
+        callback();
       }
     }
   }
 
   onBidResponseEvent(bidResponse, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent, config)) {
-      return
+      return;
     }
-    this.#userConsent = userConsent
-    const storedData = this.#getData()
+    this.#userConsent = userConsent;
+    const storedData = this.#getData();
     if (!storedData) {
-      return
+      return;
     }
-    const engine = this.#initialiseEngine(config)
+    const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData })
-      return
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData });
+      return;
     }
     try {
-      engine.onBidResponseEvent(bidResponse, userConsent, storedData)
+      engine.onBidResponseEvent(bidResponse, userConsent, storedData);
     } catch (error) {
-      logError(`Error processing bid response event: ${error}`)
+      logError(`Error processing bid response event: ${error}`);
     }
   }
 
   onAuctionEndEvent(auctionDetails, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent, config)) {
-      return
+      return;
     }
-    this.#userConsent = userConsent
-    const storedData = this.#getData()
+    this.#userConsent = userConsent;
+    const storedData = this.#getData();
     if (!storedData) {
-      return
+      return;
     }
-    const engine = this.#initialiseEngine(config)
+    const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onAuctionEndEvent', { config, auctionDetails, userConsent, storedData })
-      return
+      this.#addToCommandQueue('onAuctionEndEvent', { config, auctionDetails, userConsent, storedData });
+      return;
     }
     try {
-      engine.onAuctionEndEvent(auctionDetails, userConsent, storedData)
+      engine.onAuctionEndEvent(auctionDetails, userConsent, storedData);
     } catch (error) {
-      logError(`Error processing auction end event: ${error}`)
+      logError(`Error processing auction end event: ${error}`);
     }
   }
 
   // Private methods
   #getData() {
-    const storedData = this.#readFromStorage()
+    const storedData = this.#readFromStorage();
     if (storedData === null) {
-      this.#fetchData()
-      return null
+      this.#fetchData();
+      return null;
     }
     if (storedData.facts === undefined) {
-      storedData.facts = {}
+      storedData.facts = {};
     }
-    storedData.facts = mergeDeep(storedData.facts, this.#getRuntimeFacts())
-    return storedData
+    storedData.facts = mergeDeep(storedData.facts, this.#getRuntimeFacts());
+    return storedData;
   }
 
   #initialiseEngine(config) {
-    const engine = this.#getEngine()
+    const engine = this.#getEngine();
     if (!engine) {
-      logInfo(`Engine v${ENGINE_VESION} not found`)
-      return null
+      logInfo(`Engine v${ENGINE_VESION} not found`);
+      return null;
     }
     try {
-      engine.init(config)
-      return engine
+      engine.init(config);
+      return engine;
     } catch (error) {
-      logError(`Error initialising engine: ${error}`)
-      return null
+      logError(`Error initialising engine: ${error}`);
+      return null;
     }
   }
 
   #getEngine() {
     try {
-      return window?.$nodals?.adTargetingEngine?.[ENGINE_VESION]
+      return window?.$nodals?.adTargetingEngine?.[ENGINE_VESION];
     } catch (error) {
-      return undefined
+      return undefined;
     }
   }
 
   #setOverrides(params) {
     if (params?.storage?.ttl && typeof params.storage.ttl === 'number') {
-      this.#overrides.storageTTL = params.storage.ttl
+      this.#overrides.storageTTL = params.storage.ttl;
     }
-    this.#overrides.storageKey = params?.storage?.key
-    this.#overrides.endpointOrigin = params?.endpoint?.origin
+    this.#overrides.storageKey = params?.storage?.key;
+    this.#overrides.endpointOrigin = params?.endpoint?.origin;
   }
 
   #getRuntimeFacts() {
     return {
       'page.url': getRefererInfo().page,
       'prebid.version': '$prebid.version$',
-    }
+    };
   }
 
   /**
@@ -235,10 +235,10 @@ class NodalsAiRtdProvider {
   #isValidConfig(params) {
     // Basic validation logic
     if (typeof params === 'object' && params?.propertyId) {
-      return true
+      return true;
     }
-    logWarn('Invalid configuration')
-    return false
+    logWarn('Invalid configuration');
+    return false;
   }
 
   /**
@@ -250,47 +250,47 @@ class NodalsAiRtdProvider {
 
   #hasRequiredUserConsent(userConsent, config) {
     if (config?.params?.publisherProvidedConsent === true || !userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
-      return true
+      return true;
     }
     if (
       [false, undefined].includes(userConsent.gdpr.vendorData?.vendor?.consents?.[this.gvlid])
     ) {
-      return false
+      return false;
     } else if (userConsent.gdpr.vendorData?.purpose?.consents[1] === false ||
       userConsent.gdpr.vendorData?.purpose?.consents[7] === false
     ) {
-      return false
+      return false;
     }
-    return true
+    return true;
   }
 
   #readFromStorage() {
-    const key = this.#overrides?.storageKey || this.STORAGE_KEY
+    const key = this.#overrides?.storageKey || this.STORAGE_KEY;
     if (
       this.storage.hasLocalStorage() &&
       this.storage.localStorageIsEnabled()
     ) {
       try {
-        const entry = this.storage.getDataFromLocalStorage(key)
+        const entry = this.storage.getDataFromLocalStorage(key);
         if (!entry) {
-          return null
+          return null;
         }
-        const dataEnvelope = JSON.parse(entry)
+        const dataEnvelope = JSON.parse(entry);
         if (this.#dataIsStale(dataEnvelope)) {
-          logInfo('Stale data found in storage. Refreshing data.')
-          this.#fetchData()
+          logInfo('Stale data found in storage. Refreshing data.');
+          this.#fetchData();
         }
         if (!dataEnvelope.data) {
-          throw new Error('Data envelope is missing \'data\' property.')
+          throw new Error('Data envelope is missing \'data\' property.');
         }
-        return dataEnvelope.data
+        return dataEnvelope.data;
       } catch (error) {
-        logError(`Corrupted data in local storage: ${error}`)
-        return null
+        logError(`Corrupted data in local storage: ${error}`);
+        return null;
       }
     } else {
-      logError('Local storage is not available or not enabled.')
-      return null
+      logError('Local storage is not available or not enabled.');
+      return null;
     }
   }
 
@@ -308,10 +308,10 @@ class NodalsAiRtdProvider {
       const storageObject = {
         createdAt: Date.now(),
         data,
-      }
-      this.storage.setDataInLocalStorage(key, JSON.stringify(storageObject))
+      };
+      this.storage.setDataInLocalStorage(key, JSON.stringify(storageObject));
     } else {
-      logError('Local storage is not available or not enabled.')
+      logError('Local storage is not available or not enabled.');
     }
   }
 
@@ -322,15 +322,15 @@ class NodalsAiRtdProvider {
    */
 
   #dataIsStale(dataEnvelope) {
-    const currentTime = Date.now()
-    const dataTime = dataEnvelope.createdAt || 0
-    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? DEFAULT_STORAGE_TTL
-    return currentTime - dataTime >= (staleThreshold * 1000)
+    const currentTime = Date.now();
+    const dataTime = dataEnvelope.createdAt || 0;
+    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? DEFAULT_STORAGE_TTL;
+    return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
   #getEndpointUrl(userConsent) {
     const endpointOrigin =
-      this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN
+      this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
     const parameterMap = {
       gdpr_consent: userConsent?.gdpr?.consentString ?? '',
       gdpr: userConsent?.gdpr?.gdprApplies ? '1' : '0',
@@ -340,14 +340,14 @@ class NodalsAiRtdProvider {
         userConsent.gpp && Array.isArray(userConsent.gpp.applicableSections)
           ? userConsent.gpp.applicableSections.join(',')
           : '',
-    }
-    const querystring = new URLSearchParams(parameterMap).toString()
+    };
+    const querystring = new URLSearchParams(parameterMap).toString();
     const values = {
       propertyId: this.#propertyId,
       consentParams: querystring,
-    }
-    const path = PUB_ENDPOINT_PATH(values)
-    return `${endpointOrigin}${path}`
+    };
+    const path = PUB_ENDPOINT_PATH(values);
+    return `${endpointOrigin}${path}`;
   }
 
   /**
@@ -356,34 +356,34 @@ class NodalsAiRtdProvider {
 
   #fetchData() {
     if (this.#dataFetchInProgress) {
-      return
+      return;
     }
-    this.#dataFetchInProgress = true
-    const endpointUrl = this.#getEndpointUrl(this.#userConsent)
+    this.#dataFetchInProgress = true;
+    const endpointUrl = this.#getEndpointUrl(this.#userConsent);
     const callback = {
       success: (response, req) => {
-        this.#dataFetchInProgress = false
-        this.#handleServerResponse(response, req)
+        this.#dataFetchInProgress = false;
+        this.#handleServerResponse(response, req);
       },
       error: (error, req) => {
-        this.#dataFetchInProgress = false
-        this.#handleServerError(error, req)
+        this.#dataFetchInProgress = false;
+        this.#handleServerError(error, req);
       },
-    }
+    };
 
     const options = {
       method: 'GET',
       withCredentials: false,
-    }
+    };
 
-    logInfo(`Fetching ad rules from: ${endpointUrl}`)
-    ajax(endpointUrl, callback, null, options)
+    logInfo(`Fetching ad rules from: ${endpointUrl}`);
+    ajax(endpointUrl, callback, null, options);
   }
 
   #addToCommandQueue(cmd, payload) {
-    window.$nodals = window.$nodals || {}
-    window.$nodals.cmdQueue = window.$nodals.cmdQueue || []
-    window.$nodals.cmdQueue.push({ cmd, runtimeFacts: this.#getRuntimeFacts(), data: payload })
+    window.$nodals = window.$nodals || {};
+    window.$nodals.cmdQueue = window.$nodals.cmdQueue || [];
+    window.$nodals.cmdQueue.push({ cmd, runtimeFacts: this.#getRuntimeFacts(), data: payload });
   }
 
   /**
@@ -393,20 +393,20 @@ class NodalsAiRtdProvider {
    */
 
   #handleServerResponse(response, req) {
-    let data
+    let data;
     try {
-      data = JSON.parse(response)
+      data = JSON.parse(response);
     } catch (error) {
-      const msg = `Error parsing response: ${error}`
-      logError(msg)
-      return
+      const msg = `Error parsing response: ${error}`;
+      logError(msg);
+      return;
     }
-    this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data)
-    this.#loadAdLibraries(data.deps || [])
+    this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
+    this.#loadAdLibraries(data.deps || []);
   }
 
   #handleServerError(error, req) {
-    logError(`Publisher endpoint response error: ${error}`)
+    logError(`Publisher endpoint response error: ${error}`);
   }
 
   #loadAdLibraries(deps) {
@@ -415,12 +415,12 @@ class NodalsAiRtdProvider {
       if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
           // noop
-        })
+        });
       }
     }
   }
 }
 
-export const nodalsAiRtdSubmodule = new NodalsAiRtdProvider()
+export const nodalsAiRtdSubmodule = new NodalsAiRtdProvider();
 
-submodule('realTimeData', nodalsAiRtdSubmodule)
+submodule('realTimeData', nodalsAiRtdSubmodule);

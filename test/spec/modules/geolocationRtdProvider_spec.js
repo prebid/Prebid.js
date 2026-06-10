@@ -1,32 +1,32 @@
-import { expect } from 'chai'
-import { geolocationSubmodule } from 'modules/geolocationRtdProvider.js'
-import * as activityRules from 'src/activities/rules.js'
-import 'src/prebid.js'
-import { PbPromise } from '../../../src/utils/promise.js'
-import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../../../src/activities/activities.js'
+import { expect } from 'chai';
+import { geolocationSubmodule } from 'modules/geolocationRtdProvider.js';
+import * as activityRules from 'src/activities/rules.js';
+import 'src/prebid.js';
+import { PbPromise } from '../../../src/utils/promise.js';
+import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../../../src/activities/activities.js';
 
 describe('Geolocation RTD Provider', function () {
-  let sandbox
+  let sandbox;
 
   before(() => {
     if (!navigator.permissions) {
-      navigator.permissions = { mock: true, query: false }
+      navigator.permissions = { mock: true, query: false };
     }
-  })
+  });
 
   after(() => {
     if (navigator.permissions.mock) {
-      delete navigator.permissions
+      delete navigator.permissions;
     }
-  })
+  });
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-  })
+    sandbox = sinon.createSandbox();
+  });
 
   afterEach(() => {
-    sandbox.restore()
-  })
+    sandbox.restore();
+  });
 
   describe('Geolocation not supported', function() {
     Object.entries({
@@ -34,47 +34,47 @@ describe('Geolocation RTD Provider', function () {
       'permissions': () => sandbox.stub(navigator, 'permissions').value(undefined),
     }).forEach(([t, setup]) => {
       describe(`${t} not available`, () => {
-        beforeEach(setup)
+        beforeEach(setup);
         it('init should return false', function () {
-          expect(geolocationSubmodule.init({})).is.false
-        })
-      })
-    })
-  })
+          expect(geolocationSubmodule.init({})).is.false;
+        });
+      });
+    });
+  });
 
   describe('Geolocation supported', function() {
-    let clock, rtdConfig, permState, permGiven, onDone
+    let clock, rtdConfig, permState, permGiven, onDone;
 
     beforeEach(() => {
-      onDone = sinon.stub()
-      permState = 'prompt'
-      rtdConfig = { params: {} }
+      onDone = sinon.stub();
+      permState = 'prompt';
+      rtdConfig = { params: {} };
       clock = sandbox.useFakeTimers({
         now: 11000,
         shouldClearNativeTimers: true
-      })
+      });
       sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
-        cb({ coords: { latitude: 1, longitude: 2 }, timestamp: 1000 })
-      })
+        cb({ coords: { latitude: 1, longitude: 2 }, timestamp: 1000 });
+      });
       permGiven = new Promise((resolve) => {
         sandbox.stub(navigator.permissions, 'query').value(() => {
           permGiven = Promise.resolve({
             state: permState,
-          })
-          return permGiven
-        })
-      })
-      geolocationSubmodule.init(rtdConfig)
-    })
+          });
+          return permGiven;
+        });
+      });
+      geolocationSubmodule.init(rtdConfig);
+    });
 
     afterEach(() => {
-      clock.runAll()
-      clock.restore()
-    })
+      clock.runAll();
+      clock.restore();
+    });
 
     it('init should return true', function () {
-      expect(geolocationSubmodule.init({})).is.true
-    })
+      expect(geolocationSubmodule.init({})).is.true;
+    });
 
     Object.entries({
       'not necessary, requestPermission not set': [undefined, 'granted'],
@@ -83,41 +83,41 @@ describe('Geolocation RTD Provider', function () {
     }).forEach(([t, [requestPermission, navPerm]]) => {
       describe(`when browser permission is ${t}`, () => {
         beforeEach(() => {
-          permState = navPerm
-          rtdConfig.params.requestPermission = requestPermission
-        })
+          permState = navPerm;
+          rtdConfig.params.requestPermission = requestPermission;
+        });
 
         it(`should set geolocation`, async () => {
-          const requestBidObject = { ortb2Fragments: { global: {} } }
-          geolocationSubmodule.getBidRequestData(requestBidObject, onDone, rtdConfig)
-          await permGiven
-          clock.tick(300)
-          expect(onDone.called).to.be.true
+          const requestBidObject = { ortb2Fragments: { global: {} } };
+          geolocationSubmodule.getBidRequestData(requestBidObject, onDone, rtdConfig);
+          await permGiven;
+          clock.tick(300);
+          expect(onDone.called).to.be.true;
           expect(requestBidObject.ortb2Fragments.global.device.geo).to.eql({
             type: 1,
             lat: 1,
             lon: 2,
             lastfix: 10
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     Object.entries({
       'transmitPreciseGeo is denied': () => sandbox.stub(activityRules, 'isActivityAllowed').callsFake(activity => activity !== ACTIVITY_TRANSMIT_PRECISE_GEO),
-      'permissions are required, but requestPermission is not set': () => { delete rtdConfig.params.requestPermission; permState = 'prompt' },
-      'permissions are required, but requestPermission is false': () => { rtdConfig.params.requestPermission = false; permState = 'prompt' }
+      'permissions are required, but requestPermission is not set': () => { delete rtdConfig.params.requestPermission; permState = 'prompt'; },
+      'permissions are required, but requestPermission is false': () => { rtdConfig.params.requestPermission = false; permState = 'prompt'; }
     }).forEach(([t, setup]) => {
       describe(`when ${t}`, () => {
-        beforeEach(setup)
+        beforeEach(setup);
 
         it(`should NOT set geo`, () => {
-          const req = { ortb2Fragments: { global: {} } }
-          geolocationSubmodule.getBidRequestData(req, onDone, rtdConfig)
-          clock.tick(300)
-          expect(req.ortb2Fragments.global.device?.geo).to.not.exist
-        })
-      })
-    })
-  })
-})
+          const req = { ortb2Fragments: { global: {} } };
+          geolocationSubmodule.getBidRequestData(req, onDone, rtdConfig);
+          clock.tick(300);
+          expect(req.ortb2Fragments.global.device?.geo).to.not.exist;
+        });
+      });
+    });
+  });
+});
