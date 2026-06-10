@@ -112,7 +112,7 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       '@stylistic/comma-dangle': 'off',
-      '@stylistic/semi': 'error',
+      '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
       'no-console': 'error',
       'space-before-function-paren': 'off',
