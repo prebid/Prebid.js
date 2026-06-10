@@ -2901,7 +2901,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should not surpress client side bids if testServerOnly is true in one config, ' +
-      ',bidderControl resolves to server in another config' +
+      'bidderControl resolves to server in another config ' +
       'and there are no bid with bidSource at the adUnit Level', () => {
         const testConfig1 = utils.deepClone(getServerTestingConfig(CONFIG));
         const testConfig2 = utils.deepClone(CONFIG2);
