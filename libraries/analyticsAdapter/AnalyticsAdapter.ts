@@ -1,6 +1,6 @@
 import { EVENTS } from '../../src/constants.js';
 import { noCredsAjax as ajax } from '../../src/ajax.js';
-import { logError, logMessage, getPerformanceNow } from '../../src/utils.js';
+import { logError, logMessage } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { config } from '../../src/config.js';
 
@@ -212,7 +212,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
       handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
-            const handler = ({eventType, sequence, args}) => this.enqueue({ eventType, args, sequence });
+            const handler = ({ eventType, sequence, args }) => this.enqueue({ eventType, args, sequence });
             events.listen(ev, handler);
             return [ev, handler];
           })

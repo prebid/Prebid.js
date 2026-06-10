@@ -55,7 +55,7 @@ describe('events', () => {
       emit('bidWon', {});
       sinon.assert.notCalled(handler);
     });
-  })
+  });
 
   it('can get event record using listen', () => {
     const handler = sinon.stub();
@@ -65,5 +65,5 @@ describe('events', () => {
       eventType: 'bidWon',
       args: {}
     }), {});
-  })
+  });
 });

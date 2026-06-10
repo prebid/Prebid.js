@@ -166,7 +166,7 @@ const _public = (function () {
     },
     off: function<E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
       if (handler != null && HANDLERS.has(handler)) {
-        handler = HANDLERS.get(handler)
+        handler = HANDLERS.get(handler);
       }
       const event = _handlers[eventName];
 
