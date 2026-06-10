@@ -156,7 +156,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
   return Object.values(bidsByKey).map((bids) => {
     const partner = getPartnerName(bids[0]);
-    const region = normalizeRegion(bids[0].params.region);
+    const region = normalizeRegion(bids[0].params?.region);
     const { seat, token } = bids[0].params || {};
     const endpoint = resolveEndpoint({ partner, region, seat, token });
 
