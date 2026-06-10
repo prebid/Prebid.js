@@ -552,7 +552,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
 
         it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
