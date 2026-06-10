@@ -326,15 +326,6 @@ describe('bidResponseFilter', () => {
     });
 
     mockAuctionIndex.getBidRequest = () => ({
-      ortb2Imp: {
-        banner: {
-        },
-        video: {
-        },
-      }
-    })
-
-    mockAuctionIndex.getBidRequest = () => ({
       mediaTypes: {
         banner: {},
       },
