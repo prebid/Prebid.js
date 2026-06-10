@@ -176,7 +176,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 const baseInterpretResponse = interpretResponseBuilder({
   addtlBidValidation(bid) {
-    return bid.hasOwnProperty('netRevenue');
+    return Object.prototype.hasOwnProperty.call(bid, 'netRevenue');
   }
 });
 
