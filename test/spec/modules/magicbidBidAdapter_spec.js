@@ -88,6 +88,46 @@ describe('MagicBid Bid Adapter', function() {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
+    it('should return false for video bid when mimes is missing', function() {
+      const bid = {
+        ...VALID_VIDEO_BID,
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[640, 480]],
+          },
+        },
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false for video bid when playerSize format is invalid', function() {
+      const bid = {
+        ...VALID_VIDEO_BID,
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480],
+            mimes: ['video/mp4'],
+          },
+        },
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false for video bid when context is missing', function() {
+      const bid = {
+        ...VALID_VIDEO_BID,
+        mediaTypes: {
+          video: {
+            playerSize: [[640, 480]],
+            mimes: ['video/mp4'],
+          },
+        },
+      };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
     it('should return false when adUnitType is explicitly provided but invalid', function() {
       const bid = {
         ...VALID_BANNER_BID,
