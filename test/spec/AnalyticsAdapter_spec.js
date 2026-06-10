@@ -77,7 +77,7 @@ FEATURE: Analytics Adapters API
     adapter.enableAnalytics();
     const sent = server.requests.map(req => JSON.parse(req.requestBody)).filter(({ eventType }) => eventType === BID_WON).map(({ args }) => args.n);
     expect(sent).to.eql([1, 2]);
-  })
+  });
 
   describe('analyticsLabels', () => {
     let analyticsLabels;

@@ -3285,24 +3285,24 @@ describe('adapterManager tests', function () {
       let enabled = false;
       return {
         get enabled() {
-          return enabled
+          return enabled;
         },
         code,
-        enableAnalytics: sinon.stub().callsFake(() => { enabled = true }),
-        disableAnalytics: sinon.stub().callsFake(() => { enabled = false })
-      }
+        enableAnalytics: sinon.stub().callsFake(() => { enabled = true; }),
+        disableAnalytics: sinon.stub().callsFake(() => { enabled = false; })
+      };
     }
 
     beforeEach(() => {
       adapters = {
         an1: mockAnalyticsAdapter('an1'),
         an2: mockAnalyticsAdapter('an2')
-      }
-      Object.values(adapters).forEach(adapter => adapterManager.registerAnalyticsAdapter({ code: adapter.code, adapter }))
+      };
+      Object.values(adapters).forEach(adapter => adapterManager.registerAnalyticsAdapter({ code: adapter.code, adapter }));
       allowed = {};
       sinon.stub(dep, 'isAllowed').callsFake((activity, { componentName, _config }) => {
-        return allowed[componentName] && _config.provider === componentName && activity === ACTIVITY_REPORT_ANALYTICS
-      })
+        return allowed[componentName] && _config.provider === componentName && activity === ACTIVITY_REPORT_ANALYTICS;
+      });
     });
     afterEach(() => {
       dep.isAllowed.restore();
