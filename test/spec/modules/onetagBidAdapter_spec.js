@@ -574,7 +574,7 @@ describe('onetag', function () {
             expect(priceFloor.currency).to.be.a('string');
             expect(priceFloor.floor).to.be.a('number');
             expect(priceFloor.size).to.satisfy(function (size) {
-              if (typeof size !== 'object' && size !== null && typeof size !== 'undefined') {
+              if (typeof size !== 'object' && typeof size !== 'undefined') {
                 return false;
               }
               if (size !== null) {
