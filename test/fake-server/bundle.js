@@ -38,4 +38,4 @@ module.exports = function (req, res, next) {
     res.write(bundle);
     next();
   }).catch(next);
-}
+};

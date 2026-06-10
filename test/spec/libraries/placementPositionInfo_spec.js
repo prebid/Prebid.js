@@ -19,7 +19,7 @@ describe('placementPositionInfo', function () {
 
   let mockDocument;
   let mockWindow;
-  let viewportOffset
+  let viewportOffset;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();

@@ -335,7 +335,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bidResponse.bidderCode, bidRequest.bidder)) {
               logWarn(`${bidResponse.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
-              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED)
+              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED);
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -479,7 +479,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       // an array of bids
       // a BidderAuctionResponse object
 
-      let bids
+      let bids;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
       } else {

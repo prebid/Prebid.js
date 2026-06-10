@@ -285,9 +285,9 @@ describe('config API', function () {
 
   it('does not force defaults for bidder config', () => {
     config.setConfig({ bidderSequence: 'fixed' });
-    config.setBidderConfig({ bidders: ['mockBidder'], config: { other: 'config' } })
+    config.setBidderConfig({ bidders: ['mockBidder'], config: { other: 'config' } });
     expect(config.runWithBidder('mockBidder', () => config.getConfig('bidderSequence'))).to.eql('fixed');
-  })
+  });
 
   it('sets deviceAccess', function () {
     // When the deviceAccess flag config option is not set, cookies may be read and set

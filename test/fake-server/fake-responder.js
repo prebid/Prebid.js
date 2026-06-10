@@ -48,7 +48,7 @@ const matchResponse = function (requestBody) {
     if (match.length === 0) {
       throw new Error('No mock response found');
     } else if (match.length > 1) {
-      throw new Error('More than one mock response found')
+      throw new Error('More than one mock response found');
     }
   } catch (e) {
     console.error(e);

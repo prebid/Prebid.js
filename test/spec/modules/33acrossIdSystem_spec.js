@@ -1607,8 +1607,8 @@ describe('33acrossIdSystem', () => {
 
         expect(completeCallback.calledOnceWithExactly()).to.be.true;
       });
-    })
-  })
+    });
+  });
 
   describe('decode', () => {
     it('should wrap the given value inside an object literal', () => {

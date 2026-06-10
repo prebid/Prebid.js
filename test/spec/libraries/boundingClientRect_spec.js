@@ -47,7 +47,7 @@ describe('getBoundingClientRect', () => {
   });
 
   it('should return same value for multiple calls', () => {
-    const expectedWidth = 200
+    const expectedWidth = 200;
     const expectedHeight = 300;
     element.style.width = expectedWidth + 'px';
     element.style.height = expectedHeight + 'px';

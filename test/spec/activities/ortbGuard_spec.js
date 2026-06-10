@@ -56,7 +56,7 @@ describe('ortb2Guard', () => {
         mergeDeep(guard, mod);
         const actual = deepAccess(ortb2, prop);
         if (allowed) {
-          expect(actual).to.eql(orig.concat(insert))
+          expect(actual).to.eql(orig.concat(insert));
         } else {
           expect(actual).to.eql(orig);
         }

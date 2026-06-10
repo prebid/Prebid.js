@@ -332,7 +332,7 @@ describe('1plusXRtdProvider', () => {
     it('merges fetched data in bidderConfig for configured bidders', () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: deepClone(bidderConfigInitial) }
+      const ortb2Fragments = { [bidder]: deepClone(bidderConfigInitial) };
       // Call submodule's setBidderConfig
       updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
       const newBidderConfig = ortb2Fragments[bidder];
@@ -350,7 +350,7 @@ describe('1plusXRtdProvider', () => {
     it('overwrites an existing 1plus.com entry in ortb2.user.data', () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWith1plusXUserData } }
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWith1plusXUserData } };
       // Save previous user.data entry
       const previousUserData = bidderConfigInitialWith1plusXUserData.user.data[0];
       // Call submodule's setBidderConfig
@@ -366,7 +366,7 @@ describe('1plusXRtdProvider', () => {
     it("doesn't overwrite entries in ortb2.user.data that aren't 1plusx.com", () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWithUserData } }
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWithUserData } };
       // Save previous user.data entry
       const previousUserData = bidderConfigInitialWithUserData.user.data[0];
       // Call submodule's setBidderConfig
@@ -383,7 +383,7 @@ describe('1plusXRtdProvider', () => {
     it('overwrites an existing 1plus.com entry in ortb2.site.content.data', () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWith1plusXSiteContent } }
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWith1plusXSiteContent } };
       // Save previous user.data entry
       const previousSiteContent = bidderConfigInitialWith1plusXSiteContent.site.content.data[0];
       // Call submodule's setBidderConfig
@@ -399,7 +399,7 @@ describe('1plusXRtdProvider', () => {
     it("doesn't overwrite entries in ortb2.site.content.data that aren't 1plusx.com", () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWithSiteContent } }
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWithSiteContent } };
       // Save previous user.data entry
       const previousSiteContent = bidderConfigInitialWithSiteContent.site.content.data[0];
       // Call submodule's setBidderConfig
@@ -446,7 +446,7 @@ describe('1plusXRtdProvider', () => {
       config.setBidderConfig({
         bidders,
         config: bidderConfigInitial
-      })
+      });
       const biddersOrtb2 = config.getBidderConfig();
       // call setTargetingDataToConfig
       setTargetingDataToConfig(fakeResponse, { bidders, biddersOrtb2 });

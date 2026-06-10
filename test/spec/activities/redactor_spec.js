@@ -206,7 +206,7 @@ describe('objectTransformer', () => {
         notFoo: '2',
         bar: '3',
         notBar: '4'
-      }
+      };
       const session = {};
       t1(session, obj);
       t2(session, obj);

@@ -166,8 +166,8 @@ describe('objectGuard', () => {
         prop: {
           val: 'foo'
         }
-      })
-    })
+      });
+    });
 
     it('should reject conflicting rules', () => {
       const crule = { ...rule, paths: ['outer'] };

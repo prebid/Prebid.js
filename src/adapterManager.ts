@@ -878,7 +878,7 @@ const adapterManager = {
             const spec = bidAdapter.getSpec();
             const gvlid = useBaseGvlid ? spec.gvlid : options?.gvlid;
             if (gvlid == null && spec.gvlid != null) {
-              logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`)
+              logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`);
             }
 
             const skipPbsAliasing = options && options.skipPbsAliasing;
