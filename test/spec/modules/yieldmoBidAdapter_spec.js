@@ -584,7 +584,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if params.video.skippable is false', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
       });
 
