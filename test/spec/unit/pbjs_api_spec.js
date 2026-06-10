@@ -2457,8 +2457,7 @@ describe('Unit: Prebid Module', function () {
 
         var requestObj = {
           bidsBackHandler: function bidsBackHandlerCallback() {
-            var test;
-            return test.test;
+            throw new Error('test callback failure');
           }
         };
 
