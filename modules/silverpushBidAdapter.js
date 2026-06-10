@@ -226,8 +226,6 @@ function buildVideoOutstreamResponse(bidResponse, context) {
     });
 
     bidResponse.renderer.setRender(() => _renderer(bidResponse));
-
-    bidResponse.renderer.render(bidResponse);
   }
 
   return { ...bidResponse };
