@@ -210,7 +210,7 @@ describe('adtelligentBidAdapter', () => {
     })
 
     describe('user sync', () => {
-      it('should not  be returned if passed syncs where already used', () => {
+      it('should not be returned if passed syncs where already used', () => {
         const syncs = spec.getUserSyncs({
           iframeEnabled: true,
           pixelEnabled: true
