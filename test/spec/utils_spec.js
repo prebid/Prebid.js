@@ -879,7 +879,21 @@ describe('Utils', function () {
           expect(encodeMacroURI(input)).to.eql(expected);
         })
       })
-    })
+    });
+
+    describe('createTrackPixelHtml', () => {
+      it('escapes url entities that can break the src attribute', () => {
+        const url = 'https://www.example.com/?x=&quot;onerror=alert(1)//';
+
+        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=&amp;quot;onerror=alert(1)//"');
+      });
+
+      it('escapes encoded quotes in the url', () => {
+        const url = 'https://www.example.com/?x="test"';
+
+        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=%22test%22"');
+      });
+    });
   });
 
   describe('insertElement', function () {
