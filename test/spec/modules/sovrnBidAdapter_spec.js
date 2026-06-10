@@ -1078,7 +1078,7 @@ describe('sovrnBidAdapter', function() {
       }
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ce.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, '', null)
@@ -1105,7 +1105,7 @@ describe('sovrnBidAdapter', function() {
       }
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ce.lijit.com/beacon?gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, '', gppConsent)
@@ -1126,7 +1126,7 @@ describe('sovrnBidAdapter', function() {
 
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ce.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}&us_privacy=${uspString}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, uspString, gppConsent)
@@ -1177,6 +1177,23 @@ describe('sovrnBidAdapter', function() {
         { type: 'image', url: 'http://idprovider3.com' },
         { type: 'image', url: 'http://idprovider4.com' }
       ])
+    })
+
+    it('should encode informer value in iframe URL', function() {
+      const maliciousResponse = [{
+        body: {
+          ext: {
+            iid: '1234" onload="alert(1)'
+          }
+        }
+      }]
+
+      const returnStatement = spec.getUserSyncs(syncOptions, maliciousResponse)
+
+      expect(returnStatement[0]).to.deep.equal({
+        type: 'iframe',
+        url: `https://ce.lijit.com/beacon?informer=${encodeURIComponent('1234" onload="alert(1)')}`,
+      })
     })
   })
 
