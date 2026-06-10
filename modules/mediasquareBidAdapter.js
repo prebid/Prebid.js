@@ -166,8 +166,13 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (typeof serverResponses === 'object' && serverResponses !== null && serverResponses !== undefined && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
-        serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
+    if (Array.isArray(serverResponses) &&
+        serverResponses.length > 0 &&
+        serverResponses[0] &&
+        serverResponses[0].body &&
+        typeof serverResponses[0].body === 'object' &&
+        serverResponses[0].body.hasOwnProperty('cookies') &&
+        typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
       return [];
