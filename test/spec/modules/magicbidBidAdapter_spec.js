@@ -231,6 +231,31 @@ describe('MagicBid Bid Adapter', function() {
       const payload = JSON.parse(requests[0].data);
       expect(payload.schain).to.deep.equal(schain);
     });
+
+    it('should include optional custom params and publisherId when provided', function() {
+      const bidWithOptionalParams = {
+        ...VALID_BANNER_BID,
+        bidId: 'bid-optional-001',
+        params: {
+          ...VALID_BANNER_BID.params,
+          publisherId: 'publisher-123',
+          custom1: 'c1',
+          custom2: 'c2',
+          custom3: 'c3',
+          custom4: 'c4',
+          custom5: 'c5',
+        },
+      };
+      const requests = spec.buildRequests([bidWithOptionalParams], BIDDER_REQUEST);
+      const payload = JSON.parse(requests[0].data);
+
+      expect(payload.publisherId).to.equal('publisher-123');
+      expect(payload.custom1).to.equal('c1');
+      expect(payload.custom2).to.equal('c2');
+      expect(payload.custom3).to.equal('c3');
+      expect(payload.custom4).to.equal('c4');
+      expect(payload.custom5).to.equal('c5');
+    });
   });
 
   describe('interpretResponse', function() {
