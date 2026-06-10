@@ -21,11 +21,11 @@ import {
 } from '../src/utils.js';
 
 import {
-  ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -39,6 +39,10 @@ const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collec
 let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+export const dep = {
+  ajax
+};
 
 let context = {};
 
@@ -81,7 +85,7 @@ export function validateVideo(mediaTypes) {
     return true;
   }
 
-  return video.context !== ADPOD;
+  return video.context === INSTREAM || video.context === OUTSTREAM;
 }
 
 export function _getMinSize(sizes) {
@@ -139,7 +143,7 @@ export function detectViewability(bid) {
 
       if (element) {
         bidParamSizes = [element.offsetWidth, element.offsetHeight];
-        minSize = _getMinSize(bidParamSizes)
+        minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
       logError(`Error while trying to find viewability container element: ${viewabilityContainerIdentifier}`);
@@ -151,7 +155,7 @@ export function detectViewability(bid) {
     bidParamSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
-    minSize = _getMinSize(bidParamSizes ?? [])
+    minSize = _getMinSize(bidParamSizes ?? []);
     element = getAdUnitElement(bid);
   }
 
@@ -159,8 +163,8 @@ export function detectViewability(bid) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
-    }
-    return Math.round(getViewability(element, getWindowTop(), minSizeObj))
+    };
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj));
   }
 
   return null;
@@ -383,7 +387,7 @@ export const spec = {
           saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
         }
       }
-    }, true)
+    }, true);
 
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
@@ -437,7 +441,7 @@ export const spec = {
   },
 
   triggerEvent(data) {
-    ajax(EVENTS_URL, null, JSON.stringify(data), {
+    dep.ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false
     });

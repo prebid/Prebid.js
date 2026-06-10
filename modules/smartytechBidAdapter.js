@@ -1,4 +1,4 @@
-import { buildUrl, deepAccess, isArray, generateUUID } from '../src/utils.js'
+import { buildUrl, deepAccess, isArray, generateUUID } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -157,7 +157,7 @@ export const spec = {
         oneRequest.coppa = coppa;
       }
 
-      return oneRequest
+      return oneRequest;
     });
 
     const smartytechRequestUrl = buildUrl({
@@ -187,16 +187,16 @@ export const spec = {
     }
 
     const validBids = bidRequest.data;
-    const keys = Object.keys(serverResponse.body)
+    const keys = Object.keys(serverResponse.body);
     const responseBody = serverResponse.body;
 
     return keys.filter(key => {
-      return responseBody[key].ad
+      return responseBody[key].ad;
     }).map(key => {
       return {
         bid: validBids.find(b => b.adUnitCode === key),
         response: responseBody[key]
-      }
+      };
     }).map(item => spec._adResponse(item.bid, item.response));
   },
 
@@ -228,6 +228,6 @@ export const spec = {
     return bidObject;
   },
 
-}
+};
 
 registerBidder(spec);

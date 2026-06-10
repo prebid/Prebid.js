@@ -5,8 +5,10 @@ import {
   minimum,
   maximum,
   getHighestCpm,
+  getHighestDesirability,
   getOldestHighestCpmBid, getLatestHighestCpmBid, reverseCompare
 } from '../../../../src/utils/reducers.js';
+
 import assert from 'assert';
 
 describe('reducers', () => {
@@ -18,8 +20,8 @@ describe('reducers', () => {
     }).forEach(([t, [a, b, expected]]) => {
       it(`returns ${expected} when a ${t} b`, () => {
         expect(simpleCompare(a, b)).to.equal(expected);
-      })
-    })
+      });
+    });
   });
 
   describe('keyCompare', () => {
@@ -30,8 +32,8 @@ describe('reducers', () => {
     }).forEach(([t, [a, b, expected]]) => {
       it(`returns ${expected} when key(a) ${t} key(b)`, () => {
         expect(keyCompare(item => item.k)(a, b)).to.equal(expected);
-      })
-    })
+      });
+    });
   });
 
   describe('tiebreakCompare', () => {
@@ -45,8 +47,8 @@ describe('reducers', () => {
       it(`should return ${expected} when ${t}`, () => {
         const cmp = tiebreakCompare(keyCompare(item => item.main), keyCompare(item => item.tie));
         expect(cmp(a, b)).to.equal(expected);
-      })
-    })
+      });
+    });
   });
 
   const SAMPLE_ARR = [-10, 20, 20, 123, 400];
@@ -62,7 +64,7 @@ describe('reducers', () => {
       it(`should find ${reversed[0]} using reverse compare`, () => {
         expect(SAMPLE_ARR.reduce(fn(reverseCompare()))).to.equal(reversed[1]);
       });
-    })
+    });
   });
 
   describe('getHighestCpm', function () {
@@ -90,6 +92,60 @@ describe('reducers', () => {
       };
       expect(getHighestCpm(a, b)).to.eql(b);
       expect(getHighestCpm(b, a)).to.eql(b);
+    });
+  });
+
+  describe('getHighestDesirability', function () {
+    it('matches getHighestCpm when `.desirability` mirrors cpm ranking', function () {
+      const hi = {
+        cpm: 2,
+        desirability: 2,
+        timeToRespond: 100,
+        bidderCode: 'x'
+      };
+      const lo = {
+        cpm: 1,
+        desirability: 1,
+        timeToRespond: 100,
+        bidderCode: 'y'
+      };
+      expect(getHighestDesirability(hi, lo)).to.eql(hi);
+      expect(getHighestDesirability(lo, hi)).to.eql(hi);
+
+      const slow = {
+        cpm: 1,
+        desirability: 1,
+        timeToRespond: 100,
+        bidderCode: 'x'
+      };
+      const fast = {
+        cpm: 1,
+        desirability: 1,
+        timeToRespond: 50,
+        bidderCode: 'y'
+      };
+      expect(getHighestDesirability(slow, fast)).to.eql(fast);
+      expect(getHighestDesirability(fast, slow)).to.eql(fast);
+    });
+
+    it('prefers higher `.desirability` over raw cpm tie-break ranking', function () {
+      const boosted = {
+        cpm: 2,
+        bonus: 20,
+        desirability: 22,
+        timeToRespond: 100,
+        bidderCode: 'boosted',
+        bidder: 'boosted'
+      };
+      const plain = {
+        cpm: 10,
+        desirability: 10,
+        timeToRespond: 100,
+        bidderCode: 'plain',
+        bidder: 'plain'
+      };
+      expect(getHighestDesirability(boosted, plain)).to.eql(boosted);
+      expect(getHighestDesirability(plain, boosted)).to.eql(boosted);
     });
   });
 
@@ -121,4 +177,4 @@ describe('reducers', () => {
       expect(getLatestHighestCpmBid(b, a)).to.eql(b);
     });
   });
-})
+});

@@ -38,5 +38,5 @@ export function formatResponse(bid) {
     currency: bid && bid.cur ? bid.cur : 'USD',
     ttl: 300,
     dealId: bid && bid.dealid ? bid.dealid : undefined
-  }
+  };
 }

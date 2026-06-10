@@ -86,8 +86,8 @@ export const spec = {
           meta: { advertiserDomains: bid.adomain },
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
-        })
-      })
+        });
+      });
     } else {
       logInfo('padsquad.interpretResponse :: no valid responses to interpret');
     }
@@ -119,10 +119,10 @@ export const spec = {
         });
 
         if (!syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type !== 'iframe')
+          syncs = syncs.filter(s => s.type !== 'iframe');
         }
         if (!syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type !== 'image')
+          syncs = syncs.filter(s => s.type !== 'image');
         }
       }
     });

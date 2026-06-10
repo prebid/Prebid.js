@@ -66,13 +66,13 @@ function buildRequests(bidReqs, bidderRequest) {
           ext: {
             viewability: viewabilityAmountRounded,
           }
-        }
+        };
       }
 
       if (bid?.mediaTypes?.video) {
         imp.video = {
           ...bid.mediaTypes.video,
-        }
+        };
       }
 
       if (deepAccess(bid, 'ortb2Imp.instl') === 1) {
@@ -86,7 +86,7 @@ function buildRequests(bidReqs, bidderRequest) {
       }
 
       return imp;
-    })
+    });
 
     const referrer = bidderRequest?.refererInfo?.page || '';
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
@@ -118,7 +118,7 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'regs.us_privacy', bidderRequest.uspConsent);
     }
 
-    const gpp = _getGpp(bidderRequest)
+    const gpp = _getGpp(bidderRequest);
     if (gpp) {
       deepSetValue(payload, 'regs.ext.gpp', gpp);
     }
@@ -129,19 +129,19 @@ function buildRequests(bidReqs, bidderRequest) {
 
     const schain = bidReqs?.[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
-      deepSetValue(payload, 'source.ext.schain', schain)
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     if (bidderRequest?.ortb2?.user) {
-      deepSetValue(payload, 'user', bidderRequest.ortb2.user)
+      deepSetValue(payload, 'user', bidderRequest.ortb2.user);
     }
 
     if (bidReqs?.[0]?.userIdAsEids) {
-      deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
+      deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || []);
     }
 
     if (bidderRequest?.ortb2?.site?.content) {
-      deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content)
+      deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content);
     }
 
     return {
@@ -227,7 +227,7 @@ function onBidderError(errorData) {
     return;
   }
 
-  _trackEvent('error', errorData.bidderRequest)
+  _trackEvent('error', errorData.bidderRequest);
 }
 
 function onBidWon(bid) {
@@ -235,7 +235,7 @@ function onBidWon(bid) {
     return;
   }
 
-  _trackEvent('bidwon', bid)
+  _trackEvent('bidwon', bid);
 }
 
 function _trackEvent(endpoint, data) {
@@ -247,14 +247,14 @@ function _trackEvent(endpoint, data) {
 
 function _getDeviceType(ua, sua) {
   if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
-    return 1
+    return 1;
   }
 
   if ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(ua)) {
-    return 3
+    return 3;
   }
 
-  return 2
+  return 2;
 }
 
 function _getGpp(bidderRequest) {
@@ -289,7 +289,7 @@ function _extractGpidData(bid) {
     adserverName: bid?.ortb2Imp?.ext?.data?.adserver?.name,
     adslot: bid?.ortb2Imp?.ext?.data?.adserver?.adslot,
     pbadslot: bid?.ortb2Imp?.ext?.data?.pbadslot,
-  }
+  };
 }
 
 registerBidder(spec);

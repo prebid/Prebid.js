@@ -19,7 +19,7 @@ describe('placementPositionInfo', function () {
 
   let mockDocument;
   let mockWindow;
-  let viewportOffset
+  let viewportOffset;
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
@@ -401,12 +401,12 @@ describe('placementPositionInfo', function () {
 
   describe('iframe coordinate translation', function () {
     beforeEach(() => {
-      sandbox.stub(adUnits, 'getAdUnitElement').returns({ id: 'test' })
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({ id: 'test' });
       mockWindow.innerHeight = 1000;
       mockDocument.body = {
         scrollHeight: 2000, offsetHeight: 1800
-      }
-      mockDocument.documentElement = { clientHeight: 1900, scrollHeight: 2100, offsetHeight: 1950 }
+      };
+      mockDocument.documentElement = { clientHeight: 1900, scrollHeight: 2100, offsetHeight: 1950 };
     });
     it('should apply iframe offset when running inside a friendly iframe', function () {
       viewportOffset = { y: 200 };

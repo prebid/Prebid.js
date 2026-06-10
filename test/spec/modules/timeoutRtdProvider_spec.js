@@ -1,4 +1,4 @@
-import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider.js'
+import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider.js';
 import { expect } from 'chai';
 import * as ajax from 'src/ajax.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
@@ -18,14 +18,14 @@ describe('Timeout RTD submodule', () => {
   });
 
   it('should make a request to the endpoint url if it is provided, and handle the response', () => {
-    const response = '{"deviceType":{ "2": 50, "4": 100, "5": 200 }}'
+    const response = '{"deviceType":{ "2": 50, "4": 100, "5": 200 }}';
     const ajaxStub = sandbox.stub().callsFake(function (url, callbackObj) {
       callbackObj.success(response);
     });
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(function () { return ajaxStub });
+    sandbox.stub(ajax, 'qualifiedAjaxBuilder').callsFake(function () { return ajaxStub; });
 
-    const reqBidsConfigObj = {}
-    const expectedLink = 'https://somelink.json'
+    const reqBidsConfigObj = {};
+    const expectedLink = 'https://somelink.json';
     const config = {
       'name': 'timeout',
       'params': {
@@ -33,9 +33,9 @@ describe('Timeout RTD submodule', () => {
           url: expectedLink
         }
       }
-    }
+    };
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
-    timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function() {}, config)
+    timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function() {}, config);
 
     expect(ajaxStub.calledWith(expectedLink)).to.be.true;
     expect(handleTimeoutIncrementStub.calledWith(reqBidsConfigObj, JSON.parse(response))).to.be.true;
@@ -43,8 +43,8 @@ describe('Timeout RTD submodule', () => {
 
   it('should make a request to the endpoint url and ignore the rules object if the endpoint is provided', () => {
     const ajaxStub = sandbox.stub().callsFake((url, callbackObj) => {});
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(() => ajaxStub);
-    const expectedLink = 'https://somelink.json'
+    sandbox.stub(ajax, 'qualifiedAjaxBuilder').callsFake(() => ajaxStub);
+    const expectedLink = 'https://somelink.json';
     const config = {
       'name': 'timeout',
       'params': {
@@ -57,7 +57,7 @@ describe('Timeout RTD submodule', () => {
           },
         }
       }
-    }
+    };
     timeoutSubmodule.getBidRequestData({}, function() {}, config);
     expect(ajaxStub.calledWith(expectedLink)).to.be.true;
   });
@@ -72,7 +72,7 @@ describe('Timeout RTD submodule', () => {
           },
         }
       }
-    }
+    };
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
     const reqBidsConfigObj = {};
     timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function() {}, config);
@@ -80,9 +80,9 @@ describe('Timeout RTD submodule', () => {
   });
 
   it('should exit quietly if no relevant timeout config is found', () => {
-    const callback = sandbox.stub()
+    const callback = sandbox.stub();
     const ajaxStub = sandbox.stub().callsFake((url, callbackObj) => {});
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(function() { return ajaxStub });
+    sandbox.stub(ajax, 'qualifiedAjaxBuilder').callsFake(function() { return ajaxStub; });
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
 
     timeoutSubmodule.getBidRequestData({}, callback, {});
@@ -98,18 +98,18 @@ describe('Timeout RTD submodule', () => {
     sandbox.stub(prebidGlobal, 'getGlobal').callsFake(() => {
       return {
         getConfig: getConfigStub
-      }
+      };
     });
 
-    const reqBidsConfigObj = { adUnits: [1, 2, 3] }
+    const reqBidsConfigObj = { adUnits: [1, 2, 3] };
     const addedTimeout = 400;
     const rules = {
       numAdUnits: {
         '3-5': addedTimeout,
       }
-    }
+    };
 
-    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules)
+    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
     expect(reqBidsConfigObj.timeout).to.be.equal(baseTimeout + addedTimeout);
   });
 
@@ -119,10 +119,10 @@ describe('Timeout RTD submodule', () => {
     sandbox.stub(prebidGlobal, 'getGlobal').callsFake(() => {
       return {
         getConfig: getConfigStub
-      }
+      };
     });
 
-    const reqBidsConfigObj = { adUnits: [1, 2, 3] }
+    const reqBidsConfigObj = { adUnits: [1, 2, 3] };
     const addedTimeout = 400;
     const rules = {
       numAdUnits: {
@@ -131,8 +131,8 @@ describe('Timeout RTD submodule', () => {
       includesVideo: {
         'false': addedTimeout / 2,
       }
-    }
-    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules)
+    };
+    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
     expect(reqBidsConfigObj.timeout).to.be.equal(baseTimeout + addedTimeout);
   });
 });

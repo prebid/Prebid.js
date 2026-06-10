@@ -228,7 +228,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     referer: bidderRequest.refererInfo?.ref
-  }
+  };
 }
 
 function _buildRequestGroups(ttxSettings, bidRequests) {
@@ -347,7 +347,7 @@ function _getSize(size) {
   return {
     w: parseInt(size[0], 10),
     h: parseInt(size[1], 10)
-  }
+  };
 }
 
 // BUILD REQUESTS: PRODUCT INFERENCE
@@ -391,7 +391,7 @@ function _buildBannerORTB(bidRequest) {
               bidfloors: [bidfloors]
             }
           }
-        }
+        };
       }
 
       return Object.assign({}, size, formatExt);
@@ -557,7 +557,7 @@ function _createBidResponse(bid, cur) {
     mediaType: deepAccess(bid, 'ext.ttx.mediaType', BANNER),
     currency: cur,
     netRevenue: true
-  }
+  };
 
   if (isADomainPresent) {
     bidResponse.meta = {

@@ -76,9 +76,9 @@ function cleanupObjectAttributes (obj, attributes) {
   if (!obj) return;
   if (Array.isArray(obj)) {
     obj.forEach(item => {
-      Object.keys(item).forEach(attr => { if (!attributes.includes(attr)) delete item[attr] });
+      Object.keys(item).forEach(attr => { if (!attributes.includes(attr)) delete item[attr]; });
     });
-  } else Object.keys(obj).forEach(attr => { if (!attributes.includes(attr)) delete obj[attr] });
+  } else Object.keys(obj).forEach(attr => { if (!attributes.includes(attr)) delete obj[attr]; });
 }
 function sendBidWonEvent (event, eventType) {
   const data = deepClone(event);
@@ -174,7 +174,7 @@ nobidAnalytics = {
   },
   ANALYTICS_DATA_NAME: 'analytics.nobid.io',
   ANALYTICS_OPT_NAME: 'analytics.nobid.io.optData'
-}
+};
 adapterManager.registerAnalyticsAdapter({
   adapter: nobidAnalytics,
   code: 'nobid',
@@ -187,7 +187,7 @@ window.nobidCarbonizer = {
     const b = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
     const ret = {};
     if (a) ret[nobidAnalytics.ANALYTICS_DATA_NAME] = a;
-    if (b) ret[nobidAnalytics.ANALYTICS_OPT_NAME] = b
+    if (b) ret[nobidAnalytics.ANALYTICS_OPT_NAME] = b;
     return ret;
   },
   isActive: function () {

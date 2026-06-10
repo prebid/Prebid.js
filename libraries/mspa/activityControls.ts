@@ -2,7 +2,7 @@ import { registerActivityControl } from '../../src/activities/rules.js';
 import {
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
-  ACTIVITY_SYNC_USER,
+  ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_EIDS,
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_UFPD
 } from '../../src/activities/activities.js';
@@ -31,7 +31,7 @@ declare module '../../modules/consentManagementGpp' {
 const SENSITIVE_DATA_GEO = 7;
 
 function isApplicable(val) {
-  return val != null && val !== 0
+  return val != null && val !== 0;
 }
 
 export function isBasicConsentDenied(cd) {
@@ -50,7 +50,7 @@ export function isBasicConsentDenied(cd) {
 }
 
 export function sensitiveNoticeIs(cd, value) {
-  return ['SensitiveDataProcessingOptOutNotice', 'SensitiveDataLimitUseNotice'].some(prop => cd[prop] === value)
+  return ['SensitiveDataProcessingOptOutNotice', 'SensitiveDataLimitUseNotice'].some(prop => cd[prop] === value);
 }
 
 export function isConsentDenied(cd) {
@@ -77,7 +77,7 @@ export const isTransmitUfpdConsentDenied = (() => {
     // personal communication data, status as victim of crime (version 2), status as transgender/nonbinary (version 2)
     const cannotBeInScope = [6, 7, 9, 10, 12, 14, 16].map(el => --el);
     // require consent for everything else (except geo, which is treated separately)
-    const allExceptGeo = Array.from(Array(16).keys()).filter((el) => el !== SENSITIVE_DATA_GEO)
+    const allExceptGeo = Array.from(Array(16).keys()).filter((el) => el !== SENSITIVE_DATA_GEO);
     const mustHaveConsent = allExceptGeo.filter(el => !cannotBeInScope.includes(el));
 
     return Object.fromEntries(
@@ -85,15 +85,15 @@ export const isTransmitUfpdConsentDenied = (() => {
         1: 12,
         2: 16
       }).map(([version, cardinality]) => {
-        const isInVersion = (el) => el < cardinality
+        const isInVersion = (el) => el < cardinality;
         return [version, {
           cannotBeInScope: cannotBeInScope.filter(isInVersion),
           allExceptGeo: allExceptGeo.filter(isInVersion),
           mustHaveConsent: mustHaveConsent.filter(isInVersion)
-        }]
+        }];
       })
-    )
-  })()
+    );
+  })();
 
   return function (cd) {
     const { cannotBeInScope, mustHaveConsent, allExceptGeo } = sensitiveFlags[cd.Version];
@@ -105,8 +105,8 @@ export const isTransmitUfpdConsentDenied = (() => {
       // user opted out for not-as-sensitive data
       mustHaveConsent.some(i => cd.SensitiveDataProcessing[i] === 1) ||
       // CMP says it has consent, but did not give notice about it
-      (sensitiveNoticeIs(cd, 0) && allExceptGeo.some(i => cd.SensitiveDataProcessing[i] === 2))
-  }
+      (sensitiveNoticeIs(cd, 0) && allExceptGeo.some(i => cd.SensitiveDataProcessing[i] === 2));
+  };
 })();
 
 export function isTransmitGeoConsentDenied(cd) {
@@ -116,12 +116,13 @@ export function isTransmitGeoConsentDenied(cd) {
     // no sensitive data notice was given
     sensitiveNoticeIs(cd, 2) ||
     // do not trust CMP if it says it has consent for geo but didn't show a sensitive data notice
-    (sensitiveNoticeIs(cd, 0) && geoConsent === 2)
+    (sensitiveNoticeIs(cd, 0) && geoConsent === 2);
 }
 
 const CONSENT_RULES = {
   [ACTIVITY_SYNC_USER]: isConsentDenied,
   [ACTIVITY_ENRICH_EIDS]: isConsentDenied,
+  [ACTIVITY_TRANSMIT_EIDS]: isConsentDenied,
   [ACTIVITY_ENRICH_UFPD]: isConsentDenied,
   [ACTIVITY_TRANSMIT_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
@@ -135,7 +136,7 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
         return { allow: false, reason: 'consent data not available' };
       }
       if (![1, 2].includes(consent.Version)) {
-        return { allow: false, reason: `unsupported consent specification version "${consent.Version}"` }
+        return { allow: false, reason: `unsupported consent specification version "${consent.Version}"` };
       }
       if (denies(consent)) {
         return { allow: false };
@@ -158,7 +159,7 @@ export function getRules(restrictActivities) {
 export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = (c) => c, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
   const unreg = [];
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
-  logInfo(`Enabling activity controls for ${ruleName}`)
+  logInfo(`Enabling activity controls for ${ruleName}`);
   Object.entries(rules).forEach(([activity, denies]) => {
     unreg.push(registerRule(activity, ruleName, mspaRule(
       sids,

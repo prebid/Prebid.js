@@ -143,7 +143,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData })
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData });
       return;
     }
     try {
@@ -196,7 +196,7 @@ class NodalsAiRtdProvider {
     }
     try {
       engine.init(config);
-      return engine
+      return engine;
     } catch (error) {
       logError(`Error initialising engine: ${error}`);
       return null;

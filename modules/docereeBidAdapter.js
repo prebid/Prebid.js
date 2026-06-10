@@ -5,8 +5,8 @@ import { BANNER } from '../src/mediaTypes.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'doceree';
 const GVLID = 1063;
-const END_POINT = 'https://bidder.doceree.com'
-const TRACKING_END_POINT = 'https://tracking.doceree.com'
+const END_POINT = 'https://bidder.doceree.com';
+const TRACKING_END_POINT = 'https://tracking.doceree.com';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,25 +16,25 @@ export const spec = {
 
   isBidRequestValid: (bid) => {
     const { placementId } = bid.params;
-    return !!placementId
+    return !!placementId;
   },
   isGdprConsentPresent: (bid) => {
     const { gdpr, gdprConsent } = bid.params;
     if (Number(gdpr) === 1) {
-      return !!gdprConsent
+      return !!gdprConsent;
     }
-    return true
+    return true;
   },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
-    const { data } = config.getConfig('doceree.user')
+    const { data } = config.getConfig('doceree.user');
     // TODO: this should probably look at refererInfo
-    const { page, domain, token } = config.getConfig('doceree.context')
-    const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
+    const { page, domain, token } = config.getConfig('doceree.context');
+    const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)));
 
     validBidRequests.forEach(function(validBidRequest) {
       const { publisherUrl, placementId, gdpr, gdprConsent } = validBidRequest.params;
-      const url = publisherUrl || page
+      const url = publisherUrl || page;
       let queryString = '';
       queryString = tryAppendQueryString(queryString, 'id', placementId);
       queryString = tryAppendQueryString(queryString, 'publisherDomain', domain);
@@ -50,8 +50,8 @@ export const spec = {
       serverRequests.push({
         method: 'GET',
         url: END_POINT + '/v1/adrequest?' + queryString
-      })
-    })
+      });
+    });
     return serverRequests;
   },
   interpretResponse: (serverResponse, request) => {
@@ -84,7 +84,7 @@ export const spec = {
         timeout: td.timeout,
       })));
       triggerPixel(TRACKING_END_POINT + '/v1/hbTimeout?adp=prebidjs&data=' + encodedBuf);
-    })
+    });
   },
   onBidWon: function (bidWon) {
     if (bidWon == null) {

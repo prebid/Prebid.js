@@ -27,7 +27,7 @@ function init() {
       enabled = true;
       getHook('addBidResponse').before(addBidResponseHook);
     }
-  })
+  });
 }
 
 export function reset() {

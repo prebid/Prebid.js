@@ -1,7 +1,7 @@
 import { deepSetValue, logError, logInfo, logMessage, logWarn } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import { defer } from '../src/utils/promise.js';
@@ -28,6 +28,7 @@ export var currencySupportEnabled = false;
 export var currencyRates = {} as any;
 let bidderCurrencyDefault = {};
 let defaultRates;
+let shouldUseDefaults = true;
 
 export let responseReady = defer<void>();
 
@@ -93,11 +94,12 @@ export function setConfig(config: CurrencyConfig) {
 
   if (config.rates !== null && typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
+    shouldUseDefaults = false;
     currencyRatesLoaded = true;
     needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
-  if (config.defaultRates !== null && typeof config.defaultRates === 'object') {
+  if (shouldUseDefaults && config.defaultRates !== null && typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
 
     // set up the default rates to be used if the rate file doesn't get loaded in time
@@ -167,6 +169,7 @@ function loadRates() {
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
             conversionCache = {};
             currencyRatesLoaded = true;
+            shouldUseDefaults = false;
             processBidResponseQueue();
             delayedAuctions.resume();
           } catch (e) {
@@ -197,7 +200,7 @@ declare module '../src/prebidGlobal' {
  * Convert `amount` in currency `fromCurrency` to `toCurrency`.
  */
 function convertCurrency(cpm, fromCurrency, toCurrency) {
-  return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)
+  return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
 }
 
 function initCurrency() {
@@ -231,6 +234,7 @@ export function resetCurrency() {
     currencySupportEnabled = false;
     currencyRatesLoaded = false;
     needToCallForCurrencyFile = true;
+    shouldUseDefaults = true;
     currencyRates = {};
     bidderCurrencyDefault = {};
     responseReady = defer();
@@ -290,7 +294,7 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
 function rejectOnAuctionTimeout({ auctionId }) {
   bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
     if (bid.auctionId === auctionId) {
-      reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
+      reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
       return false;
     } else {
       return true;
@@ -401,7 +405,7 @@ function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
     deepSetValue(ortb2, 'ext.prebid.adServerCurrency', adServerCurrency);
     return ortb2;
-  }))
+  }));
 }
 
 export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
@@ -409,7 +413,7 @@ export const requestBidsHook = timedAuctionHook('currency', function requestBids
 
   if (!currencyRatesLoaded && auctionDelay > 0) {
     delayedAuctions.submit(auctionDelay, continueAuction, () => {
-      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`);
       continueAuction();
     });
   } else {

@@ -121,9 +121,7 @@ const sampleBidRequestVideo = {
   mediaTypes: {
     [VIDEO]: {
       sizes: [[360, 250]],
-      context: 'adpod',
-      adPodDurationSec: 90,
-      contentMode: 'live',
+      context: 'video'
     },
   },
 };
@@ -560,9 +558,7 @@ describe('AmxBidAdapter', () => {
         sc: schainConfig,
         vd: {
           sizes: [[360, 250]],
-          context: 'adpod',
-          adPodDurationSec: 90,
-          contentMode: 'live',
+          context: 'video',
         },
         tf: 0,
         f: 0.5,

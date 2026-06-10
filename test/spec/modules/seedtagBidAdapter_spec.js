@@ -1,15 +1,14 @@
 import { expect } from 'chai';
-import { getTimeoutUrl, spec } from 'modules/seedtagBidAdapter.js';
+import { getTimeoutUrl, spec, BIDFLOOR_CURRENCY } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
-import { BIDFLOOR_CURRENCY } from '../../../modules/seedtagBidAdapter.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
 
-const adUnitCode = '/19968336/header-bid-tag-0'
+const adUnitCode = '/19968336/header-bid-tag-0';
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -61,7 +60,7 @@ describe('Seedtag Adapter', function () {
           left: 20,
           width: 300,
           height: 250
-        }
+        };
       }
     });
   });
@@ -217,7 +216,7 @@ describe('Seedtag Adapter', function () {
   });
 
   describe('buildRequests method', function () {
-    const bidFloor = 0.60
+    const bidFloor = 0.60;
     const bidderRequest = {
       refererInfo: { page: 'referer' },
       timeout: 1000,
@@ -246,7 +245,7 @@ describe('Seedtag Adapter', function () {
     validBidRequests[0].getFloor = () => ({
       currency: BIDFLOOR_CURRENCY,
       floor: bidFloor
-    })
+    });
 
     it('Url params should be correct ', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -376,31 +375,31 @@ describe('Seedtag Adapter', function () {
         const bidRequests = data.bidRequests;
         const bannerBid = bidRequests[0];
 
-        expect(bannerBid).to.have.property('geom')
+        expect(bannerBid).to.have.property('geom');
 
-        const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
+        const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]];
         params.forEach(([param, value]) => {
-          expect(bannerBid.geom).to.have.property(param)
-          expect(bannerBid.geom[param]).to.be.a('number')
-          expect(bannerBid.geom[param]).to.be.equal(value)
-        })
+          expect(bannerBid.geom).to.have.property(param);
+          expect(bannerBid.geom[param]).to.be.a('number');
+          expect(bannerBid.geom[param]).to.be.equal(value);
+        });
 
-        expect(bannerBid.geom).to.have.property('viewport')
-        const viewportParams = ['width', 'height']
+        expect(bannerBid.geom).to.have.property('viewport');
+        const viewportParams = ['width', 'height'];
         viewportParams.forEach(param => {
-          expect(bannerBid.geom.viewport).to.have.property(param)
-          expect(bannerBid.geom.viewport[param]).to.be.a('number')
-        })
-      })
+          expect(bannerBid.geom.viewport).to.have.property(param);
+          expect(bannerBid.geom.viewport[param]).to.be.a('number');
+        });
+      });
 
       it('should have bidfloor parameter if available', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         const bidRequests = data.bidRequests;
 
-        expect(bidRequests[0].bidFloor).to.be.equal(bidFloor)
-        expect(bidRequests[1]).not.to.have.property('bidFloor')
-      })
+        expect(bidRequests[0].bidFloor).to.be.equal(bidFloor);
+        expect(bidRequests[1]).not.to.have.property('bidFloor');
+      });
 
       it('should not launch an exception when request a video with no playerSize', function () {
         const validBidRequests = [
@@ -423,7 +422,7 @@ describe('Seedtag Adapter', function () {
         const bidRequests = data.bidRequests;
         const firstBidRequest = bidRequests[0];
 
-        expect(firstBidRequest).to.not.have.property('videoParams')
+        expect(firstBidRequest).to.not.have.property('videoParams');
       });
     });
 
@@ -500,8 +499,8 @@ describe('Seedtag Adapter', function () {
         const gppConsent = {
           gppString: 'someGppString',
           applicableSections: [7]
-        }
-        bidderRequest['gppConsent'] = gppConsent
+        };
+        bidderRequest['gppConsent'] = gppConsent;
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.gppConsent).to.exist;
@@ -510,7 +509,7 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should be undefined on payload when bidderRequest has not gppConsent param', function () {
-        bidderRequest.gppConsent = undefined
+        bidderRequest.gppConsent = undefined;
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         expect(data.gppConsent).to.be.undefined;
@@ -522,8 +521,8 @@ describe('Seedtag Adapter', function () {
             gpp: 'someGppString',
             gpp_sid: [7]
           }
-        }
-        bidderRequest['gppConsent'] = undefined
+        };
+        bidderRequest['gppConsent'] = undefined;
         bidderRequest['ortb2'] = ortb2;
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -563,8 +562,8 @@ describe('Seedtag Adapter', function () {
 
             ]
           }
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
 
@@ -574,7 +573,7 @@ describe('Seedtag Adapter', function () {
         expect(data.user.topics[0].ext).to.eql(ortb2.user.data[0].ext);
         expect(data.user.topics[0].segment).to.eql(ortb2.user.data[0].segment);
         expect(data.user.topics[0].name).to.eql(ortb2.user.data[0].name);
-      })
+      });
 
       it('should be added to payload user eids param when validRequest has userId info', function () {
         var userIdAsEids = [{
@@ -583,8 +582,8 @@ describe('Seedtag Adapter', function () {
             atype: 1,
             id: 'randomId'
           }]
-        }]
-        validBidRequests[0]['userIdAsEids'] = userIdAsEids
+        }];
+        validBidRequests[0]['userIdAsEids'] = userIdAsEids;
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
 
@@ -592,16 +591,16 @@ describe('Seedtag Adapter', function () {
         expect(data.user.eids).to.exist;
         expect(data.user.eids).to.be.an('array').that.is.not.empty;
         expect(data.user.eids).to.deep.equal(userIdAsEids);
-      })
+      });
     });
 
     describe('Blocking params', function () {
       it('should add bcat param to payload when bidderRequest has ortb2 bcat info', function () {
-        const blockedCategories = ['IAB1', 'IAB2']
+        const blockedCategories = ['IAB1', 'IAB2'];
         var ortb2 = {
           bcat: blockedCategories
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -609,11 +608,11 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should add badv param to payload when bidderRequest has ortb2 badv info', function () {
-        const blockedAdvertisers = ['blocked.com']
+        const blockedAdvertisers = ['blocked.com'];
         var ortb2 = {
           badv: blockedAdvertisers
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -621,8 +620,8 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should not add bcat and badv params to payload when bidderRequest does not have ortb2 badv and bcat info', function () {
-        var ortb2 = {}
-        bidderRequest['ortb2'] = ortb2
+        var ortb2 = {};
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -633,13 +632,13 @@ describe('Seedtag Adapter', function () {
 
     describe('Site params', function () {
       it('should add cat param to payload when bidderRequest has ortb2 site cat info', function () {
-        const siteCategories = ['1217', 'bsr004', '692']
+        const siteCategories = ['1217', 'bsr004', '692'];
         var ortb2 = {
           site: {
             cat: siteCategories
           }
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -647,13 +646,13 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should add pagecat param to payload when bidderRequest has ortb2 site pagecat info', function () {
-        const pageCategories = ['1217', 'bsr004', '692']
+        const pageCategories = ['1217', 'bsr004', '692'];
         var ortb2 = {
           site: {
             pagecat: pageCategories
           }
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -661,13 +660,13 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should add cattac param to payload when bidderRequest has ortb2 site cattax info', function () {
-        const taxonomy = 6
+        const taxonomy = 6;
         var ortb2 = {
           site: {
             cattax: taxonomy
           }
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -675,8 +674,8 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should not add site params to payload when bidderRequest does not have ortb2 site info', function () {
-        var ortb2 = {}
-        bidderRequest['ortb2'] = ortb2
+        var ortb2 = {};
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -688,13 +687,13 @@ describe('Seedtag Adapter', function () {
 
     describe('device.sua param', function () {
       it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
-        const sua = 1
+        const sua = 1;
         var ortb2 = {
           device: {
             sua: sua
           }
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -704,8 +703,8 @@ describe('Seedtag Adapter', function () {
       it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
         var ortb2 = {
           device: {}
-        }
-        bidderRequest['ortb2'] = ortb2
+        };
+        bidderRequest['ortb2'] = ortb2;
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
@@ -753,7 +752,7 @@ describe('Seedtag Adapter', function () {
         expect(data.ortb).to.be.undefined;
       });
     });
-  })
+  });
   describe('interpret response method', function () {
     it('should return a void array, when the server response are not correct.', function () {
       const request = { data: JSON.stringify({}) };

@@ -51,7 +51,7 @@ export const spec = {
       if (mediaType === 'display') {
         data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
-        ).join('|')
+        ).join('|');
       }
       /** @type {ServerRequest} */
       return {
@@ -153,5 +153,5 @@ export const spec = {
   _isBannerRequest(req) {
     return !!(req.mediaTypes && req.mediaTypes.banner);
   }
-}
+};
 registerBidder(spec);
