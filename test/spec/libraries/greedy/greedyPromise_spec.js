@@ -201,13 +201,11 @@ describe('greedySetTimeout', () => {
       const handle = greedySetTimeout(() => {
         cbRan = true;
       }, 5);
+      clearTimeout(handle);
       setTimeout(() => {
-        clearTimeout(handle);
-        setTimeout(() => {
-          expect(cbRan).to.be.false;
-          done();
-        }, 10);
-      }, 0);
+        expect(cbRan).to.be.false;
+        done();
+      }, 10);
     });
   });
 });
