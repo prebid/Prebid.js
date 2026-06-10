@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { Renderer } from 'src/Renderer.js';
 import { REQUEST_URL, SP_OUTSTREAM_PLAYER_URL, CONVERTER, spec } from '../../../modules/silverpushBidAdapter.js';
 
 const bannerBid = {
@@ -357,6 +358,31 @@ describe('Silverpush Adapter', function () {
         expect(bids[0].seatBidId).to.equal('soCWeklh');
         expect(bids[0].width).to.equal(1024);
         expect(bids[0].height).to.equal(768);
+      });
+
+      it('should defer outstream rendering until the renderer is executed', () => {
+        const response = utils.deepClone(videoResponse);
+        const outstreamBid = utils.deepClone(videoBid);
+        outstreamBid.mediaTypes.video.context = 'outstream';
+
+        const fakeRenderer = {
+          url: SP_OUTSTREAM_PLAYER_URL,
+          setRender: sinon.spy(),
+          render: sinon.spy()
+        };
+        const installStub = sinon.stub(Renderer, 'install').returns(fakeRenderer);
+
+        try {
+          const requests = spec.buildRequests([outstreamBid], bidderRequest);
+          const bids = spec.interpretResponse({ body: response }, requests[0]);
+
+          expect(installStub.calledOnce).to.equal(true);
+          expect(fakeRenderer.setRender.calledOnce).to.equal(true);
+          expect(fakeRenderer.render.called).to.equal(false);
+          expect(bids[0].renderer).to.equal(fakeRenderer);
+        } finally {
+          installStub.restore();
+        }
       });
     }
   });
