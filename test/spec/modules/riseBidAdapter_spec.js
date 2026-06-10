@@ -549,7 +549,7 @@ describe('riseAdapter', function () {
         const bid = utils.deepClone(bidRequests[0]);
         const userIds = [
           {
-            sourcer: 'pubcid.org',
+            source: 'pubcid.org',
             uids: [{
               id: '12345678',
               atype: 1,
