@@ -243,9 +243,9 @@ describe('riseAdapter', function () {
     it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].sizes).to.be.an('array');
-      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes);
       expect(request.data.bids[1].sizes).to.be.an('array');
-      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes);
       expect(request.data.bids[2].sizes).to.be.an('array');
       expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes)
     });
@@ -387,8 +387,6 @@ describe('riseAdapter', function () {
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
       const bidderRequestWithGPP = Object.assign({ gppConsent: { gppString: 'gpp-consent', applicableSections: [7] } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
-      console.log('request.data.params');
-      console.log(request.data.params);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gpp', 'gpp-consent');
       expect(request.data.params.gpp_sid[0]).to.be.equal(7);
@@ -549,7 +547,7 @@ describe('riseAdapter', function () {
         const bid = utils.deepClone(bidRequests[0]);
         const userIds = [
           {
-            sourcer: 'pubcid.org',
+            source: 'pubcid.org',
             uids: [{
               id: '12345678',
               atype: 1,
