@@ -38,7 +38,7 @@ const deviceConnection = {
   UNKNOWN: 'unknown',
 };
 
-export const BIDFLOOR_CURRENCY = 'USD'
+export const BIDFLOOR_CURRENCY = 'USD';
 
 function getBidFloor(bidRequest) {
   let floorInfo = {};

@@ -56,7 +56,7 @@ const getBidderConfig = (bids) => {
     }
   }
   return cfg;
-}
+};
 
 const converter = ortbConverter({
   context: {

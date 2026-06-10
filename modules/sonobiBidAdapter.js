@@ -103,7 +103,7 @@ export const spec = {
 
     if (fpd) {
       delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
-      delete fpd.experianRtidKey
+      delete fpd.experianRtidKey;
       payload.fpd = JSON.stringify(fpd);
     }
 

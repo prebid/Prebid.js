@@ -150,7 +150,7 @@ declare module '../src/config' {
 
 config.getConfig('storageControl', (cfg) => {
   enforcement = cfg?.storageControl?.enforcement ?? ENFORCE_STRICT;
-})
+});
 
 export function dynamicDisclosureCollector() {
   const disclosures = {};

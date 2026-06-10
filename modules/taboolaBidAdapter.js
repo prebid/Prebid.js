@@ -97,7 +97,7 @@ export const userData = {
   getFromTRC() {
     return window.TRC ? window.TRC.user_id : 0;
   }
-}
+};
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
@@ -106,7 +106,7 @@ export const internal = {
   getReferrer: (refererInfo = {}) => {
     return refererInfo?.ref || getWindowSelf().document.referrer;
   }
-}
+};
 
 export function detectBot() {
   try {
@@ -375,7 +375,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     data.user = {
       buyeruid: 0,
       ext: {}
-    }
+    };
   }
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
@@ -383,7 +383,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
   if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
-    }
+    };
   }
   deepSetValue(data, 'regs.coppa', 0);
   if (gdprConsent.gdprApplies) {

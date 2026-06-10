@@ -32,7 +32,7 @@ export function applySchainConfig(ortb2Fragments) {
     if (!ortb2Fragments?.global?.source?.schain) {
       applySchainToPath(ortb2Fragments, 'global.source', globalSchainConfig.config);
     } else {
-      logWarn('Disregarding global schain config as schain is already provided in FPD')
+      logWarn('Disregarding global schain config as schain is already provided in FPD');
     }
   }
 

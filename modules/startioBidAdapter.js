@@ -64,7 +64,7 @@ const converter = ortbConverter({
       if (request.imp[0].hasOwnProperty(mediaType)) {
         request.imp[0][mediaType].battr ??= ortb?.[mediaType]?.battr || bidParams?.battr;
       }
-    })
+    });
 
     return request;
   },

@@ -111,7 +111,7 @@ function getSize(bid) {
   if (Array.isArray(bid.params?.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize]
+      inputSize = [inputSize];
     }
   }
 

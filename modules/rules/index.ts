@@ -170,7 +170,7 @@ function getGlobalRandom(auctionId: string, auctionIndex: AuctionIndex = auction
   return globalRandomStore.get(auction);
 }
 
-const unregisterFunctions: Array<() => void> = []
+const unregisterFunctions: Array<() => void> = [];
 
 let moduleConfig: ShapingRulesConfig = {
   endpoint: {
@@ -412,7 +412,7 @@ export function registerActivities() {
             }
           }
           return false;
-        }
+        };
 
         const results = [];
         let modelGroups = auctionConfigStore.get(auctionId) || [];

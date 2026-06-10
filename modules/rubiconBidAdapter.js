@@ -543,7 +543,7 @@ export const spec = {
 
     // If the bid request contains a 'mobile' property under 'ortb2.site', add it to 'data' as 'p_site.mobile'.
     if (typeof bidRequest?.ortb2?.site?.mobile === 'number') {
-      data['p_site.mobile'] = bidRequest.ortb2.site.mobile
+      data['p_site.mobile'] = bidRequest.ortb2.site.mobile;
     }
 
     // loop through userIds and add to request
@@ -940,7 +940,7 @@ function applyFPD(bidRequest, mediaType, data) {
             }, '');
           }
         }
-      ])
+      ]);
     }
 
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
@@ -975,7 +975,7 @@ function applyFPD(bidRequest, mediaType, data) {
           data.m_ch_platform = platform?.brand;
           data.m_ch_platform_ver = platform?.version?.join?.('.');
         }
-      ])
+      ]);
     }
   } else {
     if (Object.keys(impExt).length) {

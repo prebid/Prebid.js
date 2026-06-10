@@ -157,7 +157,7 @@ export const spec = {
         oneRequest.coppa = coppa;
       }
 
-      return oneRequest
+      return oneRequest;
     });
 
     const smartytechRequestUrl = buildUrl({
