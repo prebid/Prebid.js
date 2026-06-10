@@ -604,6 +604,29 @@ describe('Utils', function () {
     });
   });
 
+  describe('insertUserSyncIframe', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils.internal, 'createTrackPixelIframeHtml').returns('<iframe></iframe>');
+      sandbox.stub(utils.internal, 'insertElement');
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should create sandboxed sync iframe without same-origin', function () {
+      utils.insertUserSyncIframe('https://example.com/sync');
+      expect(utils.internal.createTrackPixelIframeHtml.calledOnceWithExactly(
+        'https://example.com/sync',
+        false,
+        'allow-scripts'
+      )).to.equal(true);
+    });
+  });
+
   describe('polyfill test', function () {
     it('should not add polyfill to array', function() {
       var arr = ['hello', 'world'];

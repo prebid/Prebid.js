@@ -479,7 +479,7 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
 export function insertUserSyncIframe(url, done, timeout) {
-  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
+  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts');
   const div = document.createElement('div');
   div.innerHTML = iframeHtml;
   const iframe = div.firstChild;
