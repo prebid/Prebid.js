@@ -529,9 +529,7 @@ export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') 
   if (!url) {
     return '';
   }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
+  url = encodeUri ? encodeURI(url) : escapeHtmlAttr(url);
   if (sandbox) {
     sandbox = `sandbox="${sandbox}"`;
   }
@@ -545,6 +543,14 @@ export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') 
       scrolling="no"
       src="${url}">
     </iframe>`;
+}
+
+function escapeHtmlAttr(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 export function uniques(value, index, arry) {
