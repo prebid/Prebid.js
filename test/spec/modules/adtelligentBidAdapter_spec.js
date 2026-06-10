@@ -14,7 +14,6 @@ const aliasEP = {
   'indicue': 'https://ghb.console.indicue.com/v2/auction/',
 };
 
-const DEFAULT_ADAPTER_REQ = { bidderCode: 'adtelligent', ortb2: { source: { ext: { schain: { ver: 1 } } } } };
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
