@@ -1552,6 +1552,21 @@ describe('IndexexchangeAdapter', function () {
         expect(payload.user).to.exist;
         expect(payload.user.eids).to.not.exist;
       });
+
+      it('payload should not include RTI eids when GDPR applies and consentString is missing', function () {
+        const options = {
+          gdprConsent: {
+            gdprApplies: true,
+            vendorData: {}
+          }
+        };
+
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options)[0];
+        payload = extractPayload(request);
+
+        expect(payload.regs.ext.gdpr).to.equal(1);
+        expect(payload.user).to.be.undefined;
+      });
     });
   });
 
