@@ -39,7 +39,7 @@ export const spec = {
     const device = getDevice(common.device);
     const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
     const eids = getByKey(validBidRequests, 'userIdAsEids');
-    const currency = config.getConfig('currency')
+    const currency = config.getConfig('currency');
     const cur = currency && [currency];
 
     const imp = validBidRequests.map((bid, id) => {

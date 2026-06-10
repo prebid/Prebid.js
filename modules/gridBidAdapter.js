@@ -26,7 +26,7 @@ import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
-const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s'
+const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s';
 
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;

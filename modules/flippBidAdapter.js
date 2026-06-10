@@ -91,7 +91,7 @@ const getAdTypes = (creativeType) => {
     return DTX_TYPES;
   }
   return AD_TYPES;
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -196,5 +196,5 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses) => [],
-}
+};
 registerBidder(spec);

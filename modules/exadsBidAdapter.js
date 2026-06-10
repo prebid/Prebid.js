@@ -70,7 +70,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   if (gdprConsent && gdprConsent.gdprApplies) {
     bidRequestData.user['ext'] = {
       consent: gdprConsent.consentString
-    }
+    };
   }
 
   if (validBidRequest.params.dsa && (
@@ -85,7 +85,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
           'datatopub': validBidRequest.params.dsa.datatopub
         }
       }
-    }
+    };
   }
 
   const impData = imps.get(validBidRequest.params.impressionId);

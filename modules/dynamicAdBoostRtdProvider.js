@@ -78,7 +78,7 @@ function getBidRequestData(reqBidsConfigObj, callback) {
 const markViewed = (entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-  }
+  };
 }
 
 // Callback function when an observed element becomes visible

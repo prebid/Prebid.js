@@ -208,7 +208,7 @@ export const spec = {
         keyValues._fw_is_lat = lmt;
       }
 
-      PRIVACY_VALUES = {}
+      PRIVACY_VALUES = {};
       if (keyValues._fw_coppa != null) {
         PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
       }

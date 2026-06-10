@@ -100,7 +100,7 @@ export function GenericAnalytics() {
 
   function optionsAreValid(options) {
     if (!options.url && !options.handler) {
-      logError('options must specify either `url` or `handler`')
+      logError('options must specify either `url` or `handler`');
       return false;
     }
     if (options.hasOwnProperty('method') && !['GET', 'POST'].includes(options.method)) {

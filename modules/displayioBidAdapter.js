@@ -137,7 +137,7 @@ function getPayload (bid, bidderRequest) {
         connection_type: connection?.effectiveType || '',
       }
     }
-  }
+  };
 }
 
 function newRenderer(bid) {

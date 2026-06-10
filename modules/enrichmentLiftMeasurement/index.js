@@ -37,7 +37,7 @@ export function init(storageManager = getStorageManager({ moduleType: MODULE_TYP
       modules = internals.getCalculatedSubmodules();
       storeTestConfig(testRun, modules, storeSplits, storageManager);
     } else {
-      modules = testConfig.modules
+      modules = testConfig.modules;
     }
   }
 
@@ -127,7 +127,7 @@ export function storeTestConfig(testRun, modules, storeSplits, storageManager) {
 
 export const internals = {
   getCalculatedSubmodules
-}
+};
 
 GDPR_GVLIDS.register(MODULE_TYPE, MODULE_NAME, VENDORLESS_GVLID);
 

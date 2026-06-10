@@ -71,7 +71,7 @@ function initFirstVisit() {
 
   try {
     // TODO: commented out because of rule violations
-    cookies = {} // parseCookies(document.cookie);
+    cookies = {}; // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -176,7 +176,7 @@ function initSession() {
 
   try {
     // TODO: commented out because of rule violations
-    cookies = {} // parseCookies(document.cookie);
+    cookies = {}; // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }

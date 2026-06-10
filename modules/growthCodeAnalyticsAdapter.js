@@ -94,7 +94,7 @@ const growthCodeAnalyticsAdapter = Object.assign(adapter({ url: url, analyticsTy
       }
 
       case EVENTS.NO_BID: {
-        data = eventData
+        data = eventData;
         break;
       }
 

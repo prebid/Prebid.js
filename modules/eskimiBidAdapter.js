@@ -69,7 +69,7 @@ export const spec = {
   onBidderError: function ({ error, bidderRequest }) {
     logInfo('Error: ', error, bidderRequest);
   },
-}
+};
 
 registerBidder(spec);
 

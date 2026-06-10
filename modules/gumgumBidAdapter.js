@@ -39,7 +39,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   let topWindow;
   let topScreen;
   let topUrl;
-  let mosttopURL
+  let mosttopURL;
   let ggad;
   let ggdeal;
   let ns;
@@ -112,7 +112,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
 }
 
 function getWrapperCode(wrapper, data) {
-  return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
+  return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)));
 }
 
 /**
@@ -132,7 +132,7 @@ function _serializeSupplyChainObj(schainObj) {
     serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
-  })
+  });
 
   return serializedSchain;
 }

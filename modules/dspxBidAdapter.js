@@ -212,7 +212,7 @@ function outstreamRender(bid) {
       logError('[DSPx][outstreamRender] Error: slot not found');
     }
   } catch (err) {
-    logError('[DSPx][outstreamRender] Error:' + err.message)
+    logError('[DSPx][outstreamRender] Error:' + err.message);
   }
 }
 
