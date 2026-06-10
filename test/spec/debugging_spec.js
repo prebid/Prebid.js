@@ -54,6 +54,7 @@ describe('Debugging', () => {
       const error = new Error();
       alreadyInstalled.returns(false);
       scriptResult = Promise.reject(error)
+      scriptResult.catch(() => null);
       return loader().then(() => {
         throw new Error('loader should not resolve');
       }).catch((err) => {
