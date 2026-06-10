@@ -123,6 +123,64 @@ describe('nativoBidAdapterTests', function () {
       expect(request.data.imp[0].ext.placementId).to.equal('10433394')
     })
 
+    it('Request should preserve a numeric placementId in imp extension', function () {
+      bidRequests[0].params = { placementId: 10433394 }
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.imp[0].ext.placementId).to.equal(10433394)
+    })
+
+    it('Request should not set placementId in imp extension when not provided', function () {
+      bidRequests[0].params = {}
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.imp[0].ext.placementId).to.be.undefined
+    })
+
+    it('Request should set imp.tagid to the adUnitCode', function () {
+      bidRequests[0].adUnitCode = 'div-gpt-ad-12345'
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.imp[0].tagid).to.equal('div-gpt-ad-12345')
+    })
+
+    it('Request should set imp.tagid for each impression', function () {
+      const second = JSON.parse(bidRequestString)
+      second.adUnitCode = 'adunit-code-2'
+      second.bidId = '38c13147ddgb7f'
+      bidRequests.push(second)
+
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.imp.length).to.equal(2)
+      expect(request.data.imp[0].tagid).to.equal('adunit-code')
+      expect(request.data.imp[1].tagid).to.equal('adunit-code-2')
+    })
+
     it('Request should not error when placementId is not provided', function () {
       bidRequests[0].params = {}
       const request = spec.buildRequests(bidRequests, {
@@ -187,6 +245,35 @@ describe('nativoBidAdapterTests', function () {
       expect(request.data.site).to.exist
       expect(request.data.site.page).to.exist
       // The ORTB converter should populate this from refererInfo
+    })
+
+    it('Request should include gpid in imp extension from ortb2Imp.ext.gpid', function () {
+      bidRequests[0].ortb2Imp = {
+        ext: {
+          gpid: '/1111/homepage#div-1'
+        }
+      }
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.imp[0].ext.gpid).to.equal('/1111/homepage#div-1')
+    })
+
+    it('Request should not set gpid when none is provided', function () {
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          page: 'https://www.test.com',
+          referer: 'https://www.test.com',
+        },
+      })
+
+      expect(request.data.imp[0].ext.gpid).to.be.undefined
     })
   })
 })
