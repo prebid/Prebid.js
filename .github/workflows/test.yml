@@ -48,7 +48,6 @@ jobs:
 
       - name: Commit info
         id: info
-        # NOTE: Updated by codex agent.
         env:
           BRANCH: ${{ github.head_ref || github.ref }}
         run: |
