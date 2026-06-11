@@ -177,21 +177,11 @@ const _public = (function () {
       if (id && (utils.isEmpty(event[id]) || utils.isEmpty(event[id].que))) {
         return;
       }
-
-      if (id) {
-        (event[id].que || []).forEach(function (_handler) {
-          const que = event[id].que;
-          if (_handler === handler) {
-            que.splice(que.indexOf(_handler), 1);
-          }
-        });
-      } else {
-        (event.que || []).forEach(function (_handler) {
-          const que = event.que;
-          if (_handler === handler) {
-            que.splice(que.indexOf(_handler), 1);
-          }
-        });
+      const removeHandler = (que) => que.filter(_handler => handler !== handler);
+      if (id && event[id].que?.length > 0) {
+        event[id].que = removeHandler(event[id].que);
+      } else if (event.que?.length > 0) {
+        event.que = removeHandler(event.que);
       }
 
       _handlers[eventName] = event;
