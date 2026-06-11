@@ -22,8 +22,14 @@ module.exports = function(api, options) {
   ];
 
   function translateToJs(path, state) {
-    if (path.node.source?.value?.endsWith('.ts')) {
-      path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+    const source = path.node.source?.value;
+    if (source) {
+      if (source.endsWith('.d.ts')) {
+        // assuming .d.ts files are just definitions, they are not relevant at runtime
+        path.remove(path.node);
+      } else if (source.endsWith('.ts')) {
+        path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+      }
     }
   }
 

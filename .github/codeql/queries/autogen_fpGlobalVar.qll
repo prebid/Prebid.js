@@ -6,23 +6,23 @@ class GlobalVar extends string {
   
   GlobalVar() {
       
-      ( this = "devicePixelRatio"  and weight = 15.26 )
+      ( this = "devicePixelRatio"  and weight = 15.37 )
        or 
-      ( this = "screenX"  and weight = 391.09 )
+      ( this = "screenX"  and weight = 425.14 )
        or 
-      ( this = "screenY"  and weight = 359.23 )
+      ( this = "screenY"  and weight = 399.3 )
        or 
-      ( this = "outerWidth"  and weight = 115.95 )
+      ( this = "outerWidth"  and weight = 118.62 )
        or 
-      ( this = "outerHeight"  and weight = 174.07 )
+      ( this = "outerHeight"  and weight = 187.18 )
        or 
-      ( this = "screenLeft"  and weight = 379.3 )
+      ( this = "screenLeft"  and weight = 345.98 )
        or 
-      ( this = "screenTop"  and weight = 377.73 )
+      ( this = "screenTop"  and weight = 344.76 )
        or 
-      ( this = "indexedDB"  and weight = 21.74 )
+      ( this = "indexedDB"  and weight = 22.13 )
        or 
-      ( this = "openDatabase"  and weight = 33.54 )
+      ( this = "openDatabase"  and weight = 32.7 )
   }  
 
   float getWeight() {

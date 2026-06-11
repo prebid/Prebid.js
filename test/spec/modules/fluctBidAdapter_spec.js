@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/fluctBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);
@@ -192,16 +193,31 @@ describe('fluctAdapter', function () {
       expect(request.data.regs).to.eql(undefined);
     });
 
-    it('does not include x-fluct-prebid-wrapper header by default', function () {
+    it('does not include wrapperName in data by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.options.customHeaders['x-fluct-prebid-wrapper']).to.be.undefined;
+      expect(request.data.wrapperName).to.be.undefined;
     });
 
-    it('includes x-fluct-prebid-wrapper header when fluct.wrapperName is configured', function () {
+    it('includes wrapperName in data when fluct.wrapperName is configured', function () {
       sb.stub(config, 'getConfig').withArgs('fluct').returns({ wrapperName: 'boost' });
 
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.options.customHeaders['x-fluct-prebid-wrapper']).to.equal('boost');
+      expect(request.data.wrapperName).to.equal('boost');
+    });
+
+    it('includes adapterVersion in data', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.adapterVersion).to.be.a('string').and.not.empty;
+    });
+
+    it('does not set application/json content type', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.options.contentType).to.be.undefined;
+    });
+
+    it('does not include custom headers', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.options.customHeaders).to.be.undefined;
     });
 
     it('includes filtered user.eids if any exists', function () {
@@ -451,6 +467,27 @@ describe('fluctAdapter', function () {
       expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
     });
 
+    it('includes data.regs.ext.dsa if bidderRequest.ortb2.regs.ext.dsa exists', function () {
+      const dsa = {
+        dsarequired: 1,
+        pubrender: 0,
+        datatopub: 2,
+        transparency: [{ domain: 'example.com', dsaparams: [1, 2] }],
+      };
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          ortb2: { regs: { ext: { dsa } } },
+        }),
+      )[0];
+      expect(request.data.regs.ext.dsa).to.eql(dsa);
+    });
+
+    it('does not include data.regs.ext.dsa when absent', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.regs?.ext?.dsa).to.eql(undefined);
+    });
+
     it('includes no data.site by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.site).to.eql(undefined);
@@ -665,7 +702,7 @@ describe('fluctAdapter', function () {
     it('sends no instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.instl).to.eql(0);
-    })
+    });
 
     it('sends ortb2Imp.instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({
@@ -795,6 +832,154 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
       expect(request.data.bidfloor).to.eql(undefined);
       expect(request.data.bidfloorcur).to.eql(undefined);
+    });
+
+    it('includes data.regs.ext.gpc from ortb2.regs.ext.gpc', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { regs: { ext: { gpc: '1' } } },
+      }))[0];
+      expect(request.data.regs.ext.gpc).to.eql('1');
+    });
+
+    it('does not include data.regs.ext.gpc when absent', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.regs?.ext?.gpc).to.eql(undefined);
+    });
+
+    it('includes data.canonicalUrl from refererInfo.canonicalUrl', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', canonicalUrl: 'https://example.com/canonical' },
+      }))[0];
+      expect(request.data.canonicalUrl).to.eql('https://example.com/canonical');
+    });
+
+    it('does not include data.canonicalUrl when absent', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.canonicalUrl).to.eql(undefined);
+    });
+
+    it('includes data.isAmp when refererInfo.isAmp is true', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', isAmp: true },
+      }))[0];
+      expect(request.data.isAmp).to.eql(true);
+    });
+
+    it('does not include data.isAmp when refererInfo.isAmp is false', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', isAmp: false },
+      }))[0];
+      expect(request.data.isAmp).to.eql(undefined);
+    });
+
+    it('includes data.reachedTop from refererInfo.reachedTop', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', reachedTop: false },
+      }))[0];
+      expect(request.data.reachedTop).to.eql(false);
+    });
+
+    it('includes data.numIframes from refererInfo.numIframes', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', numIframes: 2 },
+      }))[0];
+      expect(request.data.numIframes).to.eql(2);
+    });
+
+    it('includes data.numIframes = 0 when page is at top level', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        refererInfo: { page: 'http://example.com', numIframes: 0 },
+      }))[0];
+      expect(request.data.numIframes).to.eql(0);
+    });
+
+    it('includes data.timeout from bidderRequest.timeout', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        timeout: 3000,
+      }))[0];
+      expect(request.data.timeout).to.eql(3000);
+    });
+
+    it('does not include data.timeout when absent', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.timeout).to.eql(undefined);
+    });
+
+    it('includes data.source.tid from ortb2.source.tid', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { source: { tid: 'auction-tid-123' } },
+      }))[0];
+      expect(request.data.source.tid).to.eql('auction-tid-123');
+    });
+
+    it('does not include data.source.tid when absent', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.source?.tid).to.eql(undefined);
+    });
+
+    it('includes data.site.name and data.site.search and data.site.publisher.domain', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: {
+          site: {
+            name: 'My Site',
+            search: 'prebid',
+            publisher: { domain: 'publisher.example.com' },
+          },
+        },
+      }))[0];
+      expect(request.data.site.name).to.eql('My Site');
+      expect(request.data.site.search).to.eql('prebid');
+      expect(request.data.site.publisher).to.eql({ domain: 'publisher.example.com' });
+    });
+
+    it('includes data.site.publisher.id even when domain is absent', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { site: { publisher: { id: 'pub-123' } } },
+      }))[0];
+      expect(request.data.site.publisher).to.eql({ id: 'pub-123' });
+    });
+
+    it('includes both id and domain in data.site.publisher when both present', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { site: { publisher: { id: 'pub-123', domain: 'example.com' } } },
+      }))[0];
+      expect(request.data.site.publisher).to.eql({ id: 'pub-123', domain: 'example.com' });
+    });
+
+    it('includes data.user.yob, data.user.gender, data.user.keywords', function () {
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { user: { yob: 1990, gender: 'M', keywords: 'sports,tech' } },
+      }))[0];
+      expect(request.data.user.yob).to.eql(1990);
+      expect(request.data.user.gender).to.eql('M');
+      expect(request.data.user.keywords).to.eql('sports,tech');
+    });
+
+    it('includes data.user.ext.data from ortb2.user.ext.data', function () {
+      const extData = { segment: ['A', 'B'], customAttr: 'value' };
+      const request = spec.buildRequests(bidRequests, Object.assign({}, bidderRequest, {
+        ortb2: { user: { ext: { data: extData } } },
+      }))[0];
+      expect(request.data.user.ext.data).to.eql(extData);
+    });
+
+    it('does not include data.user.ext when ortb2.user.ext.data is absent', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext).to.eql(undefined);
+    });
+
+    describe('autoplay signal', function () {
+      it('sends data.autoplay = 1 when autoplay is enabled', function () {
+        sb.stub(autoplay, 'isAutoplayEnabled').returns(true);
+        const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+        expect(request.data.autoplay).to.equal(1);
+      });
+
+      it('sends data.autoplay = 0 when autoplay is disabled', function () {
+        sb.stub(autoplay, 'isAutoplayEnabled').returns(false);
+        const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+        expect(request.data.autoplay).to.equal(0);
+      });
     });
   });
 

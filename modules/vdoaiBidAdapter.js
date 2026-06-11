@@ -60,7 +60,7 @@ export const spec = {
       logMessage(e);
       winTop = window;
     }
-    const placements = groupBy(vdoValidBidRequests.map(bidRequest => vdoBuildPlacement(bidRequest)), 'host')
+    const placements = groupBy(vdoValidBidRequests.map(bidRequest => vdoBuildPlacement(bidRequest)), 'host');
     return Object.keys(placements)
       .map(host => vdoBuildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest));
   },
@@ -104,16 +104,16 @@ export const spec = {
     const allImageSyncs = [];
     for (let i = 0; i < vdoServerResponses.length; i++) {
       const serverResponseHeaders = vdoServerResponses[i].headers;
-      const vdoImgSync = (serverResponseHeaders != null && userSyncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
-      const vdoIframeSync = (serverResponseHeaders != null && userSyncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
+      const vdoImgSync = (serverResponseHeaders != null && userSyncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null;
+      const vdoIframeSync = (serverResponseHeaders != null && userSyncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null;
       if (vdoIframeSync != null) {
-        allIframeSyncs.push(vdoIframeSync)
+        allIframeSyncs.push(vdoIframeSync);
       } else if (vdoImgSync != null) {
-        allImageSyncs.push(vdoImgSync)
+        allImageSyncs.push(vdoImgSync);
       }
     }
-    return [allIframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
-      allImageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques);
+    return [allIframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it }; }),
+      allImageSyncs.filter(uniques).map(it => { return { type: 'image', url: it }; })].reduce(flatten, []).filter(uniques);
   }
 };
 
@@ -133,7 +133,7 @@ function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
       sua: bidderRequest?.ortb2?.device?.sua,
       page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
-  }
+  };
 }
 
 function vdoBuildPlacement(vdoBidRequest) {
@@ -163,7 +163,7 @@ function vdoBuildPlacement(vdoBidRequest) {
         return {
           width: size[0],
           height: size[1]
-        }
+        };
       }),
       type: vdoBidRequest.params.adUnitType.toUpperCase(),
       ortb2Imp: vdoBidRequest.ortb2Imp,
@@ -176,5 +176,5 @@ function vdoBuildPlacement(vdoBidRequest) {
       custom4: vdoBidRequest.params.custom4,
       custom5: vdoBidRequest.params.custom5
     }
-  }
+  };
 }

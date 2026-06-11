@@ -28,8 +28,8 @@ describe('normalizer', () => {
       untouched: 0,
       f1: null,
       f2: null,
-    })
-  })
+    });
+  });
   it('initializes list fields to null-array with correct size', () => {
     const res = normalizer({}, { 'l1': 2, 'l2': 3 })({});
     expect(res).to.eql({
@@ -404,14 +404,14 @@ describe('state normalizations', () => {
   }).forEach(([t, [sid, original, normalized]]) => {
     it(t, () => {
       expect(NORMALIZATIONS[sid](original)).to.eql(normalized);
-    })
+    });
   });
 
   describe('child consent', () => {
     function checkChildConsent(sid, orig, normalized) {
       expect(NORMALIZATIONS[sid]({
         KnownChildSensitiveDataConsents: orig
-      }).KnownChildSensitiveDataConsents).to.eql(normalized)
+      }).KnownChildSensitiveDataConsents).to.eql(normalized);
     }
 
     describe('states with single flag', () => {
@@ -429,11 +429,11 @@ describe('state normalizations', () => {
             orig = Number(orig);
             it(`translates ${orig} to ${normalized}`, () => {
               checkChildConsent(sid, orig, normalized);
-            })
-          })
-        })
+            });
+          });
+        });
       });
-    })
+    });
 
     Object.entries({
       'CA/8, consent not known': [
@@ -469,9 +469,9 @@ describe('state normalizations', () => {
     }).forEach(([t, [sid, orig, normalized]]) => {
       it(t, () => {
         checkChildConsent(sid, orig, normalized);
-      })
-    })
-  })
+      });
+    });
+  });
 });
 
 describe('getSections', () => {
@@ -500,7 +500,7 @@ describe('getSections', () => {
       }
     })).to.eql([
       ['uspv1ca', [8], NORMALIZATIONS[8]]
-    ])
+    ]);
   });
 
   it('can override normalization', () => {
@@ -514,6 +514,6 @@ describe('getSections', () => {
     })).to.eql([
       ['usca', [8], NORMALIZATIONS[9]],
       ['usva', [9], NORMALIZATIONS[9]]
-    ])
+    ]);
   });
-})
+});

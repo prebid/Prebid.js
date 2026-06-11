@@ -57,9 +57,9 @@ export function sizeSupported(size, configs = sizeConfig) {
 
 const SIZE_PROPS = {
   [BANNER]: 'banner.sizes'
-}
+};
 if (FEATURES.VIDEO) {
-  SIZE_PROPS[VIDEO] = 'video.playerSize'
+  SIZE_PROPS[VIDEO] = 'video.playerSize';
 }
 
 /**
@@ -96,12 +96,12 @@ export function resolveStatus({ labels = [], labelAll = false, activeLabels = []
         hasSize = hasSize || newSizes.length > 0;
         if (oldSizes.length !== newSizes.length) {
           filterResults.before[mediaType] = oldSizes;
-          filterResults.after[mediaType] = newSizes
+          filterResults.after[mediaType] = newSizes;
         }
       }
-    })
+    });
   } else {
-    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null
+    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null;
   }
 
   const results = {
@@ -155,7 +155,7 @@ function evaluateSizeConfig(configs) {
         ['labels', 'sizesSupported'].forEach(
           type => (config[type] || []).forEach(
             thing => {
-              results[type][thing] = true
+              results[type][thing] = true;
             }
           )
         );

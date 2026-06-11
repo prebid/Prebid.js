@@ -372,7 +372,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
               currency: 'USD',
               ad: '<html>fake ad1</html>'
             },
-          ]
+          ];
 
           ucfunnelAnalyticsAdapter.handleBidWon(receivedBids[0]);
           sinon.assert.callCount(ucfunnelAnalyticsAdapter.createImpressionMessage, 1);

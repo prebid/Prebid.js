@@ -41,7 +41,7 @@ export const ortbConverterProps = {
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
+    const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0;
     const gpid = bidRequest.adUnitCode;
     imp.tagid = bidRequest.adUnitCode;
     imp.ext = mergeDeep({}, bidRequest.params, { timeSpentOnPage, gpid }, imp.ext);
@@ -67,7 +67,7 @@ export const ortbConverterProps = {
 
     return bidResponse;
   }
-}
+};
 
 export const converter = ortbConverter(ortbConverterProps);
 
@@ -153,17 +153,17 @@ function getFloor(bid) {
 
 function getWindowContext() {
   try {
-    return getWindowTop()
+    return getWindowTop();
   } catch (e) {
-    return getWindowSelf()
+    return getWindowSelf();
   }
 }
 
 function onBidWon(bid) {
-  const w = getWindowContext()
+  const w = getWindowContext();
   w.OG_PREBID_BID_OBJECT = {
     ...(bid && { ...bid }),
-  }
+  };
   if (bid && bid.nurl) ajax(bid.nurl, null);
 }
 
@@ -186,6 +186,6 @@ export const spec = {
   onBidWon,
   getWindowContext,
   onTimeout
-}
+};
 
 registerBidder(spec);

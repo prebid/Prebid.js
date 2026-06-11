@@ -22,19 +22,19 @@ export function updateRulesFromConfig(registerRule) {
 
   function cleanParams(params) {
     // remove private parameters for publisher condition checks
-    return Object.fromEntries(Object.entries(params).filter(([k]) => !k.startsWith('_')))
+    return Object.fromEntries(Object.entries(params).filter(([k]) => !k.startsWith('_')));
   }
 
   function setupRule(activity, priority) {
     if (!activeRuleHandles.has(activity)) {
-      activeRuleHandles.set(activity, new Map())
+      activeRuleHandles.set(activity, new Map());
     }
     const handles = activeRuleHandles.get(activity);
     if (!handles.has(priority)) {
       handles.set(priority, registerRule(activity, RULE_NAME, function (params) {
         for (const rule of rulesByActivity.get(activity).get(priority)) {
           if (!rule.condition || rule.condition(cleanParams(params))) {
-            return { allow: rule.allow, reason: rule }
+            return { allow: rule.allow, reason: rule };
           }
         }
       }, priority));
@@ -44,8 +44,8 @@ export function updateRulesFromConfig(registerRule) {
   function setupDefaultRule(activity) {
     if (!defaultRuleHandles.has(activity)) {
       defaultRuleHandles.set(activity, registerRule(activity, RULE_NAME, function () {
-        return { allow: false, reason: 'activity denied by default' }
-      }, Number.POSITIVE_INFINITY))
+        return { allow: false, reason: 'activity denied by default' };
+      }, Number.POSITIVE_INFINITY));
     }
   }
 
@@ -61,14 +61,14 @@ export function updateRulesFromConfig(registerRule) {
       (activityCfg.rules || []).forEach(rule => {
         const priority = rule.priority == null ? DEFAULT_PRIORITY : rule.priority;
         if (!rules.has(priority)) {
-          rules.set(priority, [])
+          rules.set(priority, []);
         }
         rules.get(priority).push(rule);
       });
 
       Array.from(rules.keys()).forEach(priority => setupRule(activity, priority));
     });
-  })
+  });
 }
 
 updateRulesFromConfig(registerActivityControl);

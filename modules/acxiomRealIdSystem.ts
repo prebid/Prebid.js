@@ -21,7 +21,7 @@ const DEFAULT_SOURCE_ID = 'acxiom.id';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 export const dep = {
   ajaxBuilder
-}
+};
 
 export type AcxiomRealIdParams = {
   /** Partner ID issued by GrowthCode on behalf of Acxiom */
@@ -32,14 +32,14 @@ export type AcxiomRealIdParams = {
   sourceId?: string;
   /** Override the full API endpoint URL */
   apiUrl?: string;
-}
+};
 
 export type AcxiomRealIdValue = {
   /** The resolved Acxiom Real ID token */
   id: string;
   /** Agent type per OpenRTB spec (1 = cookie/device, 2 = in-app, 3 = person-based) */
   atype: number;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {

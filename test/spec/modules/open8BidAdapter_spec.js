@@ -53,7 +53,7 @@ describe('Open8Adapter', function() {
     });
   });
   describe('interpretResponse', function() {
-    const adomin = ['example.com']
+    const adomin = ['example.com'];
     const bannerResponse = {
       slotKey: 'slotkey1234',
       userId: 'userid1234',

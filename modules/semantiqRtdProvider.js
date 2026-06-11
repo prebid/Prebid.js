@@ -106,7 +106,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
     error(error) {
       reject(error);
     }
-  }
+  };
 
   ajax(requestUrl, callbacks);
 });
@@ -243,7 +243,7 @@ const getBidRequestData = (
       onDone();
     }
   }, timeout);
-}
+};
 
 /** @type {RtdSubmodule} */
 export const semantiqRtdSubmodule = {
