@@ -157,7 +157,7 @@ const _public = (function () {
     has: _checkAvailableEvent,
     listen,
     on: function <E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
-      const innerHandler = (_, ...args: Events[E]) => handler(...args);
+      const innerHandler = HANDLERS.has(handler) ? HANDLERS.get(handler) : (_, ...args: Events[E]) => handler(...args);
       HANDLERS.set(handler, innerHandler);
       listen(eventName, innerHandler, id);
     },

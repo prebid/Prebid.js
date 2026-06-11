@@ -55,6 +55,18 @@ describe('events', () => {
       emit('bidWon', {});
       sinon.assert.notCalled(handler);
     });
+
+    it(`can use off on handlers registered multiple times with ${name}`, () => {
+      const handler = sinon.stub();
+      fn('bidWon', handler);
+      fn('bidWon', handler);
+      fn('bidResponse', handler);
+      off('bidWon', handler);
+      emit('bidWon', { event: 'bidWon' });
+      emit('bidResponse', { event: 'bidResponse' });
+      sinon.assert.calledOnce(handler);
+      expect(handler.args[0][handler.args[0].length - 1]).to.eql({ event: 'bidResponse' });
+    });
   });
 
   it('can get event record using listen', () => {
