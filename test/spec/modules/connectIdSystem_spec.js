@@ -980,7 +980,7 @@ describe('Yahoo ConnectID Submodule', () => {
       }
     }];
     VALID_API_RESPONSES.forEach(responseData => {
-      it('should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)', () => {
+      it(`should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)`, () => {
         expect(connectIdSubmodule.decode(responseData.payload)).to.deep.equal(
           { connectId: responseData.expected }
         );
