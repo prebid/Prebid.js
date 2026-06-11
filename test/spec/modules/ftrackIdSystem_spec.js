@@ -176,7 +176,7 @@ describe('FTRACK ID System', () => {
           expect(window.D9r).to.not.have.property('DeviceID');
           expect(window.D9r).to.not.have.property('SingleDeviceID');
           expect(window.D9r).to.not.have.property('HHID');
-        })
+        });
 
         it(`- any ID set to false should not be added to window.D9r`, () => {
           const configMock1 = JSON.parse(JSON.stringify(configMock));
@@ -222,7 +222,7 @@ describe('FTRACK ID System', () => {
           expect(window.D9r).to.have.property('HHID', true);
         });
       });
-    })
+    });
 
     it(`should populate localstorage and return the IDS (end-to-end test)`, () => {
       let ftrackId;
@@ -318,7 +318,7 @@ describe('FTRACK ID System', () => {
       ftrackIdSubmodule.decode('value', configMock);
 
       expect(server.requests).to.have.length(0);
-    })
+    });
   });
 
   describe(`extendId() method`, () => {
@@ -583,5 +583,5 @@ describe('FTRACK ID System', () => {
         }]
       }]);
     });
-  })
+  });
 });

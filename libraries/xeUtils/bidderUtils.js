@@ -145,9 +145,9 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, usp
       const [type, url] = pixel;
       const sync = { type, url: `${url}&${usPrivacy}${gdprFlag}${gdprString}` };
       if (type === 'iframe' && syncOptions.iframeEnabled) {
-        syncs.push(sync)
+        syncs.push(sync);
       } else if (type === 'image' && syncOptions.pixelEnabled) {
-        syncs.push(sync)
+        syncs.push(sync);
       }
     });
   }

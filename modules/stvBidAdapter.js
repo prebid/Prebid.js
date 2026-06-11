@@ -107,7 +107,7 @@ export const spec = {
             payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key];
           });
       }
-      if (Object.keys(payload.pfilter).length === 0) { delete payload.pfilter }
+      if (Object.keys(payload.pfilter).length === 0) { delete payload.pfilter; }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -145,7 +145,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     return handleSyncUrls(syncOptions, serverResponses, gdprConsent);
   }
-}
+};
 
 function stvObjectToQueryString(obj, prefix) {
   const str = [];

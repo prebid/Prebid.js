@@ -1,5 +1,6 @@
-import { deepAccess, deepSetValue, generateUUID, logInfo } from '../../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getParameterByName, logInfo } from '../../src/utils.js';
 import { Renderer } from '../../src/Renderer.js';
+import { config } from '../../src/config.js';
 import { getCurrencyFromBidderRequest } from '../ortb2Utils/currency.js';
 import { INSTREAM, OUTSTREAM } from '../../src/video.js';
 import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
@@ -13,11 +14,11 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 let sessionId:string | null = null;
 
 const getSessionId = ():string => {
-  if (!sessionId) {
-    sessionId = generateUUID();
-  }
-  return sessionId;
-}
+  if (sessionId) return sessionId;
+  const id:string = generateUUID();
+  sessionId = id;
+  return id;
+};
 
 let lastPageUrl:string = '';
 let requestCounter:number = 0;
@@ -28,7 +29,7 @@ const getRequestCount = ():number => {
   }
   lastPageUrl = window.location.pathname;
   return 0;
-}
+};
 
 export const getLocalStorageFunctionGenerator = <
   T extends Record<string, string>
@@ -101,7 +102,7 @@ export type CreateRenderPayload = {
   divId: string,
   width: number,
   height: number
-}
+};
 
 export const createRenderer = (
   { requestId, vastXml, divId, width, height }: CreateRenderPayload
@@ -134,7 +135,7 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
-}
+};
 
 export const enrichRequest = (
   request: ORTBRequest,
@@ -206,7 +207,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === NATIVE) {
     try {
-      response.native = { ortb: JSON.parse(bid.adm) }
+      response.native = { ortb: JSON.parse(bid.adm) };
     } catch (e) {}
   }
   return response as BidResponse;
@@ -227,7 +228,7 @@ export const interpretResponse = (serverResponse: ServerResponse): AdapterRespon
     }
   }
   return responses;
-}
+};
 
 /**
  * Get the AMX ID
@@ -243,4 +244,16 @@ export const getAmxId = (
   }
   const amxId = storage.getDataFromLocalStorage('__amuidpb');
   return amxId || null;
-}
+};
+
+export const getGzipSetting = (
+  bidderCode: string,
+  defaultEnabled: boolean = true,
+): boolean => {
+  if (getParameterByName('nexx360_debug') === '1') return false;
+  const bidderConfig = config.getBidderConfig();
+  const gzipEnabled = bidderConfig[bidderCode]?.gzipEnabled;
+  if (gzipEnabled === true || gzipEnabled === 'true') return true;
+  if (gzipEnabled === false || gzipEnabled === 'false') return false;
+  return defaultEnabled;
+};

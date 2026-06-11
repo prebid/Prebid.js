@@ -1,9 +1,9 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-import * as utils from '../src/utils.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
-export const BIDDER_CODE = 'eightPod'
+export const BIDDER_CODE = 'eightPod';
 const url = 'https://demo.8pod.com/bidder/rtb/eightpod_exchange/bid';
 
 export const spec = {
@@ -15,9 +15,9 @@ export const spec = {
   isBannerBid,
   isVideoBid,
   onBidWon
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 
 const converter = ortbConverter({
   context: {
@@ -25,34 +25,34 @@ const converter = ortbConverter({
     ttl: 300,
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context)
-    return req
+    const req = buildRequest(imps, bidderRequest, context);
+    return req;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
-    const response = buildResponse(bidResponses, ortbResponse, context)
-    return response.bids
+    const response = buildResponse(bidResponses, ortbResponse, context);
+    return response.bids;
   },
   imp(buildImp, bidRequest, context) {
-    return buildImp(bidRequest, context)
+    return buildImp(bidRequest, context);
   },
   bidResponse
-})
+});
 
 function hasRequiredParams(bidRequest) {
-  return !!bidRequest?.params?.placementId
+  return !!bidRequest?.params?.placementId;
 }
 
 function isBidRequestValid(bidRequest) {
-  return hasRequiredParams(bidRequest)
+  return hasRequiredParams(bidRequest);
 }
 
 function buildRequests(bids, bidderRequest) {
-  const bannerBids = bids.filter((bid) => isBannerBid(bid))
+  const bannerBids = bids.filter((bid) => isBannerBid(bid));
   const requests = bannerBids.length
     ? createRequest(bannerBids, bidderRequest, BANNER)
-    : []
+    : [];
 
-  return requests
+  return requests;
 }
 
 function bidResponse(buildBidResponse, bid, context) {
@@ -71,11 +71,11 @@ function bidResponse(buildBidResponse, bid, context) {
 
 function onBidWon(bid) {
   if (bid.burl) {
-    utils.triggerPixel(bid.burl)
+    utils.triggerPixel(bid.burl);
   }
 }
 function replacePriceInUrl(url, price) {
-  return url.replace(/\${AUCTION_PRICE}/, price)
+  return url.replace(/\${AUCTION_PRICE}/, price);
 }
 
 export function parseUserAgent() {
@@ -145,14 +145,14 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
         country: params.country || 'GRB'
       },
       language: params.language || data.device.language,
-    }
+    };
     data.site = {
       ...data.site,
       keywords: getPageKeywords(window),
       publisher: {
         id: params.publisherId
       }
-    }
+    };
     data.imp = [
       {
         ...data.imp?.[0],
@@ -169,13 +169,13 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
             }
           : data.pmp,
       }
-    ]
+    ];
     data.adSlotPlacementId = params.placementId;
 
     if (userId) {
       data.user = {
         id: userId
-      }
+      };
     }
 
     const req = {
@@ -183,9 +183,9 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
       url: url && params.trace ? url + '?trace=true' : url,
       options: { withCredentials: false },
       data
-    }
-    return req
-  })
+    };
+    return req;
+  });
 
   return requests;
 }
@@ -195,11 +195,11 @@ function getBidderParams(bid) {
 }
 
 function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video')
+  return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner')
+  return utils.deepAccess(bid, 'mediaTypes.banner');
 }
 
 function interpretResponse(resp, req) {
@@ -242,7 +242,7 @@ function interpretResponse(resp, req) {
                 b=document;c='script';d=b.createElement(c);d.src=a;d.type='text/java'+c;d.async=true;
                 a=b.getElementsByTagName(c)[0];a.parentNode.insertBefore(d,a);
             })();
-        </script>`
+        </script>`;
 
   bidResponses[0].ad = ad.replace('</head>', trackingTag + '</head>');
   return bidResponses;

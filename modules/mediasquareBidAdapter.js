@@ -16,8 +16,8 @@ import { getRefererInfo } from '../src/refererDetection.js';
  */
 
 const BIDDER_CODE = 'mediasquare';
-const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
-const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
+const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/';
+const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/';
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
 const BIDDER_ENDPOINT_WINNING = 'winning';
 
@@ -61,7 +61,7 @@ export const spec = {
         bidId: adunitValue.bidId,
         mediatypes: adunitValue.mediaTypes,
         floor: {}
-      }
+      };
       if (typeof adunitValue.getFloor === 'function') {
         if (Array.isArray(adunitValue.sizes)) {
           adunitValue.sizes.forEach(value => {
@@ -72,7 +72,7 @@ export const spec = {
         const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: '*' });
         if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
       }
-      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
+      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp; }
       codes.push(code);
     });
     const payload = {
@@ -90,9 +90,9 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
       if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
-      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
-      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
-      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }
+      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids; };
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa; }
+      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2; }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -146,8 +146,8 @@ export const spec = {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
         } else if ('video' in value) {
-          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url'] }
-          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml'] }
+          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url']; }
+          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml']; }
           bidResponse['mediaType'] = 'video';
           bidResponse['renderer'] = createRenderer(value, OUTSTREAM_RENDERER_URL);
         }
@@ -223,7 +223,7 @@ export const spec = {
     return true;
   }
 
-}
+};
 
 function outstreamRender(bid) {
   bid.renderer.push(() => {

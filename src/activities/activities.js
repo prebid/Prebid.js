@@ -34,7 +34,7 @@ export const ACTIVITY_REPORT_ANALYTICS = 'reportAnalytics';
 /**
  * some component wants access to (and send along) user IDs
  */
-export const ACTIVITY_TRANSMIT_EIDS = 'transmitEids'
+export const ACTIVITY_TRANSMIT_EIDS = 'transmitEids';
 
 /**
  * transmitUfpd: some component wants access to (and send along) user FPD

@@ -40,7 +40,7 @@ export const spec = {
 
     serverResponse.seatbid.forEach(function (seatbid) {
       bids.push(seatbid.bid);
-    })
+    });
 
     return bids;
   },
@@ -64,7 +64,7 @@ function newBidRequest(bidRequest, bidderRequest) {
     sizes: bidRequest.sizes,
     params: bidRequest.params,
     mediaTypes: bidRequest.mediaTypes,
-  }
+  };
 
   const data = {
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781

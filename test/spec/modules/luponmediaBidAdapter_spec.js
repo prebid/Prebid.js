@@ -1,5 +1,5 @@
 // tests/luponmediaBidAdapter_spec.js
-import { resetUserSync, spec, converter, storage } from 'modules/luponmediaBidAdapter.js';
+import { converter, resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
 import sinon from 'sinon';
 import { expect } from 'chai';
 

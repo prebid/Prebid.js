@@ -19,6 +19,7 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js';
+import { getSlotTargeting } from '../src/utils/gptTargeting.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -65,7 +66,7 @@ function handleAdMessage(e) {
         // 3. Get AdUnit IDs for the selected slot
         if (adSlot) {
           adUnitId = adSlot.getAdUnitPath();
-          adDeliveryId = adSlot.getTargeting('RSDK_ADID');
+          adDeliveryId = getSlotTargeting(adSlot, 'RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
             : `${timestamp()}-${generateUUID()}`;
@@ -231,7 +232,7 @@ export const track = {
       }
     );
   }
-}
+};
 
 /**
  * Set custom targetings for provided adUnits

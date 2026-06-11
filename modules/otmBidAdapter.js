@@ -14,7 +14,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'otm';
 const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';
-const DEFAULT_CURRENCY = 'RUB'
+const DEFAULT_CURRENCY = 'RUB';
 
 export const spec = {
 
@@ -43,22 +43,22 @@ export const spec = {
     logInfo('validBidRequests', validBidRequests);
 
     const bidRequests = [];
-    const tz = new Date().getTimezoneOffset()
+    const tz = new Date().getTimezoneOffset();
     // TODO: are these the right referer values?
     const referrer = bidderRequest?.refererInfo?.page || '';
     const topOrigin = bidderRequest?.refererInfo?.domain || '';
 
     _each(validBidRequests, (bid) => {
-      const domain = isStr(bid.params.domain) ? bid.params.domain : topOrigin
-      const cur = getValue(bid.params, 'currency') || DEFAULT_CURRENCY
-      const bidid = getBidIdParameter('bidId', bid)
+      const domain = isStr(bid.params.domain) ? bid.params.domain : topOrigin;
+      const cur = getValue(bid.params, 'currency') || DEFAULT_CURRENCY;
+      const bidid = getBidIdParameter('bidId', bid);
       const transactionid = bid.ortb2Imp?.ext?.tid || '';
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      const auctionid = getBidIdParameter('auctionId', bid)
-      const bidfloor = _getBidFloor(bid)
+      const auctionid = getBidIdParameter('auctionId', bid);
+      const bidfloor = _getBidFloor(bid);
 
       _each(bid.sizes, size => {
-        const hasSizes = isArray(size) && isNumber(size[0]) && isNumber(size[1])
+        const hasSizes = isArray(size) && isNumber(size[0]) && isNumber(size[1]);
         const width = hasSizes ? size[0] : 0;
         const height = hasSizes ? size[1] : 0;
 
@@ -78,9 +78,9 @@ export const spec = {
             auctionid,
             bidfloor,
           },
-        })
-      })
-    })
+        });
+      });
+    });
     return bidRequests;
   },
 
