@@ -1,4 +1,4 @@
-import AnalyticsAdapter, { type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import AnalyticsAdapter, { type AnalyticsAdapterInstance, type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { prefixLog, isPlainObject } from '../src/utils.js';
 import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
@@ -91,9 +91,15 @@ const TYPES = {
 
 const MAX_CALL_DEPTH = 20;
 
-export function GenericAnalytics() {
+type GenericAnalyticsAdapter = AnalyticsAdapterInstance<'generic'> & {
+  gvlid: (config) => number | undefined;
+};
+
+type GenericAnalyticsConstructor = new () => GenericAnalyticsAdapter;
+
+export function GenericAnalytics(): GenericAnalyticsAdapter {
   if (!new.target) {
-    return new (GenericAnalytics as any)();
+    return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
   }
 
   const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
