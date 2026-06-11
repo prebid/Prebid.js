@@ -106,7 +106,7 @@ describe('Yahoo ConnectID Submodule', () => {
           expected: { connectId: 'foo' }
         },
         {
-          detail: 'local storage data if only it local storage data exists',
+          detail: 'local storage data if only local storage data exists',
           cookie: undefined,
           localStorage: JSON.stringify({ connectId: 'bar' }),
           expected: { connectId: 'bar' }
