@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 
 concurrency:
   group: test-${{ github.head_ref || github.ref }}
@@ -66,10 +67,18 @@ jobs:
           echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
           echo base-branch="$BASE_BRANCH" >> $GITHUB_OUTPUT
           echo base-commit="$BASE_COMMIT" >> $GITHUB_OUTPUT
-
+      - name: Save PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo ${{ github.event.pull_request.number }} > ${{ runner.temp }}/prNo
+      - name: Upload PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: prNo
+          path: ${{ runner.temp }}/prNo
       - name: Install dependencies
         uses: ./.github/actions/npm-ci
-
       - name: 'Save working directory'
         uses: ./.github/actions/save
         with:
@@ -110,23 +119,90 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
-  coveralls:
-    name: Update coveralls
-    needs: [checkout, test]
+  base-coverage-check:
+    name: Check for base branch coverage
+    needs: [checkout]
+    outputs:
+      needs-base-coverage: ${{ steps.restore.outputs.cache-hit != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore from cache
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/coverage.info
+          key: coverage-${{ needs.checkout.outputs.base-commit }}
+      - name: Rename restored file
+        if: ${{ steps.restore.outputs.cache-hit == 'true' }}
+        run: |
+          mv "${{ runner.temp }}/coverage.info" "base-coverage.info"
+      - name: Save as artifact
+        if: ${{ steps.restore.outputs.cache-hit == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: base-coverage.info
+          path: base-coverage.info
+      - name: Checkout
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.checkout.outputs.base-commit }}
+      - name: Install dependencies
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/npm-ci
+      - name: 'Save working directory'
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/save
+        with:
+          name: base-branch-source
+  base-coverage-compute:
+    name: Compute base branch coverage
+    needs: [base-coverage-check]
+    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
+    uses: ./.github/workflows/browser-tests.yml
+    with:
+      source-key: base-branch-source
+      coverage-only: true
+  base-coverage-combine:
+    name: Combine base branch coverage
+    needs: [checkout, base-coverage-check, base-coverage-compute]
+    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Restore source
-        uses: ./.github/actions/load
+      - name: Combine coverage results
+        uses: ./.github/actions/combine-coverage
         with:
-          name: ${{ needs.test.outputs.coverage }}
-
-      - name: Coveralls
-        uses: coverallsapp/github-action@v2
+          source-artifact: ${{ needs.base-coverage-compute.outputs.coverage }}
+          lcov: base-coverage.info
+          cache-key: coverage-${{needs.checkout.outputs.base-commit}}
+  coverage:
+    name: Coverage
+    needs: [checkout, test, base-coverage-combine]
+    if: always() && needs.test.result == 'success' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-combine.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Combine coverage results
+        uses: ./.github/actions/combine-coverage
         with:
-          git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
-          git-commit: ${{ needs.checkout.outputs.commit }}
-          compare-ref: ${{ needs.checkout.outputs.base-branch }}
-          compare-sha: ${{ needs.checkout.outputs.base-commit }}
+          source-artifact: ${{ needs.test.outputs.coverage }}
+          lcov: coverage.info
+          cache-key: coverage-${{needs.checkout.outputs.commit}}
+      - name: Fetch base branch coverage
+        uses: actions/download-artifact@v8
+        with:
+          path: "."
+          name: "base-coverage.info"
+      - name: Generate coverage annotations
+        uses: barecheck/code-coverage-action@v1
+        with:
+          github-token: ${{ github.token }}
+          lcov-file: "coverage.info"
+          base-lcov-file: "base-coverage.info"
+          minimum-ratio: 0
+          send-summary-comment: false
+          show-annotations: "warning"
+

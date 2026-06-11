@@ -31,7 +31,9 @@ declare module '../src/adUnits' {
     [BIDDER_CODE]: MileBidParams;
   }
 }
-
+export const dep = {
+  ajax
+};
 export let siteIdTracker : string | undefined;
 export let publisherIdTracker : string | undefined;
 
@@ -39,12 +41,12 @@ export function getLowestFloorPrice(bid) {
   let floorPrice: number;
 
   if (typeof bid.getFloor === 'function') {
-    let sizes = []
+    let sizes = [];
     // Get floor prices for each banner size in the bid request
     if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-      sizes = deepAccess(bid, 'mediaTypes.banner.sizes')
+      sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     } else if (bid.sizes) {
-      sizes = bid.sizes
+      sizes = bid.sizes;
     }
 
     sizes.forEach((size: string | number[]) => {
@@ -59,10 +61,10 @@ export function getLowestFloorPrice(bid) {
       }
     });
   } else {
-    floorPrice = 0
+    floorPrice = 0;
   }
 
-  return floorPrice
+  return floorPrice;
 }
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
@@ -394,12 +396,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       yetiPublisherID: deepAccess(bid, 'meta.publisherID') || '',
       page: deepAccess(bid, 'meta.page') || '',
       site: deepAccess(bid, 'meta.domain') || '',
-    }
+    };
 
-    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
+    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify([winNotificationData]), { method: 'POST' });
 
-    // @ts-expect-error - bid.nurl is not defined
-    if (bid.nurl) ajax(bid.nurl, null, null, { method: 'GET' });
+    if ((bid as any).nurl) dep.ajax((bid as any).nurl, null, null, { method: 'GET' });
   },
 
   /**
@@ -430,7 +431,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       timedOutBids.push(timeoutNotificationData);
     });
 
-    ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' });
+    dep.ajax(MILE_ANALYTICS_ENDPOINT, null, JSON.stringify(timedOutBids), { method: 'POST' });
   },
 };
 

@@ -26,6 +26,8 @@ const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const babelConfig = require('./babelConfig.js')(getDefaults({distUrlBase, disableFeatures, dev}));
     return function () {
+      const sourceRoot = path.resolve('.');
+      const relativeSourceRoot = path.relative(helpers.getPrecompiledPath(), sourceRoot);
       return gulp.src(helpers.getSourcePatterns(), {
         base: '.',
         since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
@@ -33,7 +35,8 @@ const babelPrecomp = _.memoize(
       })
         .pipe(babel(babelConfig))
         .pipe(tap(file => {
-          file.sourceMap.sources = file.sourceMap.sources.map(source => path.relative(path.dirname(helpers.getPrecompiledPath(source)), path.resolve('.', source)))
+          file.sourceMap.file = file.basename;
+          file.sourceMap.sourceRoot = path.join(relativeSourceRoot, path.relative(file.dirname, sourceRoot))
         }))
         .pipe(gulp.dest(helpers.getPrecompiledPath(), {
           sourcemaps: '.'
@@ -52,6 +55,7 @@ function generateMetadataModules() {
   function cleanMetadata(file) {
     const data = JSON.parse(file.contents.toString())
     delete data.NOTICE;
+    delete data.purposes; // directly included in adapter source
     data.components.forEach(component => {
       delete component.gvlid;
       if (component.aliasOf == null) {
@@ -226,13 +230,16 @@ function precompile(options = {}) {
       generateCoreSummary,
       generateModuleSummary,
       generateGlobalDef(options),
-    ])
-  ]);
+    ]),
+  ].concat(options.dev ? [] : [
+    'ts-strict'
+  ]));
 }
 
 
 gulp.task('ts', helpers.execaTask('tsc'));
-gulp.task('ts-dev', helpers.execaTask('tsc --incremental'))
+gulp.task('ts-dev', helpers.execaTask('tsc --incremental'));
+gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());

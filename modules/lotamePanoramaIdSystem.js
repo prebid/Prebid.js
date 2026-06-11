@@ -23,6 +23,8 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./lotamePanoramaIdSystem.d.ts').LotamePanoramaIdSystemModuleName} LotamePanoramaIdSystemModuleName
  */
 
 const KEY_ID = 'panoramaId';
@@ -219,7 +221,7 @@ function checkConfigHasErrorsAndReport(config) {
   }
   return error;
 }
-/** @type {Submodule} */
+/** @type {IdProviderSpec<LotamePanoramaIdSystemModuleName>} */
 export const lotamePanoramaIdSubmodule = {
   /**
    * used to link submodule with config
@@ -290,7 +292,7 @@ export const lotamePanoramaIdSubmodule = {
         return ID_HOST_COOKIELESS;
       }
       return ID_HOST;
-    }
+    };
 
     const resolveIdFunction = function (callback) {
       const queryParams = {};

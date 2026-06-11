@@ -97,7 +97,7 @@ describe('AdvRed Analytics Adapter', function () {
 
   describe('pageUrl detection', function () {
     afterEach(function () {
-      advRedAnalytics.disableAnalytics()
+      advRedAnalytics.disableAnalytics();
     });
     it('check pageUrl property', function () {
       advRedAnalytics.enableAnalytics({

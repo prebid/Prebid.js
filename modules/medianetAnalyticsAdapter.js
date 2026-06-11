@@ -65,6 +65,7 @@ import {
   WINNING_BID_ABSENT_ERROR, ERROR_IWB_BID_MISSING, POST_ENDPOINT_RA
 } from '../libraries/medianetUtils/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 // General Constants
 const ADAPTER_CODE = 'medianetAnalytics';
@@ -109,7 +110,7 @@ function fetchAnalyticsConfig() {
     return `${CONFIG_URL}?${(formatQS({
       cid: mnetGlobals.configuration.cid,
       dn: mnetGlobals.refererInfo.domain
-    }))}`
+    }))}`;
   }
 
   // Debugging and default settings
@@ -278,7 +279,7 @@ function getDummyBids(auctionObj, adUnitCode, receivedResponse) {
 
   auctionObj.bidsRequested
     .forEach((bid) => {
-      if (bid.adUnitCode !== adUnitCode) return
+      if (bid.adUnitCode !== adUnitCode) return;
       const emptySizes = bid.sizes.filter(
         (size) => !deepAccess(receivedResponse, `${bid.bidId}.${size}`)
       );
@@ -359,7 +360,7 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
     if (fromSameAuction && !winningBidObj) {
       errorLogger(ERROR_IWB_BID_MISSING, pick(winner, ['adId', 'auctionId', 'bidder', 'requestId', 'cpm', 'adUnitCode'])).send();
     }
-  }
+  };
 
   Object.keys(auctionObj.adSlots).forEach((adUnitCode) => {
     const winner = getGlobal().getHighestCpmBids(adUnitCode)[0];
@@ -549,10 +550,9 @@ function setupSlotResponseReceivedListener() {
         mnetGlobals.infoByAdIdMap[adId] = mnetGlobals.infoByAdIdMap[adId] || {};
         mnetGlobals.infoByAdIdMap[adId].srrEvt = slotInf;
       };
-
-      slot.getTargetingKeys()
+      getSlotTargetingKeys(slot)
         .filter((key) => key.startsWith(TARGETING_KEYS.AD_ID))
-        .forEach((key) => setSlotResponseInf(slot.getTargeting(key)[0]));
+        .forEach((key) => setSlotResponseInf(getSlotTargeting(slot, key)[0]));
     });
   });
 }

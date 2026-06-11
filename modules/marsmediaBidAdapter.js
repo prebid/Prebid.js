@@ -70,7 +70,7 @@ function MarsmediaAdapter() {
       domain: '',
       page: '',
       ref: ''
-    }
+    };
     if (bidderRequest && bidderRequest.refererInfo) {
       var ri = bidderRequest.refererInfo;
       // TODO: is 'ref' the right value here?
@@ -95,14 +95,13 @@ function MarsmediaAdapter() {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
       dnt: getDNT() ? 1 : 0,
-    }
+    };
   }
 
   function getValidSizeSet(dimensionList) {
     const w = parseInt(dimensionList[0]);
     const h = parseInt(dimensionList[1]);
-    // clever check for NaN
-    if (! (w !== w || h !== h)) {  // eslint-disable-line
+    if (!Number.isNaN(w) && !Number.isNaN(h)) {
       return [w, h];
     }
     return false;
@@ -143,7 +142,7 @@ function MarsmediaAdapter() {
       if (isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
-      var validSize = getValidSizeSet(dimensionSet)
+      var validSize = getValidSizeSet(dimensionSet);
       if (validSize) {
         size = validSize;
       }
@@ -158,7 +157,7 @@ function MarsmediaAdapter() {
       playbackmethod: deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
       delivery: deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
       api: deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
-    }
+    };
   }
 
   function frameExt(bid) {
@@ -180,14 +179,14 @@ function MarsmediaAdapter() {
           zoneId: bid.params['zoneId']
         },
         viewability: viewabilityAmountRounded
-      }
+      };
     } else {
       return {
         bidder: {
           zoneId: bid.params['zoneId']
         },
         viewability: 'na'
-      }
+      };
     }
   }
 
@@ -215,10 +214,10 @@ function MarsmediaAdapter() {
       deepSetValue(bid, 'source.ext.schain', schain);
     }
     if (bidderRequest.uspConsent) {
-      deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     if (config.getConfig('coppa') === true) {
-      deepSetValue(bid, 'regs.coppa', config.getConfig('coppa') & 1)
+      deepSetValue(bid, 'regs.coppa', config.getConfig('coppa') & 1);
     }
 
     return bid;
@@ -265,15 +264,15 @@ function MarsmediaAdapter() {
       );
       triggerPixel(bid.nurl, null);
     };
-    sendbeacon(bid, 17)
+    sendbeacon(bid, 17);
   };
 
   this.onTimeout = function (bid) {
-    sendbeacon(bid, 19)
+    sendbeacon(bid, 19);
   };
 
   this.onSetTargeting = function (bid) {
-    sendbeacon(bid, 20)
+    sendbeacon(bid, 20);
   };
 
   this.interpretResponse = function (serverResponse) {

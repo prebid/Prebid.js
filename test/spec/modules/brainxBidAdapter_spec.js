@@ -1,9 +1,8 @@
 // import or require modules necessary for the test, e.g.:
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import { spec } from 'modules/brainxBidAdapter.js';
-import utils, { deepClone } from '../../../src/utils.js';
 // import adapter from 'src/adapters/<adapter>';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { BANNER } from 'src/mediaTypes.js';
 
 describe('Brain-X Aapater', function () {
   describe('isBidRequestValid', function () {
@@ -24,7 +23,7 @@ describe('Brain-X Aapater', function () {
         params: { pubId: 'F7B53DBC-85C1-4685-9A06-9CF4B6261FA3', endpoint: 'http://adx-engine-gray.tec-do.cn/bid' }
       })).to.be.false;
     });
-  })
+  });
 
   // describe('isBidRequestValid', function () {
   //   it('Test the banner request processing function', function () {
@@ -110,7 +109,7 @@ describe('Brain-X Aapater', function () {
 
       expect(bidResponse.mediaType).to.equal(BANNER);
       expect(bidResponse.requestId).to.equal(bid.impid);
-      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2))
+      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2));
       expect(bidResponse.currency).to.equal(serverResponse.body.cur);
       expect(bidResponse.creativeId).to.equal(bid.crid || bid.id);
       expect(bidResponse.netRevenue).to.be.true;

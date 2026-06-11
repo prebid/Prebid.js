@@ -85,7 +85,7 @@ describe('BidfuseBidAdapter', function () {
     params: {
 
     }
-  }
+  };
 
   const bidderRequest = {
     uspConsent: '1---',
@@ -329,7 +329,7 @@ describe('BidfuseBidAdapter', function () {
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
       const result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent, uspConsent, gppConsent);
 
@@ -354,7 +354,7 @@ describe('BidfuseBidAdapter', function () {
       expect(data).to.have.property('gpp_sid');
 
       delete bidderRequest.gppConsent;
-    })
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
       bidderRequest.ortb2 = bidderRequest.ortb2 || {};
@@ -367,7 +367,7 @@ describe('BidfuseBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -467,7 +467,7 @@ describe('BidfuseBidAdapter', function () {
 
       const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');

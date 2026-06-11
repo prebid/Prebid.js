@@ -6,7 +6,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./illuminBidAdapterTypes.d.ts').IlluminBidRequestParams} IlluminBidRequestParams
+ * @typedef {import('./illuminBidAdapter.d.ts').IlluminBidRequestParams} IlluminBidRequestParams
  */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';

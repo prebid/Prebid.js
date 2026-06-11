@@ -1,14 +1,13 @@
 import {
   weboramaSubmodule
+  ,
+  storage,
+  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
 } from 'modules/weboramaRtdProvider.js';
 import {
   server
 } from 'test/mocks/xhr.js';
-import {
-  storage,
-  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
-  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
-} from '../../../modules/weboramaRtdProvider.js';
 
 import 'src/prebid.js';
 
@@ -69,7 +68,7 @@ describe('weboramaRtdProvider', function() {
           gdpr: {
             gdprApplies: false,
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
       it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
@@ -112,7 +111,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
@@ -155,7 +154,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function() {
@@ -198,7 +197,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
@@ -226,7 +225,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss one purpose id', function() {
@@ -254,7 +253,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
     });
@@ -352,7 +351,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -439,7 +438,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -526,7 +525,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -661,7 +660,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder === 'appnexus'
+            return bid.bidder === 'appnexus';
           },
         };
 
@@ -768,7 +767,7 @@ describe('weboramaRtdProvider', function() {
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
             expect(onDataResponse).to.deep.equal({
               data: data,
               meta: {
@@ -1035,7 +1034,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -1178,7 +1177,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -1307,7 +1306,7 @@ describe('weboramaRtdProvider', function() {
               bidder: 'other',
             }]
           }]
-        }
+        };
         const onDoneSpy = sinon.spy();
 
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
@@ -1353,7 +1352,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of api error', function() {
@@ -1433,7 +1432,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -1559,7 +1558,7 @@ describe('weboramaRtdProvider', function() {
               }
             });
 
-            return
+            return;
           }
 
           expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
@@ -1569,7 +1568,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
@@ -1666,7 +1665,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -1692,7 +1691,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder === 'appnexus'
+            return bid.bidder === 'appnexus';
           },
         };
 
@@ -1795,11 +1794,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
             expect(onDataResponse).to.deep.equal({
               data: data,
               meta: {
@@ -1920,11 +1919,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
 
             expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
@@ -2082,7 +2081,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -2227,7 +2226,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -2403,7 +2402,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -2470,7 +2469,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of something malformed on local storage', function() {
@@ -2546,7 +2545,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile if cant read from local storage', function() {
@@ -2620,7 +2619,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -2748,7 +2747,7 @@ describe('weboramaRtdProvider', function() {
               }
             });
 
-            return
+            return;
           }
 
           expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
@@ -2758,7 +2757,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -2848,7 +2847,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -2874,7 +2873,7 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder === 'appnexus'
+            return bid.bidder === 'appnexus';
           },
         };
 
@@ -2976,11 +2975,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -3105,11 +3104,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -3263,7 +3262,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -3407,7 +3406,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -3585,7 +3584,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -3651,7 +3650,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile if cant read from local storage', function() {
@@ -3731,7 +3730,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -3811,7 +3810,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -3937,7 +3936,7 @@ describe('weboramaRtdProvider', function() {
               }
             });
 
-            return
+            return;
           }
 
           expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
@@ -3947,7 +3946,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
 
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           lite_occupation: ['gérant', 'bénévole'],

@@ -4,6 +4,15 @@ import type { Bid } from "./bidfactory.ts";
 import type { MediaTypes } from "./mediaTypes.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 
+/**
+ * Configuration for the creative SafeRenderer (iframe script URL + optional config, resolved at render time).
+ */
+export interface SafeRendererConfig {
+  url: string;
+  config?: any; // set by the bidder adapter
+  getConfig?(bidResponse: Bid): any; // set by the publisher
+}
+
 export interface RendererConfig {
   /**
    * URL to the renderer script that will be loaded before invoking `render`.
@@ -120,6 +129,11 @@ export interface AdUnitDefinition {
    * @deprecated - use mediaType specific size parameters instead.
    */
   sizes?: Size | Size[];
+
+  /**
+   * Safe iframe renderer: script URL and optional publisher config for `pbRenderInFrame`.
+   */
+  safeRenderer?: SafeRendererConfig;
 }
 
 /**
@@ -144,14 +158,14 @@ const AUCTIONS = 'auctions';
 
 let adUnits = {};
 export function reset() {
-  adUnits = {}
+  adUnits = {};
 }
 
 function ensureAdUnit(adunit, bidderCode?) {
   const adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
   if (bidderCode) {
-    adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
-    return adUnit.bidders[bidderCode]
+    adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {};
+    return adUnit.bidders[bidderCode];
   }
   return adUnit;
 }
@@ -165,13 +179,13 @@ function incrementer<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): C
     const counters = ensureAdUnit(adUnit, byBidder && bidder);
     counters[counter] = (counters[counter] ?? 0) + 1;
     return counters[counter];
-  }
+  };
 }
 
 function getter<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): Counter<BY_BIDDER> {
   return function (adUnit, bidder?) {
     return ensureAdUnit(adUnit, byBidder && bidder)[counter] ?? 0;
-  }
+  };
 }
 
 /**
@@ -202,7 +216,7 @@ export const getRequestsCounter = getter(REQUESTS, false);
 /**
  * Returns current Adunit requests counter for a specific bidder code
  */
-export const getBidderRequestsCounter = getter(REQUESTS, true)
+export const getBidderRequestsCounter = getter(REQUESTS, true);
 
 /**
  * Returns current Adunit requests counter for a specific bidder code

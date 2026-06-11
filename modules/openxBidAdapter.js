@@ -56,7 +56,7 @@ const converter = ortbConverter({
         bc: `${bidderConfig}_${bidderVersion}`,
         pv: '$prebid.version$'
       }
-    })
+    });
     const bid = context.bidRequests[0];
     if (bid.params.coppa) {
       utils.deepSetValue(req, 'regs.coppa', 1);
@@ -72,7 +72,7 @@ const converter = ortbConverter({
       utils.deepSetValue(req, 'ext.response_template_name', bid.params.response_template_name);
     }
     if (bid.params.test) {
-      req.test = 1
+      req.test = 1;
     }
     return req;
   },
@@ -117,7 +117,7 @@ const converter = ortbConverter({
           let videoParams = bidRequest.mediaTypes[VIDEO];
           if (videoParams) {
             videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
+            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } };
           }
           orig(imp, bidRequest, context);
         }
@@ -181,12 +181,12 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsen
     if (responses.length > 0 && responses[0].body && responses[0].body.ext) {
       const ext = responses[0].body.ext;
       if (ext.delDomain) {
-        syncUrl = `https://${ext.delDomain}/w/1.0/pd`
+        syncUrl = `https://${ext.delDomain}/w/1.0/pd`;
       } else if (ext.platform) {
-        queryParamStrings.push('ph=' + ext.platform)
+        queryParamStrings.push('ph=' + ext.platform);
       }
     } else {
-      queryParamStrings.push('ph=' + DEFAULT_PH)
+      queryParamStrings.push('ph=' + DEFAULT_PH);
     }
     return [{
       type: pixelType,

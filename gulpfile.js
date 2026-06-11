@@ -509,8 +509,8 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), makeWebpackPkg(makeV
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
-gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'))
-gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})))
+gulp.task('test-build-logic', execaTask('npx mocha ./test/build-logic'));
+gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverage ?? true})));
 gulp.task('test-only', gulp.series('test-build-logic', 'precompile', test));
 
 gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
@@ -523,8 +523,8 @@ gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
 gulp.task('update-codeql', function (done) {
   import('./fingerprintApis.mjs').then(({updateQueries}) => {
     updateQueries().then(() => done(), done);
-  })
-})
+  });
+});
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
@@ -532,7 +532,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
 gulp.task('build-release', gulp.series('update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
 // prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
-gulp.task('prepare-release', gulp.series('build', 'setup-npmignore'))
+gulp.task('prepare-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
@@ -546,7 +546,7 @@ gulp.task('default', gulp.series('build'));
 
 gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
 gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
-gulp.task('e2e-test-nobuild', gulp.series(requireNodeVersion(16), e2eTestTaskMaker()))
+gulp.task('e2e-test-nobuild', gulp.series(requireNodeVersion(16), e2eTestTaskMaker()));
 
 // other tasks
 gulp.task(bundleToStdout);
@@ -561,16 +561,16 @@ gulp.task('extract-metadata', function (done) {
   const server = startLocalServer();
   import('./metadata/extractMetadata.mjs').then(({default: extract}) => {
     extract().then(metadata => {
-      fs.writeFileSync('./metadata/modules.json', JSON.stringify(metadata, null, 2))
+      fs.writeFileSync('./metadata/modules.json', JSON.stringify(metadata, null, 2));
     }).finally(() => {
-      server.close()
+      server.close();
     }).then(() => done(), done);
   });
-})
+});
 gulp.task('compile-metadata', function (done) {
   import('./metadata/compileMetadata.mjs').then(({default: compile}) => {
-    compile().then(() => done(), done);
-  })
-})
+    compile(argv.fetch ?? true).then(() => done(), done);
+  });
+});
 gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));
 module.exports = nodeBundle;

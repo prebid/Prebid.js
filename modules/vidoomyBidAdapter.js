@@ -107,7 +107,7 @@ const isBidResponseValid = bid => {
     default:
       return false;
   }
-}
+};
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
@@ -198,9 +198,9 @@ const render = (bid) => {
     autoPlay: true,
     preload: true,
     mute: true,
-  }
+  };
   window.outstreamPlayer(bid, bid.adUnitCode, obj);
-}
+};
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {

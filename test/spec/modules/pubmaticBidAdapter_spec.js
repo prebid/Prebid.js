@@ -91,7 +91,7 @@ describe('PubMatic adapter', () => {
         }
       }
     }
-  }
+  };
   firstAliasBid = {
     adUnitCode: 'Div1',
     bidder: PUBMATIC_ALIAS_BIDDER,
@@ -174,7 +174,7 @@ describe('PubMatic adapter', () => {
         }
       }
     }
-  }
+  };
   videoBid = {
     'seat': 'seat-id',
     'ext': {
@@ -233,7 +233,7 @@ describe('PubMatic adapter', () => {
       id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
       seatbid: [videoBid]
     }
-  }
+  };
   const validBidRequests = [firstBid];
   const validAliasBidRequests = [firstAliasBid];
   const bidderRequest = {
@@ -337,9 +337,9 @@ describe('PubMatic adapter', () => {
             skippable: false,
             skip: 1,
             linearity: 2
-          }
+          };
           videoBidRequest.params.outstreamAU = 'outstreamAU';
-          videoBidRequest.params.renderer = 'renderer_test_pubmatic'
+          videoBidRequest.params.renderer = 'renderer_test_pubmatic';
         });
         it('should return false if mimes are missing in a video impression request', () => {
           const isValid = spec.isBidRequestValid(videoBidRequest);
@@ -350,7 +350,7 @@ describe('PubMatic adapter', () => {
           delete videoBidRequest.mediaTypes.context;
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(false);
-        })
+        });
 
         it('should return true if banner/native present, but outstreamAU or renderer is missing', () => {
           videoBidRequest.mediaTypes.video.mimes = ['video/flv'];
@@ -585,14 +585,14 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
 
-      xit('should include custom targeting data in imp.ext when provided by RTD', () => {
+      it('should include custom targeting data in imp.ext when provided by RTD', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('ext');
         expect(imp[0].ext).to.have.property('key_val');
         expect(imp[0].ext.key_val).to.deep.equal('im_segments=segment1,segment2|jw-id=jwplayer-content-id|jw-jwplayer-segment-1=1|jw-jwplayer-segment-2=1');
-      })
+      });
 
       if (FEATURES.VIDEO) {
         describe('VIDEO', () => {
@@ -617,15 +617,15 @@ describe('PubMatic adapter', () => {
               minbitrate: 10,
               maxbitrate: 10,
               playerSize: [640, 480]
-            }
+            };
             videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
-            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic'
+            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
             videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
           afterEach(() => {
             utilsLogWarnMock.restore();
-          })
+          });
 
           it('should generate request with mediatype video', () => {
             const request = spec.buildRequests(validBidRequests, videoBidderRequest);
@@ -703,12 +703,12 @@ describe('PubMatic adapter', () => {
               sponsoredBy: {
                 required: true
               }
-            }
+            };
           });
 
           afterEach(() => {
             utilsLogWarnMock.restore();
-          })
+          });
 
           it('should generate request with mediatype native', () => {
             const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
@@ -815,7 +815,7 @@ describe('PubMatic adapter', () => {
           expect(result).to.have.property('ias-brand-safety');
           expect(result['ias-brand-safety']).to.deep.equal('content=news|sports=cricket|cricket=player');
         });
-      })
+      });
     });
 
     describe('rest of ORTB request', () => {
@@ -1080,7 +1080,7 @@ describe('PubMatic adapter', () => {
           copiedBidderRequest.ortb2.site.ext = {
             id: 'site-id',
             name: 'site-name',
-          }
+          };
           copiedBidderRequest.ortb2.badv = ['example.com'];
         });
 
@@ -1130,7 +1130,7 @@ describe('PubMatic adapter', () => {
             ext: {
               consent: 'kjfdniwjnifwenrif3'
             }
-          }
+          };
         });
 
         it('should have GDPR string', () => {
@@ -1147,7 +1147,7 @@ describe('PubMatic adapter', () => {
           copiedBidderRequest.ortb2.regs = {
             gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
             gpp_sid: [5]
-          }
+          };
           const request = spec.buildRequests(validBidRequests, copiedBidderRequest);
           expect(request.data).to.have.property('regs');
           expect(request.data.regs).to.have.property('gpp').to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
@@ -1513,7 +1513,7 @@ describe('PubMatic adapter', () => {
             minbitrate: 10,
             maxbitrate: 10,
             playerSize: [640, 480]
-          }
+          };
           videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
           videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
           videoBidderRequest.bids[0].adUnitCode = 'Div1';
@@ -1636,7 +1636,7 @@ describe('PubMatic adapter', () => {
         });
       });
     });
-  })
+  });
 
   it('should add userIdAsEids to user.ext.eids when present in bidRequest', () => {
     const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
@@ -1852,7 +1852,7 @@ describe('PubMatic adapter', () => {
     // The impression-level bidfloor should match the banner floor (2.5)
     expect(builtImp.bidfloor).to.equal(2.5);
   });
-})
+});
 
 describe('addViewabilityToImp', () => {
   let imp;

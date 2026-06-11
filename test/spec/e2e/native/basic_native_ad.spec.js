@@ -13,7 +13,7 @@ const EXPECTED_TARGETING_KEYS = {
   hb_bidder: 'appnexus',
   hb_format_appnexus: 'native',
   hb_size_appnexus: '0x0'
-}
+};
 
 setupTest({
   url: TEST_PAGE_URL,
@@ -29,4 +29,4 @@ setupTest({
     const targetingKeys = result['/19968336/prebid_native_example_2'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
   });
-})
+});

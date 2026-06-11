@@ -14,9 +14,9 @@ export function getStorageDisclosureSummary(moduleNames, getModuleMetadata) {
           disclosedIn: url,
           disclosedBy: [moduleName],
           ...identifier
-        }))
+        }));
       }
-    })
+    });
   });
   return [].concat(...Object.values(summary));
 }

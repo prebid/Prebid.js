@@ -48,7 +48,7 @@ const ORTB_SITE_FIRST_PARTY_DATA = {
   'mobile': v => isInteger(),
   'content': v => typeof v === 'object',
   'keywords': v => typeof v === 'string',
-}
+};
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -102,7 +102,7 @@ function buildBanner(bidRequest) {
   return {
     format,
     pos,
-  }
+  };
 }
 
 function buildVideo(bidRequest) {
@@ -150,9 +150,9 @@ function buildVideo(bidRequest) {
     h,
     ...optionalParams,
     ...videoBidderParams // bidder specific overrides for video
-  }
+  };
 
-  return videoObj
+  return videoObj;
 }
 
 function buildImpression(bidRequest) {
@@ -167,7 +167,7 @@ function buildImpression(bidRequest) {
         adUnitId: bidRequest.params.adUnitId,
       },
     },
-  }
+  };
 
   if (bidRequest?.params?.adUnitId) {
     deepSetValue(imp, 'ext.prebid.bidder.insticator.adUnitId', bidRequest.params.adUnitId);
@@ -182,7 +182,7 @@ function buildImpression(bidRequest) {
   if (!isNaN(bidFloor)) {
     imp.bidfloor = deepAccess(bidRequest, 'params.floor');
     imp.bidfloorcur = 'USD';
-    const bidfloorcur = deepAccess(bidRequest, 'params.bidfloorcur')
+    const bidfloorcur = deepAccess(bidRequest, 'params.bidfloorcur');
     if (bidfloorcur && bidfloorcur !== 'USD') {
       delete imp.bidfloor;
       delete imp.bidfloorcur;
@@ -246,7 +246,7 @@ function buildImpression(bidRequest) {
 
 function buildDevice(bidRequest) {
   const ortb2Data = bidRequest?.ortb2 || {};
-  const deviceConfig = ortb2Data?.device || {}
+  const deviceConfig = ortb2Data?.device || {};
 
   const device = {
     w: getWinDimensions().innerWidth,
@@ -276,14 +276,14 @@ function _getCoppa(bidderRequest) {
 }
 
 function _getGppConsent(bidderRequest) {
-  let gpp = deepAccess(bidderRequest, 'gppConsent.gppString')
-  let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections')
+  let gpp = deepAccess(bidderRequest, 'gppConsent.gppString');
+  let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections');
 
   if (!gpp || !gppSid) {
-    gpp = deepAccess(bidderRequest, 'ortb2.regs.gpp', '')
-    gppSid = deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', [])
+    gpp = deepAccess(bidderRequest, 'ortb2.regs.gpp', '');
+    gppSid = deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []);
   }
-  return { gpp, gppSid }
+  return { gpp, gppSid };
 }
 
 function _getUspConsent(bidderRequest) {
@@ -315,7 +315,7 @@ function buildRegs(bidderRequest) {
 
   if (usp) {
     regs.ext.us_privacy = usp.uspConsent;
-    regs.ext.ccpa = usp.uspConsent
+    regs.ext.ccpa = usp.uspConsent;
   }
 
   const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
@@ -328,17 +328,17 @@ function buildRegs(bidderRequest) {
 
 function buildUser(bid) {
   const userId = getUserId() || generateUUID();
-  const yob = deepAccess(bid, 'params.user.yob')
-  const gender = deepAccess(bid, 'params.user.gender')
-  const keywords = deepAccess(bid, 'params.user.keywords')
-  const data = deepAccess(bid, 'params.user.data')
-  const ext = deepAccess(bid, 'params.user.ext')
+  const yob = deepAccess(bid, 'params.user.yob');
+  const gender = deepAccess(bid, 'params.user.gender');
+  const keywords = deepAccess(bid, 'params.user.keywords');
+  const data = deepAccess(bid, 'params.user.data');
+  const ext = deepAccess(bid, 'params.user.ext');
 
   setUserId(userId);
 
   const userData = {
     id: userId,
-  }
+  };
 
   if (yob) {
     userData.yob = yob;
@@ -360,7 +360,7 @@ function buildUser(bid) {
     userData.ext = ext;
   }
 
-  return userData
+  return userData;
 }
 
 function extractSchain(bids, requestId) {
@@ -454,14 +454,14 @@ function buildRequest(validBidRequests, bidderRequest) {
 function buildBid(bid, bidderRequest, seatbid) {
   const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
 
-  let meta = {}
+  let meta = {};
 
   if (bid.ext && bid.ext.meta) {
-    meta = bid.ext.meta
+    meta = bid.ext.meta;
   }
 
   if (bid.adomain) {
-    meta.advertiserDomains = bid.adomain
+    meta.advertiserDomains = bid.adomain;
   }
 
   // ORTB 2.6: Add category support
@@ -532,7 +532,7 @@ function buildBid(bid, bidderRequest, seatbid) {
   if (mediaType === 'video') {
     bidResponse.vastXml = bid.adm;
 
-    // ORTB 2.6: Add video duration for adpod support
+    // ORTB 2.6: Add video duration
     if (bid.dur && isInteger(bid.dur) && bid.dur > 0) {
       bidResponse.video = bidResponse.video || {};
       bidResponse.video.durationSeconds = bid.dur;
@@ -548,7 +548,7 @@ function buildBid(bid, bidderRequest, seatbid) {
     bidResponse.ext = {
       ...bidResponse.ext,
       dsa: bid.ext.dsa,
-    }
+    };
   }
 
   return bidResponse;
@@ -617,7 +617,7 @@ function validateVideo(bid) {
   const video = {
     ...videoParams,
     ...videoBidderParams // bidder specific overrides for video
-  }
+  };
 
   // Check if the video object is undefined
   if (videoParams === undefined) {

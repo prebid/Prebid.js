@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import * as dnt from 'libraries/dnt/index.js';
-import 'src/prebid.js'
+import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -104,7 +104,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
 
       describe('should return false when there is a host only', function () {
         beforeEach(function () {
-          bannerBid.params = { host: 'test-delivery-domain' }
+          bannerBid.params = { host: 'test-delivery-domain' };
         });
 
         it('should return false when there is no placementId and size', function () {
@@ -314,12 +314,12 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         multiformat.mediaTypes.video = {
           context: 'outstream',
           playerSize: [640, 480]
-        }
+        };
         const requests = spec.buildRequests([multiformat], mockBidderRequest);
         const outgoingFormats = requests.flatMap(rq => rq.data.imp.flatMap(imp => ['banner', 'video'].filter(k => imp[k] != null)));
-        const expected = FEATURES.VIDEO ? ['banner', 'video'] : ['banner']
+        const expected = FEATURES.VIDEO ? ['banner', 'video'] : ['banner'];
         expect(outgoingFormats).to.have.members(expected);
-      })
+      });
 
       it('should send bid request to trafficgate url via POST', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
@@ -363,7 +363,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
           beforeEach(function () {
             adServerCurrencyStub = sinon
               .stub(config, 'getConfig')
-              .withArgs('currency.adServerCurrency')
+              .withArgs('currency.adServerCurrency');
           });
 
           afterEach(function () {
@@ -378,7 +378,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                   return {
                     currency: 'USD',
                     floor: 9.99
-                  }
+                  };
                 }
               }
             );
@@ -397,17 +397,17 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                   return {
                     currency: 'BTC',
                     floor: 9.99
-                  }
+                  };
                 }
               }
             );
 
             const request = spec.buildRequests([bidRequest], mockBidderRequest);
-            expect(request[0].data.imp[0].bidfloor).to.equal(undefined)
-            expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined)
+            expect(request[0].data.imp[0].bidfloor).to.equal(undefined);
+            expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined);
           });
-        })
-      })
+        });
+      });
 
       describe('FPD', function() {
         let bidRequests;
@@ -844,7 +844,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         after(function () {
-          config.getConfig.restore()
+          config.getConfig.restore();
         });
       });
 
@@ -983,7 +983,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             auctionId: 'test-auction-1',
           }];
           // enrich bid request with userId key/value
-          mockBidderRequest.ortb2 = { user: { ext: { eids: userIdAsEids } } }
+          mockBidderRequest.ortb2 = { user: { ext: { eids: userIdAsEids } } };
           const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
           expect(request[0].data.user.ext.eids).to.eql(userIdAsEids);
         });
@@ -1345,7 +1345,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
 
         it('should return the proper mediaType', function () {
           const winUrl = 'https//my.win.url';
-          bidResponse.seatbid[0].bid[0].nurl = winUrl
+          bidResponse.seatbid[0].bid[0].nurl = winUrl;
           bid = spec.interpretResponse({ body: bidResponse }, bidRequest)[0];
 
           expect(bid.vastUrl).to.equal(winUrl);

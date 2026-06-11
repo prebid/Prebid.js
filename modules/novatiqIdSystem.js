@@ -103,7 +103,7 @@ export const novatiqIdSubmodule = {
       return {
         'id': novatiqId,
         'sharedStatus': sharedStatus
-      }
+      };
     }
   },
 
@@ -132,7 +132,7 @@ export const novatiqIdSubmodule = {
       ajax(url,
         { success: onSuccess },
         undefined, { method: 'GET', withCredentials: false });
-    }
+    };
 
     return { callback: resp };
   },
@@ -206,7 +206,7 @@ export const novatiqIdSubmodule = {
     return {
       url: url,
       novatiqId: novatiqId
-    }
+    };
   },
 
   getUrlParams(configParams) {
@@ -215,7 +215,7 @@ export const novatiqIdSubmodule = {
       useStandardUuid: false,
       useSspId: true,
       useSspHost: true
-    }
+    };
 
     if (typeof configParams.urlParams !== 'undefined') {
       if (configParams.urlParams.novatiqId !== undefined) {

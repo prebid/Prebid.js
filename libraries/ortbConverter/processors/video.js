@@ -16,7 +16,7 @@ export function fillVideoImp(imp, bidRequest, context) {
     if (videoParams.playerSize) {
       const format = sizesToSizeTuples(videoParams.playerSize).map(sizeTupleToRtbSize);
       if (format.length > 1) {
-        logWarn('video request specifies more than one playerSize; all but the first will be ignored')
+        logWarn('video request specifies more than one playerSize; all but the first will be ignored');
       }
       Object.assign(video, format[0]);
     }

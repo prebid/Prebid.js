@@ -23,44 +23,44 @@ function convertExtensionFields(request) {
   if (request.imp) {
     request.imp.forEach(imp => {
       if (imp.banner?.ext) {
-        moveExt(imp.banner, '[com.google.doubleclick.banner_ext]')
+        moveExt(imp.banner, '[com.google.doubleclick.banner_ext]');
       }
       if (imp.ext) {
-        moveExt(imp, '[com.google.doubleclick.imp]')
+        moveExt(imp, '[com.google.doubleclick.imp]');
       }
     });
   }
 
   if (request.app?.ext) {
-    moveExt(request.app, '[com.google.doubleclick.app]')
+    moveExt(request.app, '[com.google.doubleclick.app]');
   }
 
   if (request.site?.ext) {
-    moveExt(request.site, '[com.google.doubleclick.site]')
+    moveExt(request.site, '[com.google.doubleclick.site]');
   }
 
   if (request.site?.publisher?.ext) {
-    moveExt(request.site.publisher, '[com.google.doubleclick.publisher]')
+    moveExt(request.site.publisher, '[com.google.doubleclick.publisher]');
   }
 
   if (request.user?.ext) {
-    moveExt(request.user, '[com.google.doubleclick.user]')
+    moveExt(request.user, '[com.google.doubleclick.user]');
   }
 
   if (request.user?.data) {
     request.user.data.forEach(data => {
       if (data.ext) {
-        moveExt(data, '[com.google.doubleclick.data]')
+        moveExt(data, '[com.google.doubleclick.data]');
       }
     });
   }
 
   if (request.device?.ext) {
-    moveExt(request.device, '[com.google.doubleclick.device]')
+    moveExt(request.device, '[com.google.doubleclick.device]');
   }
 
   if (request.device?.geo?.ext) {
-    moveExt(request.device.geo, '[com.google.doubleclick.geo]')
+    moveExt(request.device.geo, '[com.google.doubleclick.geo]');
   }
 
   if (request.regs?.ext) {
@@ -68,15 +68,15 @@ function convertExtensionFields(request) {
       request.regs.ext.gdpr = request.regs.ext.gdpr === 1;
     }
 
-    moveExt(request.regs, '[com.google.doubleclick.regs]')
+    moveExt(request.regs, '[com.google.doubleclick.regs]');
   }
 
   if (request.source?.ext) {
-    moveExt(request.source, '[com.google.doubleclick.source]')
+    moveExt(request.source, '[com.google.doubleclick.source]');
   }
 
   if (request.ext) {
-    moveExt(request, '[com.google.doubleclick.bid_request]')
+    moveExt(request, '[com.google.doubleclick.bid_request]');
   }
 }
 
@@ -164,7 +164,7 @@ const converter = ortbConverter({
 
     return request;
   }
-})
+});
 
 /**
  * Validates supply chain object structure
@@ -221,7 +221,7 @@ export const spec = {
       options: {
         contentType: 'text/plain'
       },
-    }
+    };
   },
 
   /**
@@ -252,6 +252,6 @@ export const spec = {
     }
   }
 
-}
+};
 
 registerBidder(spec);

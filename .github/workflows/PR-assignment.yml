@@ -67,7 +67,7 @@ jobs:
             console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
       - name: Auto-label core PR
         if: ${{ fromJSON(steps.get-props.outputs.result).isCoreChange }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
