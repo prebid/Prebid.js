@@ -7,6 +7,7 @@ import {
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { expect } from 'chai';
+import { getGlobalVarName } from '../../../src/buildOptions.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Adagio Rtd Provider', function () {
@@ -719,7 +720,7 @@ describe('Adagio Rtd Provider', function () {
         bidderRequestsCount,
         organizationId: config.params.organizationId,
         site: config.params.site,
-        localPbjs: 'pbjs',
+        localPbjs: getGlobalVarName(),
         localPbjsRef: getGlobal()
       };
 
