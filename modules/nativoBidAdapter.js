@@ -1,27 +1,27 @@
-import { isEmpty, parseUrl, extractDomainFromHost, logWarn, deepAccess } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
-import { getGlobal } from '../src/prebidGlobal.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { isEmpty, parseUrl, extractDomainFromHost, logWarn, deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-const BIDDER_CODE = 'nativo'
-const BIDDER_ALIASES = ['ntv']
-const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/esi.json?ntv_epid=39'
+const BIDDER_CODE = 'nativo';
+const BIDDER_ALIASES = ['ntv'];
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/esi.json?ntv_epid=39';
 
-const GVLID = 263
+const GVLID = 263;
 
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 
-const localPbjsRef = getGlobal()
+const localPbjsRef = getGlobal();
 
-const adUnitsRequested = {}
-const extData = {}
-const responseCache = {}
+const adUnitsRequested = {};
+const extData = {};
+const responseCache = {};
 
 // Filtering
-const adsToFilter = new Set()
-const advertisersToFilter = new Set()
-const campaignsToFilter = new Set()
+const adsToFilter = new Set();
+const advertisersToFilter = new Set();
+const campaignsToFilter = new Set();
 
 const converter = ortbConverter({
   context: {
@@ -30,20 +30,20 @@ const converter = ortbConverter({
     ttl: 30, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
-    imp.tagid = bidRequest.adUnitCode
-    if (!imp.ext) imp.ext = {}
+    const imp = buildImp(bidRequest, context);
+    imp.tagid = bidRequest.adUnitCode;
+    if (!imp.ext) imp.ext = {};
     if (bidRequest?.params?.placementId !== undefined) {
-      imp.ext.placementId = bidRequest.params.placementId
+      imp.ext.placementId = bidRequest.params.placementId;
     }
 
-    return imp
+    return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context)
+    const request = buildRequest(imps, bidderRequest, context);
 
     // Add Nativo-specific extensions
-    if (!request.ext) request.ext = {}
+    if (!request.ext) request.ext = {};
     request.ext.nativo = {
       prebid: {
         version: localPbjsRef.version || '0.0.0'
@@ -54,23 +54,23 @@ const converter = ortbConverter({
         advertiserFilterIds: Array.from(advertisersToFilter),
         campaignFilterIds: Array.from(campaignsToFilter)
       }
-    }
+    };
 
-    return request
+    return request;
   }
-})
+});
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
 // Validity checks for optional parameters
 const validParameter = {
   placementId: (value) => {
-    const isString = typeof value === 'string'
-    const isNumber = typeof value === 'number'
-    return isString || isNumber
+    const isString = typeof value === 'string';
+    const isNumber = typeof value === 'number';
+    return isString || isNumber;
   },
   url: (value) => typeof value === 'string',
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -86,21 +86,21 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     // We don't need any specific parameters to make a bid request
-    if (!bid.params) return true
+    if (!bid.params) return true;
 
     // Check if any supplied parameters are invalid
     const hasInvalidParameters = Object.keys(bid.params).some((key) => {
-      const value = bid.params[key]
-      const validityCheck = validParameter[key]
+      const value = bid.params[key];
+      const validityCheck = validParameter[key];
 
       // We don't have a test for this so it's not a parameter we care about
-      if (!validityCheck) return false
+      if (!validityCheck) return false;
 
       // Return if the check is not passed
-      return !validityCheck(value)
-    })
+      return !validityCheck(value);
+    });
 
-    return !hasInvalidParameters
+    return !hasInvalidParameters;
   },
 
   /**
@@ -117,21 +117,21 @@ export const spec = {
       adUnitsRequested[bidRequest.adUnitCode] =
         adUnitsRequested[bidRequest.adUnitCode] !== undefined
           ? adUnitsRequested[bidRequest.adUnitCode] + 1
-          : 0
-    })
+          : 0;
+    });
 
     // Override site data in ortb2 if url parameter is provided
     // This ensures the ortbConverter uses the custom URL when building the request
-    const urlParam = validBidRequests.length > 0 ? validBidRequests[0]?.params?.url : null
+    const urlParam = validBidRequests.length > 0 ? validBidRequests[0]?.params?.url : null;
     if (urlParam && typeof urlParam === 'string') {
       // Clone bidderRequest to avoid mutating the original
-      bidderRequest = { ...bidderRequest }
-      bidderRequest.ortb2 = { ...(bidderRequest.ortb2 || {}) }
+      bidderRequest = { ...bidderRequest };
+      bidderRequest.ortb2 = { ...(bidderRequest.ortb2 || {}) };
 
-      const existingSite = bidderRequest.ortb2.site || {}
-      const siteData = buildSite(urlParam, existingSite)
+      const existingSite = bidderRequest.ortb2.site || {};
+      const siteData = buildSite(urlParam, existingSite);
       if (siteData) {
-        bidderRequest.ortb2.site = siteData
+        bidderRequest.ortb2.site = siteData;
       }
     }
 
@@ -139,16 +139,16 @@ export const spec = {
     const openRTBData = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
-    })
+    });
 
     const serverRequest = {
       method: 'POST',
       url: BIDDER_ENDPOINT,
       data: openRTBData,
       bidderRequest: bidderRequest,
-    }
+    };
 
-    return serverRequest
+    return serverRequest;
   },
 
   /**
@@ -162,45 +162,44 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     // If the bid response was empty, return []
-    if (!response || !response.body || isEmpty(response.body)) return []
+    if (!response || !response.body || isEmpty(response.body)) return [];
 
     try {
       // Normalize the response body
       const body = typeof response.body === 'string'
         ? JSON.parse(response.body)
-        : response.body
+        : response.body;
 
       // Cache response data temporarily for onBidWon to retrieve
       // Store by both bid.id and bid.impid to handle different converter mappings
       body.seatbid?.forEach(seatbid => {
         seatbid.bid?.forEach(bid => {
-          if(!bid.mtype) bid.mtype = inferMediaType(bid)
+          if (!bid.mtype) bid.mtype = inferMediaType(bid);
 
           if (bid.ext) {
             // Store by bid.id (UUID) if present
             if (bid.id) {
-              responseCache[bid.id] = bid.ext
+              responseCache[bid.id] = bid.ext;
             }
             // Store by bid.impid (maps to Prebid requestId) if present
             if (bid.impid) {
-              responseCache[bid.impid] = bid.ext
+              responseCache[bid.impid] = bid.ext;
             }
           }
-        })
-      })
+        });
+      });
 
-      
       // Use ortbConverter to parse the response
       const converted = converter.fromORTB({
         response: body,
         request: request.data
-      })
-      const bids = converted.bids
-      return bids
+      });
+      const bids = converted.bids;
+      return bids;
     } catch (error) {
       // If there is an error, return []
-      logWarn('[Nativo] Error parsing bid response:', error)
-      return []
+      logWarn('[Nativo] Error parsing bid response:', error);
+      return [];
     }
   },
 
@@ -223,19 +222,19 @@ export const spec = {
     gppConsent
   ) {
     // Generate consent qs string
-    let params = ''
+    let params = '';
     // GDPR
     if (gdprConsent) {
       params = appendQSParamString(
         params,
         'gdpr',
         gdprConsent.gdprApplies ? 1 : 0
-      )
+      );
       params = appendQSParamString(
         params,
         'gdpr_consent',
         encodeURIComponent(gdprConsent.consentString || '')
-      )
+      );
     }
     // CCPA
     if (uspConsent) {
@@ -243,7 +242,7 @@ export const spec = {
         params,
         'us_privacy',
         encodeURIComponent(uspConsent.uspConsent)
-      )
+      );
     }
     // GPP
     if (gppConsent?.gppString) {
@@ -251,13 +250,13 @@ export const spec = {
         params,
         'gpp',
         encodeURIComponent(gppConsent.gppString)
-      )
+      );
       if (gppConsent.applicableSections?.length > 0) {
         params = appendQSParamString(
           params,
           'gpp_sid',
           encodeURIComponent(gppConsent.applicableSections.join(','))
-        )
+        );
       }
     }
 
@@ -265,32 +264,32 @@ export const spec = {
     const types = {
       iframe: syncOptions.iframeEnabled,
       image: syncOptions.pixelEnabled,
-    }
-    const syncs = []
+    };
+    const syncs = [];
 
-    let body
+    let body;
     serverResponses.forEach((response) => {
       // If the bid response was empty, skip
       if (!response || !response.body || isEmpty(response.body)) {
-        return
+        return;
       }
 
       try {
         body =
           typeof response.body === 'string'
             ? JSON.parse(response.body)
-            : response.body
+            : response.body;
       } catch (err) {
-        return
+        return;
       }
 
       // Make sure we have valid content
-      if (!body || !body.seatbid || body.seatbid.length === 0) return
+      if (!body || !body.seatbid || body.seatbid.length === 0) return;
 
       body.seatbid.forEach((seatbid) => {
         // Validate seatbid structure
         if (!seatbid || !Array.isArray(seatbid.syncUrls)) {
-          return
+          return;
         }
         // Grab the syncs for each seatbid
         seatbid.syncUrls.forEach((sync) => {
@@ -299,14 +298,14 @@ export const spec = {
               syncs.push({
                 type: sync.type,
                 url: sync.url.replace('{GDPR_params}', params),
-              })
+              });
             }
           }
-        })
-      })
-    })
+        });
+      });
+    });
 
-    return syncs
+    return syncs;
   },
 
   /**
@@ -315,49 +314,49 @@ export const spec = {
    */
   onBidWon: function (bid) {
     // Validate input
-    if (!bid || typeof bid !== 'object') return
+    if (!bid || typeof bid !== 'object') return;
 
     // Primary key for bid lookup is requestId (mapped from ORTB impid)
-    const bidKey = bid.requestId
+    const bidKey = bid.requestId;
 
     if (!bidKey) {
-      logWarn('[Nativo] onBidWon: bid.requestId is missing', bid)
-      return
+      logWarn('[Nativo] onBidWon: bid.requestId is missing', bid);
+      return;
     }
 
     // ALWAYS check responseCache first for fresh ext data from the latest response
-    let ext = responseCache[bidKey]
+    let ext = responseCache[bidKey];
 
     if (ext) {
       // Move to extData for this winning bid only (selective storage)
-      extData[bidKey] = ext
+      extData[bidKey] = ext;
 
       // Clean up responseCache: delete by key and by reference
-      delete responseCache[bidKey]
+      delete responseCache[bidKey];
 
       // Also clean up the ORTB bid.id UUID we might have stored during interpretResponse
       // Since we store the same ext object by both bid.id and bid.impid, we need to find and delete both
       Object.keys(responseCache).forEach(key => {
         if (responseCache[key] === ext) {
-          delete responseCache[key]
+          delete responseCache[key];
         }
-      })
+      });
     } else {
       // Fall back to extData for repeat wins with no new response
-      ext = extData[bidKey]
+      ext = extData[bidKey];
     }
 
     if (!ext) {
-      logWarn('[Nativo] onBidWon: ext data not found for requestId:', bidKey)
-      return
+      logWarn('[Nativo] onBidWon: ext data not found for requestId:', bidKey);
+      return;
     }
 
-    appendFilterData(adsToFilter, ext.adsToFilter)
-    appendFilterData(advertisersToFilter, ext.advertisersToFilter)
-    appendFilterData(campaignsToFilter, ext.campaignsToFilter)
+    appendFilterData(adsToFilter, ext.adsToFilter);
+    appendFilterData(advertisersToFilter, ext.advertisersToFilter);
+    appendFilterData(campaignsToFilter, ext.campaignsToFilter);
   },
-}
-registerBidder(spec)
+};
+registerBidder(spec);
 
 // Utils
 
@@ -369,7 +368,7 @@ registerBidder(spec)
  * @returns {String} Updated query string
  */
 function appendQSParamString(str, key, value) {
-  return str + `${str.length ? '&' : ''}${key}=${value}`
+  return str + `${str.length ? '&' : ''}${key}=${value}`;
 }
 
 /**
@@ -379,7 +378,7 @@ function appendQSParamString(str, key, value) {
  */
 function appendFilterData(filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length) {
-    filterData.forEach((ad) => filter.add(ad))
+    filterData.forEach((ad) => filter.add(ad));
   }
 }
 
@@ -392,26 +391,26 @@ function appendFilterData(filter, filterData) {
  */
 function buildSite(urlParam, existingSite = {}) {
   try {
-    const parsedUrl = parseUrl(urlParam)
-    const rootDomain = extractDomainFromHost(parsedUrl.hostname)
+    const parsedUrl = parseUrl(urlParam);
+    const rootDomain = extractDomainFromHost(parsedUrl.hostname);
 
     // Start with existing site data to preserve FPD
-    const site = {...existingSite}
+    const site = { ...existingSite };
 
     // Override URL-related fields
-    site.page = urlParam  // Full URL with path
-    site.domain = rootDomain || parsedUrl.hostname  // Root domain
+    site.page = urlParam;  // Full URL with path
+    site.domain = rootDomain || parsedUrl.hostname;  // Root domain
 
     // Preserve existing publisher object, only override domain
-    site.publisher = {...(site.publisher || {})}
-    site.publisher.domain = site.domain
+    site.publisher = { ...(site.publisher || {}) };
+    site.publisher.domain = site.domain;
 
     // DO NOT override site.ref - preserve referrer from FPD
 
-    return site
+    return site;
   } catch (err) {
-    logWarn('[Nativo] Failed to parse params.url:', urlParam, err)
-    return null
+    logWarn('[Nativo] Failed to parse params.url:', urlParam, err);
+    return null;
   }
 }
 
@@ -420,13 +419,13 @@ const ORTB_MEDIA_TYPE = {
   "Video": 2,
   "Audio": 3,
   "Native": 4
-}
+};
 function inferMediaType(bid) {
   if (deepAccess(bid, 'mediaTypes.video')) {
-    return ORTB_MEDIA_TYPE.Video
-  } else if (deepAccess(bid, 'mediaTypes.native') || bid?.adm.startsWith('{\"')) {
-    return ORTB_MEDIA_TYPE.Native
+    return ORTB_MEDIA_TYPE.Video;
+  } else if (deepAccess(bid, 'mediaTypes.native') || bid?.adm.startsWith('{"')) {
+    return ORTB_MEDIA_TYPE.Native;
   } else {
-    return ORTB_MEDIA_TYPE.Banner
+    return ORTB_MEDIA_TYPE.Banner;
   }
 }
