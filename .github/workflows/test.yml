@@ -84,27 +84,6 @@ jobs:
         with:
           name: source
 
-  build:
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [windows-latest, macos-latest]
-    name: "Build (${{matrix.os}})"
-    needs: checkout
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Restore source
-        uses: ./.github/actions/load
-        with:
-          name: source
-      - name: Install dependencies
-        uses: ./.github/actions/npm-ci
-      - name: Build
-        run: |
-          npx gulp build
-
   lint:
     name: "Run linter"
     needs: checkout
@@ -119,19 +98,28 @@ jobs:
       - name: lint
         run: |
           npx eslint
-      
+
+  build-no-features:
+    name: "Build (all features disabled)"
+    needs: checkout
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp precompile-all-features-disabled
+      source-key: 'source'
+
   test-no-features:
     name: "Unit tests (all features disabled)"
-    needs: checkout
+    needs: [checkout, build-no-features]
     uses: ./.github/workflows/run-tests.yml
     with:
       chunks: 8
-      build-cmd: npx gulp precompile-all-features-disabled
+      built-key: ${{ needs.build-no-features.outputs.linux }}
       test-cmd: npx gulp test-all-features-disabled-nobuild
       browserstack: false
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
   test:
     name: "Browser tests"
     needs: checkout
