@@ -79,12 +79,42 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
       options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
     };
 
-export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }: {
+type AnalyticsAdapterOptions = {
   analyticsType?: AnalyticsType;
   url?: string;
   global?: string;
   handler?: any;
-}) {
+};
+
+type AnalyticsEvent = {
+  eventType: keyof events.Events;
+  args: events.Events[keyof events.Events][0];
+  labels?: Record<string, unknown>;
+  callback?: any;
+};
+
+export type AnalyticsAdapterInstance<PROVIDER extends AnalyticsProvider = AnalyticsProvider> = {
+  track: (arg: AnalyticsEvent) => void;
+  enqueue: (arg: AnalyticsEvent) => void;
+  enableAnalytics: (config?: AnalyticsConfig<PROVIDER>) => void;
+  disableAnalytics: () => void;
+  getAdapterType: () => AnalyticsType | undefined;
+  getGlobal: () => string | undefined;
+  getHandler: () => any;
+  getUrl: () => string | undefined;
+  enabled: boolean;
+  _oldEnable?: (config?: AnalyticsConfig<PROVIDER>) => void;
+};
+
+type AnalyticsAdapterConstructor = new <PROVIDER extends AnalyticsProvider>(options: AnalyticsAdapterOptions) => AnalyticsAdapterInstance<PROVIDER>;
+
+export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(options: AnalyticsAdapterOptions): AnalyticsAdapterInstance<PROVIDER> {
+  if (!new.target) {
+    return new (AnalyticsAdapter as unknown as AnalyticsAdapterConstructor)<PROVIDER>(options);
+  }
+
+  const { url, analyticsType, global, handler } = options;
+
   const queue = [];
   let handlers;
   let enabled = false;
@@ -143,7 +173,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
     enabled: {
       get: () => enabled
     }
-  });
+  }) as AnalyticsAdapterInstance<PROVIDER>;
 
   function _track(arg) {
     const { eventType, args } = arg;
