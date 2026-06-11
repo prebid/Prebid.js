@@ -32,7 +32,7 @@ describe('ConnectAd Adapter', function () {
 
     bidderRequest = {
       timeout: 3000
-    }
+    };
   });
 
   afterEach(function () {
