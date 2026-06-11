@@ -177,7 +177,7 @@ const _public = (function () {
       if (id && (utils.isEmpty(event[id]) || utils.isEmpty(event[id].que))) {
         return;
       }
-      const removeHandler = (que) => que.filter(_handler => handler !== handler);
+      const removeHandler = (que) => que.filter(item => item !== handler);
       if (id && event[id].que?.length > 0) {
         event[id].que = removeHandler(event[id].que);
       } else if (event.que?.length > 0) {

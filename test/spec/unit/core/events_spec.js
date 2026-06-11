@@ -48,24 +48,36 @@ describe('events', () => {
     on,
     listen
   }).forEach(([name, fn]) => {
-    it(`can use off on handlers passed to ${name}`, () => {
-      const handler = sinon.stub();
-      fn('bidWon', handler);
-      off('bidWon', handler);
-      emit('bidWon', {});
-      sinon.assert.notCalled(handler);
-    });
+    describe(name, () => {
+      it(`can be undone with off`, () => {
+        const handler = sinon.stub();
+        fn('bidWon', handler);
+        off('bidWon', handler);
+        emit('bidWon', {});
+        sinon.assert.notCalled(handler);
+      });
 
-    it(`can use off on handlers registered multiple times with ${name}`, () => {
-      const handler = sinon.stub();
-      fn('bidWon', handler);
-      fn('bidWon', handler);
-      fn('bidResponse', handler);
-      off('bidWon', handler);
-      emit('bidWon', { event: 'bidWon' });
-      emit('bidResponse', { event: 'bidResponse' });
-      sinon.assert.calledOnce(handler);
-      expect(handler.args[0][handler.args[0].length - 1]).to.eql({ event: 'bidResponse' });
+      it('off only unregisters the handler it is passed', () => {
+        const handler = sinon.stub();
+        const other = sinon.stub();
+        fn('bidWon', handler);
+        fn('bidWon', other);
+        off('bidWon', other);
+        emit('bidWon', {});
+        sinon.assert.calledOnce(handler);
+      });
+
+      it(`can still be undone if the same handler is reused`, () => {
+        const handler = sinon.stub();
+        fn('bidWon', handler);
+        fn('bidWon', handler);
+        fn('bidResponse', handler);
+        off('bidWon', handler);
+        emit('bidWon', { event: 'bidWon' });
+        emit('bidResponse', { event: 'bidResponse' });
+        sinon.assert.calledOnce(handler);
+        expect(handler.args[0][handler.args[0].length - 1]).to.eql({ event: 'bidResponse' });
+      });
     });
   });
 
