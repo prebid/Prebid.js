@@ -22,7 +22,7 @@ const MODULE_NAME = 'jixieId';
 const STD_JXID_KEY = '_jxx';
 const PBJS_JXID_KEY = 'pbjx_jxx';
 const PBJS_IDLOGSTR_KEY = 'pbjx_idlog';
-const TRACKER_EP_FROM_IDMODULE = 'https://traid.jixie.io/api/usersyncpbjs'
+const TRACKER_EP_FROM_IDMODULE = 'https://traid.jixie.io/api/usersyncpbjs';
 const CK_LIFE_DAYS = 365;
 const ONE_YEAR_IN_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -163,7 +163,7 @@ export const jixieIdSubmodule = {
           if (xhr.status === 200) {
             let response = JSON.parse(responseText);
             if (response && response.data && response.data.success) {
-              response = response.data
+              response = response.data;
               persistExtInfo(response);
               callback(response.client_id);
               if (response.telcoep) {

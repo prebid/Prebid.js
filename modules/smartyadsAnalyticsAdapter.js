@@ -65,7 +65,7 @@ const smartyadsAdapter = Object.assign({},
 
 const sendDataToServer = (data) => {
   ajax(URL, () => {}, JSON.stringify(data));
-}
+};
 
 const auctionHandler = (eventType, data) => {
   const auctionData = {
@@ -78,10 +78,10 @@ const auctionHandler = (eventType, data) => {
       delete bidderRequest.refererInfo;
       return bidderRequest;
     }).filter(request => request.bidderCode === BIDDER_CODE),
-  }
+  };
 
   sendDataToServer({ eventType, auctionData });
-}
+};
 
 const bidHandler = (eventType, bid) => {
   const bids = bid.length ? bid : [bid];
@@ -106,7 +106,7 @@ const bidHandler = (eventType, bid) => {
 
     sendDataToServer({ eventType, bid: bidToSend });
   }
-}
+};
 
 const onBidderError = (data) => {
   sendDataToServer({
@@ -116,18 +116,18 @@ const onBidderError = (data) => {
       ? data.bidderRequests.filter(request => request.bidderCode === BIDDER_CODE)
       : [data.bidderRequest]
   });
-}
+};
 
 const onAdRender = (eventType, data) => {
   if (data?.bid?.bidderCode === BIDDER_CODE) {
     sendDataToServer({ eventType, renderData: data });
   }
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: smartyadsAdapter,
   code: BIDDER_CODE,
   gvlid: GVLID
-})
+});
 
 export default smartyadsAdapter;

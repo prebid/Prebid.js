@@ -1,9 +1,9 @@
 import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 import { isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../../src/utils.js';
-import { ConsentHandler } from '../../src/consentHandler.js';
 import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';
+import { type ConsentHandler } from "../../src/consentHandler.ts";
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -95,7 +95,7 @@ export function lookupConsentData(
   }).finally(() => {
     timeoutHandle && clearTimeout(timeoutHandle);
   }).catch((e) => {
-    consentDataHandler.setConsentData(null);
+    consentDataHandler.error(e);
     throw e;
   });
 }
@@ -157,7 +157,7 @@ export function configParser(
   }
 
   function loadConsentData() {
-    return cdLoader().then(({ error }) => ({ error, consentData: consentDataHandler.getConsentData() }))
+    return cdLoader().then(({ error }) => ({ error, consentData: consentDataHandler.getConsentData() }));
   }
 
   function activate() {
@@ -165,7 +165,7 @@ export function configParser(
       requestBidsHook = consentManagementHook(namespace, () => cdLoader());
       getHook('requestBids').before(requestBidsHook, 50);
       buildActivityParams.before(attachActivityParams);
-      logInfo(`${displayName} consentManagement module has been activated...`)
+      logInfo(`${displayName} consentManagement module has been activated...`);
     }
   }
 
@@ -225,7 +225,7 @@ export function configParser(
       if (isPlainObject(cmConfig.consentData)) {
         staticConsentData = cmConfig.consentData;
         cmpTimeout = null;
-        setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))))
+        setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))));
       } else {
         logError(msg(`config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`));
       }
@@ -253,10 +253,10 @@ export function configParser(
           cd = lookup().catch(err => {
             cd = null;
             throw err;
-          })
+          });
         }
         return cd;
-      }
+      };
     })();
 
     activate();
@@ -267,6 +267,6 @@ export function configParser(
       staticConsentData,
       loadConsentData,
       requestBidsHook
-    }
-  }
+    };
+  };
 }

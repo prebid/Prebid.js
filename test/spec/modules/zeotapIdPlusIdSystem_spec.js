@@ -70,7 +70,7 @@ describe('Zeotap ID System', function() {
 
     it('should check for localStorage if cookies are disabled', function() {
       cookiesAreEnabledStub.returns(false);
-      localStorageIsEnabledStub.returns(true)
+      localStorageIsEnabledStub.returns(true);
       const id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.called).to.be.false;
@@ -104,8 +104,8 @@ describe('Zeotap ID System', function() {
 
     it('returns undefined if both cookie and local storage are empty', function() {
       const id = zeotapIdPlusSubmodule.getId();
-      expect(id).to.be.undefined
-    })
+      expect(id).to.be.undefined;
+    });
   });
 
   describe('test method: decode', function() {

@@ -155,7 +155,7 @@ export const spec = {
       }
     });
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, serverResponses = []) {

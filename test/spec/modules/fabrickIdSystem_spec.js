@@ -9,7 +9,7 @@ const defaultConfigParams = {
   p: ['def', 'hij'],
   url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
-const responseHeader = { 'Content-Type': 'application/json' }
+const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('Fabrick ID System', function() {
   let logErrorStub;

@@ -1,18 +1,19 @@
-import { expect } from 'chai'
-import { spec } from 'modules/showheroesBidAdapter.js'
+import { expect } from 'chai';
+import { spec } from 'modules/showheroesBidAdapter.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import { VIDEO } from 'src/mediaTypes.js'
+import { VIDEO } from 'src/mediaTypes.js';
 
 const bidderRequest = {
   refererInfo: {
     page: 'https://example.com/home',
     ref: 'https://referrer'
   }
-}
+};
 
 const adomain = ['showheroes.com'];
 
@@ -23,7 +24,7 @@ const gdpr = {
     vendorData: { purpose: { consents: { 1: true } } },
     gdprApplies: true,
   }
-}
+};
 
 const uspConsent = '1---';
 
@@ -42,7 +43,7 @@ const schain = {
       ]
     }
   }
-}
+};
 
 const bidRequestCommonParamsV2 = {
   bidder: 'showheroes',
@@ -53,7 +54,7 @@ const bidRequestCommonParamsV2 = {
   bidId: '38b373e1e31c18',
   bidderRequestId: '12e3ade2543ba6',
   auctionId: '43aa080090a47f',
-}
+};
 
 const bidRequestVideoV2 = {
   ...bidRequestCommonParamsV2,
@@ -65,7 +66,7 @@ const bidRequestVideoV2 = {
       }
     }
   }
-}
+};
 
 const bidRequestOutstreamV2 = {
   ...bidRequestCommonParamsV2,
@@ -77,7 +78,7 @@ const bidRequestOutstreamV2 = {
       },
     }
   }
-}
+};
 
 const bidRequestBannerV2 = {
   ...bidRequestCommonParamsV2,
@@ -88,7 +89,7 @@ const bidRequestBannerV2 = {
       }
     }
   }
-}
+};
 
 describe('shBidAdapter', () => {
   before(() => {
@@ -112,7 +113,7 @@ describe('shBidAdapter', () => {
   });
 
   it('passes gdpr, usp, schain, floor in ortb request', async () => {
-    const bidRequest = Object.assign({}, bidRequestVideoV2)
+    const bidRequest = Object.assign({}, bidRequestVideoV2);
     const fullRequest = {
       bids: [bidRequestVideoV2],
       ...bidderRequest,
@@ -145,9 +146,8 @@ describe('shBidAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>'
+    const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>';
 
-    const callback_won = 'https://test.com/track/?ver=15&session_id=01ecd03ce381505ccdeb88e555b05001&category=request_session&type=event&request_session_id=01ecd03ce381505ccdeb88e555b05001&label=prebid_won&reason=ok'
     const basicResponse = {
       cur: 'EUR',
       seatbid: [{
@@ -161,20 +161,17 @@ describe('shBidAdapter', () => {
           mtype: 2, // 2 = video
           adomain: adomain,
           ext: {
-            callbacks: {
-              won: [callback_won],
-            },
             extra: 'test',
           },
         }],
         seat: 'showheroes',
       }]
-    }
-    const vastUrl = 'https://test.com/vast/?zid=AACBWAcof-611K4U&u=https://example.org/?foo=bar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ecd03ce381505ccdeb88e555b05001&width=300&height=200&prebidmode=1'
+    };
+    const vastUrl = 'https://test.com/vast/?zid=AACBWAcof-611K4U&u=https://example.org/?foo=bar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ecd03ce381505ccdeb88e555b05001&width=300&height=200&prebidmode=1';
 
     if (FEATURES.VIDEO) {
       it('should get correct bid response when type is video (V2)', function () {
-        const request = spec.buildRequests([bidRequestVideoV2], bidderRequest)
+        const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
         const expectedResponse = [
           {
             cpm: 1,
@@ -193,23 +190,20 @@ describe('shBidAdapter', () => {
               advertiserDomains: adomain
             },
             vastXml: vastXml,
-            callbacks: {
-              won: [callback_won],
-            },
             extra: 'test',
           }
-        ]
+        ];
 
-        const result = spec.interpretResponse({ 'body': basicResponse }, request)
-        expect(result).to.deep.equal(expectedResponse)
-      })
+        const result = spec.interpretResponse({ 'body': basicResponse }, request);
+        expect(result).to.deep.equal(expectedResponse);
+      });
 
       it('should get correct bid response when type is outstream (slot V2)', function () {
         window.myRenderer = {
           renderAd: function() {
             return null;
           }
-        }
+        };
         const bidRequestV2 = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
         const bidResponse = JSON.parse(JSON.stringify(basicResponse));
         bidResponse.seatbid[0].bid[0].ext.rendererConfig = {
@@ -219,16 +213,16 @@ describe('shBidAdapter', () => {
             key: 'my renderer custom value',
           }
         };
-        const slotId = 'testSlot2'
+        const slotId = 'testSlot2';
 
-        const container = document.createElement('div')
-        container.setAttribute('id', slotId)
-        document.body.appendChild(container)
+        const container = document.createElement('div');
+        container.setAttribute('id', slotId);
+        document.body.appendChild(container);
 
-        const request = spec.buildRequests([bidRequestV2], bidderRequest)
+        const request = spec.buildRequests([bidRequestV2], bidderRequest);
 
-        const result = spec.interpretResponse({ 'body': bidResponse }, request)
-        const bid = result[0]
+        const result = spec.interpretResponse({ 'body': bidResponse }, request);
+        const bid = result[0];
         expect(bid).to.have.property('mediaType', VIDEO);
         expect(typeof bid.renderer).to.be.eql('object');
         expect(bid.renderer.url).to.eql('https://test.com/render.js');
@@ -240,34 +234,34 @@ describe('shBidAdapter', () => {
         const renderPayload = renderCall.args[0];
         expect(renderPayload.adResponse.content).to.eql(vastXml);
         expect(renderPayload.key).to.eql('my renderer custom value');
-      })
+      });
 
       it('should get correct bid response when type is outstream (customRender)', function () {
         const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
 
-        const request = spec.buildRequests([bidRequest], bidderRequest)
+        const request = spec.buildRequests([bidRequest], bidderRequest);
 
-        const result = spec.interpretResponse({ 'body': basicResponse }, request)
+        const result = spec.interpretResponse({ 'body': basicResponse }, request);
         const bid = result[0];
         expect(bid).to.have.property('mediaType', VIDEO);
 
         expect(bid.vastXml).to.eql(vastXml);
-      })
+      });
 
       it('should get vast url', function () {
         const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
         const bidResponse = JSON.parse(JSON.stringify(basicResponse));
-        bidResponse.seatbid[0].bid[0].nurl = vastUrl
+        bidResponse.seatbid[0].bid[0].nurl = vastUrl;
 
-        const request = spec.buildRequests([bidRequest], bidderRequest)
+        const request = spec.buildRequests([bidRequest], bidderRequest);
 
-        const result = spec.interpretResponse({ 'body': bidResponse }, request)
+        const result = spec.interpretResponse({ 'body': bidResponse }, request);
         const bid = result[0];
         expect(bid).to.have.property('mediaType', VIDEO);
 
         expect(bid.vastXml).to.eql(vastXml);
         expect(bid.vastUrl).to.eql(vastUrl);
-      })
+      });
     }
 
     it('should get correct bid response when type is banner', function () {
@@ -285,9 +279,6 @@ describe('shBidAdapter', () => {
             mtype: 1, // 1 = banner
             adomain: adomain,
             ext: {
-              callbacks: {
-                won: [callback_won],
-              },
               extra: 'test',
             },
           }],
@@ -311,16 +302,13 @@ describe('shBidAdapter', () => {
             advertiserDomains: adomain,
           },
           ad: '<div>test banner</div>',
-          callbacks: {
-            won: [callback_won],
-          },
           extra: 'test',
         }
       ];
 
       const result = spec.interpretResponse({ 'body': bannerResponse }, request);
       expect(result).to.deep.equal(expectedResponse);
-    })
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -333,7 +321,7 @@ describe('shBidAdapter', () => {
           }
         }
       }
-    }]
+    }];
 
     it('empty', function () {
       const result = spec.getUserSyncs({}, []);
@@ -357,6 +345,76 @@ describe('shBidAdapter', () => {
 
       expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal('https://sync.showheroes.com/pixel');
+    });
+  });
+
+  describe('Gzip Configuration', () => {
+    let configStub;
+    let bidderConfigStub;
+
+    beforeEach(() => {
+      configStub = sinon.stub(config, 'getConfig');
+      bidderConfigStub = sinon.stub(config, 'getBidderConfig');
+    });
+
+    afterEach(() => {
+      configStub.restore();
+      if (bidderConfigStub && bidderConfigStub.restore) {
+        bidderConfigStub.restore();
+      }
+    });
+
+    it('should enable gzip compression by default', () => {
+      // No specific configuration set, should use default
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should respect bidder-specific boolean configuration set via setBidderConfig', () => {
+      // Mock bidder-specific config to return false
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: false
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should handle bidder-specific string configuration ("true")', () => {
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: 'true'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should handle bidder-specific string configuration ("false")', () => {
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: 'false'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should fall back to default when bidder-specific value is invalid', () => {
+      // Mock bidder-specific config to return invalid value
+      bidderConfigStub.returns({
+        showheroes: {
+          gzipEnabled: 'invalid'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest);
+      // Should fall back to default (true)
+      expect(request.options.endpointCompression).to.be.true;
     });
   });
 });

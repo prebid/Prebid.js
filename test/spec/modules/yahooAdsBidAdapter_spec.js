@@ -13,7 +13,7 @@ const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 const DEFAULT_VIDEO_CONTEXT = 'instream';
-const ADAPTER_VERSION = '1.1.0';
+const ADAPTER_VERSION = '2.1.0';
 const DEFAULT_BIDDER_CODE = 'yahooAds';
 const VALID_BIDDER_CODES = [DEFAULT_BIDDER_CODE, 'yahoossp', 'yahooAdvertising'];
 const PREBID_VERSION = '$prebid.version$';
@@ -50,7 +50,7 @@ const generateBidRequest = ({ bidderCode, bidId, pos, adUnitCode, adUnitType, bi
   };
 
   if (videoContext === 'outstream') {
-    bidRequest.renderer = undefined
+    bidRequest.renderer = undefined;
   };
 
   if (adUnitType === 'banner' || adUnitType === 'dap-o2' || adUnitType === 'dap-up') {
@@ -74,7 +74,7 @@ const generateBidRequest = ({ bidderCode, bidId, pos, adUnitCode, adUnitType, bi
   };
 
   return bidRequest;
-}
+};
 
 const generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
   const bidderRequest = {
@@ -125,7 +125,7 @@ const generateBuildRequestMock = ({ bidderCode, bidId, pos, adUnitCode, adUnitTy
   const validBidRequests = [bidRequest];
   const bidderRequest = generateBidderRequest(validBidRequests, adUnitCode, ortb2);
 
-  return { bidRequest, validBidRequests, bidderRequest }
+  return { bidRequest, validBidRequests, bidderRequest };
 };
 
 const generateAdmPayload = (admPayloadType) => {
@@ -141,9 +141,9 @@ const generateAdmPayload = (admPayloadType) => {
       const admPayloads = [
         '<script>logInfo(\'ad\'); AdPlacement </script>', // banner
         '<VAST></VAST>' // VAST xml
-      ]
+      ];
       const random = Math.floor(Math.random() * admPayloads.length);
-      ADM_PAYLOAD = admPayloads[random]
+      ADM_PAYLOAD = admPayloads[random];
       break;
     case 'dap-o2':
       ADM_PAYLOAD = '<script>o2playerSettings</script>'; // O2 player
@@ -180,7 +180,7 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
   const { validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: admPayloadType, videoContext });
   const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
   return { serverResponse, data, bidderRequest };
-}
+};
 
 // Unit tests
 describe('Yahoo Advertising Bid Adapter:', () => {
@@ -303,7 +303,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             'us_privacy': bidderRequest.uspConsent,
             'gpp': bidderRequest.gppConsent.gppString,
             'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
-          }
+          };
           for (const [key, value] of Object.entries(expectedParams)) {
             it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
               expect(urlParams.get(key)).to.equal(value);
@@ -330,7 +330,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             'us_privacy': '',
             'gpp': '',
             'gpp_sid': ''
-          }
+          };
           for (const [key, value] of Object.entries(expectedParams)) {
             it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
               expect(urlParams.get(key)).to.equal(value);
@@ -401,7 +401,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           floor: bidRequest.floors.values[floorObj.mediaType + '|640x480'],
           currency: floorObj.currency,
           mediaType: floorObj.mediaType
-        }
+        };
       };
       bidRequest.floors = {
         currency: 'EUR',
@@ -429,11 +429,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
       bidRequest.ortb2.source.ext.schain = globalSchain;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      const schain = data.source.ext.schain;
+      const schain = data.source.schain;
       expect(schain).to.be.undefined;
     });
 
-    it('should send Global or Bidder specific schain', function () {
+    it('should send Global or Bidder specific schain from bid.ortb2.source.ext (2.5 path)', function () {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const globalSchain = {
         ver: '1.0',
@@ -441,7 +441,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         nodes: [{
           asi: 'some-platform.com',
           sid: '111111',
-          rid: bidRequest.bidId,
           hp: 1
         }]
       };
@@ -450,9 +449,48 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
       bidRequest.ortb2.source.ext.schain = globalSchain;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      const schain = data.source.ext.schain;
+      const schain = data.source.schain;
       expect(schain.nodes.length).to.equal(1);
-      expect(schain).to.equal(globalSchain);
+      expect(schain.nodes[0].asi).to.equal('some-platform.com');
+      // rid is stamped from the outbound request id (a UUID), original object is not mutated
+      expect(schain.nodes[0].rid).to.be.a('string').and.not.equal('');
+      expect(globalSchain.nodes[0].rid).to.be.undefined; // original not mutated
+    });
+
+    it('should read schain from bidderRequest.ortb2.source.schain (global FPD / Prebid setConfig path)', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'exchange.com', sid: 'pub-1', hp: 1 }]
+      };
+      // Simulates pbjs.setConfig({ ortb2: { source: { schain: ... } } })
+      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
+      bidderRequest.ortb2.source = { schain: globalSchain };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.schain).to.exist;
+      expect(data.source.schain.nodes[0].asi).to.equal('exchange.com');
+      expect(data.source.ext.schain).to.be.undefined;
+    });
+
+    it('should prefer bidderRequest.ortb2.source.schain over bid.ortb2.source.schain', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const canonicalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'canonical.com', sid: 'canonical-1', hp: 1 }]
+      };
+      const perBidSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'per-bid.com', sid: 'per-bid-1', hp: 1 }]
+      };
+      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
+      bidderRequest.ortb2.source = { schain: canonicalSchain };
+      bidRequest.ortb2 = bidRequest.ortb2 || {};
+      bidRequest.ortb2.source = { schain: perBidSchain };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.source.schain.nodes[0].asi).to.equal('canonical.com');
     });
   });
 
@@ -461,7 +499,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     const INVALID_ORTB2_TYPES = [null, [], 123, 'unsupportedKeyName', true, false, undefined];
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = { site: param }
+        const ortb2 = { site: param };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.be.undefined;
@@ -626,7 +664,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     const INVALID_ORTB2_TYPES = [null, [], 'unsupportedKeyName', true, false, undefined];
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
-        const ortb2 = { user: param }
+        const ortb2 = { user: param };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.be.undefined;
@@ -726,7 +764,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
     });
 
-    const VALID_USER_DATA_ARRAYS = ['segment']
+    const VALID_USER_DATA_ARRAYS = ['segment'];
     VALID_USER_DATA_ARRAYS.forEach(param => {
       it(`should allow supported user data arrays to be added to the bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = {
@@ -760,9 +798,21 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
     });
 
-    // adUnit.ortb2Imp.ext.data
-    it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+    // adUnit.ortb2Imp.data (OpenRTB 2.6 moved from ext to top-level)
+    it(`should allow adUnit.ortb2Imp.data object (2.6 top-level) to be added to the bid-request`, () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].ortb2Imp = {
+        data: {
+          pbadslot: 'homepage-top-rect',
+          adUnitSpecificAttribute: '123'
+        }
+      };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].data).to.deep.equal(validBidRequests[0].ortb2Imp.data);
+    });
+
+    it(`should allow adUnit.ortb2Imp.ext.data object (2.5 backward compat) to be added to the bid-request`, () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         ext: {
           data: {
@@ -772,11 +822,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         }
       };
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      expect(data.imp[0].ext.data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
+      expect(data.imp[0].data).to.deep.equal(validBidRequests[0].ortb2Imp.ext.data);
     });
     // adUnit.ortb2Imp.instl
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         instl: 1
       };
@@ -785,7 +835,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         instl: true
       };
@@ -794,7 +844,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "false" to be added to the bid-request`, () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].ortb2Imp = {
         instl: false
       };
@@ -812,7 +862,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         testing: {
           e2etest: true
         }
-      }
+      };
       bidRequest.params = params;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.id).to.be.equal('8a969516017a7a396ec539d97f540011');
@@ -844,8 +894,24 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const clonedBidderRequest = { ...bidderRequest };
       const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
-      expect(data.regs.ext.gpp).to.equal(bidderRequest.gppConsent.gppString);
-      expect(data.regs.ext.gpp_sid).to.eql(bidderRequest.gppConsent.applicableSections);
+      expect(data.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
+      expect(data.regs.gpp_sid).to.eql(bidderRequest.gppConsent.applicableSections);
+    });
+
+    it('should omit regs.gpp and regs.gpp_sid when no GPP consent is present', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      delete bidderRequest.gppConsent;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs).to.not.have.property('gpp');
+      expect(data.regs).to.not.have.property('gpp_sid');
+    });
+
+    it('should default regs.gpp_sid to [] when GPP applies but applicableSections is undefined', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.gppConsent = { gppString: 'somegppstring' };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs.gpp).to.equal('somegppstring');
+      expect(data.regs.gpp_sid).to.eql([]);
     });
 
     it('overrides the GPP consent data using data from the ortb2 config object', function () {
@@ -858,8 +924,28 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       };
       const clonedBidderRequest = { ...bidderRequest, ortb2 };
       const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
-      expect(data.regs.ext.gpp).to.equal(ortb2.regs.gpp);
-      expect(data.regs.ext.gpp_sid).to.eql(ortb2.regs.gpp_sid);
+      expect(data.regs.gpp).to.equal(ortb2.regs.gpp);
+      expect(data.regs.gpp_sid).to.eql(ortb2.regs.gpp_sid);
+    });
+
+    it('should set regs.coppa to 1 when ortb2.regs.coppa is 1', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const clonedBidderRequest = { ...bidderRequest, ortb2: { regs: { coppa: 1 } } };
+      const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
+      expect(data.regs.coppa).to.equal(1);
+    });
+
+    it('should set regs.coppa to 0 when ortb2.regs.coppa is 0', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const clonedBidderRequest = { ...bidderRequest, ortb2: { regs: { coppa: 0 } } };
+      const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
+      expect(data.regs.coppa).to.equal(0);
+    });
+
+    it('should not set regs.coppa when ortb2.regs.coppa is not provided', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs.coppa).to.be.undefined;
     });
   });
 
@@ -929,7 +1015,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(responsePayload.imp[0]).to.deep.include({
         id: DEFAULT_BID_ID,
         ext: {
-          pos: DEFAULT_BID_POS,
           dfp_ad_unit_code: DEFAULT_AD_UNIT_CODE
         }
       });
@@ -937,7 +1022,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(responsePayload.imp[1]).to.deep.include({
         id: BID_ID_2,
         ext: {
-          pos: BID_POS_2,
           dfp_ad_unit_code: AD_UNIT_CODE_2
         }
       });
@@ -967,7 +1051,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         {
           contentType: 'application/json',
           customHeaders: {
-            'x-openrtb-version': '2.5'
+            'x-openrtb-version': '2.6'
           },
           withCredentials: true
         });
@@ -992,7 +1076,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         { source: 'neustar.biz', uids: [{ id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1 }] }
       ];
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      expect(data.user.ext.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
+
+      expect(data.user.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
 
     it('should not set not allowed user eids sources', () => {
@@ -1002,7 +1087,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
 
-      expect(data.user.ext.eids).to.deep.equal([]);
+      expect(data.user.eids).to.deep.equal([]);
     });
   });
 
@@ -1024,11 +1109,12 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.regs).to.deep.equal({
+        gdpr: 1,
+        gpp: bidderRequest.gppConsent.gppString,
+        gpp_sid: bidderRequest.gppConsent.applicableSections,
+        us_privacy: bidderRequest.uspConsent,
         ext: {
-          'us_privacy': bidderRequest.uspConsent,
-          gdpr: 1,
-          gpp: bidderRequest.gppConsent.gppString,
-          gpp_sid: bidderRequest.gppConsent.applicableSections
+          'us_privacy': bidderRequest.uspConsent
         }
       });
 
@@ -1047,10 +1133,9 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       });
 
       expect(data.user).to.deep.equal({
-        ext: {
-          consent: bidderRequest.gdprConsent.consentString,
-          eids: []
-        }
+        consent: bidderRequest.gdprConsent.consentString,
+        eids: [],
+        ext: {}
       });
 
       expect(data.cur).to.deep.equal(['USD']);
@@ -1126,10 +1211,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
     it('should generate a valid openRTB imp.ext object in the bid-request', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      const bid = validBidRequests[0];
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].ext).to.deep.equal({
-        pos: bid.params.pos,
         dfp_ad_unit_code: DEFAULT_AD_UNIT_CODE
       });
     });
@@ -1151,7 +1234,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             }
           }
         }
-      }
+      };
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.publisher).to.deep.equal({
@@ -1172,7 +1255,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
             }
           }
         }
-      }
+      };
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ pubIdMode: true, ortb2 });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.publisher).to.deep.equal({
@@ -1286,7 +1369,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
     // Validate Key-Value Pairs
     it('should generate supported String, Number, Array of Strings, Array of Numbers key-value pairs and append to imp.ext.kvs', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       validBidRequests[0].params.kvp = {
         key1: 'String',
         key2: 123456,
@@ -1324,11 +1407,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       validBidRequests = [bidRequest, bidRequest2, bidRequest3];
       bidderRequest.bids = validBidRequests;
 
-      const reqs = spec.buildRequests(validBidRequests, bidderRequest)
+      const reqs = spec.buildRequests(validBidRequests, bidderRequest);
       expect(reqs).to.be.a('array');
       expect(reqs.length).to.equal(2);
       reqs.forEach(req => {
-        expect(req.data.imp[0].video).to.not.exist
+        expect(req.data.imp[0].video).to.not.exist;
         expect(req.data.imp[0].banner).to.deep.equal({
           mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
           format: [{ w: 300, h: 250 }, { w: 300, h: 600 }]
@@ -1356,11 +1439,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       validBidRequests = [bidRequest, bidRequest2, bidRequest3];
       bidderRequest.bids = validBidRequests;
 
-      const reqs = spec.buildRequests(validBidRequests, bidderRequest)
+      const reqs = spec.buildRequests(validBidRequests, bidderRequest);
       expect(reqs).to.be.a('array');
       expect(reqs.length).to.equal(2);
       reqs.forEach(req => {
-        expect(req.data.imp[0].banner).to.not.exist
+        expect(req.data.imp[0].banner).to.not.exist;
         expect(req.data.imp[0].video).to.deep.equal({
           mimes: ['video/mp4', 'application/javascript'],
           w: 300,
@@ -1465,7 +1548,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
               plcmt: 1
             }
           }
-        }
+        };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ bidderCode, adUnitType: 'video', bidOverrideObject: bidOverride });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.imp[0].video).to.deep.equal(bidOverride.imp.video);
@@ -1493,7 +1576,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           playbackmethod: 1,
           placement: 1,
           plcmt: 1
-        }
+        };
         const validBidRequests = [bidRequest];
         bidderRequest.bids = validBidRequests;
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
@@ -1527,7 +1610,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           device: {
             ip: '1.2.3.4'
           }
-        }
+        };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ bidderCode, adUnitType: 'video', bidOverrideObject: bidOverride });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.device.ip).to.deep.equal(bidOverride.device.ip);
@@ -1543,7 +1626,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(response[0].ad).to.equal('<script>logInfo(\'ad\'); AdPlacement </script>');
         expect(response[0].mediaType).to.equal('banner');
-      })
+      });
     });
 
     describe('for mediaTypes: "video"', () => {
@@ -1569,7 +1652,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         expect(response[0].ad).to.be.undefined;
         expect(response[0].vastXml).to.equal('<VAST></VAST>');
         expect(response[0].mediaType).to.equal('video');
-      })
+      });
 
       describe('wrapped in video players for display inventory', () => {
         beforeEach(() => {
@@ -1596,7 +1679,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           expect(response[0].vastUrl).to.be.undefined;
           expect(response[0].vastXml).to.be.undefined;
           expect(response[0].mediaType).to.equal('banner');
-        })
+        });
       });
     });
 
@@ -1606,7 +1689,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(response[0].meta.advertiserDomains).to.be.a('array');
         expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
-      })
+      });
     });
 
     describe('bid response Ad ID / Creative ID', () => {
@@ -1763,6 +1846,405 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         expect(response[0].mediaType).to.not.equal('video');
         expect(response[0].renderer).to.be.undefined;
       });
+    });
+  });
+
+  describe('OpenRTB 2.6 compliance:', () => {
+    it('should use application/json content type and send x-openrtb-version header', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const request = spec.buildRequests(validBidRequests, bidderRequest)[0];
+      expect(request.options.contentType).to.equal('application/json');
+      expect(request.options.customHeaders['x-openrtb-version']).to.equal('2.6');
+    });
+
+    it('should place us_privacy at regs top-level AND keep in regs.ext for backward compat', () => {
+      // OpenRTB 2.6: us_privacy promoted from regs.ext.us_privacy to regs.us_privacy.
+      // It is also kept in regs.ext.us_privacy for 2.5 backward compat.
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.us_privacy).to.equal(bidderRequest.uspConsent);
+      expect(data.regs.ext['us_privacy']).to.equal(bidderRequest.uspConsent);
+    });
+
+    it('should not set us_privacy fields when uspConsent is absent', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      delete bidderRequest.uspConsent;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.us_privacy).to.equal('');
+      expect(data.regs.ext['us_privacy']).to.equal('');
+    });
+
+    it('should override us_privacy from ortb2.regs.us_privacy (2.6 top-level)', () => {
+      const ortb2 = { regs: { us_privacy: '1YYN' } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.us_privacy).to.equal('1YYN');
+      expect(data.regs.ext['us_privacy']).to.equal('1YYN');
+    });
+
+    it('should override us_privacy from ortb2.regs.ext.us_privacy (2.5 backward compat)', () => {
+      const ortb2 = { regs: { ext: { us_privacy: '1YYN' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.us_privacy).to.equal('1YYN');
+      expect(data.regs.ext['us_privacy']).to.equal('1YYN');
+    });
+
+    it('should place gdpr, gpp, gpp_sid at regs top-level (not in regs.ext)', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.gdpr).to.exist;
+      expect(data.regs.gpp).to.exist;
+      expect(data.regs.gpp_sid).to.exist;
+      expect(data.regs.ext.gdpr).to.be.undefined;
+      expect(data.regs.ext.gpp).to.be.undefined;
+      expect(data.regs.ext.gpp_sid).to.be.undefined;
+    });
+
+    it('should place user.consent and user.eids at user top-level (not in user.ext)', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = [
+        { source: 'yahoo.com', uids: [{ id: 'testId', atype: 3 }] }
+      ];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.user.consent).to.exist;
+      expect(data.user.eids).to.exist;
+      expect(data.user.eids).to.be.an('array').with.lengthOf(1);
+      expect(data.user.ext.consent).to.be.undefined;
+      expect(data.user.ext.eids).to.be.undefined;
+    });
+
+    it('should place source.schain at source top-level (not in source.ext)', () => {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'test.com', sid: '111', hp: 1 }]
+      };
+      bidRequest.ortb2 = { source: { schain: globalSchain } };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.source.schain).to.exist;
+      expect(data.source.schain.nodes).to.be.an('array');
+      expect(data.source.ext.schain).to.be.undefined;
+    });
+
+    it('should handle schain in 2.5 location (fallback)', () => {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const schain25 = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'legacy.com', sid: '222', hp: 1 }]
+      };
+      bidRequest.ortb2 = { source: { ext: { schain: schain25 } } };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      // Should still place at top-level even when reading from ext
+      expect(data.source.schain).to.exist;
+      expect(data.source.schain.nodes[0].asi).to.equal('legacy.com');
+    });
+
+    it('should override regs.gdpr from ortb2.regs.gdpr (2.6 top-level)', () => {
+      const ortb2 = { regs: { gdpr: 0 } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      // gdprConsent says gdpr applies, but ortb2.regs.gdpr overrides to 0
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs.gdpr).to.equal(0);
+    });
+
+    it('should override regs.gdpr from ortb2.regs.ext.gdpr (2.5 backward compat)', () => {
+      const ortb2 = { regs: { ext: { gdpr: 0 } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.regs.gdpr).to.equal(0);
+      expect(data.regs.ext.gdpr).to.be.undefined;
+    });
+
+    it('should handle gpp/gpp_sid from ortb2.regs in 2.5 location (fallback)', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const ortb2 = {
+        regs: {
+          ext: {
+            gpp: 'legacy_gpp_string',
+            gpp_sid: [8, 9]
+          }
+        }
+      };
+      const clonedBidderRequest = { ...bidderRequest, ortb2 };
+      const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
+
+      // Should still place at top-level even when reading from ext
+      expect(data.regs.gpp).to.equal('legacy_gpp_string');
+      expect(data.regs.gpp_sid).to.eql([8, 9]);
+    });
+
+    it('should use cattax default value of 1 when not provided in ortb2', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.cattax).to.equal(1);
+    });
+
+    it('should use cattax value from ortb2 when provided', () => {
+      const ortb2 = { cattax: 6 };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.cattax).to.equal(6);
+    });
+
+    it('should include wlangb from ortb2 when provided', () => {
+      const ortb2 = { wlangb: ['en', 'fr'] };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.wlangb).to.deep.equal(['en', 'fr']);
+    });
+
+    it('should not include wlangb when not provided in ortb2', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.wlangb).to.be.undefined;
+    });
+
+    it('should include device.sua from ortb2.device.sua when provided', () => {
+      const sua = {
+        browsers: [{ brand: 'Chrome', version: ['108'] }],
+        platform: { brand: 'Windows', version: '10.0' },
+        mobile: 0
+      };
+      const ortb2 = { device: { sua } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.ortb2 = ortb2;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.device.sua).to.deep.equal(sua);
+    });
+
+    it('should not include device.sua when not provided in ortb2', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.device.sua).to.be.undefined;
+    });
+
+    it('should use site.inventorypartnerdomain from ortb2.site (2.6 top-level)', () => {
+      const ortb2 = { site: { inventorypartnerdomain: 'partner.example.com' } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.inventorypartnerdomain).to.equal('partner.example.com');
+    });
+
+    it('should fall back to site.ext.inventoryPartnerDomain (2.5 backward compat) when 2.6 field absent', () => {
+      const ortb2 = { site: { ext: { inventoryPartnerDomain: 'legacy-partner.example.com' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.inventorypartnerdomain).to.equal('legacy-partner.example.com');
+    });
+
+    it('should prefer site.inventorypartnerdomain (2.6) over site.ext.inventoryPartnerDomain (2.5) when both present', () => {
+      const ortb2 = { site: { inventorypartnerdomain: 'new-partner.example.com', ext: { inventoryPartnerDomain: 'old-partner.example.com' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.inventorypartnerdomain).to.equal('new-partner.example.com');
+    });
+
+    it('should use user.kwarray from ortb2.user (2.6 top-level)', () => {
+      const ortb2 = { user: { kwarray: ['sports', 'tech'] } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.kwarray).to.deep.equal(['sports', 'tech']);
+    });
+
+    it('should fall back to user.ext.kwarray (2.5 backward compat) when 2.6 field absent', () => {
+      const ortb2 = { user: { ext: { kwarray: ['legacy-kw1', 'legacy-kw2'] } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.kwarray).to.deep.equal(['legacy-kw1', 'legacy-kw2']);
+    });
+
+    it('should prefer user.kwarray (2.6) over user.ext.kwarray (2.5) when both present', () => {
+      const ortb2 = { user: { kwarray: ['new-kw'], ext: { kwarray: ['old-kw'] } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.kwarray).to.deep.equal(['new-kw']);
+    });
+
+    it('should not include user.ext.kwarray in user.ext after promotion', () => {
+      const ortb2 = { user: { ext: { kwarray: ['kw1'], someOtherKey: 'value' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.kwarray).to.deep.equal(['kw1']);
+      expect(data.user.ext.kwarray).to.be.undefined;
+      expect(data.user.ext.someOtherKey).to.equal('value');
+    });
+
+    it('should pick up user.eids from ortb2.user (2.6 top-level) when userIdAsEids is empty', () => {
+      const fpdEids = [{ source: 'liveramp.com', uids: [{ id: 'lr-from-fpd', atype: 3 }] }];
+      const ortb2 = { user: { eids: fpdEids } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal(fpdEids);
+    });
+
+    it('should fall back to user.ext.eids (2.5 backward compat) when 2.6 field absent', () => {
+      const legacyEids = [{ source: 'criteo.com', uids: [{ id: 'criteo-from-fpd-ext', atype: 1 }] }];
+      const ortb2 = { user: { ext: { eids: legacyEids } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal(legacyEids);
+    });
+
+    it('should merge FPD user.eids with userIdAsEids and de-duplicate by source+uids', () => {
+      const idModuleEids = [{ source: 'yahoo.com', uids: [{ id: 'connectId', atype: 3 }] }];
+      const fpdEids = [
+        { source: 'yahoo.com', uids: [{ id: 'connectId', atype: 3 }] },
+        { source: 'liveramp.com', uids: [{ id: 'lr-from-fpd', atype: 3 }] }
+      ];
+      const ortb2 = { user: { eids: fpdEids } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = idModuleEids;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal([
+        { source: 'yahoo.com', uids: [{ id: 'connectId', atype: 3 }] },
+        { source: 'liveramp.com', uids: [{ id: 'lr-from-fpd', atype: 3 }] }
+      ]);
+    });
+
+    it('should ignore FPD user.eids with unsupported sources', () => {
+      const ortb2 = { user: { eids: [{ source: 'unsupported.example.com', uids: [{ id: 'x', atype: 1 }] }] } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal([]);
+    });
+
+    it('should not duplicate FPD eids into user.ext after promotion', () => {
+      const fpdEids = [{ source: 'criteo.com', uids: [{ id: 'criteo-id', atype: 1 }] }];
+      const ortb2 = { user: { ext: { eids: fpdEids, someOtherKey: 'value' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      validBidRequests[0].userIdAsEids = [];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.eids).to.deep.equal(fpdEids);
+      expect(data.user.ext.eids).to.be.undefined;
+      expect(data.user.ext.someOtherKey).to.equal('value');
+    });
+
+    it('should fall back to ortb2.user.consent (2.6) when gdprConsent did not populate it', () => {
+      const ortb2 = { user: { consent: 'fpd-consent-string-26' } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.gdprConsent = { gdprApplies: false, consentString: '' };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.consent).to.equal('fpd-consent-string-26');
+    });
+
+    it('should fall back to ortb2.user.ext.consent (2.5) when neither gdprConsent nor 2.6 path is set', () => {
+      const ortb2 = { user: { ext: { consent: 'fpd-consent-string-25' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      bidderRequest.gdprConsent = { gdprApplies: false, consentString: '' };
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.consent).to.equal('fpd-consent-string-25');
+      expect(data.user.ext.consent).to.be.undefined;
+    });
+
+    it('should keep gdprConsent.consentString over FPD consent when gdpr applies', () => {
+      const ortb2 = { user: { consent: 'fpd-consent-should-be-ignored' } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.user.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should transform content.network string (2.5 backward compat) to an object with id and name', () => {
+      const ortb2 = { site: { content: { network: 'yahoonetwork' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.content.network).to.deep.equal({ id: 'yahoonetwork', name: 'yahoonetwork' });
+    });
+
+    it('should pass content.network object (2.6) through unchanged', () => {
+      const networkObj = { id: 'net1', name: 'Yahoo Network', domain: 'yahoo.com' };
+      const ortb2 = { site: { content: { network: networkObj } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.content.network).to.deep.equal(networkObj);
+    });
+
+    it('should transform content.channel string (2.5 backward compat) to an object with id and name', () => {
+      const ortb2 = { site: { content: { channel: 'sports' } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.content.channel).to.deep.equal({ id: 'sports', name: 'sports' });
+    });
+
+    it('should pass content.channel object (2.6) through unchanged', () => {
+      const channelObj = { id: 'ch1', name: 'Sports Channel', domain: 'sports.yahoo.com' };
+      const ortb2 = { site: { content: { channel: channelObj } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.content.channel).to.deep.equal(channelObj);
+    });
+
+    it('should include video pod fields from mediaTypes.video when provided', () => {
+      config.setConfig({ yahooAds: { mode: VIDEO } });
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' });
+      bidRequest.mediaTypes.video.podid = 'pod_1';
+      bidRequest.mediaTypes.video.podseq = 1;
+      bidRequest.mediaTypes.video.maxseq = 4;
+      bidRequest.mediaTypes.video.poddur = 120;
+      bidRequest.mediaTypes.video.slotinpod = 2;
+      bidRequest.mediaTypes.video.mincpmpersec = 0.5;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].video.podid).to.equal('pod_1');
+      expect(data.imp[0].video.podseq).to.equal(1);
+      expect(data.imp[0].video.maxseq).to.equal(4);
+      expect(data.imp[0].video.poddur).to.equal(120);
+      expect(data.imp[0].video.slotinpod).to.equal(2);
+      expect(data.imp[0].video.mincpmpersec).to.equal(0.5);
+    });
+
+    it('should include video pod fields from params.bidOverride when provided', () => {
+      config.setConfig({ yahooAds: { mode: VIDEO } });
+      const bidOverride = {
+        imp: {
+          video: {
+            podid: 'pod_override',
+            podseq: 2,
+            maxseq: 5,
+            poddur: 60,
+            slotinpod: 1,
+            mincpmpersec: 1.0
+          }
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video', bidOverrideObject: bidOverride });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].video.podid).to.equal('pod_override');
+      expect(data.imp[0].video.podseq).to.equal(2);
+      expect(data.imp[0].video.maxseq).to.equal(5);
+      expect(data.imp[0].video.poddur).to.equal(60);
+      expect(data.imp[0].video.slotinpod).to.equal(1);
+      expect(data.imp[0].video.mincpmpersec).to.equal(1.0);
+    });
+
+    it('should not include video pod fields when not provided', () => {
+      config.setConfig({ yahooAds: { mode: VIDEO } });
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.imp[0].video.podid).to.be.undefined;
+      expect(data.imp[0].video.podseq).to.be.undefined;
+      expect(data.imp[0].video.maxseq).to.be.undefined;
+      expect(data.imp[0].video.poddur).to.be.undefined;
+      expect(data.imp[0].video.slotinpod).to.be.undefined;
+      expect(data.imp[0].video.mincpmpersec).to.be.undefined;
     });
   });
 });

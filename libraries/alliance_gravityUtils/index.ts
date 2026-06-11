@@ -51,7 +51,7 @@ export type CreateRenderPayload = {
   adUnitCode: string,
   width: number,
   height: number
-}
+};
 
 export const createRenderer = (
   { requestId, vastXml, adUnitCode, width, height }: CreateRenderPayload
@@ -82,7 +82,7 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
-}
+};
 
 export function createResponse(bid:any, ortbResponse:any): BidResponse {
   let mediaType: MediaType = BANNER;
@@ -125,7 +125,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === NATIVE) {
     try {
-      response.native = { ortb: JSON.parse(bid.adm) }
+      response.native = { ortb: JSON.parse(bid.adm) };
     } catch (e) {}
   }
   return response as BidResponse;
@@ -146,4 +146,4 @@ export const interpretResponse = (serverResponse: ServerResponse): AdapterRespon
     }
   }
   return responses;
-}
+};

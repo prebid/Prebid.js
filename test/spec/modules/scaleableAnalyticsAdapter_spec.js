@@ -69,7 +69,7 @@ describe('Scaleable Analytics Adapter', function() {
       code: bidObj.adUnitCode,
       bidRequests: expectedBidRequests
     }]
-  }
+  };
 
   MOCK_DATA.expectedBidTimeout = {
     [MOCK_DATA.bidTimeout[0].adUnitCode]: [{
@@ -97,7 +97,7 @@ describe('Scaleable Analytics Adapter', function() {
       bidData: MOCK_DATA.expectedBidTimeout[MOCK_DATA.bidTimeout[0].adUnitCode],
       code: MOCK_DATA.bidTimeout[0].adUnitCode
     }]
-  }
+  };
 
   describe('Event Handling', function() {
     beforeEach(function() {

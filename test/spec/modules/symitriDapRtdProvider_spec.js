@@ -1,14 +1,18 @@
 import { config } from 'src/config.js';
 import {
+  DAP_ENCRYPTED_MEMBERSHIP,
+  DAP_MAX_RETRY_TOKENIZE,
+  DAP_MEMBERSHIP,
+  DAP_SS_ID,
+  DAP_TOKEN,
   dapUtils,
   generateRealTimeData,
-  symitriDapRtdSubmodule,
-  onBidWonListener,
-  storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
+  storage,
+  symitriDapRtdSubmodule
 } from 'modules/symitriDapRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import { hook } from '../../../src/hook.js';
-import { EVENTS } from 'src/constants.js';
+
 const responseHeader = { 'Content-Type': 'application/json' };
 
 const events = require('src/events');
@@ -22,7 +26,7 @@ describe('symitriDapRtdProvider', function() {
     ]
   };
 
-  const onDone = function() { return true };
+  const onDone = function() { return true; };
 
   const sampleGdprConsentConfig = {
     'gdpr': {
@@ -51,7 +55,7 @@ describe('symitriDapRtdProvider', function() {
       'identityType': 'dap-signature:1.0.0',
       'segtax': 708
     }
-  }
+  };
 
   const emoduleConfig = {
     'name': 'symitriDap',
@@ -64,7 +68,7 @@ describe('symitriDapRtdProvider', function() {
       'segtax': 710,
       'pixelUrl': 'https://www.test.com/pixel'
     }
-  }
+  };
 
   const sampleConfig = {
     'api_hostname': 'prebid.dap.akadns.net',
@@ -72,7 +76,7 @@ describe('symitriDapRtdProvider', function() {
     'domain': 'prebid.org',
     'segtax': 708,
     'identity': sampleIdentity
-  }
+  };
 
   const sampleX2Config = {
     'api_hostname': 'prebid.dap.akadns.net',
@@ -80,7 +84,7 @@ describe('symitriDapRtdProvider', function() {
     'domain': 'prebid.org',
     'segtax': 708,
     'identity': sampleIdentity
-  }
+  };
 
   const esampleConfig = {
     'api_hostname': 'prebid.dap.akadns.net',
@@ -88,7 +92,7 @@ describe('symitriDapRtdProvider', function() {
     'domain': 'prebid.org',
     'segtax': 710,
     'identity': sampleIdentity
-  }
+  };
   const cacheExpiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
   const sampleCachedToken = { 'expires_at': cacheExpiry, 'token': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..6buzBd2BjtgoyaNbHN8YnQ.l38avCfm3sYNy798-ETYOugz0cOx1cCkjACkAhYszxzrZ0sUJ0AiF-NdDXVTiTyp2Ih3vCWKzS0rKJ8lbS1zhyEVWVu91QwtwseM2fBbwA5ggAgBEo5wV-IXqDLPxVnxsPF0D3hP6cNCiH9Q2c-vULfsLhMhG5zvvZDPBbn4hUY5fKB8LoCBTF9rbuuWGYK1nramnb4AlS5UK82wBsHQea1Ou_Kp5wWCMNZ6TZk5qKIuRBfPIAhQblWvHECaHXkg1wyoM9VASs_yNhne7RR-qkwzbFiPFiMJibNOt9hF3_vPDJO5-06ZBjRTP1BllYGWxI-uQX6InzN18Wtun2WHqg.63sH0SNlIRcsK57v0pMujfB_nhU8Y5CuQbsHqH5MGoM' };
   const cachedEncryptedMembership = { 'expires_at': cacheExpiry, 'encryptedSegments': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQifQ..IvnIUQDqWBVYIS0gbcE9bw.Z4NZGvtogWaWlGH4e-GdYKe_PUc15M2x3Bj85rMWsN1A17mIxQIMOfg2hsQ2tgieLu5LggWPmsFu1Wbph6P0k3kOu1dVReoIhOHzxw50rP0DLHKaEZ5mLMJ7Lcosvwh4miIfFuCHlsX7J0sFgOTAp0zGo1S_UsHLtev1JflhjoSB0AoX95ALbAnyctirPuLJM8gZ1vXTiZ01jpvucGyR1lM4cWjPOeD8jPtgwaPGgSRZXE-3X2Cqy7z4Giam5Uqu74LPWTBuKtUQTGyAXA5QJoP7xwTbsU4O1f69lu3fWNqC92GijeTH1A4Zd_C-WXxWuQlDEURjlkWQoaqTHka2OqlnwukEQIf_v0r5KQQX64CTLhEUH91jeD0-E9ClcIP7pwOLxxqiKoaBmx8Mrnm_6Agj5DtTA1rusy3AL63sI_rsUxrmLrVt0Wft4aCfRkW8QpQxu8clFdOmce0NNCGeBCyCPVw9d9izrILlXJ6rItU2cpFrcbz8uw2otamF5eOFCOY3IzHedWVNNuKHFIUVC_xYSlsYvQ8f2QIP1eiMbmukcuPzmTzjw1h1_7IKaj-jJkXrnrY-TdDgX_4-_Z3rmbpXK2yTR7dBrsg-ubqFbgbKic1b4zlQEO_LbBlgPl3DYdWEuJ8CY2NUt1GfpATQGsufS2FTY1YGw_gkPe3q04l_cgLafDoxHvHh_t_0ZgPjciW82gThB_kN4RP7Mc3krVcXl_P6N1VbV07xyx0hCyVsrrxbLslI8q9wYDiLGci7mNmByM5j7SXV9jPwwPkHtn0HfMJlw2PFbIDPjgG3h7sOyLcBIJTTvuUIgpHPIkRWLIl_4FlIucXbJ7orW2nt5BWleBVHgumzGcnl9ZNcZb3W-dsdYPSOmuj0CY28MRTP2oJ1rzLInbDDpIRffJBtR7SS4nYyy7Vi09PtBigod5YNz1Q0WDSJxr8zeH_aKFaXInw7Bfo_U0IAcLiRgcT0ogsMLeQRjRFy27mr4XNJv3NtHhbdjDAwF2aClCktXyXbQaVdsPH2W71v6m2Q9rB5GQWOktw2s5f-4N1-_EBPGq6TgjF-aJZP22MJVwp1pimT50DfOzoeEqDwi862NNwNNoHmcObH0ZfwAXlhRxsgupNBe20-MNNABj2Phlfv4DUrtQbMdfCnNiypzNCmoTb7G7c_o5_JUwoV_GVkwUtvmi_IUm05P4GeMASSUw8zDKVRAj9h31C2cabM8RjMHGhkbCWpUP2pcz9zlJ7Y76Dh3RLnctfTw7DG9U4w4UlaxNZOgLUiSrGwfyapuSiuGUpuOJkBBLiHmEqAGI5C8oJpcVRccNlHxJAYowgXyFopD5Fr-FkXmv8KMkS0h5C9F6KihmDt5sqDD0qnjM0hHJgq01l7wjVnhEmPpyD-6auFQ-xDnbh1uBOJ_0gCVbRad--FSa5p-dXenggegRxOvZXJ0iAtM6Fal5Og-RCjexIHa9WhVbXhQBJpkSTWwAajZJ64eQ.yih49XB51wE-Xob7COT9OYqBrzBmIMVCQbLFx2UdzkI' };
@@ -174,11 +178,11 @@ describe('symitriDapRtdProvider', function() {
 
   describe('Get Real-Time Data', function() {
     it('gets rtd from local storage cache', function() {
-      const dapGetMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetMembershipFromLocalStorage').returns(membership)
-      const dapGetRtdObjStub = sinon.stub(dapUtils, 'dapGetRtdObj').returns(cachedRtd)
-      const dapGetEncryptedMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetEncryptedMembershipFromLocalStorage').returns(encMembership)
-      const dapGetEncryptedRtdObjStub = sinon.stub(dapUtils, 'dapGetEncryptedRtdObj').returns(cachedEncRtd)
-      const callDapApisStub = sinon.stub(dapUtils, 'callDapAPIs')
+      const dapGetMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetMembershipFromLocalStorage').returns(membership);
+      const dapGetRtdObjStub = sinon.stub(dapUtils, 'dapGetRtdObj').returns(cachedRtd);
+      const dapGetEncryptedMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetEncryptedMembershipFromLocalStorage').returns(encMembership);
+      const dapGetEncryptedRtdObjStub = sinon.stub(dapUtils, 'dapGetEncryptedRtdObj').returns(cachedEncRtd);
+      const callDapApisStub = sinon.stub(dapUtils, 'callDapAPIs');
       try {
         storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
         expect(ortb2).to.eql({});
@@ -188,11 +192,11 @@ describe('symitriDapRtdProvider', function() {
         generateRealTimeData(bidConfig, () => {}, cmoduleConfig, {});
         expect(ortb2.user.data).to.deep.include.members([rtdUserObj]);
       } finally {
-        dapGetRtdObjStub.restore()
-        dapGetMembershipFromLocalStorageStub.restore()
-        dapGetEncryptedRtdObjStub.restore()
-        dapGetEncryptedMembershipFromLocalStorageStub.restore()
-        callDapApisStub.restore()
+        dapGetRtdObjStub.restore();
+        dapGetMembershipFromLocalStorageStub.restore();
+        dapGetEncryptedRtdObjStub.restore();
+        dapGetEncryptedMembershipFromLocalStorageStub.restore();
+        callDapApisStub.restore();
       }
     });
   });
@@ -200,14 +204,14 @@ describe('symitriDapRtdProvider', function() {
   describe('calling DAP APIs', function() {
     it('Calls callDapAPIs for unencrypted segments flow', function() {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
-      const dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
+      const dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry);
       try {
         expect(ortb2).to.eql({});
         dapUtils.callDapAPIs(bidConfig, () => {}, cmoduleConfig, {});
-        const membership = { 'cohorts': ['9', '11', '13'], 'said': 'sample-said' }
+        const membership = { 'cohorts': ['9', '11', '13'], 'said': 'sample-said' };
         const membershipRequest = server.requests[0];
         membershipRequest.respond(200, responseHeader, JSON.stringify(membership));
-        const tokenWithExpiry = 'Sample-token-with-exp'
+        const tokenWithExpiry = 'Sample-token-with-exp';
         const tokenizeRequest = server.requests[1];
         tokenizeRequest.requestHeaders['Content-Type'].should.equal('application/json');
         responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
@@ -221,7 +225,7 @@ describe('symitriDapRtdProvider', function() {
 
     it('Calls callDapAPIs for encrypted segments flow', function() {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
-      const dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
+      const dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry);
       try {
         expect(ortb2).to.eql({});
         dapUtils.callDapAPIs(bidConfig, () => {}, emoduleConfig, {});
@@ -229,7 +233,7 @@ describe('symitriDapRtdProvider', function() {
         const membershipRequest = server.requests[0];
         responseHeader['Symitri-DAP-Token'] = encMembership;
         membershipRequest.respond(200, responseHeader, JSON.stringify(encMembership));
-        const tokenWithExpiry = 'Sample-token-with-exp'
+        const tokenWithExpiry = 'Sample-token-with-exp';
         const tokenizeRequest = server.requests[1];
         tokenizeRequest.requestHeaders['Content-Type'].should.equal('application/json');
         responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
@@ -446,8 +450,8 @@ describe('symitriDapRtdProvider', function() {
         domain: 'prebid.org',
         segtax: 708
       };
-      expect(dapUtils.dapRefreshMembership(ortb2, config, 'token', onDone)).to.equal(undefined)
-      const membership = { cohorts: ['1', '5', '7'] }
+      expect(dapUtils.dapRefreshMembership(ortb2, config, 'token', onDone)).to.equal(undefined);
+      const membership = { cohorts: ['1', '5', '7'] };
       expect(dapUtils.dapGetRtdObj(membership, config.segtax)).to.not.equal(undefined);
     });
   });
@@ -464,16 +468,16 @@ describe('symitriDapRtdProvider', function() {
 
   describe('dapExtractExpiryFromToken test', function () {
     it('test dapExtractExpiryFromToken function', function () {
-      const tokenWithoutExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..6buzBd2BjtgoyaNbHN8YnQ.l38avCfm3sYNy798-ETYOugz0cOx1cCkjACkAhYszxzrZ0sUJ0AiF-NdDXVTiTyp2Ih3vCWKzS0rKJ8lbS1zhyEVWVu91QwtwseM2fBbwA5ggAgBEo5wV-IXqDLPxVnxsPF0D3hP6cNCiH9Q2c-vULfsLhMhG5zvvZDPBbn4hUY5fKB8LoCBTF9rbuuWGYK1nramnb4AlS5UK82wBsHQea1Ou_Kp5wWCMNZ6TZk5qKIuRBfPIAhQblWvHECaHXkg1wyoM9VASs_yNhne7RR-qkwzbFiPFiMJibNOt9hF3_vPDJO5-06ZBjRTP1BllYGWxI-uQX6InzN18Wtun2WHqg.63sH0SNlIRcsK57v0pMujfB_nhU8Y5CuQbsHqH5MGoM'
+      const tokenWithoutExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..6buzBd2BjtgoyaNbHN8YnQ.l38avCfm3sYNy798-ETYOugz0cOx1cCkjACkAhYszxzrZ0sUJ0AiF-NdDXVTiTyp2Ih3vCWKzS0rKJ8lbS1zhyEVWVu91QwtwseM2fBbwA5ggAgBEo5wV-IXqDLPxVnxsPF0D3hP6cNCiH9Q2c-vULfsLhMhG5zvvZDPBbn4hUY5fKB8LoCBTF9rbuuWGYK1nramnb4AlS5UK82wBsHQea1Ou_Kp5wWCMNZ6TZk5qKIuRBfPIAhQblWvHECaHXkg1wyoM9VASs_yNhne7RR-qkwzbFiPFiMJibNOt9hF3_vPDJO5-06ZBjRTP1BllYGWxI-uQX6InzN18Wtun2WHqg.63sH0SNlIRcsK57v0pMujfB_nhU8Y5CuQbsHqH5MGoM';
       expect(dapUtils.dapExtractExpiryFromToken(tokenWithoutExpiry)).to.equal(undefined);
-      const tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw'
+      const tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw';
       expect(dapUtils.dapExtractExpiryFromToken(tokenWithExpiry)).to.equal(1643830369);
     });
   });
 
   describe('dapRefreshToken test', function () {
     it('test dapRefreshToken success response', function () {
-      dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone);
       const request = server.requests[0];
       request.requestHeaders['Content-Type'].should.equal('application/json');
       responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
@@ -482,7 +486,7 @@ describe('symitriDapRtdProvider', function() {
     });
 
     it('test dapRefreshToken success response with deviceid 100', function () {
-      dapUtils.dapRefreshToken(ortb2, esampleConfig, true, onDone)
+      dapUtils.dapRefreshToken(ortb2, esampleConfig, true, onDone);
       const request = server.requests[0];
       request.requestHeaders['Content-Type'].should.equal('application/json');
       responseHeader['Symitri-DAP-100'] = sampleCachedToken.token;
@@ -491,9 +495,9 @@ describe('symitriDapRtdProvider', function() {
     });
 
     it('test dapRefreshToken success response with exp claim', function () {
-      dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone);
       const request = server.requests[0];
-      const tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw'
+      const tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw';
       responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
       request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
@@ -502,7 +506,7 @@ describe('symitriDapRtdProvider', function() {
 
     it('test dapRefreshToken error response', function () {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
-      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone);
       const request = server.requests[0];
       request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(400, responseHeader, 'error');
@@ -514,35 +518,35 @@ describe('symitriDapRtdProvider', function() {
     it('test dapRefreshEncryptedMembership success response', function () {
       const expiry = Math.round(Date.now() / 1000.0) + 3600; // in seconds
       const encMembership = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQifQ..f8_At4OqeQXyQcSwThOJ_w.69ImVQ3bEZ6QP7ROCRpAJjNcKY49SEPYR6qTp_8l7L8kQdPbpi4wmuOzt78j7iBrX64k2wltzmQFjDmVKSxDhrEguxpgx6t-L1tT8ZA0UosMWpVsgmKEZxOn2e9ES3jw8RNCS4WSWocSPQX33xSb51evXjm9E1s0tGoLnwXl0GsUvzRsSU86wQG6RZnAQTi7s-r-M2TKibdDjUqgIt62vJ-aBZ7RWw91MINgOdmDNs1bFfbBX5Cy1kd4-kjvRDz_aJ6zHX4sK_7EmQhGEY3tW-A3_l2I88mw-RSJaPkb_IWg0QpVwXDaE2F2g8NpY1PzCRvG_NIE8r28eK5q44OMVitykHmKmBXGDj7z2JVgoXkfo5u0I-dypZARn4GP_7niK932avB-9JD7Mz3TrlU4GZ7IpYfJ91PMsRhrs5xNPQwLZbpuhF76A7Dp7iss71UjkGCiPTU6udfRb4foyf_7xEF66m1eQVcVaMdxEbMuu9GBfdr-d04TbtJhPfUV8JfxTenvRYoi13n0j5kH0M5OgaSQD9kQ3Mrd9u-Cms-BGtT0vf-N8AaFZY_wn0Y4rkpv5HEaH7z3iT4RCHINWrXb_D0WtjLTKQi2YmF8zMlzUOewNJGwZRwbRwxc7JoDIKEc5RZkJYevfJXOEEOPGXZ7AGZxOEsJawPqFqd_nOUosCZS4akHhcDPcVowoecVAV0hhhoS6JEY66PhPp1snbt6yqA-fQhch7z8Y-DZT3Scibvffww3Scg_KFANWp0KeEvHG0vyv9R2F4o66viSS8y21MDnM7Yjk8C-j7aNMldUQbjN_7Yq1nkfe0jiBX_hsINBRPgJHUY4zCaXuyXs-JZZfU92nwG0RT3A_3RP2rpY8-fXp9d3C2QJjEpnmHvTMsuAZCQSBe5DVrJwN_UKedxcJEoOt0wLz6MaCMyYZPd8tnQeqYK1cd3RgQDXtzKC0HDw1En489DqJXEst4eSSkaaW1lImLeaF8XCOaIqPqoyGk4_6KVLw5Q7OnpczuXqYKMd9UTMovGeuTuo1k0ddfEqTq9QwxkwZL51AiDRnwTCAeYBU1krV8FCJQx-mH_WPB5ftZj-o_3pbvANeRk27QBVmjcS-tgDllJkWBxX-4axRXzLw8pUUUZUT_NOL0OiqUCWVm0qMBEpgRQ57Se42-hkLMTzLhhGJOnVcaXU1j4ep-N7faNvbgREBjf_LgzvaWS90a2NJ9bB_J9FyXelhCN_AMLfdOS3fHkeWlZ0u0PMbn5DxXRMe0l9jB-2VJZhcPQRlWoYyoCO3l4F5ZmuQP5Xh9CU4tvSWih6jlwMDgdVWuTpdfPD5bx8ccog3JDq87enx-QtPzLU3gMgouNARJGgNwKS_GJSE1uPrt2oiqgZ3Z0u_I5MKvPdQPV3o-4rsaE730eB4OwAOF-mkGWpzy8Pbl-Qe5PR9mHBhuyJgZ-WDSCHl5yvet2kfO9mPXZlqBQ26fzTcUYH94MULAZn36og6w.3iKGv-Le-AvRmi26W1v6ibRLGbwKbCR92vs-a9t55hw';
-      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
-      const rtdObj = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, 710)
+      const rtdObj = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, 710);
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(expiry);
     });
 
     it('test dapRefreshEncryptedMembership success response with exp claim', function () {
       const encMembership = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQiLCJleHAiOjE2NDM4MzA2NDB9..inYoxwht_aqTIWqGhEm_Gw.wDcCUOCwtqgnNUouaD723gKfm7X7bgkHgtiX4mr07P3tWk25PUQunmwTLhWBB5CYzzGIfIvveG_u4glNRLi_eRSQV4ihKKk1AN-BSSJ3d0CLAdY9I1WG5vX1VmopXyKnV90bl9SLNqnhg4Vxe6YU4ogTYxsKHuIN1EeIH4hpl-HbCQWQ1DQt4mB-MQF8V9AWTfU0D7sFMSK8f9qj6NGmf1__oHdHUlws0t5V2UAn_dhJexsuREK_gh65pczCuly5eEcziZ82LeP-nOhKWSRHB_tS_mKXrRU6_At_EVDgtfA3PSBJ6eQylCii6bTL42vZzz4jZhJv_3eLfRdKqpVT5CWNBzcDoQ2VcQgKgIBtPJ45KFfAYTQ6kdl21QMSjqtu8GTsv1lEZtrqHY6zRiG8_Mu28-PmjEw4LDdZmBDOeroue_MJD6wuE_jlE7J2iVdo8CkVnoRgzFwNbKBo7CK4z0WahV9rhuOm0LKAN5H0jF_gj696U-3fVTDTIb8ndNKNI2_xAhvWs00BFGtUtWgr8QGDGRTDCNGsDgnb_Vva9xCqVOyAE9O3Fq1QYl-tMA-KkBt3zzvmFFpOxpOyH-lUubKLKlsrxKc3GSyVEQ9DDLhrXXJgR5H5BSE4tjlK7p3ODF5qz0FHtIj7oDcgLazFO7z2MuFy2LjJmd3hKl6ujcfYEDiQ4D3pMIo7oiU33aFBD1YpzI4-WzNfJlUt1FoK0-DAXpbbV95s8p08GOD4q81rPw5hRADKJEr0QzrbDwplTWCzT2fKXMg_dIIc5AGqGKnVRUS6UyF1DnHpudNIJWxyWZjWIEw_QNjU0cDFmyPSyKxNrnfq9w8WE2bfbS5KTicxei5QHnC-cnL7Nh7IXp7WOW6R1YHbNPT7Ad4OhnlV-jjrXwkSv4wMAbfwAWoSCchGh7uvENNAeJymuponlJbOgw_GcYM73hMs8Z8W9qxRfbyF4WX5fDKXg61mMlaieHkc0EnoC5q7uKyXuZUehHZ76JLDFmewslLkQq5SkVCttzJePBnY1ouPEHw5ZTzUnG5f01QQOVcjIN-AqXNDbG5IOwq0heyS6vVfq7lZKJdLDVQ21qRjazGPaqYwLzugkWkzCOzPTgyFdbXzgjfmJwylHSOM5Jpnul84GzxEQF-1mHP2A8wtIT-M7_iX24It2wwWvc8qLA6GEqruWCtNyoug8CXo44mKdSSCGeEZHtfMbzXdLIBHCy2jSHz5i8S7DU_R7rE_5Ssrb81CqIYbgsAQBHtOYoyvzduTOruWcci4De0QcULloqImIEHUuIe2lnYO889_LIx5p7nE3UlSvLBo0sPexavFUtHqI6jdG6ye9tdseUEoNBDXW0aWD4D-KXX1JLtAgToPVUtEaXCJI7QavwO9ZG6UZM6jbfuJ5co0fvUXp6qYrFxPQo2dYHkar0nT6s1Zg5l2g8yWlLUJrHdHAzAw_NScUp71OpM4TmNsLnYaPVPcOxMvtJXTanbNWr0VKc8gy9q3k_1XxAnQwiduNs7f5bA-6qCVpayHv5dE7mUhFEwyh1_w95jEaURsQF_hnnd2OqRkADfiok4ZiPU2b38kFW1LXjpI39XXES3JU0e08Rq2uuelyLbCLWuJWq_axuKSZbZvpYeqWtIAde8FjCiO7RPlEc0nyzWBst8RBxQ-Bekg9UXPhxBRcm0HwA.Q2cBSFOQAC-QKDwmjrQXnVQd3jNOppMl9oZfd2yuKeY';
-      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
-      const rtdObj = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, 710)
+      const rtdObj = dapUtils.dapGetEncryptedRtdObj({ 'encryptedSegments': encMembership }, 710);
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(1643830630);
     });
 
     it('test dapRefreshEncryptedMembership error response', function () {
-      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(400, responseHeader, 'error');
       expect(ortb2).to.eql({});
     });
 
     it('test dapRefreshEncryptedMembership 403 error response', function () {
-      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(403, responseHeader, 'error');
       const requestTokenize = server.requests[1];
@@ -556,7 +560,7 @@ describe('symitriDapRtdProvider', function() {
 
   describe('dapRefreshMembership test', function () {
     it('test dapRefreshMembership success response', function () {
-      const membership = { 'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..17wnrhz6FbWx0Cf6LXpm1A.m9PKVCradk3CZokNKzVHzE06TOqiXYeijgxTQUiQy5Syx-yicnO8DyYX6zQ6rgPcNgUNRt4R4XE5MXuK0laUVQJr9yc9g3vUfQfw69OMYGW_vRlLMPzoNOhF2c4gSyfkRrLr7C0qgALmZO1D11sPflaCTNmO7pmZtRaCOB5buHoWcQhp1bUSJ09DNDb31dX3llimPwjNGSrUhyq_EZl4HopnnjxbM4qVNMY2G_43C_idlVOvbFoTxcDRATd-6MplJoIOIHQLDZEetpIOVcbEYN9gQ_ndBISITwuu5YEgs5C_WPHA25nm6e4BT5R-tawSA8yPyQAupqE8gk4ZWq_2-T0cqyTstIHrMQnZ_vysYN7h6bkzE-KeZRk7GMtySN87_fiu904hLD9QentGegamX6UAbVqQh7Htj7SnMHXkEenjxXAM5mRqQvNCTlw8k-9-VPXs-vTcKLYP8VFf8gMOmuYykgWac1gX-svyAg-24mo8cUbqcsj9relx4Qj5HiXUVyDMBZxK-mHZi-Xz6uv9GlggcsjE13DSszar-j2OetigpdibnJIxRZ-4ew3-vlvZ0Dul3j0LjeWURVBWYWfMjuZ193G7lwR3ohh_NzlNfwOPBK_SYurdAnLh7jJgTW-lVLjH2Dipmi9JwX9s03IQq9opexAn7hlM9oBI6x5asByH8JF8WwZ5GhzDjpDwpSmHPQNGFRSyrx_Sh2CPWNK6C1NJmLkyqAtJ5iw0_al7vPDQyZrKXaLTjBCUnbpJhUZ8dUKtWLzGPjzFXp10muoDIutd1NfyKxk1aWGhx5aerYuLdywv6cT_M8RZTi8924NGj5VA30V5OvEwLLyX93eDhntXZSCbkPHpAfiRZNGXrPY.GhCbWGQz11mIRD4uPKmoAuFXDH7hGnils54zg7N7-TU' }
+      const membership = { 'cohorts': ['9', '11', '13'], 'said': 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIn0..17wnrhz6FbWx0Cf6LXpm1A.m9PKVCradk3CZokNKzVHzE06TOqiXYeijgxTQUiQy5Syx-yicnO8DyYX6zQ6rgPcNgUNRt4R4XE5MXuK0laUVQJr9yc9g3vUfQfw69OMYGW_vRlLMPzoNOhF2c4gSyfkRrLr7C0qgALmZO1D11sPflaCTNmO7pmZtRaCOB5buHoWcQhp1bUSJ09DNDb31dX3llimPwjNGSrUhyq_EZl4HopnnjxbM4qVNMY2G_43C_idlVOvbFoTxcDRATd-6MplJoIOIHQLDZEetpIOVcbEYN9gQ_ndBISITwuu5YEgs5C_WPHA25nm6e4BT5R-tawSA8yPyQAupqE8gk4ZWq_2-T0cqyTstIHrMQnZ_vysYN7h6bkzE-KeZRk7GMtySN87_fiu904hLD9QentGegamX6UAbVqQh7Htj7SnMHXkEenjxXAM5mRqQvNCTlw8k-9-VPXs-vTcKLYP8VFf8gMOmuYykgWac1gX-svyAg-24mo8cUbqcsj9relx4Qj5HiXUVyDMBZxK-mHZi-Xz6uv9GlggcsjE13DSszar-j2OetigpdibnJIxRZ-4ew3-vlvZ0Dul3j0LjeWURVBWYWfMjuZ193G7lwR3ohh_NzlNfwOPBK_SYurdAnLh7jJgTW-lVLjH2Dipmi9JwX9s03IQq9opexAn7hlM9oBI6x5asByH8JF8WwZ5GhzDjpDwpSmHPQNGFRSyrx_Sh2CPWNK6C1NJmLkyqAtJ5iw0_al7vPDQyZrKXaLTjBCUnbpJhUZ8dUKtWLzGPjzFXp10muoDIutd1NfyKxk1aWGhx5aerYuLdywv6cT_M8RZTi8924NGj5VA30V5OvEwLLyX93eDhntXZSCbkPHpAfiRZNGXrPY.GhCbWGQz11mIRD4uPKmoAuFXDH7hGnils54zg7N7-TU' };
       dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
@@ -569,20 +573,20 @@ describe('symitriDapRtdProvider', function() {
       dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
-      const rtdObj = dapUtils.dapGetRtdObj(membership, 708)
+      const rtdObj = dapUtils.dapGetRtdObj(membership, 708);
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_MEMBERSHIP)).expires_at).to.be.equal(1647971548);
     });
 
     it('test dapRefreshMembership 400 error response', function () {
-      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(400, responseHeader, 'error');
       expect(ortb2).to.eql({});
     });
 
     it('test dapRefreshMembership 403 error response', function () {
-      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone)
+      dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       const request = server.requests[0];
       request.respond(403, responseHeader, 'error');
       expect(server.requests.length).to.be.equal(DAP_MAX_RETRY_TOKENIZE);
@@ -591,14 +595,14 @@ describe('symitriDapRtdProvider', function() {
 
   describe('dapGetEncryptedMembershipFromLocalStorage test', function () {
     it('test dapGetEncryptedMembershipFromLocalStorage function with valid cache', function () {
-      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(cachedEncryptedMembership))
+      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(cachedEncryptedMembership));
       expect(JSON.stringify(dapUtils.dapGetEncryptedMembershipFromLocalStorage())).to.equal(JSON.stringify(encMembership));
     });
 
     it('test dapGetEncryptedMembershipFromLocalStorage function with invalid cache', function () {
       const expiry = Math.round(Date.now() / 1000.0) - 100; // in seconds
-      const encMembership = { 'expiry': expiry, 'encryptedSegments': cachedEncryptedMembership.encryptedSegments }
-      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(encMembership))
+      const encMembership = { 'expiry': expiry, 'encryptedSegments': cachedEncryptedMembership.encryptedSegments };
+      storage.setDataInLocalStorage(DAP_ENCRYPTED_MEMBERSHIP, JSON.stringify(encMembership));
       expect(dapUtils.dapGetEncryptedMembershipFromLocalStorage()).to.equal(null);
     });
   });
@@ -606,7 +610,7 @@ describe('symitriDapRtdProvider', function() {
   describe('Symitri-DAP-SS-ID test', function () {
     it('Symitri-DAP-SS-ID present in response header', function () {
       const expiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
-      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone);
       const request = server.requests[0];
       request.requestHeaders['Content-Type'].should.equal('application/json');
       const sampleSSID = 'Test_SSID_Spec';
@@ -618,8 +622,8 @@ describe('symitriDapRtdProvider', function() {
 
     it('Test if Symitri-DAP-SS-ID is present in request header', function () {
       const expiry = Math.round(Date.now() / 1000.0) + 100; // in seconds
-      storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'))
-      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
+      storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'));
+      dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone);
       const request = server.requests[0];
       request.requestHeaders['Content-Type'].should.equal('application/json');
       const ssidHeader = request.requestHeaders['Symitri-DAP-SS-ID'];
@@ -676,7 +680,7 @@ describe('symitriDapRtdProvider', function() {
         const hid = await dapUtils.addIdentifier(identity, apiParams).then();
         expect(hid['identity']).is.equal('843BE0FB20AAE699F27E5BC88C554B716F3DD366F58C1BDE0ACFB7EA0DD90CE7');
       } else {
-        expect(window.crypto.subtle).is.undefined
+        expect(window.crypto.subtle).is.undefined;
       }
     });
 
@@ -684,7 +688,7 @@ describe('symitriDapRtdProvider', function() {
       const test_identity = undefined;
       const identity = {
         identity: test_identity
-      }
+      };
       const apiParams = {
         'type': identity.type,
       };

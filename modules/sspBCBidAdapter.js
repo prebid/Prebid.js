@@ -61,7 +61,7 @@ const getNativeAssetType = id => {
       return assetName;
     }
   }
-}
+};
 
 /**
  * Get preferred language of browser (i.e. user)
@@ -103,7 +103,7 @@ const getTopHost = () => {
 const unpackParams = (bidParams) => {
   const result = isArray(bidParams) ? bidParams[0] : bidParams;
   return result || {};
-}
+};
 
 /**
  * Get bid parameters for notification
@@ -117,7 +117,7 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
-      }
+      };
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
         const { platform = 'wpartner' } = meta;
@@ -129,8 +129,8 @@ const getNotificationPayload = bidData => {
           timeout: timeout || result.timeout,
           pvid: pageView.id,
           platform
-        }
-        result = { ...result, ...bidBasicData }
+        };
+        result = { ...result, ...bidBasicData };
 
         result.tagid.push(adUnitCode);
 
@@ -156,14 +156,14 @@ const getNotificationPayload = bidData => {
             adomain: advertiserDomains[0],
             adtype: mediaType,
             networkName,
-          }
-          result = { ...result, ...bidNonEmptyData }
+          };
+          result = { ...result, ...bidNonEmptyData };
         }
-      })
+      });
       return result;
     }
   }
-}
+};
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
@@ -259,7 +259,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
     ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
     ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
-}
+};
 
 /**
  * Get highest floorprice for a given adslot
@@ -270,7 +270,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
-  const currency = requestCurrency
+  const currency = requestCurrency;
   const result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
@@ -322,7 +322,7 @@ const sendNotification = payload => {
     method: 'POST',
     crossOrigin: true
   });
-}
+};
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
@@ -342,7 +342,7 @@ const mapBanner = slot => {
       id: slot.bidId,
     };
   }
-}
+};
 
 /**
  * @param {string} paramName Native parameter name
@@ -454,7 +454,7 @@ const mapNative = (slot) => {
       })
     };
   }
-}
+};
 
 var mapVideo = (slot, videoFromBid) => {
   var videoFromSlot = deepAccess(slot, 'mediaTypes.video');
@@ -528,23 +528,23 @@ const mapImpression = slot => {
   imp.bidfloorcur = currency;
 
   return imp;
-}
+};
 
 const isVideoAd = bid => {
   const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
-}
+};
 
 const isNativeAd = bid => {
   const xmlTester = new RegExp(/^{['"]native['"]/);
 
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
-}
+};
 
 const isHTML = bid => {
   const xmlTester = new RegExp(/^<html|<iframe/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
-}
+};
 
 const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
@@ -597,7 +597,7 @@ const parseNative = (nativeData, adUnitCode) => {
   });
 
   return result;
-}
+};
 
 const spec = {
   code: BIDDER_CODE,

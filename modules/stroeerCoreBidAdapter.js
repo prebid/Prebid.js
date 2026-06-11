@@ -28,7 +28,7 @@ export const spec = {
           logWarn(`${BIDDER_CODE}: Bid setup for ${bidRequest.adUnitCode} is invalid: ${msg}`);
           return false;
         }
-      }
+      };
     };
 
     const hasValidMediaType = bidReq => hasBanner(bidReq) || hasVideo(bidReq);
@@ -42,7 +42,7 @@ export const spec = {
 
     return function (bidRequest) {
       return validators.every(f => f(bidRequest));
-    }
+    };
   }()),
 
   buildRequests: function (validBidRequests = [], bidderRequest) {
@@ -148,7 +148,7 @@ const isMainPageAccessible = () => {
   } catch (ignore) {
     return false;
   }
-}
+};
 
 const elementInView = (elementId) => {
   // TODO this should use getAdUnitElement
@@ -175,7 +175,7 @@ const elementInView = (elementId) => {
     // old browser, element not found, cross-origin etc.
   }
   return undefined;
-}
+};
 
 const buildEndpointUrl = ({ host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH }) => {
   if (securePort) {
@@ -183,24 +183,24 @@ const buildEndpointUrl = ({ host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, 
   }
 
   return buildUrl({ protocol: 'https', hostname, port, pathname });
-}
+};
 
 const getGdprParams = gdprConsent => {
   if (gdprConsent) {
-    const consentString = encodeURIComponent(gdprConsent.consentString || '')
+    const consentString = encodeURIComponent(gdprConsent.consentString || '');
     const isGdpr = gdprConsent.gdprApplies ? 1 : 0;
 
-    return `?gdpr=${isGdpr}&gdpr_consent=${consentString}`
+    return `?gdpr=${isGdpr}&gdpr_consent=${consentString}`;
   } else {
     return '';
   }
-}
+};
 
 const hasBanner = bidReq => {
   return (!bidReq.mediaTypes && !bidReq.mediaType) ||
     (bidReq.mediaTypes && bidReq.mediaTypes.banner) ||
     bidReq.mediaType === BANNER;
-}
+};
 
 const hasVideo = bidReq => {
   const mediaTypes = bidReq.mediaTypes;
@@ -216,7 +216,7 @@ const mapToPayloadBaseBid = (bidRequest) => {
     viz: elementInView(bidRequest.adUnitCode),
     sfp: bidRequest.params.sfp,
     tid: bidRequest.transactionId,
-  }
+  };
   copyDeepPaths(bid, bidRequest.ortb2Imp, ['ext.gpid'], 'ortb2Imp');
   return bid;
 };
@@ -286,7 +286,7 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
         p: sizeFloor.floor
       }))
   };
-}
+};
 
 const copyDeepPaths = (target, source, paths, targetPrefix = '') => {
   paths.forEach(path => {
@@ -299,6 +299,6 @@ const copyDeepPaths = (target, source, paths, targetPrefix = '') => {
       deepSetValue(target, targetPath, value);
     }
   });
-}
+};
 
 registerBidder(spec);

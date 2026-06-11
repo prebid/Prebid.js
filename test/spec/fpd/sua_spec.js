@@ -4,7 +4,6 @@ import {
   SUA_SOURCE_HIGH_ENTROPY,
   SUA_SOURCE_LOW_ENTROPY,
   SUA_SOURCE_UNKNOWN,
-  suaFromUAData,
   uaDataToSUA
 } from '../../../src/fpd/sua.js';
 
@@ -25,11 +24,11 @@ describe('uaDataToSUA', () => {
         model: 'mockModel',
         bitness: '64',
         architecture: 'arm'
-      }
+      };
       delete example[uaKey];
       const sua = uaDataToSUA(SUA_SOURCE_UNKNOWN, example);
       expect(sua.hasOwnProperty(suaKey)).to.be.false;
-    })
+    });
   });
 
   it('should convert low-entropy userAgentData', () => {
@@ -78,7 +77,7 @@ describe('uaDataToSUA', () => {
           ]
         }
       ]
-    })
+    });
   });
 
   it('should convert high entropy properties', () => {
@@ -116,7 +115,7 @@ describe('uaDataToSUA', () => {
       model: 'mockModel',
       platform: 'Linux',
       platformVersion: '5.14.0'
-    }
+    };
 
     expect(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, uaData)).to.eql({
       source: SUA_SOURCE_HIGH_ENTROPY,
@@ -160,8 +159,8 @@ describe('uaDataToSUA', () => {
           ]
         }
       ]
-    })
-  })
+    });
+  });
 });
 
 describe('lowEntropySUAAccessor', () => {
@@ -184,15 +183,15 @@ describe('lowEntropySUAAccessor', () => {
 
   it('should return null if no uaData is available', () => {
     expect(getSUA(null)).to.eql(null);
-  })
+  });
 
   it('should return null if uaData is empty', () => {
     expect(getSUA({})).to.eql(null);
-  })
+  });
 
   it('should return mobile and source', () => {
-    expect(getSUA(new MockUserAgentData())).to.eql({ mobile: 0, source: 1 })
-  })
+    expect(getSUA(new MockUserAgentData())).to.eql({ mobile: 0, source: 1 });
+  });
 });
 
 describe('highEntropySUAAccessor', () => {
@@ -210,32 +209,32 @@ describe('highEntropySUAAccessor', () => {
       getSUA = highEntropySUAAccessor(null);
       return getSUA().then((result) => {
         expect(result).to.eql(null);
-      })
+      });
     });
     it('getHighEntropyValues is not avialable', () => {
       delete userAgentData.getHighEntropyValues;
       return getSUA().then((result) => {
         expect(result).to.eql(null);
-      })
+      });
     });
     it('getHighEntropyValues throws', () => {
-      userAgentData.getHighEntropyValues.callsFake(() => { throw new Error() });
+      userAgentData.getHighEntropyValues.callsFake(() => { throw new Error(); });
       return getSUA().then((result) => {
         expect(result).to.eql(null);
-      })
+      });
     });
     it('getHighEntropyValues rejects', () => {
       userAgentData.getHighEntropyValues.callsFake(() => Promise.reject(new Error()));
       return getSUA().then((result) => {
         expect(result).to.eql(null);
-      })
+      });
     });
     it('getHighEntropyValues returns an empty object', () => {
       userAgentData.getHighEntropyValues.callsFake(() => Promise.resolve({}));
       return getSUA().then((result) => {
         expect(result).to.eql(null);
       });
-    })
+    });
   });
   it('should pass hints to userAgentData', () => {
     getSUA(['h1', 'h2']);
@@ -251,6 +250,6 @@ describe('highEntropySUAAccessor', () => {
   it('should return unmodifiable objects', () => {
     return getSUA().then(result => {
       expect(() => { result.prop = 'value'; }).to.throw();
-    })
-  })
-})
+    });
+  });
+});

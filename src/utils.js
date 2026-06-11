@@ -1,32 +1,23 @@
 import { config } from './config.js';
 
-import { EVENTS } from './constants.js';
 import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
 import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
+import * as logging from './utils/logging.js';
+import * as debug from './utils/debug.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
-export * from './utils/objects.js'
+export * from './utils/objects.js';
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
-const consoleExists = Boolean(window.console);
-const consoleLogExists = Boolean(consoleExists && window.console.log);
-const consoleInfoExists = Boolean(consoleExists && window.console.info);
-const consoleWarnExists = Boolean(consoleExists && window.console.warn);
-const consoleErrorExists = Boolean(consoleExists && window.console.error);
 
-let eventEmitter;
-
-export function _setEventEmitter(emitFn) {
-  // called from events.js - this hoop is to avoid circular imports
-  eventEmitter = emitFn;
-}
-
-function emitEvent(...args) {
-  if (eventEmitter != null) {
-    eventEmitter(...args);
-  }
-}
+// many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
+export const logInfo = logging.logInfo;
+export const logWarn = logging.logWarn;
+export const logError = logging.logError;
+export const logMessage = logging.logMessage;
+export const prefixLog = logging.prefixLog;
+export const debugTurnedOn = debug.debugTurnedOn;
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -47,6 +38,7 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
+  runBackgroundTask,
 };
 
 const prebidInternal = {};
@@ -89,7 +81,7 @@ export function generateUUID(placeholder) {
  */
 function _getRandomData() {
   if (window && window.crypto && window.crypto.getRandomValues) {
-    return crypto.getRandomValues(new Uint8Array(1))[0] % 16;
+    return window.crypto.getRandomValues(new Uint8Array(1))[0] % 16;
   } else {
     return Math.random() * 16;
   }
@@ -132,10 +124,10 @@ export function sizesToSizeTuples(sizes) {
       .split(/\s*,\s*/)
       .map(sz => sz.match(/^(\d+)x(\d+)$/i))
       .filter(match => match)
-      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)]);
   } else if (Array.isArray(sizes)) {
     if (isValidGPTSingleSize(sizes)) {
-      return [sizes]
+      return [sizes];
     }
     return sizes.filter(isValidGPTSingleSize);
   }
@@ -152,7 +144,7 @@ export function parseSizesInput(sizeObj) {
 }
 
 export function sizeTupleToSizeString(size) {
-  return size[0] + 'x' + size[1]
+  return size[0] + 'x' + size[1];
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -171,7 +163,7 @@ export function sizeTupleToRtbSize(size) {
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return sizeTupleToRtbSize(singleSize)
+    return sizeTupleToRtbSize(singleSize);
   }
 }
 
@@ -218,82 +210,6 @@ export function getFallbackWindow(win) {
   return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
 }
 
-/**
- * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
- */
-// eslint-disable-next-line no-restricted-syntax
-export function logMessage() {
-  if (debugTurnedOn() && consoleLogExists) {
-    // eslint-disable-next-line no-console
-    console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
-  }
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logInfo() {
-  if (debugTurnedOn() && consoleInfoExists) {
-    // eslint-disable-next-line no-console
-    console.info.apply(console, decorateLog(arguments, 'INFO:'));
-  }
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logWarn() {
-  if (debugTurnedOn() && consoleWarnExists) {
-    // eslint-disable-next-line no-console
-    console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logError() {
-  if (debugTurnedOn() && consoleErrorExists) {
-    // eslint-disable-next-line no-console
-    console.error.apply(console, decorateLog(arguments, 'ERROR:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
-}
-
-export function prefixLog(prefix) {
-  function decorate(fn) {
-    return function (...args) {
-      fn(prefix, ...args);
-    }
-  }
-  return {
-    logError: decorate(logError),
-    logWarn: decorate(logWarn),
-    logMessage: decorate(logMessage),
-    logInfo: decorate(logInfo),
-  }
-}
-
-function decorateLog(args, prefix) {
-  args = [].slice.call(args);
-  const bidder = config.getCurrentBidder();
-
-  prefix && args.unshift(prefix);
-  if (bidder) {
-    args.unshift(label('#aaa'));
-  }
-  args.unshift(label('#3b88c3'));
-  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
-  return args;
-
-  function label(color) {
-    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
-  }
-}
-
-export function hasConsoleLogger() {
-  return consoleLogExists;
-}
-
-export function debugTurnedOn() {
-  return !!config.getConfig('debug');
-}
-
 export const createIframe = (() => {
   const DEFAULTS = {
     border: '0px',
@@ -304,13 +220,13 @@ export const createIframe = (() => {
     scrolling: 'no',
     frameBorder: '0',
     allowtransparency: 'true'
-  }
+  };
   return (doc, attrs, style = {}) => {
     const f = doc.createElement('iframe');
     Object.assign(f, Object.assign({}, DEFAULTS, attrs));
     Object.assign(f.style, style);
     return f;
-  }
+  };
 })();
 
 export function createInvisibleIframe() {
@@ -383,7 +299,7 @@ export function contains(a, obj) {
  */
 export function _map(object, callback) {
   if (isFn(object?.map)) return object.map(callback);
-  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object));
 }
 
 /*
@@ -440,17 +356,60 @@ export function waitForElementToLoad(element, timeout) {
 }
 
 /**
- * Inserts an image pixel with the specified `url` for cookie sync
- * @param {string} url URL string of the image pixel to load
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
+ * Fires a fire-and-forget request for `url` on the background task queue (a keepalive fetch, falling
+ * back to an image pixel) for cookie sync and similar best-effort pixels.
+ * @param {string} url URL string to request
+ * @param {string} [credentials='include'] fetch credentials mode (e.g. `'include'`, `'omit'`); pass
+ *   `'omit'` for a cookieless request — the image fallback (which cannot omit cookies) is then skipped.
  */
+
+export function politeTriggerPixel(url, credentials = 'include') {
+  const triggerSync = () => {
+    if (window.fetch && window.Request) {
+      try {
+        const request = new Request(url, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials,
+          keepalive: true
+        });
+        window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
+        return;
+      } catch (e) {}
+    }
+    if (credentials !== 'omit') triggerPixel(url);
+  };
+
+  runBackgroundTask(triggerSync);
+}
+
+export function politeInsertUserSyncIframe(url) {
+  runBackgroundTask(() => insertUserSyncIframe(url));
+}
+
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
+}
+
+/**
+ * Run a task at low priority when supported by the browser, or immediately as fallback.
+ * @param {function} task
+ */
+export function runBackgroundTask(task) {
+  const scheduler = window.scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => task(), { timeout: 2000 });
+    return;
+  }
+  task();
 }
 
 /**
@@ -514,8 +473,8 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
 export function encodeMacroURI(url) {
   const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
   return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
-  }, encodeURI(url))
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro);
+  }, encodeURI(url));
 }
 
 /**
@@ -560,7 +519,7 @@ export function getBidRequest(id, bidderRequests) {
     return;
   }
   return bidderRequests.flatMap(br => br.bids)
-    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id))
+    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id));
 }
 
 export function getValue(obj, key) {
@@ -587,7 +546,7 @@ export function isApnGetTagDefined() {
 
 export const sortByHighestCpm = (a, b) => {
   return b.cpm - a.cpm;
-}
+};
 
 /**
  * Fisher–Yates shuffle
@@ -651,7 +610,15 @@ export function getSafeframeGeometry() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+}
+
+export function isFirefoxBrowser() {
+  return /firefox|fxios/i.test(navigator.userAgent);
+}
+
+export function isChromeIOSBrowser() {
+  return /crios|crmo/i.test(navigator.userAgent);
 }
 
 export function replaceMacros(str, subs) {
@@ -662,7 +629,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, { AUCTION_PRICE: cpm })
+  return replaceMacros(str, { AUCTION_PRICE: cpm });
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -749,7 +716,7 @@ export function delayExecution(func, numRequiredCalls) {
     if (numCalls === numRequiredCalls) {
       func.apply(this, arguments);
     }
-  }
+  };
 }
 
 /**
@@ -836,7 +803,7 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'));
 }
 
 /**
@@ -1014,7 +981,7 @@ function mergeDeepHelper(target, source) {
     const val = source[key];
 
     if (isPlainObject(val)) {
-      if (!target[key]) {
+      if (!isPlainObject(target[key])) {
         target[key] = {};
       }
       mergeDeepHelper(target[key], val);
@@ -1111,7 +1078,7 @@ export function memoize(fn, key = function (arg) { return arg; }) {
       cache.set(cacheKey, fn.apply(this, arguments));
     }
     return cache.get(cacheKey);
-  }
+  };
   memoized.clear = cache.clear.bind(cache);
   return memoized;
 }
@@ -1149,7 +1116,7 @@ export function convertObjectToArray(obj) {
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {
-  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v))
+  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v));
 }
 
 /**

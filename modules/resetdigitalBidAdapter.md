@@ -11,6 +11,11 @@ Maintainer: BidderSupport@resetdigital.co
 Prebid adapter for Reset Digital. Requires approval and account setup.
 Video is supported but requires a publisher supplied renderer at this time.
 
+# User IDs
+
+The adapter forwards Prebid User ID module EIDs from `bidRequest.userIdAsEids` in OpenRTB format under `user.eids`.
+Publishers should include and configure the Prebid User ID module and any desired ID submodules to make IDs available.
+
 # Test Parameters
 
 ## Web

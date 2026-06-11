@@ -5,7 +5,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 // load modules that register ORTB processors
-import 'src/prebid.js'
+import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -106,7 +106,7 @@ describe('OpenxRtbAdapter', function () {
 
       describe('when there is a delivery domain', function () {
         beforeEach(function () {
-          bannerBid.params = { delDomain: 'test-delivery-domain' }
+          bannerBid.params = { delDomain: 'test-delivery-domain' };
         });
 
         it('should return false when there is no ad unit id and size', function () {
@@ -257,7 +257,7 @@ describe('OpenxRtbAdapter', function () {
             len: 80
           }
         }]
-      }
+      };
       describe('and request config uses mediaTypes', () => {
         const nativeBidWithMediaTypes = {
           bidder: 'openx',
@@ -421,13 +421,13 @@ describe('OpenxRtbAdapter', function () {
         if (FEATURES.VIDEO) {
           expect(requests[0].data.imp[0].video).to.exist;
         }
-      })
+      });
 
       it('should be able to handle multiformat request - banner + native', () => {
         const multiformat = utils.deepClone(nativeBidRequest);
         multiformat.mediaTypes.banner = {
           sizes: [[300, 250], [300, 600]]
-        }
+        };
         const requests = spec.buildRequests([multiformat], mockBidderRequest);
         expect(requests).to.have.length(1);
         expect(requests[0].data.imp).to.have.length(1);
@@ -436,7 +436,7 @@ describe('OpenxRtbAdapter', function () {
         if (FEATURES.NATIVE) {
           expect(requests[0].data.imp[0].native).to.exist;
         }
-      })
+      });
 
       it('should be able to handle multiformat request - banner + video + native', () => {
         const multiformat = utils.deepClone(nativeBidRequest);
@@ -446,7 +446,7 @@ describe('OpenxRtbAdapter', function () {
         };
         multiformat.mediaTypes.banner = {
           sizes: [[300, 250]]
-        }
+        };
         const requests = spec.buildRequests([multiformat], mockBidderRequest);
         expect(requests).to.have.length(1);
         expect(requests[0].data.imp).to.have.length(1);
@@ -457,7 +457,7 @@ describe('OpenxRtbAdapter', function () {
         if (FEATURES.VIDEO) {
           expect(requests[0].data.imp[0].video).to.exist;
         }
-      })
+      });
 
       it('should send banner, video and native bids in a single HTTP request', function () {
         const allBids = [...bidRequestsWithMediaTypes, nativeBidRequest];
@@ -530,7 +530,7 @@ describe('OpenxRtbAdapter', function () {
         mockBidderRequest.bids = [bidRequest];
         const request = spec.buildRequests([bidRequest], mockBidderRequest);
         expect(request[0].data.imp[0].ext.customParams).to.equal(bidRequest.params.customParams);
-      })
+      });
 
       describe('floors', function () {
         it('should send out custom floors on bids that have customFloors, no currency as account currency is used', function () {
@@ -556,7 +556,7 @@ describe('OpenxRtbAdapter', function () {
           beforeEach(function () {
             adServerCurrencyStub = sinon
               .stub(config, 'getConfig')
-              .withArgs('currency.adServerCurrency')
+              .withArgs('currency.adServerCurrency');
           });
 
           afterEach(function () {
@@ -571,7 +571,7 @@ describe('OpenxRtbAdapter', function () {
                   return {
                     currency: 'USD',
                     floor: 9.99
-                  }
+                  };
                 }
               }
             );
@@ -590,17 +590,17 @@ describe('OpenxRtbAdapter', function () {
                   return {
                     currency: 'BTC',
                     floor: 9.99
-                  }
+                  };
                 }
               }
             );
 
             const request = spec.buildRequests([bidRequest], mockBidderRequest);
-            expect(request[0].data.imp[0].bidfloor).to.equal(undefined)
-            expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined)
+            expect(request[0].data.imp[0].bidfloor).to.equal(undefined);
+            expect(request[0].data.imp[0].bidfloorcur).to.equal(undefined);
           });
-        })
-      })
+        });
+      });
 
       describe('FPD', function() {
         let bidRequests;
@@ -1056,7 +1056,7 @@ describe('OpenxRtbAdapter', function () {
         });
 
         after(function () {
-          config.getConfig.restore()
+          config.getConfig.restore();
         });
       });
 
@@ -1203,7 +1203,7 @@ describe('OpenxRtbAdapter', function () {
           }];
           // enrich bid request with userId key/value
 
-          mockBidderRequest.ortb2 = { user: { ext: { eids } } }
+          mockBidderRequest.ortb2 = { user: { ext: { eids } } };
           const request = spec.buildRequests(bidRequests, mockBidderRequest);
           expect(request[0].data.user.ext.eids).to.eql(eids);
         });
@@ -1562,7 +1562,7 @@ describe('OpenxRtbAdapter', function () {
 
         it('should return the proper vastUrl', function () {
           const winUrl = 'https//my.win.url';
-          bidResponse.seatbid[0].bid[0].nurl = winUrl
+          bidResponse.seatbid[0].bid[0].nurl = winUrl;
           bid = spec.interpretResponse({ body: bidResponse }, bidRequest).bids[0];
 
           expect(bid.vastUrl).to.equal(winUrl);
@@ -2009,7 +2009,7 @@ describe('OpenxRtbAdapter', function () {
         const gppConsent = {
           gppString: 'gpp-pixel-consent',
           applicableSections: [6, 7]
-        }
+        };
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
@@ -2026,11 +2026,11 @@ describe('OpenxRtbAdapter', function () {
         const gdprConsent = {
           consentString: 'gdpr-pixel-consent',
           gdprApplies: true
-        }
+        };
         const gppConsent = {
           gppString: 'gpp-pixel-consent',
           applicableSections: [6, 7]
-        }
+        };
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
@@ -2048,7 +2048,7 @@ describe('OpenxRtbAdapter', function () {
       it('should not send GPP query params when GPP string not available', function () {
         const gppConsent = {
           applicableSections: [6, 7]
-        }
+        };
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
@@ -2064,7 +2064,7 @@ describe('OpenxRtbAdapter', function () {
       it('should not send GPP query params when GPP section IDs not available', function () {
         const gppConsent = {
           gppString: 'gpp-pixel-consent',
-        }
+        };
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
@@ -2081,7 +2081,7 @@ describe('OpenxRtbAdapter', function () {
         const gppConsent = {
           gppString: 'gpp-pixel-consent',
           applicableSections: []
-        }
+        };
         const [{ url }] = spec.getUserSyncs(
           { iframeEnabled: true, pixelEnabled: true },
           [],
@@ -2110,7 +2110,7 @@ describe('OpenxRtbAdapter', function () {
       const privacyString = 'TEST';
       beforeEach(() => {
         usPrivacyConsent = 'TEST';
-        uspPixelUrl = `${DEFAULT_SYNC}&us_privacy=${privacyString}`
+        uspPixelUrl = `${DEFAULT_SYNC}&us_privacy=${privacyString}`;
       });
       it('should send the us privacy string, ', () => {
         const [{ url }] = spec.getUserSyncs(

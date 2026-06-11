@@ -338,7 +338,7 @@ describe('Oxxion Analytics', function () {
       expect(server.requests.length).to.equal(1);
       const message = JSON.parse(server.requests[0].requestBody);
       expect(message).not.to.have.property('ad');
-      expect(message).to.have.property('adId')
+      expect(message).to.have.property('adId');
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
       expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true);
       expect(message).to.have.property('ova').and.to.equal('cleared');

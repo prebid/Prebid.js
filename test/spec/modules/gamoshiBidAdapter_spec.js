@@ -68,7 +68,7 @@ describe('GamoshiAdapter', () => {
         }
       },
       uspConsent: 'gamoshiCCPA',
-    }
+    };
     bannerBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': 'auction-id-12345',
@@ -241,7 +241,7 @@ describe('GamoshiAdapter', () => {
   });
 
   afterEach(() => {
-    sandBox.restore()
+    sandBox.restore();
     config.resetConfig();
   });
 
@@ -396,7 +396,7 @@ describe('GamoshiAdapter', () => {
         page: 'http://www.test.com/page.html',
         domain: 'www.test.com',
         ref: 'http://referrer.com'
-      })
+      });
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
 
       expect(response.data.imp.length).to.equal(1);

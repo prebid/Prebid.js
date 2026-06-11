@@ -19,6 +19,8 @@ describe('user sync', function () {
   let shuffleStub;
   let getUniqueIdentifierStrStub;
   let insertUserSyncIframeStub;
+  let politeTriggerPixelStub;
+  let politeInsertUserSyncIframeStub;
   const idPrefix = 'test-generated-id-';
   let lastId = 0;
   const defaultUserSyncConfig = config.getConfig('userSync');
@@ -28,7 +30,7 @@ describe('user sync', function () {
     [regRule, isAllowed] = ruleRegistry();
     return newUserSync(Object.assign({
       regRule, isAllowed
-    }, deps))
+    }, deps));
   }
 
   function newTestUserSync(configOverrides, disableBrowserCookies) {
@@ -36,7 +38,7 @@ describe('user sync', function () {
     return mkUserSync({
       config: thisConfig,
       browserSupportsCookies: !disableBrowserCookies,
-    })
+    });
   }
   let clock;
   before(function () {
@@ -54,6 +56,12 @@ describe('user sync', function () {
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
     insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
+    politeTriggerPixelStub = sinon.stub(utils, 'politeTriggerPixel').callsFake((url) => {
+      utils.triggerPixel(url);
+    });
+    politeInsertUserSyncIframeStub = sinon.stub(utils, 'politeInsertUserSyncIframe').callsFake((url) => {
+      utils.insertUserSyncIframe(url);
+    });
   });
 
   afterEach(function () {
@@ -62,6 +70,8 @@ describe('user sync', function () {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     insertUserSyncIframeStub.restore();
+    politeTriggerPixelStub.restore();
+    politeInsertUserSyncIframeStub.restore();
     config.resetConfig();
   });
 
@@ -73,21 +83,49 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 
+  it('should use politeTriggerPixel for image syncs', function () {
+    const userSync = newTestUserSync({ usePoliteSync: true });
+
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.syncUsers();
+
+    expect(politeTriggerPixelStub.calledOnce).to.equal(true);
+    expect(politeTriggerPixelStub.getCall(0).args[0]).to.equal('http://example.com');
+  });
+
+  it('should use politeInsertUserSyncIframe for iframe syncs', function () {
+    const userSync = newTestUserSync({
+      usePoliteSync: true,
+      filterSettings: {
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
+      }
+    });
+
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+
+    expect(politeInsertUserSyncIframeStub.calledOnce).to.equal(true);
+    expect(politeInsertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
+  });
+
   it('should NOT fire a sync if a rule blocks syncUser', () => {
-    const userSync = newTestUserSync()
+    const userSync = newTestUserSync();
     regRule(ACTIVITY_SYNC_USER, 'testRule', (params) => {
       if (
         params[ACTIVITY_PARAM_COMPONENT] === `${MODULE_TYPE_BIDDER}.testBidder` &&
         params[ACTIVITY_PARAM_SYNC_TYPE] === 'image' &&
         params[ACTIVITY_PARAM_SYNC_URL] === 'http://example.com'
       ) {
-        return { allow: false }
+        return { allow: false };
       }
-    })
+    });
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.called).to.be.false;
-  })
+  });
 
   it('should clear queue after sync', function () {
     const userSync = newTestUserSync();

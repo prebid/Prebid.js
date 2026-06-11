@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { spec, converter } from 'modules/nativeryBidAdapter';
+import { converter, dep, spec } from 'modules/nativeryBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
-import * as ajax from 'src/ajax.js';
 
 const ENDPOINT = 'https://hb.nativery.com/openrtb2/auction';
 const MAX_IMPS_PER_REQUEST = 10;
@@ -199,17 +198,17 @@ describe('NativeryAdapter', function () {
       expect(spec.onBidWon).to.exist.and.to.be.a('function');
     });
     it('should NOT call ajax when invalid or empty data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       spec.onBidWon(null);
       spec.onBidWon({});
       spec.onBidWon(undefined);
       expect(ajaxStub.called).to.be.false;
     });
     it('should call ajax with correct payload when valid data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = { bidder: 'nativery', adUnitCode: 'div-1' };
       spec.onBidWon(validData);
-      assertTrackEvent(ajaxStub, 'NAT_BID_WON', validData)
+      assertTrackEvent(ajaxStub, 'NAT_BID_WON', validData);
     });
   });
 
@@ -218,17 +217,17 @@ describe('NativeryAdapter', function () {
       expect(spec.onAdRenderSucceeded).to.exist.and.to.be.a('function');
     });
     it('should NOT call ajax when invalid or empty data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       spec.onAdRenderSucceeded(null);
       spec.onAdRenderSucceeded({});
       spec.onAdRenderSucceeded(undefined);
       expect(ajaxStub.called).to.be.false;
     });
     it('should call ajax with correct payload when valid data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = { bidder: 'nativery', adUnitCode: 'div-1' };
       spec.onAdRenderSucceeded(validData);
-      assertTrackEvent(ajaxStub, 'NAT_AD_RENDERED', validData)
+      assertTrackEvent(ajaxStub, 'NAT_AD_RENDERED', validData);
     });
   });
 
@@ -237,7 +236,7 @@ describe('NativeryAdapter', function () {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
     it('should NOT call ajax when invalid or empty data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       spec.onTimeout(null);
       spec.onTimeout({});
       spec.onTimeout([]);
@@ -245,10 +244,10 @@ describe('NativeryAdapter', function () {
       expect(ajaxStub.called).to.be.false;
     });
     it('should call ajax with correct payload when valid data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = [{ bidder: 'nativery', adUnitCode: 'div-1' }];
       spec.onTimeout(validData);
-      assertTrackEvent(ajaxStub, 'NAT_TIMEOUT', validData)
+      assertTrackEvent(ajaxStub, 'NAT_TIMEOUT', validData);
     });
   });
 
@@ -257,14 +256,14 @@ describe('NativeryAdapter', function () {
       expect(spec.onBidderError).to.exist.and.to.be.a('function');
     });
     it('should NOT call ajax when invalid or empty data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       spec.onBidderError(null);
       spec.onBidderError({});
       spec.onBidderError(undefined);
       expect(ajaxStub.called).to.be.false;
     });
     it('should call ajax with correct payload when valid data is provided', () => {
-      const ajaxStub = sandBox.stub(ajax, 'ajax');
+      const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = {
         error: 'error',
         bidderRequest: {
@@ -272,7 +271,7 @@ describe('NativeryAdapter', function () {
         }
       };
       spec.onBidderError(validData);
-      assertTrackEvent(ajaxStub, 'NAT_BIDDER_ERROR', validData)
+      assertTrackEvent(ajaxStub, 'NAT_BIDDER_ERROR', validData);
     });
   });
 });
@@ -289,6 +288,6 @@ const assertTrackEvent = (ajaxStub, event, data) => {
 
   const payload = JSON.parse(body);
   expect(payload.event).to.equal(event);
-  expect(payload.prebidVersion).to.exist.and.to.be.a('string')
+  expect(payload.prebidVersion).to.exist.and.to.be.a('string');
   expect(payload.data).to.deep.equal(data);
-}
+};

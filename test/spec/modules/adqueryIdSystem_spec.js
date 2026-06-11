@@ -79,5 +79,5 @@ describe('AdqueryIdSystem', function () {
         }]
       });
     });
-  })
+  });
 });

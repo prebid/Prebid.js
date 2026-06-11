@@ -1,6 +1,6 @@
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js'
+import * as hook from '../../../src/hook.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
@@ -196,7 +196,7 @@ describe('humansecurityMalvDefense RTD module', function () {
 
       events.on(EVENTS.BILLABLE_EVENT, (evt) => {
         if (evt.vendor === 'humansecurityMalvDefense') {
-          eventCounter.registerHumansecurityMalvDefenseBillingEvent()
+          eventCounter.registerHumansecurityMalvDefenseBillingEvent();
         }
       });
 

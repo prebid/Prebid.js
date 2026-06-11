@@ -4,9 +4,10 @@
  * @module modules/operaadsIdSystem
  * @requires module:modules/userId
  */
-import * as ajax from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { logMessage, logError } from '../src/utils.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -29,7 +30,7 @@ function constructUrl(pairs) {
 }
 
 function asyncRequest(url, cb) {
-  ajax.ajaxBuilder(AJAX_TIMEOUT)(
+  qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME, AJAX_TIMEOUT)(
     url,
     {
       success: response => {
@@ -97,7 +98,7 @@ export const operaIdSubmodule = {
       callback: (cb) => {
         asyncRequest(url, cb);
       }
-    }
+    };
   },
 
   eids: {
