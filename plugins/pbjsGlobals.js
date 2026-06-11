@@ -102,7 +102,7 @@ module.exports = function(api, options) {
           path.node.object.name === FEATURES_GLOBAL &&
           !path.scope.hasBinding(FEATURES_GLOBAL) &&
           t.isIdentifier(path.node.property) &&
-          features.hasOwnProperty(path.node.property.name)
+          Object.prototype.hasOwnProperty.call(features, path.node.property.name)
         ) {
           path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
         }
