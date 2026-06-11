@@ -85,6 +85,10 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   global?: string;
   handler?: any;
 }) {
+  if (!new.target) {
+    return new (AnalyticsAdapter as any)({ url, analyticsType, global, handler });
+  }
+
   const queue = [];
   let handlers;
   let enabled = false;

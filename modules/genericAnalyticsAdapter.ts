@@ -92,6 +92,10 @@ const TYPES = {
 const MAX_CALL_DEPTH = 20;
 
 export function GenericAnalytics() {
+  if (!new.target) {
+    return new (GenericAnalytics as any)();
+  }
+
   const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
   const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
