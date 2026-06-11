@@ -26,7 +26,7 @@ module.exports = function(api, options) {
     if (source) {
       if (source.endsWith('.d.ts')) {
         // assuming .d.ts files are just definitions, they are not relevant at runtime
-        path.remove(path.node);
+        path.remove();
       } else if (source.endsWith('.ts')) {
         path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
       }
