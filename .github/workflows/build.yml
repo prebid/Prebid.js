@@ -9,7 +9,7 @@ on:
         default: source
       build-cmd:
         description: Build command
-        required: false
+        required: true
         type: string
       linux:
         description: Build on Linux
@@ -70,25 +70,22 @@ jobs:
       macos: ${{ steps.out.outputs.macos }}
     steps:
       - name: Checkout
-        if: ${{ inputs.build-cmd }}
         uses: actions/checkout@v6
       - name: Restore source
-        if: ${{ inputs.build-cmd }}
         uses: ./.github/actions/load
         with:
           name: ${{ inputs.source-key }}
       - name: Install dependencies
         uses: ./.github/actions/npm-ci
       - name: Build
-        if: ${{ inputs.build-cmd }}
         run: ${{ inputs.build-cmd }}
       - name: 'Save working directory'
         id: save
-        if: ${{ inputs.build-cmd }}
         uses: ./.github/actions/save
         with:
           prefix: 'build-'
       - name: 'Set output'
         id: out
+        shell: bash
         run: |
           echo '${{ matrix.os.name }}=${{ steps.save.outputs.name }}' >> $GITHUB_OUTPUT
