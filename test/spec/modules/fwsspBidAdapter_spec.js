@@ -1,7 +1,8 @@
 const { expect } = require('chai');
+const { getGlobal } = require('../../../src/prebidGlobal.js');
 const { spec, getSDKVersion, formatAdHTML, getBidFloor } = require('modules/fwsspBidAdapter');
 
-const pbjsVersion = 'v$prebid.version$';
+const pbjsVersion = getGlobal().version;
 
 describe('fwsspBidAdapter', () => {
   describe('isBidRequestValid', () => {
