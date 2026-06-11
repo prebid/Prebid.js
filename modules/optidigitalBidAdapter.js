@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isPlainObject, parseSizesInput} from '../src/utils.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -63,8 +63,9 @@ export const spec = {
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
       badv: ortb2.badv || deepAccess(validBidRequests[0], 'params.badv') || [],
       bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
-      bapp: deepAccess(validBidRequests[0], 'params.bapp') || []
-    }
+      bapp: deepAccess(validBidRequests[0], 'params.bapp') || [],
+      device: ortb2.device || {}
+    };
 
     if (validBidRequests[0].auctionId) {
       payload.auctionId = validBidRequests[0].auctionId;
@@ -82,28 +83,32 @@ export const spec = {
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
     if (bidderRequest && gdpr) {
       const isConsentString = typeof gdpr.consentString === 'string';
+      const isGdprApplies = typeof gdpr.gdprApplies === 'boolean';
       payload.gdpr = {
         consent: isConsentString ? gdpr.consentString : '',
-        required: true
+        required: isGdprApplies ? gdpr.gdprApplies : false
       };
+      if (gdpr?.addtlConsent) {
+        payload.gdpr.addtlConsent = gdpr.addtlConsent;
+      }
     }
     if (bidderRequest && !gdpr) {
       payload.gdpr = {
         consent: '',
         required: false
-      }
+      };
     }
 
     if (bidderRequest?.gppConsent?.gppString) {
       payload.gpp = {
         consent: bidderRequest.gppConsent.gppString,
         sid: bidderRequest.gppConsent.applicableSections
-      }
+      };
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
       payload.gpp = {
         consent: bidderRequest.ortb2.regs.gpp,
         sid: bidderRequest.ortb2.regs.gpp_sid
-      }
+      };
     }
 
     if (window.location.href.indexOf('optidigitalTestMode=true') !== -1) {
@@ -117,13 +122,19 @@ export const spec = {
     if (_getEids(validBidRequests[0])) {
       payload.user = {
         eids: _getEids(validBidRequests[0])
-      }
+      };
+    }
+
+    const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');
+    if (ortb2SiteKeywords) {
+      payload.site = payload.site || {};
+      payload.site.keywords = ortb2SiteKeywords;
     }
 
     const payloadObject = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: `${ENDPOINT_URL}/${payload.publisherId}`,
       data: payloadObject
     };
   },
@@ -228,6 +239,11 @@ function buildImp(bidRequest, ortb2) {
   const battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
   if (battr && Array.isArray(battr) && battr.length) {
     imp.battr = battr;
+  }
+
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  if (gpid) {
+    imp.gpid = gpid;
   }
 
   return imp;

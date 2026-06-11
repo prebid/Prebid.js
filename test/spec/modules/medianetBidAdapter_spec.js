@@ -1,11 +1,12 @@
-import {expect, assert} from 'chai';
-import {spec, EVENTS} from '../../../modules/medianetBidAdapter.js';
-import {POST_ENDPOINT} from '../../../libraries/medianetUtils/constants.js';
+import { expect, assert } from 'chai';
+import { spec, EVENTS } from '../../../modules/medianetBidAdapter.js';
+import { POST_ENDPOINT } from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
-import {server} from '../../mocks/xhr.js';
-import {resetWinDimensions} from '../../../src/utils.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { server } from '../../mocks/xhr.js';
+import { resetWinDimensions } from '../../../src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 getGlobal().version = getGlobal().version || 'version';
 const VALID_BID_REQUEST = [{
@@ -144,7 +145,7 @@ const VALID_BID_REQUEST_WITH_ORTB2 = [{
   'ortb2Imp': {
     'ext': {
       tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
-      'data': {'pbadslot': '/12345/my-gpt-tag-0'}
+      'data': { 'pbadslot': '/12345/my-gpt-tag-0' }
     }
   },
   'auctionsCount': 1
@@ -173,12 +174,12 @@ const VALID_BID_REQUEST_WITH_ORTB2 = [{
   'ortb2Imp': {
     'ext': {
       tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
-      'data': {'pbadslot': '/12345/my-gpt-tag-0'}
+      'data': { 'pbadslot': '/12345/my-gpt-tag-0' }
     }
   },
   'auctionsCount': 1
 }];
-  // Protected Audience API Request
+// Protected Audience API Request
 const VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
   'bidder': 'medianet',
   'params': {
@@ -1160,7 +1161,7 @@ const VALID_PAYLOAD_WITH_CRID = {
   'ortb2': {},
   'tmax': config.getConfig('bidderTimeout')
 };
-  // Protected Audience API Valid Payload
+// Protected Audience API Valid Payload
 const VALID_PAYLOAD_PAAPI = {
   'site': {
     'domain': 'media.net',
@@ -1468,7 +1469,7 @@ const SERVER_RESPONSE_VALID_BID = {
     }
   }
 };
-  // Protected Audience API Response
+// Protected Audience API Response
 const SERVER_RESPONSE_PAAPI = {
   body: {
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1511,7 +1512,7 @@ const SERVER_RESPONSE_PAAPI = {
               'callbackURL': 'https://test.com/paapi/v1/abcd'
             },
             'perBuyerSignals': {
-              'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+              'https://buyer.test.media.net': ['test_buyer_signals']
             },
             'perBuyerTimeouts': {
               '*': 200
@@ -1526,7 +1527,7 @@ const SERVER_RESPONSE_PAAPI = {
     }
   }
 };
-  // Protected Audience API OpenRTB Response
+// Protected Audience API OpenRTB Response
 const SERVER_RESPONSE_PAAPI_ORTB = {
   body: {
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1571,7 +1572,7 @@ const SERVER_RESPONSE_PAAPI_ORTB = {
                 'callbackURL': 'https://test.com/paapi/v1/abcd'
               },
               'perBuyerSignals': {
-                'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+                'https://buyer.test.media.net': ['test_buyer_signals']
               },
               'perBuyerTimeouts': {
                 '*': 200
@@ -1937,10 +1938,10 @@ describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    sandbox.stub(window.top, 'innerHeight').value(780)
-    sandbox.stub(window.top, 'innerWidth').value(440)
-    sandbox.stub(window.top, 'scrollY').value(100)
-    sandbox.stub(window.top, 'scrollX').value(50)
+    sandbox.stub(window.top, 'innerHeight').value(780);
+    sandbox.stub(window.top, 'innerWidth').value(440);
+    sandbox.stub(window.top, 'scrollY').value(100);
+    sandbox.stub(window.top, 'scrollX').value(50);
   });
 
   afterEach(function () {
@@ -1979,17 +1980,13 @@ describe('Media.net bid adapter', function () {
     beforeEach(function () {
       getGlobal().medianetGlobals = {};
 
-      const documentStub = sandbox.stub(document, 'getElementById');
       const boundingRect = {
         top: 50,
         left: 50,
         bottom: 100,
         right: 100
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      sandbox.stub(adUnits, 'getAdUnitElement').returns({
         getBoundingClientRect: () => boundingRect
       });
       const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
@@ -2048,8 +2045,8 @@ describe('Media.net bid adapter', function () {
     it('should have valid ortb2Imp param present in bid request', function() {
       let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_ORTB2, VALID_AUCTIONDATA);
       let actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
-      const expected = VALID_BID_REQUEST_WITH_ORTB2[0].ortb2Imp
-      assert.equal(JSON.stringify(actual), JSON.stringify(expected))
+      const expected = VALID_BID_REQUEST_WITH_ORTB2[0].ortb2Imp;
+      assert.equal(JSON.stringify(actual), JSON.stringify(expected));
 
       bidreq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
@@ -2064,19 +2061,6 @@ describe('Media.net bid adapter', function () {
     it('should have userIdAsEids in bid request', function () {
       const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERIDASEIDS, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_WITH_USERIDASEIDS);
-    });
-
-    it('should have valid payload when PAAPI is enabled', function () {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAAPI);
-    });
-
-    it('should send whatever is set in ortb2imp.ext.ae in all bid requests when PAAPI is enabled', function () {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      const data = JSON.parse(bidReq.data);
-      expect(data).to.deep.equal(VALID_PAYLOAD_PAAPI);
-      expect(data.imp[0].ext).to.have.property('ae');
-      expect(data.imp[0].ext.ae).to.equal(1);
     });
 
     describe('build requests: when page meta-data is available', () => {
@@ -2102,14 +2086,14 @@ describe('Media.net bid adapter', function () {
   });
 
   describe('slot visibility', function () {
-    let documentStub;
+    let elementStub;
     beforeEach(function () {
       const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,
         h: 1000
       });
-      documentStub = sandbox.stub(document, 'getElementById');
+      elementStub = sandbox.stub(adUnits, 'getAdUnitElement');
     });
     it('slot visibility should be 2 and ratio 0 when ad unit is BTF', function () {
       const boundingRect = {
@@ -2118,10 +2102,7 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
 
@@ -2137,10 +2118,7 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
       const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
@@ -2155,10 +2133,7 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-0').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
       const bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
@@ -2183,14 +2158,11 @@ describe('Media.net bid adapter', function () {
         bottom: 1050,
         right: 1050
       };
-      documentStub.withArgs(divId).returns({
-        getBoundingClientRect: () => boundingRect
-      });
-      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+      elementStub.returns({
         getBoundingClientRect: () => boundingRect
       });
 
-      const bidRequest = [{...VALID_BID_REQUEST[0], adUnitCode: code}]
+      const bidRequest = [{ ...VALID_BID_REQUEST[0], adUnitCode: code }];
       const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);
       const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
@@ -2253,32 +2225,6 @@ describe('Media.net bid adapter', function () {
       const validBids = [];
       const bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
       expect(bids).to.deep.equal(validBids);
-    });
-
-    it('should return paapi if PAAPI response is received', function() {
-      const response = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
-      expect(response).to.have.property('bids');
-      expect(response).to.have.property('paapi');
-      expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI.body.ext.paApiAuctionConfigs[0]);
-    });
-
-    it('should return paapi if openRTB PAAPI response received', function () {
-      const response = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
-      expect(response).to.have.property('bids');
-      expect(response).to.have.property('paapi');
-      expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI_ORTB.body.ext.igi[0].igs[0])
-    });
-
-    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id', function() {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      const bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
-      expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
-    });
-
-    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id for openRTB response', function() {
-      const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
-      const bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
-      expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
   });
 
@@ -2366,10 +2312,10 @@ describe('Media.net bid adapter', function () {
     });
     it('should send bidderError data correctly', function () {
       const error = {
-        reason: {message: 'Failed to fetch', status: 500},
+        reason: { message: 'Failed to fetch', status: 500 },
         timedOut: true,
         status: 0
-      }
+      };
       const bids = [{
         bidder: 'medianet',
         bidId: 'mnet-4644-442a-b5e0-93f268cf8d19',
@@ -2380,7 +2326,7 @@ describe('Media.net bid adapter', function () {
       }];
       sandbox.stub(window.navigator, 'sendBeacon').returns(false);
 
-      spec.onBidderError({error, bidderRequest: {bids}});
+      spec.onBidderError({ error, bidderRequest: { bids } });
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');

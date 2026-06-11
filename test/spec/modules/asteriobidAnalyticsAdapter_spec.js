@@ -1,8 +1,8 @@
-import asteriobidAnalytics, {storage} from 'modules/asteriobidAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import asteriobidAnalytics, { storage } from 'modules/asteriobidAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 
 const events = require('src/events');
@@ -99,7 +99,7 @@ describe('AsterioBid Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
-    this.timeout(4000)
+    this.timeout(4000);
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -110,7 +110,7 @@ describe('AsterioBid Analytics Adapter', function () {
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
-      asteriobidAnalytics.disableAnalytics()
+      asteriobidAnalytics.disableAnalytics();
     });
     it('should build utm data from local storage', function () {
       asteriobidAnalytics.enableAnalytics({
@@ -132,7 +132,7 @@ describe('AsterioBid Analytics Adapter', function () {
 
   describe('build page info', function () {
     afterEach(function () {
-      asteriobidAnalytics.disableAnalytics()
+      asteriobidAnalytics.disableAnalytics();
     });
     it('should build page info', function () {
       asteriobidAnalytics.enableAnalytics({

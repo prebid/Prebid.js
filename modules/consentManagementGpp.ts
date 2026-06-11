@@ -4,15 +4,15 @@
  * and make it available for any GPP supported adapters to read/pass this information to
  * their system and for various other features/modules in Prebid.js.
  */
-import {deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn} from '../src/utils.js';
-import {config} from '../src/config.js';
-import {gppDataHandler} from '../src/adapterManager.js';
-import {enrichFPD} from '../src/fpd/enrichment.js';
-import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
-import {PbPromise, defer} from '../src/utils/promise.js';
-import {type CMConfig, configParser} from '../libraries/consentManagement/cmUtils.js';
-import {createCmpEventManager, type CmpEventManager} from '../libraries/cmp/cmpEventUtils.js';
-import {CONSENT_GPP} from "../src/consentHandler.ts";
+import { deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { gppDataHandler } from '../src/adapterManager.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
+import { cmpClient, MODE_CALLBACK } from '../libraries/cmp/cmpClient.js';
+import { PbPromise, defer } from '../src/utils/promise.js';
+import { type CMConfig, configParser } from '../libraries/consentManagement/cmUtils.js';
+import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
+import { CONSENT_GPP } from "../src/consentHandler.ts";
 
 export let consentConfig = {} as any;
 
@@ -23,13 +23,13 @@ type RelevantCMPData = {
   applicableSections: number[]
   gppString: string;
   parsedSections: Record<string, unknown>
-}
+};
 
 type CMPData = RelevantCMPData & { [key: string]: unknown };
 
 export type GPPConsentData = RelevantCMPData & {
   gppData: CMPData;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GPPConfig {
@@ -142,7 +142,7 @@ export class GPPClient {
   }
 
   refresh() {
-    return this.cmp({command: 'ping'}).then(this.init.bind(this));
+    return this.cmp({ command: 'ping' }).then(this.init.bind(this));
   }
 
   /**
@@ -191,7 +191,7 @@ export class GPPClient {
 }
 
 function lookupIabConsent() {
-  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()))
+  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()));
 }
 
 // add new CMPs here, with their dedicated lookup function

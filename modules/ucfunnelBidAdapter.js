@@ -1,10 +1,10 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, _each, deepAccess } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,8 +19,8 @@ const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
-}
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+};
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -61,7 +61,7 @@ export const spec = {
         url: spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
         bidRequest: bid
-      }
+      };
     });
   },
 
@@ -220,7 +220,7 @@ function getMediaType(mediaTypes) {
   } else if (mediaTypes != null && mediaTypes.video) {
     return 'video';
   } else if (mediaTypes != null && mediaTypes.native) {
-    return 'native'
+    return 'native';
   }
   return 'banner';
 }
@@ -233,7 +233,7 @@ function getFloor(bid, size, mediaTypes) {
     var bidFloor = bid.getFloor({
       currency: CURRENCY,
       mediaType: getMediaType(mediaTypes),
-      size: (size) ? [ size[0], size[1] ] : '*',
+      size: (size) ? [size[0], size[1]] : '*',
     });
     if (bidFloor?.currency === CURRENCY) {
       return bidFloor.floor;
@@ -249,7 +249,7 @@ function addBidData(bidData, key, value) {
 }
 
 function getFormat(size) {
-  const formatList = []
+  const formatList = [];
   for (var i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
   }

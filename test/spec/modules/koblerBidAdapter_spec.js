@@ -1,13 +1,13 @@
-import {expect} from 'chai';
-import {pageViewId, spec} from 'modules/koblerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { spec } from 'modules/koblerBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getRefererInfo} from 'src/refererDetection.js';
+import { getRefererInfo } from 'src/refererDetection.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
-function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}) {
+function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}, pageViewId) {
   const gdprConsent = {
     consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
     apiVersion: 2,
@@ -21,13 +21,14 @@ function createBidderRequest(auctionId, timeout, pageUrl, gdprVendorData = {}) {
     refererInfo: {
       page: pageUrl || 'example.com'
     },
-    gdprConsent: gdprConsent
+    gdprConsent: gdprConsent,
+    pageViewId
   };
 }
 
-function createValidBidRequest(params, bidId, sizes) {
+function createValidBidRequest(params, bidId, sizes, adUnitCode) {
   const validBidRequest = {
-    adUnitCode: 'adunit-code',
+    adUnitCode: adUnitCode || 'adunit-code',
     bidId: bidId || '22c4871113f461',
     bidder: 'kobler',
     bidderRequestId: '15246a574e859f',
@@ -54,7 +55,7 @@ describe('KoblerAdapter', function () {
   });
 
   afterEach(() => {
-    sandbox.restore()
+    sandbox.restore();
   });
 
   describe('inherited functions', function () {
@@ -259,15 +260,17 @@ describe('KoblerAdapter', function () {
       const testUrl = 'kobler.no';
       const auctionId1 = '8319af54-9795-4642-ba3a-6f57d6ff9100';
       const auctionId2 = 'e19f2d0c-602d-4969-96a1-69a22d483f47';
+      const pageViewId1 = '2949ce3c-2c4d-4b96-9ce0-8bf5aa0bb416';
+      const pageViewId2 = '6c449b7d-c9b0-461d-8cc7-ce0a8da58349';
       const timeout = 5000;
       const validBidRequests = [createValidBidRequest()];
-      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl);
-      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl);
+      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl, {}, pageViewId1);
+      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl, {}, pageViewId2);
 
       const openRtbRequest1 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest1).data);
-      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId);
+      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId1);
       const openRtbRequest2 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest2).data);
-      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId);
+      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId2);
     });
 
     it('should read data from valid bid requests', function () {
@@ -417,16 +420,16 @@ describe('KoblerAdapter', function () {
           if (utils.isArray(params.size) && params.size[0] === 580 && params.size[1] === 400) {
             floorPrice = floorPriceFor580x400;
           } else if (params.size === '*') {
-            floorPrice = floorPriceForAnySize
+            floorPrice = floorPriceForAnySize;
           } else {
-            floorPrice = 0
+            floorPrice = 0;
           }
           return {
             currency: params.currency,
             floor: floorPrice
-          }
-        }
-      })
+          };
+        };
+      });
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
@@ -440,6 +443,7 @@ describe('KoblerAdapter', function () {
     });
 
     it('should create whole OpenRTB request', function () {
+      const pageViewId = 'aa9f0b20-a642-4d0e-acb5-e35805253ef7';
       const validBidRequests = [
         createValidBidRequest(
           {
@@ -447,7 +451,8 @@ describe('KoblerAdapter', function () {
             dealIds: ['623472534328234']
           },
           '953ee65d-d18a-484f-a840-d3056185a060',
-          [[400, 600]]
+          [[400, 600]],
+          'ad-unit-1'
         ),
         createValidBidRequest(
           {
@@ -455,12 +460,14 @@ describe('KoblerAdapter', function () {
             dealIds: ['92368234753283', '263845832942']
           },
           '8320bf79-9d90-4a17-87c6-5d505706a921',
-          [[400, 500], [200, 250], [300, 350]]
+          [[400, 500], [200, 250], [300, 350]],
+          'ad-unit-2'
         ),
         createValidBidRequest(
           undefined,
           'd0de713b-32e3-4191-a2df-a007f08ffe72',
-          [[800, 900]]
+          [[800, 900]],
+          'ad-unit-3'
         )
       ];
       const bidderRequest = createBidderRequest(
@@ -483,7 +490,8 @@ describe('KoblerAdapter', function () {
               }
             }
           }
-        }
+        },
+        pageViewId
       );
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
@@ -515,6 +523,11 @@ describe('KoblerAdapter', function () {
                   id: '623472534328234'
                 }
               ]
+            },
+            ext: {
+              prebid: {
+                adunitcode: 'ad-unit-1'
+              }
             }
           },
           {
@@ -548,6 +561,11 @@ describe('KoblerAdapter', function () {
                   id: '263845832942'
                 }
               ]
+            },
+            ext: {
+              prebid: {
+                adunitcode: 'ad-unit-2'
+              }
             }
           },
           {
@@ -564,7 +582,12 @@ describe('KoblerAdapter', function () {
             },
             bidfloor: 0,
             bidfloorcur: 'USD',
-            pmp: {}
+            pmp: {},
+            ext: {
+              prebid: {
+                adunitcode: 'ad-unit-3'
+              }
+            }
           }
         ],
         device: {
@@ -593,7 +616,7 @@ describe('KoblerAdapter', function () {
       const responseWithEmptyBody = {
         body: undefined
       };
-      const bids = spec.interpretResponse(responseWithEmptyBody)
+      const bids = spec.interpretResponse(responseWithEmptyBody);
 
       expect(bids.length).to.be.equal(0);
     });
@@ -643,7 +666,7 @@ describe('KoblerAdapter', function () {
           cur: 'USD'
         }
       };
-      const bids = spec.interpretResponse(responseWithTwoBids, {})
+      const bids = spec.interpretResponse(responseWithTwoBids, {});
 
       const expectedBids = [
         {
@@ -718,16 +741,22 @@ describe('KoblerAdapter', function () {
       const bidderRequest = { refererInfo };
       return addFPDToBidderRequest(bidderRequest).then(res => {
         JSON.parse(spec.buildRequests(validBidRequests, res).data);
-        const bids = spec.interpretResponse({ body: { seatbid: [{ bid: [{
-          originalCpm: 1.532,
-          price: 8.341,
-          currency: 'NOK',
-          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
-        }]}]}}, { bidderRequest: res });
+        const bids = spec.interpretResponse({
+          body: {
+            seatbid: [{
+              bid: [{
+                originalCpm: 1.532,
+                price: 8.341,
+                currency: 'NOK',
+                nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+              }]
+            }]
+          }
+        }, { bidderRequest: res });
         const bidToWon = bids[0];
         bidToWon.adserverTargeting = {
           hb_pb: 8
-        }
+        };
         spec.onBidWon(bidToWon);
 
         expect(utils.triggerPixel.callCount).to.be.equal(1);

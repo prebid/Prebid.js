@@ -1,10 +1,10 @@
-import {buildUrl, deepAccess, isArray, generateUUID} from '../src/utils.js'
+import { buildUrl, deepAccess, isArray, generateUUID } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {chunk} from '../libraries/chunk/chunk.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {findRootDomain} from '../src/fpd/rootDomain.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { chunk } from '../libraries/chunk/chunk.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { findRootDomain } from '../src/fpd/rootDomain.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -16,7 +16,7 @@ const AUID_COOKIE_NAME = '_smartytech_auid';
 const AUID_COOKIE_EXPIRATION_DAYS = 1825; // 5 years
 
 // Storage manager for cookies
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Get or generate Alias User ID (auId)
@@ -47,7 +47,7 @@ export function getAliasUserId() {
 }
 
 export const spec = {
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   code: BIDDER_CODE,
 
   isBidRequestValid: function (bidRequest) {
@@ -157,7 +157,7 @@ export const spec = {
         oneRequest.coppa = coppa;
       }
 
-      return oneRequest
+      return oneRequest;
     });
 
     const smartytechRequestUrl = buildUrl({
@@ -187,16 +187,16 @@ export const spec = {
     }
 
     const validBids = bidRequest.data;
-    const keys = Object.keys(serverResponse.body)
+    const keys = Object.keys(serverResponse.body);
     const responseBody = serverResponse.body;
 
     return keys.filter(key => {
-      return responseBody[key].ad
+      return responseBody[key].ad;
     }).map(key => {
       return {
         bid: validBids.find(b => b.adUnitCode === key),
         response: responseBody[key]
-      }
+      };
     }).map(item => spec._adResponse(item.bid, item.response));
   },
 
@@ -228,6 +228,6 @@ export const spec = {
     return bidObject;
   },
 
-}
+};
 
 registerBidder(spec);

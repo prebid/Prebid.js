@@ -4,9 +4,9 @@ import {
   resetConsentData,
   setConsentConfig,
 } from 'modules/consentManagementGpp.js';
-import {gppDataHandler} from 'src/adapterManager.js';
+import { gppDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import 'src/prebid.js';
 
 const expect = require('chai').expect;
@@ -21,7 +21,7 @@ describe('consentManagementGpp', function () {
       hookRan = true;
     }, request);
     try {
-      await consentConfig.loadConsentData()
+      await consentConfig.loadConsentData();
     } catch (e) {
     }
     return hookRan;
@@ -63,11 +63,11 @@ describe('consentManagementGpp', function () {
       });
 
       it('should not produce any consent metadata', async function () {
-        await setConsentConfig(undefined)
+        await setConsentConfig(undefined);
         const consentMetadata = gppDataHandler.getConsentMeta();
         expect(consentMetadata).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
-      })
+      });
 
       it('should immediately look up consent data', async () => {
         await setConsentConfig({
@@ -76,7 +76,7 @@ describe('consentManagementGpp', function () {
           }
         });
         expect(gppDataHandler.ready).to.be.true;
-      })
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -156,7 +156,7 @@ describe('consentManagementGpp', function () {
 
     beforeEach(() => {
       makeCmp = sinon.stub().callsFake(() => {
-        return sinon.stub()
+        return sinon.stub();
       });
     });
 
@@ -170,8 +170,8 @@ describe('consentManagementGpp', function () {
         GPPClient.get(sinon.stub().throws(new Error()));
       } catch (e) {}
       expect(GPPClient.get(makeCmp)).to.exist;
-    })
-  })
+    });
+  });
 
   describe('GPP client', () => {
     const CHANGE_EVENTS = ['sectionChange', 'signalStatus'];
@@ -179,13 +179,13 @@ describe('consentManagementGpp', function () {
     let gppClient, gppData, eventListener;
 
     function mockClient(apiVersion = '1.1', cmpVersion = '1.1') {
-      const mockCmp = sinon.stub().callsFake(function ({command, callback}) {
+      const mockCmp = sinon.stub().callsFake(function ({ command, callback }) {
         if (command === 'addEventListener') {
           eventListener = callback;
         } else {
           throw new Error('unexpected command: ' + command);
         }
-      })
+      });
       const client = new GPPClient(mockCmp);
       client.apiVersion = apiVersion;
       client.events = CHANGE_EVENTS;
@@ -232,10 +232,10 @@ describe('consentManagementGpp', function () {
             expect(err.message).to.match(/empty/);
             expect(err.args).to.eql(data == null ? [] : [data]);
             expect(gppDataHandler.ready).to.be.false;
-            done()
-          })
+            done();
+          });
         });
-      })
+      });
 
       describe('consent data validation', () => {
         Object.entries({
@@ -253,7 +253,7 @@ describe('consentManagementGpp', function () {
             Object.entries(tests).forEach(([t, value]) => {
               describe(t, () => {
                 it('should not update', (done) => {
-                  Object.assign(gppData, {[prop]: value});
+                  Object.assign(gppData, { [prop]: value });
                   gppClient.updateConsent(gppData).catch(err => {
                     expect(err.message).to.match(/unexpected/);
                     expect(err.args).to.eql([gppData]);
@@ -261,7 +261,7 @@ describe('consentManagementGpp', function () {
                     done();
                   });
                 });
-              })
+              });
             });
           });
         });
@@ -270,23 +270,23 @@ describe('consentManagementGpp', function () {
 
     describe('init', () => {
       it('does not use initial pingData if CMP is not ready', () => {
-        gppClient.init({...gppData, signalStatus: 'not ready'});
+        gppClient.init({ ...gppData, signalStatus: 'not ready' });
         expect(eventListener).to.exist;
         expect(gppDataHandler.ready).to.be.false;
       });
 
       it('uses initial pingData (and resolves promise) if CMP is ready', () => {
-        return gppClient.init({...gppData, signalStatus: 'ready'}).then(data => {
+        return gppClient.init({ ...gppData, signalStatus: 'ready' }).then(data => {
           expect(eventListener).to.exist;
           sinon.assert.match(data, gppData);
           sinon.assert.match(gppDataHandler.getConsentData(), gppData);
-        })
+        });
       });
 
       it('rejects promise when CMP errors out', (done) => {
-        gppClient.init({signalStatus: 'not ready'}).catch((err) => {
+        gppClient.init({ signalStatus: 'not ready' }).catch((err) => {
           expect(err.message).to.match(/error/);
-          expect(err.args).to.eql(['error'])
+          expect(err.args).to.eql(['error']);
           done();
         });
         eventListener('error', false);
@@ -295,25 +295,25 @@ describe('consentManagementGpp', function () {
       Object.entries({
         'empty': {},
         'null': null,
-        'irrelevant': {eventName: 'irrelevant'}
+        'irrelevant': { eventName: 'irrelevant' }
       }).forEach(([t, evt]) => {
         it(`ignores ${t} events`, () => {
-          const pm = gppClient.init({signalStatus: 'not ready'}).catch((err) => err.args[0] !== 'done' && Promise.reject(err));
+          const pm = gppClient.init({ signalStatus: 'not ready' }).catch((err) => err.args[0] !== 'done' && Promise.reject(err));
           eventListener(evt);
           eventListener('done', false);
           return pm;
-        })
+        });
       });
 
       it('rejects the promise when cmpStatus is "error"', (done) => {
-        const evt = {eventName: 'other', pingData: {cmpStatus: 'error'}};
-        gppClient.init({signalStatus: 'not ready'}).catch(err => {
+        const evt = { eventName: 'other', pingData: { cmpStatus: 'error' } };
+        gppClient.init({ signalStatus: 'not ready' }).catch(err => {
           expect(err.message).to.match(/error/);
           expect(err.args).to.eql([evt]);
           done();
         });
         eventListener(evt);
-      })
+      });
 
       CHANGE_EVENTS.forEach(evt => {
         describe(`event: ${evt}`, () => {
@@ -321,39 +321,39 @@ describe('consentManagementGpp', function () {
             return {
               eventName: evt,
               pingData
-            }
+            };
           }
 
-          let gppData2
+          let gppData2;
           beforeEach(() => {
-            gppData2 = Object.assign(gppData, {gppString: '2nd'});
+            gppData2 = Object.assign(gppData, { gppString: '2nd' });
           });
 
           it('does not fire consent data updates if the CMP is not ready', (done) => {
-            gppClient.init({signalStatus: 'not ready'}).catch(() => {
+            gppClient.init({ signalStatus: 'not ready' }).catch(() => {
               expect(gppDataHandler.ready).to.be.false;
               done();
             });
-            eventListener({...gppData2, signalStatus: 'not ready'});
+            eventListener({ ...gppData2, signalStatus: 'not ready' });
             eventListener('done', false);
-          })
+          });
 
           it('fires consent data updates (and resolves promise) if CMP is ready', (done) => {
-            gppClient.init({signalStatus: 'not ready'}).then(data => {
+            gppClient.init({ signalStatus: 'not ready' }).then(data => {
               sinon.assert.match(data, gppData2);
-              done()
+              done();
             });
-            eventListener(makeEvent({...gppData2, signalStatus: 'ready'}));
+            eventListener(makeEvent({ ...gppData2, signalStatus: 'ready' }));
           });
 
           it('keeps updating consent data on new events', () => {
-            const pm = gppClient.init({signalStatus: 'not ready'}).then(data => {
+            const pm = gppClient.init({ signalStatus: 'not ready' }).then(data => {
               sinon.assert.match(data, gppData);
               sinon.assert.match(gppDataHandler.getConsentData(), gppData);
             });
-            eventListener(makeEvent({...gppData, signalStatus: 'ready'}));
+            eventListener(makeEvent({ ...gppData, signalStatus: 'ready' }));
             return pm.then(() => {
-              eventListener(makeEvent({...gppData2, signalStatus: 'ready'}))
+              eventListener(makeEvent({ ...gppData2, signalStatus: 'ready' }));
             }).then(() => {
               sinon.assert.match(gppDataHandler.getConsentData(), gppData2);
             });
@@ -377,11 +377,11 @@ describe('consentManagementGpp', function () {
         'undefined': [false, undefined]
       }).forEach(([t, [expected, signalStatus]]) => {
         it(`should be ${expected} when signalStatus is ${t}`, () => {
-          expect(gppClient.isCMPReady(Object.assign({}, {signalStatus}))).to.equal(expected);
+          expect(gppClient.isCMPReady(Object.assign({}, { signalStatus }))).to.equal(expected);
         });
       });
     });
-  })
+  });
 
   describe('moduleConfig.requestBidsHook tests:', function () {
     const goodConfig = {
@@ -400,7 +400,7 @@ describe('consentManagementGpp', function () {
           applicableSections: [7]
         }
       }
-    }
+    };
 
     let didHookReturn;
 
@@ -442,7 +442,7 @@ describe('consentManagementGpp', function () {
         });
         expect(await runHook()).to.be.true;
         expect(gppDataHandler.ready).to.be.true;
-      })
+      });
 
       it('should throw proper errors when CMP is not found', async function () {
         await setConsentConfig(goodConfig);
@@ -498,13 +498,13 @@ describe('consentManagementGpp', function () {
         window.__gpp = sinon.stub().callsFake(function (command, callback) {
           switch (command) {
             case 'addEventListener':
-              triggerCMPEvent = (event, payload = {}) => callback({eventName: event, pingData: {...pingData, ...payload}})
+              triggerCMPEvent = (event, payload = {}) => callback({ eventName: event, pingData: { ...pingData, ...payload } });
               break;
             case 'ping':
-              callback(pingData)
+              callback(pingData);
               break;
             default:
-              throw new Error('unexpected __gpp invocation')
+              throw new Error('unexpected __gpp invocation');
           }
         });
         setConsentConfig(goodConfig);
@@ -526,9 +526,9 @@ describe('consentManagementGpp', function () {
       it('should wait for signalStatus: ready', async () => {
         const didHookRun = startHook();
         expect(await didHookRun()).to.be.false;
-        triggerCMPEvent('sectionChange', {signalStatus: 'not ready'});
+        triggerCMPEvent('sectionChange', { signalStatus: 'not ready' });
         expect(await didHookRun()).to.be.false;
-        triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
+        triggerCMPEvent('sectionChange', { signalStatus: 'ready' });
         await consentConfig.loadConsentData();
         expect(await didHookRun()).to.be.true;
         expect(gppDataHandler.getConsentData().gppString).to.eql('xyz');
@@ -537,7 +537,7 @@ describe('consentManagementGpp', function () {
       it('should re-use GPP data once ready', async () => {
         let didHookRun = startHook();
         await didHookRun();
-        triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
+        triggerCMPEvent('sectionChange', { signalStatus: 'ready' });
         await consentConfig.loadConsentData();
         window.__gpp.resetHistory();
         didHookRun = startHook();
@@ -549,18 +549,18 @@ describe('consentManagementGpp', function () {
       it('after signalStatus: ready, should wait again for signalStatus: ready', async () => {
         let didHookRun = startHook();
         await didHookRun();
-        triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
+        triggerCMPEvent('sectionChange', { signalStatus: 'ready' });
         await consentConfig.loadConsentData();
         for (const run of ['first', 'second']) {
-          triggerCMPEvent('cmpDisplayStatus', {signalStatus: 'not ready'});
+          triggerCMPEvent('cmpDisplayStatus', { signalStatus: 'not ready' });
           didHookRun = startHook();
           expect(await didHookRun()).to.be.false;
-          triggerCMPEvent('sectionChange', {signalStatus: 'ready', gppString: run});
+          triggerCMPEvent('sectionChange', { signalStatus: 'ready', gppString: run });
           await consentConfig.loadConsentData();
           expect(await didHookRun()).to.be.true;
           expect(gppDataHandler.getConsentData().gppString).to.eql(run);
         }
       });
-    })
+    });
   });
 });

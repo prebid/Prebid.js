@@ -1,8 +1,8 @@
-import {getBidIdParameter} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {interpretResponse} from '../libraries/uniquestUtils/uniquestUtils.js';
+import { getBidIdParameter } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { interpretResponse } from '../libraries/uniquestUtils/uniquestUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -45,7 +45,7 @@ export const spec = {
       const sid = getBidIdParameter('sid', request.params);
       const widths = request.sizes.map(size => size[0]).join(',');
       const heights = request.sizes.map(size => size[1]).join(',');
-      const timeout = bidderRequest.timeout
+      const timeout = bidderRequest.timeout;
 
       queryString = tryAppendQueryString(queryString, 'bid', bid);
       queryString = tryAppendQueryString(queryString, 'sid', sid);

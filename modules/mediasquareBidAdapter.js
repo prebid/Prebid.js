@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
@@ -16,8 +16,8 @@ import { getRefererInfo } from '../src/refererDetection.js';
  */
 
 const BIDDER_CODE = 'mediasquare';
-const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
-const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
+const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/';
+const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/';
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
 const BIDDER_ENDPOINT_WINNING = 'winning';
 
@@ -61,18 +61,18 @@ export const spec = {
         bidId: adunitValue.bidId,
         mediatypes: adunitValue.mediaTypes,
         floor: {}
-      }
+      };
       if (typeof adunitValue.getFloor === 'function') {
         if (Array.isArray(adunitValue.sizes)) {
           adunitValue.sizes.forEach(value => {
-            const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: value });
             if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor[value.join('x')] = tmpFloor; }
           });
         }
-        const tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: '*' });
         if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
       }
-      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
+      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp; }
       codes.push(code);
     });
     const payload = {
@@ -90,9 +90,9 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
       if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
-      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
-      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
-      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }
+      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids; };
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa; }
+      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2; }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -139,12 +139,15 @@ export const spec = {
             bidResponse['mediasquare'][param] = value[param];
           }
         });
+        if ('burls' in value) {
+          bidResponse['mediasquare']['burls'] = value['burls'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
         } else if ('video' in value) {
-          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url'] }
-          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml'] }
+          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url']; }
+          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml']; }
           bidResponse['mediaType'] = 'video';
           bidResponse['renderer'] = createRenderer(value, OUTSTREAM_RENDERER_URL);
         }
@@ -182,9 +185,22 @@ export const spec = {
     }
     const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+
     if (bid.hasOwnProperty('mediasquare')) {
-      paramsToSearchFor.forEach(param => {
+      // if burls then fire tracking pixels and exit
+      if (bid.mediasquare.hasOwnProperty('burls') && Array.isArray(bid.mediasquare.burls) && bid.mediasquare.burls.length > 0) {
+        bid.mediasquare.burls.forEach(burl => {
+          const url = burl && burl.url;
+          if (!url) return;
+          const method = (burl.method ?? "GET").toUpperCase();
+          const data = (method === "POST" && burl.data ? burl.data : null);
+          ajax(url, null, data ? JSON.stringify(data) : null, { method: method, withCredentials: true });
+        });
+        return true;
+      }
+      // no burl so checking for other mediasquare params
+      let msqParamsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+      msqParamsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
           if (typeof params[param] === 'number') {
@@ -193,7 +209,8 @@ export const spec = {
         }
       });
     };
-    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
     paramsToSearchFor.forEach(param => {
       if (bid.hasOwnProperty(param)) {
         params[param] = bid[param];
@@ -202,11 +219,11 @@ export const spec = {
         }
       }
     });
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), { method: 'POST', withCredentials: true });
     return true;
   }
 
-}
+};
 
 function outstreamRender(bid) {
   bid.renderer.push(() => {

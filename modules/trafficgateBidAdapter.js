@@ -1,10 +1,10 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {deepAccess, mergeDeep} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { deepAccess, mergeDeep } from '../src/utils.js';
 
 const BIDDER_CODE = 'trafficgate';
-const URL = 'https://[HOST].bc-plugin.com/prebidjs'
+const URL = 'https://[HOST].bc-plugin.com/prebidjs';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -15,7 +15,7 @@ export const spec = {
   isBannerBid
 };
 
-registerBidder(spec)
+registerBidder(spec);
 
 const converter = ortbConverter({
   context: {
@@ -41,10 +41,10 @@ const converter = ortbConverter({
     const req = buildRequest(imps, bidderRequest, context);
     mergeDeep(req, {
       at: 1,
-    })
+    });
     const bid = context.bidRequests[0];
     if (bid.params.test) {
-      req.test = 1
+      req.test = 1;
     }
     return req;
   },
@@ -58,13 +58,13 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    return response.bids
+    return response.bids;
   },
   overrides: {
     imp: {
       bidfloor(setBidFloor, imp, bidRequest, context) {
         const floor = {};
-        setBidFloor(floor, bidRequest, {...context, currency: 'USD'});
+        setBidFloor(floor, bidRequest, { ...context, currency: 'USD' });
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }
@@ -74,7 +74,7 @@ const converter = ortbConverter({
           let videoParams = bidRequest.mediaTypes[VIDEO];
           if (videoParams) {
             videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-            bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } };
           }
           orig(imp, bidRequest, context);
           if (imp.video && videoParams?.context === 'outstream') {
@@ -89,12 +89,12 @@ const converter = ortbConverter({
 function isBidRequestValid(bidRequest) {
   const isValid = bidRequest.params.placementId && bidRequest.params.host;
   if (!isValid) {
-    return false
+    return false;
   }
   if (isBannerBid(bidRequest)) {
     return deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
   }
-  return true
+  return true;
 }
 
 function buildRequests(bids, bidderRequest) {
@@ -111,8 +111,8 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: URL.replace('[HOST]', bidRequests[0].params.host),
-    data: converter.toORTB({bidRequests, bidderRequest, context: {mediaType}})
-  }
+    data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
+  };
 }
 
 function isVideoBid(bid) {
@@ -125,9 +125,9 @@ function isBannerBid(bid) {
 
 function interpretResponse(resp, req) {
   if (!resp.body) {
-    resp.body = {nbr: 0};
+    resp.body = { nbr: 0 };
   }
-  return converter.fromORTB({request: req.data, response: resp.body});
+  return converter.fromORTB({ request: req.data, response: resp.body });
 }
 
 export const spec2 = {
@@ -135,6 +135,6 @@ export const spec2 = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.bidId && bid.params && parseInt(bid.params.placementId) && bid.params.host)
+    return !!(bid.bidId && bid.params && parseInt(bid.params.placementId) && bid.params.host);
   },
-}
+};

@@ -8,7 +8,7 @@ describe('novatiqIdSystem', function () {
     useStandardUuid: false,
     useSspId: true,
     useSspHost: true
-  }
+  };
 
   describe('getSrcId', function() {
     it('getSrcId should set srcId value to 000 due to undefined parameter in config section', function() {
@@ -91,7 +91,7 @@ describe('novatiqIdSystem', function () {
         useStandardUuid: false,
         useSspId: true,
         useSspHost: true
-      }
+      };
 
       const config = { params: { sourceid: '123' } };
       const response = novatiqIdSubmodule.getUrlParams(config);
@@ -105,7 +105,7 @@ describe('novatiqIdSystem', function () {
         useStandardUuid: true,
         useSspId: false,
         useSspHost: false
-      }
+      };
 
       const config = {
         sourceid: '123',
@@ -129,7 +129,7 @@ describe('novatiqIdSystem', function () {
         useStandardUuid: false,
         useSspId: true,
         useSspHost: true
-      }
+      };
 
       const url = novatiqIdSubmodule.getSyncUrl(false, '', defaultUrlParams);
       const response = novatiqIdSubmodule.sendAsyncSyncRequest('testuuid', url);
@@ -158,11 +158,11 @@ describe('novatiqIdSystem', function () {
       const novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
-      var config = {params: {removeAdditionalInfo: true}};
+      var config = { params: { removeAdditionalInfo: true } };
       const response = novatiqIdSubmodule.decode(novatiqId, config);
       expect(response.novatiq.ext.syncResponse).should.be.not.empty;
       expect(response.novatiq.snowflake.id).should.be.not.empty;
       should.equal(response.novatiq.snowflake.syncResponse, undefined);
     });
   });
-})
+});

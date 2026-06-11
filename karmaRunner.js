@@ -62,7 +62,7 @@ process.on('message', function (options) {
       chunks.push([options.file]);
     } else {
       const chunkNum = process.env['TEST_CHUNKS'] ?? 1;
-      const pat = process.env['TEST_PAT'] ?? '*_spec.js'
+      const pat = process.env['TEST_PAT'] ?? '*_spec.js';
       const tests = glob.sync('test/**/' + pat).sort();
       const chunkLen = chunkNum === 'MAX' ? 0 : Math.floor(tests.length / Number(chunkNum));
       chunks.push([]);

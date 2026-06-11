@@ -1,8 +1,8 @@
-import {ENDPOINT, spec} from 'modules/browsiBidAdapter.js';
-import {config} from 'src/config.js';
-import {VIDEO, BANNER} from 'src/mediaTypes.js';
+import { ENDPOINT, spec } from 'modules/browsiBidAdapter.js';
+import { config } from 'src/config.js';
+import { VIDEO, BANNER } from 'src/mediaTypes.js';
 
-const {expect} = require('chai');
+const { expect } = require('chai');
 const DATA = 'brwvidtag';
 const ADAPTER = '__bad';
 
@@ -42,7 +42,7 @@ describe('browsi Bid Adapter Test', function () {
     });
     it('should return false when video mediaType is missing', function () {
       delete bid.mediaTypes[VIDEO];
-      bid.mediaTypes[BANNER] = {}
+      bid.mediaTypes[BANNER] = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -51,8 +51,8 @@ describe('browsi Bid Adapter Test', function () {
     let bidRequest;
     let bidderRequest;
     beforeEach(function () {
-      window[DATA] = {}
-      window[DATA][ADAPTER] = {index: 0};
+      window[DATA] = {};
+      window[DATA][ADAPTER] = { index: 0 };
       bidRequest = [
         {
           'params': {
@@ -76,7 +76,7 @@ describe('browsi Bid Adapter Test', function () {
               }
             }
           },
-          'mediaTypes': {video: {playerSize: [640, 480]}}
+          'mediaTypes': { video: { playerSize: [640, 480] } }
         }
       ];
       bidderRequest = {
@@ -119,14 +119,14 @@ describe('browsi Bid Adapter Test', function () {
           gdpr: bidderRequest.gdprConsent,
           ccpa: bidderRequest.uspConsent,
           sizes: inputRequest.sizes,
-          video: {playerSize: [640, 480]},
+          video: { playerSize: [640, 480] },
           aUCode: inputRequest.adUnitCode,
           aID: inputRequest.auctionId,
           tID: inputRequest.ortb2Imp.ext.tid,
           schain: inputRequest.ortb2?.source?.ext?.schain,
           params: inputRequest.params
         }
-      }
+      };
       assert.deepEqual(request, requestToExpect);
     });
     it('should pass on timeout in bidderRequest', function() {
@@ -135,7 +135,7 @@ describe('browsi Bid Adapter Test', function () {
       expect(requests[0].data.timeout).to.equal(8000);
     });
     it('should pass timeout in config', function() {
-      config.setConfig({'bidderTimeout': 6000});
+      config.setConfig({ 'bidderTimeout': 6000 });
       const requests = spec.buildRequests(bidRequest, bidderRequest);
       expect(requests[0].data.timeout).to.equal(6000);
     });
@@ -159,7 +159,7 @@ describe('browsi Bid Adapter Test', function () {
       cur: 'USD',
       ttl: 10000,
       someExtraParams: 8,
-    }
+    };
 
     it('should return a valid response', function () {
       const bidResponses = spec.interpretResponse(serverResponse, bidRequest);
@@ -186,32 +186,32 @@ describe('browsi Bid Adapter Test', function () {
   describe('getUserSyncs', function () {
     const bidResponse = {
       userSyncs: [
-        {url: 'syncUrl1', type: 'image'},
-        {url: 'http://syncUrl2', type: 'iframe'}
+        { url: 'syncUrl1', type: 'image' },
+        { url: 'http://syncUrl2', type: 'iframe' }
       ]
-    }
+    };
     const serverResponse = [
-      {body: bidResponse}
+      { body: bidResponse }
     ];
     it('should return iframe type userSync', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, serverResponse[0]);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponse[0]);
       expect(userSyncs.length).to.equal(1);
       const userSync = userSyncs[0];
       expect(userSync.url).to.equal('http://syncUrl2');
       expect(userSync.type).to.equal('iframe');
     });
     it('should return image type userSyncs', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse[0]);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponse[0]);
       const userSync = userSyncs[0];
       expect(userSync.url).to.equal('http://syncUrl1');
       expect(userSync.type).to.equal('image');
     });
     it('should handle multiple server responses', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponse);
       expect(userSyncs.length).to.equal(1);
     });
     it('should return empty userSyncs', function () {
-      const userSyncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, serverResponse);
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, serverResponse);
       expect(userSyncs.length).to.equal(0);
     });
   });

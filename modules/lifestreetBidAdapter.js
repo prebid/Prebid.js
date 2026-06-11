@@ -39,8 +39,8 @@ function template(strings, ...keys) {
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
 function formatBidRequest(bid, bidderRequest = {}) {
-  const {params} = bid;
-  const {referer} = (bidderRequest.refererInfo || {});
+  const { params } = bid;
+  const { referer } = (bidderRequest.refererInfo || {});
   let url = urlTemplate({
     adapter: 'prebid',
     slot: params.slot,
@@ -68,7 +68,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
 
   // ccpa support
   if (bidderRequest.uspConsent) {
-    url += `&__us_privacy=${bidderRequest.uspConsent}`
+    url += `&__us_privacy=${bidderRequest.uspConsent}`;
   }
 
   return {
@@ -90,13 +90,13 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {
-    const {params = {}} = bid;
+    const { params = {} } = bid;
     return !!(params.slot && params.adkey && params.ad_size);
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
     return validBidRequests.map(bid => {
-      return formatBidRequest(bid, bidderRequest)
+      return formatBidRequest(bid, bidderRequest);
     });
   },
 

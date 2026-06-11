@@ -1,6 +1,6 @@
-import {BANNER} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {triggerPixel} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { triggerPixel } from '../src/utils.js';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
@@ -14,7 +14,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: bid => {
-    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone';
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
@@ -79,7 +79,7 @@ export const spec = {
             bid.meta.advertiserDomains = adponeBid.meta.adomain;
           }
 
-          return bid
+          return bid;
         })];
       }
     });

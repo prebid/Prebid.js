@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/connectadBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/connectadBidAdapter.js';
 import { config } from 'src/config.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import assert from 'assert';
 
 describe('ConnectAd Adapter', function () {
@@ -73,7 +73,7 @@ describe('ConnectAd Adapter', function () {
         consentString: 'consentDataString',
         vendorData: {}
       }
-    }
+    };
   });
 
   afterEach(function () {
@@ -132,7 +132,7 @@ describe('ConnectAd Adapter', function () {
           }
         };
         const isValid = spec.isBidRequestValid(validBid);
-        expect(isValid).to.equal(true)
+        expect(isValid).to.equal(true);
       });
 
       it('should reject if missing siteId/networkId', function () {
@@ -210,7 +210,7 @@ describe('ConnectAd Adapter', function () {
             gdprApplies: false,
             consentString: 'consentDataString',
           },
-        }
+        };
         const request = spec.buildRequests(bidRequests, localbidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -222,7 +222,7 @@ describe('ConnectAd Adapter', function () {
         const localbidderRequest = {
           timeout: 3000,
           gdprConsent: {}
-        }
+        };
         const request = spec.buildRequests(bidRequests, localbidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -230,8 +230,8 @@ describe('ConnectAd Adapter', function () {
       });
 
       it('should have CCPA Consent if defined', function () {
-        const uspConsent = '1YYN'
-        bidderRequest.uspConsent = uspConsent
+        const uspConsent = '1YYN';
+        bidderRequest.uspConsent = uspConsent;
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -239,7 +239,7 @@ describe('ConnectAd Adapter', function () {
       });
 
       it('should not have CCPA Consent if not defined', function () {
-        bidderRequest.uspConsent = undefined
+        bidderRequest.uspConsent = undefined;
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
         expect(requestparse.user.ext.us_privacy).to.be.undefined;
@@ -319,11 +319,11 @@ describe('ConnectAd Adapter', function () {
               tid: '9XSL9B79XM'
             }
           }
-        }
+        };
 
         const request = spec.buildRequests(bidRequest, localBidderRequest);
         const data = JSON.parse(request.data);
-        expect(data.source?.tid).to.equal('9XSL9B79XM')
+        expect(data.source?.tid).to.equal('9XSL9B79XM');
       });
 
       it('should pass gpid', function() {
@@ -357,10 +357,10 @@ describe('ConnectAd Adapter', function () {
         const data = JSON.parse(request.data);
         expect(data.bcat).to.deep.equal(localBidderRequest.ortb2.bcat);
         expect(data.badv).to.deep.equal(localBidderRequest.ortb2.badv);
-        expect(data.site).to.nested.include({'ext.data': 'some site data'});
-        expect(data.device).to.nested.include({'ext.data': 'some device data'});
-        expect(data.user).to.nested.include({'ext.data': 'some user data'});
-        expect(data.regs).to.nested.include({'ext.data': 'some regs data'});
+        expect(data.site).to.nested.include({ 'ext.data': 'some site data' });
+        expect(data.device).to.nested.include({ 'ext.data': 'some device data' });
+        expect(data.user).to.nested.include({ 'ext.data': 'some user data' });
+        expect(data.regs).to.nested.include({ 'ext.data': 'some regs data' });
       });
 
       it('should accept tmax from global config if not set by requestBids method', function() {
@@ -685,7 +685,7 @@ describe('ConnectAd Adapter', function () {
   describe('GPP Sync', function() {
     it('should concatenate gppString and applicableSections values in the returned image url', () => {
       const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
-      const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, undefined, undefined, undefined, gppConsent);
+      const result = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, undefined, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'image',
         url: `https://sync.connectad.io/ImageSyncer?gpp=DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN&gpp_sid=5&`
@@ -694,7 +694,7 @@ describe('ConnectAd Adapter', function () {
 
     it('should concatenate gppString and applicableSections values in the returned iFrame url', () => {
       const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5, 6] };
-      const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: `https://sync.connectad.io/iFrameSyncer?gpp=DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN&gpp_sid=5%2C6&`
@@ -702,7 +702,7 @@ describe('ConnectAd Adapter', function () {
     });
 
     it('should return url without Gpp consent if gppConsent is undefined', () => {
-      const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, undefined);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, undefined);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: `https://sync.connectad.io/iFrameSyncer?`
@@ -711,7 +711,7 @@ describe('ConnectAd Adapter', function () {
 
     it('should return iFrame url without Gpp consent if gppConsent.gppString is undefined', () => {
       const gppConsent = { applicableSections: ['5'] };
-      const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+      const result = spec.getUserSyncs({ iframeEnabled: true }, undefined, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: `https://sync.connectad.io/iFrameSyncer?`
@@ -731,7 +731,7 @@ describe('ConnectAd Adapter', function () {
       },
       {
         name: 'iframe/gdpr',
-        arguments: [{ iframeEnabled: true, pixelEnabled: false }, {}, {gdprApplies: true, consentString: '234234'}],
+        arguments: [{ iframeEnabled: true, pixelEnabled: false }, {}, { gdprApplies: true, consentString: '234234' }],
         expect: {
           type: 'iframe',
           pixels: ['https://sync.connectad.io/iFrameSyncer?gdpr=1&gdpr_consent=234234&']
@@ -747,7 +747,7 @@ describe('ConnectAd Adapter', function () {
       },
       {
         name: 'iframe/ccpa & gdpr',
-        arguments: [{ iframeEnabled: true, pixelEnabled: false }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        arguments: [{ iframeEnabled: true, pixelEnabled: false }, {}, { gdprApplies: true, consentString: '234234' }, 'YN12'],
         expect: {
           type: 'iframe',
           pixels: ['https://sync.connectad.io/iFrameSyncer?gdpr=1&gdpr_consent=234234&us_privacy=YN12&']
@@ -755,7 +755,7 @@ describe('ConnectAd Adapter', function () {
       },
       {
         name: 'image/ccpa & gdpr',
-        arguments: [{ iframeEnabled: false, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        arguments: [{ iframeEnabled: false, pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }, 'YN12'],
         expect: {
           type: 'image',
           pixels: ['https://sync.connectad.io/ImageSyncer?gdpr=1&gdpr_consent=234234&us_privacy=YN12&']
@@ -763,7 +763,7 @@ describe('ConnectAd Adapter', function () {
       },
       {
         name: 'image/gdpr',
-        arguments: [{ iframeEnabled: false, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}],
+        arguments: [{ iframeEnabled: false, pixelEnabled: true }, {}, { gdprApplies: true, consentString: '234234' }],
         expect: {
           type: 'image',
           pixels: ['https://sync.connectad.io/ImageSyncer?gdpr=1&gdpr_consent=234234&']

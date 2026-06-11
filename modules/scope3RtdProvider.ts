@@ -112,9 +112,9 @@ function initModule(config: any): boolean {
   // Set defaults
   moduleConfig.endpoint = moduleConfig.endpoint || DEFAULT_ENDPOINT;
   moduleConfig.timeout = moduleConfig.timeout || DEFAULT_TIMEOUT;
-  moduleConfig.includeKey = moduleConfig.includeKey || 'scope3_include';
-  moduleConfig.excludeKey = moduleConfig.excludeKey || 'scope3_exclude';
-  moduleConfig.macroKey = moduleConfig.macroKey || 'scope3_macro';
+  moduleConfig.includeKey = moduleConfig.includeKey || 'axei';
+  moduleConfig.excludeKey = moduleConfig.excludeKey || 'axex';
+  moduleConfig.macroKey = moduleConfig.macroKey || 'axem';
   moduleConfig.publisherTargeting = moduleConfig.publisherTargeting !== false;
   moduleConfig.advertiserTargeting = moduleConfig.advertiserTargeting !== false;
   moduleConfig.cacheEnabled = moduleConfig.cacheEnabled !== false;

@@ -154,7 +154,7 @@ describe('WinrAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].private_sizes).to.exist;
-      expect(payload.tags[0].private_sizes).to.deep.equal([{width: 1, height: 1}]);
+      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 1, height: 1 }]);
     });
 
     it('should add publisher_id in request', function() {
@@ -173,7 +173,7 @@ describe('WinrAdapter', function () {
       expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
       expect(payload.publisher_id).to.exist;
       expect(payload.publisher_id).to.deep.equal(1231234);
-    })
+    });
 
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests);
@@ -222,7 +222,7 @@ describe('WinrAdapter', function () {
       expect(payload.user).to.deep.equal({
         external_uid: '123',
         // dnt: false
-        segments: [{id: 123}, {id: 987, value: 876}]
+        segments: [{ id: 123 }, { id: 987, value: 876 }]
       });
     });
 
@@ -286,7 +286,7 @@ describe('WinrAdapter', function () {
               singleValNum: 123,
               emptyStr: '',
               emptyArr: [''],
-              badValue: {'foo': 'bar'} // should be dropped
+              badValue: { 'foo': 'bar' } // should be dropped
             }
           }
         }
@@ -342,7 +342,7 @@ describe('WinrAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid);
     });
 
     it('should add gdpr consent information to the request', function () {
@@ -360,7 +360,7 @@ describe('WinrAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.options).to.deep.equal({withCredentials: true});
+      expect(request.options).to.deep.equal({ withCredentials: true });
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
@@ -431,7 +431,7 @@ describe('WinrAdapter', function () {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           topmostLocation: 'https://example.com/page.html',
@@ -443,7 +443,7 @@ describe('WinrAdapter', function () {
             'https://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -525,7 +525,7 @@ describe('WinrAdapter', function () {
         .returns(true);
 
       const request = spec.buildRequests([bidRequest]);
-      expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
+      expect(request.options.customHeaders).to.deep.equal({ 'X-Is-Test': 1 });
 
       config.getConfig.restore();
     });
@@ -709,8 +709,8 @@ describe('WinrAdapter', function () {
             'child': 4
           }
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -726,7 +726,7 @@ describe('WinrAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -739,8 +739,8 @@ describe('WinrAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
 
@@ -753,8 +753,8 @@ describe('WinrAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });
@@ -771,8 +771,8 @@ describe('WinrAdapter', function () {
             'child': 4
           }
         }]
-      }
-      const result = spec.interpretResponse({ body: responseParams }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: responseParams }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['placementId', 'domParent', 'child']);
     });
   });

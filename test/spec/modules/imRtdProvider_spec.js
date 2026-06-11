@@ -9,8 +9,8 @@ import {
   imUidLocalName,
   imVidCookieName,
   imRtdLocalName
-} from 'modules/imRtdProvider.js'
-import { timestamp } from '../../../src/utils.js'
+} from 'modules/imRtdProvider.js';
+import { timestamp } from '../../../src/utils.js';
 
 describe('imRtdProvider', function () {
   let getLocalStorageStub;
@@ -23,14 +23,14 @@ describe('imRtdProvider', function () {
       }
     ]
   };
-  const onDone = function() { return true };
+  const onDone = function() { return true; };
   const moduleConfig = {
     params: {
       cid: 5126,
       setGptKeyValues: true,
       maxSegments: 2
     }
-  }
+  };
 
   beforeEach(function (done) {
     getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -45,9 +45,9 @@ describe('imRtdProvider', function () {
 
   describe('imRtdSubmodule', function () {
     it('should initialise and return true', function () {
-      expect(imRtdSubmodule.init()).to.equal(true)
-    })
-  })
+      expect(imRtdSubmodule.init()).to.equal(true);
+    });
+  });
 
   describe('getBidderFunction', function () {
     const assumedBidder = [
@@ -60,12 +60,12 @@ describe('imRtdProvider', function () {
       });
 
       it(`should return bid with correct key data: ${bidderName}`, function () {
-        const bid = {bidder: bidderName};
-        expect(getBidderFunction(bidderName)(bid, {'im_segments': ['12345', '67890']}, {params: {}})).to.equal(bid);
+        const bid = { bidder: bidderName };
+        expect(getBidderFunction(bidderName)(bid, { 'im_segments': ['12345', '67890'] }, { params: {} })).to.equal(bid);
       });
       it(`should return bid without data: ${bidderName}`, function () {
-        const bid = {bidder: bidderName};
-        expect(getBidderFunction(bidderName)(bid, '', {params: {}})).to.equal(bid);
+        const bid = { bidder: bidderName };
+        expect(getBidderFunction(bidderName)(bid, '', { params: {} })).to.equal(bid);
       });
     });
     it(`should return null with unexpected bidder`, function () {
@@ -73,8 +73,8 @@ describe('imRtdProvider', function () {
     });
     describe('fluct bidder function', function () {
       it('should return a bid w/o im_segments if not any exists', function () {
-        const bid = {bidder: 'fluct'};
-        expect(getBidderFunction('fluct')(bid, '', {params: {}})).to.eql(bid);
+        const bid = { bidder: 'fluct' };
+        expect(getBidderFunction('fluct')(bid, '', { params: {} })).to.eql(bid);
       });
       it('should return a bid w/ im_segments if any exists', function () {
         const bid = {
@@ -87,8 +87,8 @@ describe('imRtdProvider', function () {
         };
         expect(getBidderFunction('fluct')(
           bid,
-          {im_segments: ['12345', '67890', '09876']},
-          {params: {maxSegments: 2}}
+          { im_segments: ['12345', '67890', '09876'] },
+          { params: { maxSegments: 2 } }
         ))
           .to.eql(
             {
@@ -103,7 +103,7 @@ describe('imRtdProvider', function () {
           );
       });
     });
-  })
+  });
 
   describe('getCustomBidderFunction', function () {
     it('should return config function', function () {
@@ -116,10 +116,10 @@ describe('imRtdProvider', function () {
           }
         }
       };
-      const bidder = 'testBidder'
+      const bidder = 'testBidder';
       expect(getCustomBidderFunction(config, bidder)).to.exist.and.to.be.a('function');
       expect(getCustomBidderFunction(config, bidder)()).to.equal('testString');
-    })
+    });
     it('should return null when overwrites falsy', function () {
       const config = {
         params: {
@@ -128,38 +128,38 @@ describe('imRtdProvider', function () {
           }
         }
       };
-      const bidder = 'testBidder'
+      const bidder = 'testBidder';
       expect(getCustomBidderFunction(config, bidder)).to.equal(null);
-    })
-  })
+    });
+  });
 
   describe('processBidderFunction', function () {
 
-  })
+  });
 
   describe('setRealTimeData', function () {
     it('should return true when empty params', function () {
-      expect(setRealTimeData({adUnits: []}, {params: {}}, {im_segments: []})).to.equal(undefined)
+      expect(setRealTimeData({ adUnits: [] }, { params: {} }, { im_segments: [] })).to.equal(undefined);
     });
     it('should return true when overwrites and bid params', function () {
       const config = {
         params: {
           overwrites: {
-            testBidder: function() { return true }
+            testBidder: function() { return true; }
           }
         }
       };
-      expect(setRealTimeData(testReqBidsConfigObj, config, {im_segments: []})).to.equal(undefined)
+      expect(setRealTimeData(testReqBidsConfigObj, config, { im_segments: [] })).to.equal(undefined);
     });
-  })
+  });
 
   describe('getRealTimeData', function () {
     it('should initialise and return when empty params', function () {
-      expect(getRealTimeData({}, function() {}, {})).to.equal(undefined)
+      expect(getRealTimeData({}, function() {}, {})).to.equal(undefined);
     });
 
     it('should initialise and return with config', function () {
-      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
+      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined);
     });
 
     it('should return the uid when sids(rtd) not expired', function () {
@@ -167,7 +167,7 @@ describe('imRtdProvider', function () {
       getLocalStorageStub.withArgs(imRtdLocalName).returns('testSids');
       getCookieStub.withArgs(imVidCookieName).returns('testUid');
       getLocalStorageStub.withArgs(`${imRtdLocalName}_mt`).returns(new Date(timestamp()).toUTCString());
-      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
+      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined);
     });
 
     it('should return the uid when it exists uid, sids(rtd), vid in storages and sids(rtd) expired', function () {
@@ -175,7 +175,7 @@ describe('imRtdProvider', function () {
       getLocalStorageStub.withArgs(imRtdLocalName).returns('testSids');
       getCookieStub.withArgs(imVidCookieName).returns('testUid');
       getLocalStorageStub.withArgs(`${imRtdLocalName}_mt`).returns(0);
-      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
+      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined);
     });
 
     it('should return the uid when uid not expired', function () {
@@ -183,9 +183,9 @@ describe('imRtdProvider', function () {
       getLocalStorageStub.withArgs(imRtdLocalName).returns('testSids');
       getCookieStub.withArgs(imVidCookieName).returns('testUid');
       getLocalStorageStub.withArgs(`${imUidLocalName}_mt`).returns(new Date(timestamp()).toUTCString());
-      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined)
+      expect(getRealTimeData(testReqBidsConfigObj, onDone, moduleConfig)).to.equal(undefined);
     });
-  })
+  });
 
   describe('getApiCallback', function () {
     it('should return success and error functions', function () {
@@ -197,13 +197,13 @@ describe('imRtdProvider', function () {
     it('should return "undefined" success', function () {
       const res = getApiCallback(testReqBidsConfigObj, false, moduleConfig);
       const successResponse = '{"uid": "testid", "segments": "testsegment", "vid": "testvid"}';
-      expect(res.success(successResponse, {status: 200})).to.equal(undefined);
+      expect(res.success(successResponse, { status: 200 })).to.equal(undefined);
       expect(res.error()).to.equal(undefined);
     });
 
     it('should return "undefined" catch error response', function () {
       const res = getApiCallback(testReqBidsConfigObj, false, moduleConfig);
-      expect(res.success('error response', {status: 400})).to.equal(undefined);
+      expect(res.success('error response', { status: 400 })).to.equal(undefined);
     });
-  })
-})
+  });
+});

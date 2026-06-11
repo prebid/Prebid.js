@@ -21,7 +21,7 @@ const PUBLISHER_PARAMS = {
    */
   PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
   PARAM_NAME_PLACEMENT_ID: 'placementId',
-}
+};
 
 export const converter = ortbConverter({
   context: {
@@ -61,7 +61,7 @@ export const spec = {
       !deepAccess(bid, `params.${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID}`)
     ) {
       logError(`The ${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID} field is required in the bid request. ` +
-        'Please follow the setup guideline to set the placement ID field.')
+        'Please follow the setup guideline to set the placement ID field.');
       return false;
     }
 
@@ -91,7 +91,7 @@ export const spec = {
   interpretResponse(serverResponse, customBidRequest) {
     if (!serverResponse.body) return [];
 
-    const responseBody = {...serverResponse.body, seatbid: serverResponse.body.seatbid};
+    const responseBody = { ...serverResponse.body, seatbid: serverResponse.body.seatbid };
     const prebidBidResponse = converter.fromORTB({
       request: customBidRequest.data,
       response: responseBody,
@@ -182,7 +182,7 @@ export const utils = {
         'Failed to obtain placement ID from the given object. ' +
         `Please set it via the "${paramPath}" field in the bid configuration.\n` +
         'Given object:\n' +
-        JSON.stringify({functionParam: prebidBidRequestOrOrtbBidRequest}, null, 3)
+        JSON.stringify({ functionParam: prebidBidRequestOrOrtbBidRequest }, null, 3)
       );
     }
 
@@ -230,4 +230,4 @@ export const utils = {
     prebidBidResponse.ortbBidResponse = ortbBidResponse;
     prebidBidResponse.ortbId = ortbBidResponse.id;
   },
-}
+};

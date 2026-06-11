@@ -1,7 +1,6 @@
-import {expect} from 'chai';
-import {spec, storage} from 'modules/mantisBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
+import { expect } from 'chai';
+import { spec, storage, sfPostMessage, iframePostMessage } from 'modules/mantisBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
@@ -60,7 +59,7 @@ describe('MantisAdapter', function () {
         }
       ]);
 
-      iframePostMessage({innerHeight: 500, innerWidth: 500}, 'mantis', () => viewed = true);
+      iframePostMessage({ innerHeight: 500, innerWidth: 500 }, 'mantis', () => viewed = true);
 
       sandbox.clock.runAll();
 
@@ -121,19 +120,19 @@ describe('MantisAdapter', function () {
     ];
 
     it('gdpr consent not required', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: false}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: false } });
 
       expect(request.url).not.to.include('consent=false');
     });
 
     it('gdpr consent required', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: true}});
+      const request = spec.buildRequests(bidRequests, { gdprConsent: { gdprApplies: true } });
 
       expect(request.url).to.include('consent=false');
     });
 
     it('usp consent', function () {
-      const request = spec.buildRequests(bidRequests, {uspConsent: 'foobar'});
+      const request = spec.buildRequests(bidRequests, { uspConsent: 'foobar' });
 
       expect(request.url).to.include('usp=foobar');
     });
@@ -255,7 +254,7 @@ describe('MantisAdapter', function () {
       ];
       let bidderRequest;
 
-      const result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
@@ -296,7 +295,7 @@ describe('MantisAdapter', function () {
       ];
       let bidderRequest;
 
-      const result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
@@ -339,7 +338,7 @@ describe('MantisAdapter', function () {
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
       const spy = sandbox.spy(storage, 'setDataInLocalStorage');
 
-      const result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
 
       expect(spy.calledWith('mantis:uuid', 'uuid'));
       expect(result[0]).to.deep.equal(expectedResponse[0]);
@@ -354,7 +353,7 @@ describe('MantisAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse(response, {bidderRequest});
+      const result = spec.interpretResponse(response, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });

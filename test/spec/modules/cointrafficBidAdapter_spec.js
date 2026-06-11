@@ -1,15 +1,15 @@
-import sinon from 'sinon'
+import sinon from 'sinon';
 import { expect } from 'chai';
 import { spec } from 'modules/cointrafficBidAdapter.js';
-import { config } from 'src/config.js'
-import * as utils from 'src/utils.js'
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
-const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps.adsgravity.io/v1/request/prebid';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -20,9 +20,13 @@ describe('cointrafficBidAdapter', function () {
         placementId: 'testPlacementId'
       },
       adUnitCode: 'adunit-code',
-      sizes: [
-        [300, 250]
-      ],
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [300, 250]
+          ],
+        },
+      },
       bidId: 'bidId12345',
       bidderRequestId: 'bidderRequestId12345',
       auctionId: 'auctionId12345'
@@ -42,9 +46,13 @@ describe('cointrafficBidAdapter', function () {
           placementId: 'testPlacementId'
         },
         adUnitCode: 'adunit-code',
-        sizes: [
-          [300, 250]
-        ],
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250]
+            ],
+          },
+        },
         bidId: 'bidId12345',
         bidderRequestId: 'bidderRequestId12345',
         auctionId: 'auctionId12345'
@@ -55,9 +63,13 @@ describe('cointrafficBidAdapter', function () {
           placementId: 'testPlacementId'
         },
         adUnitCode: 'adunit-code2',
-        sizes: [
-          [300, 250]
-        ],
+        mediaTypes: {
+          banner: {
+            sizes: [
+              [300, 250]
+            ],
+          },
+        },
         bidId: 'bidId67890"',
         bidderRequestId: 'bidderRequestId67890',
         auctionId: 'auctionId12345'
@@ -97,8 +109,8 @@ describe('cointrafficBidAdapter', function () {
     });
 
     it('throws an error if currency provided in params is not allowed', function () {
-      const utilsMock = sinon.mock(utils)
-      utilsMock.expects('logError').twice()
+      const utilsMock = sinon.mock(utils);
+      utilsMock.expects('logError').twice();
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.cointraffic' ? 'BTC' : 'EUR'
       );
@@ -108,7 +120,7 @@ describe('cointrafficBidAdapter', function () {
       expect(request[0]).to.undefined;
       expect(request[1]).to.undefined;
 
-      utilsMock.restore()
+      utilsMock.restore();
       getConfigStub.restore();
     });
 

@@ -7,15 +7,15 @@ import {
   isPlainObject,
   logError
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
-import {addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -31,14 +31,14 @@ const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function buildBid(bidData) {
   const bid = bidData;
   const position = {
     domParent: bid.meta.domParent ? `'${bid.meta.domParent}'` : null,
     child: bid.meta.child ? bid.meta.child : 4
-  }
+  };
   bid.ad = wrapAd(bid, position);
   return bid;
 }
@@ -455,7 +455,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {

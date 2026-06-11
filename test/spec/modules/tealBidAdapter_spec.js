@@ -205,7 +205,7 @@ const buildRequest = (params) => {
 
 describe('Teal Bid Adaper', function () {
   describe('buildRequests', () => {
-    const {data, url} = buildRequest();
+    const { data, url } = buildRequest();
     it('should give the correct URL', () => {
       expect(url).equal(`https://${PBS_HOST}/openrtb2/auction`);
     });
@@ -218,11 +218,11 @@ describe('Teal Bid Adaper', function () {
     });
     it('should set tmax to something below the timeout', () => {
       expect(data.tmax).be.greaterThan(0);
-      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout)
+      expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout);
     });
   });
   describe('buildRequests with subAccount', () => {
-    const {data} = buildRequest({ subAccount: SUB_ACCOUNT });
+    const { data } = buildRequest({ subAccount: SUB_ACCOUNT });
     it('should set the correct stored request ids', () => {
       expect(data.ext.prebid.storedrequest.id).equal(SUB_ACCOUNT);
     });

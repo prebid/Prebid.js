@@ -1,5 +1,4 @@
-import {getStorageDisclosureSummary} from '../../../libraries/storageDisclosure/summary.js';
-import {dynamicDisclosureCollector} from '../../../modules/storageControl.js';
+import { getStorageDisclosureSummary } from '../../../libraries/storageDisclosure/summary.js';
 
 describe('storageDisclosure', () => {
   let moduleMeta;
@@ -27,10 +26,10 @@ describe('storageDisclosure', () => {
             }
           }
         }
-      }
+      };
       expect(getSummary()).to.eql([]);
-    })
-  })
+    });
+  });
 
   it('should list disclosures', () => {
     moduleMeta = {
@@ -38,7 +37,7 @@ describe('storageDisclosure', () => {
         disclosures: {
           url1: {
             disclosures: [
-              {identifier: 'foo'}
+              { identifier: 'foo' }
             ]
           }
         }
@@ -47,12 +46,12 @@ describe('storageDisclosure', () => {
         disclosures: {
           url2: {
             disclosures: [
-              {identifier: 'bar'}
+              { identifier: 'bar' }
             ]
           }
         }
       }
-    }
+    };
     expect(getSummary()).to.eql([
       {
         disclosedIn: 'url1',
@@ -64,17 +63,17 @@ describe('storageDisclosure', () => {
         disclosedBy: ['module2'],
         identifier: 'bar'
       }
-    ])
+    ]);
   });
 
   it('should group by disclosure URL', () => {
     const disclosures = {
       url: {
         disclosures: [
-          {identifier: 'foo'}
+          { identifier: 'foo' }
         ]
       }
-    }
+    };
     moduleMeta = {
       module1: {
         disclosures
@@ -89,6 +88,6 @@ describe('storageDisclosure', () => {
         disclosedBy: ['module1', 'module2'],
         identifier: 'foo'
       }
-    ])
+    ]);
   });
 });

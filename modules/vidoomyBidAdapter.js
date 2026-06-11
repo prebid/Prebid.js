@@ -1,9 +1,9 @@
-import {deepAccess, isPlainObject, logError, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import { deepAccess, isPlainObject, logError, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
@@ -87,7 +87,7 @@ function getBidFloor(bid, mediaType, sizes, bidfloor) {
   let floor = bidfloor;
   var size = sizes && sizes.length > 0 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
     if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(bidfloor, parseFloat(floorInfo.floor));
     }
@@ -107,7 +107,7 @@ const isBidResponseValid = bid => {
     default:
       return false;
   }
-}
+};
 
 const buildRequests = (validBidRequests, bidderRequest) => {
   const serverRequests = validBidRequests.map(bid => {
@@ -198,9 +198,9 @@ const render = (bid) => {
     autoPlay: true,
     preload: true,
     mute: true,
-  }
+  };
   window.outstreamPlayer(bid, bid.adUnitCode, obj);
-}
+};
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {

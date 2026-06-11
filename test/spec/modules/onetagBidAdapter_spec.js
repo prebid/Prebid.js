@@ -1,9 +1,8 @@
-import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
+import { spec, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
-import { hasTypeNative } from '../../../modules/onetagBidAdapter.js';
 
 const NATIVE_SUFFIX = 'Ad';
 
@@ -26,7 +25,7 @@ const getFloor = function(params) {
       floorPrice = 5.0;
       break;
   }
-  return {currency: params.currency, floor: floorPrice};
+  return { currency: params.currency, floor: floorPrice };
 };
 
 describe('onetag', function () {
@@ -100,7 +99,7 @@ describe('onetag', function () {
         required: 1,
         sendId: 1
       }
-    }
+    };
     bid = addNativeParams(bid);
     const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
     bid.mediaTypes.native = {};
@@ -110,12 +109,12 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'native|*': 1.10
       }
-    }
+    };
     bid.getFloor = getFloor;
     return bid;
   }
@@ -180,12 +179,12 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'native|*': 1.10
       }
-    }
+    };
     bid.getFloor = getFloor;
 
     return bid;
@@ -201,12 +200,12 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'banner|300x250': 0.10
       }
-    }
+    };
     bid.getFloor = getFloor;
 
     return bid;
@@ -224,12 +223,12 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'video|640x480': 0.10
       }
-    }
+    };
     bid.getFloor = getFloor;
     return bid;
   }
@@ -246,12 +245,12 @@ describe('onetag', function () {
       currency: 'EUR',
       schema: {
         delimiter: '|',
-        fields: [ 'mediaType', 'size' ]
+        fields: ['mediaType', 'size']
       },
       values: {
         'video|640x480': 0.10
       }
-    }
+    };
     bid.getFloor = getFloor;
     return bid;
   }
@@ -267,7 +266,7 @@ describe('onetag', function () {
     outstreamVideoBid = createOutstreamVideoBid();
     nativeBid = createNativeBid();
     nativeLegacyBid = createNativeLegacyBid();
-  })
+  });
 
   describe('isBidRequestValid', function () {
     it('Should return true when required params are found', function () {
@@ -491,7 +490,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
@@ -502,14 +501,12 @@ describe('onetag', function () {
       expect(data.sWidth).to.be.a('number');
       expect(data.wWidth).to.be.a('number');
       expect(data.wHeight).to.be.a('number');
-      expect(data.sLeft).to.be.a('number');
-      expect(data.sTop).to.be.a('number');
       expect(data.hLength).to.be.a('number');
       expect(data.networkConnectionType).to.satisfy(function (value) {
-        return value === null || typeof value === 'string'
+        return value === null || typeof value === 'string';
       });
       expect(data.networkEffectiveConnectionType).to.satisfy(function (value) {
-        return value === null || typeof value === 'string'
+        return value === null || typeof value === 'string';
       });
       expect(data.fledgeEnabled).to.be.a('boolean');
       expect(data.bids).to.be.an('array');
@@ -577,7 +574,7 @@ describe('onetag', function () {
             expect(priceFloor.currency).to.be.a('string');
             expect(priceFloor.floor).to.be.a('number');
             expect(priceFloor.size).to.satisfy(function (size) {
-              if (typeof size !== 'object' && size !== null && typeof size !== 'undefined') {
+              if (typeof size !== 'object' && typeof size !== 'undefined') {
                 return false;
               }
               if (size !== null) {
@@ -696,7 +693,7 @@ describe('onetag', function () {
                 cids: ['iris_c73g5jq96mwso4d8']
               },
               // the bare minimum are the IDs. These IDs are the ones from the new IAB Content Taxonomy v3
-              segment: [ { id: '687' }, { id: '123' } ]
+              segment: [{ id: '687' }, { id: '123' }]
             }]
           },
           ext: {
@@ -736,7 +733,7 @@ describe('onetag', function () {
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'ortb2': firtPartyData
-      }
+      };
       const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
@@ -764,43 +761,11 @@ describe('onetag', function () {
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'ortb2': dsa
-      }
+      };
       const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
-    });
-    it('Should send FLEDGE eligibility flag when FLEDGE is enabled', function () {
-      const bidderRequest = {
-        'bidderCode': 'onetag',
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'paapi': {
-          'enabled': true
-        }
-      };
-      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
-      const payload = JSON.parse(serverRequest.data);
-
-      expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
-    });
-    it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
-      const bidderRequest = {
-        'bidderCode': 'onetag',
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        paapi: {
-          enabled: false
-        }
-      };
-      const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
-      const payload = JSON.parse(serverRequest.data);
-
-      expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
     });
     it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
       const bidderRequest = {
@@ -823,13 +788,7 @@ describe('onetag', function () {
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
-      const fledgeInterpretedResponse = spec.interpretResponse(fledgeResponse, request);
       expect(interpretedResponse).to.be.an('array').that.is.not.empty;
-      expect(fledgeInterpretedResponse).to.be.an('object');
-      expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
-        return value === null || Array.isArray(value);
-      });
-      expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         const dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
@@ -877,10 +836,22 @@ describe('onetag', function () {
         },
         'adrender': 1
       };
-      const responseWithDsa = {...response};
-      responseWithDsa.body.bids.forEach(bid => bid.dsa = {...dsaResponseObj});
+      const responseWithDsa = { ...response };
+      responseWithDsa.body.bids.forEach(bid => bid.dsa = { ...dsaResponseObj });
       const serverResponse = spec.interpretResponse(responseWithDsa, request);
       serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
+    });
+    it('Returns dealId when present in server response', function () {
+      const interpretedResponse = spec.interpretResponse(response, request);
+      const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
+      expect(bannerBid.dealId).to.equal('dishfo');
+    });
+    it('Returns undefined dealId when absent from server response', function () {
+      const responseWithoutDealId = getBannerVideoNativeResponse();
+      responseWithoutDealId.body.bids.forEach(bid => delete bid.dealId);
+      const interpretedResponse = spec.interpretResponse(responseWithoutDealId, request);
+      const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
+      expect(bannerBid.dealId).to.be.undefined;
     });
   });
   describe('getUserSyncs', function () {
@@ -992,7 +963,7 @@ describe('onetag', function () {
         ]
       };
       expect(isSchainValid(validSchain)).to.be.true;
-    })
+    });
   });
 });
 
@@ -1093,7 +1064,7 @@ function getFledgeBannerResponse() {
         ],
       }
     }
-  ]
+  ];
   return bannerVideoResponse;
 }
 
@@ -1133,8 +1104,6 @@ function getBannerVideoRequest() {
       wHeight: 949,
       sWidth: 1920,
       sHeight: 1080,
-      sLeft: 1987,
-      sTop: 27,
       xOffset: 0,
       yOffset: 0,
       docHidden: false,
@@ -1146,5 +1115,5 @@ function getBannerVideoRequest() {
       },
       onetagSid: 'user_id'
     })
-  }
+  };
 }

@@ -52,7 +52,8 @@ export const spec = {
     const timestamp = Date.now();
     const query = {
       ts: timestamp,
-      json: true};
+      json: true
+    };
 
     _each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId);
@@ -204,7 +205,7 @@ export const spec = {
           },
         };
 
-        const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid)
+        const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid);
         if (dsa !== undefined) {
           bidResponse.meta = { ...bidResponse.meta, dsa: dsa };
         }

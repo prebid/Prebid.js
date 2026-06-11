@@ -8,8 +8,8 @@
 import { logInfo, getWindowLocation } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -85,15 +85,17 @@ export const novatiqIdSubmodule = {
     const sharedStatus = (sharedId !== null && sharedId !== undefined && sharedId !== false) ? 'Found' : 'Not Found';
 
     if (useCallbacks) {
-      const res = this.sendAsyncSyncRequest(novatiqId, url); ;
+      const res = this.sendAsyncSyncRequest(novatiqId, url);
       res.sharedStatus = sharedStatus;
 
       return res;
     } else {
       this.sendSimpleSyncRequest(novatiqId, url);
 
-      return { 'id': novatiqId,
-        'sharedStatus': sharedStatus }
+      return {
+        'id': novatiqId,
+        'sharedStatus': sharedStatus
+      };
     }
   },
 
@@ -122,9 +124,9 @@ export const novatiqIdSubmodule = {
       ajax(url,
         { success: onSuccess },
         undefined, { method: 'GET', withCredentials: false });
-    }
+    };
 
-    return {callback: resp};
+    return { callback: resp };
   },
 
   sendSimpleSyncRequest(novatiqId, url) {
@@ -172,7 +174,7 @@ export const novatiqIdSubmodule = {
     return {
       url: url,
       novatiqId: novatiqId
-    }
+    };
   },
 
   getUrlParams(configParams) {
@@ -181,7 +183,7 @@ export const novatiqIdSubmodule = {
       useStandardUuid: false,
       useSspId: true,
       useSspHost: true
-    }
+    };
 
     if (typeof configParams.urlParams !== 'undefined') {
       if (configParams.urlParams.novatiqId !== undefined) {
@@ -225,7 +227,7 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       const cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+      const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
       // first check local storage
       if (storage.hasLocalStorage()) {

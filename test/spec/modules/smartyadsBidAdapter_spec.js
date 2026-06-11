@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/smartyadsBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/smartyadsBidAdapter.js';
 import { config } from '../../../src/config.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('SmartyadsAdapter', function () {
   const bid = {
@@ -111,7 +111,7 @@ describe('SmartyadsAdapter', function () {
           netRevenue: true,
           currency: 'USD',
           dealId: '1',
-          meta: {advertiserDomains: ['example.com']}
+          meta: { advertiserDomains: ['example.com'] }
         }]
       };
       const bannerResponses = spec.interpretResponse(banner);
@@ -182,7 +182,7 @@ describe('SmartyadsAdapter', function () {
 
       const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');

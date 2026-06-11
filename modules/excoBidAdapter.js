@@ -45,7 +45,7 @@ export class AdapterHelpers {
   createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
       const url = new URL(SYNC_URL);
-      const networks = [ '368531133' ];
+      const networks = ['368531133'];
 
       if (network) {
         networks.push(network);
@@ -86,7 +86,7 @@ export class AdapterHelpers {
       aid: bidRequests[0]?.auctionId || bidderRequest.bidderRequestId,
       rc: bidRequests[0]?.bidRequestsCount,
       brc: bidRequests[0]?.bidderRequestsCount,
-    }
+    };
   }
 
   createRequest(converter, bidRequests, bidderRequest, mediaType) {
@@ -161,7 +161,7 @@ export class AdapterHelpers {
     for (let i = 0; i < window.parent.frames.length; i++) {
       window.parent.frames[i].postMessage(message, '*');
     }
-  }
+  };
 
   sendMessage(eventName, data = {}) {
     this.postToAllParentFrames({
@@ -295,7 +295,7 @@ export const converter = ortbConverter({
     imp.secure = window.location.protocol === 'http:' ? 0 : 1;
 
     if (imp.video) {
-      helpers.adoptVideoImp(imp, bidRequest)
+      helpers.adoptVideoImp(imp, bidRequest);
     }
 
     if (imp.banner) {
@@ -392,7 +392,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const body = response?.body?.Result || response?.body || {};
-    const converted = converter.fromORTB({response: body, request: request?.data});
+    const converted = converter.fromORTB({ response: body, request: request?.data });
     const bids = converted.bids || [];
 
     if (bids.length && !EVENTS.subscribed) {
@@ -428,7 +428,7 @@ export const spec = {
           }
         });
       }
-    }
+    };
 
     serverResponses.forEach(response => {
       const { body = {} } = response;

@@ -1,21 +1,7 @@
 import * as utils from 'src/utils.js';
-import analyticsAdapter, {
-  sendImpressions,
-  handleClickEventWithClosureScope,
-  createUnOptimisedParamsField,
-  dataLoaderForHandler,
-  pinHandlerToHTMLElement,
-  setAuctionAbjectPosition,
-  createNewAuctionObject,
-  concatAllUnits,
-  trackAuctionEnd,
-  handleImpression,
-  getCookie,
-  storeAndReturnRivrUsrIdCookie,
-  arrayDifference,
-  activelyWaitForBannersToRender} from 'modules/rivrAnalyticsAdapter.js';
+import analyticsAdapter from 'modules/rivrAnalyticsAdapter.js';
 
-import {expect} from 'chai';
+import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { EVENTS } from 'src/constants.js';

@@ -1,7 +1,7 @@
 import { logInfo, deepAccess, generateUUID } from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,7 +13,7 @@ const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 const UNICORN_PB_VERSION = '1.1';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Placement ID and Account ID are required.
@@ -117,13 +117,13 @@ const initializeEids = (bidRequest) => {
   }
 
   return eids;
-}
+};
 
 const interpretResponse = (serverResponse, request) => {
   logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);
   logInfo('[UNICORN] interpretResponse.request:', request);
   const res = serverResponse.body;
-  var bids = []
+  var bids = [];
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
@@ -137,14 +137,14 @@ const interpretResponse = (serverResponse, request) => {
           creativeId: b.crid,
           netRevenue: true,
           currency: res.cur
-        }
+        };
 
         if (b.adomain) {
           bid.meta = { advertiserDomains: b.adomain };
         }
 
-        bids.push(bid)
-      })
+        bids.push(bid);
+      });
     });
   }
   logInfo('[UNICORN] interpretResponse bids:', bids);
@@ -173,7 +173,7 @@ const getUid = () => {
  * @param {Array<Number>} arr
  */
 const makeFormat = arr => arr.map((s) => {
-  return {w: s[0], h: s[1]};
+  return { w: s[0], h: s[1] };
 });
 
 export const spec = {

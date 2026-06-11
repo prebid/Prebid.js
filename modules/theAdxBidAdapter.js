@@ -1,4 +1,3 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { logInfo, isEmpty, deepAccess, parseUrl, parseSizesInput, _map } from '../src/utils.js';
 import {
   BANNER,
@@ -9,6 +8,8 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -298,7 +299,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
+    logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     const syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -329,7 +330,7 @@ export const spec = {
     return syncs;
   },
 
-}
+};
 
 const buildSiteComponent = (bidRequest, bidderRequest) => {
   const loc = parseUrl(bidderRequest.refererInfo.page || '', {
@@ -355,7 +356,7 @@ const buildSiteComponent = (bidRequest, bidderRequest) => {
   }
 
   return site;
-}
+};
 
 function isMobile() {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
@@ -374,11 +375,11 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
     dnt: getDNT() ? 1 : 0,
   };
   // Include connection info if available
-  const CONNECTION = navigator.connection || navigator.webkitConnection;
-  if (CONNECTION && CONNECTION.type) {
-    device['connectiontype'] = CONNECTION.type;
-    if (CONNECTION.downlinkMax) {
-      device['connectionDownlinkMax'] = CONNECTION.downlinkMax;
+  const connection = getConnectionInfo();
+  if (connection?.type) {
+    device['connectiontype'] = connection.type;
+    if (connection.downlinkMax != null) {
+      device['connectionDownlinkMax'] = connection.downlinkMax;
     }
   }
 
@@ -387,7 +388,7 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
 
 const determineOptimalRequestId = (bidRequest, bidderRequest) => {
   return bidRequest.bidId;
-}
+};
 
 const extractValidSize = (bidRequest, bidderRequest) => {
   let width = null;
@@ -428,8 +429,8 @@ const generateVideoComponent = (bidRequest, bidderRequest) => {
   return {
     w: impSize.w,
     h: impSize.h
-  }
-}
+  };
+};
 
 const generateBannerComponent = (bidRequest, bidderRequest) => {
   const impSize = extractValidSize(bidRequest);
@@ -437,8 +438,8 @@ const generateBannerComponent = (bidRequest, bidderRequest) => {
   return {
     w: impSize.w,
     h: impSize.h
-  }
-}
+  };
+};
 
 const generateNativeComponent = (bidRequest, bidderRequest) => {
   const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
@@ -462,8 +463,8 @@ const generateNativeComponent = (bidRequest, bidderRequest) => {
     request: {
       assets
     }
-  }
-}
+  };
+};
 
 const generateImpBody = (bidRequest, bidderRequest) => {
   const mediaTypes = bidRequest.mediaTypes;
@@ -503,7 +504,7 @@ const generateImpBody = (bidRequest, bidderRequest) => {
   }
 
   return result;
-}
+};
 const getRegionEndPoint = (bidRequest) => {
   if (bidRequest && bidRequest.params && bidRequest.params.region) {
     if (bidRequest.params.region.toLowerCase() === 'tr') {
@@ -531,7 +532,7 @@ const generatePayload = (bidRequest, bidderRequest) => {
 };
 
 function getEids(bidRequest) {
-  const eids = {}
+  const eids = {};
 
   const uId2 = deepAccess(bidRequest, 'userId.uid2.id');
   if (uId2) {

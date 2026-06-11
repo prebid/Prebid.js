@@ -1,6 +1,6 @@
 import { isArray, deepAccess, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'kubient';
@@ -9,7 +9,7 @@ const VERSION = '1.1';
 const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(
       bid &&
@@ -31,9 +31,9 @@ export const spec = {
       if (typeof bid.getFloor === 'function') {
         const mediaType = (Object.keys(bid.mediaTypes).length === 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
-        const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
+        const floorInfo = bid.getFloor({ currency: 'USD', mediaType: mediaType, size: sizes });
         if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
-          const floor = parseFloat(floorInfo.floor)
+          const floor = parseFloat(floorInfo.floor);
           if (!isNaN(floor) && floor > 0) {
             adSlot.floor = parseFloat(floorInfo.floor);
           }
@@ -61,19 +61,19 @@ export const spec = {
         gdpr: (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0,
         consentGiven: kubientGetConsentGiven(bidderRequest.gdprConsent),
         uspConsent: bidderRequest.uspConsent
-      }
+      };
 
       if (config.getConfig('coppa') === true) {
-        data.coppa = 1
+        data.coppa = 1;
       }
 
       if (bidderRequest?.refererInfo?.page) {
         // TODO: is 'page' the right value here?
-        data.referer = bidderRequest.refererInfo.page
+        data.referer = bidderRequest.refererInfo.page;
       }
 
       if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-        data.consent = bidderRequest.gdprConsent.consentString
+        data.consent = bidderRequest.gdprConsent.consentString;
       }
 
       return {
@@ -161,7 +161,7 @@ function kubientGetSyncInclude(config) {
   try {
     const kubientSync = {};
     if (config.getConfig('userSync').filterSettings !== null && config.getConfig('userSync').filterSettings !== undefined) {
-      const filterSettings = config.getConfig('userSync').filterSettings
+      const filterSettings = config.getConfig('userSync').filterSettings;
       if (filterSettings.iframe !== null && typeof filterSettings.iframe !== 'undefined') {
         kubientSync.iframe = ((isArray(filterSettings.image.bidders) && filterSettings.iframe.bidders.indexOf('kubient') !== -1) || filterSettings.iframe.bidders === '*') ? filterSettings.iframe.filter : 'exclude';
       }

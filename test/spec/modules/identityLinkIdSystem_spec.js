@@ -1,17 +1,17 @@
-import {getEnvelopeFromStorage, identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
+import { getEnvelopeFromStorage, identityLinkSubmodule } from 'modules/identityLinkIdSystem.js';
 import * as utils from 'src/utils.js';
-import {server} from 'test/mocks/xhr.js';
-import {getCoreStorageManager} from '../../../src/storageManager.js';
-import {stub} from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { server } from 'test/mocks/xhr.js';
+import { getCoreStorageManager } from '../../../src/storageManager.js';
+import { stub } from 'sinon';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 const storage = getCoreStorageManager();
 
 const pid = '14';
 let defaultConfigParams;
-const responseHeader = {'Content-Type': 'application/json'};
+const responseHeader = { 'Content-Type': 'application/json' };
 const testEnvelope = 'eyJ0aW1lc3RhbXAiOjE2OTEwNjU5MzQwMTcsInZlcnNpb24iOiIxLjIuMSIsImVudmVsb3BlIjoiQWhIenUyMFN3WHZ6T0hPd3c2bkxaODAtd2hoN2Nnd0FqWllNdkQ0UjBXT25xRVc1N21zR2Vral9QejU2b1FwcGdPOVB2aFJFa3VHc2lMdG56c3A2aG13eDRtTTRNLTctRy12NiJ9';
 const testEnvelopeValue = '{"timestamp":1691065934017,"version":"1.2.1","envelope":"AhHzu20SwXvzOHOww6nLZ80-whh7cgwAjZYMvD4R0WOnqEW57msGekj_Pz56oQppgO9PvhREkuGsiLtnzsp6hmwx4mM4M-7-G-v6"}';
 
@@ -26,7 +26,7 @@ describe('IdentityLinkId tests', function () {
   let gppConsentDataStub;
 
   beforeEach(function () {
-    defaultConfigParams = { params: {pid: pid} };
+    defaultConfigParams = { params: { pid: pid } };
     logErrorStub = sinon.stub(utils, 'logError');
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
@@ -68,13 +68,13 @@ describe('IdentityLinkId tests', function () {
       gdprApplies: true,
       consentString: ''
     };
-    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, { gdpr: consentData });
     expect(submoduleCallback).to.be.undefined;
   });
 
   it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is missing', function () {
     const consentData = { gdprApplies: true };
-    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, { gdpr: consentData });
     expect(submoduleCallback).to.be.undefined;
   });
 
@@ -87,7 +87,7 @@ describe('IdentityLinkId tests', function () {
         tcfPolicyVersion: 2
       }
     };
-    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData}).callback;
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, { gdpr: consentData }).callback;
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=4&cv=CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA');
@@ -106,7 +106,7 @@ describe('IdentityLinkId tests', function () {
       applicableSections: [7]
     };
     const callBackSpy = sinon.spy();
-    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, { gpp: gppData }).callback;
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&gpp=DBABLA~BVVqAAAACqA.QA&gpp_sid=7');
@@ -125,7 +125,7 @@ describe('IdentityLinkId tests', function () {
       applicableSections: [7]
     };
     const callBackSpy = sinon.spy();
-    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, { gpp: gppData }).callback;
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
@@ -207,7 +207,7 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(callBackSpy.calledOnce).to.be.true;
-  })
+  });
 
   it('should replace invalid characters if initial atob fails', function () {
     setTestEnvelopeCookie();
@@ -219,7 +219,7 @@ describe('IdentityLinkId tests', function () {
     stubAtob.restore();
     expect(stubAtob.calledTwice).to.be.true;
     expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
-  })
+  });
 
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
     const envelopeValueFromStorage = getEnvelopeFromStorage();
@@ -234,21 +234,23 @@ describe('IdentityLinkId tests', function () {
     );
     expect(envelopeValueFromStorage).to.be.a('undefined');
     expect(callBackSpy.calledOnce).to.be.true;
-  })
+  });
 
   it('if ats is present on a page, and envelope is generated and stored in storage, call a callback', function () {
     setTestEnvelopeCookie();
     const envelopeValueFromStorage = getEnvelopeFromStorage();
-    window.ats = {retrieveEnvelope: function() {
-    }}
+    window.ats = {
+      retrieveEnvelope: function() {
+      }
+    };
     // mock ats.retrieveEnvelope to return envelope
-    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage })
+    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage; });
     const callBackSpy = sinon.spy();
     const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(envelopeValueFromStorage).to.be.eq(testEnvelopeValue);
-  })
+  });
 
   describe('eid', () => {
     before(() => {
@@ -262,8 +264,8 @@ describe('IdentityLinkId tests', function () {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'liveramp.com',
-        uids: [{id: 'some-random-id-value', atype: 3}]
+        uids: [{ id: 'some-random-id-value', atype: 3 }]
       });
     });
-  })
+  });
 });

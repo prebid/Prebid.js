@@ -7,6 +7,7 @@ The Scope3 RTD module enables real-time agentic execution for programmatic adver
 ### What It Does
 
 This module:
+
 1. Captures the **complete OpenRTB request** including all user IDs, geo data, device info, and site context
 2. Sends it to Scope3's AEE for real-time analysis
 3. Receives back targeting instructions: which line items to include/exclude this impression from
@@ -30,34 +31,39 @@ The AEE returns opaque codes (e.g., "x82s") that instruct GAM which line items s
 pbjs.setConfig({
   realTimeData: {
     auctionDelay: 1000,
-    dataProviders: [{
-      name: 'scope3',
-      params: {
-        orgId: 'YOUR_ORG_ID',  // Required - your Scope3 organization identifier
-        
-        // Optional - customize targeting keys (defaults shown)
-        includeKey: 's3i',      // Key for include segments
-        excludeKey: 's3x',      // Key for exclude segments  
-        macroKey: 's3m',        // Key for macro blob
-        
-        // Optional - other settings
-        endpoint: 'https://prebid.scope3.com/prebid',  // API endpoint (default)
-        timeout: 1000,          // Milliseconds (default: 1000)
-        publisherTargeting: true,   // Set GAM targeting keys (default: true)
-        advertiserTargeting: true,  // Enrich bid requests (default: true)
-        bidders: [],            // Specific bidders to get data for (empty = all bidders in auction)
-        cacheEnabled: true,     // Enable response caching (default: true)
-        debugMode: false        // Enable debug logging (default: false)
-      }
-    }]
-  }
+    dataProviders: [
+      {
+        name: "scope3",
+        waitForIt: true,
+        params: {
+          orgId: "YOUR_ORG_ID", // Required - your Scope3 organization identifier
+
+          // Optional - customize targeting keys (defaults shown)
+          includeKey: "axei", // Key for include segments
+          excludeKey: "axex", // Key for exclude segments
+          macroKey: "axem", // Key for macro blob
+
+          // Optional - other settings
+          endpoint: "https://prebid.scope3.com/prebid", // API endpoint (default)
+          timeout: 1000, // Milliseconds (default: 1000)
+          publisherTargeting: true, // Set GAM targeting keys (default: true)
+          advertiserTargeting: true, // Enrich bid requests (default: true)
+          bidders: [], // Specific bidders to get data for (empty = all bidders in auction)
+          cacheEnabled: true, // Enable response caching (default: true)
+          debugMode: false, // Enable debug logging (default: false)
+        },
+      },
+    ],
+  },
 });
 ```
 
 ### Advanced Configuration Examples
 
 #### Custom Targeting Keys
+
 Use your own naming convention for targeting keys:
+
 ```javascript
 params: {
   orgId: 'YOUR_ORG_ID',
@@ -68,7 +74,9 @@ params: {
 ```
 
 #### Specific Bidders Only
+
 Apply AEE signals only to certain bidders:
+
 ```javascript
 params: {
   orgId: 'YOUR_ORG_ID',
@@ -79,6 +87,7 @@ params: {
 ```
 
 #### Development/Testing
+
 ```javascript
 params: {
   orgId: 'YOUR_ORG_ID',
@@ -91,7 +100,9 @@ params: {
 ## Data Flow
 
 ### 1. Complete OpenRTB Capture
+
 The module captures ALL available OpenRTB data:
+
 - **Site**: page URL, domain, referrer, keywords, content, categories
 - **Device**: user agent, geo location, IP, device type, screen size
 - **User**: ID, buyer UIDs, year of birth, gender, keywords, data segments, **all extended IDs (eids)**
@@ -100,18 +111,20 @@ The module captures ALL available OpenRTB data:
 - **App**: if in-app, all app details
 
 ### 2. Request to AEE
+
 Sends the complete OpenRTB request with list of bidders:
+
 ```json
 {
   "orgId": "YOUR_ORG_ID",
   "ortb2": {
-    "site": { 
+    "site": {
       "page": "https://example.com/page",
       "domain": "example.com",
       "cat": ["IAB1-1"],
       "keywords": "news,sports"
     },
-    "device": { 
+    "device": {
       "ua": "Mozilla/5.0...",
       "geo": {
         "country": "USA",
@@ -128,7 +141,7 @@ Sends the complete OpenRTB request with list of bidders:
           "uids": [{"id": "XY123456"}]
         },
         {
-          "source": "id5-sync.com", 
+          "source": "id5-sync.com",
           "uids": [{"id": "ID5*abc"}]
         }
       ],
@@ -144,7 +157,9 @@ Sends the complete OpenRTB request with list of bidders:
 ```
 
 ### 3. AEE Response
+
 Receives targeting instructions with opaque codes (e.g., 'x82s', 'a91k') that tell GAM which line items to include/exclude. These are NOT audience segments or IAB taxonomy:
+
 ```json
 {
   "aee_signals": {
@@ -172,13 +187,17 @@ Receives targeting instructions with opaque codes (e.g., 'x82s', 'a91k') that te
 ### 4. Signal Application
 
 #### Publisher Targeting (GAM)
+
 Sets the configured targeting keys (GAM automatically converts to lowercase):
-- `s3i` (or your includeKey): ["x82s", "a91k", "p2m7"] - line items to include
-- `s3x` (or your excludeKey): ["c4x9", "f7r2"] - line items to exclude
-- `s3m` (or your macroKey): "ctx9h3v8s5" - opaque context data
+
+- `axei` (or your includeKey): ["x82s", "a91k", "p2m7"] - line items to include
+- `axex` (or your excludeKey): ["c4x9", "f7r2"] - line items to exclude
+- `axem` (or your macroKey): "ctx9h3v8s5" - opaque context data
 
 #### Advertiser Data (OpenRTB)
+
 Enriches bid requests with AEE signals:
+
 ```javascript
 ortb2: {
   site: {
@@ -203,20 +222,22 @@ Create line items that respond to agent targeting instructions. The codes (e.g.,
 
 ```
 Include impression in this line item:
-s3i contains "x82s"
+axei contains "x82s"
 
 Exclude impression from this line item:
-s3x does not contain "f7r2"
+axex does not contain "f7r2"
 
 Multiple targeting conditions:
-s3i contains "a91k" AND s3x does not contain "c4x9"
+axei contains "a91k" AND axex does not contain "c4x9"
 
 Macro data for creative:
-s3m is present
+axem is present
 ```
 
 ### Custom Key Configuration
+
 If you use custom keys:
+
 ```javascript
 // Configuration
 params: {
@@ -239,14 +260,14 @@ Bidders can access AEE signals in their adapters:
 ```javascript
 buildRequests: function(validBidRequests, bidderRequest) {
   const aeeSignals = bidderRequest.ortb2?.site?.ext?.data?.scope3_aee;
-  
+
   if (aeeSignals) {
     // Use include segments for targeting
     payload.targeting_segments = aeeSignals.include;
-    
+
     // Respect exclude segments
     payload.exclude_segments = aeeSignals.exclude;
-    
+
     // Include macro data as opaque string
     if (aeeSignals.macro) {
       payload.context_code = aeeSignals.macro;
@@ -258,12 +279,15 @@ buildRequests: function(validBidRequests, bidderRequest) {
 ## Performance Considerations
 
 ### Caching
+
 - Responses are cached for 30 seconds by default
 - Cache key includes: page, user agent, geo, user IDs, and ad units
 - Reduces redundant API calls for similar contexts
 
 ### Data Completeness
+
 The module sends ALL available OpenRTB data to maximize AEE intelligence:
+
 - Extended user IDs (LiveRamp, ID5, UID2, etc.)
 - Geo location data
 - Device characteristics
@@ -272,6 +296,7 @@ The module sends ALL available OpenRTB data to maximize AEE intelligence:
 - Regulatory consent status
 
 ### Timeout Handling
+
 - Default timeout: 1000ms
 - Auction continues if AEE doesn't respond in time
 - No blocking - graceful degradation
@@ -287,6 +312,7 @@ The module sends ALL available OpenRTB data to maximize AEE intelligence:
 ## Troubleshooting
 
 ### Enable Debug Mode
+
 ```javascript
 params: {
   orgId: 'YOUR_ORG_ID',
@@ -297,12 +323,14 @@ params: {
 ### Common Issues
 
 1. **No signals appearing**
+
    - Verify orgId is correct
    - Check endpoint is accessible
    - Ensure timeout is sufficient
    - Look for console errors in debug mode
 
 2. **Targeting keys not in GAM**
+
    - Verify `publisherTargeting: true`
    - Check key names match GAM setup
    - Ensure AEE is returning signals
@@ -319,17 +347,21 @@ Minimal setup with defaults:
 ```javascript
 pbjs.setConfig({
   realTimeData: {
-    dataProviders: [{
-      name: 'scope3',
-      params: {
-        orgId: 'YOUR_ORG_ID'  // Only required parameter
-      }
-    }]
-  }
+    dataProviders: [
+      {
+        name: "scope3",
+        waitForIt: true,
+        params: {
+          orgId: "YOUR_ORG_ID", // Only required parameter
+        },
+      },
+    ],
+  },
 });
 ```
 
 This will:
+
 - Send complete OpenRTB data to Scope3's AEE
 - Set targeting keys: `s3i` (include), `s3x` (exclude), `s3m` (macro)
 - Enrich all bidders with AEE signals
@@ -338,6 +370,7 @@ This will:
 ## About the Agentic Execution Engine
 
 Scope3's AEE implements the [Ad Context Protocol](https://adcontextprotocol.org) to analyze the complete context of each bid opportunity. By processing the full OpenRTB request including all user IDs, geo data, and site context, the AEE can:
+
 - Identify optimal audience segments in real-time
 - Detect and prevent unwanted targeting scenarios
 - Apply complex business rules at scale
@@ -346,6 +379,7 @@ Scope3's AEE implements the [Ad Context Protocol](https://adcontextprotocol.org)
 ## Support
 
 For technical support and AEE configuration:
+
 - Documentation: https://docs.scope3.com
 - Ad Context Protocol: https://adcontextprotocol.org
 - Support: support@scope3.com

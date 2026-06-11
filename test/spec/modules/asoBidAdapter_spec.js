@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec} from 'modules/asoBidAdapter.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
-import {OUTSTREAM} from 'src/video.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {parseUrl} from '../../../src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/asoBidAdapter.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { OUTSTREAM } from 'src/video.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { parseUrl } from '../../../src/utils.js';
 
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
@@ -125,18 +125,18 @@ describe('Adserver.Online bidding adapter', function () {
           'https://example.com/iframe1.html'
         ]
       }
-    }).then(br => { bidderRequest = br });
-  })
+    }).then(br => { bidderRequest = br; });
+  });
 
   const uspConsent = 'usp_consent';
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found in bidVideo', function () {
-      expect(spec.isBidRequestValid(videoRequest)).to.be.true
+      expect(spec.isBidRequestValid(videoRequest)).to.be.true;
     });
 
     it('should return true when required params found in bidBanner', function () {
-      expect(spec.isBidRequestValid(bannerRequest)).to.be.true
+      expect(spec.isBidRequestValid(bannerRequest)).to.be.true;
     });
 
     it('should return false when required params not found', function () {
@@ -147,7 +147,7 @@ describe('Adserver.Online bidding adapter', function () {
       const bid = Object.assign({}, bannerRequest);
       delete bid.params;
       bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
     it('should return false when required zone param not found', function () {
@@ -165,7 +165,7 @@ describe('Adserver.Online bidding adapter', function () {
         return {
           currency: 'USD',
           floor: 0.5
-        }
+        };
       };
 
       const payload = spec.buildRequests([bidRequest], bidderRequest)[0].data;
@@ -291,7 +291,7 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.user.ext.consent).to.equal('consentString');
         expect(payload.regs.ext.us_privacy).to.equal(uspConsent);
         expect(payload.regs.ext.gdpr).to.equal(1);
-      })
+      });
     });
 
     it('should not send GDPR/USP consent data if it does not apply', function () {
@@ -381,8 +381,8 @@ describe('Adserver.Online bidding adapter', function () {
               crid: 123,
               adm: JSON.stringify({
                 assets: [
-                  {id: 0, title: {text: 'Title'}},
-                  {id: 1, img: {type: 3, url: 'https://img'}},
+                  { id: 0, title: { text: 'Title' } },
+                  { id: 1, img: { type: 3, url: 'https://img' } },
                 ],
               }),
               adomain: ['example.com'],

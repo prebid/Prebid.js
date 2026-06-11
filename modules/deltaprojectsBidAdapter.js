@@ -23,7 +23,7 @@ function isBidRequestValid(bid) {
   if (!bid) return false;
 
   // publisher id is required
-  const publisherId = deepAccess(bid, 'params.publisherId')
+  const publisherId = deepAccess(bid, 'params.publisherId');
   if (!publisherId) {
     logError('Invalid bid request, missing publisher id in params');
     return false;
@@ -55,7 +55,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     ua,
     w: screen.width,
     h: screen.height
-  }
+  };
 
   // -- build user, reg
   const user = { ext: {} };
@@ -64,7 +64,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (gdprConsent) {
     user.ext = { consent: gdprConsent.consentString };
     if (typeof gdprConsent.gdprApplies === 'boolean') {
-      regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0
+      regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
     }
   }
 
@@ -93,15 +93,15 @@ function buildOpenRTBRequest(validBidRequest, bidderRequest, id, site, device, u
   const impression = buildImpression(validBidRequest, currency);
 
   // build test
-  const test = deepAccess(validBidRequest, 'params.test') ? 1 : 0
+  const test = deepAccess(validBidRequest, 'params.test') ? 1 : 0;
 
-  const at = 1
+  const at = 1;
 
   // build source
   const source = {
     tid: validBidRequest.auctionId,
     fd: 1,
-  }
+  };
 
   return {
     id,
@@ -202,7 +202,7 @@ function onBidWon(bid) {
 
 /** -- Get user syncs -- */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
-  const syncs = []
+  const syncs = [];
 
   if (syncOptions.pixelEnabled) {
     let gdprParams;
@@ -227,7 +227,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
 export function getBidFloor(bid, mediaType, size, currency) {
   if (isFn(bid.getFloor)) {
     const bidFloorCurrency = currency || 'USD';
-    const bidFloor = bid.getFloor({currency: bidFloorCurrency, mediaType: mediaType, size: size});
+    const bidFloor = bid.getFloor({ currency: bidFloorCurrency, mediaType: mediaType, size: size });
     if (isNumber(bidFloor?.floor)) {
       return bidFloor;
     }

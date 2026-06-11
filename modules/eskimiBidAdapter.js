@@ -1,8 +1,9 @@
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
+import { getBidIdParameter, logInfo, mergeDeep } from '../src/utils.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -65,10 +66,10 @@ export const spec = {
   onTimeout: function (timeoutData) {
     logInfo('Timeout: ', timeoutData);
   },
-  onBidderError: function ({error, bidderRequest}) {
+  onBidderError: function ({ error, bidderRequest }) {
     logInfo('Error: ', error, bidderRequest);
   },
-}
+};
 
 registerBidder(spec);
 
@@ -83,7 +84,7 @@ const CONVERTER = ortbConverter({
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD';
     }
 
     if (bidRequest.mediaTypes[VIDEO]) {
@@ -101,13 +102,13 @@ const CONVERTER = ortbConverter({
       ext: {
         pv: '$prebid.version$'
       }
-    })
+    });
     const bid = context.bidRequests[0];
     if (bid.params.coppa) {
       utils.deepSetValue(req, 'regs.coppa', 1);
     }
     if (bid.params.test) {
-      req.test = 1
+      req.test = 1;
     }
     return req;
   },
@@ -157,14 +158,14 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(response, request) {
-  return CONVERTER.fromORTB({request: request.data, response: response.body}).bids;
+  return CONVERTER.fromORTB({ request: request.data, response: response.body }).bids;
 }
 
 function buildVideoImp(bidRequest, imp) {
   const videoAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`, {});
   const videoBidderParams = utils.deepAccess(bidRequest, `params.${VIDEO}`, {});
 
-  const videoParams = {...videoAdUnitParams, ...videoBidderParams};
+  const videoParams = { ...videoAdUnitParams, ...videoBidderParams };
 
   const videoSizes = (videoAdUnitParams && videoAdUnitParams.playerSize) || [];
 
@@ -183,14 +184,14 @@ function buildVideoImp(bidRequest, imp) {
     imp.video.plcmt = imp.video.plcmt || 4;
   }
 
-  return {...imp};
+  return { ...imp };
 }
 
 function buildBannerImp(bidRequest, imp) {
   const bannerAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}`, {});
   const bannerBidderParams = utils.deepAccess(bidRequest, `params.${BANNER}`, {});
 
-  const bannerParams = {...bannerAdUnitParams, ...bannerBidderParams};
+  const bannerParams = { ...bannerAdUnitParams, ...bannerBidderParams };
 
   const sizes = bidRequest.mediaTypes.banner.sizes;
 
@@ -205,15 +206,15 @@ function buildBannerImp(bidRequest, imp) {
     }
   });
 
-  return {...imp};
+  return { ...imp };
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const data = CONVERTER.toORTB({bidRequests, bidderRequest, context: {mediaType}})
+  const data = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } });
 
-  const bid = bidRequests.find((b) => b.params.placementId)
-  if (!data.site) data.site = {}
-  data.site.ext = {placementId: parseInt(bid.params.placementId)}
+  const bid = bidRequests.find((b) => b.params.placementId);
+  if (!data.site) data.site = {};
+  data.site.ext = { placementId: parseInt(bid.params.placementId) };
 
   if (bidderRequest.gdprConsent) {
     if (!data.user) data.user = {};
@@ -236,7 +237,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
       withCredentials: true,
       contentType: 'application/json;charset=UTF-8',
     }
-  }
+  };
 }
 
 function isVideoBid(bid) {
@@ -303,8 +304,7 @@ function getUserSyncUrlByRegion() {
  */
 function getRegionSubdomainSuffix() {
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const region = timezone.split('/')[0];
+    const region = getTimeZone().split('/')[0];
 
     switch (region) {
       case 'Europe':

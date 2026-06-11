@@ -1,5 +1,5 @@
-import {targetingLock} from '../../../../src/targeting/lock.js';
-import {config} from 'src/config.js';
+import { targetingLock } from '../../../../src/targeting/lock.js';
+import { config } from 'src/config.js';
 
 describe('Targeting lock', () => {
   let lock, clock, targeting, sandbox;
@@ -91,8 +91,8 @@ describe('Targeting lock', () => {
             eventHandlers[event] = listener;
           },
           removeEventListener: sinon.stub()
-        }
-      })
+        };
+      });
 
       it('should unlock on slotRenderEnded', () => {
         lock.lock(targeting);
@@ -107,8 +107,8 @@ describe('Targeting lock', () => {
       it('should unregister when disabled', () => {
         lock.lock(targeting);
         config.resetConfig();
-        sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded')
-      })
+        sinon.assert.calledWith(pubads.removeEventListener, 'slotRenderEnded');
+      });
     });
   });
 });

@@ -14,14 +14,15 @@ import {
   fireImpressionTrackers,
   fireClickTrackers,
   setNativeResponseProperties, getNativeRenderingData,
+  convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest
 } from 'src/native.js';
 import { NATIVE_KEYS } from 'src/constants.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
-import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
-import {auctionManager} from '../../src/auctionManager.js';
-import {getRenderingData} from '../../src/adRendering.js';
-import {getCreativeRendererSource, PUC_MIN_VERSION} from '../../src/creativeRenderers.js';
-import {deepSetValue} from '../../src/utils.js';
+import { auctionManager } from '../../src/auctionManager.js';
+import { getRenderingData } from '../../src/adRendering.js';
+import { getCreativeDefaultRendererSource, PUC_MIN_VERSION } from '../../src/creativeRenderers.js';
+import { deepSetValue } from '../../src/utils.js';
+import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from 'src/eventTrackers.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -118,7 +119,7 @@ const completeNativeBid = {
     ...bid.native,
     ...ortbBid.native
   }
-}
+};
 
 const ortbRequest = {
   assets: [
@@ -161,7 +162,7 @@ const ortbRequest = {
     }
   ],
   ver: '1.2'
-}
+};
 
 const bidWithUndefinedFields = {
   adUnitId: 'au',
@@ -223,7 +224,7 @@ describe('native.js', function () {
       adUnit = {};
       sandbox.stub(auctionManager, 'index').get(() => ({
         getAdUnit: () => adUnit
-      }))
+      }));
     });
 
     Object.entries({
@@ -241,36 +242,36 @@ describe('native.js', function () {
       },
       'does not return native data': {
         renderDataHook(next) {
-          next.bail({})
+          next.bail({});
         },
         renderSourceHook(next) {
           next.bail('mock-display-renderer');
         },
         withRenderer: false
       }
-    }).forEach(([t, {renderDataHook, renderSourceHook, withRenderer}]) => {
+    }).forEach(([t, { renderDataHook, renderSourceHook, withRenderer }]) => {
       describe(`when getRenderingData ${t}`, () => {
         before(() => {
           getRenderingData.before(renderDataHook, 100);
-          getCreativeRendererSource.before(renderSourceHook, 100);
+          getCreativeDefaultRendererSource.before(renderSourceHook, 100);
         });
         after(() => {
-          getRenderingData.getHooks({hook: renderDataHook}).remove();
-          getCreativeRendererSource.getHooks({hook: renderSourceHook}).remove();
+          getRenderingData.getHooks({ hook: renderDataHook }).remove();
+          getCreativeDefaultRendererSource.getHooks({ hook: renderSourceHook }).remove();
         });
 
         function checkRenderer(message) {
           if (withRenderer) {
-            expect(message.renderer).to.eql('mock-native-renderer')
+            expect(message.renderer).to.eql('mock-native-renderer');
             expect(message.rendererVersion).to.eql(PUC_MIN_VERSION);
             Object.entries(message).forEach(([key, val]) => {
               if (!['native', 'adId', 'message', 'assets', 'renderer', 'rendererVersion'].includes(key)) {
                 expect(message.native[key]).to.eql(val);
               }
-            })
+            });
             message.assets.forEach(asset => {
               expect(message.native.assets).to.contain(asset);
-            })
+            });
           } else {
             expect(message.renderer).to.not.exist;
             expect(message.native).to.not.exist;
@@ -440,9 +441,9 @@ describe('native.js', function () {
             action: 'allAssetRequest',
             adId: '123',
           };
-          adUnit = {mediaTypes: {native: {ortb: ortbRequest}}, nativeOrtbRequest: ortbRequest}
+          adUnit = { mediaTypes: { native: { ortb: ortbRequest } }, nativeOrtbRequest: ortbRequest };
           const message = getAllAssetsMessage(messageRequest, bid);
-          const expected = toOrtbNativeResponse(bid.native, ortbRequest)
+          const expected = toOrtbNativeResponse(bid.native, ortbRequest);
           expect(message.ortb).to.eql(expected);
           checkRenderer(message);
         });
@@ -476,8 +477,8 @@ describe('native.js', function () {
       { event: 1, method: 1, url: 'https://sampleurl.com' },
       { event: 1, method: 2, url: 'https://sampleurljs.com' }
     ],
-    imptrackers: [ 'https://sample-imp.com' ]
-  }
+    imptrackers: ['https://sample-imp.com']
+  };
   describe('toLegacyResponse', () => {
     it('returns assets in legacy format for ortb responses', () => {
       const actual = toLegacyResponse(SAMPLE_ORTB_RESPONSE, SAMPLE_ORTB_REQUEST);
@@ -491,12 +492,12 @@ describe('native.js', function () {
     });
     ['img.type', 'title.text', 'data.type'].forEach(prop => {
       it(`does not choke when the request does not have ${prop}, but the response does`, () => {
-        const request = {ortb: {assets: [{id: 1}]}};
-        const response = {ortb: {assets: [{id: 1}]}};
+        const request = { ortb: { assets: [{ id: 1 }] } };
+        const response = { ortb: { assets: [{ id: 1 }] } };
         deepSetValue(response, `assets.0.${prop}`, 'value');
         toLegacyResponse(response, request);
-      })
-    })
+      });
+    });
   });
 
   describe('setNativeResponseProperties', () => {
@@ -540,7 +541,7 @@ describe('native.js', function () {
     });
 
     it('sets rendererUrl', () => {
-      adUnit.nativeParams.rendererUrl = {url: 'renderer'};
+      adUnit.nativeParams.rendererUrl = { url: 'renderer' };
       setNativeResponseProperties(bid, adUnit);
       expect(bid.native.rendererUrl).to.eql('renderer');
     });
@@ -836,7 +837,7 @@ describe('validate native', function () {
       });
       expect(ortbReq.assets.length).to.equal(0);
     });
-  })
+  });
 
   it('should convert from ortb to old-style native request', () => {
     const openRTBRequest = {
@@ -1055,26 +1056,26 @@ describe('validate native', function () {
 describe('legacyPropertiesToOrtbNative', () => {
   describe('click trakckers', () => {
     it('should convert clickUrl to link.url', () => {
-      const native = legacyPropertiesToOrtbNative({clickUrl: 'some-url'});
+      const native = legacyPropertiesToOrtbNative({ clickUrl: 'some-url' });
       expect(native.link.url).to.eql('some-url');
     });
     it('should convert single clickTrackers to link.clicktrackers', () => {
-      const native = legacyPropertiesToOrtbNative({clickTrackers: 'some-url'});
+      const native = legacyPropertiesToOrtbNative({ clickTrackers: 'some-url' });
       expect(native.link.clicktrackers).to.eql([
         'some-url'
-      ])
+      ]);
     });
     it('should convert multiple clickTrackers into link.clicktrackers', () => {
-      const native = legacyPropertiesToOrtbNative({clickTrackers: ['url1', 'url2']});
+      const native = legacyPropertiesToOrtbNative({ clickTrackers: ['url1', 'url2'] });
       expect(native.link.clicktrackers).to.eql([
         'url1',
         'url2'
-      ])
-    })
+      ]);
+    });
   });
   describe('impressionTrackers', () => {
     it('should convert a single tracker into an eventtracker entry', () => {
-      const native = legacyPropertiesToOrtbNative({impressionTrackers: 'some-url'});
+      const native = legacyPropertiesToOrtbNative({ impressionTrackers: 'some-url' });
       expect(native.eventtrackers).to.eql([
         {
           event: 1,
@@ -1085,7 +1086,7 @@ describe('legacyPropertiesToOrtbNative', () => {
     });
 
     it('should convert an array into corresponding eventtracker entries', () => {
-      const native = legacyPropertiesToOrtbNative({impressionTrackers: ['url1', 'url2']});
+      const native = legacyPropertiesToOrtbNative({ impressionTrackers: ['url1', 'url2'] });
       expect(native.eventtrackers).to.eql([
         {
           event: 1,
@@ -1097,25 +1098,25 @@ describe('legacyPropertiesToOrtbNative', () => {
           method: 1,
           url: 'url2'
         }
-      ])
-    })
+      ]);
+    });
   });
   describe('javascriptTrackers', () => {
     it('should convert a single value into jstracker', () => {
-      const native = legacyPropertiesToOrtbNative({javascriptTrackers: 'some-markup'});
+      const native = legacyPropertiesToOrtbNative({ javascriptTrackers: 'some-markup' });
       expect(native.jstracker).to.eql('some-markup');
-    })
+    });
     it('should merge multiple values into a single jstracker', () => {
-      const native = legacyPropertiesToOrtbNative({javascriptTrackers: ['some-markup', 'some-other-markup']});
+      const native = legacyPropertiesToOrtbNative({ javascriptTrackers: ['some-markup', 'some-other-markup'] });
       expect(native.jstracker).to.eql('some-markupsome-other-markup');
-    })
+    });
   });
   describe('privacylink', () => {
     it('should convert privacyLink to privacy', () => {
-      const native = legacyPropertiesToOrtbNative({privacyLink: 'https:/my-privacy-link.com'});
+      const native = legacyPropertiesToOrtbNative({ privacyLink: 'https:/my-privacy-link.com' });
       expect(native.privacy).to.eql('https:/my-privacy-link.com');
-    })
-  })
+    });
+  });
 });
 
 describe('fireImpressionTrackers', () => {
@@ -1123,10 +1124,10 @@ describe('fireImpressionTrackers', () => {
   beforeEach(() => {
     runMarkup = sinon.stub();
     fetchURL = sinon.stub();
-  })
+  });
 
   function runTrackers(resp) {
-    fireImpressionTrackers(resp, {runMarkup, fetchURL})
+    fireImpressionTrackers(resp, {}, { runMarkup, fetchURL });
   }
 
   it('should run markup in jstracker', () => {
@@ -1147,17 +1148,17 @@ describe('fireImpressionTrackers', () => {
   it('should fetch each url in eventtrackers that use the image method', () => {
     const urls = ['url1', 'url2'];
     runTrackers({
-      eventtrackers: urls.map(url => ({event: 1, method: 1, url}))
+      eventtrackers: urls.map(url => ({ event: 1, method: 1, url }))
     });
-    urls.forEach(url => sinon.assert.calledWith(fetchURL, url))
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
   });
 
   it('should load as a script each url in eventtrackers that use the js method', () => {
     const urls = ['url1', 'url2'];
     runTrackers({
-      eventtrackers: urls.map(url => ({event: 1, method: 2, url}))
+      eventtrackers: urls.map(url => ({ event: 1, method: 2, url }))
     });
-    urls.forEach(url => sinon.assert.calledWith(runMarkup, sinon.match(`script async src="${url}"`)))
+    urls.forEach(url => sinon.assert.calledWith(runMarkup, sinon.match(`script async src="${url}"`)));
   });
 
   it('should not fire trackers that are not impression trakcers', () => {
@@ -1173,8 +1174,109 @@ describe('fireImpressionTrackers', () => {
     });
     sinon.assert.notCalled(fetchURL);
     sinon.assert.notCalled(runMarkup);
-  })
-})
+  });
+
+  describe('when bidResponse mediaTypes.native.ortb.eventtrackers filters allowed trackers', () => {
+    let indexStub;
+    let getMediaTypesStub;
+
+    beforeEach(() => {
+      getMediaTypesStub = sinon.stub();
+      indexStub = sinon.stub(auctionManager, 'index').get(() => ({ getMediaTypes: getMediaTypesStub }));
+    });
+
+    afterEach(() => {
+      indexStub.restore();
+    });
+
+    it('should fire only impression+IMG eventtrackers when request allows only IMG for impression', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_IMG] }]
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'img-url' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'js-url' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.calledOnceWithExactly(fetchURL, 'img-url');
+      sinon.assert.notCalled(runMarkup);
+    });
+
+    it('should fire only impression+JS eventtrackers when request allows only JS for impression', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_JS] }]
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'img-url' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'js-url' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.notCalled(fetchURL);
+      sinon.assert.calledWith(runMarkup, sinon.match('script async src="js-url"'));
+    });
+
+    it('should not fire any eventtrackers when request eventtrackers do not include impression', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: [{ event: 2, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] }]
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'imp-img-url' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.notCalled(fetchURL);
+      sinon.assert.notCalled(runMarkup);
+    });
+
+    it('should still fire legacy imptrackers and jstracker when eventtrackers are filtered out', () => {
+      getMediaTypesStub.returns({
+        native: {
+          ortb: {
+            eventtrackers: []
+          }
+        }
+      });
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [{ event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'from-eventtrackers' }],
+        imptrackers: ['legacy-imp-url'],
+        jstracker: 'legacy-js-markup'
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.calledOnceWithExactly(fetchURL, 'legacy-imp-url');
+      sinon.assert.calledWith(runMarkup, 'legacy-js-markup');
+    });
+
+    it('should use default allowed trackers when getMediaTypes returns empty', () => {
+      getMediaTypesStub.returns({});
+      const bidResponse = { adUnitId: 'au', requestId: 'req' };
+      fireImpressionTrackers({
+        eventtrackers: [
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'default-img' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'default-js' }
+        ]
+      }, bidResponse, { runMarkup, fetchURL });
+      sinon.assert.calledWith(fetchURL, 'default-img');
+      sinon.assert.calledWith(runMarkup, sinon.match('script async src="default-js"'));
+    });
+  });
+});
 
 describe('fireClickTrackers', () => {
   let fetchURL;
@@ -1183,7 +1285,7 @@ describe('fireClickTrackers', () => {
   });
 
   function runTrackers(resp, assetId = null) {
-    fireClickTrackers(resp, assetId, {fetchURL});
+    fireClickTrackers(resp, assetId, { fetchURL });
   }
 
   it('should load each URL in link.clicktrackers', () => {
@@ -1194,7 +1296,7 @@ describe('fireClickTrackers', () => {
       }
     });
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
-  })
+  });
 
   it('should load each URL in asset.link.clicktrackers, when response is ORTB', () => {
     const urls = ['asset_url1', 'asset_url2'];
@@ -1209,15 +1311,15 @@ describe('fireClickTrackers', () => {
       ],
     }, 1);
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
-  })
-})
+  });
+});
 
 describe('toOrtbNativeResponse', () => {
   it('should work when there are unrequested assets in the response', () => {
     const legacyResponse = {
       'title': 'vtitle',
       'body': 'vbody'
-    }
+    };
     const request = toOrtbNativeRequest({
       title: {
         required: 'true'
@@ -1231,7 +1333,7 @@ describe('toOrtbNativeResponse', () => {
   it('should not modify the request', () => {
     const legacyResponse = {
       title: 'vtitle'
-    }
+    };
     const request = toOrtbNativeRequest({
       title: {
         required: true
@@ -1244,7 +1346,7 @@ describe('toOrtbNativeResponse', () => {
       title: {
         text: 'vtitle'
       }
-    })
+    });
   });
 
   it('should accept objects as legacy assets', () => {
@@ -1252,7 +1354,7 @@ describe('toOrtbNativeResponse', () => {
       icon: {
         url: 'image-url'
       }
-    }
+    };
     const request = toOrtbNativeRequest({
       icon: {
         required: true
@@ -1263,6 +1365,6 @@ describe('toOrtbNativeResponse', () => {
       img: {
         url: 'image-url'
       }
-    })
-  })
-})
+    });
+  });
+});

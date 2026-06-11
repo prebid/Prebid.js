@@ -1,12 +1,13 @@
 /**
  * events.js
  */
-import * as utils from './utils.js'
+import * as utils from './utils.js';
 import { EVENTS, EVENT_ID_PATHS } from './constants.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {config} from './config.js';
+import { ttlCollection } from './utils/ttlCollection.js';
+import { config } from './config.js';
+import { _setEventEmitter } from "./utils/logging.ts";
 
-type CoreEvent = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVENTS];
+type CoreEvent = { [K in keyof typeof EVENTS]: typeof EVENTS[K] }[keyof typeof EVENTS];
 
 // hide video events (unless the video module is included) with this one weird trick
 
@@ -15,7 +16,7 @@ export interface EventNames {
 }
 type AllEvents = {
   [K in EventNames[keyof EventNames]]: unknown[];
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Events extends AllEvents {
@@ -24,7 +25,12 @@ export interface Events extends AllEvents {
 }
 
 export type EventIDs = {
-  [K in Event]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
+  [K in Event]:
+  K extends keyof typeof EVENT_ID_PATHS
+    ? Events[K][0] extends { [P in (typeof EVENT_ID_PATHS)[K]]: infer V }
+      ? V
+      : unknown
+    : undefined;
 };
 
 export type Event = keyof Events;
@@ -36,7 +42,7 @@ export type EventRecord<E extends Event> = {
   args: EventPayload<E>;
   id: EventIDs[E];
   elapsedTime: number;
-}
+};
 
 declare module './config' {
   interface Config {
@@ -56,7 +62,7 @@ let eventTTL = null;
 const eventsFired = ttlCollection<EventRecord<Event>>({
   monotonic: true,
   ttl: () => eventTTL,
-})
+});
 
 config.getConfig(TTL_CONFIG, (cfg) => {
   const previous = eventTTL;
@@ -184,14 +190,14 @@ const _public = (function () {
      * Return a copy of all events fired
      */
     getEvents: function (): EventRecord<Event>[] {
-      return eventsFired.toArray().map(val => Object.assign({}, val))
+      return eventsFired.toArray().map(val => Object.assign({}, val));
     }
-  }
+  };
 }());
 
-utils._setEventEmitter(_public.emit.bind(_public));
+_setEventEmitter(_public.emit.bind(_public));
 
-export const {on, off, get, getEvents, emit, addEvents, has} = _public;
+export const { on, off, get, getEvents, emit, addEvents, has } = _public;
 
 export function clearEvents() {
   eventsFired.clear();

@@ -1,10 +1,11 @@
-import {getDNT} from '../libraries/dnt/index.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {logWarn} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import { getDNT } from '../libraries/dnt/index.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { logWarn } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
@@ -27,7 +28,7 @@ export const spec = {
       const data = getPayload(bid, bidderRequest);
       return {
         method: 'POST',
-        headers: {'Content-Type': 'application/json;charset=utf-8'},
+        headers: { 'Content-Type': 'application/json;charset=utf-8' },
         url,
         data
       };
@@ -57,7 +58,7 @@ export const spec = {
       };
 
       if (bidResponse.mediaType === VIDEO) {
-        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url
+        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url;
       }
 
       if (bidResponse.renderURL) {
@@ -70,8 +71,8 @@ export const spec = {
 };
 
 function getPayload (bid, bidderRequest) {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  const storage = getStorageManager({bidderCode: BIDDER_CODE});
+  const connection = getConnectionInfo();
+  const storage = getStorageManager({ bidderCode: BIDDER_CODE });
   const userSession = (() => {
     let us = storage.getDataFromLocalStorage(US_KEY);
     if (!us) {
@@ -82,12 +83,12 @@ function getPayload (bid, bidderRequest) {
       });
       storage.setDataInLocalStorage(US_KEY, us);
     }
-    return us
+    return us;
   })();
   const { params, adUnitCode, bidId } = bid;
   const { siteId, placementId, renderURL, pageCategory, keywords } = params;
   const { refererInfo, uspConsent, gdprConsent } = bidderRequest;
-  const mediation = {gdprConsent: '', gdpr: '-1'};
+  const mediation = { gdprConsent: '', gdpr: '-1' };
   if (gdprConsent && 'gdprApplies' in gdprConsent) {
     if (gdprConsent.consentString !== undefined) {
       mediation.gdprConsent = gdprConsent.consentString;
@@ -133,10 +134,10 @@ function getPayload (bid, bidderRequest) {
       device: {
         w: window.screen.width,
         h: window.screen.height,
-        connection_type: connection ? connection.effectiveType : '',
+        connection_type: connection?.effectiveType || '',
       }
     }
-  }
+  };
 }
 
 function newRenderer(bid) {
@@ -159,7 +160,7 @@ function webisRender(bid, doc) {
   bid.renderer.push(() => {
     const win = doc?.defaultView || window;
     win.webis.init(bid.adData, bid.adUnitCode, bid.params);
-  })
+  });
 }
 
 registerBidder(spec);

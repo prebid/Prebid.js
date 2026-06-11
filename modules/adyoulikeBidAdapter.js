@@ -1,7 +1,7 @@
-import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -224,7 +224,7 @@ export const spec = {
       url: `https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4${params}`
     }];
   }
-}
+};
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
@@ -253,7 +253,7 @@ function getFloor(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.width, size.height ]
+    size: [size.width, size.height]
   });
 
   if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
@@ -328,7 +328,7 @@ function getSizeArray(bid) {
   if (bid.params && Array.isArray(bid.params.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize]
+      inputSize = [inputSize];
     }
   }
 

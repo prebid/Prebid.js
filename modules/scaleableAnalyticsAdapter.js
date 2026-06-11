@@ -64,7 +64,7 @@ scaleableAnalytics.enableAnalytics = config => {
   scaleableAnalytics.enableAnalytics = function _enable() {
     return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
   };
-}
+};
 
 scaleableAnalytics.getAuctionData = () => {
   return auctionData;
@@ -74,7 +74,7 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 
 // Track auction initiated
 const onAuctionInit = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   const adunitObj = {};
   const adunits = [];
@@ -83,7 +83,7 @@ const onAuctionInit = args => {
   args.adUnitCodes.forEach((code) => {
     adunitObj[code] = [{
       bidder: 'scaleable_adunit_request'
-    }]
+    }];
   });
 
   // Loop through bidder requests and bids
@@ -92,7 +92,7 @@ const onAuctionInit = args => {
       adunitObj[bidObj.adUnitCode].push({
         bidder: bidObj.bidder,
         params: bidObj.params
-      })
+      });
     });
   });
 
@@ -107,14 +107,14 @@ const onAuctionInit = args => {
     event: 'request',
     site: config.options.site,
     adunits: adunits
-  }
+  };
 
   sendDataToServer(data);
-}
+};
 
 // Handle all events besides requests and wins
 const onAuctionEnd = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   const adunitObj = {};
   const adunits = [];
@@ -150,24 +150,24 @@ const onAuctionEnd = args => {
     adunits.push({
       code: adunitCode,
       bidData: bidData
-    })
+    });
   });
 
   const data = {
     event: 'bids',
     site: config.options.site,
     adunits: adunits
-  }
+  };
 
   if (adunits.length) { sendDataToServer(data); }
 
   // Reset auctionData
-  auctionData = {}
-}
+  auctionData = {};
+};
 
 // Bid Win Events occur after auction end
 const onBidWon = args => {
-  const config = scaleableAnalytics.config || {options: {}};
+  const config = scaleableAnalytics.config || { options: {} };
 
   const data = {
     event: 'win',
@@ -180,12 +180,12 @@ const onBidWon = args => {
   };
 
   sendDataToServer(data);
-}
+};
 
 const onBidTimeout = args => {
   args.forEach(currObj => {
     if (!auctionData[currObj.adUnitCode]) {
-      auctionData[currObj.adUnitCode] = []
+      auctionData[currObj.adUnitCode] = [];
     }
 
     auctionData[currObj.adUnitCode].push({
@@ -193,11 +193,11 @@ const onBidTimeout = args => {
       bidder: currObj.bidder
     });
   });
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: scaleableAnalytics,
   code: 'scaleable'
-})
+});
 
 export default scaleableAnalytics;

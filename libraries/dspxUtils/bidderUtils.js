@@ -1,5 +1,5 @@
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import {deepAccess, isArray, isEmptyStr, isFn} from '../../src/utils.js';
+import { deepAccess, isArray, isEmptyStr, isFn } from '../../src/utils.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -154,7 +154,7 @@ export function getBannerSizes(bid) {
  * @returns {object} sizeObj
  */
 export function parseSize(size) {
-  const sizeObj = {}
+  const sizeObj = {};
   sizeObj.width = parseInt(size[0], 10);
   sizeObj.height = parseInt(size[1], 10);
   return sizeObj;
@@ -229,7 +229,7 @@ export function getBidFloor(bid) {
     });
     return bidFloor?.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }
 

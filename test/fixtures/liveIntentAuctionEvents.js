@@ -140,6 +140,16 @@ export const AUCTION_INIT_EVENT = {
               90
             ]
           ]
+        },
+        'video': {
+          'playerSize': [300, 250],
+          'mimes': ["video/x-ms-wmv", "video/mp4"],
+          'minduration': 0,
+          'maxduration': 30,
+          'protocols': [1, 2],
+          'api': [1, 2, 4, 6],
+          'placement': 1,
+          'plcmt': 1
         }
       },
       'bids': [
@@ -1049,7 +1059,7 @@ export const AUCTION_INIT_EVENT = {
     'requestBids.makeRequests': 1
   },
   'seatNonBids': []
-}
+};
 
 export const AUCTION_INIT_EVENT_NOT_LI = {
   'auctionId': '87b4a93d-19ae-432a-96f0-8c2d4cc1c539',
@@ -2102,13 +2112,12 @@ export const AUCTION_INIT_EVENT_NOT_LI = {
     'requestBids.makeRequests': 1
   },
   'seatNonBids': []
-}
+};
 
 export const BID_WON_EVENT = {
   'bidderCode': 'appnexus',
   'width': 728,
   'height': 90,
-  'statusMessage': 'Bid available',
   'adId': '4e02072b881823',
   'requestId': '3fae2718fd70f',
   'transactionId': '6daa1dac-9eea-47ce-82ce-ce9681df1ec5',
@@ -2223,13 +2232,12 @@ export const BID_WON_EVENT = {
       'placementId': 13144370
     }
   ]
-}
+};
 
 export const BID_WON_EVENT_UNDEFINED = {
   'bidderCode': undefined,
   'width': 728,
   'height': 90,
-  'statusMessage': 'Bid available',
   'adId': '4e02072b881823',
   'requestId': '3fae2718fd70f',
   'transactionId': '6daa1dac-9eea-47ce-82ce-ce9681df1ec5',
@@ -2344,4 +2352,4 @@ export const BID_WON_EVENT_UNDEFINED = {
       'placementId': 13144370
     }
   ]
-}
+};

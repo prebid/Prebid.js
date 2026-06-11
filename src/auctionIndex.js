@@ -11,6 +11,7 @@
  * Bid responses are not guaranteed to have a corresponding request.
  * @property {function({ requestId?: string }): *} getBidRequest Returns bidRequest object for requestId.
  * Bid responses are not guaranteed to have a corresponding request.
+ * @property {function} getOrtb2 Returns ortb2 object for bid
  */
 
 /**
@@ -19,33 +20,33 @@
  */
 export function AuctionIndex(getAuctions) {
   Object.assign(this, {
-    getAuction({auctionId}) {
+    getAuction({ auctionId }) {
       if (auctionId != null) {
         return getAuctions()
           .find(auction => auction.getAuctionId() === auctionId);
       }
     },
-    getAdUnit({adUnitId}) {
+    getAdUnit({ adUnitId }) {
       if (adUnitId != null) {
         return getAuctions()
           .flatMap(a => a.getAdUnits())
           .find(au => au.adUnitId === adUnitId);
       }
     },
-    getMediaTypes({adUnitId, requestId}) {
+    getMediaTypes({ adUnitId, requestId }) {
       if (requestId != null) {
-        const req = this.getBidRequest({requestId});
+        const req = this.getBidRequest({ requestId });
         if (req != null && (adUnitId == null || req.adUnitId === adUnitId)) {
           return req.mediaTypes;
         }
       } else if (adUnitId != null) {
-        const au = this.getAdUnit({adUnitId});
+        const au = this.getAdUnit({ adUnitId });
         if (au != null) {
           return au.mediaTypes;
         }
       }
     },
-    getBidderRequest({requestId, bidderRequestId}) {
+    getBidderRequest({ requestId, bidderRequestId }) {
       if (requestId != null || bidderRequestId != null) {
         let bers = getAuctions().flatMap(a => a.getBidRequests());
         if (bidderRequestId != null) {
@@ -54,11 +55,11 @@ export function AuctionIndex(getAuctions) {
         if (requestId == null) {
           return bers[0];
         } else {
-          return bers.find(ber => ber.bids && ber.bids.find(br => br.bidId === requestId) != null)
+          return bers.find(ber => ber.bids && ber.bids.find(br => br.bidId === requestId) != null);
         }
       }
     },
-    getBidRequest({requestId}) {
+    getBidRequest({ requestId }) {
       if (requestId != null) {
         return getAuctions()
           .flatMap(a => a.getBidRequests())
@@ -67,7 +68,7 @@ export function AuctionIndex(getAuctions) {
       }
     },
     getOrtb2(bid) {
-      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2
+      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2;
     }
   });
 }

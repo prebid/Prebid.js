@@ -6,9 +6,10 @@ import {
   isPlainObject,
   isStr,
   parseUrl,
-  replaceAuctionPrice} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+  replaceAuctionPrice
+} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 
@@ -94,17 +95,17 @@ export const spec = {
     if (!serverResponse.body) {
       return [];
     } else {
-      const response = serverResponse.body
+      const response = serverResponse.body;
       const bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
       return bids.map((bid) => _buildResponse(response, bid));
     }
   }
-}
+};
 
 function _getBanner(bidRequest) {
   const sizes = _getSizes(bidRequest);
   if (sizes === undefined) return undefined;
-  return {format: sizes};
+  return { format: sizes };
 }
 
 function _getNative(mediaTypeNative) {
@@ -128,12 +129,12 @@ function _getNative(mediaTypeNative) {
   required: Overrides the asset required field configured, only overrides when is true.
 */
 const NATIVE_ASSET_MAP = [
-  {id: 1, kind: 'title', key: 'title', required: true},
-  {id: 2, kind: 'img', key: 'image', type: 3, required: true},
-  {id: 3, kind: 'img', key: 'icon', type: 1},
-  {id: 4, kind: 'img', key: 'logo', type: 2},
-  {id: 5, kind: 'data', key: 'sponsoredBy', type: 1},
-  {id: 6, kind: 'data', key: 'body', type: 2}
+  { id: 1, kind: 'title', key: 'title', required: true },
+  { id: 2, kind: 'img', key: 'image', type: 3, required: true },
+  { id: 3, kind: 'img', key: 'icon', type: 1 },
+  { id: 4, kind: 'img', key: 'logo', type: 2 },
+  { id: 5, kind: 'data', key: 'sponsoredBy', type: 1 },
+  { id: 6, kind: 'data', key: 'body', type: 2 }
 ];
 
 const ASSET_KIND_MAP = {
@@ -154,7 +155,7 @@ function _getAsset(mediaTypeNative, assetMap) {
 }
 
 function _getTitleAsset(title, _assetMap) {
-  return {len: title.len || 0};
+  return { len: title.len || 0 };
 }
 
 function _getMinAspectRatio(aspectRatio, property) {
@@ -299,7 +300,7 @@ function _getSizes(bidRequest) {
     return {
       w: size[0],
       h: size[1]
-    }
+    };
   });
 }
 

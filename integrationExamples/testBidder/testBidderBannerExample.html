@@ -11,16 +11,50 @@
             const adUnits = [{
                 mediaTypes: {
                     banner: {
-                        sizes: [600, 500]
+                        sizes: [[320, 250], [300, 250]]
                     }
                 },
                 code: adUnitCode,
                 bids: [
-                    {bidder: 'testBidder', params: {}}
+                    {bidder: 'testBidder', params: {}},
+                    {bidder: 'kobler', params: {test: true}},
                 ]
-            }]
+            }];
+
+            function requestBids() {
+                pbjs.requestBids({
+                    adUnitCodes: [adUnitCode],
+                    bidsBackHandler: function() {
+                        const bids = pbjs.getHighestCpmBids(adUnitCode);
+                        const winningBid = bids[0];
+                        const div = document.getElementById('banner');
+                        let iframe = div.querySelector('iframe')
+                        if (iframe === null) {
+                            iframe = document.createElement('iframe');
+                            iframe.frameBorder = '0';
+                            div.appendChild(iframe);
+                        }
+                        var iframeDoc = iframe.contentWindow.document;
+                        pbjs.renderAd(iframeDoc, winningBid.adId);
+                    }
+                });
+            }
+
+            function refreshBids() {
+                pbjs.que.push(requestBids);
+            }
+
+            function refreshPageViewId() {
+                pbjs.que.push(function () {
+                    pbjs.refreshPageViewId()
+                });
+            }
 
             pbjs.que.push(function () {
+
+                pbjs.setConfig({
+                    pageUrl: 'https://www.tv2.no/mening-og-analyse/14555348/'
+                })
 
                 /**
                  * BID RESPONSE SIMULATION SECTION START
@@ -55,24 +89,14 @@
                  */
 
                 pbjs.addAdUnits(adUnits);
-                pbjs.requestBids({
-                    adUnitCodes: [adUnitCode],
-                    bidsBackHandler: function() {
-                        const bids = pbjs.getHighestCpmBids(adUnitCode);
-                        const winningBid = bids[0];
-                        const div = document.getElementById('banner');
-                        let iframe = document.createElement('iframe');
-                        iframe.frameBorder = '0';
-                        div.appendChild(iframe);
-                        var iframeDoc = iframe.contentWindow.document;
-                        pbjs.renderAd(iframeDoc, winningBid.adId);
-                    }
-                });
+                requestBids();
             });
         </script>
     </head>
     <body>
         <h2>Prebid Test Bidder Example</h2>
+        <p><button onclick="refreshBids()">Refresh Ad Units</button></p>
+        <p><button onclick="refreshPageViewId()">Refresh page view ID</button></p>
         <h5>Banner ad</h5>
         <div id="banner"></div>
     </body>

@@ -164,7 +164,7 @@ describe('Dianomi adapter', () => {
         },
       ];
       const request = JSON.parse(
-        spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}, ortb2: {source: {tid: 'tid'}}}).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2: { source: { tid: 'tid' } } }).data
       );
 
       assert.equal(request.source.tid, 'tid');
@@ -269,7 +269,7 @@ describe('Dianomi adapter', () => {
     });
 
     it('should send currency if defined', () => {
-      setCurrencyConfig({ adServerCurrency: 'EUR' })
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
       const validBidRequests = [{ params: { smartadId: 1234 } }];
       const refererInfo = { page: 'page' };
       return addFPDToBidderRequest({ refererInfo }).then(res => {
@@ -404,7 +404,7 @@ describe('Dianomi adapter', () => {
         });
 
         it('should request floor price in adserver currency', () => {
-          setCurrencyConfig({ adServerCurrency: 'GBP' })
+          setCurrencyConfig({ adServerCurrency: 'GBP' });
           const validBidRequests = [getBidWithFloor()];
           const refererInfo = { page: 'page' };
           return addFPDToBidderRequest({ refererInfo }).then(res => {

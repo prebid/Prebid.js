@@ -1,0 +1,35 @@
+name: Install deb
+description: Download and install a .deb package
+inputs:
+  url:
+    description: URL to the .deb file
+    required: true
+  name:
+    description: A local name for the package. Required if using this action multiple times in the same context.
+    default: package.deb
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore deb
+      id: deb-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: "${{ runner.temp }}/${{ inputs.name }}"
+        key: ${{ inputs.url }}
+    - name: Download deb
+      if: ${{ steps.deb-restore.outputs.cache-hit != 'true'  }}
+      shell: bash
+      run: |
+        wget --no-verbose "${{ inputs.url }}" -O "${{ runner.temp }}/${{ inputs.name }}"
+    - name: Cache deb
+      if: ${{ steps.deb-restore.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: "${{ runner.temp }}/${{ inputs.name }}"
+        key: ${{ inputs.url }}
+    - name: Install deb
+      shell: bash
+      run: |
+        sudo apt-get install -y --allow-downgrades "${{ runner.temp }}/${{ inputs.name }}"

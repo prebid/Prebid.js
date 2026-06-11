@@ -1,12 +1,12 @@
 'use strict';
 
-import {getDNT} from '../libraries/dnt/index.js';
 import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +16,7 @@ const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.4';
+const TAPPX_BIDDER_VERSION = '0.1.5';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -43,7 +43,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 var hostDomain;
 
@@ -61,11 +61,11 @@ export const spec = {
   isBidRequestValid: function(bid) {
     // bid.params.host
     if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
-      if ((new RegExp(`^(zz.*)\\.*$`, 'i')).test(bid.params.host)) return validBasic(bid)
-      else return validBasic(bid) && validMediaType(bid)
+      if ((new RegExp(`^(zz.*)\\.*$`, 'i')).test(bid.params.host)) return validBasic(bid);
+      else return validBasic(bid) && validMediaType(bid);
     } else { // This is backward compatible feature. It will be remove in the future
-      if ((new RegExp(`^(ZZ.*)\\.*$`, 'i')).test(bid.params.endpoint)) return validBasic(bid)
-      else return validBasic(bid) && validMediaType(bid)
+      if ((new RegExp(`^(ZZ.*)\\.*$`, 'i')).test(bid.params.endpoint)) return validBasic(bid);
+      else return validBasic(bid) && validMediaType(bid);
     }
   },
 
@@ -129,20 +129,20 @@ export const spec = {
 
     // SyncOptions
     if (syncOptions.iframeEnabled) {
-      url += '&type=iframe'
+      url += '&type=iframe';
       return [{
         type: 'iframe',
         url: url
       }];
     } else {
-      url += '&type=img'
+      url += '&type=img';
       return [{
         type: 'image',
         url: url
       }];
     }
   }
-}
+};
 
 function validBasic(bid) {
   if (bid.params == null) {
@@ -203,12 +203,13 @@ function interpretBid(serverBid, request) {
     ttl: TTL,
     creativeId: serverBid.crid,
     netRevenue: true,
-  }
+  };
 
-  if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
-  if (typeof serverBid.lurl !== 'undefined') { bidReturned.lurl = serverBid.lurl }
-  if (typeof serverBid.nurl !== 'undefined') { bidReturned.nurl = serverBid.nurl }
-  if (typeof serverBid.burl !== 'undefined') { bidReturned.burl = serverBid.burl }
+  if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId; }
+  if (typeof serverBid.lurl !== 'undefined') { bidReturned.lurl = serverBid.lurl; }
+  if (typeof serverBid.nurl !== 'undefined') { bidReturned.nurl = serverBid.nurl; }
+  if (typeof serverBid.burl !== 'undefined') { bidReturned.burl = serverBid.burl; }
+  if (typeof serverBid.adomain !== 'undefined') { bidReturned.adomain = serverBid.adomain; }
 
   if (typeof request.bids?.mediaTypes !== 'undefined' && typeof request.bids?.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
@@ -231,7 +232,7 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
-    bidReturned.meta = { advertiserDomains: request.bids?.adomain };
+    bidReturned.meta = { advertiserDomains: bidReturned.adomain };
   }
 
   return bidReturned;
@@ -329,7 +330,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     banner.api = api;
 
-    const formatArr = bannerMediaType.sizes.map(size => ({w: size[0], h: size[1]}))
+    const formatArr = bannerMediaType.sizes.map(size => ({ w: size[0], h: size[1] }));
     banner.format = Object.assign({}, formatArr);
 
     imp.banner = banner;
@@ -553,12 +554,12 @@ export function _getHostInfo(validBidRequests) {
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
     domainInfo.newEndpoint = true;
-    domainInfo.endpoint = domainInfo.domain.split('.', 1)[0]
-    domainInfo.url = `https://${hostParam}`
+    domainInfo.endpoint = domainInfo.domain.split('.', 1)[0];
+    domainInfo.url = `https://${hostParam}`;
   } else if (regexClassicEndpoints.test(domainInfo.domain)) {
     domainInfo.newEndpoint = false;
-    domainInfo.endpoint = endpoint
-    domainInfo.url = `https://${hostParam}${endpoint}`
+    domainInfo.endpoint = endpoint;
+    domainInfo.url = `https://${hostParam}${endpoint}`;
   }
 
   return domainInfo;
@@ -621,7 +622,7 @@ export function _checkParamDataType(key, value, datatype) {
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
   const url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
-  return parseDomain(url, {noLeadingWww: true});
+  return parseDomain(url, { noLeadingWww: true });
 }
 
 registerBidder(spec);

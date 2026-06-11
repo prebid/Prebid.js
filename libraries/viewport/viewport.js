@@ -1,4 +1,4 @@
-import {getWinDimensions, getWindowTop} from '../../src/utils.js';
+import { getWinDimensions, getWindowTop } from '../../src/utils.js';
 
 export function getViewportCoordinates() {
   try {

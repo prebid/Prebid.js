@@ -1,20 +1,25 @@
-import { _each, isStr, isArray, parseSizesInput } from '../src/utils.js';
+import { _each, isStr, isArray, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adocean';
+const GVLID = 328;
 const URL_SAFE_FIELDS = {
   slaves: true
 };
 
-function buildEndpointUrl(emitter, payloadMap) {
+function buildEndpointUrl(emitter, payloadMap, emitterRequestParams) {
   const payload = [];
   _each(payloadMap, function(v, k) {
     payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
-  return 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
+  let request = 'https://' + emitter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
+  if (emitterRequestParams.length) {
+    request += '&' + emitterRequestParams.join('&');
+  }
+  return request;
 }
 
 function buildRequest(bid, gdprConsent) {
@@ -32,6 +37,13 @@ function buildRequest(bid, gdprConsent) {
 
   if (bid.userId && bid.userId.gemiusId) {
     payload.aouserid = bid.userId.gemiusId;
+  }
+
+  const emitterRequestParams = [];
+  if (bid.params.emitterRequestParams) {
+    _each(bid.params.emitterRequestParams, function(v, k) {
+      emitterRequestParams.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    });
   }
 
   const bidIdMap = {};
@@ -53,33 +65,16 @@ function buildRequest(bid, gdprConsent) {
       }
       payload.spots = 1;
     }
-    if (bid.mediaTypes.video.context === 'adpod') {
-      const durationRangeSec = bid.mediaTypes.video.durationRangeSec;
-      if (!bid.mediaTypes.video.adPodDurationSec || !isArray(durationRangeSec) || durationRangeSec.length === 0) {
-        return;
-      }
-      const spots = calculateAdPodSpotsNumber(bid.mediaTypes.video.adPodDurationSec, bid.mediaTypes.video.durationRangeSec);
-      const maxDuration = Math.max(...durationRangeSec);
-      payload.dur = bid.mediaTypes.video.adPodDurationSec;
-      payload.maxdur = maxDuration;
-      payload.spots = spots;
-    }
   } else if (bid.mediaTypes.banner) {
     payload.aosize = parseSizesInput(bid.mediaTypes.banner.sizes).join(',');
   }
 
   return {
     method: 'GET',
-    url: buildEndpointUrl(emitter, payload),
+    url: buildEndpointUrl(emitter, payload, emitterRequestParams),
     data: '',
     bidIdMap: bidIdMap
   };
-}
-
-function calculateAdPodSpotsNumber(adPodDurationSec, durationRangeSec) {
-  const minAllowedDuration = Math.min(...durationRangeSec);
-  const numberOfSpots = Math.floor(adPodDurationSec / minAllowedDuration);
-  return numberOfSpots;
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
@@ -117,11 +112,16 @@ function interpretResponse(placementResponse, bidRequest, bids) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     const requiredParams = ['slaveId', 'masterId', 'emitter'];
     if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
+      return false;
+    }
+
+    if (bid.params.emitterRequestParams && !isPlainObject(bid.params.emitterRequestParams)) {
       return false;
     }
 
@@ -131,9 +131,6 @@ export const spec = {
     if (bid.mediaTypes.video) {
       if (bid.mediaTypes.video.context === 'instream') {
         return true;
-      }
-      if (bid.mediaTypes.video.context === 'adpod') {
-        return !bid.mediaTypes.video.requireExactDuration;
       }
     }
     return false;

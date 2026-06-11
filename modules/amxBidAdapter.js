@@ -17,7 +17,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
+import { getGlobalVarName } from '../src/buildOptions.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -251,7 +251,7 @@ function getSyncSettings() {
   const all = isSyncEnabled(syncConfig.filterSettings, 'all');
 
   if (all) {
-    settings.t = SYNC_IMAGE & SYNC_IFRAME;
+    settings.t = SYNC_IMAGE | SYNC_IFRAME;
     return settings;
   }
 
@@ -334,7 +334,8 @@ export const spec = {
         : {
             bidderRequestsCount: 0,
             bidderWinsCount: 0,
-            bidRequestsCount: 0 };
+            bidRequestsCount: 0
+          };
 
     const payload = {
       a: generateUUID(),

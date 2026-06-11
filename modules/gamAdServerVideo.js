@@ -9,7 +9,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
-import { getHook } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {
@@ -22,44 +21,21 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import {DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams} from '../libraries/gamUtils/gamUtils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
-import { fetch } from '../src/ajax.js';
+import { noCredsFetch as fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
-import {getGlobalVarName} from '../src/buildOptions.js';
-/**
- * @typedef {Object} DfpVideoParams
- *
- * This object contains the params needed to form a URL which hits the
- * [DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en}.
- *
- * All params (except iu, mentioned below) should be considered optional. This module will choose reasonable
- * defaults for all of the other required params.
- *
- * The cust_params property, if present, must be an object. It will be merged with the rest of the
- * standard Prebid targeting params (hb_adid, hb_bidder, etc).
- *
- * @param {string} iu This param *must* be included, in order for us to create a valid request.
- * @param [string] description_url This field is required if you want Ad Exchange to bid on our ad unit...
- *   but otherwise optional
- */
+import { getGlobalVarName } from '../src/buildOptions.js';
+import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 
 /**
- * @typedef {Object} DfpVideoOptions
- *
- * @param {Object} adUnit The adUnit which this bid is supposed to help fill.
- * @param [Object] bid The bid which should be considered alongside the rest of the adserver's demand.
- *   If this isn't defined, then we'll use the winning bid for the adUnit.
- *
- * @param {DfpVideoParams} [params] Query params which should be set on the DFP request.
- *   These will override this module's defaults whenever they conflict.
- * @param {string} [url] video adserver url
+ * @typedef {import('./gamAdServerVideo.d.ts').GamVideoOptions} GamVideoOptions
  */
 
 export const dep = {
   ri: getRefererInfo
-}
+};
 
 export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
@@ -68,7 +44,7 @@ export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
  *
  * @see [The DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en#env} for details.
  *
- * @param {DfpVideoOptions} options Options which should be used to construct the URL.
+ * @param {GamVideoOptions} options Options which should be used to construct the URL.
  *
  * @return {string} A URL which calls DFP, letting options.bid
  *   (or the auction's winning bid for this adUnit, if undefined) compete alongside the rest of the
@@ -88,7 +64,7 @@ export function buildGamVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, { noDecodeWholeURL: true });
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -117,6 +93,22 @@ export function buildGamVideoUrl(options) {
     { cust_params: encodedCustomParams },
     gdprParams()
   );
+
+  // The IMA player adds usp info, but not gpp info
+  // For cases where the CMP only exposes gpp but not usp,
+  // it is better to derive an usp string from the gpp info and include it in the url
+  if (window.google?.ima) {
+    const usPrivacy = uspDataHandler.getConsentData?.();
+    const gpp = gppDataHandler.getConsentData?.();
+
+    if (!usPrivacy && gpp) {
+      // Extract an usPrivacy string from the GPP string if possible
+      const uspFromGpp = retrieveUspInfoFromGpp(gpp);
+      if (uspFromGpp) {
+        queryParams['us_privacy'] = uspFromGpp;
+      }
+    }
+  }
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
@@ -176,17 +168,11 @@ export function buildGamVideoUrl(options) {
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
       PublisherProvidedTaxonomySignals: signals
-    }))
+    }));
   }
 
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
 }
-
-export function notifyTranslationModule(fn) {
-  fn.call(this, 'dfp');
-}
-
-if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
 
 /**
  * Builds a video url from a base dfp video url and a winning bid, appending
@@ -244,7 +230,7 @@ function getCustParams(bid, options, urlCustParams) {
   );
 
   // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
-  events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+  events.emit(EVENTS.SET_TARGETING, { [adUnit.code]: prebidTargetingSet });
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = options?.params?.cust_params;
@@ -290,9 +276,31 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
     return gamVastWrapper;
   }
 };
-
+/**
+ * @param {GamVideoOptions} options
+ */
 export async function getVastXml(options, localCacheMap = vastLocalCache) {
-  const vastUrl = buildGamVideoUrl(options);
+  let vastUrl = buildGamVideoUrl(options);
+
+  const adUnit = options.adUnit;
+  const video = adUnit?.mediaTypes?.video;
+  const sdkApis = (video?.api || []).join(',');
+  const usPrivacy = uspDataHandler.getConsentData?.();
+  // Adding parameters required by ima
+  if (config.getConfig('cache.useLocal') && window.google?.ima) {
+    vastUrl = new URL(vastUrl);
+    const imaSdkVersion = `h.${window.google.ima.VERSION}`;
+    vastUrl.searchParams.set('omid_p', `Google1/${imaSdkVersion}`);
+    vastUrl.searchParams.set('sdkv', imaSdkVersion);
+    if (sdkApis) {
+      vastUrl.searchParams.set('sdk_apis', sdkApis);
+    }
+    if (usPrivacy) {
+      vastUrl.searchParams.set('us_privacy', usPrivacy);
+    }
+    vastUrl = vastUrl.toString();
+  }
+
   const response = await fetch(vastUrl);
   if (!response.ok) {
     throw new Error('Unable to fetch GAM VAST wrapper');
@@ -306,6 +314,41 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   }
 
   return gamVastWrapper;
+}
+/**
+ * Extract a US Privacy string from the GPP data
+ */
+function retrieveUspInfoFromGpp(gpp) {
+  if (!gpp) {
+    return undefined;
+  }
+  const parsedSections = gpp.gppData?.parsedSections;
+  if (parsedSections) {
+    if (parsedSections.uspv1) {
+      const usp = parsedSections.uspv1;
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`;
+    } else {
+      let saleOptOut;
+      let saleOptOutNotice;
+      Object.values(parsedSections).forEach(parsedSection => {
+        (Array.isArray(parsedSection) ? parsedSection : [parsedSection]).forEach(ps => {
+          const sectionSaleOptOut = ps.SaleOptOut;
+          const sectionSaleOptOutNotice = ps.SaleOptOutNotice;
+          if (saleOptOut === undefined && saleOptOutNotice === undefined && sectionSaleOptOut != null && sectionSaleOptOutNotice != null) {
+            saleOptOut = sectionSaleOptOut;
+            saleOptOutNotice = sectionSaleOptOutNotice;
+          }
+        });
+      });
+      if (saleOptOut !== undefined && saleOptOutNotice !== undefined) {
+        const uspOptOutSale = saleOptOut === 0 ? '-' : saleOptOut === 1 ? 'Y' : 'N';
+        const uspOptOutNotice = saleOptOutNotice === 0 ? '-' : saleOptOutNotice === 1 ? 'Y' : 'N';
+        const uspLspa = uspOptOutSale === '-' && uspOptOutNotice === '-' ? '-' : 'Y';
+        return `1${uspOptOutNotice}${uspOptOutSale}${uspLspa}`;
+      }
+    }
+  }
+  return undefined;
 }
 
 export async function getBase64BlobContent(blobUrl) {

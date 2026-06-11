@@ -16,9 +16,9 @@ describe('betweenBidAdapterTests', function () {
     const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
-      params: {w: 240, h: 400, s: 1112},
+      params: { w: 240, h: 400, s: 1112 },
       sizes: [[240, 400]]
-    }]
+    }];
     const request = spec.buildRequests(bidRequestData);
     const req_data = JSON.parse(request.data)[0].data;
     expect(req_data.bidid).to.equal('bid1234');
@@ -28,7 +28,7 @@ describe('betweenBidAdapterTests', function () {
     const bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
-      params: {w: 240, h: 400, s: 1112},
+      params: { w: 240, h: 400, s: 1112 },
       mediaTypes: {
         video: {
           context: 'outstream',
@@ -222,7 +222,7 @@ describe('betweenBidAdapterTests', function () {
         consentString: 'BOtGbjbOtGbjbBQABBENC3-AAAAtR7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4u_1vf99yfm1-7etr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Ew_v-_v-b7JCON_IA',
         gdprApplies: true
       }
-    }
+    };
 
     const request = spec.buildRequests(bidRequestData, bidderRequest);
     const req_data = JSON.parse(request.data)[0].data;
@@ -305,8 +305,8 @@ describe('betweenBidAdapterTests', function () {
   it('check getUserSyncs', function() {
     const syncs = spec.getUserSyncs({}, {});
     expect(syncs).to.be.an('array').that.to.have.lengthOf(2);
-    expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe'});
-    expect(syncs[1]).to.deep.equal({type: 'image', url: 'https://ads.betweendigital.com/sspmatch'});
+    expect(syncs[0]).to.deep.equal({ type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe' });
+    expect(syncs[1]).to.deep.equal({ type: 'image', url: 'https://ads.betweendigital.com/sspmatch' });
   });
 
   it('check sizes', function() {
@@ -326,7 +326,7 @@ describe('betweenBidAdapterTests', function () {
     const request = spec.buildRequests(bidRequestData);
     const req_data = JSON.parse(request.data)[0].data;
 
-    expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
+    expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90']);
   });
 
   it('check adomain', function() {

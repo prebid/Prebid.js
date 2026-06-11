@@ -1,36 +1,25 @@
-import {getReplier, receiveMessage, resizeRemoteCreative} from 'src/secureCreatives.js';
+import { getReplier, receiveMessage, resizeAnchor, resizeRemoteCreative } from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
-import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
-import {auctionManager} from 'src/auctionManager.js';
+import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtures.js';
+import { auctionManager } from 'src/auctionManager.js';
 import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
-import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
+import { fireNativeTrackers, getAllAssetsMessage } from 'src/native.js';
 import * as events from 'src/events.js';
-import {config as configObj} from 'src/config.js';
+import { config as configObj } from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 import 'modules/nativeRendering.js';
+import * as adUnits from 'src/utils/adUnits';
 
-import {expect} from 'chai';
+import { expect } from 'chai';
 
-import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS} from 'src/constants.js';
-import {getBidToRender} from '../../../src/adRendering.js';
-import {PUC_MIN_VERSION} from 'src/creativeRenderers.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
+import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('secureCreatives', () => {
   let sandbox;
-
-  function getBidToRenderHook(next, adId) {
-    // make sure that bids can be retrieved asynchronously
-    next(adId, new Promise((resolve) => setTimeout(resolve)))
-  }
-  before(() => {
-    getBidToRender.before(getBidToRenderHook);
-  });
-  after(() => {
-    getBidToRender.getHooks({hook: getBidToRenderHook}).remove()
-  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -41,11 +30,13 @@ describe('secureCreatives', () => {
   });
 
   function makeEvent(ev) {
-    return Object.assign({origin: 'mock-origin', ports: []}, ev)
+    return Object.assign({ origin: 'mock-origin', ports: [] }, ev);
   }
 
   function receive(ev) {
-    return Promise.resolve(receiveMessage(ev));
+    return new Promise((resolve) => {
+      receiveMessage(ev, resolve);
+    });
   }
 
   describe('getReplier', () => {
@@ -66,7 +57,7 @@ describe('secureCreatives', () => {
         ports: [{
           postMessage: sinon.spy()
         }]
-      }
+      };
       getReplier(ev)('test');
       sinon.assert.calledWith(ev.ports[0].postMessage, JSON.stringify('test'));
     });
@@ -76,7 +67,7 @@ describe('secureCreatives', () => {
         origin: null,
         ports: [],
         postMessage: sinon.spy()
-      }
+      };
       const reply = getReplier(ev);
       expect(() => reply('test')).to.throw();
     });
@@ -105,7 +96,7 @@ describe('secureCreatives', () => {
         const bidsReceived = getBidResponses();
         bidsReceived.push(adResponse);
         return bidsReceived;
-      }
+      };
       auction.getAuctionId = () => 1;
     }
 
@@ -114,7 +105,7 @@ describe('secureCreatives', () => {
       auction.getBidRequests = getBidRequests;
       auction.getBidsReceived = getBidResponses;
       auction.getAdUnits = getAdUnits;
-      auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
+      auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED; };
     }
 
     function resetHistories(...others) {
@@ -134,7 +125,7 @@ describe('secureCreatives', () => {
       const adUnitCodes = getAdUnits().map(unit => unit.code);
       const bidsBackHandler = function() {};
       const timeout = 2000;
-      auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
+      auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout });
       resetAuction();
     });
 
@@ -159,7 +150,7 @@ describe('secureCreatives', () => {
     describe('Prebid Request', function() {
       it('should render', function () {
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -186,7 +177,7 @@ describe('secureCreatives', () => {
 
       it('should allow stale rendering without config', function () {
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -218,10 +209,10 @@ describe('secureCreatives', () => {
       });
 
       it('should stop stale rendering with config', function () {
-        configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
+        configObj.setConfig({ 'auctionOptions': { 'suppressStaleRender': true } });
 
         pushBidResponseToAuction({
-          renderer: {render: sinon.stub(), url: 'some url'}
+          renderer: { render: sinon.stub(), url: 'some url' }
         });
 
         const data = {
@@ -245,14 +236,14 @@ describe('secureCreatives', () => {
           expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
 
           resetHistories(adResponse.renderer.render);
-          return receive(ev)
+          return receive(ev);
         }).then(() => {
           sinon.assert.calledWith(spyLogWarn, warning);
           sinon.assert.notCalled(spyAddWinningBid);
           sinon.assert.notCalled(adResponse.renderer.render);
           sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
-          configObj.setConfig({'auctionOptions': {}});
+          configObj.setConfig({ 'auctionOptions': {} });
         });
       });
 
@@ -287,7 +278,7 @@ describe('secureCreatives', () => {
             reason: AD_RENDER_FAILED_REASON.EXCEPTION,
             adId: bidId
           }));
-        })
+        });
       });
 
       it('should include renderers in responses', () => {
@@ -297,11 +288,11 @@ describe('secureCreatives', () => {
           source: {
             postMessage: sinon.stub()
           },
-          data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+          data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
         });
         return receive(ev).then(() => {
           sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
-            const {renderer, rendererVersion} = JSON.parse(ob);
+            const { renderer, rendererVersion } = JSON.parse(ob);
             return renderer === 'mock-renderer' && rendererVersion === PUC_MIN_VERSION;
           }));
         });
@@ -326,14 +317,14 @@ describe('secureCreatives', () => {
               adTemplate: 'tpl',
               rendererUrl: 'rurl'
             }
-          }
+          };
           pushBidResponseToAuction(bid);
           const ev = makeEvent({
             source: {
               postMessage: sinon.stub()
             },
-            data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
-          })
+            data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
+          });
           return receive(ev).then(() => {
             sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
               const data = JSON.parse(ob);
@@ -343,16 +334,16 @@ describe('secureCreatives', () => {
                 ortb: bid.native.ortb,
                 adTemplate: bid.native.adTemplate,
                 rendererUrl: bid.native.rendererUrl,
-              })
-              expect(Object.fromEntries(native.assets.map(({key, value}) => [key, value]))).to.eql({
+              });
+              expect(Object.fromEntries(native.assets.map(({ key, value }) => [key, value]))).to.eql({
                 adTemplate: bid.native.adTemplate,
                 rendererUrl: bid.native.rendererUrl,
                 body: 'vbody'
               });
               return true;
-            }))
+            }));
           });
-        })
+        });
       }
     });
 
@@ -429,7 +420,7 @@ describe('secureCreatives', () => {
         return receive(ev).then(() => {
           sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
         });
-      })
+      });
 
       describe('resizing', () => {
         let container, slot;
@@ -440,8 +431,8 @@ describe('secureCreatives', () => {
           after(() => {
             window.googletag = gtag;
             window.apntag = atag;
-          })
-        })
+          });
+        });
         beforeEach(() => {
           pushBidResponseToAuction({
             adUnitCode: 'mock-au'
@@ -450,13 +441,13 @@ describe('secureCreatives', () => {
           container.id = 'mock-au';
           slot = document.createElement('iframe');
           container.appendChild(slot);
-          document.body.appendChild(container)
+          document.body.appendChild(container);
         });
         afterEach(() => {
           if (container) {
             document.body.removeChild(container);
           }
-        })
+        });
         it('should handle resize request', () => {
           const ev = makeEvent({
             data: JSON.stringify({
@@ -475,14 +466,14 @@ describe('secureCreatives', () => {
             expect(slot.style.width).to.eql('123px');
             expect(slot.style.height).to.eql('321px');
           });
-        })
-      })
+        });
+      });
     });
 
     describe('Prebid Event', () => {
       Object.entries({
         'unrendered': [false, (bid) => { delete bid.status; }],
-        'rendered': [true, (bid) => { bid.status = BID_STATUS.RENDERED }]
+        'rendered': [true, (bid) => { bid.status = BID_STATUS.RENDERED; }]
       }).forEach(([test, [shouldEmit, prepBid]]) => {
         describe(`for ${test} bids`, () => {
           beforeEach(() => {
@@ -552,7 +543,7 @@ describe('secureCreatives', () => {
         }),
         getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
         getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
-      }
+      };
     }
     let slots;
     beforeEach(() => {
@@ -560,14 +551,14 @@ describe('secureCreatives', () => {
         mockSlot('div1', 'au1'),
         mockSlot('div2', 'au2'),
         mockSlot('div3', 'au3')
-      ]
+      ];
       window.googletag = {
         pubads: sinon.stub().returns({
           getSlots: sinon.stub().returns(slots)
         })
       };
       sandbox.stub(document, 'getElementById');
-    })
+    });
 
     it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
       slots[1].setTargeting('hb_adid', ['adId']);
@@ -576,7 +567,7 @@ describe('secureCreatives', () => {
         width: 300,
         height: 250,
       });
-      [0, 2].forEach((i) => sinon.assert.notCalled(slots[i].getSlotElementId))
+      [0, 2].forEach((i) => sinon.assert.notCalled(slots[i].getSlotElementId));
       sinon.assert.called(slots[1].getSlotElementId);
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
@@ -587,7 +578,7 @@ describe('secureCreatives', () => {
       };
       const apnTag = {
         targetId: 'apnAdUnitId',
-      }
+      };
       window.apntag.getTag.withArgs('apnAdUnit').returns(apnTag);
 
       resizeRemoteCreative({
@@ -629,6 +620,67 @@ describe('secureCreatives', () => {
         height: 250,
       });
       sinon.assert.notCalled(document.getElementById);
-    })
-  })
+    });
+  });
+
+  describe('resizeAnchor', () => {
+    let ins, clock;
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      ins = {
+        style: {
+          width: 'auto',
+          height: 'auto'
+        }
+      };
+    });
+    afterEach(() => {
+      clock.restore();
+    });
+    function setSize(width = '300px', height = '250px') {
+      ins.style.width = width;
+      ins.style.height = height;
+    }
+    it('should not change dimensions until they have been set externally', () => {
+      const pm = resizeAnchor(ins, 100, 200);
+      clock.tick(200);
+      expect(ins.style).to.eql({ width: 'auto', height: 'auto' });
+      setSize();
+      clock.tick(200);
+      return pm.then(() => {
+        expect(ins.style.width).to.eql('100px');
+        expect(ins.style.height).to.eql('200px');
+      });
+    });
+    it('should quit trying if dimensions are never set externally', () => {
+      const pm = resizeAnchor(ins, 100, 200);
+      clock.tick(5000);
+      return pm
+        .then(() => { sinon.assert.fail('should have thrown'); })
+        .catch(err => {
+          expect(err.message).to.eql('Could not resize anchor');
+        });
+    });
+    it('should not choke when initial width/ height are null', () => {
+      ins.style = {};
+      const pm = resizeAnchor(ins, 100, 200);
+      clock.tick(200);
+      setSize();
+      clock.tick(200);
+      return pm.then(() => {
+        expect(ins.style.width).to.eql('100px');
+        expect(ins.style.height).to.eql('200px');
+      });
+    });
+
+    it('should not resize dimensions that are set to 100%', () => {
+      const pm = resizeAnchor(ins, 100, 200);
+      setSize('100%', '250px');
+      clock.tick(200);
+      return pm.then(() => {
+        expect(ins.style.width).to.eql('100%');
+        expect(ins.style.height).to.eql('200px');
+      });
+    });
+  });
 });

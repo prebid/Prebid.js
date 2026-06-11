@@ -1,11 +1,11 @@
-import {deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+import { deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { convertCurrency } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -67,7 +67,7 @@ export const spec = {
    * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse(serverResponse, { ortbRequest }) {
-    return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
+    return CONVERTER.fromORTB({ request: ortbRequest, response: serverResponse.body }).bids;
   },
 
   /**
@@ -89,8 +89,8 @@ export const spec = {
       if (this.syncStore.extendMode && serverResponses) {
         serverResponses.forEach(response => {
           if (!response?.body?.ext?.responsetimemillis) return;
-          Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
-        })
+          Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b));
+        });
       }
       syncs.push({
         type: 'iframe',
@@ -139,7 +139,7 @@ export const CONVERTER = ortbConverter({
     ttl: CREATIVE_TTL,
     nativeRequest: {
       eventtrackers: [
-        {event: 1, methods: [1, 2]},
+        { event: 1, methods: [1, 2] },
       ]
     }
   },
@@ -190,7 +190,7 @@ export const CONVERTER = ortbConverter({
     if (!bid.adm || !bid.price || bid.hasOwnProperty('errorCode')) {
       return;
     }
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     context.mediaType = (() => {
       const requestMediaTypes = Object.keys(bidRequest.mediaTypes);
       if (requestMediaTypes.length === 1) return requestMediaTypes[0];
@@ -212,12 +212,12 @@ export const CONVERTER = ortbConverter({
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
       netRevenue: idExt.is_net || false,
-    })
+    });
     if (bidResponse.mediaType === VIDEO && ID_REQUEST.isOutstreamVideo(bidRequest)) {
       Object.assign(bidResponse, {
         adResponse: { content: bidResponse.vastXml },
         renderer: ID_OUTSTREAM.createRenderer(bidRequest)
-      })
+      });
     }
     return bidResponse;
   },
@@ -227,8 +227,8 @@ export const CONVERTER = ortbConverter({
         // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
         if (config.getConfig('improvedigital.usePrebidSizes') === false) {
-          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
-          bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
+          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], { sizes: null });
+          bidRequest = { ...bidRequest, mediaTypes: { [BANNER]: banner } };
         }
         fillImpBanner(imp, bidRequest, context);
       },
@@ -236,20 +236,20 @@ export const CONVERTER = ortbConverter({
         // override to use video params from both mediaTypes.video and bidRequest.params.video
         if (!bidRequest.mediaTypes[VIDEO]) return;
         const video = Object.assign(
-          {mimes: VIDEO_PARAMS.DEFAULT_MIMES},
+          { mimes: VIDEO_PARAMS.DEFAULT_MIMES },
           bidRequest.mediaTypes[VIDEO],
           bidRequest.params?.video
-        )
+        );
         fillImpVideo(
           imp,
-          {...bidRequest, mediaTypes: {[VIDEO]: video}},
+          { ...bidRequest, mediaTypes: { [VIDEO]: video } },
           context
         );
         deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
       }
     }
   }
-})
+});
 
 const ID_REQUEST = {
   buildServerRequests(bidRequests, bidderRequest) {
@@ -265,16 +265,16 @@ const ID_REQUEST = {
         return EXTEND_URL;
       }
       const urlSegments = [];
-      urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL)
+      urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL);
       if (publisherId) {
-        urlSegments.push(publisherId)
+        urlSegments.push(publisherId);
       }
-      urlSegments.push(PB_ENDPOINT)
+      urlSegments.push(PB_ENDPOINT);
       return urlSegments.join('/');
     }
 
     function formatRequest(bidRequests, publisherId, extendMode) {
-      const ortbRequest = CONVERTER.toORTB({bidRequests, bidderRequest, context: {extendMode}});
+      const ortbRequest = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { extendMode } });
       return {
         method: 'POST',
         url: adServerUrl(extendMode, publisherId),
@@ -284,7 +284,7 @@ const ID_REQUEST = {
         options: {
           endpointCompression: true,
         },
-      }
+      };
     }
 
     let publisherId = null;

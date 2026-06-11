@@ -28,6 +28,9 @@ const DEFAULT_CURRENCY = 'EUR';
 const TTL = 30;
 const MAX_IMPS_PER_REQUEST = 10;
 const GVLID = 1133;
+export const dep = {
+  ajax
+};
 
 export const converter = ortbConverter({
   context: {
@@ -113,8 +116,8 @@ export const spec = {
    * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function(bid) {
-    if (bid == null || Object.keys(bid).length === 0) return
-    reportEvent('NAT_BID_WON', bid)
+    if (bid == null || Object.keys(bid).length === 0) return;
+    reportEvent('NAT_BID_WON', bid);
   },
   /**
    * Register bidder specific code, which will execute if the ad
@@ -122,24 +125,24 @@ export const spec = {
    * @param {Bid} bid Bid request object
    */
   onAdRenderSucceeded: function (bid) {
-    if (bid == null || Object.keys(bid).length === 0) return
-    reportEvent('NAT_AD_RENDERED', bid)
+    if (bid == null || Object.keys(bid).length === 0) return;
+    reportEvent('NAT_AD_RENDERED', bid);
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {Object} timeoutData Containing timeout specific data
    */
   onTimeout: function (timeoutData) {
-    if (!Array.isArray(timeoutData) || timeoutData.length === 0) return
-    reportEvent('NAT_TIMEOUT', timeoutData)
+    if (!Array.isArray(timeoutData) || timeoutData.length === 0) return;
+    reportEvent('NAT_TIMEOUT', timeoutData);
   },
   /**
    * Register bidder specific code, which will execute if the bidder responded with an error
    * @param {Object} errorData An object with the XMLHttpRequest error and the bid request object
    */
   onBidderError: function (errorData) {
-    if (errorData == null || Object.keys(errorData).length === 0) return
-    reportEvent('NAT_BIDDER_ERROR', errorData)
+    if (errorData == null || Object.keys(errorData).length === 0) return;
+    reportEvent('NAT_BIDDER_ERROR', errorData);
   }
 };
 
@@ -182,7 +185,7 @@ function reportEvent(event, data, sampling = null) {
       event,
       data,
     };
-    ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true });
+    dep.ajax(EVENT_TRACKER_URL, undefined, safeJSONEncode(payload), { method: 'POST', withCredentials: true, keepalive: true });
   }
 }
 

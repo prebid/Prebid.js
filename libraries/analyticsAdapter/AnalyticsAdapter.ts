@@ -1,8 +1,8 @@
 import { EVENTS } from '../../src/constants.js';
-import {ajax} from '../../src/ajax.js';
-import {logError, logMessage} from '../../src/utils.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
+import { logError, logMessage } from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 
 export const _internal = {
   ajax
@@ -22,7 +22,7 @@ let allLabels = {};
 
 config.getConfig(LABELS_KEY, (cfg) => {
   labels.publisher = cfg[LABELS_KEY];
-  allLabels = combineLabels(); ;
+  allLabels = combineLabels();
 });
 
 export function setLabels(internalLabels) {
@@ -30,7 +30,7 @@ export function setLabels(internalLabels) {
   allLabels = combineLabels();
 };
 
-const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({...acc, ...curr}), {});
+const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({ ...acc, ...curr }), {});
 
 export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
   .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
@@ -56,7 +56,7 @@ export type DefaultOptions = {
    * Defaults to 1
    */
   sampling?: number;
-}
+};
 
 export type AnalyticsConfig<P extends AnalyticsProvider> = (
     P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : { [key: string]: unknown }
@@ -77,7 +77,7 @@ export type AnalyticsConfig<P extends AnalyticsProvider> = (
        * Adapter specific options
        */
       options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
-    }
+    };
 
 export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }: {
   analyticsType?: AnalyticsType;
@@ -107,10 +107,10 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
             if (queue.length >= len) {
               notDecreasing++;
             } else {
-              notDecreasing = 0
+              notDecreasing = 0;
             }
             if (notDecreasing >= 10) {
-              logError('Detected probable infinite loop, discarding events', queue)
+              logError('Detected probable infinite loop, discarding events', queue);
               queue.length = 0;
               return;
             }
@@ -127,7 +127,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
         timer = null;
       }
       debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
-    }
+    };
   })();
 
   return Object.defineProperties({
@@ -146,7 +146,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   });
 
   function _track(arg) {
-    const {eventType, args} = arg;
+    const { eventType, args } = arg;
     if (this.getAdapterType() === BUNDLE) {
       (window[global] as any)(handler, eventType, args);
     }
@@ -160,15 +160,15 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
     _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: allLabels }));
   }
 
-  function _enqueue({eventType, args}) {
+  function _enqueue({ eventType, args }) {
     queue.push(() => {
       if (Object.keys(allLabels || []).length > 0) {
         args = {
           [LABELS_KEY]: allLabels,
           ...args,
-        }
+        };
       }
-      this.track({eventType, labels: allLabels, args});
+      this.track({ eventType, labels: allLabels, args });
     });
     emptyQueue();
   }
@@ -184,7 +184,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
 
     if (sampled) {
       const trackedEvents: Set<keyof events.Events> = (() => {
-        const {includeEvents = DEFAULT_INCLUDE_EVENTS, excludeEvents = []} = (config || {});
+        const { includeEvents = DEFAULT_INCLUDE_EVENTS, excludeEvents = [] } = (config || {});
         return new Set(
           Object.values(EVENTS)
             .filter(ev => includeEvents.includes(ev))
@@ -206,11 +206,11 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
       handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
-            const handler = (args) => this.enqueue({eventType: ev, args});
+            const handler = (args) => this.enqueue({ eventType: ev, args });
             events.on(ev, handler);
             return [ev, handler];
           })
-      )
+      );
     } else {
       logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }
@@ -226,7 +226,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   function _disable() {
     Object.entries(handlers || {}).forEach(([event, handler]: any) => {
       events.off(event, handler);
-    })
+    });
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
     enabled = false;
   }

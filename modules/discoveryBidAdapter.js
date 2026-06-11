@@ -18,7 +18,7 @@ import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const globals = {};
 const itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
@@ -236,7 +236,7 @@ export const buildUTMTagData = (url) => {
   UTMValue = JSON.parse(storage.getCookie(UTM_KEY) || '{}');
   Object.assign(UTMValue, UTMParams);
   storage.setCookie(UTM_KEY, JSON.stringify(UTMValue), getCookieTimeToUTCString());
-}
+};
 
 /**
  * get rtb qequest params
@@ -288,7 +288,7 @@ function getParam(validBidRequests, bidderRequest) {
       device: {
         nbw: getConnectionDownLink(),
       }
-    }
+    };
   } catch (error) {}
   try {
     buildUTMTagData(page);

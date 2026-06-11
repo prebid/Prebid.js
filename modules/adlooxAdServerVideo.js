@@ -8,10 +8,13 @@
 
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
-import { ajax } from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { targeting } from '../src/targeting.js';
 import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+
+const ajax = qualifiedAjaxBuilder(MODULE_TYPE_ANALYTICS, 'adloox');
 
 const MODULE = 'adlooxAdserverVideo';
 
@@ -135,7 +138,7 @@ function VASTWrapper(options, callback) {
       const epoch = timestamp() - new Date().getTimezoneOffset() * 60 * 1000;
       const expires0 = options.bid.ttl * 1000 - (epoch - options.bid.responseTimestamp);
       const expires = Math.max(30 * 1000, expires0);
-      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)) }, expires);
+      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)); }, expires);
     }
 
     if (!result) {
@@ -174,22 +177,22 @@ function VASTWrapper(options, callback) {
     if (skipd) skip = durationToSeconds(skipd.trim());
 
     const args = [
-      [ 'client', '%%client%%' ],
-      [ 'platform_id', '%%platformid%%' ],
-      [ 'scriptname', 'adl_%%clientid%%' ],
-      [ 'tag_id', '%%tagid%%' ],
-      [ 'fwtype', 4 ],
-      [ 'vast', options.url ],
-      [ 'id11', 'video' ],
-      [ 'id12', '$ADLOOX_WEBSITE' ],
-      [ 'id18', (!skip || skip >= duration) ? 'fd' : 'od' ],
-      [ 'id19', 'na' ],
-      [ 'id20', 'na' ]
+      ['client', '%%client%%'],
+      ['platform_id', '%%platformid%%'],
+      ['scriptname', 'adl_%%clientid%%'],
+      ['tag_id', '%%tagid%%'],
+      ['fwtype', 4],
+      ['vast', options.url],
+      ['id11', 'video'],
+      ['id12', '$ADLOOX_WEBSITE'],
+      ['id18', (!skip || skip >= duration) ? 'fd' : 'od'],
+      ['id19', 'na'],
+      ['id20', 'na']
     ];
-    if (version && version !== 3) args.push([ 'version', version ]);
-    if (vpaid) args.push([ 'vpaid', 1 ]);
-    if (duration !== 15) args.push([ 'duration', duration ]);
-    if (skip) args.push([ 'skip', skip ]);
+    if (version && version !== 3) args.push(['version', version]);
+    if (vpaid) args.push(['vpaid', 1]);
+    if (duration !== 15) args.push(['duration', duration]);
+    if (skip) args.push(['skip', skip]);
 
     logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);
 

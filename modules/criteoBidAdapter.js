@@ -1,15 +1,15 @@
-import {deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel, deepAccess, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {Renderer} from '../src/Renderer.js';
-import {OUTSTREAM} from '../src/video.js';
-import {ajax} from '../src/ajax.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
-import {config} from '../src/config.js';
+import { deepAccess, deepSetValue, logError, logInfo, logWarn, parseUrl, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { ajax } from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -28,12 +28,16 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 const TRANSLATOR = ortb25Translator();
 
-const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js'
+const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js';
 const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
 const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
 const DEFAULT_GZIP_ENABLED = true;
+
+export const dep = {
+  ajax
+};
 
 /**
  * Defines the generic oRTB converter and all customization functions.
@@ -74,11 +78,7 @@ function imp(buildImp, bidRequest, context) {
     },
   });
 
-  delete imp.rwdd // oRTB 2.6 field moved to ext
-
-  if (!context.fledgeEnabled && imp.ext.igs?.ae) {
-    delete imp.ext.igs.ae;
-  }
+  delete imp.rwdd; // oRTB 2.6 field moved to ext
 
   if (hasVideoMediaType(bidRequest)) {
     const paramsVideo = bidRequest.params.video;
@@ -90,15 +90,13 @@ function imp(buildImp, bidRequest, context) {
         minduration: imp.video.minduration || paramsVideo.minduration,
         playbackmethod: imp.video.playbackmethod || paramsVideo.playbackmethod,
         startdelay: imp.video.startdelay || paramsVideo.startdelay || 0,
-      })
+      });
     }
     deepSetValue(imp, 'video.ext', {
       context: bidRequest.mediaTypes.video.context,
       playersizes: parseSizes(bidRequest?.mediaTypes?.video?.playerSize, parseSize),
       plcmt: bidRequest.mediaTypes.video.plcmt,
-      poddur: bidRequest.mediaTypes.video.adPodDurationSec,
-      rqddurs: bidRequest.mediaTypes.video.durationRangeSec,
-    })
+    });
   }
 
   if (imp.native && typeof imp.native.request !== 'undefined') {
@@ -165,7 +163,7 @@ function bidResponse(buildBidResponse, bid, context) {
   }
 
   const bidResponse = buildBidResponse(bid, context);
-  const {bidRequest} = context;
+  const { bidRequest } = context;
 
   bidResponse.currency = bid?.ext?.cur;
 
@@ -176,7 +174,7 @@ function bidResponse(buildBidResponse, bid, context) {
     });
   }
   if (typeof bid?.ext?.paf?.content_id !== 'undefined') {
-    deepSetValue(bidResponse, 'meta.paf.content_id', bid.ext.paf.content_id)
+    deepSetValue(bidResponse, 'meta.paf.content_id', bid.ext.paf.content_id);
   }
 
   if (bidResponse.mediaType === VIDEO) {
@@ -374,7 +372,7 @@ export const spec = {
 
     const context = buildContext(bidRequests, bidderRequest);
     const url = buildCdbUrl(context);
-    const data = CONVERTER.toORTB({bidderRequest, bidRequests, context});
+    const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
 
     if (data) {
       return {
@@ -392,26 +390,15 @@ export const spec = {
   /**
    * @param {*} response
    * @param {ServerRequest} request
-   * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
+   * @return {Bid[] | {bids: Bid[]}}
    */
   interpretResponse: (response, request) => {
     if (typeof response?.body === 'undefined') {
       return []; // no bid
     }
 
-    const interpretedResponse = CONVERTER.fromORTB({response: response.body, request: request.data});
-    const bids = interpretedResponse.bids || [];
-
-    const fledgeAuctionConfigs = response.body?.ext?.igi?.filter(igi => isArray(igi?.igs))
-      .flatMap(igi => igi.igs);
-    if (fledgeAuctionConfigs?.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
-    }
-
-    return bids;
+    const interpretedResponse = CONVERTER.fromORTB({ response: response.body, request: request.data });
+    return interpretedResponse.bids || [];
   },
 
   /**
@@ -421,7 +408,7 @@ export const spec = {
     const id = readFromAllStorages(BUNDLE_COOKIE_NAME);
     if (id) {
       deleteFromAllStorages(BUNDLE_COOKIE_NAME);
-      ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
+      dep.ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
         null,
         JSON.stringify({ publisherUserId: id }),
         {
@@ -503,7 +490,6 @@ function buildContext(bidRequests, bidderRequest) {
     url: bidderRequest?.refererInfo?.page || '',
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
-    fledgeEnabled: bidderRequest.paapi?.enabled,
     amp: bidRequests.some(bidRequest => bidRequest.params.integrationMode === 'amp'),
     networkId: bidRequests.find(bidRequest => bidRequest.params?.networkId)?.params.networkId,
     publisherId: bidRequests.find(bidRequest => bidRequest.params?.pubid)?.params.pubid,
@@ -637,7 +623,7 @@ function getFloors(bidRequest) {
     if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         floors.banner = {};
-        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes)
+        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes);
         bannerSizes.forEach(bannerSize => {
           floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER });
         });
@@ -645,7 +631,7 @@ function getFloors(bidRequest) {
 
       if (bidRequest.mediaTypes?.video) {
         floors.video = {};
-        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize)
+        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize);
         videoSizes.forEach(videoSize => {
           floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO });
         });
@@ -672,7 +658,7 @@ function createOutstreamVideoRenderer(bid) {
     documentResolver: (_, sourceDocument, renderDocument) => {
       return renderDocument ?? sourceDocument;
     }
-  }
+  };
 
   const render = (_, renderDocument) => {
     const payload = {
@@ -683,11 +669,13 @@ function createOutstreamVideoRenderer(bid) {
     };
 
     const outstreamConfig = bid.ext.videoPlayerConfig;
-    window.CriteoOutStream[bid.ext.videoPlayerType].play(payload, outstreamConfig)
+    window.CriteoOutStream[bid.ext.videoPlayerType].play(payload, outstreamConfig);
   };
 
   const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });
-  renderer.setRender(render);
+  renderer.setRender(
+    (renderBid, renderDocument) => renderBid.renderer.push(() => render(renderBid, renderDocument))
+  );
   return renderer;
 }
 

@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/pubxBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pubxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('pubxAdapter', function () {
@@ -147,7 +147,7 @@ describe('pubxAdapter', function () {
           'test.com'
         ],
       }
-    }
+    };
 
     const bidRequests = [
       {
@@ -187,7 +187,7 @@ describe('pubxAdapter', function () {
           height: 250,
           width: 300,
         }
-      }
+      };
       const result = spec.interpretResponse(serverResponseWithCidEmpty, bidRequests[0]);
       expect(result).to.be.empty;
     });

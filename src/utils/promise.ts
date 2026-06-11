@@ -1,5 +1,5 @@
-import {GreedyPromise, greedySetTimeout} from '../../libraries/greedy/greedyPromise.js';
-import {getGlobal} from '../prebidGlobal.js';
+import { GreedyPromise, greedySetTimeout } from '../../libraries/greedy/greedyPromise.js';
+import { getGlobal } from '../prebidGlobal.js';
 
 declare module '../prebidGlobal' {
   interface PrebidJS {
@@ -14,7 +14,7 @@ declare module '../prebidGlobal' {
   }
 }
 
-export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
+export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout);
 export const PbPromise: typeof Promise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise) as any;
 
 export function delay(delayMs = 0): Promise<void> {
@@ -35,7 +35,7 @@ export type ToPromise<T> = Promise<UnwrapPromise<T>>;
 /**
  * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
  */
-export function defer<T>({promiseFactory = (resolver) => new PbPromise(resolver) as Promise<T>}: {
+export function defer<T>({ promiseFactory = (resolver) => new PbPromise(resolver) as Promise<T> }: {
   promiseFactory?: (...args: ConstructorParameters<typeof Promise<T>>) => Promise<T>
 } = {}): Defer<T> {
   function invoker(delegate) {
@@ -51,5 +51,5 @@ export function defer<T>({promiseFactory = (resolver) => new PbPromise(resolver)
     }),
     resolve: invoker(resolveFn),
     reject: invoker(rejectFn)
-  }
+  };
 }

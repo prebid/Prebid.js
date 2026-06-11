@@ -23,7 +23,7 @@ const COMMON_PARAMS = [
 
 export const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 export const ADAPTER_VERSION = '2.0';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -40,7 +40,7 @@ export const spec = {
       utils.triggerPixel(bid.burl);
     }
   }
-}
+};
 
 function isBidRequestValid(bid) {
   return (isValidInventoryId(bid) && (isValidBannerRequest(bid) || isValidVideoRequest(bid)));
@@ -86,12 +86,12 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
+  const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } });
 
-  const bid = bidRequests.find((b) => b.params.inventoryId)
+  const bid = bidRequests.find((b) => b.params.inventoryId);
 
   if (bid.params.inventoryId) rtbData.ext = {};
-  if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
+  if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId;
 
   const ortb2Data = bidderRequest?.ortb2 || {};
   const bcat = ortb2Data?.bcat || bid.params.bcat || [];
@@ -112,7 +112,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
     data: rtbData
-  }
+  };
 }
 
 function interpretResponse(response, request) {
@@ -135,14 +135,14 @@ const CONVERTER = ortbConverter({
     [VIDEO, BANNER].forEach(namespace => {
       COMMON_PARAMS.forEach(param => {
         if (bidRequest.params.hasOwnProperty(param)) {
-          utils.deepSetValue(imp, `${namespace}.${param}`, bidRequest.params[param])
+          utils.deepSetValue(imp, `${namespace}.${param}`, bidRequest.params[param]);
         }
-      })
-    })
+      });
+    });
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const {bidRequest} = context;
+    const { bidRequest } = context;
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.mediaType === BANNER) {
       bidResponse.ad = bid.adm;
@@ -160,7 +160,7 @@ const CONVERTER = ortbConverter({
         let videoParams = bidRequest.mediaTypes[VIDEO];
         if (videoParams) {
           videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+          bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } };
         }
         orig(imp, bidRequest, context);
       },

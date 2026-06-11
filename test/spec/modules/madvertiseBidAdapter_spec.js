@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { config } from 'src/config';
 import * as utils from 'src/utils';
-import {spec} from 'modules/madvertiseBidAdapter';
+import { spec } from 'modules/madvertiseBidAdapter';
 
 describe('madvertise adapater', () => {
   describe('Test validate req', () => {
@@ -119,7 +119,7 @@ describe('madvertise adapater', () => {
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).to.contain(`&gdpr=1`);
       expect(req[0].url).to.contain(`&consent[0][format]=iab`);
-      expect(req[0].url).to.contain(`&consent[0][value]=CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA`)
+      expect(req[0].url).to.contain(`&consent[0][value]=CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA`);
     });
 
     it('minimum request without gdpr consent', () => {
@@ -135,7 +135,7 @@ describe('madvertise adapater', () => {
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).not.to.contain(`&gdpr=1`);
       expect(req[0].url).not.to.contain(`&consent[0][format]=`);
-      expect(req[0].url).not.to.contain(`&consent[0][value]=`)
+      expect(req[0].url).not.to.contain(`&consent[0][value]=`);
     });
   });
 
@@ -155,19 +155,21 @@ describe('madvertise adapater', () => {
           age: 25,
         }
       };
-      const resp = spec.interpretResponse({body: {
-        requestId: 'REQUEST_ID',
-        cpm: 1,
-        ad: '<html><h3>I am an ad</h3></html>',
-        Width: 320,
-        height: 50,
-        creativeId: 'CREATIVE_ID',
-        dealId: 'DEAL_ID',
-        ttl: 180,
-        currency: 'EUR',
-        netRevenue: true,
-        adomain: ['madvertise.com']
-      }}, {bidId: bid.bidId});
+      const resp = spec.interpretResponse({
+        body: {
+          requestId: 'REQUEST_ID',
+          cpm: 1,
+          ad: '<html><h3>I am an ad</h3></html>',
+          Width: 320,
+          height: 50,
+          creativeId: 'CREATIVE_ID',
+          dealId: 'DEAL_ID',
+          ttl: 180,
+          currency: 'EUR',
+          netRevenue: true,
+          adomain: ['madvertise.com']
+        }
+      }, { bidId: bid.bidId });
 
       expect(resp).to.exist.and.to.be.a('array');
       expect(resp[0]).to.have.property('requestId', bid.bidId);
@@ -197,7 +199,7 @@ describe('madvertise adapater', () => {
           age: 25,
         }
       };
-      const resp = spec.interpretResponse({body: null}, {bidId: bid.bidId});
+      const resp = spec.interpretResponse({ body: null }, { bidId: bid.bidId });
 
       expect(resp).to.exist.and.to.be.a('array').that.is.empty;
     });

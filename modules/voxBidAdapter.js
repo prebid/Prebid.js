@@ -1,8 +1,8 @@
-import {_map, isArray} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { _map, isArray } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
+import { createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams } from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -39,7 +39,7 @@ function buildBidRequests(validBidRequests, bidderRequest) {
     };
 
     return bidRequest;
-  })
+  });
 }
 
 function buildBid(bidData) {
@@ -54,8 +54,7 @@ function buildBid(bidData) {
     mediaType: BANNER,
     ttl: TTL,
     content: bidData.content,
-    meta: {
-      advertiserDomains: bidData.advertiserDomains || []}
+    meta: { advertiserDomains: bidData.advertiserDomains || [] }
   };
 
   if (bidData.placement === 'video') {
@@ -186,7 +185,7 @@ export const spec = {
       options: {
         contentType: 'application/json'
       }
-    }
+    };
   },
 
   /**
@@ -214,5 +213,5 @@ export const spec = {
     }
   }
 
-}
+};
 registerBidder(spec);

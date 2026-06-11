@@ -12,7 +12,7 @@ import {
   triggerPixel
 } from './utils.js';
 
-import {auctionManager} from './auctionManager.js';
+import { auctionManager } from './auctionManager.js';
 import {
   NATIVE_ASSET_TYPES,
   NATIVE_IMAGE_TYPES,
@@ -20,24 +20,24 @@ import {
   NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
   PREBID_NATIVE_DATA_KEYS_TO_ORTB
 } from './constants.js';
-import {NATIVE} from './mediaTypes.js';
-import {getRenderingData} from './adRendering.js';
-import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
-import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
-import type {Link, NativeRequest, NativeResponse} from "./types/ortb/native.d.ts";
-import type {Size} from "./types/common.d.ts";
-import type {Ext} from "./types/ortb/common.d.ts";
-import type {BidResponse, NativeBidResponse} from "./bidfactory.ts";
-import type {AdUnit} from "./adUnits.ts";
+import { NATIVE } from './mediaTypes.js';
+import { getRenderingData } from './adRendering.js';
+import { getCreativeDefaultRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
+import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_VIEWABLE, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS } from './eventTrackers.js';
+import type { Link, NativeRequest, NativeResponse } from "./types/ortb/native.d.ts";
+import type { Size } from "./types/common.d.ts";
+import type { Ext } from "./types/ortb/common.d.ts";
+import type { BidResponse, NativeBidResponse } from "./bidfactory.ts";
+import type { AdUnit } from "./adUnits.ts";
 
-type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
+type LegacyAssets = Omit<{ [K in keyof (typeof NATIVE_KEYS)]: unknown }, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
 type LegacyImageAssets = { icon: unknown, image: unknown };
 
 type LegacyImageAssetResponse = {
   url: string;
   width: number;
   height: number;
-}
+};
 
 export type LegacyNativeAssetsResponse = {
   [K in keyof Omit<LegacyAssets, keyof LegacyImageAssets>]?: string;
@@ -67,7 +67,7 @@ declare module './bidfactory' {
 
 type LegacyAssetRequest = {
   required?: boolean;
-}
+};
 
 export type LegacyNativeRequest = {
   privacyLink?: LegacyAssetRequest;
@@ -90,7 +90,7 @@ export type LegacyNativeRequest = {
       ratio_height: number;
     }[];
   }
-}
+};
 
 export interface NativeMediaType extends LegacyNativeRequest {
   /**
@@ -224,7 +224,7 @@ export function isOpenRTBBidRequestValid(ortb: NativeRequest) {
     return false;
   }
 
-  return assets.every(asset => isOpenRTBAssetValid(asset))
+  return assets.every(asset => isOpenRTBAssetValid(asset));
 }
 
 function isOpenRTBAssetValid(asset: NativeRequest['assets'][0]) {
@@ -282,7 +282,7 @@ export const nativeAdUnit = adUnit => {
   const mediaType = adUnit.mediaType === 'native';
   const mediaTypes = adUnit?.mediaTypes?.native;
   return mediaType || mediaTypes;
-}
+};
 export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
@@ -293,10 +293,10 @@ export const hasNonNativeBidder = adUnit =>
  * bid Native bid to validate
  * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
+export function nativeBidIsValid(bid, { index = auctionManager.index } = {}) {
   const adUnit = index.getAdUnit(bid);
   if (!adUnit) { return false; }
-  const ortbRequest = adUnit.nativeOrtbRequest
+  const ortbRequest = adUnit.nativeOrtbRequest;
   const ortbResponse = bid.native?.ortb || toOrtbNativeResponse(bid.native, ortbRequest);
   return isNativeOpenRTBBidValid(ortbResponse, ortbRequest);
 }
@@ -350,14 +350,15 @@ export function fireNativeTrackers(message, bidResponse) {
   if (message.action === 'click') {
     fireClickTrackers(nativeResponse, message?.assetId);
   } else {
-    fireImpressionTrackers(nativeResponse);
+    fireImpressionTrackers(nativeResponse, bidResponse);
   }
   return message.action;
 }
 
-export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
-  let {[TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = []} = parseEventTrackers(
-    nativeResponse.eventtrackers || []
+export function fireImpressionTrackers(nativeResponse, bidResponse, { runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel } = {}) {
+  const filteredEventTrackers = filterEventTrackers(nativeResponse, bidResponse);
+  let { [TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = [] } = parseEventTrackers(
+    filteredEventTrackers || []
   )[EVENT_TYPE_IMPRESSION] || {};
 
   if (nativeResponse.imptrackers) {
@@ -375,7 +376,7 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
+export function fireClickTrackers(nativeResponse, assetId = null, { fetchURL = triggerPixel } = {}) {
   // legacy click tracker
   if (!assetId) {
     (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
@@ -386,7 +387,7 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
       .filter(a => a.link)
       .reduce((map, asset) => {
         map[asset.id] = asset.link;
-        return map
+        return map;
       }, {});
     const masterClickTrackers = nativeResponse.link?.clicktrackers || [];
     const assetLink = assetIdLinkMap[assetId];
@@ -396,6 +397,20 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
     }
     clickTrackers.forEach(url => fetchURL(url));
   }
+}
+
+export function filterEventTrackers(nativeResponse, bid) {
+  const DEFAULT_ALLOWED_TRACKERS = [
+    { event: EVENT_TYPE_IMPRESSION, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
+    { event: EVENT_TYPE_VIEWABLE, methods: [TRACKER_METHOD_IMG, TRACKER_METHOD_JS] },
+  ];
+  const mediaTypes = auctionManager.index.getMediaTypes(bid) || {};
+  const nativeMediaType = mediaTypes.native || {};
+  const requestEventTrackers = nativeMediaType.ortb?.eventtrackers || DEFAULT_ALLOWED_TRACKERS;
+
+  const { eventtrackers = [] } = nativeResponse || {};
+
+  return eventtrackers.filter(tracker => requestEventTrackers.some(requestTracker => requestTracker.event === tracker.event && requestTracker.methods.includes(tracker.method)));
 }
 
 export function setNativeResponseProperties(bid, adUnit) {
@@ -423,7 +438,7 @@ function getNativeAssets(nativeProps, keys, ext = false) {
       if (ext === false && key === 'ext') {
         assets.push(...getNativeAssets(value, keys, true));
       } else if (ext || NATIVE_KEYS.hasOwnProperty(key)) {
-        assets.push({key, value: getAssetValue(value)});
+        assets.push({ key, value: getAssetValue(value) });
       }
     });
   return assets;
@@ -443,7 +458,7 @@ export function getNativeRenderingData(bid, adUnit, keys) {
   return data;
 }
 
-function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
+function assetsMessage(data, adObject, keys, { index = auctionManager.index } = {}) {
   const msg: any = {
     message: 'assetResponse',
     adId: data.adId,
@@ -454,10 +469,10 @@ function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}
     // include it in full ("all assets") together with the renderer.
     // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
     msg.native = Object.assign({}, renderData);
-    msg.renderer = getCreativeRendererSource(adObject);
+    msg.renderer = getCreativeDefaultRendererSource(adObject);
     msg.rendererVersion = PUC_MIN_VERSION;
     if (keys != null) {
-      renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
+      renderData.assets = renderData.assets.filter(({ key }) => keys.includes(key));
     }
   } else {
     renderData = getNativeRenderingData(adObject, index.getAdUnit(adObject), keys);
@@ -527,7 +542,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
     if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
       ortbAsset.data = {
         type: NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]
-      }
+      };
       if (asset.len) {
         ortbAsset.data.len = asset.len;
       }
@@ -535,7 +550,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
     } else if (key === 'icon' || key === 'image') {
       ortbAsset.img = {
         type: key === 'icon' ? NATIVE_IMAGE_TYPES.ICON : NATIVE_IMAGE_TYPES.MAIN,
-      }
+      };
       // if min_width and min_height are defined in aspect_ratio, they are preferred
       if (asset.aspect_ratios) {
         if (!isArray(asset.aspect_ratios)) {
@@ -556,7 +571,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
           if (aspectRatios.length > 0) {
             ortbAsset.img.ext = {
               aspectratios: aspectRatios
-            }
+            };
           }
         }
       }
@@ -578,7 +593,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
         // in openRTB, len is required for titles, while in legacy prebid was not.
         // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
         len: asset.len || 140
-      }
+      };
     // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
       ortbAsset.ext = asset;
@@ -624,22 +639,22 @@ export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
       const title = {
         required: asset.required ? Boolean(asset.required) : false,
         len: asset.title.len
-      }
+      };
       oldNativeObject.title = title;
     } else if (asset.img) {
       const image: any = {
         required: asset.required ? Boolean(asset.required) : false,
-      }
+      };
       if (asset.img.w && asset.img.h) {
         image.sizes = [asset.img.w, asset.img.h];
       } else if (asset.img.wmin && asset.img.hmin) {
-        const scale = gcd(asset.img.wmin, asset.img.hmin)
+        const scale = gcd(asset.img.wmin, asset.img.hmin);
         image.aspect_ratios = [{
           min_width: asset.img.wmin,
           min_height: asset.img.hmin,
           ratio_width: asset.img.wmin / scale,
           ratio_height: asset.img.hmin / scale
-        }]
+        }];
       }
 
       if (asset.img.type === NATIVE_IMAGE_TYPES.MAIN) {
@@ -652,7 +667,7 @@ export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
       const prebidAssetName = Object.keys(PREBID_NATIVE_DATA_KEYS_TO_ORTB).find(k => PREBID_NATIVE_DATA_KEYS_TO_ORTB[k] === assetType);
       oldNativeObject[prebidAssetName] = {
         required: asset.required ? Boolean(asset.required) : false,
-      }
+      };
       if (asset.data.len) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
@@ -708,7 +723,7 @@ export function legacyPropertiesToOrtbNative(legacyNative: LegacyNativeResponse)
   const response: NativeResponse = {
     link: {} as Link,
     eventtrackers: []
-  }
+  };
   Object.entries(legacyNative).forEach(([key, value]) => {
     switch (key) {
       case 'clickUrl':
@@ -765,7 +780,7 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
           titleAsset.title = {
             text: value
           };
-        })
+        });
         break;
       case 'image':
       case 'icon':
@@ -774,7 +789,7 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
           imageAsset.img = {
             url: value
           };
-        })
+        });
         break;
       default:
         if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
@@ -782,7 +797,7 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
             dataAsset.data = {
               value
             };
-          })
+          });
         }
         break;
     }

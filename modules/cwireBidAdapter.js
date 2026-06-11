@@ -2,7 +2,6 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { getStorageManager } from "../src/storageManager.js";
 import { BANNER } from "../src/mediaTypes.js";
 import {
-  generateUUID,
   getParameterByName,
   isNumber,
   logError,
@@ -12,6 +11,7 @@ import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingC
 import { hasPurpose1Consent } from "../src/utils/gdpr.js";
 import { sendBeacon } from "../src/ajax.js";
 import { isAutoplayEnabled } from "../libraries/autoplayDetection/autoplay.js";
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -27,11 +27,6 @@ export const BID_ENDPOINT = "https://prebid.cwi.re/v1/bid";
 export const EVENT_ENDPOINT = "https://prebid.cwi.re/v1/event";
 export const GVL_ID = 1081;
 
-/**
- * Allows limiting ad impressions per site render. Unique per prebid instance ID.
- */
-export const pageViewId = generateUUID();
-
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
@@ -41,7 +36,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
  */
 function slotDimensions(bid) {
   const adUnitCode = bid.adUnitCode;
-  const slotEl = document.getElementById(adUnitCode);
+  const slotEl = getAdUnitElement(bid);
 
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`);
@@ -248,7 +243,7 @@ export const spec = {
       slots: processed,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
-      pageViewId: pageViewId,
+      pageViewId: bidderRequest.pageViewId,
       networkBandwidth: getConnectionDownLink(window.navigator),
       sdk: {
         version: "$prebid.version$",

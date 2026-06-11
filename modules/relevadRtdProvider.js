@@ -6,11 +6,11 @@
  * @requires module:modules/realTimeData
  */
 
-import {deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { deepSetValue, isEmpty, logError, mergeDeep } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'RelevadRTDModule';
@@ -39,7 +39,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
   moduleConfig.params = moduleConfig.params || {};
   moduleConfig.params.partnerid = moduleConfig.params.partnerid ? moduleConfig.params.partnerid : 1;
 
-  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
+  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params]; })]; });
   serverData.page = moduleConfig.params.actualUrl || getRefererInfo().page || '';
   const url = (RELEVAD_API_DOMAIN + '/apis/rweb2/' +
                 '?url=' + encodeURIComponent(serverData.page) +
@@ -88,7 +88,7 @@ export function setGlobalOrtb2(ortb2, rtdData) {
     const addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(addOrtb2) && mergeDeep(ortb2, addOrtb2);
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
@@ -116,7 +116,7 @@ function composeOrtb2Data(rtdData, prefix) {
     const contentSegments = {
       name: 'relevad',
       ext: { segtax: content.segtax },
-      segment: content.segs.map(x => { return {id: x}; })
+      segment: content.segs.map(x => { return { id: x }; })
     };
     deepSetValue(addOrtb2, prefix + '.content.data', [contentSegments]);
   }
@@ -142,7 +142,7 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
     bidderOrtbFragment[bidder] = bidderOrtbFragment[bidder] || {};
     mergeDeep(bidderOrtbFragment[bidder], addOrtb2);
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
@@ -174,7 +174,7 @@ function filterByScore(dict, minscore) {
  * @return     {object}  Filtered RTD
  */
 function getFiltered(data, minscore) {
-  const relevadData = {'segments': []};
+  const relevadData = { 'segments': [] };
 
   minscore = minscore && typeof minscore === 'number' ? minscore : 30;
 
@@ -182,11 +182,11 @@ function getFiltered(data, minscore) {
   const pcats = filterByScore(data.pcats, minscore) || cats;
   const scats = filterByScore(data.scats, minscore) || pcats;
   const cattax = (data.cattax || data.cattax === undefined) ? data.cattax : CATTAX_IAB;
-  relevadData.categories = {cat: cats, pagecat: pcats, sectioncat: scats, cattax: cattax};
+  relevadData.categories = { cat: cats, pagecat: pcats, sectioncat: scats, cattax: cattax };
 
   const contsegs = filterByScore(data.contsegs, minscore);
   const segtax = data.segtax ? data.segtax : SEGTAX_IAB;
-  relevadData.content = {segs: contsegs, segtax: segtax};
+  relevadData.content = { segs: contsegs, segtax: segtax };
 
   try {
     if (data && data.segments) {
@@ -224,25 +224,14 @@ export function addRtdData(reqBids, data, moduleConfig) {
   // Add RTD data to the global ORTB fragments when no whitelists present
   noWhitelists && setGlobalOrtb2(reqBids.ortb2Fragments?.global, relevadData);
 
-  // Target GAM/GPT
+  // Add ad server targeting for Prebid targeting methods
   const setgpt = moduleConfig.params.setgpt || !moduleConfig.params.hasOwnProperty('setgpt');
-  if (moduleConfig.dryrun || (typeof window.googletag !== 'undefined' && setgpt)) {
-    try {
-      if (window.googletag && window.googletag.pubads && (typeof window.googletag.pubads === 'function')) {
-        window.googletag.pubads().getSlots().forEach(function (n) {
-          if (typeof n.setTargeting !== 'undefined' && relevadList && relevadList.length > 0) {
-            n.setTargeting('relevad_rtd', relevadList);
-          }
-        });
-      }
-    } catch (e) {
-      logError(e);
-    }
-  }
+  const shouldSetAdserverTargeting = setgpt && !isEmpty(relevadList);
 
   // Set per-bidder RTD
   const adUnits = reqBids.adUnits;
   adUnits.forEach(adUnit => {
+    shouldSetAdserverTargeting && deepSetValue(adUnit, 'adserverTargeting.relevad_rtd', relevadList);
     noWhitelists && deepSetValue(adUnit, 'ortb2Imp.ext.data.relevad_rtd', relevadList);
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
@@ -283,7 +272,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
     });
   });
 
-  serverData = {...serverData, ...relevadData};
+  serverData = { ...serverData, ...relevadData };
   return adUnits;
 }
 
@@ -329,7 +318,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
   });
 
   entries(adunitObj).forEach(([adunitCode, bidsReceived]) => {
-    adunits.push({code: adunitCode, bids: bidsReceived});
+    adunits.push({ code: adunitCode, bids: bidsReceived });
   });
 
   const data = {
@@ -341,7 +330,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     cid: encodeURIComponent(config.params?.partnerid || ''),
     gdpra: encodeURIComponent(userConsent?.gdpr?.gdprApplies || ''),
     gdprc: encodeURIComponent(userConsent?.gdpr?.consentString || ''),
-  }
+  };
   if (!config.dryrun) {
     data.page = serverData?.page || config?.params?.actualUrl || getRefererInfo().page || '';
   }

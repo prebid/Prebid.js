@@ -28,6 +28,7 @@ export const spec = {
     { code: 'monetixads', gvlid: 1281 },
     { code: 'netaddiction', gvlid: 1281 },
     { code: 'adt', gvlid: 779 },
+    { code: 'adrubi', gvlid: 779 },
     { code: 'yobee', gvlid: 1281 }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -199,7 +200,7 @@ export const spec = {
           } else if (resbid.mediaType === 'banner') {
             resbid.ad = bid.party_tag;
           } else if (resbid.mediaType === 'native') {
-            resbid.native = interpretNativeAd(bid.party_tag)
+            resbid.native = interpretNativeAd(bid.party_tag);
           };
 
           const context = deepAccess(bidRequest, 'mediatype.context');
@@ -300,7 +301,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
     if (bidRequest.getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
-        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
+        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
         bannerSizes.forEach(bannerSize => {
           slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER });
         });
@@ -308,7 +309,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
-        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
+        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
         videoSizes.forEach(videoSize => {
           slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO });
         });
@@ -321,7 +322,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
 
       if (Object.keys(slotFloors).length > 0) {
         if (!slot) {
-          slot = {}
+          slot = {};
         }
         Object.assign(slot, {
           floors: slotFloors
@@ -364,8 +365,11 @@ function buildRequestObject(bid) {
     reqObj.mediatype = bid.mediaTypes.native;
   }
 
+  reqObj.ext = reqObj.ext || {};
+
   if (deepAccess(bid, 'ortb2Imp.ext')) {
-    reqObj.ext = bid.ortb2Imp.ext;
+    Object.assign(reqObj.ext, bid.ortb2Imp.ext);
+    reqObj.ext.ortb2Imp = bid.ortb2Imp;
   }
 
   reqObj.id = getBidIdParameter('bidId', bid);
@@ -393,7 +397,7 @@ function concatSizes(bid) {
           if (isArray(currSize[0])) {
             currSize.forEach(function (childSize) {
               acc.push({ w: childSize[0], h: childSize[1] });
-            })
+            });
           }
         }
         return acc;

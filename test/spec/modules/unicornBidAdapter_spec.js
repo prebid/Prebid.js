@@ -1,8 +1,8 @@
-import {assert, expect} from 'chai';
+import { assert, expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {spec} from 'modules/unicornBidAdapter.js';
+import { spec } from 'modules/unicornBidAdapter.js';
 import * as _ from 'lodash';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const bidRequests = [
   {
@@ -505,7 +505,7 @@ describe('unicornBidAdapterTest', () => {
       delete data['id'];
       data['imp'].forEach(imp => {
         delete imp['id'];
-      })
+      });
       delete data['user']['id'];
       return data;
     };
@@ -535,7 +535,7 @@ describe('unicornBidAdapterTest', () => {
         id5id: {
           uid: 'id5_XXXXX'
         }
-      }
+      };
       const req = spec.buildRequests(_validBidRequests, bidderRequest);
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest));
@@ -548,9 +548,9 @@ describe('unicornBidAdapterTest', () => {
             }
           ]
         }
-      ]
+      ];
       assert.deepStrictEqual(reqData, openRTBRequestData);
-    })
+    });
   });
 
   describe('interpretResponse', () => {

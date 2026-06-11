@@ -56,9 +56,6 @@ export let transmitWithBidRequests = 'allow';
 /** @type {Object<string, any>} */
 export let optimeraTargeting = {};
 
-/** @type {boolean} */
-export let fetchScoreFile = true;
-
 /** @type {RtdSubmodule} */
 export const optimeraSubmodule = {
   name: 'optimeraRTD',
@@ -84,7 +81,6 @@ export function init(moduleConfig) {
     if (_moduleParams.transmitWithBidRequests) {
       transmitWithBidRequests = _moduleParams.transmitWithBidRequests;
     }
-    setScoresURL();
     return true;
   }
   logError('Optimera clientID is missing in the Optimera RTD configuration.');
@@ -111,9 +107,9 @@ export function setScoresURL() {
 
   if (scoresURL !== newScoresURL) {
     scoresURL = newScoresURL;
-    fetchScoreFile = true;
+    return true;
   } else {
-    fetchScoreFile = false;
+    return false;
   }
 }
 
@@ -125,6 +121,12 @@ export function setScoresURL() {
  * @param {object} userConsent
  */
 export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
+  // If setScoresURL returns false, no need to re-fetch the score file
+  if (!setScoresURL()) {
+    callback();
+    return;
+  }
+  // Else, fetch the score file
   const ajax = ajaxBuilder();
   ajax(scoresURL, {
     success: (res, req) => {
@@ -159,6 +161,10 @@ export function setScores(result) {
   let scores = {};
   try {
     scores = JSON.parse(result);
+    let pagelevel;
+    if (scores.pagelevel) {
+      pagelevel = scores.pagelevel;
+    }
     if (device !== 'default' && scores.device && scores.device[device]) {
       scores = scores.device[device];
     }
@@ -167,6 +173,7 @@ export function setScores(result) {
     window.optimera = window.optimera || {};
     window.optimera.data = window.optimera.data || {};
     window.optimera.insights = window.optimera.insights || {};
+    window.optimera.pagelevel = window.optimera.pagelevel || [];
     Object.keys(scores).forEach((key) => {
       if (key !== 'insights') {
         window.optimera.data[key] = scores[key];
@@ -174,6 +181,9 @@ export function setScores(result) {
     });
     if (scores.insights) {
       window.optimera.insights = scores.insights;
+    }
+    if (pagelevel !== undefined) {
+      window.optimera.pagelevel = pagelevel;
     }
   } catch (e) {
     logError('Optimera score file could not be parsed.');

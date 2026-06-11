@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { parseUserAgentDetailed } from '../libraries/userAgentUtils/detailed.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'adWMG';
 const ENDPOINT = 'https://hb.adwmg.com/hb';
@@ -36,7 +36,7 @@ export const spec = {
         if (isNaN(parseFloat(value))) {
           return 0;
         } else return parseFloat(value);
-      }
+      };
 
       const adUnit = {
         code: bidRequest.adUnitCode,
@@ -97,7 +97,7 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT,
         data: JSON.stringify(request)
-      }
+      };
     });
   },
   interpretResponse: (serverResponse) => {

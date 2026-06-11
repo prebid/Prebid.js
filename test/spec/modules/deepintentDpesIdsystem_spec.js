@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { deepintentDpesSubmodule } from 'modules/deepintentDpesIdSystem.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
-const DI_COOKIE_OBJECT = {id: '2cf40748c4f7f60d343336e08f80dc99'};
+const DI_COOKIE_OBJECT = { id: '2cf40748c4f7f60d343336e08f80dc99' };
 const DI_UPDATED_STORAGE = '2cf40748c4f7f60d343336e08f80dc99';
 
 const cookieConfig = {
@@ -22,7 +22,7 @@ const html5Config = {
     name: '_dpes_id',
     expires: 28
   }
-}
+};
 
 describe('Deepintent DPES System', () => {
   describe('Deepintent Dpes Sytsem: test "getId" method', () => {
@@ -44,11 +44,11 @@ describe('Deepintent DPES System', () => {
 
   describe('Deepintent Dpes System : test "decode" method', () => {
     it('Get the correct decoded value for dpes id, if an object is set return object', () => {
-      expect(deepintentDpesSubmodule.decode(DI_COOKIE_OBJECT, cookieConfig)).to.deep.equal({'deepintentId': DI_COOKIE_OBJECT});
+      expect(deepintentDpesSubmodule.decode(DI_COOKIE_OBJECT, cookieConfig)).to.deep.equal({ 'deepintentId': DI_COOKIE_OBJECT });
     });
 
     it('Get the correct decoded value for dpes id, if a string is set return string', () => {
-      expect(deepintentDpesSubmodule.decode(DI_UPDATED_STORAGE, {})).to.deep.equal({'deepintentId': DI_UPDATED_STORAGE});
+      expect(deepintentDpesSubmodule.decode(DI_UPDATED_STORAGE, {})).to.deep.equal({ 'deepintentId': DI_UPDATED_STORAGE });
     });
   });
 
@@ -64,7 +64,7 @@ describe('Deepintent DPES System', () => {
   describe('eid', () => {
     before(() => {
       attachIdSystem(deepintentDpesSubmodule);
-    })
+    });
     it('deepintentId', function() {
       const userId = {
         deepintentId: 'some-random-id-value'
@@ -73,8 +73,8 @@ describe('Deepintent DPES System', () => {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'deepintent.com',
-        uids: [{id: 'some-random-id-value', atype: 3}]
+        uids: [{ id: 'some-random-id-value', atype: 3 }]
       });
     });
-  })
+  });
 });

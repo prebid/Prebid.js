@@ -1,16 +1,17 @@
-import {getDNT} from '../libraries/dnt/index.js';
 import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
   BIDDER_CODE: 'apstream',
   GVLID: 394
 };
-const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: CONSTANTS.BIDDER_CODE });
 
 var dsuModule = (function() {
   'use strict';
@@ -18,7 +19,7 @@ var dsuModule = (function() {
   var DSU_KEY = 'apr_dsu';
   var DSU_VERSION_NUMBER = '1';
   var SIGNATURE_SALT = 'YicAu6ZpNG';
-  var DSU_CREATOR = {'USERREPORT': '1'};
+  var DSU_CREATOR = { 'USERREPORT': '1' };
 
   function stringToU8(str) {
     if (typeof TextEncoder === 'function') {
@@ -335,7 +336,7 @@ function injectPixels(ad, pixels, scripts) {
 }
 
 function getScreenParams() {
-  return `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
+  return `${window.screen.width}x${window.screen.height}@${getDevicePixelRatio(window)}`;
 }
 
 function getBids(bids) {
@@ -391,7 +392,7 @@ function getEndpointsGroups(bidRequests) {
     }
 
     return `https://bapi.userreport.com/v2/${publisherId}/bid`;
-  }
+  };
   bidRequests.forEach(bid => {
     const endpoint = getEndpoint(bid);
     const exist = endpoints.filter(item => item.endpoint.indexOf(endpoint) > -1)[0];
@@ -489,6 +490,6 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse
-}
+};
 
 registerBidder(spec);

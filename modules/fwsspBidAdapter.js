@@ -13,7 +13,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: [ 'freewheel-mrm'], //  aliases for fwssp
+  aliases: ['freewheel-mrm'], //  aliases for fwssp
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -22,7 +22,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId && bid.params.videoAssetId);
+    return !!(bid.params.serverUrl && bid.params.networkId && bid.params.profile && bid.params.siteSectionId);
   },
 
   /**
@@ -47,16 +47,29 @@ export const spec = {
     const buildRequest = (currentBidRequest, bidderRequest) => {
       const globalParams = constructGlobalParams(currentBidRequest);
       const keyValues = constructKeyValues(currentBidRequest, bidderRequest);
-
       const slotParams = constructSlotParams(currentBidRequest);
-      const dataString = constructDataString(globalParams, keyValues, slotParams);
+      const serializedSChain = constructSupplyChain(currentBidRequest, bidderRequest);
+      const dataString = constructDataString(globalParams, keyValues, serializedSChain, slotParams);
       return {
         method: 'GET',
         url: currentBidRequest.params.serverUrl,
         data: dataString,
         bidRequest: currentBidRequest
       };
-    }
+    };
+
+    const constructSupplyChain = (currentBidRequest, bidderRequest) => {
+      // Add schain object
+      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
+      if (!schain) {
+        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
+      }
+      if (!schain) {
+        schain = currentBidRequest.schain;
+      }
+
+      return this.serializeSupplyChain(schain);
+    };
 
     const constructGlobalParams = currentBidRequest => {
       const sdkVersion = getSDKVersion(currentBidRequest);
@@ -66,24 +79,24 @@ export const spec = {
         resp: 'vast4',
         prof: currentBidRequest.params.profile,
         csid: currentBidRequest.params.siteSectionId,
-        caid: currentBidRequest.params.videoAssetId,
+        caid: currentBidRequest.params.videoAssetId ? currentBidRequest.params.videoAssetId : 0,
         pvrn: getRandomNumber(),
         vprn: getRandomNumber(),
         flag: setFlagParameter(currentBidRequest.params.flags),
         mode: currentBidRequest.params.mode ? currentBidRequest.params.mode : 'on-demand',
         vclr: `js-${sdkVersion}-prebid-${prebidVersion}`
       };
-    }
+    };
 
     const getRandomNumber = () => {
       return (new Date().getTime() * Math.random()).toFixed(0);
-    }
+    };
 
     const setFlagParameter = optionalFlags => {
       logInfo('setFlagParameter, optionalFlags: ', optionalFlags);
       const requiredFlags = '+fwssp+emcr+nucr+aeti+rema+exvt+fwpbjs';
       return optionalFlags ? optionalFlags + requiredFlags : requiredFlags;
-    }
+    };
 
     const constructKeyValues = (currentBidRequest, bidderRequest) => {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
@@ -97,7 +110,7 @@ export const spec = {
       if (bidderRequest && bidderRequest.gdprConsent) {
         keyValues._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies;
+          keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
       }
 
@@ -125,23 +138,6 @@ export const spec = {
           keyValues._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content);
         } catch (error) {
           logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error);
-        }
-      }
-
-      // Add schain object
-      let schain = deepAccess(bidderRequest, 'ortb2.source.schain');
-      if (!schain) {
-        schain = deepAccess(bidderRequest, 'ortb2.source.ext.schain');
-      }
-      if (!schain) {
-        schain = currentBidRequest.schain;
-      }
-
-      if (schain) {
-        try {
-          keyValues.schain = JSON.stringify(schain);
-        } catch (error) {
-          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
         }
       }
 
@@ -212,7 +208,7 @@ export const spec = {
         keyValues._fw_is_lat = lmt;
       }
 
-      PRIVACY_VALUES = {}
+      PRIVACY_VALUES = {};
       if (keyValues._fw_coppa != null) {
         PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
       }
@@ -225,7 +221,7 @@ export const spec = {
       }
 
       return keyValues;
-    }
+    };
 
     const constructSlotParams = currentBidRequest => {
       /**
@@ -247,7 +243,7 @@ export const spec = {
         ptgt: 'a',   // Currently only support temporal slot
         slid: currentBidRequest.params.slid ? currentBidRequest.params.slid : 'Preroll_1',
         slau: currentBidRequest.params.slau ? currentBidRequest.params.slau : 'preroll',
-      }
+      };
       const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {};
       const mind = video.minduration || currentBidRequest.params.minD;
       const maxd = video.maxduration || currentBidRequest.params.maxD;
@@ -258,20 +254,36 @@ export const spec = {
       if (maxd) {
         slotParams.maxd = maxd;
       }
-      return slotParams
-    }
+      return slotParams;
+    };
 
-    const constructDataString = (globalParams, keyValues, slotParams) => {
+    const constructDataString = (globalParams, keyValues, serializedSChain, slotParams) => {
       const globalParamsString = appendParams(globalParams) + ';';
-      const keyValuesString = appendParams(keyValues) + ';';
+      // serializedSChain requires special encoding logic as outlined in the ORTB spec https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/supplychainobject.md
+      const keyValuesString = appendParams(keyValues) + serializedSChain + ';';
       const slotParamsString = appendParams(slotParams) + ';';
 
       return globalParamsString + keyValuesString + slotParamsString;
-    }
+    };
 
     return bidRequests.map(function(currentBidRequest) {
       return buildRequest(currentBidRequest, bidderRequest);
     });
+  },
+
+  /**
+   * Serialize a supply chain object to a string uri encoded
+   *
+   * @param {*} schain object
+   */
+  serializeSupplyChain: function(schain) {
+    if (!schain || !schain.nodes) return '';
+    const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return `&schain=${schain.ver},${schain.complete}!` +
+      schain.nodes.map(node => nodesProperties.map(prop =>
+        node[prop] ? encodeURIComponent(node[prop]) : '')
+        .join(','))
+        .join('!');
   },
 
   /**
@@ -398,7 +410,7 @@ export const spec = {
 
     return syncs;
   }
-}
+};
 
 /**
  * Generates structured HTML for FreeWheel MRM ad integration with Prebid.js
@@ -410,8 +422,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true;
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false;
 
   let playerParams = null;
   try {
@@ -484,7 +496,7 @@ function getSdkUrl(bidrequest) {
   const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
-  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
+  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`;
 }
 
 /**

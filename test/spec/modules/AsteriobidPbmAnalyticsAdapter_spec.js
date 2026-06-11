@@ -1,8 +1,8 @@
-import prebidmanagerAnalytics, {storage} from 'modules/AsteriobidPbmAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import prebidmanagerAnalytics, { storage } from 'modules/AsteriobidPbmAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 
 const events = require('src/events');
@@ -100,7 +100,7 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
-    this.timeout(4000)
+    this.timeout(4000);
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -111,7 +111,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
-      prebidmanagerAnalytics.disableAnalytics()
+      prebidmanagerAnalytics.disableAnalytics();
     });
     it('should build utm data from local storage', function () {
       prebidmanagerAnalytics.enableAnalytics({
@@ -133,7 +133,7 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build page info', function () {
     afterEach(function () {
-      prebidmanagerAnalytics.disableAnalytics()
+      prebidmanagerAnalytics.disableAnalytics();
     });
     it('should build page info', function () {
       prebidmanagerAnalytics.enableAnalytics({

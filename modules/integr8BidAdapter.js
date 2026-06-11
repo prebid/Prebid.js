@@ -17,7 +17,7 @@ const SIZE_SEPARATOR = ';';
 const BISKO_ID = 'integr8Id';
 const STORAGE_ID = 'bisko-sid';
 const SEGMENTS = 'integr8Segments';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,

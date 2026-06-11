@@ -1,6 +1,6 @@
-import {deepAccess, logMessage, getBidIdParameter, logError, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, logMessage, getBidIdParameter, logError, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 import {
   fillUsersIds,
@@ -16,7 +16,7 @@ import {
   extractUserSegments,
   interpretResponse
 } from '../libraries/dspxUtils/bidderUtils.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -176,7 +176,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     return handleSyncUrls(syncOptions, serverResponses, gdprConsent);
   }
-}
+};
 
 /**
  * Outstream Render Function
@@ -212,7 +212,7 @@ function outstreamRender(bid) {
       logError('[DSPx][outstreamRender] Error: slot not found');
     }
   } catch (err) {
-    logError('[DSPx][outstreamRender] Error:' + err.message)
+    logError('[DSPx][outstreamRender] Error:' + err.message);
   }
 }
 

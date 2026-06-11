@@ -6,8 +6,8 @@
  */
 
 import { logError, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -25,6 +25,10 @@ const TIME_MAX = Math.pow(2, 48) - 1;
 const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
+
+export const dep = {
+  ajax
+};
 
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
@@ -156,7 +160,7 @@ function syncId(storedId) {
     error: function () {
       logInfo('KinessoId: Sync error for id : ' + storedId);
     }
-  }
+  };
 }
 
 /**
@@ -182,7 +186,7 @@ function encodeId(value) {
  * @return {string}
  */
 function kinessoSyncUrl(accountId, consentData) {
-  const {gdpr, usp: usPrivacyString} = consentData ?? {};
+  const { gdpr, usp: usPrivacyString } = consentData ?? {};
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
     kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
@@ -190,7 +194,7 @@ function kinessoSyncUrl(accountId, consentData) {
   if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
   kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
-  return kinessoSyncUrl
+  return kinessoSyncUrl;
 }
 
 /** @type {Submodule} */
@@ -235,8 +239,8 @@ export const kinessoIdSubmodule = {
     const kinessoIdPayload = {};
     kinessoIdPayload.id = knnsoId;
     const payloadString = JSON.stringify(kinessoIdPayload);
-    ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, {method: 'POST', withCredentials: true});
-    return {'id': knnsoId};
+    dep.ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
+    return { 'id': knnsoId };
   },
   eids: {
     'kpuid': {

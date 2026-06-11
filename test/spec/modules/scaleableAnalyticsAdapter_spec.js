@@ -55,7 +55,7 @@ describe('Scaleable Analytics Adapter', function() {
 
   const bidObj = MOCK_DATA.bidderRequests[0].bids[0];
 
-  const expectedBidRequests = [{bidder: 'scaleable_adunit_request'}].concat([
+  const expectedBidRequests = [{ bidder: 'scaleable_adunit_request' }].concat([
     {
       bidder: bidObj.bidder,
       params: bidObj.params
@@ -69,7 +69,7 @@ describe('Scaleable Analytics Adapter', function() {
       code: bidObj.adUnitCode,
       bidRequests: expectedBidRequests
     }]
-  }
+  };
 
   MOCK_DATA.expectedBidTimeout = {
     [MOCK_DATA.bidTimeout[0].adUnitCode]: [{
@@ -97,7 +97,7 @@ describe('Scaleable Analytics Adapter', function() {
       bidData: MOCK_DATA.expectedBidTimeout[MOCK_DATA.bidTimeout[0].adUnitCode],
       code: MOCK_DATA.bidTimeout[0].adUnitCode
     }]
-  }
+  };
 
   describe('Event Handling', function() {
     beforeEach(function() {

@@ -1,10 +1,17 @@
-import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
-import {expect} from 'chai';
-import {TARGETING_KEYS} from 'src/constants.js';
+import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
+import { expect } from 'chai';
+import { TARGETING_KEYS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
-import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
-import { getWinDimensions, internal } from '../../src/utils.js';
+import {
+  binarySearch,
+  deepEqual,
+  encodeMacroURI,
+  getWinDimensions,
+  memoize,
+  sizesToSizeTuples,
+  waitForElementToLoad
+} from 'src/utils.js';
+import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.js';
 import * as winDimensions from '../../src/utils/winDimensions.js';
 
 var assert = require('assert');
@@ -53,7 +60,7 @@ describe('Utils', function () {
 
     afterEach(function() {
       delete window.$sf;
-    })
+    });
 
     it('should return true if window.$sf is accessible', function () {
       window.$sf = $sf;
@@ -198,12 +205,12 @@ describe('Utils', function () {
         in: '1x',
         out: []
       }
-    }).forEach(([t, {in: input, out}]) => {
+    }).forEach(([t, { in: input, out }]) => {
       it(`can parse ${t}`, () => {
         expect(sizesToSizeTuples(input)).to.eql(out);
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
@@ -285,13 +292,13 @@ describe('Utils', function () {
     it('should return size string with input single size array', function () {
       var size = [300, 250];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('should return size string with input single size array', function () {
       var size = ['300', '250'];
       var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
-      assert.deepEqual(output, {w: 300, h: 250});
+      assert.deepEqual(output, { w: 300, h: 250 });
     });
 
     it('return undefined using string input', function () {
@@ -331,57 +338,17 @@ describe('Utils', function () {
     });
   });
 
-  describe('isA', function () {
-    it('should return true with string object', function () {
-      var output = utils.isA(obj_string, type_string);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with object', function () {
-      var output = utils.isA(obj_object, type_string);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with object', function () {
-      var output = utils.isA(obj_object, type_object);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_object);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with array object', function () {
-      var output = utils.isA(obj_array, type_array);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_function);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with function', function () {
-      var output = utils.isA(obj_function, type_function);
-      assert.deepEqual(output, true);
-    });
-
-    it('should return false with number', function () {
-      var output = utils.isA(obj_function, type_number);
-      assert.deepEqual(output, false);
-    });
-
-    it('should return true with number', function () {
-      var output = utils.isA(obj_number, type_number);
-      assert.deepEqual(output, true);
-    });
-  });
-
   describe('isFn', function () {
-    it('should return true with input function', function () {
-      var output = utils.isFn(obj_function);
-      assert.deepEqual(output, true);
+    Object.entries({
+      'vanilla function': () => null,
+      'async function': async () => null,
+      'generator function': function * () {},
+      'async generator function': async function * () {}
+    }).forEach(([t, fn]) => {
+      it(`should return true with input ${t}`, function () {
+        var output = utils.isFn(fn);
+        assert.deepEqual(output, true);
+      });
     });
 
     it('should return false with input string', function () {
@@ -624,7 +591,7 @@ describe('Utils', function () {
       }
       assert(callback.notCalled);
       delayed(3);
-      assert(callback.called)
+      assert(callback.called);
       assert.equal(callback.firstCall.args[0], 3);
     });
   });
@@ -705,7 +672,7 @@ describe('Utils', function () {
     it('deep copies objects', function () {
       const adUnit = [{
         code: 'swan',
-        mediaTypes: {video: {context: 'outstream'}},
+        mediaTypes: { video: { context: 'outstream' } },
         renderer: {
           render: bid => player.render(bid),
           url: '/video/renderer.js'
@@ -820,7 +787,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { noDecodeWholeURL: true });
       });
 
       it('extracts the search query', function () {
@@ -840,7 +807,7 @@ describe('Utils', function () {
           hostname: 'example.com',
           port: 3000,
           pathname: '/pathname/',
-          search: {foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx'},
+          search: { foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx' },
           hash: 'hash'
         })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test&bar=foo%26foo%3Dxxx#hash');
       });
@@ -856,7 +823,7 @@ describe('Utils', function () {
       let parsed;
 
       beforeEach(function () {
-        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', { decodeSearchAsString: true });
       });
 
       it('extracts the search query', function () {
@@ -877,9 +844,9 @@ describe('Utils', function () {
       ].forEach(([input, expected]) => {
         it(`can encode ${input} -> ${expected}`, () => {
           expect(encodeMacroURI(input)).to.eql(expected);
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('insertElement', function () {
@@ -933,6 +900,10 @@ describe('Utils', function () {
       userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36';
       expect(utils.isSafariBrowser()).to.equal(false);
     });
+    it('does not flag Chromium', function () {
+      userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/124.0.0.0 Safari/537.36';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
     it('does not flag Chrome iOS', function () {
       userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
       expect(utils.isSafariBrowser()).to.equal(false);
@@ -944,6 +915,66 @@ describe('Utils', function () {
     it('does not flag Windows Edge', function () {
       userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43';
       expect(utils.isSafariBrowser()).to.equal(false);
+    });
+  });
+
+  describe('isFirefoxBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Firefox on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('properly detects Firefox on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/125.0 Mobile/15E148 Safari/605.1.15';
+      expect(utils.isFirefoxBrowser()).to.equal(true);
+    });
+
+    it('does not flag Safari', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
+      expect(utils.isFirefoxBrowser()).to.equal(false);
+    });
+  });
+
+  describe('isChromeIOSBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects Chrome on iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
+      expect(utils.isChromeIOSBrowser()).to.equal(true);
+    });
+
+    it('does not flag Chrome on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
+    });
+
+    it('does not flag Opera on desktop', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 OPR/130.0.0.0';
+      expect(utils.isChromeIOSBrowser()).to.equal(false);
     });
   });
 
@@ -1102,15 +1133,15 @@ describe('Utils', function () {
             { minViewPort: [1000, 0], sizes: [[1000, 300], [728, 90]] },
           ],
         },
-      }
+      };
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
     it('should check types if {matchTypes: true}', () => {
       function Typed(obj) {
         Object.assign(this, obj);
       }
-      const obj = {key: 'value'};
-      expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
+      const obj = { key: 'value' };
+      expect(deepEqual({ outer: obj }, { outer: new Typed(obj) }, { checkTypes: true })).to.be.false;
     });
     it('should work when adding properties to the prototype of Array', () => {
       after(function () {
@@ -1153,7 +1184,7 @@ describe('Utils', function () {
     function delay(delay = 0) {
       return new Promise((resolve) => {
         window.setTimeout(resolve, delay);
-      })
+      });
     }
 
     beforeEach(() => {
@@ -1174,7 +1205,7 @@ describe('Utils', function () {
         element.dispatchEvent(new Event(event));
         return delay().then(() => {
           expect(callbacks).to.equal(1);
-        })
+        });
       });
     });
   });
@@ -1206,13 +1237,13 @@ describe('Utils', function () {
 
   describe('convertObjectToArray', () => {
     it('correctly converts object to array', () => {
-      const obj = {key: 1, anotherKey: 'fred', third: ['fred'], fourth: {sub: {obj: 'test'}}};
+      const obj = { key: 1, anotherKey: 'fred', third: ['fred'], fourth: { sub: { obj: 'test' } } };
       const array = utils.convertObjectToArray(obj);
 
-      expect(JSON.stringify(array[0])).equal(JSON.stringify({'key': 1}))
-      expect(JSON.stringify(array[1])).equal(JSON.stringify({'anotherKey': 'fred'}))
-      expect(JSON.stringify(array[2])).equal(JSON.stringify({'third': ['fred']}))
-      expect(JSON.stringify(array[3])).equal(JSON.stringify({'fourth': {sub: {obj: 'test'}}}));
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }));
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }));
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }));
+      expect(JSON.stringify(array[3])).equal(JSON.stringify({ 'fourth': { sub: { obj: 'test' } } }));
       expect(array.length).to.equal(4);
     });
   });
@@ -1246,7 +1277,7 @@ describe('Utils', function () {
       expect(result).to.equal(`{"key1":"val1","key2":{"key3":100,"key4":true}}`);
     });
     it('return empty string for stringify errors', () => {
-      const jsonObj = {k: 2n};
+      const jsonObj = { k: 2n };
       const result = utils.safeJSONEncode(jsonObj);
       expect(result).to.equal('');
     });
@@ -1387,7 +1418,7 @@ describe('memoize', () => {
   });
 
   it('allows setting cache keys', () => {
-    const mem = memoize(fn, (...args) => args.join(','))
+    const mem = memoize(fn, (...args) => args.join(','));
     mem('one', 'two');
     mem('one', 'three');
     expect(mem('one', 'three')).to.eql(['one', 'three']);
@@ -1422,7 +1453,7 @@ describe('memoize', () => {
           [100, 5]
         ]
       }
-    ].forEach(({arr, tests}) => {
+    ].forEach(({ arr, tests }) => {
       describe(`on ${arr}`, () => {
         tests.forEach(([el, pos]) => {
           it(`finds index for ${el} => ${pos}`, () => {
@@ -1430,9 +1461,9 @@ describe('memoize', () => {
           });
         });
       });
-    })
-  })
-})
+    });
+  });
+});
 
 describe('getWinDimensions', () => {
   let clock;
@@ -1446,7 +1477,7 @@ describe('getWinDimensions', () => {
   });
 
   it('should clear cache once per 20ms', () => {
-    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal, 'reset');
+    const resetWinDimensionsSpy = sinon.spy(winDimensions.internal.winDimensions, 'reset');
     expect(getWinDimensions().innerHeight).to.exist;
     clock.tick(1);
     expect(getWinDimensions().innerHeight).to.exist;
@@ -1458,5 +1489,102 @@ describe('getWinDimensions', () => {
     clock.tick(18);
     expect(getWinDimensions().innerHeight).to.exist;
     sinon.assert.calledTwice(resetWinDimensionsSpy);
+  });
+});
+
+describe('polite sync helpers', () => {
+  let originalScheduler;
+  let originalRequestIdleCallback;
+  let originalFetch;
+  let originalRequest;
+
+  beforeEach(() => {
+    originalScheduler = window.scheduler;
+    originalRequestIdleCallback = window.requestIdleCallback;
+    originalFetch = window.fetch;
+    originalRequest = window.Request;
+    window.scheduler = undefined;
+    window.requestIdleCallback = undefined;
+    window.fetch = sinon.stub().returns(Promise.resolve());
+    window.Request = function (url, opts) {
+      this.url = url;
+      this.opts = opts;
+    };
+  });
+
+  afterEach(() => {
+    window.scheduler = originalScheduler;
+    window.requestIdleCallback = originalRequestIdleCallback;
+    window.fetch = originalFetch;
+    window.Request = originalRequest;
+  });
+
+  it('uses keepalive fetch for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'include',
+      keepalive: true
+    });
+  });
+
+  it('omits credentials when requested for politeTriggerPixel', () => {
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    expect(window.fetch.calledOnce).to.equal(true);
+    expect(window.fetch.getCall(0).args[0].opts).to.include({
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'omit',
+      keepalive: true
+    });
+  });
+
+  it('skips the image fallback for an omit beacon when the keepalive fetch fails', async () => {
+    window.fetch = sinon.stub().callsFake(() => Promise.reject(new Error('network')));
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(false); // no <img> => the cookieless guarantee holds even on fetch failure
+  });
+
+  it('falls back to an image pixel for the default include beacon when the keepalive fetch fails', async () => {
+    window.fetch = sinon.stub().callsFake(() => Promise.reject(new Error('network')));
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(true); // default behavior preserved byte-for-byte
+  });
+
+  it('skips the image fallback for an omit beacon when Request is unavailable', () => {
+    window.Request = undefined;
+    const imageSpy = sinon.spy(window, 'Image');
+    utils.politeTriggerPixel('http://example.com/pixel', 'omit');
+    const fellBack = imageSpy.called;
+    imageSpy.restore();
+    expect(fellBack).to.equal(false);
+  });
+
+  it('does not attempt fetch when Request is unavailable', () => {
+    window.Request = undefined;
+    utils.politeTriggerPixel('http://example.com/pixel');
+    expect(window.fetch.called).to.equal(false);
+  });
+
+  it('uses background scheduling for politeInsertUserSyncIframe', () => {
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+
+    utils.politeInsertUserSyncIframe('http://example.com/iframe');
+    expect(window.scheduler.postTask.calledOnce).to.equal(true);
   });
 });

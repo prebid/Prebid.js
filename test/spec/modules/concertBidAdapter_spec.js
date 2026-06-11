@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
 import { hook } from 'src/hook.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 describe('ConcertAdapter', function () {
   let bidRequests;
@@ -83,10 +84,10 @@ describe('ConcertAdapter', function () {
           }
         ]
       }
-    }
+    };
 
     sandbox = sinon.createSandbox();
-    sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
   });
 
   afterEach(function () {
@@ -104,7 +105,7 @@ describe('ConcertAdapter', function () {
       const bid = {
         bidder: 'concert',
         params: {}
-      }
+      };
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -197,30 +198,30 @@ describe('ConcertAdapter', function () {
 
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
-      const meta = payload.meta
+      const meta = payload.meta;
 
       expect(meta.eids.length).to.equal(1);
-      expect(meta.eids[0].uids[0].id).to.equal('uid123')
-      expect(meta.eids[0].uids[0].atype).to.equal(3)
-    })
+      expect(meta.eids[0].uids[0].id).to.equal('uid123');
+      expect(meta.eids[0].uids[0].atype).to.equal(3);
+    });
 
     it('should return empty eids list if none are available', function() {
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
-      const meta = payload.meta
+      const meta = payload.meta;
 
       expect(meta.eids.length).to.equal(0);
     });
 
     it('should return x/y offset coordiantes when element is present', function() {
-      Object.assign(element, { x: 100, y: 0, width: 400, height: 400 })
+      Object.assign(element, { x: 100, y: 0, width: 400, height: 400 });
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
       const slot = payload.slots[0];
 
-      expect(slot.offsetCoordinates.x).to.equal(100)
-      expect(slot.offsetCoordinates.y).to.equal(0)
-    })
+      expect(slot.offsetCoordinates.x).to.equal(100);
+      expect(slot.offsetCoordinates.y).to.equal(0);
+    });
 
     it('should not pass along tdid if the user has opted out', function() {
       storage.setDataInLocalStorage('c_nap', 'true');
@@ -301,7 +302,7 @@ describe('ConcertAdapter', function () {
     });
 
     it('should return empty bids if there are no bids from the server', function() {
-      const bids = spec.interpretResponse({ body: {bids: []} }, bidRequest);
+      const bids = spec.interpretResponse({ body: { bids: [] } }, bidRequest);
       expect(bids).to.have.lengthOf(0);
     });
   });
