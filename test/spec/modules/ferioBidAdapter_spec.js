@@ -11,12 +11,12 @@ const ALIAS_CODE = "clientABidder";
 const ALIAS_PARAM_BIDDER_CODE = "ferioflow";
 const FERIO_BID_URL = "https://ferio.bid/pbjs/bid";
 const ALIAS_BID_URL = "https://bidder.ferio.cloud/prebid/bid";
-const FEATURETV_CODE = "featuretv";
-const FEATURETV_BID_URL = "https://featuretv.bid/prebid/bid";
+const MYFEATURE_CODE = "myfeature";
+const MYFEATURE_BID_URL = "https://featuretv.bid/prebid/bid";
 const FERIO_ALIASES = [
   {
-    code: FEATURETV_CODE,
-    bidUrl: FEATURETV_BID_URL,
+    code: MYFEATURE_CODE,
+    bidUrl: MYFEATURE_BID_URL,
     syncBaseUrl: "https://featuretv.bid/prebid",
     skipPbsAliasing: true,
   },

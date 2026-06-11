@@ -6,8 +6,8 @@ import { createFerioBidderSpec } from "../libraries/ferioUtils/bidderUtils.js";
 
 const BIDDER_CODE = "ferio";
 const FERIO_ENDPOINT = "https://ferio.bid/pbjs/bid";
-const FEATURETV_BIDDER_CODE = "featuretv";
-const FEATURETV_ENDPOINT = "https://featuretv.bid/prebid";
+const MYFEATURE_BIDDER_CODE = "myfeature";
+const MYFEATURE_ENDPOINT = "https://featuretv.bid/prebid";
 
 export interface FerioBidParams {
   publisherId: string;
@@ -18,7 +18,7 @@ export interface FerioBidParams {
 declare module "../src/adUnits" {
   interface BidderParams {
     [BIDDER_CODE]: FerioBidParams;
-    [FEATURETV_BIDDER_CODE]: FerioBidParams;
+    [MYFEATURE_BIDDER_CODE]: FerioBidParams;
   }
 }
 
@@ -28,8 +28,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = createFerioBidderSpec({
   requiredParams: ["tenantId"],
   aliases: [
     {
-      code: FEATURETV_BIDDER_CODE,
-      endpoint: FEATURETV_ENDPOINT,
+      code: MYFEATURE_BIDDER_CODE,
+      endpoint: MYFEATURE_ENDPOINT,
       skipPbsAliasing: true,
     },
   ],
