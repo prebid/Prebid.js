@@ -236,7 +236,7 @@ export const buildUTMTagData = (url) => {
   UTMValue = JSON.parse(storage.getCookie(UTM_KEY) || '{}');
   Object.assign(UTMValue, UTMParams);
   storage.setCookie(UTM_KEY, JSON.stringify(UTMValue), getCookieTimeToUTCString());
-}
+};
 
 /**
  * get rtb qequest params
@@ -288,7 +288,7 @@ function getParam(validBidRequests, bidderRequest) {
       device: {
         nbw: getConnectionDownLink(),
       }
-    }
+    };
   } catch (error) {}
   try {
     buildUTMTagData(page);

@@ -1,12 +1,12 @@
 import {
   goldfishAdsSubModule,
   manageCallbackResponse,
+  DATA_STORAGE_KEY, MODULE_NAME, MODULE_TYPE, getStorageData, updateUserData
 } from 'modules/goldfishAdsRtdProvider.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { config as _config } from 'src/config.js';
-import { DATA_STORAGE_KEY, MODULE_NAME, MODULE_TYPE, getStorageData, updateUserData } from '../../../modules/goldfishAdsRtdProvider.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
@@ -48,7 +48,7 @@ const sampleAdUnits = [
       }]
   }];
 
-const sampleOutputData = [1, 2, 3]
+const sampleOutputData = [1, 2, 3];
 
 describe('goldfishAdsRtdProvider is a RTD provider that', function () {
   describe('has a method `init` that', function () {
@@ -137,7 +137,7 @@ describe('goldfishAdsRtdProvider is a RTD provider that', function () {
 
   describe('uses Local Storage to ', function () {
     const sandbox = sinon.createSandbox();
-    const storage = getStorageManager({ moduleType: MODULE_TYPE, moduleName: MODULE_NAME })
+    const storage = getStorageManager({ moduleType: MODULE_TYPE, moduleName: MODULE_NAME });
     beforeEach(() => {
       storage.setDataInLocalStorage(DATA_STORAGE_KEY, JSON.stringify({
         targeting: {

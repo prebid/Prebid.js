@@ -1,6 +1,6 @@
-import { makeNormalizer, normalizeEIDs, normalizeFPD, normalizeSchain } from '../../../src/fpd/normalize.js';
+import { makeNormalizer, normalizeEIDs } from '../../../src/fpd/normalize.js';
 import * as utils from '../../../src/utils.js';
-import { deepClone, deepSetValue } from '../../../src/utils.js';
+import { deepSetValue } from '../../../src/utils.js';
 import deepAccess from 'dlv/index.js';
 
 describe('FPD normalization', () => {
@@ -11,7 +11,7 @@ describe('FPD normalization', () => {
   });
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   describe('EIDs', () => {
     it('should merge user.eids into user.ext.eids', () => {
@@ -26,7 +26,7 @@ describe('FPD normalization', () => {
       expect(result.user.ext.eids).to.deep.have.members([
         { source: 'idA' },
         { source: 'idB' }
-      ])
+      ]);
     });
     it('should remove duplicates', () => {
       const fpd = {
@@ -34,10 +34,10 @@ describe('FPD normalization', () => {
           eids: [{ source: 'id' }],
           ext: { eids: [{ source: 'id' }] }
         }
-      }
+      };
       expect(normalizeEIDs(fpd).user.ext.eids).to.eql([
         { source: 'id' }
-      ])
+      ]);
       sinon.assert.called(utils.logWarn);
     });
     it('should NOT remove duplicates if they come from the same place', () => {
@@ -45,13 +45,13 @@ describe('FPD normalization', () => {
         user: {
           eids: [{ source: 'id' }, { source: 'id' }]
         }
-      }
+      };
       expect(normalizeEIDs(fpd).user.ext.eids.length).to.eql(2);
     });
     it('should do nothing if there are no eids', () => {
       expect(normalizeEIDs({})).to.eql({});
-    })
-  })
+    });
+  });
 
   describe('makeNormalizer', () => {
     let ortb2;
@@ -69,7 +69,7 @@ describe('FPD normalization', () => {
           normalizer = makeNormalizer('preferred.path', 'fallback.path', dest);
           expected = {};
           deepSetValue(expected, dest, ['data']);
-        })
+        });
 
         function check() {
           expect(deepAccess(ortb2, dest)).to.eql(deepAccess(expected, dest));
@@ -84,7 +84,7 @@ describe('FPD normalization', () => {
           ortb2.unrelated = ['data'];
           normalizer(ortb2);
           expect(ortb2).to.eql({ unrelated: ['data'] });
-        })
+        });
 
         it(`should leave fpd unchanged if data is only in the ${t}`, () => {
           deepSetValue(ortb2, dest, ['data']);
@@ -111,8 +111,8 @@ describe('FPD normalization', () => {
           normalizer(ortb2);
           sinon.assert.called(utils.logWarn);
           check();
-        })
+        });
       });
     });
-  })
-})
+  });
+});

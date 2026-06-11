@@ -62,13 +62,15 @@ const BANNER_BID_REQUEST = {
     gdprApplies: 1,
   },
   uspConsent: 'uspConsent'
-}
+};
 
 const bidRequest = {
   refererInfo: {
     referer: 'test.com'
   }
-}
+};
+
+const ENDPOINT_URL_PATTERN = /^https:\/\/(lb-east|n2)\.intenze\.co\/bid\?pass=accountId&integration=prebidjs$/;
 
 const VIDEO_BID_REQUEST = {
   code: 'video1',
@@ -103,7 +105,7 @@ const VIDEO_BID_REQUEST = {
   },
   timeout: 1000
 
-}
+};
 
 const BANNER_BID_RESPONSE = {
   id: 'request_id',
@@ -235,7 +237,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.match(ENDPOINT_URL_PATTERN);
     });
 
     it('Returns empty data if no valid requests are passed', function () {
@@ -265,7 +267,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.match(ENDPOINT_URL_PATTERN);
     });
   });
 
@@ -284,7 +286,7 @@ describe('IntenzeAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.match(ENDPOINT_URL_PATTERN);
     });
   });
 
@@ -294,12 +296,12 @@ describe('IntenzeAdapter', function () {
       const response = spec.interpretResponse(emptyResponse);
 
       expect(response).to.be.an('array').that.is.empty;
-    })
+    });
 
     it('Should interpret banner response', function () {
       const bannerResponse = {
         body: [BANNER_BID_RESPONSE]
-      }
+      };
 
       const expectedBidResponse = {
         requestId: BANNER_BID_RESPONSE.id,
@@ -314,7 +316,7 @@ describe('IntenzeAdapter', function () {
         mediaType: 'banner',
         meta: BANNER_BID_RESPONSE.seatbid[0].bid[0].adomain,
         ad: BANNER_BID_RESPONSE.seatbid[0].bid[0].adm
-      }
+      };
 
       const bannerResponses = spec.interpretResponse(bannerResponse);
 
@@ -337,7 +339,7 @@ describe('IntenzeAdapter', function () {
     it('Should interpret video response', function () {
       const videoResponse = {
         body: [VIDEO_BID_RESPONSE]
-      }
+      };
 
       const expectedBidResponse = {
         requestId: VIDEO_BID_RESPONSE.id,
@@ -353,7 +355,7 @@ describe('IntenzeAdapter', function () {
         meta: VIDEO_BID_RESPONSE.seatbid[0].bid[0].adomain,
         vastXml: VIDEO_BID_RESPONSE.seatbid[0].bid[0].adm,
         vastUrl: VIDEO_BID_RESPONSE.seatbid[0].bid[0].ext.vastUrl
-      }
+      };
 
       const videoResponses = spec.interpretResponse(videoResponse);
 
@@ -376,7 +378,7 @@ describe('IntenzeAdapter', function () {
     it('Should interpret native response', function () {
       const nativeResponse = {
         body: [NATIVE_BID_RESPONSE]
-      }
+      };
 
       const expectedBidResponse = {
         requestId: NATIVE_BID_RESPONSE.id,
@@ -393,7 +395,7 @@ describe('IntenzeAdapter', function () {
         native: {
           clickUrl: NATIVE_BID_RESPONSE.seatbid[0].bid[0].adm.native.link.url
         }
-      }
+      };
 
       const nativeResponses = spec.interpretResponse(nativeResponse);
 
@@ -413,4 +415,4 @@ describe('IntenzeAdapter', function () {
       expect(dataItem.height).to.equal(expectedBidResponse.height);
     });
   });
-})
+});

@@ -1,11 +1,11 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adtrueBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/adtrueBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from '../../../src/utils.js';
 import { config } from 'src/config.js';
 
 describe('AdTrueBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   let bidRequests;
   let bidResponses;
   let bidResponses2;
@@ -144,15 +144,15 @@ describe('AdTrueBidAdapter', function () {
 
   describe('.code', function () {
     it('should return a bidder code of adtrue', function () {
-      expect(spec.code).to.equal('adtrue')
-    })
-  })
+      expect(spec.code).to.equal('adtrue');
+    });
+  });
 
   describe('inherited functions', function () {
     it('should exist and be a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
   describe('implementation', function () {
     describe('Bid validations', function () {
       it('valid bid case', function () {

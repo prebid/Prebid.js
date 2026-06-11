@@ -1,6 +1,4 @@
-import { naveggIdSubmodule, storage, getIdFromAPI } from 'modules/naveggIdSystem.js';
-import { server } from 'test/mocks/xhr.js';
-import * as ajaxLib from 'src/ajax.js';
+import { dep, naveggIdSubmodule, storage } from 'modules/naveggIdSystem.js';
 
 const NAVEGGID_CONFIG_COOKIE_HTML5 = {
   storage: {
@@ -8,24 +6,24 @@ const NAVEGGID_CONFIG_COOKIE_HTML5 = {
     type: 'cookie&html5',
     expires: 8
   }
-}
+};
 
 const MOCK_RESPONSE = {
   nvggid: 'test_nvggid'
-}
+};
 
 const MOCK_RESPONSE_NULL = {
   nvggid: null
-}
+};
 
 function mockResponse(responseText, isSuccess = true) {
   return function(url, callbacks) {
     if (isSuccess) {
-      callbacks.success(responseText)
+      callbacks.success(responseText);
     } else {
-      callbacks.error(new Error('Mock Error'))
+      callbacks.error(new Error('Mock Error'));
     }
-  }
+  };
 }
 
 function deleteAllCookies() {
@@ -45,7 +43,7 @@ describe('getId', function () {
 
   beforeEach(function() {
     ajaxStub = sinon.stub();
-    ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(ajaxStub);
+    ajaxBuilderStub = sinon.stub(dep, 'ajaxBuilder').returns(ajaxStub);
   });
 
   afterEach(function() {
@@ -65,14 +63,14 @@ describe('getId', function () {
         successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
       }
     });
-    apiCallback(callback)
+    apiCallback(callback);
 
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith('localstorage_value')).to.be.true;
   });
 
   it('should get the value from a nid cookie', function() {
-    storage.setCookie('nid', 'old_nid_cookie', storage.expires)
+    storage.setCookie('nid', 'old_nid_cookie', storage.expires);
 
     const callback = sinon.spy();
     const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
@@ -82,14 +80,14 @@ describe('getId', function () {
         successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
       }
     });
-    apiCallback(callback)
+    apiCallback(callback);
 
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith('old_nid_cookie')).to.be.true;
   });
 
   it('should get the value from a nav cookie', function() {
-    storage.setCookie('navId', 'old_nav_cookie', storage.expires)
+    storage.setCookie('navId', 'old_nav_cookie', storage.expires);
 
     const callback = sinon.spy();
     const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
@@ -99,14 +97,14 @@ describe('getId', function () {
         successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
       }
     });
-    apiCallback(callback)
+    apiCallback(callback);
 
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith('old_nav_cookie')).to.be.true;
   });
 
   it('should get the value from an old nvg cookie', function() {
-    storage.setCookie('nvgid', 'old_nvg_cookie', storage.expires)
+    storage.setCookie('nvgid', 'old_nvg_cookie', storage.expires);
 
     const callback = sinon.spy();
     const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
@@ -116,7 +114,7 @@ describe('getId', function () {
         successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
       }
     });
-    apiCallback(callback)
+    apiCallback(callback);
 
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith('old_nvg_cookie')).to.be.true;
@@ -131,7 +129,7 @@ describe('getId', function () {
         successCallbacks(JSON.stringify(MOCK_RESPONSE));
       }
     });
-    apiCallback(callback)
+    apiCallback(callback);
 
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith('test_nvggid')).to.be.true;
@@ -147,7 +145,7 @@ describe('getId', function () {
         successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
       }
     });
-    apiCallback(callback)
+    apiCallback(callback);
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith(undefined)).to.be.true;
     done();

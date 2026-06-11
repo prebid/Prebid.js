@@ -59,7 +59,7 @@ type ConversantBidParams = {
   protocols?: number[];
   /** Optional. Array of supported video API frameworks (1-6) */
   api?: number[];
-}
+};
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -299,7 +299,7 @@ function getBidFloor(bid) {
     }
   }
 
-  return floor
+  return floor;
 }
 
 function makeBidUrl(bid) {

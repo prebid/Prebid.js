@@ -1,6 +1,6 @@
 import { config } from 'src/config.js';
 import { emit, clearEvents, getEvents, on, off } from '../../../../src/events.js';
-import * as utils from '../../../../src/utils.js'
+import * as utils from '../../../../src/utils.js';
 
 describe('events', () => {
   let clock;
@@ -43,4 +43,4 @@ describe('events', () => {
     off(eventString, fn);
     logErrorStub.restore();
   });
-})
+});

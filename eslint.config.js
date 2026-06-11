@@ -93,6 +93,10 @@ module.exports = [
         tagNamePreference: {
           return: 'return'
         }
+      },
+      'import/resolver': {
+        [path.resolve('./plugins/eslint/resolver')]: true,
+        node: true,
       }
     },
     languageOptions: {
@@ -108,13 +112,18 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       '@stylistic/comma-dangle': 'off',
-      semi: 'off',
-      '@stylistic/semi': 'off',
+      '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
       'no-console': 'error',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
-      'import/extensions': ['error', 'ignorePackages'],
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'import/no-duplicates': 'warn',
       'no-restricted-syntax': [
         'error',
         {
@@ -170,6 +179,15 @@ module.exports = [
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
       '@stylistic/multiline-ternary': 'off',
+    }
+  },
+  {
+    files: getSourceFolders().map(dir => `${dir}/**/*.d.ts`),
+    ignores: [
+      'src/types/**/*'
+    ],
+    rules: {
+      'prebid/declaration-filename': 'error'
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {

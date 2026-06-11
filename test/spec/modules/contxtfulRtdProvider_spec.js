@@ -5,7 +5,7 @@ import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import * as events from '../../../src/events.js';
 import * as utils from 'src/utils.js';
-import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import Sinon from 'sinon';
 import { deepClone, getWinDimensions } from '../../../src/utils.js';
 
@@ -20,7 +20,7 @@ const RX_FROM_SESSION_STORAGE = { ReceptivityState: 'Receptive', test_info: 'rx_
 const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine' };
 
 const RX_API_MOCK = { receptivity: sinon.stub(), receptivityBatched: sinon.stub() };
-const RX_API_MOCK_WITH_BUNDLE = { receptivity: sinon.stub(), receptivityBatched: sinon.stub(), getOrtb2Fragment: sinon.stub() }
+const RX_API_MOCK_WITH_BUNDLE = { receptivity: sinon.stub(), receptivityBatched: sinon.stub(), getOrtb2Fragment: sinon.stub() };
 
 const RX_CONNECTOR_MOCK = {
   fetchConfig: sinon.stub(),
@@ -87,7 +87,7 @@ describe('contxtfulRtdProvider', function () {
     RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callsFake((bidders, reqBidsConfigObj) => {
       const bidderObj = bidders.reduce((accumulator, bidder) => { accumulator[bidder] = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } }; return accumulator; }, {});
-      return { global: { user: { site: { id: 'globalsiteId' } } }, bidder: bidderObj }
+      return { global: { user: { site: { id: 'globalsiteId' } } }, bidder: bidderObj };
     }
     );
 
@@ -261,7 +261,7 @@ describe('contxtfulRtdProvider', function () {
           done();
         }, TIMEOUT);
       });
-    })
+    });
   });
 
   describe('getTargetingData', function () {
@@ -366,7 +366,7 @@ describe('contxtfulRtdProvider', function () {
     theories.forEach(([adUnits, expected, _description]) => {
       it('uses non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
         // Simulate that there was a write to sessionStorage in the past.
-        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({ exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE }))
+        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({ exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE }));
 
         const config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
@@ -668,7 +668,7 @@ describe('contxtfulRtdProvider', function () {
 
         // Cannot change the window size from JS
         // So we take the current size as expectation
-        const { innerHeight: height, innerWidth: width } = getWinDimensions()
+        const { innerHeight: height, innerWidth: width } = getWinDimensions();
 
         const reqBidsConfigObj = {
           ortb2Fragments: {
@@ -771,7 +771,7 @@ describe('contxtfulRtdProvider', function () {
         expect(pos['code3'].p).to.be.equal(0);
         done();
       }, TIMEOUT);
-    })
+    });
 
     function getFakeRequestBidConfigObj() {
       return {
@@ -789,10 +789,10 @@ describe('contxtfulRtdProvider', function () {
     function InitDivStubPositions(config, withIframe, isVisible, forceGetElementById = true) {
       const fakeElem = fakeGetElementById(100, 100, 30, 30);
       if (isVisible) {
-        fakeElem.checkVisibility = function () { return true };
+        fakeElem.checkVisibility = function () { return true; };
         sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
       } else {
-        fakeElem.checkVisibility = function () { return false };
+        fakeElem.checkVisibility = function () { return false; };
         sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
       }
 
@@ -805,7 +805,7 @@ describe('contxtfulRtdProvider', function () {
             getElementById: (id) => fakeElem,
 
           }
-        }
+        };
         sandbox.stub(utils, 'getWindowSelf').returns(window.top);
         sandbox.stub(utils, 'inIframe').returns(true);
         sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);
@@ -851,7 +851,7 @@ describe('contxtfulRtdProvider', function () {
           expect(Object.keys(pos).length).to.be.equal(0);
           done();
         }, TIMEOUT);
-      })
+      });
 
       it('returns object visibility and position if gpt not found but the div id is the ad unit code', function (done) {
         const config = buildInitConfig(VERSION, CUSTOMER);
@@ -955,7 +955,7 @@ describe('contxtfulRtdProvider', function () {
       describe('when we are in an iframe', function () {
         it('return object visibility true if element is visible', function (done) {
           const reqBidsConfigObj = getFakeRequestBidConfigObj();
-          InitDivStubPositions(config, true, true)
+          InitDivStubPositions(config, true, true);
           setTimeout(() => {
             const onDoneSpy = sinon.spy();
             contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
@@ -1015,7 +1015,7 @@ describe('contxtfulRtdProvider', function () {
         done();
       }, TIMEOUT);
     });
-  })
+  });
 
   describe('when rxConnector contains getOrtb2Fragment function', () => {
     it('should just take whatever it contains and merge to the fragment', function (done) {
@@ -1046,6 +1046,6 @@ describe('contxtfulRtdProvider', function () {
         expect(bidder).to.deep.equal(bidderExpected);
         done();
       }, TIMEOUT);
-    })
-  })
+    });
+  });
 });

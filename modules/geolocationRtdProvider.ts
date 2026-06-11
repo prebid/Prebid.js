@@ -30,11 +30,11 @@ export const geolocationSubmodule: RtdProviderSpec<'geolocation'> = {
     let done = false;
     if (!permissionsAvailable) {
       logWarn('permission for geolocation receiving was denied');
-      return complete()
+      return complete();
     }
     if (!isActivityAllowed(ACTIVITY_TRANSMIT_PRECISE_GEO, activityParams(MODULE_TYPE_RTD, 'geolocation'))) {
       logWarn('permission for geolocation receiving was denied by CMP');
-      return complete()
+      return complete();
     }
     const requestPermission = deepAccess(providerConfig, 'params.requestPermission') === true;
     navigator.permissions.query({
@@ -56,7 +56,7 @@ export const geolocationSubmodule: RtdProviderSpec<'geolocation'> = {
           lastfix: Math.round((timestamp() - geolocation.timestamp) / 1000),
           type: 1
         });
-        logInfo('geolocation was successfully received ', requestBidsObject.ortb2Fragments.global.device.geo)
+        logInfo('geolocation was successfully received ', requestBidsObject.ortb2Fragments.global.device.geo);
       }
       onDone();
     }

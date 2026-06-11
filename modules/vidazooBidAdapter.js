@@ -15,9 +15,13 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 import { OPT_CACHE_KEY, OPT_TIME_KEY, ALIASES } from '../libraries/vidazooUtils/constants.js';
 
+/**
+ * @typedef {import('./vidazooBidAdapter.d.ts').VidazooBidRequestParams} VidazooBidRequestParams
+ */
+
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
-const DEFAULT_BASE_ULR = 'cootlogix.com'
+const DEFAULT_BASE_ULR = 'cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
 const BIDDER_VERSION = '1.0.0';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });

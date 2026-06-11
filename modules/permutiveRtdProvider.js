@@ -16,36 +16,36 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveRtdProviderConfig} PermutiveRtdProviderConfig
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveRtdProviderParams} PermutiveRtdProviderParams
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveBidderConfig} PermutiveBidderConfig
- * @typedef {import('./permutiveRtdProviderTypes.d.ts').PermutiveTransformationConfig} PermutiveTransformationConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveRtdProviderConfig} PermutiveRtdProviderConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveRtdProviderParams} PermutiveRtdProviderParams
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveBidderConfig} PermutiveBidderConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveTransformationConfig} PermutiveTransformationConfig
  */
 
-const MODULE_NAME = 'permutive'
+const MODULE_NAME = 'permutive';
 
-const logger = prefixLog('[PermutiveRTD]')
+const logger = prefixLog('[PermutiveRTD]');
 
-export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
-export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
-export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive'
-export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
+export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd';
+export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard';
+export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive';
+export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
 function init(moduleConfig, userConsent) {
-  readPermutiveModuleConfigFromCache()
+  readPermutiveModuleConfigFromCache();
 
-  const enforceVendorConsent = deepAccess(moduleConfig, 'params.enforceVendorConsent')
+  const enforceVendorConsent = deepAccess(moduleConfig, 'params.enforceVendorConsent');
 
-  return hasPurposeConsent(userConsent, [1], enforceVendorConsent)
+  return hasPurposeConsent(userConsent, [1], enforceVendorConsent);
 }
 
 function liftIntoParams(params) {
-  return isPlainObject(params) ? { params } : {}
+  return isPlainObject(params) ? { params } : {};
 }
 
-let cachedPermutiveModuleConfig = {}
+let cachedPermutiveModuleConfig = {};
 
 /**
  * Access the submodules RTD params that are cached to LocalStorage by the Permutive SDK. This lets the RTD submodule
@@ -53,9 +53,9 @@ let cachedPermutiveModuleConfig = {}
  * not initialised before this submodule is initialised.
  */
 function readPermutiveModuleConfigFromCache() {
-  const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
-  cachedPermutiveModuleConfig = liftIntoParams(params)
-  return cachedPermutiveModuleConfig
+  const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY));
+  cachedPermutiveModuleConfig = liftIntoParams(params);
+  return cachedPermutiveModuleConfig;
 }
 
 /**
@@ -65,9 +65,9 @@ function readPermutiveModuleConfigFromCache() {
  */
 function getParamsFromPermutive() {
   try {
-    return liftIntoParams(window.permutive.addons.prebid.getPermutiveRtdConfig())
+    return liftIntoParams(window.permutive.addons.prebid.getPermutiveRtdConfig());
   } catch (e) {
-    return null
+    return null;
   }
 }
 
@@ -86,7 +86,7 @@ function getParamsFromPermutive() {
  */
 export function getModuleConfig(customModuleConfig) {
   // Use the params from Permutive if available, otherwise fallback to the cached value set by Permutive.
-  const permutiveModuleConfig = getParamsFromPermutive() || cachedPermutiveModuleConfig
+  const permutiveModuleConfig = getParamsFromPermutive() || cachedPermutiveModuleConfig;
 
   return mergeDeep({
     waitForIt: false,
@@ -100,7 +100,7 @@ export function getModuleConfig(customModuleConfig) {
   },
   permutiveModuleConfig,
   customModuleConfig,
-  )
+  );
 }
 
 /**
@@ -110,37 +110,37 @@ export function getModuleConfig(customModuleConfig) {
  * @param {Object} segmentData - Segment data grouped by bidder or type
  */
 export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
-  const acBidders = deepAccess(moduleConfig, 'params.acBidders')
-  const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
-  const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
-  const biddersConfig = deepAccess(moduleConfig, 'params.bidders') || {}
+  const acBidders = deepAccess(moduleConfig, 'params.acBidders');
+  const maxSegs = deepAccess(moduleConfig, 'params.maxSegs');
+  const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || [];
+  const biddersConfig = deepAccess(moduleConfig, 'params.bidders') || {};
 
-  const ssps = segmentData?.ssp?.ssps ?? []
-  const sspCohorts = segmentData?.ssp?.cohorts ?? []
-  const topics = segmentData?.topics ?? {}
+  const ssps = segmentData?.ssp?.ssps ?? [];
+  const sspCohorts = segmentData?.ssp?.cohorts ?? [];
+  const topics = segmentData?.topics ?? {};
 
-  const bidders = new Set([...acBidders, ...ssps, ...Object.keys(biddersConfig)])
+  const bidders = new Set([...acBidders, ...ssps, ...Object.keys(biddersConfig)]);
   bidders.forEach(function (bidder) {
     const bidderConfig = biddersConfig[bidder] || {};
-    const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
+    const currConfig = { ortb2: bidderOrtb2[bidder] || {} };
 
-    let cohorts = []
+    let cohorts = [];
 
-    const isAcBidder = acBidders.indexOf(bidder) > -1
+    const isAcBidder = acBidders.indexOf(bidder) > -1;
     if (isAcBidder) {
-      cohorts = segmentData.ac
+      cohorts = segmentData.ac;
     }
 
-    const isSspBidder = ssps.indexOf(bidder) > -1
+    const isSspBidder = ssps.indexOf(bidder) > -1;
     if (isSspBidder) {
-      cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
+      cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs);
     }
 
-    const customCohortsData = getCustomCohortsData(bidderConfig, bidder, segmentData, maxSegs)
+    const customCohortsData = getCustomCohortsData(bidderConfig, bidder, segmentData, maxSegs);
 
-    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, customCohortsData)
-    bidderOrtb2[bidder] = nextConfig.ortb2
-  })
+    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, customCohortsData);
+    bidderOrtb2[bidder] = nextConfig.ortb2;
+  });
 }
 
 /**
@@ -152,11 +152,11 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  * @return {string[]} Custom cohort IDs
  */
 function getCustomCohortsData (bidderCfg, bidder, segmentData, maxSegs) {
-  const customCohorts = bidderCfg?.customCohorts
+  const customCohorts = bidderCfg?.customCohorts;
   if (customCohorts?.source === 'ls' && customCohorts?.key) {
-    return makeSafe(() => readSegments(customCohorts.key, []).map(String).slice(0, maxSegs)) || []
+    return makeSafe(() => readSegments(customCohorts.key, []).map(String).slice(0, maxSegs)) || [];
   }
-  return deepAccess(segmentData, bidder) || []
+  return deepAccess(segmentData, bidder) || [];
 }
 
 /**
@@ -172,28 +172,28 @@ function getCustomCohortsData (bidderCfg, bidder, segmentData, maxSegs) {
  * @return {Object} Merged ortb2 object
  */
 function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, customCohortsData) {
-  logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig })
+  logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig });
 
-  const name = 'permutive.com'
+  const name = 'permutive.com';
 
   const permutiveUserData = {
     name,
     segment: segmentIDs.map(segmentId => ({ id: segmentId })),
-  }
+  };
 
   const transformedUserData = transformationConfigs
     .filter(({ id }) => ortb2UserDataTransformations.hasOwnProperty(id))
-    .map(({ id, config }) => ortb2UserDataTransformations[id](permutiveUserData, config))
+    .map(({ id, config }) => ortb2UserDataTransformations[id](permutiveUserData, config));
 
   const customCohortsUserData = {
     name: PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
     segment: customCohortsData.map(cohortID => ({ id: cohortID })),
-  }
+  };
 
-  const ortbConfig = mergeDeep({}, currConfig)
-  const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
+  const ortbConfig = mergeDeep({}, currConfig);
+  const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || [];
 
-  const topicsUserData = []
+  const topicsUserData = [];
   for (const [k, value] of Object.entries(topics)) {
     topicsUserData.push({
       name,
@@ -201,62 +201,62 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
         segtax: Number(k)
       },
       segment: value.map(topic => ({ id: topic.toString() })),
-    })
+    });
   }
 
   const updatedUserData = currentUserData
     .filter(el => el.name !== permutiveUserData.name && el.name !== customCohortsUserData.name)
     .concat(permutiveUserData, transformedUserData, customCohortsUserData)
-    .concat(topicsUserData)
+    .concat(topicsUserData);
 
-  logger.logInfo(`Updating ortb2.user.data`, { bidder, user_data: updatedUserData })
-  deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
+  logger.logInfo(`Updating ortb2.user.data`, { bidder, user_data: updatedUserData });
+  deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData);
 
   // Set ortb2.user.keywords
-  const currentKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords')
+  const currentKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords');
   const keywordGroups = {
     [PERMUTIVE_STANDARD_KEYWORD]: segmentIDs,
     [PERMUTIVE_STANDARD_AUD_KEYWORD]: sspSegmentIDs,
     [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData,
-  }
+  };
 
   // Transform groups of key-values into a single array of strings
   // i.e { permutive: ['1', '2'], p_standard: ['3', '4'] } => ['permutive=1', 'permutive=2', 'p_standard=3',' p_standard=4']
   const transformedKeywordGroups = Object.entries(keywordGroups)
-    .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
+    .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`));
 
   const keywords = Array.from(new Set([
     ...(currentKeywords || '').split(',').map(kv => kv.trim()),
     ...transformedKeywordGroups
   ]))
     .filter(Boolean)
-    .join(',')
+    .join(',');
 
   logger.logInfo(`Updating ortb2.user.keywords`, {
     bidder,
     keywords,
-  })
-  deepSetValue(ortbConfig, 'ortb2.user.keywords', keywords)
+  });
+  deepSetValue(ortbConfig, 'ortb2.user.keywords', keywords);
 
   // Set user extensions
   if (segmentIDs.length > 0) {
-    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
-    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
+    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs);
+    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs);
   }
 
   if (customCohortsData.length > 0) {
-    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}`, customCohortsData.map(String))
-    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
+    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}`, customCohortsData.map(String));
+    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData);
   }
 
   // Set site extensions
   if (segmentIDs.length > 0) {
-    deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
-    logger.logInfo(`Extending ortb2.site.ext.permutive with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
+    deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs);
+    logger.logInfo(`Extending ortb2.site.ext.permutive with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs);
   }
 
-  logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig })
-  return ortbConfig
+  logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig });
+  return ortbConfig;
 }
 
 /**
@@ -266,32 +266,32 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
  * @param {Object} segmentData - Segment object
  */
 function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
-  const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits
-  const utils = { deepSetValue, deepAccess, isFn, mergeDeep }
+  const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits;
+  const utils = { deepSetValue, deepAccess, isFn, mergeDeep };
   const aliasMap = {
     appnexusAst: 'appnexus'
-  }
+  };
 
   if (!adUnits) {
-    return
+    return;
   }
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
-      let { bidder } = bid
+      let { bidder } = bid;
       if (typeof aliasMap[bidder] !== 'undefined') {
-        bidder = aliasMap[bidder]
+        bidder = aliasMap[bidder];
       }
-      const acEnabled = isAcEnabled(moduleConfig, bidder)
-      const customFn = getCustomBidderFn(moduleConfig, bidder)
+      const acEnabled = isAcEnabled(moduleConfig, bidder);
+      const customFn = getCustomBidderFn(moduleConfig, bidder);
 
       if (customFn) {
         // For backwards compatibility we pass an identity function to any custom bidder function set by a publisher
-        const bidIdentity = (bid) => bid
-        customFn(bid, segmentData, acEnabled, utils, bidIdentity)
+        const bidIdentity = (bid) => bid;
+        customFn(bid, segmentData, acEnabled, utils, bidIdentity);
       }
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -300,19 +300,19 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
  */
 function makeSafe (fn) {
   try {
-    return fn()
+    return fn();
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
 function getCustomBidderFn (moduleConfig, bidder) {
-  const overwriteFn = deepAccess(moduleConfig, `params.overwrites.${bidder}`)
+  const overwriteFn = deepAccess(moduleConfig, `params.overwrites.${bidder}`);
 
   if (overwriteFn && isFn(overwriteFn)) {
-    return overwriteFn
+    return overwriteFn;
   } else {
-    return null
+    return null;
   }
 }
 
@@ -323,8 +323,8 @@ function getCustomBidderFn (moduleConfig, bidder) {
  * @return {boolean}
  */
 export function isAcEnabled (moduleConfig, bidder) {
-  const acBidders = deepAccess(moduleConfig, 'params.acBidders') || []
-  return acBidders.includes(bidder)
+  const acBidders = deepAccess(moduleConfig, 'params.acBidders') || [];
+  return acBidders.includes(bidder);
 }
 
 /**
@@ -332,7 +332,7 @@ export function isAcEnabled (moduleConfig, bidder) {
  * @return {boolean}
  */
 export function isPermutiveOnPage () {
-  return typeof window.permutive !== 'undefined' && typeof window.permutive.ready === 'function'
+  return typeof window.permutive !== 'undefined' && typeof window.permutive.ready === 'function';
 }
 
 /**
@@ -409,18 +409,18 @@ export function getSegments(maxSegs) {
   for (const bidder in segments) {
     if (bidder === 'ssp') {
       if (segments[bidder].cohorts && Array.isArray(segments[bidder].cohorts)) {
-        segments[bidder].cohorts = segments[bidder].cohorts.slice(0, maxSegs)
+        segments[bidder].cohorts = segments[bidder].cohorts.slice(0, maxSegs);
       }
     } else if (bidder === 'topics') {
       for (const taxonomy in segments[bidder]) {
-        segments[bidder][taxonomy] = segments[bidder][taxonomy].slice(0, maxSegs)
+        segments[bidder][taxonomy] = segments[bidder][taxonomy].slice(0, maxSegs);
       }
     } else {
-      segments[bidder] = segments[bidder].slice(0, maxSegs)
+      segments[bidder] = segments[bidder].slice(0, maxSegs);
     }
   }
 
-  logger.logInfo(`Read segments`, segments)
+  logger.logInfo(`Read segments`, segments);
   return segments;
 }
 
@@ -434,13 +434,13 @@ export function getSegments(maxSegs) {
  */
 function readSegments (key, defaultValue) {
   try {
-    return JSON.parse(storage.getDataFromLocalStorage(key)) || defaultValue
+    return JSON.parse(storage.getDataFromLocalStorage(key)) || defaultValue;
   } catch (e) {
-    return defaultValue
+    return defaultValue;
   }
 }
 
-const unknownIabSegmentId = '_unknown_'
+const unknownIabSegmentId = '_unknown_';
 
 /**
  * Functions to apply to ORT2B2 `user.data` objects.
@@ -456,7 +456,7 @@ const ortb2UserDataTransformations = {
       .map(segment => ({ id: iabSegmentId(segment.id, config.iabIds) }))
       .filter(segment => segment.id !== unknownIabSegmentId)
   })
-}
+};
 
 /**
  * Transform a Permutive segment ID into an IAB audience taxonomy ID.
@@ -465,7 +465,7 @@ const ortb2UserDataTransformations = {
  * @return {string} IAB audience taxonomy ID associated with the Permutive segment ID
  */
 function iabSegmentId(permutiveSegmentId, iabIds) {
-  return iabIds[permutiveSegmentId] || unknownIabSegmentId
+  return iabIds[permutiveSegmentId] || unknownIabSegmentId;
 }
 
 /**
@@ -475,21 +475,21 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * @param moduleConfig - Publisher provided config
  */
 export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
-  const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))
+  const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'));
 
   makeSafe(function () {
     // Legacy route with custom parameters
     // ACK policy violation, in process of removing
-    setSegments(reqBidsConfigObj, moduleConfig, segmentData)
+    setSegments(reqBidsConfigObj, moduleConfig, segmentData);
   });
 
   makeSafe(function () {
     // Route for bidders supporting ORTB2
-    setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, moduleConfig, segmentData)
-  })
+    setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, moduleConfig, segmentData);
+  });
 }
 
-let permutiveSDKInRealTime = false
+let permutiveSDKInRealTime = false;
 
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
@@ -498,30 +498,30 @@ export const permutiveSubmodule = {
   gvlid: VENDORLESS_GVLID,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
     const completeBidRequestData = () => {
-      logger.logInfo(`Request data updated`)
-      callback()
-    }
+      logger.logInfo(`Request data updated`);
+      callback();
+    };
 
-    const moduleConfig = getModuleConfig(customModuleConfig)
+    const moduleConfig = getModuleConfig(customModuleConfig);
 
-    readAndSetCohorts(reqBidsConfigObj, moduleConfig)
+    readAndSetCohorts(reqBidsConfigObj, moduleConfig);
 
     makeSafe(function () {
       if (permutiveSDKInRealTime || !(moduleConfig.waitForIt && isPermutiveOnPage())) {
-        return completeBidRequestData()
+        return completeBidRequestData();
       }
 
       window.permutive.ready(function () {
-        logger.logInfo(`SDK is realtime, updating cohorts`)
-        permutiveSDKInRealTime = true
-        readAndSetCohorts(reqBidsConfigObj, getModuleConfig(customModuleConfig))
-        completeBidRequestData()
-      }, 'realtime')
+        logger.logInfo(`SDK is realtime, updating cohorts`);
+        permutiveSDKInRealTime = true;
+        readAndSetCohorts(reqBidsConfigObj, getModuleConfig(customModuleConfig));
+        completeBidRequestData();
+      }, 'realtime');
 
-      logger.logInfo(`Registered cohort update when SDK is realtime`)
-    })
+      logger.logInfo(`Registered cohort update when SDK is realtime`);
+    });
   },
   init: init
-}
+};
 
-submodule('realTimeData', permutiveSubmodule)
+submodule('realTimeData', permutiveSubmodule);

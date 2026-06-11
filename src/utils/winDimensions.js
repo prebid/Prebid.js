@@ -45,7 +45,7 @@ export const getWinDimensions = (() => {
       lastCheckTimestamp = Date.now();
     }
     return internal.winDimensions.obj;
-  }
+  };
 })();
 
 export function resetWinDimensions() {

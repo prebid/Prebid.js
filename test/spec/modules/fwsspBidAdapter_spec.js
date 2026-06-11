@@ -101,7 +101,7 @@ describe('fwsspBidAdapter', () => {
             '_fw_player_height': '1080'
           }
         }
-      }]
+      }];
     };
 
     const bidderRequest = {
@@ -208,7 +208,7 @@ describe('fwsspBidAdapter', () => {
     it('should return image type userSyncs with gdprConsent', () => {
       const syncOptions = {
         'pixelEnabled': true
-      }
+      };
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
@@ -219,7 +219,7 @@ describe('fwsspBidAdapter', () => {
     it('should return iframe type userSyncs with gdprConsent, uspConsent, gppConsent', () => {
       const syncOptions = {
         'iframeEnabled': true
-      }
+      };
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
@@ -243,7 +243,7 @@ describe('fwsspBidAdapter', () => {
 
       const syncOptions = {
         'iframeEnabled': true
-      }
+      };
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
@@ -257,14 +257,14 @@ describe('fwsspBidAdapter', () => {
       bidRequests[0].params.adRequestKeyValues._fw_atts = 1;
       bidRequests[0].params.adRequestKeyValues._fw_is_lat = 1;
 
-      const bidderRequest2 = { ...bidderRequest }
+      const bidderRequest2 = { ...bidderRequest };
       bidderRequest2.ortb2 = {
         regs: { coppa: 0 },
         device: {
           lmt: 0,
           ext: { atts: 0 }
         }
-      }
+      };
 
       const requests = spec.buildRequests(bidRequests, bidderRequest2);
       const request = requests[0];
@@ -276,7 +276,7 @@ describe('fwsspBidAdapter', () => {
 
       const syncOptions = {
         'iframeEnabled': true
-      }
+      };
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest2.gdprConsent, bidderRequest2.uspConsent, bidderRequest2.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
@@ -286,7 +286,7 @@ describe('fwsspBidAdapter', () => {
 
     it('should use schain from ortb2, prioritizing source.schain', () => {
       const bidRequests = getBidRequests();
-      const bidderRequest2 = { ...bidderRequest }
+      const bidderRequest2 = { ...bidderRequest };
       const schain1 = {
         ver: '1.0',
         complete: 1,
@@ -329,7 +329,7 @@ describe('fwsspBidAdapter', () => {
 
     it('should use schain from ortb2.source.ext, if source.schain is not available', () => {
       const bidRequests = getBidRequests();
-      const bidderRequest2 = { ...bidderRequest }
+      const bidderRequest2 = { ...bidderRequest };
       const schain2 = {
         ver: '1.0',
         complete: 1,
@@ -404,7 +404,7 @@ describe('fwsspBidAdapter', () => {
           },
           'gdpr_consented_providers': 'test_providers'
         }
-      }]
+      }];
     };
 
     const bidderRequest = {
@@ -554,7 +554,7 @@ describe('fwsspBidAdapter', () => {
     it('should return image type userSyncs with gdprConsent', () => {
       const syncOptions = {
         'pixelEnabled': true
-      }
+      };
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
@@ -565,7 +565,7 @@ describe('fwsspBidAdapter', () => {
     it('should return iframe type userSyncs with gdprConsent, uspConsent, gppConsent', () => {
       const syncOptions = {
         'iframeEnabled': true
-      }
+      };
       const userSyncs = spec.getUserSyncs(syncOptions, null, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
@@ -607,7 +607,7 @@ describe('fwsspBidAdapter', () => {
       }];
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload).to.include('_fw_video_context=outstream'); ;
+      expect(payload).to.include('_fw_video_context=outstream');
       expect(payload).to.include('_fw_placement_type=2');
       expect(payload).to.include('_fw_plcmt_type=3');
     });
@@ -725,9 +725,9 @@ describe('fwsspBidAdapter', () => {
       const bidRequest = {
         params: {},
         adUnitCode: 'test'
-      }
+      };
       const actualAdHtml = formatAdHTML(bidRequest, [640, 480], '<VAST></VAST>');
-      expect(actualAdHtml).to.deep.equal(expectedAdHtml)
+      expect(actualAdHtml).to.deep.equal(expectedAdHtml);
     });
 
     it('should take bid request showMuteButton, isMuted, and playerParams', () => {
@@ -798,9 +798,9 @@ describe('fwsspBidAdapter', () => {
           playerParams: { 'test-param': 'test-value' }
         },
         adUnitCode: 'test'
-      }
+      };
       const actualAdHtml = formatAdHTML(bidRequest, [640, 480], '<VAST></VAST>');
-      expect(actualAdHtml).to.deep.equal(expectedAdHtml)
+      expect(actualAdHtml).to.deep.equal(expectedAdHtml);
     });
 
     it('should generate html with the AdManager stg url when env param has value fo stg in bid request', () => {
@@ -869,9 +869,9 @@ describe('fwsspBidAdapter', () => {
           env: 'stg'
         },
         adUnitCode: 'test'
-      }
+      };
       const actualAdHtml = formatAdHTML(bidRequest, [640, 480], '<VAST></VAST>');
-      expect(actualAdHtml).to.deep.equal(expectedAdHtml)
+      expect(actualAdHtml).to.deep.equal(expectedAdHtml);
     });
 
     it('should use the correct version when sdkVersion is in bid params', () => {
@@ -941,9 +941,9 @@ describe('fwsspBidAdapter', () => {
           sdkVersion: '7.11.0'
         },
         adUnitCode: 'test'
-      }
+      };
       const actualAdHtml = formatAdHTML(bidRequest, [640, 480], '<VAST></VAST>');
-      expect(actualAdHtml).to.deep.equal(expectedAdHtml)
+      expect(actualAdHtml).to.deep.equal(expectedAdHtml);
     });
   });
 
@@ -967,7 +967,7 @@ describe('fwsspBidAdapter', () => {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      }]
+      }];
     };
 
     const response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'>' +
@@ -1290,7 +1290,7 @@ describe('fwsspBidAdapter', () => {
           },
           'gdpr_consented_providers': 'test_providers'
         }
-      }]
+      }];
     };
 
     const bidderRequest = {
@@ -1333,7 +1333,7 @@ describe('fwsspBidAdapter', () => {
 
     it('should only encode comma within attribute value', () => {
       const bidRequests = getBidRequests();
-      const bidderRequest2 = { ...bidderRequest }
+      const bidderRequest2 = { ...bidderRequest };
       const schain1 = {
         ver: '1.0',
         complete: 1,

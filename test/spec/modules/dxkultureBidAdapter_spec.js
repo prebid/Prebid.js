@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import { spec, SYNC_URL } from 'modules/dxkultureBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { spec } from 'modules/dxkultureBidAdapter.js';
 
 const getBannerRequest = () => {
   return {
@@ -31,7 +30,7 @@ const getBannerRequest = () => {
     start: 1487883186070,
     auctionStart: 1487883186069,
     timeout: 3000
-  }
+  };
 };
 
 const getVideoRequest = () => {
@@ -190,7 +189,7 @@ const getBidderResponse = () => {
       }
     }
   };
-}
+};
 
 describe('dxkultureBidAdapter', function() {
   let videoBidRequest;
@@ -267,7 +266,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('returns false when banner mediaType does not exist', function () {
-      bidderRequest.bids[0].mediaTypes = {}
+      bidderRequest.bids[0].mediaTypes = {};
       expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false;
     });
   });
@@ -390,12 +389,12 @@ describe('dxkultureBidAdapter', function() {
         'test',
         1,
         []
-      ]
+      ];
 
       invalidMimes.forEach((mimes) => {
         this.bid.mediaTypes.video.mimes = mimes;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      })
+      });
     });
 
     it('returns false when video protocols is invalid', function () {
@@ -404,12 +403,12 @@ describe('dxkultureBidAdapter', function() {
         'test',
         1,
         []
-      ]
+      ];
 
       invalidMimes.forEach((protocols) => {
         this.bid.mediaTypes.video.protocols = protocols;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      })
+      });
     });
   });
 
@@ -465,7 +464,7 @@ describe('dxkultureBidAdapter', function() {
 
     context('when mediaType is banner', function () {
       it('creates request data', function () {
-        const request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
+        const request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
 
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;

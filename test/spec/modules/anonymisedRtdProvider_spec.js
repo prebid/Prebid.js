@@ -13,18 +13,18 @@ describe('anonymisedRtdProvider', function() {
     ]
   };
 
-  const onDone = function() { return true };
+  const onDone = function() { return true; };
 
   const cmoduleConfig = {
     'name': 'anonymised',
     'params': {
       'cohortStorageKey': 'cohort_ids'
     }
-  }
+  };
 
   beforeEach(function() {
     config.resetConfig();
-    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
   });
 
   afterEach(function () {
@@ -356,7 +356,7 @@ describe('anonymisedRtdProvider', function() {
     });
 
     it('should initialize and return with config', function () {
-      expect(getRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig)).to.equal(undefined)
+      expect(getRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig)).to.equal(undefined);
     });
   });
 });

@@ -45,7 +45,7 @@ export const spec = {
       const sid = getBidIdParameter('sid', request.params);
       const widths = request.sizes.map(size => size[0]).join(',');
       const heights = request.sizes.map(size => size[1]).join(',');
-      const timeout = bidderRequest.timeout
+      const timeout = bidderRequest.timeout;
 
       queryString = tryAppendQueryString(queryString, 'bid', bid);
       queryString = tryAppendQueryString(queryString, 'sid', sid);

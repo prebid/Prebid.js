@@ -1,20 +1,13 @@
-import {
-  expect
-} from 'chai';
-import {
-  spec,
-  internals
-} from 'modules/theAdxBidAdapter.js';
-import {
-  newBidder
-} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/theAdxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('TheAdxAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('getUserSyncs', () => {
-    const USER_SYNC_IFRAME_URL = 'https://ssp.theadx.com/async_usersync_iframe.html'
-    const USER_SYNC_IMAGE_URL = 'https://ssp.theadx.com/async_usersync_image.gif'
+    const USER_SYNC_IFRAME_URL = 'https://ssp.theadx.com/async_usersync_iframe.html';
+    const USER_SYNC_IMAGE_URL = 'https://ssp.theadx.com/async_usersync_image.gif';
 
     expect(spec.getUserSyncs({
       iframeEnabled: true,
@@ -104,7 +97,7 @@ describe('TheAdxAdapter', function () {
         canonicalUrl: 'https://domain.com/to',
         referer: 'https://domain.com/from'
       }
-    }
+    };
 
     it('successfully generates a URL', function () {
       const placementId = '1';
@@ -403,7 +396,7 @@ describe('TheAdxAdapter', function () {
 
       const result = spec.interpretResponse({
         body: ''
-      }, {})
+      }, {});
 
       expect(result).to.eql([]);
     });
@@ -411,14 +404,14 @@ describe('TheAdxAdapter', function () {
     it('gracefully fails when a non-JSON body is present', function () {
       const result = spec.interpretResponse({
         body: 'THIS IS NOT <JSON/>'
-      }, {})
+      }, {});
 
       expect(result).to.eql([]);
     });
 
     it('returns a valid bid response on successful banner request', function () {
       const incomingRequestId = 'XXtestingXX';
-      const responsePrice = 3.14
+      const responsePrice = 3.14;
 
       const responseCreative = 'sample_creative&{FOR_COVARAGE}';
 
@@ -466,7 +459,7 @@ describe('TheAdxAdapter', function () {
       };
       const serverResponse = {
         body: sampleResponse
-      }
+      };
       const result = spec.interpretResponse(serverResponse, sampleRequest);
 
       expect(result.length).to.equal(1);
@@ -486,7 +479,7 @@ describe('TheAdxAdapter', function () {
 
     it('returns a valid deal bid response on successful banner request with deal', function () {
       const incomingRequestId = 'XXtestingXX';
-      const responsePrice = 3.14
+      const responsePrice = 3.14;
 
       const responseCreative = 'sample_creative&{FOR_COVARAGE}';
 
@@ -537,7 +530,7 @@ describe('TheAdxAdapter', function () {
       };
       const serverResponse = {
         body: sampleResponse
-      }
+      };
       const result = spec.interpretResponse(serverResponse, sampleRequest);
 
       expect(result.length).to.equal(1);
@@ -558,8 +551,8 @@ describe('TheAdxAdapter', function () {
 
     it('returns an valid bid response on successful video request', function () {
       const incomingRequestId = 'XXtesting-275XX';
-      const responsePrice = 6
-      const vast_url = 'https://theadx.com/vast?rid=a8ae0b48-a8db-4220-ba0c-7458f452b1f5&{FOR_COVARAGE}'
+      const responsePrice = 6;
+      const vast_url = 'https://theadx.com/vast?rid=a8ae0b48-a8db-4220-ba0c-7458f452b1f5&{FOR_COVARAGE}';
 
       const responseCreativeId = '1556';
       const responseCurrency = 'TRY';
@@ -624,9 +617,9 @@ describe('TheAdxAdapter', function () {
 
     it('returns an valid bid response on successful native request', function () {
       const incomingRequestId = 'XXtesting-275XX';
-      const responsePrice = 6
+      const responsePrice = 6;
       const nurl = 'https://app.theadx.com/ixc?rid=02aefd80-2df9-11e9-896d-d33384d77f5c&time=v-1549888312715&sp=1WzMjcRpeyk%3D';
-      const linkUrl = 'https%3A%2F%2Fapp.theadx.com%2Fgclick%3Frid%3D02aefd80-2df9-11e9-896d-d33384d77f5c%26url%3Dhttps%253A%252F%252Fwww.theadx.com%252Ftr%252Fhedeflemeler'
+      const linkUrl = 'https%3A%2F%2Fapp.theadx.com%2Fgclick%3Frid%3D02aefd80-2df9-11e9-896d-d33384d77f5c%26url%3Dhttps%253A%252F%252Fwww.theadx.com%252Ftr%252Fhedeflemeler';
       const responseCreativeId = '1556';
       const responseCurrency = 'TRY';
 

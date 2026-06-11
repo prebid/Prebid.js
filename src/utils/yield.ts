@@ -11,7 +11,7 @@ declare module '../prebidGlobal' {
 
 function doYield() {
   const scheduler = (window as any).scheduler;
-  return typeof scheduler?.yield === 'function' ? scheduler.yield() : PbPromise.resolve()
+  return typeof scheduler?.yield === 'function' ? scheduler.yield() : PbPromise.resolve();
 }
 
 /**
@@ -32,8 +32,8 @@ export function yieldsIf<T extends (...args: any[]) => void>(shouldYield: () => 
   return function (...args) {
     pbYield(shouldYield, () => {
       fn.apply(this, args);
-    })
-  }
+    });
+  };
 }
 
 /**
@@ -45,7 +45,7 @@ export function yieldAll(shouldYield: () => boolean, fns: (() => void)[], cb?: (
     pbYield(shouldYield, () => {
       fn();
       cb();
-    })
+    });
   }), cb);
 }
 
