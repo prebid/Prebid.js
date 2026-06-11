@@ -44,7 +44,7 @@ jobs:
       - name:  Restore working directory
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.built-key }}
+          name: ${{ needs.build.outputs.linux }}
       - name: "Define testing strategy"
         uses: actions/github-script@v9
         id: define
