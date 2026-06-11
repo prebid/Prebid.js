@@ -342,7 +342,7 @@ describe('Prebid Adapter: Startio', function () {
       expect(request.test).to.equal(1);
     });
 
-    it('should hit production by default and the test endpoint when params.testAdsEnabled is set', function () {
+    it('should append testAdsEnabled=true to the endpoint only when params.testAdsEnabled is set', function () {
       let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
 
       let request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0];
@@ -351,7 +351,7 @@ describe('Prebid Adapter: Startio', function () {
 
       bidRequest.params.testAdsEnabled = true;
       request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0];
-      expect(request.url).to.include('alx-rtb.startappnetwork.com');
+      expect(request.url).to.include('pbc-rtb.startappnetwork.com');
       expect(request.url).to.include('testAdsEnabled=true');
     });
 
