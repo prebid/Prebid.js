@@ -5,15 +5,8 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "ferio",
+      "componentName": "magicbid",
       "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "myfeature",
-      "aliasOf": "ferio",
       "gvlid": null,
       "disclosureURL": null
     }
