@@ -938,7 +938,7 @@ describe('Yahoo ConnectID Submodule', () => {
         expect(connectIdSubmodule.userHasOptedOut).to.be.a('function');
       });
 
-      it('should return false when local storage key has not been set function', () => {
+      it('should return false when local storage key has not been set', () => {
         expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
       });
 
