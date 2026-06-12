@@ -10,7 +10,7 @@ import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v2.1.0';
+const terceptAnalyticsVersion = 'v2.2.0';
 const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 0;
@@ -35,6 +35,7 @@ function flush(auctionId, useBeacon = false) {
   });
   send({ auctionInit: auction.auctionInit, bids: auction.bids }, useBeacon);
   pendingAuctions.delete(auctionId);
+  adUnitMap.delete(auctionId);
 }
 
 // flush remaining auctions via sendBeacon on page exit
@@ -114,6 +115,10 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
             timeToRespond: args.timeToRespond,
             requestTimestamp: args.requestTimestamp,
             responseTimestamp: args.responseTimestamp,
+            vastUrl: args.vastUrl || null,
+            vastImpUrl: args.vastImpUrl || null,
+            playerWidth: args.playerWidth || null,
+            playerHeight: args.playerHeight || null,
             ...winFields
           }
         });
@@ -169,6 +174,15 @@ function mapBidRequests(params) {
   const arr = [];
   if (typeof params.bids !== 'undefined' && params.bids.length) {
     params.bids.forEach(function (bid) {
+      const mediaType = bid.mediaTypes?.video ? 'video'
+        : bid.mediaTypes?.banner ? 'banner'
+        : bid.mediaTypes?.native ? 'native'
+        : null;
+      const sizes = bid.mediaTypes?.banner?.sizes
+        ? parseSizesInput(bid.mediaTypes.banner.sizes).toString()
+        : bid.mediaTypes?.video?.playerSize
+          ? parseSizesInput(bid.mediaTypes.video.playerSize).toString()
+          : '';
       arr.push({
         bidderCode: bid.bidder,
         bidId: bid.bidId,
@@ -176,7 +190,9 @@ function mapBidRequests(params) {
         requestId: bid.bidderRequestId,
         auctionId: bid.auctionId,
         transactionId: bid.transactionId,
-        sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
+        mediaType,
+        sizes,
+        videoContext: bid.mediaTypes?.video?.context || null,
         renderStatus: 1,
         requestTimestamp: params.auctionStart
       });
@@ -242,6 +258,10 @@ function mapBidResponse(bidResponse, status) {
     adId: bidResponse.adId,
     adserverTargeting: bidResponse.adserverTargeting,
     videoCacheKey: bidResponse.videoCacheKey,
+    vastUrl: bidResponse.vastUrl || null,
+    vastImpUrl: bidResponse.vastImpUrl || null,
+    playerWidth: bidResponse.playerWidth || null,
+    playerHeight: bidResponse.playerHeight || null,
     meta: bidResponse.meta || {}
   };
 }
