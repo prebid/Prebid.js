@@ -53,7 +53,7 @@ describe('BidFabrik bid adapter', function () {
       const req = reqs[0];
       expect(req.method).to.equal('POST');
       expect(req.url).to.equal('https://bid.bidfabrik.com/bid?feed=pub-4417');
-      expect(req.options.contentType).to.equal('application/json');
+      expect(req.options.contentType).to.equal('text/plain');
       expect(req.options.withCredentials).to.equal(false);
     });
 
