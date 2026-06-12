@@ -54,7 +54,7 @@ describe('Improve Digital Adapter Tests', function () {
     skip: 1,
     skipmin: 5,
     skipafter: 30
-  }
+  };
 
   const instreamBidRequest = {
     bidder: 'improvedigital',
@@ -232,7 +232,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.tmax).not.to.exist;
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
-      sinon.assert.match(payload.source, { tid: 'mock-tid' })
+      sinon.assert.match(payload.source, { tid: 'mock-tid' });
       expect(payload.device).to.be.an('object');
       expect(payload.user).to.not.exist;
       sinon.assert.match(payload.imp, [
@@ -293,7 +293,7 @@ describe('Improve Digital Adapter Tests', function () {
           native: {
             ver: '1.2'
           },
-        })
+        });
         const nativeReq = JSON.parse(payload.imp[0].native.request);
         sinon.assert.match(nativeReq, {
           eventtrackers: [
@@ -318,7 +318,7 @@ describe('Improve Digital Adapter Tests', function () {
             sinon.match({ required: 1, title: { len: 140 } }),
             sinon.match({ required: 1, data: { type: 2 } })
           ]
-        })
+        });
       });
 
       it('should not make native request when nativeOrtbRequest is undefined', function () {
@@ -329,7 +329,7 @@ describe('Improve Digital Adapter Tests', function () {
       });
 
       it('should not make native request when no assets', function () {
-        const requests = updateNativeParams([{ ...nativeBidRequest, nativeParams: {} }])
+        const requests = updateNativeParams([{ ...nativeBidRequest, nativeParams: {} }]);
         const payload = JSON.parse(spec.buildRequests(requests, {})[0].data);
         expect(payload.imp[0].native).to.not.exist;
       });
@@ -502,7 +502,7 @@ describe('Improve Digital Adapter Tests', function () {
         const bidRequest = deepClone(instreamBidRequest);
         bidRequest.params.video = {
           w: 1024, h: 640
-        }
+        };
         const request = spec.buildRequests([bidRequest], bidderRequest)[0];
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].video.h).equal(480);
@@ -516,7 +516,7 @@ describe('Improve Digital Adapter Tests', function () {
           skip: 1,
           skipmin: 5,
           skipafter: 30
-        }
+        };
         const videoTestInvParam = Object.assign({}, videoTest);
         videoTestInvParam.blah = 1;
         bidRequest.params.video = videoTestInvParam;
@@ -789,10 +789,10 @@ describe('Improve Digital Adapter Tests', function () {
         bidderRequest
       });
 
-      const bidRequest2 = deepClone(simpleBidRequest)
+      const bidRequest2 = deepClone(simpleBidRequest);
       bidRequest2.params.publisherId = 1002;
 
-      const bidRequest3 = deepClone(extendBidRequest)
+      const bidRequest3 = deepClone(extendBidRequest);
       bidRequest3.params.publisherId = 1002;
 
       const request1 = spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[0];
@@ -808,8 +808,8 @@ describe('Improve Digital Adapter Tests', function () {
       try {
         spec.buildRequests([bidRequest, bidRequest2], bidderRequest);
       } catch (e) {
-        expect(e.name).to.exist.equal('Error')
-        expect(e.message).to.exist.equal(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`)
+        expect(e.name).to.exist.equal('Error');
+        expect(e.message).to.exist.equal(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`);
       }
 
       bidRequest2.params.publisherId = null;
@@ -1109,7 +1109,7 @@ describe('Improve Digital Adapter Tests', function () {
     function makeRequest(bidderRequest) {
       return {
         ortbRequest: CONVERTER.toORTB({ bidderRequest })
-      }
+      };
     }
 
     function expectMatch(actual, expected) {
@@ -1234,9 +1234,9 @@ describe('Improve Digital Adapter Tests', function () {
         const request = makeRequest({
           ...nativeBidderRequest,
           reqBids
-        })
+        });
         const bids = spec.interpretResponse(serverResponseNative, request);
-        expect(bids[0].native.ortb).to.eql(JSON.parse(serverResponseNative.body.seatbid[0].bid[0].adm))
+        expect(bids[0].native.ortb).to.eql(JSON.parse(serverResponseNative.body.seatbid[0].bid[0].adm));
       });
 
       it('should return a well-formed native bid for multi-format ad unit', function () {
@@ -1377,10 +1377,10 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.extend').returns(true);
       spec.buildRequests([simpleBidRequest], {});
-      const rawResponse = deepClone(serverResponse)
-      deepSetValue(rawResponse, 'body.ext.responsetimemillis', { a: 1, b: 1, c: 1, d: 1, e: 1 })
+      const rawResponse = deepClone(serverResponse);
+      deepSetValue(rawResponse, 'body.ext.responsetimemillis', { a: 1, b: 1, c: 1, d: 1, e: 1 });
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [rawResponse]);
-      const url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e'
+      const url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e';
       expect(syncs).to.deep.equal([{ type: 'iframe', url }]);
     });
   });

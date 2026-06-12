@@ -128,7 +128,7 @@ export const buildExtuidQuery = ({ id5, imuId }) => {
   const queryString = params.join('\t');
   if (!queryString) return null;
   return queryString;
-}
+};
 
 /**
  * Get Floor Price from Prebid Price Floors Module
@@ -436,7 +436,7 @@ export const spec = {
         }
 
         if (syncOptions.pixelEnabled && bid.adm) {
-          const decodedAdm = decodeURIComponent(bid.adm)
+          const decodedAdm = decodeURIComponent(bid.adm);
           const reg = new RegExp('https:\\\\/\\\\/cs.gssprt.jp\\\\/yie\\\\/ld\\\\/mcs\\?([^\\\\"]+)\\\\"', 'g');
           const csQuery = Array.from(decodedAdm.matchAll(reg), (match) => match[1]);
           if (!csQuery.length) {

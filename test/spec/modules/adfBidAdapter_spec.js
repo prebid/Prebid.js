@@ -286,7 +286,7 @@ describe('Adf adapter', function () {
       const validBidRequests = [{ bidId: 'bidId', params: { mid: 1 } }];
       const refererInfo = { page: 'page' };
       const bidderRequest = { refererInfo };
-      setCurrencyConfig({ adServerCurrency: 'EUR' })
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const request = spec.buildRequests(validBidRequests, res).data;
         assert.deepEqual(request.cur, ['EUR']);

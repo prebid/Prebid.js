@@ -1,9 +1,9 @@
 import {
   wurflSubmodule,
   storage,
-  __testing__
+  __testing__,
+  dep
 } from 'modules/wurflRtdProvider';
-import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as prebidGlobalModule from 'src/prebidGlobal.js';
 import { guardOrtb2Fragments } from 'libraries/objectGuard/ortbGuard.js';
@@ -38,7 +38,7 @@ describe('wurflRtdProvider', function () {
           cap_indices: [12, 13, 14, 19, 20, 21, 22]
         }
       }
-    }
+    };
     const WURFL = {
       advertised_browser: 'Chrome Mobile',
       advertised_browser_version: '130.0.0.0',
@@ -84,8 +84,8 @@ describe('wurflRtdProvider', function () {
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       window.WURFLPromises = {
-        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
-        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
+        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
+        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
       };
       // Initialize module with clean state for each test
       wurflSubmodule.init({ params: {} });
@@ -388,7 +388,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -435,7 +435,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -533,7 +533,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -575,7 +575,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -624,7 +624,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -677,7 +677,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -1608,8 +1608,8 @@ describe('wurflRtdProvider', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-      const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(false);
-      const fetchAjaxStub = sandbox.stub(ajaxModule, 'fetch').returns(Promise.resolve());
+      const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(false);
+      const fetchAjaxStub = sandbox.stub(dep, 'fetch').returns(Promise.resolve());
 
       // Mock getGlobal().getHighestCpmBids()
       const mockHighestCpmBids = [
@@ -1691,7 +1691,7 @@ describe('wurflRtdProvider', function () {
       });
 
       const testConsentClass = (description, userConsent, expectedClass, done) => {
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const callback = () => {
           const auctionDetails = {
@@ -1846,8 +1846,8 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon');
-        const fetchStub = sandbox.stub(ajaxModule, 'fetch').returns(Promise.resolve());
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon');
+        const fetchStub = sandbox.stub(dep, 'fetch').returns(Promise.resolve());
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -1891,7 +1891,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -1935,7 +1935,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -1999,7 +1999,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const callback = () => {
           const auctionDetails = {
@@ -2074,7 +2074,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const callback = () => {
           const auctionDetails = {
@@ -2350,7 +2350,7 @@ describe('wurflRtdProvider', function () {
       });
 
       it('should set LCE_ERROR enrichment type when LCE device detection throws error', (done) => {
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -2448,7 +2448,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const auctionDetails = {
           bidsReceived: [],
@@ -2472,7 +2472,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const auctionDetails = {
           bidsReceived: [],

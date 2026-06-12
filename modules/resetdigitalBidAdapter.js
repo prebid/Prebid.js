@@ -58,7 +58,8 @@ export const spec = {
       return result;
     }
 
-    const userIds = extractUserIdsFromEids(bidderRequest.userIdAsEids);
+    const userEids = validBidRequests[0]?.userIdAsEids || [];
+    const userIds = extractUserIdsFromEids(userEids);
 
     const payload = {
       start_time: timestamp(),
@@ -74,6 +75,12 @@ export const spec = {
       user_ids: userIds,
       sync_limit: spb,
     };
+
+    if (userEids.length) {
+      payload.user = {
+        eids: deepClone(userEids),
+      };
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

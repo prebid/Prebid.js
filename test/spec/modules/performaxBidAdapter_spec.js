@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { spec, converter, storeData, readData, storage, resetUserSyncsInit } from 'modules/performaxBidAdapter.js';
+import { converter, dep, readData, resetUserSyncsInit, spec, storage, storeData } from 'modules/performaxBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import * as ajax from 'src/ajax.js';
 import sinon from 'sinon';
 
 describe('Performax adapter', function () {
@@ -114,7 +113,7 @@ describe('Performax adapter', function () {
           ]
         }]
     },
-  }
+  };
 
   describe('isBidRequestValid', function () {
     const bid = {};
@@ -129,7 +128,7 @@ describe('Performax adapter', function () {
       bid.params = { tagid: 'sample' };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-  })
+  });
 
   describe('buildRequests', function () {
     let sandbox;
@@ -362,7 +361,7 @@ describe('Performax adapter', function () {
     let randomStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
       randomStub = sinon.stub(Math, 'random').returns(0);
     });
 

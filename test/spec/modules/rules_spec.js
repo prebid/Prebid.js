@@ -432,11 +432,11 @@ describe('Rules Module', function() {
       const auctions = {
         [auctionId]: auction1,
         [otherAuctionId]: auction2
-      }
+      };
 
       const index = {
         getAuction: ({ auctionId }) => auctions[auctionId]
-      }
+      };
 
       const result1 = rulesModule.dep.getGlobalRandom(auctionId, index);
       const result2 = rulesModule.dep.getGlobalRandom(auctionId, index);

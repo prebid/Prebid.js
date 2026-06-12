@@ -47,6 +47,9 @@ export const TQ = 'tq';
 export const TG = 'tg';
 export const THEMES = 'themes';
 export const TONES = 'tones';
+export const dep = {
+  ajaxBuilder
+};
 
 export const CONTEXT_KEYS = [
   AP_VALUES,
@@ -105,7 +108,7 @@ export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
       });
     cache.set(pageUrl, pending);
     return pending;
-  }
+  };
 }
 
 export const getContextData = makeMemoizedFetch();
@@ -126,13 +129,13 @@ export function makeContextDataToKeyValuesReducer(config) {
       keyValues.push([`${prefix}_${key}`, value]);
     }
     return keyValues;
-  }
+  };
 }
 
 export async function fetchContextData() {
   const pageUrl = encodeURIComponent(window.location.href);
   const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
-  const request = ajaxBuilder();
+  const request = dep.ajaxBuilder();
 
   return new Promise((resolve, reject) => {
     request(requestUrl, { success: resolve, error: reject });
@@ -164,7 +167,7 @@ export function setTargeting(config, contextData) {
   logMessage('context', contextData);
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
-    .reduce(makeContextDataToKeyValuesReducer(config), [])
+    .reduce(makeContextDataToKeyValuesReducer(config), []);
 
   keyValues.forEach(([key, value]) => setKeyValue(key, value));
 }

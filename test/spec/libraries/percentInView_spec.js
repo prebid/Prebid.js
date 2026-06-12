@@ -246,7 +246,7 @@ describe('percentInView', () => {
         hook(next, request);
         await delay();
         sinon.assert.called(next);
-      })
+      });
     });
   });
 

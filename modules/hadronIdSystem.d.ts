@@ -5,7 +5,7 @@ export type HadronIdSystemParams = {
    * Audigent Partner ID obtained from Audigent.
    */
   partnerId: number;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -21,4 +21,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

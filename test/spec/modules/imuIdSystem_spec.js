@@ -44,13 +44,13 @@ describe('imuId module', function () {
     undefined,
     null,
     ''
-  ]
+  ];
 
   const configParamTestCase = {
     params: {
       cid: 5126
     }
-  }
+  };
 
   describe('getId()', function () {
     it('should return the uid when it exists in local storages', function () {
@@ -179,13 +179,13 @@ describe('imuId module', function () {
     });
 
     it('should return "undefined" success', function () {
-      const res = getApiCallback(function(uid) { return uid });
+      const res = getApiCallback(function(uid) { return uid; });
       expect(res.success('{"uid": "testid"}')).to.equal(undefined);
       expect(res.error()).to.equal(undefined);
     });
 
     it('should return "undefined" catch error response', function () {
-      const res = getApiCallback(function(uid) { return uid });
+      const res = getApiCallback(function(uid) { return uid; });
       expect(res.success('error response')).to.equal(undefined);
     });
   });
@@ -222,5 +222,5 @@ describe('imuId module', function () {
         }]
       });
     });
-  })
+  });
 });

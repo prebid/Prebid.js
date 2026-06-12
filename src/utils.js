@@ -8,7 +8,7 @@ import * as debug from './utils/debug.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
-export * from './utils/objects.js'
+export * from './utils/objects.js';
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
 
 // many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
@@ -124,10 +124,10 @@ export function sizesToSizeTuples(sizes) {
       .split(/\s*,\s*/)
       .map(sz => sz.match(/^(\d+)x(\d+)$/i))
       .filter(match => match)
-      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)]);
   } else if (Array.isArray(sizes)) {
     if (isValidGPTSingleSize(sizes)) {
-      return [sizes]
+      return [sizes];
     }
     return sizes.filter(isValidGPTSingleSize);
   }
@@ -144,7 +144,7 @@ export function parseSizesInput(sizeObj) {
 }
 
 export function sizeTupleToSizeString(size) {
-  return size[0] + 'x' + size[1]
+  return size[0] + 'x' + size[1];
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -163,7 +163,7 @@ export function sizeTupleToRtbSize(size) {
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return sizeTupleToRtbSize(singleSize)
+    return sizeTupleToRtbSize(singleSize);
   }
 }
 
@@ -220,13 +220,13 @@ export const createIframe = (() => {
     scrolling: 'no',
     frameBorder: '0',
     allowtransparency: 'true'
-  }
+  };
   return (doc, attrs, style = {}) => {
     const f = doc.createElement('iframe');
     Object.assign(f, Object.assign({}, DEFAULTS, attrs));
     Object.assign(f.style, style);
     return f;
-  }
+  };
 })();
 
 export function createInvisibleIframe() {
@@ -299,7 +299,7 @@ export function contains(a, obj) {
  */
 export function _map(object, callback) {
   if (isFn(object?.map)) return object.map(callback);
-  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object));
 }
 
 /*
@@ -356,27 +356,28 @@ export function waitForElementToLoad(element, timeout) {
 }
 
 /**
- * Inserts an image pixel with the specified `url` for cookie sync
- * @param {string} url URL string of the image pixel to load
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
+ * Fires a fire-and-forget request for `url` on the background task queue (a keepalive fetch, falling
+ * back to an image pixel) for cookie sync and similar best-effort pixels.
+ * @param {string} url URL string to request
+ * @param {string} [credentials='include'] fetch credentials mode (e.g. `'include'`, `'omit'`); pass
+ *   `'omit'` for a cookieless request — the image fallback (which cannot omit cookies) is then skipped.
  */
 
-export function politeTriggerPixel(url) {
+export function politeTriggerPixel(url, credentials = 'include') {
   const triggerSync = () => {
     if (window.fetch && window.Request) {
       try {
         const request = new Request(url, {
           method: 'GET',
           mode: 'no-cors',
-          credentials: 'include',
+          credentials,
           keepalive: true
         });
-        window.fetch(request).catch(() => triggerPixel(url));
+        window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
         return;
       } catch (e) {}
     }
-    triggerPixel(url);
+    if (credentials !== 'omit') triggerPixel(url);
   };
 
   runBackgroundTask(triggerSync);
@@ -472,8 +473,8 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
 export function encodeMacroURI(url) {
   const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
   return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
-  }, encodeURI(url))
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro);
+  }, encodeURI(url));
 }
 
 /**
@@ -518,7 +519,7 @@ export function getBidRequest(id, bidderRequests) {
     return;
   }
   return bidderRequests.flatMap(br => br.bids)
-    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id))
+    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id));
 }
 
 export function getValue(obj, key) {
@@ -545,7 +546,7 @@ export function isApnGetTagDefined() {
 
 export const sortByHighestCpm = (a, b) => {
   return b.cpm - a.cpm;
-}
+};
 
 /**
  * Fisher–Yates shuffle
@@ -609,7 +610,7 @@ export function getSafeframeGeometry() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
 export function isFirefoxBrowser() {
@@ -628,7 +629,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, { AUCTION_PRICE: cpm })
+  return replaceMacros(str, { AUCTION_PRICE: cpm });
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -715,7 +716,7 @@ export function delayExecution(func, numRequiredCalls) {
     if (numCalls === numRequiredCalls) {
       func.apply(this, arguments);
     }
-  }
+  };
 }
 
 /**
@@ -802,7 +803,7 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'));
 }
 
 /**
@@ -1077,7 +1078,7 @@ export function memoize(fn, key = function (arg) { return arg; }) {
       cache.set(cacheKey, fn.apply(this, arguments));
     }
     return cache.get(cacheKey);
-  }
+  };
   memoized.clear = cache.clear.bind(cache);
   return memoized;
 }
@@ -1115,7 +1116,7 @@ export function convertObjectToArray(obj) {
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {
-  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v))
+  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v));
 }
 
 /**

@@ -38,13 +38,13 @@ export const spec = {
    * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let catData = null
+    let catData = null;
     if (bidderRequest?.ortb2?.site) {
       catData = {
         pagecat: bidderRequest.ortb2.site.pagecat || [],
         sectioncat: bidderRequest.ortb2.site.sectioncat || [],
         sitecat: bidderRequest.ortb2.site.cat || [],
-      }
+      };
     }
 
     let refererInfo = null;
@@ -52,7 +52,7 @@ export const spec = {
       refererInfo = {
         domain: bidderRequest.refererInfo.domain,
         pageurl: bidderRequest.refererInfo.page
-      }
+      };
     }
 
     let gdprConsent = null;

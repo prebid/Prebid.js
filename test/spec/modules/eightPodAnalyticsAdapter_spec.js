@@ -59,7 +59,7 @@ describe('eightPodAnalyticAdapter', function() {
       sandbox.spy(eightPodAnalytics, 'eventSubscribe');
 
       analyticsAdapter.setupPage();
-      expect(queue).to.deep.equal(eventList)
+      expect(queue).to.deep.equal(eventList);
     });
   });
 
@@ -78,10 +78,10 @@ describe('eightPodAnalyticAdapter', function() {
     it('should NOT call setup page and get context', function() {
       eightPodAnalytics.track({
         eventType: 'wrong_event_type',
-      })
+      });
 
       sandbox.assert.callCount(setupPageStub, 0);
-      expect(analyticsAdapter.getContext()).to.deep.equal({})
+      expect(analyticsAdapter.getContext()).to.deep.equal({});
     });
 
     it('should call setup page and get context', function() {
@@ -100,7 +100,7 @@ describe('eightPodAnalyticAdapter', function() {
             }
           ]
         }
-      })
+      });
 
       sandbox.assert.callCount(setupPageStub, 1);
       expect(analyticsAdapter.getContext()).to.deep.equal({
@@ -111,7 +111,7 @@ describe('eightPodAnalyticAdapter', function() {
           publisherId: 'publisherId',
           variantId: 'creativeId'
         }
-      })
+      });
     });
   });
 
@@ -144,7 +144,7 @@ describe('eightPodAnalyticAdapter', function() {
             value: 3
           }
         }
-      }
+      };
       const result1 = {
         context: {},
         eventType: 'Counter',
@@ -156,7 +156,7 @@ describe('eightPodAnalyticAdapter', function() {
           to: '2.2',
           value: 3
         }
-      }
+      };
 
       const event2 = {
         detail: {
@@ -166,7 +166,7 @@ describe('eightPodAnalyticAdapter', function() {
             value: 2
           }
         }
-      }
+      };
       const result2 = {
         context: {},
         eventType: 'Counter',
@@ -176,9 +176,9 @@ describe('eightPodAnalyticAdapter', function() {
         payload: {
           value: 2
         }
-      }
+      };
 
-      trackEvent(event1, adUnitCode)
+      trackEvent(event1, adUnitCode);
       expect(queue).to.deep.equal([result1]);
       trackEvent(event2, adUnitCode);
       expect(queue).to.deep.equal([result1, result2]);

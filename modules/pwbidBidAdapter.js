@@ -32,7 +32,7 @@ const MEDIATYPE = [
   BANNER,
   VIDEO,
   NATIVE
-]
+];
 
 const CUSTOM_PARAMS = {
   'gender': '', // User gender
@@ -66,7 +66,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 // rtb native types are meant to be dynamic and extendable
 // the extendable data asset types are nicely aligned
@@ -100,7 +100,7 @@ const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
   'LOGO': 2,
   'IMAGE': 3
-}
+};
 
 // to render any native unit we have to have a few items
 const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
@@ -119,17 +119,17 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
     id: NATIVE_ASSETS.IMAGE.ID,
     required: true,
   }
-]
+];
 
-let isInvalidNativeRequest = false
+let isInvalidNativeRequest = false;
 const NATIVE_ASSET_ID_TO_KEY_MAP = {};
 const NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // together allows traversal of NATIVE_ASSETS_LIST in any direction
 // id -> key
-_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
+_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY; });
 // key -> asset
-_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
+_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset; });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -375,7 +375,7 @@ export const spec = {
     // }
     return bidResponses;
   }
-}
+};
 
 function _checkMediaType(bid, newBid) {
   // Check Various ADM Aspects to Determine Media Type
@@ -671,7 +671,7 @@ function _addFloorFromFloorModule(impObj, bid) {
         const floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
         if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
-          bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+          bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
         }
       }
     });
@@ -679,7 +679,7 @@ function _addFloorFromFloorModule(impObj, bid) {
 
   // get highest, if none then take the default -1
   if (impObj.bidfloor) {
-    bidFloor = Math.max(bidFloor, impObj.bidfloor)
+    bidFloor = Math.max(bidFloor, impObj.bidfloor);
   }
 
   // assign if it has a valid floor - > 0
@@ -1019,6 +1019,6 @@ export {
   _checkVideoPlacement,
   _checkMediaType,
   _parseAdSlot
-}
+};
 
 registerBidder(spec);
