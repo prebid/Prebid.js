@@ -1,4 +1,4 @@
-import AnalyticsAdapter, { type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import AnalyticsAdapter, { type AnalyticsAdapterInstance, type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { prefixLog, isPlainObject } from '../src/utils.js';
 import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
@@ -28,7 +28,7 @@ type BaseOptions = {
    * using the data returned by their corresponding function.
    */
   events?: EventMapping;
-}
+};
 
 type Payloads<M extends EventMapping> = {
   [H in keyof M]: M[H] extends AnyFunction ? ReturnType<M[H]> : never
@@ -43,7 +43,7 @@ type CustomHandlersOptions<M extends EventMapping> = BaseOptions & {
   events: M;
   url?: undefined;
   method?: undefined;
-}
+};
 
 type BasicHandlerOptions = BaseOptions & {
   /**
@@ -54,7 +54,7 @@ type BasicHandlerOptions = BaseOptions & {
   events?: undefined;
   url?: undefined;
   method?: undefined;
-}
+};
 
 type UrlOptions = BaseOptions & {
   /**
@@ -66,7 +66,7 @@ type UrlOptions = BaseOptions & {
    */
   method?: string;
   handler?: undefined;
-}
+};
 
 declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
   interface AnalyticsProviderConfig {
@@ -80,18 +80,28 @@ const DEFAULTS = {
   batchSize: 1,
   batchDelay: 100,
   method: 'POST'
-}
+};
 
 const TYPES = {
   handler: 'function',
   batchSize: 'number',
   batchDelay: 'number',
   gvlid: 'number',
-}
+};
 
 const MAX_CALL_DEPTH = 20;
 
-export function GenericAnalytics() {
+type GenericAnalyticsAdapter = AnalyticsAdapterInstance<'generic'> & {
+  gvlid: (config) => number | undefined;
+};
+
+type GenericAnalyticsConstructor = new () => GenericAnalyticsAdapter;
+
+export function GenericAnalytics(): GenericAnalyticsAdapter {
+  if (!new.target) {
+    return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
+  }
+
   const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
   const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
@@ -100,7 +110,7 @@ export function GenericAnalytics() {
 
   function optionsAreValid(options) {
     if (!options.url && !options.handler) {
-      logError('options must specify either `url` or `handler`')
+      logError('options must specify either `url` or `handler`');
       return false;
     }
     if (options.hasOwnProperty('method') && !['GET', 'POST'].includes(options.method)) {
@@ -169,14 +179,14 @@ export function GenericAnalytics() {
           logError(`error executing options.events.${eventType}`, e);
         }
       }
-    }
+    };
   }
 
   return Object.assign(
     Object.create(parent),
     {
       gvlid(config) {
-        return config?.options?.gvlid
+        return config?.options?.gvlid;
       },
       enableAnalytics(config) {
         if (optionsAreValid(config?.options || {})) {
@@ -202,20 +212,20 @@ export function GenericAnalytics() {
         }
       }
     }
-  )
+  );
 }
 
 export function defaultHandler({ url, method, batchSize, ajax = ajaxBuilder() }) {
   const callbacks = {
     success() {},
     error() {}
-  }
+  };
   const extract = batchSize > 1 ? (events) => events : (events) => events[0];
   const serialize = method === 'GET' ? (data) => ({ data: JSON.stringify(data) }) : (data) => JSON.stringify(data);
 
   return function (events) {
-    ajax(url, callbacks, serialize(extract(events)), { method, keepalive: true })
-  }
+    ajax(url, callbacks, serialize(extract(events)), { method, keepalive: true });
+  };
 }
 
 adapterManager.registerAnalyticsAdapter({

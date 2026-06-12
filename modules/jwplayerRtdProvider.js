@@ -12,7 +12,7 @@
 import { submodule } from '../src/hook.js';
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { deepAccess, logError, logWarn } from '../src/utils.js'
+import { deepAccess, logError, logWarn } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
@@ -281,7 +281,7 @@ export function getVatFromPlayer(playerDivId, mediaID) {
   const description = item.description;
   const mediaUrl = item.file;
   const segments = item.jwpseg;
-  cachePlaylistItem(item, mediaID)
+  cachePlaylistItem(item, mediaID);
 
   return {
     segments,
@@ -305,7 +305,7 @@ export function formatTargetingResponse(vat) {
   if (mediaID) {
     targeting.content = {
       id: getContentId(mediaID)
-    }
+    };
   }
   return targeting;
 }

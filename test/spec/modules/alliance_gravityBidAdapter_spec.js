@@ -28,7 +28,7 @@ describe('Alliance Gravity bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
     it('No srid', () => {
@@ -231,7 +231,7 @@ describe('Alliance Gravity bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 

@@ -31,9 +31,9 @@ describe('compose', () => {
     };
     compose(components)('one', 'two');
     Object.values(components).forEach(comp => {
-      sinon.assert.calledWith(comp.fn, 'one', 'two')
-    })
-  })
+      sinon.assert.calledWith(comp.fn, 'one', 'two');
+    });
+  });
 
   it('respects overrides', () => {
     const components = {
@@ -46,10 +46,10 @@ describe('compose', () => {
     };
     const overrides = {
       second: sinon.stub()
-    }
+    };
     compose(components, overrides)('one', 'two');
-    sinon.assert.calledWith(overrides.second, components.second.fn, 'one', 'two')
-  })
+    sinon.assert.calledWith(overrides.second, components.second.fn, 'one', 'two');
+  });
 
   it('disables components when override is false', () => {
     const components = {
@@ -65,5 +65,5 @@ describe('compose', () => {
     };
     compose(components, overrides)('one', 'two');
     sinon.assert.notCalled(components.second.fn);
-  })
+  });
 });

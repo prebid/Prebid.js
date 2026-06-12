@@ -219,12 +219,12 @@ describe('ImpactifyAdapter', function () {
         return {
           currency: 'USD',
           floor: 1.23,
-        }
-      }
+        };
+      };
 
       const res = spec.buildRequests(videoBidRequests, videoBidderRequest);
-      const resData = JSON.parse(res.data)
-      expect(resData.imp[0].bidfloor).to.equal(1.23)
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].bidfloor).to.equal(1.23);
     });
 
     it('sends video bid request to ENDPOINT via POST', function () {
@@ -648,4 +648,4 @@ describe('ImpactifyAdapter', function () {
     const result = spec.onTimeout(bid);
     assert.ok(result);
   });
-})
+});

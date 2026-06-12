@@ -224,7 +224,7 @@ export const spec = {
       url: `https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4${params}`
     }];
   }
-}
+};
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
@@ -328,7 +328,7 @@ function getSizeArray(bid) {
   if (bid.params && Array.isArray(bid.params.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize]
+      inputSize = [inputSize];
     }
   }
 

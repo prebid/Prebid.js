@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/fluctBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 
 describe('fluctAdapter', function () {
   const adapter = newBidder(spec);
@@ -701,7 +702,7 @@ describe('fluctAdapter', function () {
     it('sends no instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.instl).to.eql(0);
-    })
+    });
 
     it('sends ortb2Imp.instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({
@@ -965,6 +966,20 @@ describe('fluctAdapter', function () {
     it('does not include data.user.ext when ortb2.user.ext.data is absent', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.user.ext).to.eql(undefined);
+    });
+
+    describe('autoplay signal', function () {
+      it('sends data.autoplay = 1 when autoplay is enabled', function () {
+        sb.stub(autoplay, 'isAutoplayEnabled').returns(true);
+        const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+        expect(request.data.autoplay).to.equal(1);
+      });
+
+      it('sends data.autoplay = 0 when autoplay is disabled', function () {
+        sb.stub(autoplay, 'isAutoplayEnabled').returns(false);
+        const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+        expect(request.data.autoplay).to.equal(0);
+      });
     });
   });
 

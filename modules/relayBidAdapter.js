@@ -2,7 +2,7 @@ import { isNumber, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'relay';
 const METHOD = 'POST';
@@ -30,7 +30,7 @@ function buildRequests(bidRequests, bidderRequest) {
   const reqs = [];
   for (const [accountId, accountBidRequests] of Object.entries(groupedByAccountId)) {
     const url = `${ENDPOINT_URL}?a=${accountId}&pb=1&pbv=${prebidVersion}`;
-    const data = CONVERTER.toORTB({ bidRequests: accountBidRequests, bidderRequest })
+    const data = CONVERTER.toORTB({ bidRequests: accountBidRequests, bidderRequest });
     const req = {
       method: METHOD,
       url,
@@ -50,9 +50,9 @@ function isBidRequestValid(bid) {
 };
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  const syncs = []
+  const syncs = [];
   for (const response of serverResponses) {
-    const responseSyncs = ((((response || {}).body || {}).ext || {}).user_syncs || [])
+    const responseSyncs = ((((response || {}).body || {}).ext || {}).user_syncs || []);
     // Relay returns user_syncs in the format expected by prebid. If for any
     // reason the request/response failed to properly capture the GDPR settings
     // -- fallback to those identified by Prebid.
@@ -61,7 +61,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
       const missingGdpr = !syncUrl.searchParams.has('gdpr');
       const missingGdprConsent = !syncUrl.searchParams.has('gdpr_consent');
       if (missingGdpr) {
-        syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies))
+        syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies));
         sync.url = syncUrl.toString();
       }
       if (missingGdprConsent) {
@@ -95,5 +95,5 @@ export const spec = {
     logMessage('Error: ', error, bidderRequest);
   },
   supportedMediaTypes: [BANNER, VIDEO, NATIVE]
-}
+};
 registerBidder(spec);

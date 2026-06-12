@@ -26,7 +26,7 @@ describe('flippAdapter', function () {
 
     it('should return false when required params are not passed', function () {
       const invalidBid = Object.assign({}, bid);
-      invalidBid.params = { siteId: 1234 }
+      invalidBid.params = { siteId: 1234 };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -169,7 +169,7 @@ describe('flippAdapter', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result).to.have.lengthOf(0);
       expect(result).to.deep.have.same.members([]);
-    })
+    });
 
     it('should get empty response when bid server returns 204', function() {
       expect(spec.interpretResponse({})).to.be.empty;

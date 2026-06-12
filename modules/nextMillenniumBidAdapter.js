@@ -149,7 +149,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const bidIds = new Map()
+    const bidIds = new Map();
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
@@ -183,8 +183,8 @@ export const spec = {
       const { cur, mediaTypes } = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
 
-      const impId = String(i + 1)
-      bidIds.set(impId, bid.bidId)
+      const impId = String(i + 1);
+      bidIds.set(impId, bid.bidId);
 
       const imp = getImp(impId, bid, id, mediaTypes);
       setOrtb2Parameters(ALLOWED_ORTB2_IMP_PARAMETERS, imp, bid?.ortb2Imp);
@@ -259,10 +259,10 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
 
     const pixels = [];
-    const getSetPixelFunc = type => url => { pixels.push({ type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type) }) };
-    const getSetPixelsFunc = type => response => { deepAccess(response, `body.ext.sync.${type}`, []).forEach(getSetPixelFunc(type)) };
+    const getSetPixelFunc = type => url => { pixels.push({ type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type) }); };
+    const getSetPixelsFunc = type => response => { deepAccess(response, `body.ext.sync.${type}`, []).forEach(getSetPixelFunc(type)); };
 
-    const setPixel = (type, url) => { (getSetPixelFunc(type))(url) };
+    const setPixel = (type, url) => { (getSetPixelFunc(type))(url); };
     const setPixelImages = getSetPixelsFunc('image');
     const setPixelIframes = getSetPixelsFunc('iframe');
 
@@ -337,7 +337,7 @@ export const spec = {
 
 export function getExtNextMilImp(impId, bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
-  const { adSlots, allowedAds } = bid.params
+  const { adSlots, allowedAds } = bid.params;
   const nextMilImp = {
     impId,
     nextMillennium: {
@@ -349,7 +349,7 @@ export function getExtNextMilImp(impId, bid) {
   };
 
   if (Array.isArray(adSlots)) nextMilImp.nextMillennium.adSlots = adSlots;
-  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds
+  if (Array.isArray(allowedAds)) nextMilImp.nextMillennium.allowedAds = allowedAds;
 
   return nextMilImp;
 }
@@ -382,8 +382,8 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return { w: s[0], h: s[1] } });
-  const { w, h } = (format[0] || {})
+  const format = (banner.data?.sizes || []).map(s => { return { w: s[0], h: s[1] }; });
+  const { w, h } = (format[0] || {});
   imp.banner = {
     w,
     h,
@@ -462,7 +462,7 @@ export function setOrtb2Parameters(allowedOrtb2Parameters, body, ortb2 = {}) {
     if (value) deepSetValue(body, parameter, value);
   }
 
-  if (body.wlang) delete body.wlangb
+  if (body.wlang) delete body.wlangb;
 }
 
 export function setEids(postBody = {}, bids = []) {

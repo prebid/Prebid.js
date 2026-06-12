@@ -25,12 +25,12 @@ describe('FPD enrichment USP', () => {
     consent = '1NN';
     return callHook().then(ortb2 => {
       expect(ortb2.regs.ext.us_privacy).to.eql('1NN');
-    })
+    });
   });
 
   it('does not set if missing', () => {
     return callHook().then(ortb2 => {
       expect(ortb2).to.eql({});
-    })
+    });
   });
 });

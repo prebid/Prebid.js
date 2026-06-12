@@ -52,7 +52,7 @@ export type CreateRenderPayload = {
   adUnitCode: string,
   width: number,
   height: number
-}
+};
 
 export const createRenderer = (
   { requestId, vastXml, adUnitCode, width, height }: CreateRenderPayload
@@ -83,7 +83,7 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
-}
+};
 
 export function mediaTypeOverride(orig: (bidResponse: any, bid: any, context: any) => void, bidResponse: any, bid: any, context: any): void {
   if (bidResponse.mediaType || ORTB_MTYPES.hasOwnProperty(bid.mtype)) {

@@ -239,7 +239,7 @@ describe('the first party data validation module', function () {
       duplicate.device = {
         h: '1',
         w: '1'
-      }
+      };
 
       const expected = {
         user: {

@@ -325,7 +325,7 @@ function trackingHandlerFactory(klass) {
         contentType: 'application/json'
       });
     }
-  }
+  };
 }
 
 /**

@@ -1,6 +1,6 @@
-import { expect } from 'chai'
-import { spec } from '../../../modules/bidscubeBidAdapter.js'
-import { deepStrictEqual, notEqual, ok, strictEqual } from 'assert'
+import { expect } from 'chai';
+import { spec } from '../../../modules/bidscubeBidAdapter.js';
+import { deepStrictEqual, notEqual, ok, strictEqual } from 'assert';
 
 describe('BidsCubeAdapter', () => {
   const bid = {
@@ -11,64 +11,64 @@ describe('BidsCubeAdapter', () => {
       traffic: 'banner',
       allParams: '{}'
     }
-  }
+  };
 
   describe('isBidRequestValid', () => {
     it('Should return true if there are bidId, params and placementId parameters present', () => {
-      strictEqual(true, spec.isBidRequestValid(bid))
-    })
+      strictEqual(true, spec.isBidRequestValid(bid));
+    });
 
     it('Should return false if at least one of parameters is not present', () => {
-      const b = { ...bid }
-      delete b.params.placementId
-      strictEqual(false, spec.isBidRequestValid(b))
-    })
-  })
+      const b = { ...bid };
+      delete b.params.placementId;
+      strictEqual(false, spec.isBidRequestValid(b));
+    });
+  });
 
   describe('buildRequests', () => {
-    const serverRequest = spec.buildRequests([bid])
+    const serverRequest = spec.buildRequests([bid]);
 
     it('Creates a ServerRequest object with method, URL and data', () => {
-      ok(serverRequest)
-      ok(serverRequest.method)
-      ok(serverRequest.url)
-      ok(serverRequest.data)
-    })
+      ok(serverRequest);
+      ok(serverRequest.method);
+      ok(serverRequest.url);
+      ok(serverRequest.data);
+    });
 
     it('Returns POST method', () => {
-      strictEqual('POST', serverRequest.method)
-    })
+      strictEqual('POST', serverRequest.method);
+    });
 
     it('Returns valid URL', () => {
-      strictEqual('https://supply.bidscube.com/?c=o&m=multi', serverRequest.url)
-    })
+      strictEqual('https://supply.bidscube.com/?c=o&m=multi', serverRequest.url);
+    });
 
     it('Returns valid data if array of bids is valid', () => {
-      const { data } = serverRequest
-      strictEqual('object', typeof data)
-      deepStrictEqual(['deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements'], Object.keys(data))
-      strictEqual('number', typeof data.deviceWidth)
-      strictEqual('number', typeof data.deviceHeight)
-      strictEqual('string', typeof data.language)
-      strictEqual('string', typeof data.host)
-      strictEqual('string', typeof data.page)
-      notEqual(-1, [0, 1].indexOf(data.secure))
+      const { data } = serverRequest;
+      strictEqual('object', typeof data);
+      deepStrictEqual(['deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements'], Object.keys(data));
+      strictEqual('number', typeof data.deviceWidth);
+      strictEqual('number', typeof data.deviceHeight);
+      strictEqual('string', typeof data.language);
+      strictEqual('string', typeof data.host);
+      strictEqual('string', typeof data.page);
+      notEqual(-1, [0, 1].indexOf(data.secure));
 
-      const placement = data.placements[0]
-      deepStrictEqual(['placementId', 'bidId', 'traffic', 'allParams'], Object.keys(placement))
-      strictEqual(0, placement.placementId)
-      strictEqual('9ec5b177515ee2e5', placement.bidId)
-      strictEqual('banner', placement.traffic)
-      strictEqual('{"bidId":"9ec5b177515ee2e5","bidder":"bidscube","params":{"placementId":0,"traffic":"banner","allParams":"{}"}}', placement.allParams)
-    })
+      const placement = data.placements[0];
+      deepStrictEqual(['placementId', 'bidId', 'traffic', 'allParams'], Object.keys(placement));
+      strictEqual(0, placement.placementId);
+      strictEqual('9ec5b177515ee2e5', placement.bidId);
+      strictEqual('banner', placement.traffic);
+      strictEqual('{"bidId":"9ec5b177515ee2e5","bidder":"bidscube","params":{"placementId":0,"traffic":"banner","allParams":"{}"}}', placement.allParams);
+    });
 
     it('Returns empty data if no valid requests are passed', () => {
-      const { placements } = spec.buildRequests([]).data
+      const { placements } = spec.buildRequests([]).data;
 
-      expect(spec.buildRequests([]).data.placements).to.be.an('array')
-      strictEqual(0, placements.length)
-    })
-  })
+      expect(spec.buildRequests([]).data.placements).to.be.an('array');
+      strictEqual(0, placements.length);
+    });
+  });
 
   describe('interpretResponse', () => {
     const validData = [
@@ -124,29 +124,29 @@ describe('BidsCubeAdapter', () => {
           }
         }]
       }
-    ]
+    ];
 
     for (const obj of validData) {
-      const { mediaType } = obj.body[0]
+      const { mediaType } = obj.body[0];
 
       it(`Should interpret ${mediaType} response`, () => {
-        const response = spec.interpretResponse(obj)
+        const response = spec.interpretResponse(obj);
 
-        expect(response).to.be.an('array')
-        strictEqual(1, response.length)
+        expect(response).to.be.an('array');
+        strictEqual(1, response.length);
 
-        const copy = { ...obj.body[0] }
-        deepStrictEqual(copy, response[0])
-      })
+        const copy = { ...obj.body[0] };
+        deepStrictEqual(copy, response[0]);
+      });
     }
 
     for (const obj of validData) {
       it(`Should interpret response has meta.advertiserDomains`, () => {
-        const response = spec.interpretResponse(obj)
+        const response = spec.interpretResponse(obj);
 
-        expect(response[0]['meta']['advertiserDomains']).to.be.an('array')
-        expect(response[0]['meta']['advertiserDomains'][0]).to.be.an('string')
-      })
+        expect(response[0]['meta']['advertiserDomains']).to.be.an('array');
+        expect(response[0]['meta']['advertiserDomains'][0]).to.be.an('string');
+      });
     }
 
     const invalidData = [
@@ -188,17 +188,17 @@ describe('BidsCubeAdapter', () => {
           currency: 'USD',
         }]
       }
-    ]
+    ];
 
     for (const obj of invalidData) {
-      const { mediaType } = obj.body[0]
+      const { mediaType } = obj.body[0];
 
       it(`Should return an empty array if invalid ${mediaType} response is passed `, () => {
-        const response = spec.interpretResponse(obj)
+        const response = spec.interpretResponse(obj);
 
-        expect(response).to.be.an('array')
-        strictEqual(0, response.length)
-      })
+        expect(response).to.be.an('array');
+        strictEqual(0, response.length);
+      });
     }
 
     it('Should return an empty array if invalid response is passed', () => {
@@ -210,17 +210,17 @@ describe('BidsCubeAdapter', () => {
           currency: 'USD',
           dealId: '1'
         }]
-      })
+      });
 
-      expect(response).to.be.an('array')
-      strictEqual(0, response.length)
-    })
-  })
+      expect(response).to.be.an('array');
+      strictEqual(0, response.length);
+    });
+  });
 
   describe('getUserSyncs', () => {
     it('Returns valid URL and type', () => {
-      const expectedResult = [{ type: 'image', url: 'https://supply.bidscube.com/?c=o&m=cookie' }]
-      deepStrictEqual(expectedResult, spec.getUserSyncs())
-    })
-  })
-})
+      const expectedResult = [{ type: 'image', url: 'https://supply.bidscube.com/?c=o&m=cookie' }];
+      deepStrictEqual(expectedResult, spec.getUserSyncs());
+    });
+  });
+});

@@ -238,7 +238,7 @@ function getResponses(gdpr, auctionIds) {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       const auction = cache.auctions[auctionId];
       const gdprPos = getGdprPos(gdpr, auction);
-      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
       const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
@@ -427,7 +427,7 @@ function getbidAdUnits() {
 prebidGlobal.clearAllAuctions = function() {
   cache.auctions = {};
   baseClearAllAuctions();
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
