@@ -236,11 +236,6 @@ function enableAnalyticsWrapper(config) {
     ? options.auctionEndDelay
     : DEFAULT_AUCTION_END_DELAY;
 
-  // Guard against double-registration if enableAnalytics is called twice.
-  if (locals.unloadHandler && typeof window !== 'undefined' && window.removeEventListener) {
-    window.removeEventListener('pagehide', locals.unloadHandler);
-    document.removeEventListener('visibilitychange', locals.unloadHandler);
-  }
   locals.unloadHandler = (/** @type {Event} */ ev) => {
     if (ev.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
     flushAllAuctions();

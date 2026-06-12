@@ -446,6 +446,79 @@ describe('scaleableAnalyticsAdapter:', function () {
 
       expect(navigator.sendBeacon.called).to.equal(false);
     });
+
+    it('clears pending flush timers on disableAnalytics', function () {
+      const auctionId = 'auction-pending-flush';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(200); // process AUCTION_END (schedules a flush timer) but stay under the delay
+      expect(Object.keys(locals.flushTimers)).to.have.lengthOf(1);
+      analyticsAdapter.disableAnalytics();
+      expect(Object.keys(locals.flushTimers)).to.have.lengthOf(0);
+    });
+
+    it('ignores event types it does not explicitly track', function () {
+      const auctionId = 'auction-untracked-event';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.SET_TARGETING, { [auctionId]: {} });
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      expect(lastBeaconPayload().auctionId).to.equal(auctionId);
+    });
+
+    it('computes timeoutReached when the auction carries a timeout', function () {
+      const auctionId = 'auction-timeout-flag';
+      const init = makeAuctionInitArgs(auctionId);
+      init.timeout = 1000;
+      events.emit(EVENTS.AUCTION_INIT, init);
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const payload = lastBeaconPayload();
+      expect(payload).to.have.property('timeoutReached');
+      expect(payload).to.have.property('duration');
+    });
+
+    it('omits networkLatencyMs when bid.metrics.getMetrics throws', function () {
+      const auctionId = 'auction-metrics-throw';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      events.emit(EVENTS.BID_RESPONSE, {
+        ...makeBidResponse('bid-a-1', auctionId),
+        metrics: { getMetrics: () => { throw new Error('boom'); } }
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const bidA = lastBeaconPayload().adUnits[0].bids.find(b => b.requestId === 'bid-a-1');
+      expect(bidA.networkLatencyMs).to.equal(undefined);
+    });
+
+    it('ignores viewable events for an unknown bid requestId', function () {
+      const auctionId = 'auction-unknown-bid';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      events.emit(EVENTS.BID_VIEWABLE, { auctionId, requestId: 'does-not-exist' });
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const bids = lastBeaconPayload().adUnits[0].bids;
+      expect(bids.every(b => !b.render)).to.equal(true);
+    });
+
+    it('logs success when the ajax fallback request completes', function () {
+      navigator.sendBeacon.returns(false);
+      const auctionId = 'auction-fallback-ok';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const req = server.requests.find(r => r.url === ENDPOINT);
+      expect(req, 'expected an ajax fallback request').to.exist;
+      req.respond(200, { 'Content-Type': 'application/json' }, '{}');
+      expect(log.info.calledWithMatch(/ajax fallback/)).to.equal(true);
+    });
   });
 
   describe('consent collection:', function () {
@@ -538,6 +611,45 @@ describe('scaleableAnalyticsAdapter:', function () {
       expect(adUnit.gamRender.lineItemId).to.equal(1234567);
       expect(adUnit.gamRender.renderedSize).to.equal('300x250');
       expect(adUnit.bids.every(b => !b.render)).to.equal(true);
+    });
+
+    it('ignores a GAM slot render that matches no active auction', function () {
+      const auctionId = 'auction-gam-nomatch';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      fireSlotRenderEnded({
+        slot: { getAdUnitPath: () => '/999/other', getSlotElementId: () => 'nope' }
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      expect(lastBeaconPayload().adUnits[0].gamRender).to.equal(undefined);
+    });
+
+    it('marks adUnit.gamRender viewable when no Prebid bid won the slot', function () {
+      const auctionId = 'auction-gam-viewable';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      gamHandlers.impressionViewable({
+        slot: { getAdUnitPath: () => '/123/header-bid-tag-0', getSlotElementId: () => 'div-0' }
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      expect(lastBeaconPayload().adUnits[0].gamRender.viewable).to.equal(true);
+    });
+
+    it('removes GAM slot listeners on disableAnalytics', function () {
+      expect(gamHandlers.slotRenderEnded).to.be.a('function');
+      analyticsAdapter.disableAnalytics();
+      expect(gamHandlers.slotRenderEnded).to.equal(undefined);
+      expect(gamHandlers.impressionViewable).to.equal(undefined);
+    });
+
+    it('logs a warning when GAM subscription throws', function () {
+      analyticsAdapter.disableAnalytics();
+      window.googletag = { cmd: { push: (fn) => fn() }, pubads: () => { throw new Error('not ready'); } };
+      analyticsAdapter.enableAnalytics({ options: { siteId: SITE_ID, endpoint: ENDPOINT } });
+      expect(log.warn.calledWithMatch(/Failed to subscribe to GAM slot events/)).to.equal(true);
     });
   });
 });
