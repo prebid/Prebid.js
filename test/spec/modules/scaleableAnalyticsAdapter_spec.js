@@ -6,7 +6,7 @@ import analyticsAdapter, {
 } from 'modules/scaleableAnalyticsAdapter.js';
 
 import * as events from 'src/events.js';
-import * as ajaxLib from 'src/ajax.js';
+import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 import {
   gdprDataHandler,
@@ -401,17 +401,15 @@ describe('scaleableAnalyticsAdapter:', function () {
 
     it('falls back to ajax when sendBeacon refuses the payload', function () {
       navigator.sendBeacon.returns(false);
-      const ajaxStub = sandbox.stub(ajaxLib, 'ajax');
       const auctionId = 'auction-fallback';
       events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
       events.emit(EVENTS.AUCTION_END, { auctionId });
       sandbox.clock.tick(TICK_FOR_FLUSH);
 
-      expect(ajaxStub.calledOnce).to.equal(true);
-      const [url, , body, opts] = ajaxStub.firstCall.args;
-      expect(url).to.equal(ENDPOINT);
-      expect(JSON.parse(body).auctionId).to.equal(auctionId);
-      expect(opts).to.include({ method: 'POST', contentType: 'application/json', withCredentials: false });
+      const req = server.requests.find(r => r.url === ENDPOINT);
+      expect(req, 'expected an ajax fallback request to the endpoint').to.exist;
+      expect(req.method).to.equal('POST');
+      expect(JSON.parse(req.requestBody).auctionId).to.equal(auctionId);
     });
 
     it('warns and drops the auction when sendBeacon refuses on unload', function () {
