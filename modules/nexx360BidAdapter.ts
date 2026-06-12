@@ -138,7 +138,7 @@ const buildRequests = (
     url: REQUEST_URL,
     data,
     options: {
-      endpointCompression: getGzipSetting()
+      endpointCompression: getGzipSetting(bidderRequest.bidderCode)
     },
   }
   return adapterRequest;
