@@ -23,6 +23,15 @@ describe('BidFabrik bid adapter', function () {
     refererInfo: { page: 'https://publisher.example/page', domain: 'publisher.example' },
   };
 
+  describe('aliases', function () {
+    it('exposes revbid and revantage aliases sharing the gvlid', function () {
+      const aliasFor = (code) => spec.aliases.find((a) => a.code === code);
+      expect(spec.aliases.map((a) => a.code)).to.have.members(['revbid', 'revantage']);
+      expect(aliasFor('revbid').gvlid).to.equal(spec.gvlid);
+      expect(aliasFor('revantage').gvlid).to.equal(spec.gvlid);
+    });
+  });
+
   describe('isBidRequestValid', function () {
     it('accepts a bid with a feed', function () {
       expect(spec.isBidRequestValid(bannerBid())).to.equal(true);

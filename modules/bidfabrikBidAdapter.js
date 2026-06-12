@@ -44,6 +44,10 @@ function resolveHost(params) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  aliases: [
+    { code: 'revbid', gvlid: GVLID },
+    { code: 'revantage', gvlid: GVLID },
+  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid(bid) {
