@@ -10,7 +10,7 @@ import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v2.2.0';
+const terceptAnalyticsVersion = 'v2.3.0';
 const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 0;
@@ -35,7 +35,6 @@ function flush(auctionId, useBeacon = false) {
   });
   send({ auctionInit: auction.auctionInit, bids: auction.bids }, useBeacon);
   pendingAuctions.delete(auctionId);
-  adUnitMap.delete(auctionId);
 }
 
 // flush remaining auctions via sendBeacon on page exit
@@ -167,16 +166,19 @@ function updateBid(auctionId, bidId, fields) {
   const auction = pendingAuctions.get(auctionId);
   if (!auction) return;
   const bid = auction.bids.find(b => b.bidId === bidId);
-  if (bid) Object.assign(bid, fields);
+  if (!bid) return;
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined) bid[key] = value;
+  }
 }
 
 function mapBidRequests(params) {
   const arr = [];
   if (typeof params.bids !== 'undefined' && params.bids.length) {
     params.bids.forEach(function (bid) {
-      const mediaType = bid.mediaTypes?.video ? 'video'
-        : bid.mediaTypes?.banner ? 'banner'
-        : bid.mediaTypes?.native ? 'native'
+      const mediaTypeKeys = Object.keys(bid.mediaTypes || {});
+      const mediaType = mediaTypeKeys.length === 1
+        ? (bid.mediaTypes.video ? 'video' : bid.mediaTypes.banner ? 'banner' : 'native')
         : null;
       const sizes = bid.mediaTypes?.banner?.sizes
         ? parseSizesInput(bid.mediaTypes.banner.sizes).toString()
