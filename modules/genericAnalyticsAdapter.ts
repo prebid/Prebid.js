@@ -108,7 +108,7 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
   let callDepth = 0;
   let options, handler, timer, translate;
 
-  function optionsAreValid(options) {
+  function optionsAreValid(options: DefaultOptions & (UrlOptions | BasicHandlerOptions | CustomHandlersOptions<EventMapping>)) {
     if (!options.url && !options.handler) {
       logError('options must specify either `url` or `handler`');
       return false;
