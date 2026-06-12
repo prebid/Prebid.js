@@ -13,7 +13,7 @@ const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'mgid';
 const MGID_RTD_API_URL = 'https://servicer.mgid.com/sda';
 const MGUID_LOCAL_STORAGE_KEY = 'mguid';
-const ORTB2_NAME = 'www.mgid.com'
+const ORTB2_NAME = 'www.mgid.com';
 
 const GVLID = 358;
 /** @type {?Object} */
@@ -155,7 +155,7 @@ function getDataForMerge(responseData) {
   if (responseData.siteSegtax) {
     siteData.ext = {
       segtax: responseData.siteSegtax
-    }
+    };
   }
 
   if (responseData.userSegments) {
@@ -164,7 +164,7 @@ function getDataForMerge(responseData) {
   if (responseData.userSegtax) {
     userData.ext = {
       segtax: responseData.userSegtax
-    }
+    };
   }
 
   const result = {};
@@ -173,13 +173,13 @@ function getDataForMerge(responseData) {
       content: {
         data: [siteData],
       }
-    }
+    };
   }
 
   if (userData.segment || userData.ext) {
     result.user = {
       data: [userData],
-    }
+    };
   }
 
   return result;

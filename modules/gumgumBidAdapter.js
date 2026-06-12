@@ -22,11 +22,11 @@ const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALIAS_BIDDER_CODE = ['gg'];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
-const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
-const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
+const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com'];
 
 const invalidRequestIds = {};
 let pageViewId = null;
@@ -39,7 +39,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   let topWindow;
   let topScreen;
   let topUrl;
-  let mosttopURL
+  let mosttopURL;
   let ggad;
   let ggdeal;
   let ns;
@@ -112,7 +112,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
 }
 
 function getWrapperCode(wrapper, data) {
-  return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
+  return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)));
 }
 
 /**
@@ -132,7 +132,7 @@ function _serializeSupplyChainObj(schainObj) {
     serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
     serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
-  })
+  });
 
   return serializedSchain;
 }
@@ -265,7 +265,7 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
       bidFloor.floor = Math.max(staticBidFloor, parseFloat(floor));
     }
   } else if (staticBidFloor) {
-    bidFloor.floor = staticBidFloor
+    bidFloor.floor = staticBidFloor;
   }
 
   return bidFloor;
@@ -297,7 +297,7 @@ function _getDeviceData(ortb2Data) {
     pxratio: _device.pxratio,
     lmt: _device.lmt,
     ifa: _device.lmt !== 1 ? _device.ifa : undefined,
-    foddid: _device?.ext?.fiftyonedegrees_deviceId,
+    foddid: _device?.ext?.fod?.deviceId,
   };
 
   // return device data params with only non-empty values
@@ -465,10 +465,10 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const gppConsent = bidderRequest && bidderRequest.gppConsent;
-  const timeout = bidderRequest && bidderRequest.timeout
+  const timeout = bidderRequest && bidderRequest.timeout;
   const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
-  const mosttopLocation = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.topmostLocation
+  const mosttopLocation = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.topmostLocation;
   _each(validBidRequests, bidRequest => {
     const {
       bidId,
@@ -508,15 +508,15 @@ function buildRequests(validBidRequests, bidderRequest) {
       const maxLength = 1800; // replace this with your desired maximum length
       const truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
       if (filteredData.length) {
-        data.pubProvidedId = truncatedJsonString
+        data.pubProvidedId = truncatedJsonString;
       }
     }
     // ADJS-1286 Read id5 id linktype field
     const id5Eid = userEids.find(eid => (eid.source || '').toLowerCase() === 'id5-sync.com');
     const id5Uid = getFirstUid(id5Eid);
     if (id5Uid && id5Uid.ext) {
-      data.id5Id = id5Uid.id || null
-      data.id5IdLinkType = id5Uid.ext.linkType || null
+      data.id5Id = id5Uid.id || null;
+      data.id5IdLinkType = id5Uid.ext.linkType || null;
     }
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode;
@@ -592,15 +592,15 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.uspConsent = uspConsent;
     }
     if (gppConsent) {
-      data.gppString = bidderRequest.gppConsent.gppString ? bidderRequest.gppConsent.gppString : ''
-      data.gppSid = Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
+      data.gppString = bidderRequest.gppConsent.gppString ? bidderRequest.gppConsent.gppString : '';
+      data.gppSid = Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : '';
     } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
-      data.gppString = bidderRequest.ortb2.regs.gpp
-      data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
+      data.gppString = bidderRequest.ortb2.regs.gpp;
+      data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : '';
     }
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
     if (dsa) {
-      data.dsa = JSON.stringify(dsa)
+      data.dsa = JSON.stringify(dsa);
     }
     if (coppa) {
       data.coppa = coppa;
@@ -610,7 +610,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.schain = _serializeSupplyChainObj(schain);
     }
     const tId = deepAccess(ortb2Imp, 'ext.tid') || deepAccess(bidderRequest, 'ortb2.source.tid') || '';
-    data.tId = tId
+    data.tId = tId;
     Object.assign(
       data,
       _getBrowserParams(topWindowUrl, mosttopLocation),
@@ -697,8 +697,8 @@ function handleLegacyParams(params, sizes) {
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 function interpretResponse(serverResponse, bidRequest) {
-  const bidResponses = []
-  const serverResponseBody = serverResponse.body
+  const bidResponses = [];
+  const serverResponseBody = serverResponse.body;
 
   if (!serverResponseBody || serverResponseBody.err) {
     const data = bidRequest.data || {};
@@ -727,7 +727,7 @@ function interpretResponse(serverResponse, bidRequest) {
       adomain: [],
       mediaType: ''
     }
-  }
+  };
   const {
     ad: {
       price: cpm,
@@ -768,19 +768,19 @@ function interpretResponse(serverResponse, bidRequest) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [width, height] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
-      return result
+      return result;
     }, [])) || [];
-    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes);
   }
 
   const [width, height] = sizes[0].split('x');
 
   if (jcsi) {
-    serverResponseBody.jcsi = JCSI
+    serverResponseBody.jcsi = JCSI;
   }
 
   // update Page View ID from server response
-  pageViewId = pvid
+  pageViewId = pvid;
 
   if (creativeId) {
     const bid = {
@@ -809,7 +809,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
     bidResponses.push(bid);
   }
-  return bidResponses
+  return bidResponses;
 }
 
 /**
@@ -821,17 +821,17 @@ function interpretResponse(serverResponse, bidRequest) {
  */
 function getUserSyncs(syncOptions, serverResponses) {
   const responses = serverResponses.map((response) => {
-    return (response.body && response.body.pxs && response.body.pxs.scr) || []
-  })
+    return (response.body && response.body.pxs && response.body.pxs.scr) || [];
+  });
   const userSyncs = responses.reduce(function (usersyncs, response) {
-    return usersyncs.concat(response)
-  }, [])
+    return usersyncs.concat(response);
+  }, []);
   const syncs = userSyncs.map((sync) => {
     return {
       type: sync.t === 'f' ? 'iframe' : 'image',
       url: sync.u
-    }
-  })
+    };
+  });
   return syncs;
 }
 
@@ -844,5 +844,5 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES
-}
-registerBidder(spec)
+};
+registerBidder(spec);

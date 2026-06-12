@@ -28,7 +28,7 @@ export const spec = {
     }
 
     return validBidRequests.map(bidRequest => {
-      let sizes = []
+      let sizes = [];
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       }
@@ -80,7 +80,7 @@ export const spec = {
         test,
         testDk,
         aimOnly
-      }
+      };
 
       if (
         bidderRequest &&
@@ -151,7 +151,7 @@ export const spec = {
   },
 
   supportedMediaTypes: [BANNER]
-}
+};
 
 function getBidRequestUrl(aimXR, params) {
   const { npi, dgid, npiHash, testNPI, testDGID, aimOnly, testDk, dtc } = params;
@@ -173,7 +173,7 @@ function getDeviceData() {
     width: winDimensions.innerWidth || winDimensions.document.documentElement.clientWidth || win.document.body.clientWidth,
     height: winDimensions.innerHeight || winDimensions.document.documentElement.clientHeight || win.document.body.clientHeight,
     browserLanguage: navigator.language,
-  }
+  };
 }
 
 registerBidder(spec);

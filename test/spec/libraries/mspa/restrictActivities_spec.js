@@ -2,7 +2,7 @@ import { config } from '../../../../src/config.js';
 import { uninstall } from '../../../../modules/tcfControl.js';
 import { isActivityAllowed } from '../../../../src/activities/rules.js';
 import { activityParams } from '../../../../src/activities/activityParams.js';
-import 'modules/consentManagementGpp.js'
+import 'modules/consentManagementGpp.js';
 import 'modules/gppControl_usnat.js';
 import 'modules/gppControl_usstates.js';
 

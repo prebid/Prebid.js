@@ -27,7 +27,7 @@ describe('discovery:BidAdapterTests', function () {
       }
     });
     sandbox.stub(storage, 'cookiesAreEnabled');
-  })
+  });
 
   afterEach(() => {
     sandbox.restore();
@@ -261,7 +261,7 @@ describe('discovery:BidAdapterTests', function () {
         expect(storage.getCookie.called).to.be.true;
         expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
-    })
+    });
     describe('buildUTMTagData function', function() {
       it('should set UTM cookie', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
@@ -276,7 +276,7 @@ describe('discovery:BidAdapterTests', function () {
         buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
-    })
+    });
   });
 
   it('discovery:validate_response_params', function () {
@@ -332,7 +332,7 @@ describe('discovery:BidAdapterTests', function () {
     };
     const USP_CONSENT = {
       consentString: 'uspConsentString'
-    }
+    };
 
     let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
     syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
@@ -464,7 +464,7 @@ describe('discovery Bid Adapter Tests', function () {
       it('should return the current document description if top document is not accessible', function() {
         const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
         const fakeWindow = {
           get top() {
             throw new Error('Access denied');

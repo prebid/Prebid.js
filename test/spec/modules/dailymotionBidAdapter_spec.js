@@ -1640,7 +1640,7 @@ describe('dailymotionBidAdapterTests', () => {
       },
       'test': 0,
       'tmax': 4242,
-    }
+    };
 
     expect(reqData.ortb.id).to.be.not.empty;
     delete reqData.ortb.id; // ortb id is generated randomly
@@ -1931,7 +1931,7 @@ describe('dailymotionBidAdapterTests', () => {
       },
       'test': 0,
       'tmax': 31416
-    }
+    };
 
     expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.ortb.id).to.be.not.empty;
@@ -2174,7 +2174,7 @@ describe('dailymotionBidAdapterTests', () => {
     it('get iabcat1 and iabcat 2 from params video', () => {
       expect(request.data.video_metadata.iabcat1).to.eql(bidRequestData[0].params.video.iabcat1);
       expect(request.data.video_metadata.iabcat2).to.eql(bidRequestData[0].params.video.iabcat2);
-    })
+    });
 
     it('get iabcat1 from content.cat and iabcat2 from data.segment', () => {
       const iabCatTestsCases = [[], null, {}];
@@ -2192,8 +2192,8 @@ describe('dailymotionBidAdapterTests', () => {
 
         expect(request.data.video_metadata.iabcat1).to.eql(bidderRequestData.ortb2.site.content.cat);
         expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20']);
-      })
-    })
+      });
+    });
 
     it('get iabcat2 from content.cat and iabcat1 from data.segment', () => {
       const iabCatTestsCases = [[], null, {}];
@@ -2213,9 +2213,9 @@ describe('dailymotionBidAdapterTests', () => {
 
           expect(request.data.video_metadata.iabcat1).to.eql(['1']);
           expect(request.data.video_metadata.iabcat2).to.eql(bidderRequestData.ortb2.site.content.cat);
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('get iabcat1 and iabcat2 from data.segmnet', () => {
       const contentCatTestCases = [[], null, {}];
@@ -2235,9 +2235,9 @@ describe('dailymotionBidAdapterTests', () => {
 
           expect(request.data.video_metadata.iabcat1).to.eql(['1']);
           expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20']);
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   it('validates buildRequests - with null floor as object for getFloor function', () => {
@@ -2272,7 +2272,7 @@ describe('dailymotionBidAdapterTests', () => {
       ],
       'test': 0
     });
-  })
+  });
 
   it('validates buildRequests - with empty/undefined validBidRequests', () => {
     expect(spec.buildRequests([], {})).to.have.lengthOf(0);

@@ -14,7 +14,7 @@ describe('Outbrain Adapter', function () {
       },
       bidId: '2d6815a92ba1ba',
       auctionId: '12043683-3254-4f74-8934-f941b085579e',
-    }
+    };
     const nativeBidRequestParams = {
       nativeParams: {
         image: {
@@ -33,7 +33,7 @@ describe('Outbrain Adapter', function () {
           required: false
         }
       },
-    }
+    };
 
     const displayBidRequestParams = {
       sizes: [
@@ -42,7 +42,7 @@ describe('Outbrain Adapter', function () {
           250
         ]
       ]
-    }
+    };
 
     const videoBidRequestParams = {
       mediaTypes: {
@@ -63,7 +63,7 @@ describe('Outbrain Adapter', function () {
           linearity: 1
         }
       }
-    }
+    };
 
     const ortb2WithDeviceData = {
       ortb2: {
@@ -89,11 +89,11 @@ describe('Outbrain Adapter', function () {
             bidderUrl: 'https://bidder-url.com',
           }
         }
-        )
-      })
+        );
+      });
       after(() => {
-        config.resetConfig()
-      })
+        config.resetConfig();
+      });
 
       it('should fail when bid is invalid', function () {
         const bid = {
@@ -103,9 +103,9 @@ describe('Outbrain Adapter', function () {
               id: 'publisher-id',
             }
           },
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
       it('should succeed when bid contains native params', function () {
         const bid = {
           bidder: 'outbrain',
@@ -115,9 +115,9 @@ describe('Outbrain Adapter', function () {
             }
           },
           ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(true)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
       it('should succeed when bid contains sizes', function () {
         const bid = {
           bidder: 'outbrain',
@@ -127,9 +127,9 @@ describe('Outbrain Adapter', function () {
             }
           },
           ...displayBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(true)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
       it('should succeed when bid contains video', function () {
         const bid = {
           bidder: 'outbrain',
@@ -139,9 +139,9 @@ describe('Outbrain Adapter', function () {
             }
           },
           ...videoBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(true)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
       it('should fail when bid contains insufficient video information', function () {
         const bid = {
           bidder: 'outbrain',
@@ -155,16 +155,16 @@ describe('Outbrain Adapter', function () {
               context: 'outstream'
             }
           },
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
       it('should fail if publisher id is not set', function () {
         const bid = {
           bidder: 'outbrain',
           ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
       it('should fail if tag id is not string', function () {
         const bid = {
           bidder: 'outbrain',
@@ -172,9 +172,9 @@ describe('Outbrain Adapter', function () {
             tagid: 123
           },
           ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
       it('should fail if badv does not include strings', function () {
         const bid = {
           bidder: 'outbrain',
@@ -183,9 +183,9 @@ describe('Outbrain Adapter', function () {
             badv: ['a', 2, 'c']
           },
           ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
       it('should fail if bcat does not include strings', function () {
         const bid = {
           bidder: 'outbrain',
@@ -194,9 +194,9 @@ describe('Outbrain Adapter', function () {
             bcat: ['a', 2, 'c']
           },
           ...nativeBidRequestParams,
-        }
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
       it('should succeed with outbrain config', function () {
         const bid = {
           bidder: 'outbrain',
@@ -206,15 +206,15 @@ describe('Outbrain Adapter', function () {
             }
           },
           ...nativeBidRequestParams,
-        }
-        config.resetConfig()
+        };
+        config.resetConfig();
         config.setConfig({
           outbrain: {
             bidderUrl: 'https://bidder-url.com',
           }
-        })
-        expect(spec.isBidRequestValid(bid)).to.equal(true)
-      })
+        });
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
       it('should fail if bidder url is not set', function () {
         const bid = {
           bidder: 'outbrain',
@@ -224,40 +224,40 @@ describe('Outbrain Adapter', function () {
             }
           },
           ...nativeBidRequestParams,
-        }
-        config.resetConfig()
-        expect(spec.isBidRequestValid(bid)).to.equal(false)
-      })
-    })
+        };
+        config.resetConfig();
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+    });
 
     describe('buildRequests', function () {
       let getDataFromLocalStorageStub;
 
       before(() => {
-        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
+        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
         config.setConfig({
           outbrain: {
             bidderUrl: 'https://bidder-url.com',
           }
-        })
-      })
+        });
+      });
       after(() => {
-        getDataFromLocalStorageStub.restore()
-        config.resetConfig()
-      })
+        getDataFromLocalStorageStub.restore();
+        config.resetConfig();
+      });
 
       const commonBidderRequest = {
         bidderRequestId: 'mock-uuid',
         refererInfo: {
           page: 'https://example.com/'
         }
-      }
+      };
 
       it('should build native request', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
+        };
         const expectedNativeAssets = {
           assets: [
             {
@@ -282,7 +282,7 @@ describe('Outbrain Adapter', function () {
               }
             }
           ]
-        }
+        };
         const expectedData = {
           id: 'mock-uuid',
           site: {
@@ -315,17 +315,17 @@ describe('Outbrain Adapter', function () {
               }
             }
           }
-        }
-        const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        expect(res.url).to.equal('https://bidder-url.com')
-        expect(res.data).to.deep.equal(JSON.stringify(expectedData))
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.url).to.equal('https://bidder-url.com');
+        expect(res.data).to.deep.equal(JSON.stringify(expectedData));
       });
 
       it('should build display request', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...displayBidRequestParams,
-        }
+        };
         const expectedData = {
           id: 'mock-uuid',
           site: {
@@ -363,17 +363,17 @@ describe('Outbrain Adapter', function () {
               }
             }
           }
-        }
-        const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        expect(res.url).to.equal('https://bidder-url.com')
-        expect(res.data).to.deep.equal(JSON.stringify(expectedData))
-      })
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.url).to.equal('https://bidder-url.com');
+        expect(res.data).to.deep.equal(JSON.stringify(expectedData));
+      });
 
       it('should build video request', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...videoBidRequestParams,
-        }
+        };
         const expectedData = {
           id: 'mock-uuid',
           site: {
@@ -420,37 +420,37 @@ describe('Outbrain Adapter', function () {
               }
             }
           }
-        }
-        const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        expect(res.url).to.equal('https://bidder-url.com')
-        expect(res.data).to.deep.equal(JSON.stringify(expectedData))
-      })
+        };
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        expect(res.url).to.equal('https://bidder-url.com');
+        expect(res.data).to.deep.equal(JSON.stringify(expectedData));
+      });
 
       it('should pass optional parameters in request', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
-        bidRequest.params.tagid = 'test-tag'
-        bidRequest.params.publisher.name = 'test-publisher'
-        bidRequest.params.publisher.domain = 'test-publisher.com'
-        bidRequest.params.bcat = ['bad-category']
-        bidRequest.params.badv = ['bad-advertiser']
+        };
+        bidRequest.params.tagid = 'test-tag';
+        bidRequest.params.publisher.name = 'test-publisher';
+        bidRequest.params.publisher.domain = 'test-publisher.com';
+        bidRequest.params.bcat = ['bad-category'];
+        bidRequest.params.badv = ['bad-advertiser'];
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.imp[0].tagid).to.equal('test-tag')
-        expect(resData.site.publisher.name).to.equal('test-publisher')
-        expect(resData.site.publisher.domain).to.equal('test-publisher.com')
-        expect(resData.bcat).to.deep.equal(['bad-category'])
-        expect(resData.badv).to.deep.equal(['bad-advertiser'])
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.imp[0].tagid).to.equal('test-tag');
+        expect(resData.site.publisher.name).to.equal('test-publisher');
+        expect(resData.site.publisher.domain).to.equal('test-publisher.com');
+        expect(resData.bcat).to.deep.equal(['bad-category']);
+        expect(resData.badv).to.deep.equal(['bad-advertiser']);
       });
 
       it('should pass first party data', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
+        };
         const bidderRequest = {
           ortb2: {
             bcat: ['IAB1', 'IAB2-1'],
@@ -458,73 +458,73 @@ describe('Outbrain Adapter', function () {
             wlang: ['en'],
           },
           ...commonBidderRequest,
-        }
+        };
 
-        const res = spec.buildRequests([bidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
-        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
-        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+        const res = spec.buildRequests([bidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat);
+        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv);
+        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang);
       });
 
       it('should pass bidder timeout', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
+        };
         const bidderRequest = {
           ...commonBidderRequest,
           timeout: 500
-        }
-        const res = spec.buildRequests([bidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.tmax).to.equal(500)
+        };
+        const res = spec.buildRequests([bidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.tmax).to.equal(500);
       });
 
       it('should pass GDPR consent', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
+        };
         const bidderRequest = {
           ...commonBidderRequest,
           gdprConsent: {
             gdprApplies: true,
             consentString: 'consentString',
           }
-        }
-        const res = spec.buildRequests([bidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.user.ext.consent).to.equal('consentString')
-        expect(resData.regs.ext.gdpr).to.equal(1)
+        };
+        const res = spec.buildRequests([bidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.user.ext.consent).to.equal('consentString');
+        expect(resData.regs.ext.gdpr).to.equal(1);
       });
 
       it('should pass us privacy consent', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
+        };
         const bidderRequest = {
           ...commonBidderRequest,
           uspConsent: 'consentString'
-        }
-        const res = spec.buildRequests([bidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.regs.ext.us_privacy).to.equal('consentString')
+        };
+        const res = spec.buildRequests([bidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
-        config.setConfig({ coppa: true })
+        };
+        config.setConfig({ coppa: true });
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.regs.coppa).to.equal(1)
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.regs.coppa).to.equal(1);
 
-        config.resetConfig()
+        config.resetConfig();
       });
 
       it('should pass gpp information', function () {
@@ -538,7 +538,7 @@ describe('Outbrain Adapter', function () {
             'gppString': 'abc12345',
             'applicableSections': [8]
           }
-        }
+        };
 
         const res = spec.buildRequests([bidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
@@ -560,7 +560,7 @@ describe('Outbrain Adapter', function () {
         };
 
         const res = spec.buildRequests([bidRequest], commonBidderRequest);
-        const resData = JSON.parse(res.data)
+        const resData = JSON.parse(res.data);
         expect(resData.user.ext.eids).to.deep.equal([
           { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
         ]);
@@ -576,8 +576,8 @@ describe('Outbrain Adapter', function () {
         };
 
         const res = spec.buildRequests([bidRequest], commonBidderRequest);
-        const resData = JSON.parse(res.data)
-        expect(resData.user.ext.obusertoken).to.equal('12345')
+        const resData = JSON.parse(res.data);
+        expect(resData.user.ext.obusertoken).to.equal('12345');
         expect(getDataFromLocalStorageStub.called).to.be.true;
         sinon.assert.calledWith(getDataFromLocalStorageStub, 'OB-USER-TOKEN');
       });
@@ -586,17 +586,17 @@ describe('Outbrain Adapter', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
-        }
+        };
         bidRequest.getFloor = function () {
           return {
             currency: 'USD',
             floor: 1.23,
-          }
-        }
+          };
+        };
 
-        const res = spec.buildRequests([bidRequest], commonBidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.imp[0].bidfloor).to.equal(1.23)
+        const res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.imp[0].bidfloor).to.equal(1.23);
       });
 
       it('should transform string sizes to numbers', function () {
@@ -606,7 +606,7 @@ describe('Outbrain Adapter', function () {
           ...commonBidRequest,
           ...nativeBidRequestParams,
         };
-        bidRequest.nativeParams.image.sizes = ['120', '100']
+        bidRequest.nativeParams.image.sizes = ['120', '100'];
 
         const expectedNativeAssets = {
           assets: [
@@ -632,10 +632,10 @@ describe('Outbrain Adapter', function () {
               }
             }
           ]
-        }
+        };
 
         const res = spec.buildRequests([bidRequest], commonBidderRequest);
-        const resData = JSON.parse(res.data)
+        const resData = JSON.parse(res.data);
         expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
       });
 
@@ -651,12 +651,12 @@ describe('Outbrain Adapter', function () {
         );
         expect(JSON.parse(res.data).device).to.deep.equal(ortb2WithDeviceData.ortb2.device);
       });
-    })
+    });
 
     describe('interpretResponse', function () {
       it('should return empty array if no valid bids', function () {
-        const res = spec.interpretResponse({}, [])
-        expect(res).to.be.an('array').that.is.empty
+        const res = spec.interpretResponse({}, []);
+        expect(res).to.be.an('array').that.is.empty;
       });
 
       it('should interpret native response', function () {
@@ -688,7 +688,7 @@ describe('Outbrain Adapter', function () {
             bidid: '82822cf5-259c-11eb-8a52-b48e7518c657',
             cur: 'USD'
           },
-        }
+        };
         const request = {
           bids: [
             {
@@ -696,7 +696,7 @@ describe('Outbrain Adapter', function () {
               ...nativeBidRequestParams,
             }
           ]
-        }
+        };
         const expectedRes = [
           {
             requestId: request.bids[0].bidId,
@@ -728,10 +728,10 @@ describe('Outbrain Adapter', function () {
               privacyLink: 'http://example.com/privacy'
             }
           }
-        ]
+        ];
 
-        const res = spec.interpretResponse(serverResponse, request)
-        expect(res).to.deep.equal(expectedRes)
+        const res = spec.interpretResponse(serverResponse, request);
+        expect(res).to.deep.equal(expectedRes);
       });
 
       it('should interpret display response', function () {
@@ -765,7 +765,7 @@ describe('Outbrain Adapter', function () {
             bidid: 'd90fe7fa-28d7-11eb-8ce4-13d94bfa26f9',
             cur: 'USD'
           }
-        }
+        };
         const request = {
           bids: [
             {
@@ -773,7 +773,7 @@ describe('Outbrain Adapter', function () {
               ...displayBidRequestParams
             }
           ]
-        }
+        };
         const expectedRes = [
           {
             requestId: request.bids[0].bidId,
@@ -793,10 +793,10 @@ describe('Outbrain Adapter', function () {
               ]
             },
           }
-        ]
+        ];
 
-        const res = spec.interpretResponse(serverResponse, request)
-        expect(res).to.deep.equal(expectedRes)
+        const res = spec.interpretResponse(serverResponse, request);
+        expect(res).to.deep.equal(expectedRes);
       });
 
       it('should interpret video response', function () {
@@ -828,7 +828,7 @@ describe('Outbrain Adapter', function () {
             bidid: '456',
             cur: 'USD'
           }
-        }
+        };
         const request = {
           bids: [
             {
@@ -836,7 +836,7 @@ describe('Outbrain Adapter', function () {
               ...videoBidRequestParams
             }
           ]
-        }
+        };
         const expectedRes = [
           {
             requestId: request.bids[0].bidId,
@@ -854,13 +854,13 @@ describe('Outbrain Adapter', function () {
               ]
             },
           }
-        ]
+        ];
 
-        const res = spec.interpretResponse(serverResponse, request)
-        expect(res).to.deep.equal(expectedRes)
+        const res = spec.interpretResponse(serverResponse, request);
+        expect(res).to.deep.equal(expectedRes);
       });
-    })
-  })
+    });
+  });
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://usersync-url.com';
@@ -870,27 +870,27 @@ describe('Outbrain Adapter', function () {
           usersyncUrl: usersyncUrl,
         }
       }
-      )
-    })
+      );
+    });
     after(() => {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
 
     it('should return user sync if pixel enabled with outbrain config', function () {
-      const ret = spec.getUserSyncs({ pixelEnabled: true })
-      expect(ret).to.deep.equal([{ type: 'image', url: usersyncUrl }])
-    })
+      const ret = spec.getUserSyncs({ pixelEnabled: true });
+      expect(ret).to.deep.equal([{ type: 'image', url: usersyncUrl }]);
+    });
 
     it('should not return user sync if pixel disabled', function () {
-      const ret = spec.getUserSyncs({ pixelEnabled: false })
-      expect(ret).to.be.an('array').that.is.empty
-    })
+      const ret = spec.getUserSyncs({ pixelEnabled: false });
+      expect(ret).to.be.an('array').that.is.empty;
+    });
 
     it('should not return user sync if url is not set', function () {
-      config.resetConfig()
-      const ret = spec.getUserSyncs({ pixelEnabled: true })
-      expect(ret).to.be.an('array').that.is.empty
-    })
+      config.resetConfig();
+      const ret = spec.getUserSyncs({ pixelEnabled: true });
+      expect(ret).to.be.an('array').that.is.empty;
+    });
 
     it('should pass GDPR consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
@@ -921,7 +921,7 @@ describe('Outbrain Adapter', function () {
         type: 'image', url: `${usersyncUrl}?gpp=abc12345&gpp_sid=1%2C2`
       }]);
     });
-  })
+  });
 
   describe('onBidWon', function () {
     it('should make an ajax call with the original cpm', function () {
@@ -929,9 +929,9 @@ describe('Outbrain Adapter', function () {
         nurl: 'http://example.com/win/${AUCTION_PRICE}',
         cpm: 2.1,
         originalCpm: 1.1,
-      }
-      spec.onBidWon(bid)
-      expect(server.requests[0].url).to.equals('http://example.com/win/1.1')
+      };
+      spec.onBidWon(bid);
+      expect(server.requests[0].url).to.equals('http://example.com/win/1.1');
     });
-  })
-})
+  });
+});

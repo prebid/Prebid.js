@@ -59,7 +59,7 @@ describe('YieldmoAdapter', function () {
         startdelay: 10,
         protocols: [2, 3],
         api: [2, 3],
-        skipppable: true,
+        skippable: true,
         playbackmethod: [1, 2],
         ...videoParams,
       },
@@ -113,7 +113,7 @@ describe('YieldmoAdapter', function () {
         const bid = mockVideoBid();
         delete utils.deepAccess(bid, key)[paramToRemove];
         return bid;
-      }
+      };
 
       it('should return true when necessary information is found', function () {
         expect(spec.isBidRequestValid(mockVideoBid())).to.be.true;
@@ -146,6 +146,28 @@ describe('YieldmoAdapter', function () {
         expect(spec.isBidRequestValid(getBidAndExclude('maxduration'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('protocols'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('api'))).to.be.false;
+      });
+    });
+
+    describe('Blocklist params (bcat / badv):', function () {
+      it('allows a bid when bcat/badv are absent (missing is fine)', function () {
+        expect(spec.isBidRequestValid(mockBannerBid())).to.be.true;
+        expect(spec.isBidRequestValid(mockVideoBid())).to.be.true;
+      });
+
+      it('allows a bid when bcat/badv are arrays', function () {
+        expect(spec.isBidRequestValid(mockBannerBid({}, { bcat: ['IAB1-1'], badv: ['x.com'] }))).to.be.true;
+        expect(spec.isBidRequestValid(mockVideoBid({}, { bcat: ['IAB1-1'], badv: ['x.com'] }))).to.be.true;
+      });
+
+      it('drops a bid when bcat is present but not an array', function () {
+        expect(spec.isBidRequestValid(mockBannerBid({}, { bcat: 'IAB1-1' }))).to.be.false;
+        expect(spec.isBidRequestValid(mockVideoBid({}, { bcat: 'IAB1-1' }))).to.be.false;
+      });
+
+      it('drops a bid when badv is present but not an array', function () {
+        expect(spec.isBidRequestValid(mockBannerBid({}, { badv: 'ford.com' }))).to.be.false;
+        expect(spec.isBidRequestValid(mockVideoBid({}, { badv: 'ford.com' }))).to.be.false;
       });
     });
   });
@@ -342,7 +364,7 @@ describe('YieldmoAdapter', function () {
 
       it('should not write 0 bidfloor value by default', function() {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
-        expect(placementsData[0].bidfloor).to.undefined;
+        expect(placementsData[0].bidfloor).to.be.undefined;
       });
 
       it('should not exceed max url length', () => {
@@ -530,7 +552,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
 
         it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
@@ -562,7 +584,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if params.video.skippable is false', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
       });
 
@@ -815,6 +837,89 @@ describe('YieldmoAdapter', function () {
         expect(payload.device.language).to.exist;
       });
     });
+
+    describe('bcat / badv blocklists (FS-12403)', function () {
+      it('banner: sends merged bcat/badv as comma-delimited GET params', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'], badv: ['ortb.com'] } });
+        const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB2-2'], badv: ['param.com'] })], 0, bidderReq);
+        expect(data.bcat).to.equal('IAB1-1,IAB2-2');
+        expect(data.badv).to.equal('ortb.com,param.com');
+      });
+
+      it('banner: unions ortb2 + params (neither source silently wins)', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['A'] } });
+        const data = buildAndGetData([mockBannerBid({}, { bcat: ['B'] })], 0, bidderReq);
+        expect(data.bcat.split(',')).to.have.members(['A', 'B']);
+      });
+
+      it('banner: dedupes values across the two sources, preserving order', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['DUP', 'A'] } });
+        const data = buildAndGetData([mockBannerBid({}, { bcat: ['DUP', 'B'] })], 0, bidderReq);
+        expect(data.bcat).to.equal('DUP,A,B');
+      });
+
+      it('banner: reads from ortb2 alone', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'], badv: ['x.com'] } });
+        const data = buildAndGetData([mockBannerBid()], 0, bidderReq);
+        expect(data.bcat).to.equal('IAB1-1');
+        expect(data.badv).to.equal('x.com');
+      });
+
+      it('banner: reads from params alone', function () {
+        const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB1-1'], badv: ['x.com'] })], 0, mockBidderRequest());
+        expect(data.bcat).to.equal('IAB1-1');
+        expect(data.badv).to.equal('x.com');
+      });
+
+      it('banner: omits bcat/badv entirely when empty', function () {
+        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest());
+        expect(data).to.not.have.property('bcat');
+        expect(data).to.not.have.property('badv');
+      });
+
+      it('video: sends merged bcat/badv as deduped arrays', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'], badv: ['ortb.com'] } }, [mockVideoBid()]);
+        const payload = buildAndGetData([mockVideoBid({}, { bcat: ['IAB2-2'], badv: ['param.com'] })], 0, bidderReq);
+        expect(payload.bcat).to.deep.equal(['IAB1-1', 'IAB2-2']);
+        expect(payload.badv).to.deep.equal(['ortb.com', 'param.com']);
+      });
+
+      it('video: reads ortb2.bcat (not the legacy bidderRequest.bcat path)', function () {
+        const bidderReq = mockBidderRequest({ bcat: ['WRONG'], ortb2: { bcat: ['RIGHT'] } }, [mockVideoBid()]);
+        const payload = buildAndGetData([mockVideoBid()], 0, bidderReq);
+        expect(payload.bcat).to.deep.equal(['RIGHT']);
+      });
+
+      it('video: defaults to empty arrays when no blocklists are set', function () {
+        const payload = buildAndGetData([mockVideoBid()], 0, mockBidderRequest({}, [mockVideoBid()]));
+        expect(payload.bcat).to.deep.equal([]);
+        expect(payload.badv).to.deep.equal([]);
+      });
+
+      describe('blocklist normalization in mergeBlocklist', function () {
+        let logWarnStub;
+        beforeEach(function () { logWarnStub = sinon.stub(utils, 'logWarn'); });
+        afterEach(function () { logWarnStub.restore(); });
+
+        it('ignores a non-array ortb2 source and warns (ortb2 is not bid-validated)', function () {
+          const bidderReq = mockBidderRequest({ ortb2: { bcat: 'IAB1-1' } });
+          const data = buildAndGetData([mockBannerBid()], 0, bidderReq);
+          expect(data).to.not.have.property('bcat');
+          expect(logWarnStub.called).to.be.true;
+        });
+
+        it('filters non-string / empty elements out of a valid array and warns', function () {
+          const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB1-1', '', 5, '  '] })], 0, mockBidderRequest());
+          expect(data.bcat).to.equal('IAB1-1');
+          expect(logWarnStub.called).to.be.true;
+        });
+
+        it('trims whitespace around entries', function () {
+          const data = buildAndGetData([mockBannerBid({}, { bcat: [' IAB1-1 '] })], 0, mockBidderRequest());
+          expect(data.bcat).to.equal('IAB1-1');
+        });
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -923,11 +1028,11 @@ describe('YieldmoAdapter', function () {
     const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
     it('should use type iframe when iframeEnabled', function() {
       const syncs = spec.getUserSyncs({ iframeEnabled: true });
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe' }])
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe' }]);
     });
     it('should use type image when pixelEnabled', function() {
       const syncs = spec.getUserSyncs({ pixelEnabled: true });
-      expect(syncs).to.deep.equal([{ type: 'image', url: pbCookieAssistSyncUrl + '&type=image' }])
+      expect(syncs).to.deep.equal([{ type: 'image', url: pbCookieAssistSyncUrl + '&type=image' }]);
     });
     it('should register no syncs', function () {
       expect(spec.getUserSyncs({})).to.deep.equal([]);

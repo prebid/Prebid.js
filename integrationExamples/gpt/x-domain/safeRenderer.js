@@ -69,7 +69,7 @@ window.pbRenderInFrame = function ({ mediaType, config, ...renderingData }) {
         mediaType,
         config,
         renderingData
-      })
+      });
     
     }
 

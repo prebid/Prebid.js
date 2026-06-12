@@ -4,7 +4,7 @@ import { delay } from '../../../../src/utils/promise.js';
 describe('GreedyPromise', () => {
   it('throws when resolver is not a function', () => {
     expect(() => new GreedyPromise()).to.throw();
-  })
+  });
 
   Object.entries({
     'resolved': (use) => new GreedyPromise((resolve) => use(resolve)),
@@ -12,12 +12,12 @@ describe('GreedyPromise', () => {
   }).forEach(([t, makePromise]) => {
     it(`runs callbacks immediately when ${t}`, () => {
       let cbRan = false;
-      const cb = () => { cbRan = true };
+      const cb = () => { cbRan = true; };
       let resolver;
-      makePromise((fn) => { resolver = fn }).then(cb, cb);
+      makePromise((fn) => { resolver = fn; }).then(cb, cb);
       resolver();
       expect(cbRan).to.be.true;
-    })
+    });
   });
 
   describe('idioms', () => {
@@ -25,10 +25,10 @@ describe('GreedyPromise', () => {
 
     Object.entries({
 
-      'resolver that throws': (P) => new P(() => { throw new Error('error') }),
+      'resolver that throws': (P) => new P(() => { throw new Error('error'); }),
       'resolver that resolves multiple times': (P) => new P((resolve) => { resolve('first'); resolve('second'); }),
-      'resolver that rejects multiple times': (P) => new P((resolve, reject) => { reject('first'); reject('second') }),
-      'resolver that resolves and rejects': (P) => new P((resolve, reject) => { reject('first'); resolve('second') }),
+      'resolver that rejects multiple times': (P) => new P((resolve, reject) => { reject('first'); reject('second'); }),
+      'resolver that resolves and rejects': (P) => new P((resolve, reject) => { reject('first'); resolve('second'); }),
       'resolver that resolves with multiple arguments': (P) => new P((resolve) => resolve('one', 'two')),
       'resolver that rejects with multiple arguments': (P) => new P((resolve, reject) => reject('one', 'two')),
       'resolver that resolves to a promise': (P) => new P((resolve) => resolve(makePromise(P, 'val'))),
@@ -38,8 +38,8 @@ describe('GreedyPromise', () => {
       'chained .then': (P) => makePromise(P, 'value').then((v) => makePromise(P, `${v} and then`)),
       '.then with error handler': (P) => makePromise(P, 'err', true).then(null, (e) => `${e} and then`),
       '.then with chained error handler': (P) => makePromise(P, 'err', true).then(null, (e) => makePromise(P, `${e} and then`)),
-      '.then that throws': (P) => makePromise(P, 'value').then((v) => { throw v }),
-      '.then that throws in error handler': (P) => makePromise(P, 'err', true).then(null, (e) => { throw e }),
+      '.then that throws': (P) => makePromise(P, 'value').then((v) => { throw v; }),
+      '.then that throws in error handler': (P) => makePromise(P, 'err', true).then(null, (e) => { throw e; }),
       '.then with no args': (P) => makePromise(P, 'value').then(),
       '.then that rejects': (P) => makePromise(P, 'value').then((v) => P.reject(v)),
       '.then that rejects in error handler': (P) => makePromise(P, 'err', true).then(null, (err) => P.reject(err)),
@@ -47,35 +47,35 @@ describe('GreedyPromise', () => {
       '.then with no success handler on a resolution': (P) => makePromise(P, 'value').then(null, (e) => `caught ${e}`),
       'simple .catch': (P) => makePromise(P, 'err', true).catch((err) => `caught ${err}`),
       'identity .catch': (P) => makePromise(P, 'err', true).catch((err) => err).then((v) => v),
-      '.catch that throws': (P) => makePromise(P, 'err', true).catch((err) => { throw err }),
+      '.catch that throws': (P) => makePromise(P, 'err', true).catch((err) => { throw err; }),
       'chained .catch': (P) => makePromise(P, 'err', true).catch((err) => makePromise(P, err)),
       'chained .catch that rejects': (P) => makePromise(P, 'err', true).catch((err) => P.reject(`reject with ${err}`)),
       'simple .finally': (P) => {
         let fval;
         return makePromise(P, 'value')
           .finally(() => fval = 'finally ran')
-          .then((val) => `${val} ${fval}`)
+          .then((val) => `${val} ${fval}`);
       },
       'chained .finally': (P) => {
         let fval;
         return makePromise(P, 'value')
-          .finally(() => pendingSuccess.then(() => { fval = 'finally ran' }))
-          .then((val) => `${val} ${fval}`)
+          .finally(() => pendingSuccess.then(() => { fval = 'finally ran'; }))
+          .then((val) => `${val} ${fval}`);
       },
       '.finally on a rejection': (P) => {
         let fval;
         return makePromise(P, 'error', true)
-          .finally(() => { fval = 'finally' })
-          .catch((err) => `${err} ${fval}`)
+          .finally(() => { fval = 'finally'; })
+          .catch((err) => `${err} ${fval}`);
       },
       'chained .finally on a rejection': (P) => {
         let fval;
         return makePromise(P, 'error', true)
-          .finally(() => pendingSuccess.then(() => { fval = 'finally' }))
-          .catch((err) => `${err} ${fval}`)
+          .finally(() => pendingSuccess.then(() => { fval = 'finally'; }))
+          .catch((err) => `${err} ${fval}`);
       },
 
-      '.finally that throws': (P) => makePromise(P, 'value').finally(() => { throw new Error('error') }),
+      '.finally that throws': (P) => makePromise(P, 'value').finally(() => { throw new Error('error'); }),
       'chained .finally that rejects': (P) => makePromise(P, 'value').finally(() => P.reject('error')),
       'scalar Promise.resolve': (P) => P.resolve('scalar'),
       'null Promise.resolve': (P) => P.resolve(null),
@@ -101,8 +101,8 @@ describe('GreedyPromise', () => {
             makePromise = function(ctor, value, fail = false, delay = 0) {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
-                setTimeout(() => fail ? reject(value) : resolve(value), delay)
-              })
+                setTimeout(() => fail ? reject(value) : resolve(value), delay);
+              });
             };
             pendingSuccess = makePromise(Promise, 'pending result', false, 10);
             pendingFailure = makePromise(Promise, 'pending failure', true, 10);
@@ -121,9 +121,9 @@ describe('GreedyPromise', () => {
                   dest[slot] = value;
                   pending--;
                   if (pending === 0) {
-                    resolve()
+                    resolve();
                   }
-                }
+                };
               }
               vanilla.then(collect(expected, 'success'), collect(expected, 'failure'));
               greedy.then(collect(actual, 'success'), collect(actual, 'failure'));
@@ -136,7 +136,7 @@ describe('GreedyPromise', () => {
             const promise = op(GreedyPromise).catch(() => null);
             return promise.then(() => {
               let cbRan = false;
-              promise.then(() => { cbRan = true });
+              promise.then(() => { cbRan = true; });
               expect(cbRan).to.be.true;
             });
           });
@@ -153,7 +153,7 @@ describe('GreedyPromise', () => {
                 } else {
                   setTimeout(run, delay);
                 }
-              })
+              });
             };
             pendingSuccess = makePromise(GreedyPromise, 'pending result');
             pendingFailure = makePromise(GreedyPromise, 'pending failure', true);
@@ -161,7 +161,7 @@ describe('GreedyPromise', () => {
 
           it('resolves immediately', () => {
             let cbRan = false;
-            op(GreedyPromise).catch(() => null).then(() => { cbRan = true });
+            op(GreedyPromise).catch(() => null).then(() => { cbRan = true; });
             expect(cbRan).to.be.true;
           });
         });
@@ -174,14 +174,14 @@ describe('greedySetTimeout', () => {
   describe('delay = 0', () => {
     it('should resolve immediately', () => {
       let cbRan = false;
-      greedySetTimeout(() => { cbRan = true }, 0);
+      greedySetTimeout(() => { cbRan = true; }, 0);
       expect(cbRan).to.be.true;
     });
 
     it('should not choke when cleared', () => {
       clearTimeout(greedySetTimeout(() => {}, 0));
     });
-  })
+  });
 
   describe('delay > 0', () => {
     it('should schedule timeout', (done) => {
@@ -193,7 +193,7 @@ describe('greedySetTimeout', () => {
       setTimeout(() => {
         expect(cbRan).to.be.true;
         done();
-      }, 10)
+      }, 10);
     });
 
     it('can be cleared', (done) => {
@@ -201,13 +201,11 @@ describe('greedySetTimeout', () => {
       const handle = greedySetTimeout(() => {
         cbRan = true;
       }, 5);
+      clearTimeout(handle);
       setTimeout(() => {
-        clearTimeout(handle);
-        setTimeout(() => {
-          expect(cbRan).to.be.false;
-          done()
-        }, 10)
-      }, 0)
-    })
-  })
+        expect(cbRan).to.be.false;
+        done();
+      }, 10);
+    });
+  });
 });

@@ -72,11 +72,11 @@ export const spec = {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
           [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(bid)}`
-        }
+        };
       } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
         return {
           [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(bid)}`
-        }
+        };
       } else {
         logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
         return null;
@@ -103,7 +103,7 @@ export const spec = {
 
     if (fpd) {
       delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
-      delete fpd.experianRtidKey
+      delete fpd.experianRtidKey;
       payload.fpd = JSON.stringify(fpd);
     }
 
@@ -297,19 +297,19 @@ function _findBidderRequest(bidderRequests, bidId) {
 function _validateSize(bid) {
   const size = [];
   if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
-    size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
+    size.push(deepAccess(bid, 'mediaTypes.video.playerSize'));
   }
   if (deepAccess(bid, 'mediaTypes.video.sizes')) {
-    size.push(deepAccess(bid, 'mediaTypes.video.sizes'))
+    size.push(deepAccess(bid, 'mediaTypes.video.sizes'));
   }
   if (deepAccess(bid, 'params.sizes')) {
     size.push(deepAccess(bid, 'params.sizes'));
   }
   if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-    size.push(deepAccess(bid, 'mediaTypes.banner.sizes'))
+    size.push(deepAccess(bid, 'mediaTypes.banner.sizes'));
   }
   if (deepAccess(bid, 'sizes')) {
-    size.push(deepAccess(bid, 'sizes'))
+    size.push(deepAccess(bid, 'sizes'));
   }
   // Pass the 2d sizes array into parseSizeInput to flatten it into an array of x separated sizes.
   // Then throw it into Set to uniquify it.
@@ -337,9 +337,9 @@ function _validateGPID(bid) {
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
 
   if (gpid) {
-    return `gpid=${gpid},`
+    return `gpid=${gpid},`;
   }
-  return ''
+  return '';
 }
 
 function _validateMediaType(bidRequest) {
@@ -418,18 +418,18 @@ function _validateMediaType(bidRequest) {
 
 const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
   if (mediaType === 'video' || mediaType === 'outstream') {
-    return _videoCreative(sbiDc, sbiAid, referer)
+    return _videoCreative(sbiDc, sbiAid, referer);
   }
   const src = `https://${sbiDc}apex.go.sonobi.com/sbi.js?aid=${sbiAid}&as=null&ref=${encodeURIComponent(referer)}`;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
 function _videoCreative(sbiDc, sbiAid, referer) {
-  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(referer)}`
+  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(referer)}`;
 }
 
 function _getBidIdFromTrinityKey(key) {
-  return key.split('|').slice(-1)[0]
+  return key.split('|').slice(-1)[0];
 }
 
 /**
@@ -450,10 +450,10 @@ export function _getPlatform(context = window) {
     ge: 768
   };
   if (isInBounds(0, MOBILE_VIEWPORT.lt)) {
-    return 'mobile'
+    return 'mobile';
   }
   if (isInBounds(TABLET_VIEWPORT.ge, TABLET_VIEWPORT.lt)) {
-    return 'tablet'
+    return 'tablet';
   }
   return 'desktop';
 }
