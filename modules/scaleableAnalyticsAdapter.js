@@ -95,6 +95,8 @@ export const log = getLogger();
  * @property {'client'|'server'} source
  * @property {'pending'|'received'|'noBid'|'timeout'|'rejected'|'won'|'lost'} status
  * @property {string} [rejectionReason] - From BID_REJECTED (e.g. below floor)
+ * @property {boolean} [isSeatNonBid] - Synthesized from PBS ext.seatnonbid; no client-side BID_RESPONSE exists
+ * @property {number} [seatNonBidStatus] - Raw OpenRTB nonbid status code reported by Prebid Server
  * @property {number} [cpm]
  * @property {string} [currency]
  * @property {number} [originalCpm]
@@ -467,7 +469,6 @@ function onBidResponse(bid) {
   const record = findBidRecord(bid.auctionId, bid.requestId || bid.bidId);
   if (!record) return;
   Object.assign(record, {
-    status: 'received',
     cpm: bid.cpm,
     currency: bid.currency,
     originalCpm: bid.originalCpm,
@@ -486,6 +487,10 @@ function onBidResponse(bid) {
     meta: pruneMeta(bid.meta)
   });
 
+  if (record.status === 'pending') {
+    record.status = 'received';
+  }
+
   if (bid.mediaType === 'video' && bid.vastUrl) {
     record.vastUrl = bid.vastUrl;
   }
@@ -503,7 +508,7 @@ function onBidRejected(bid) {
 }
 
 /**
- * Mark still-pending bids for this bidder as 'noBid'. A late BID_RESPONSE overwrites this.
+ * Mark still-pending bids for this bidder as 'noBid'.
  * @param {{auctionId: string, bids: Array<Object>}} args
  */
 function onBidderDone(args) {
@@ -572,10 +577,22 @@ function onBidTimeout(bids) {
 }
 
 function onBidWon(bid) {
-  const record = findBidRecord(bid.auctionId, bid.requestId || bid.bidId);
-  if (!record) return;
-  record.status = 'won';
-  record.adserverTargeting = pruneAdserverTargeting(bid.adserverTargeting);
+  const auction = locals.auctions[bid.auctionId];
+  if (!auction) return;
+  const requestId = bid.requestId || bid.bidId;
+  for (const adUnit of auction.adUnits) {
+    const record = adUnit.bids.find(b => b.requestId === requestId);
+    if (!record) continue;
+    record.status = 'won';
+    record.adserverTargeting = pruneAdserverTargeting(bid.adserverTargeting);
+    // GAM slot/viewability events can land before this win and park render data on
+    // adUnit.gamRender; reclaim it onto the winning bid.
+    if (adUnit.gamRender) {
+      record.render = Object.assign({}, adUnit.gamRender, record.render);
+      delete adUnit.gamRender;
+    }
+    return;
+  }
 }
 
 function onBidViewable(bid) {
@@ -601,14 +618,65 @@ function pruneAdserverTargeting(t) {
 }
 
 /**
- * @param {{auctionId: string, bidsReceived?: Array<Object>}} args
+ * Bucket a raw OpenRTB seatnonbid status code into our per-bid status. Ranges per the IAB
+ * Seat Non-Bid spec: 0–99 no-bid, 100–199 error (101 = timeout), 200–399 blocked/rejected.
+ * @param {number} code
+ * @returns {'noBid'|'timeout'|'rejected'}
+ */
+function mapSeatNonBidStatus(code) {
+  if (code === 101) return 'timeout';
+  if (typeof code === 'number' && code >= 200 && code < 400) return 'rejected';
+  return 'noBid';
+}
+
+/**
+ * Apply Prebid Server seat-level non-bids (`ext.seatnonbid`) — server bidders that never
+ * returned a client-side BID_RESPONSE. Enrich the matching server record, or synthesize one.
+ * @param {AuctionRecord} auction
+ * @param {Array<{seat?: string, nonbid?: Array<{impid?: string, status?: number, statusCode?: number}>}>} [seatNonBids]
+ */
+function applySeatNonBids(auction, seatNonBids) {
+  if (!Array.isArray(seatNonBids)) return;
+  for (const seatObj of seatNonBids) {
+    if (!seatObj || !Array.isArray(seatObj.nonbid)) continue;
+    const seat = seatObj.seat;
+    for (const nb of seatObj.nonbid) {
+      if (!nb) continue;
+      const code = nb.statuscode != null ? nb.statuscode : (nb.status != null ? nb.status : nb.statusCode);
+      const adUnit = auction.adUnits.find(au => au.code === nb.impid);
+      if (!adUnit) continue;
+      const status = mapSeatNonBidStatus(code);
+      const record = adUnit.bids.find(b =>
+        b.bidder === seat && b.source === 'server' &&
+        (b.status === 'pending' || b.status === 'noBid' || b.status === 'lost'));
+      if (record) {
+        record.status = status;
+        record.seatNonBidStatus = code;
+      } else {
+        adUnit.bids.push({
+          bidder: seat,
+          adUnitCode: nb.impid,
+          source: 'server',
+          status,
+          isSeatNonBid: true,
+          seatNonBidStatus: code
+        });
+      }
+    }
+  }
+}
+
+/**
+ * @param {{auctionId: string, auctionEnd?: number, bidsReceived?: Array<Object>, seatNonBids?: Array<Object>}} args
  */
 function onAuctionEnd(args) {
   const auctionId = args && args.auctionId;
   const auction = locals.auctions[auctionId];
   if (!auction) return;
 
-  auction.endTime = Date.now();
+  // Use the event's auctionEnd; the base adapter debounces before we run, so Date.now() would
+  // inflate duration and could mis-flag timeoutReached.
+  auction.endTime = typeof args.auctionEnd === 'number' ? args.auctionEnd : Date.now();
 
   for (const adUnit of auction.adUnits) {
     for (const record of adUnit.bids) {
@@ -617,6 +685,8 @@ function onAuctionEnd(args) {
       }
     }
   }
+
+  applySeatNonBids(auction, args.seatNonBids);
 
   if (locals.flushTimers[auctionId]) clearTimeout(locals.flushTimers[auctionId]);
   locals.flushTimers[auctionId] = setTimeout(() => finalizeAndSend(auctionId), locals.auctionEndDelay);

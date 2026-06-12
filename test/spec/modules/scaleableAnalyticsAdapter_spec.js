@@ -467,6 +467,47 @@ describe('scaleableAnalyticsAdapter:', function () {
       expect(lastBeaconPayload().auctionId).to.equal(auctionId);
     });
 
+    it('keeps timeout status when a late BID_RESPONSE arrives, but still enriches the record', function () {
+      const auctionId = 'auction-late-response';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      events.emit(EVENTS.BID_TIMEOUT, [{ auctionId, bidId: 'bid-a-1' }]);
+      events.emit(EVENTS.BID_RESPONSE, makeBidResponse('bid-a-1', auctionId)); // lands after the timeout
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const bidA = lastBeaconPayload().adUnits[0].bids.find(b => b.requestId === 'bid-a-1');
+      expect(bidA.status).to.equal('timeout');
+      expect(bidA.cpm).to.equal(1.23);
+    });
+
+    it('keeps won status when BID_WON precedes BID_RESPONSE', function () {
+      const auctionId = 'auction-won-first';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      events.emit(EVENTS.BID_WON, { auctionId, requestId: 'bid-a-1' });
+      events.emit(EVENTS.BID_RESPONSE, makeBidResponse('bid-a-1', auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const bidA = lastBeaconPayload().adUnits[0].bids.find(b => b.requestId === 'bid-a-1');
+      expect(bidA.status).to.equal('won');
+      expect(bidA.cpm).to.equal(1.23);
+    });
+
+    it('derives duration from the event auctionEnd timestamp, not wall-clock', function () {
+      const auctionId = 'auction-duration';
+      const init = makeAuctionInitArgs(auctionId); // timestamp: 1700000000000
+      init.timeout = 1000;
+      events.emit(EVENTS.AUCTION_INIT, init);
+      events.emit(EVENTS.AUCTION_END, { auctionId, auctionEnd: 1700000000500 });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const payload = lastBeaconPayload();
+      expect(payload.duration).to.equal(500);
+      expect(payload.timeoutReached).to.equal(false);
+    });
+
     it('computes timeoutReached when the auction carries a timeout', function () {
       const auctionId = 'auction-timeout-flag';
       const init = makeAuctionInitArgs(auctionId);
@@ -599,6 +640,30 @@ describe('scaleableAnalyticsAdapter:', function () {
       expect(bidA.render.viewable).to.equal(true);
     });
 
+    it('reclaims parked GAM render data onto the winner when slotRenderEnded precedes BID_WON', function () {
+      const auctionId = 'auction-gam-race';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      events.emit(EVENTS.BID_RESPONSE, makeBidResponse('bid-a-1', auctionId));
+      // GAM render + viewability arrive BEFORE Prebid emits BID_WON.
+      fireSlotRenderEnded();
+      gamHandlers.impressionViewable({
+        slot: { getAdUnitPath: () => '/123/header-bid-tag-0', getSlotElementId: () => 'div-0' }
+      });
+      events.emit(EVENTS.BID_WON, { auctionId, requestId: 'bid-a-1' });
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const adUnit = lastBeaconPayload().adUnits[0];
+      const bidA = adUnit.bids.find(b => b.requestId === 'bid-a-1');
+      expect(bidA.status).to.equal('won');
+      expect(bidA.render.lineItemId).to.equal(1234567);
+      expect(bidA.render.creativeId).to.equal(1112223);
+      expect(bidA.render.renderedSize).to.equal('300x250');
+      expect(bidA.render.viewable).to.equal(true);
+      expect(adUnit.gamRender).to.equal(undefined);
+    });
+
     it('routes GAM render to adUnit.gamRender when no Prebid bid won the slot', function () {
       const auctionId = 'auction-gam-2';
       events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
@@ -650,6 +715,73 @@ describe('scaleableAnalyticsAdapter:', function () {
       window.googletag = { cmd: { push: (fn) => fn() }, pubads: () => { throw new Error('not ready'); } };
       analyticsAdapter.enableAnalytics({ options: { siteId: SITE_ID, endpoint: ENDPOINT } });
       expect(log.warn.calledWithMatch(/Failed to subscribe to GAM slot events/)).to.equal(true);
+    });
+  });
+
+  describe('Prebid Server seat non-bids:', function () {
+    beforeEach(function () {
+      analyticsAdapter.enableAnalytics({ options: { siteId: SITE_ID, endpoint: ENDPOINT } });
+    });
+
+    function serverBidRequested(auctionId, bidder = 'serverBidder', bidId = 'srv-1') {
+      return {
+        auctionId,
+        bids: [{ bidder, bidderCode: bidder, bidId, adUnitCode: '/123/header-bid-tag-0', src: 's2s' }]
+      };
+    }
+
+    function seatNonBid(seat, statuscode, impid = '/123/header-bid-tag-0') {
+      return [{ seat, nonbid: [{ impid, statuscode }] }];
+    }
+
+    it('enriches the existing server bid record with the non-bid reason (no duplicate)', function () {
+      const auctionId = 'auction-snb-floor';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, serverBidRequested(auctionId));
+      events.emit(EVENTS.BIDDER_DONE, { auctionId, bids: [{ bidId: 'srv-1' }] });
+      events.emit(EVENTS.AUCTION_END, { auctionId, seatNonBids: seatNonBid('serverBidder', 301) });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const srv = lastBeaconPayload().adUnits[0].bids.filter(b => b.bidder === 'serverBidder');
+      expect(srv).to.have.lengthOf(1);
+      expect(srv[0].source).to.equal('server');
+      expect(srv[0].status).to.equal('rejected');
+      expect(srv[0].seatNonBidStatus).to.equal(301);
+    });
+
+    it('maps status 101 to timeout (and leaves 1 as a no-bid)', function () {
+      const auctionId = 'auction-snb-timeout';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, serverBidRequested(auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId, seatNonBids: seatNonBid('serverBidder', 101) });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const srv = lastBeaconPayload().adUnits[0].bids.find(b => b.bidder === 'serverBidder');
+      expect(srv.status).to.equal('timeout');
+      expect(srv.seatNonBidStatus).to.equal(101);
+    });
+
+    it('synthesizes a record when no client-side request exists for the seat', function () {
+      const auctionId = 'auction-snb-synth';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId, seatNonBids: seatNonBid('phantom', 0) });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      const phantom = lastBeaconPayload().adUnits[0].bids.find(b => b.bidder === 'phantom');
+      expect(phantom).to.exist;
+      expect(phantom.isSeatNonBid).to.equal(true);
+      expect(phantom.source).to.equal('server');
+      expect(phantom.status).to.equal('noBid');
+      expect(phantom.seatNonBidStatus).to.equal(0);
+    });
+
+    it('ignores a seat non-bid whose impid matches no ad unit', function () {
+      const auctionId = 'auction-snb-nomatch';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId, seatNonBids: seatNonBid('serverBidder', 0, '/999/nope') });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      expect(lastBeaconPayload().adUnits[0].bids.every(b => b.bidder !== 'serverBidder')).to.equal(true);
     });
   });
 });
