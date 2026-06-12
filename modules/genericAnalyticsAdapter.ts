@@ -167,7 +167,7 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
     }
   }
 
-  function translator(eventHandlers) {
+  function translator(eventHandlers: EventMapping | undefined) {
     if (!eventHandlers) {
       return (data) => data;
     }
