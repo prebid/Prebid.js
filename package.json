@@ -35,10 +35,7 @@
     "dist/src/metadata/**/*.js"
   ],
   "browserslist": [
-    "> 0.25%",
-    "not IE 11",
-    "not dead",
-    "not op_mini all"
+    "baseline widely available"
   ],
   "keywords": [
     "advertising",
