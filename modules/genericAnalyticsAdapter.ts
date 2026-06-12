@@ -220,8 +220,10 @@ export function defaultHandler({ url, method, batchSize, ajax = ajaxBuilder() })
     success() {},
     error() {}
   };
-  const extract = batchSize > 1 ? (events) => events : (events) => events[0];
-  const serialize = method === 'GET' ? (data) => ({ data: JSON.stringify(data) }) : (data) => JSON.stringify(data);
+  type SerializedPayload = string | { data: string };
+  const extract: (events: unknown[]) => unknown = batchSize > 1 ? (events: unknown[]) => events : (events: unknown[]) => events[0];
+  const serialize: (data: unknown) => SerializedPayload =
+    method === 'GET' ? (data: unknown) => ({ data: JSON.stringify(data) }) : (data: unknown) => JSON.stringify(data);
 
   return function (events) {
     ajax(url, callbacks, serialize(extract(events)), { method, keepalive: true });
