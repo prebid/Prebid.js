@@ -90,9 +90,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         const winFields = {
           renderStatus: 4,
           renderedSize: args.size,
-          host: window.location.hostname,
-          path: window.location.pathname,
-          search: window.location.search,
+          host: getWindowLocation().hostname,
+          path: getWindowLocation().pathname,
+          search: getWindowLocation().search,
           adserverAdSlot,
           pbAdSlot
         };
@@ -126,9 +126,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           renderStatus: 7,
           renderTimestamp: Date.now(),
           renderedSize: bid.size,
-          host: window.location.hostname,
-          path: window.location.pathname,
-          search: window.location.search,
+          host: getWindowLocation().hostname,
+          path: getWindowLocation().pathname,
+          search: getWindowLocation().search,
           adserverAdSlot,
           pbAdSlot
         });
@@ -138,9 +138,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           renderStatus: 8,
           reason: args.reason,
           message: args.message,
-          host: window.location.hostname,
-          path: window.location.pathname,
-          search: window.location.search
+          host: getWindowLocation().hostname,
+          path: getWindowLocation().pathname,
+          search: getWindowLocation().search
         });
       } else if (eventType === EVENTS.BIDDER_ERROR) {
         const { bidderRequest, error } = args;
@@ -268,7 +268,7 @@ function send(data, useBeacon = false) {
   const location = getWindowLocation();
   if (data.auctionInit) {
     Object.assign(data.auctionInit, {
-      host: location.host,
+      host: location.hostname,
       path: location.pathname,
       search: location.search
     });

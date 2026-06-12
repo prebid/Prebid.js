@@ -424,6 +424,15 @@ describe('tercept analytics adapter', function () {
       expect(bids[0].adserverAdSlot).to.equal('/1234567/homepage-banner');
     });
 
+    it('host in win beacon matches host in auctionInit — same property, no port discrepancy', function () {
+      emitFullAuction();
+      events.emit(EVENTS.BID_WON, bidWon);
+      clock.tick(0);
+      const beacon = JSON.parse(server.requests[0].requestBody);
+      const batch = JSON.parse(server.requests[1].requestBody);
+      expect(beacon.bidWon.host).to.equal(batch.auctionInit.host);
+    });
+
     it('sends win beacon even after the batch timer has already flushed the auction', function () {
       emitFullAuction();
       clock.tick(0); // batch fires, auction deleted from pendingAuctions
