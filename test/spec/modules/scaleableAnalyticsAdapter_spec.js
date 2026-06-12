@@ -422,6 +422,30 @@ describe('scaleableAnalyticsAdapter:', function () {
 
       expect(log.warn.calledWithMatch(/sendBeacon refused/)).to.equal(true);
     });
+
+    it('does not transmit anything when COPPA applies', function () {
+      sandbox.stub(coppaDataHandler, 'getCoppa').returns(true);
+      const auctionId = 'auction-coppa';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.BID_REQUESTED, makeBidRequestedArgs(auctionId));
+      events.emit(EVENTS.BID_RESPONSE, makeBidResponse('bid-a-1', auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(TICK_FOR_FLUSH);
+
+      expect(navigator.sendBeacon.called).to.equal(false);
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('does not transmit in-flight auctions on unload when COPPA applies', function () {
+      sandbox.stub(coppaDataHandler, 'getCoppa').returns(true);
+      const auctionId = 'auction-coppa-unload';
+      events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
+      events.emit(EVENTS.AUCTION_END, { auctionId });
+      sandbox.clock.tick(200);
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(navigator.sendBeacon.called).to.equal(false);
+    });
   });
 
   describe('consent collection:', function () {
@@ -429,11 +453,10 @@ describe('scaleableAnalyticsAdapter:', function () {
       sandbox.stub(gdprDataHandler, 'getConsentData').returns({ gdprApplies: true, consentString: 'TCF_STRING' });
       sandbox.stub(gppDataHandler, 'getConsentData').returns({ gppString: 'GPP_STRING', applicableSections: [7] });
       sandbox.stub(uspDataHandler, 'getConsentData').returns('1YNN');
-      sandbox.stub(coppaDataHandler, 'getCoppa').returns(true);
       analyticsAdapter.enableAnalytics({ options: { siteId: SITE_ID, endpoint: ENDPOINT } });
     });
 
-    it('forwards GDPR, GPP, USP and COPPA signals in metadata.consent', function () {
+    it('forwards GDPR, GPP and USP signals in metadata.consent', function () {
       const auctionId = 'auction-consent';
       events.emit(EVENTS.AUCTION_INIT, makeAuctionInitArgs(auctionId));
       events.emit(EVENTS.AUCTION_END, { auctionId });
@@ -445,7 +468,6 @@ describe('scaleableAnalyticsAdapter:', function () {
       expect(consent.gppString).to.equal('GPP_STRING');
       expect(consent.gppSid).to.deep.equal([7]);
       expect(consent.usPrivacy).to.equal('1YNN');
-      expect(consent.coppa).to.equal(true);
     });
   });
 

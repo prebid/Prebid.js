@@ -136,7 +136,6 @@ export const log = getLogger();
  * @property {string} [gppString]
  * @property {number[]} [gppSid]
  * @property {string} [usPrivacy]
- * @property {boolean} [coppa]
  */
 
 /**
@@ -648,6 +647,8 @@ function finalizeAndSend(auctionId) {
   if (!auction) return;
   delete locals.flushTimers[auctionId];
   delete locals.auctions[auctionId];
+  // COPPA: never transmit — drop the data rather than send.
+  if (coppaDataHandler.getCoppa()) return;
 
   if (typeof auction.endTime === 'number' && typeof auction.startTime === 'number') {
     auction.duration = auction.endTime - auction.startTime;
@@ -674,6 +675,7 @@ function finalizeAndSend(auctionId) {
  * Synchronously flush in-flight auctions on page unload, tagged `truncated: true`.
  */
 function flushAllAuctions() {
+  const coppa = coppaDataHandler.getCoppa();
   const ids = Object.keys(locals.auctions);
   for (const auctionId of ids) {
     const auction = locals.auctions[auctionId];
@@ -682,6 +684,7 @@ function flushAllAuctions() {
       delete locals.flushTimers[auctionId];
     }
     delete locals.auctions[auctionId];
+    if (coppa) continue; // COPPA: never transmit
     auction.truncated = true;
     if (!sendBeacon(locals.endpoint, JSON.stringify(auction))) {
       log.warn('sendBeacon refused payload; auction lost on unload', auction.auctionId);
@@ -742,9 +745,6 @@ function collectConsent() {
   const usp = uspDataHandler.getConsentData();
   if (usp) {
     consent.usPrivacy = usp;
-  }
-  if (coppaDataHandler.getCoppa()) {
-    consent.coppa = true;
   }
   return consent;
 }
