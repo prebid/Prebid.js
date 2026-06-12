@@ -92,7 +92,7 @@ const TYPES = {
 const MAX_CALL_DEPTH = 20;
 
 type GenericAnalyticsAdapter = AnalyticsAdapterInstance<'generic'> & {
-  gvlid: (config) => number | undefined;
+  gvlid: (config: DefaultOptions | undefined) => number | undefined;
 };
 
 type GenericAnalyticsConstructor = new () => GenericAnalyticsAdapter;
