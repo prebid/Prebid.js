@@ -166,8 +166,6 @@ describe('tercept analytics adapter', function () {
     height: 480,
     playerWidth: 640,
     playerHeight: 480,
-    vastUrl: 'https://vast.example.com/ad',
-    vastImpUrl: 'https://vast.example.com/imp',
     videoCacheKey: 'vc-key-123'
   };
 
@@ -176,9 +174,7 @@ describe('tercept analytics adapter', function () {
     mediaType: 'video',
     size: '640x480',
     playerWidth: 640,
-    playerHeight: 480,
-    vastUrl: 'https://vast.example.com/ad',
-    vastImpUrl: 'https://vast.example.com/imp'
+    playerHeight: 480
   };
 
   const multiFormatBidRequested = {
@@ -790,28 +786,24 @@ describe('tercept analytics adapter', function () {
       }).not.to.throw();
     });
 
-    it('captures vastUrl, vastImpUrl, playerWidth and playerHeight from bid response', function () {
+    it('captures playerWidth and playerHeight from bid response', function () {
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
       events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
       events.emit(EVENTS.BID_RESPONSE, videoBidResponse);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
       clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
-      expect(bids[0].vastUrl).to.equal('https://vast.example.com/ad');
-      expect(bids[0].vastImpUrl).to.equal('https://vast.example.com/imp');
       expect(bids[0].playerWidth).to.equal(640);
       expect(bids[0].playerHeight).to.equal(480);
       expect(bids[0].mediaType).to.equal('video');
     });
 
-    it('captures video fields in the BID_WON beacon', function () {
+    it('captures playerWidth, playerHeight and mediaType in the BID_WON beacon', function () {
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
       events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
       events.emit(EVENTS.BID_WON, videoBidWon);
       const { bidWon: bw } = JSON.parse(server.requests[0].requestBody);
-      expect(bw.vastUrl).to.equal('https://vast.example.com/ad');
-      expect(bw.vastImpUrl).to.equal('https://vast.example.com/imp');
       expect(bw.playerWidth).to.equal(640);
       expect(bw.playerHeight).to.equal(480);
       expect(bw.mediaType).to.equal('video');

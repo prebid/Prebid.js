@@ -114,8 +114,6 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
             timeToRespond: args.timeToRespond,
             requestTimestamp: args.requestTimestamp,
             responseTimestamp: args.responseTimestamp,
-            vastUrl: args.vastUrl || null,
-            vastImpUrl: args.vastImpUrl || null,
             playerWidth: args.playerWidth || null,
             playerHeight: args.playerHeight || null,
             ...winFields
@@ -260,8 +258,6 @@ function mapBidResponse(bidResponse, status) {
     adId: bidResponse.adId,
     adserverTargeting: bidResponse.adserverTargeting,
     videoCacheKey: bidResponse.videoCacheKey,
-    vastUrl: bidResponse.vastUrl || null,
-    vastImpUrl: bidResponse.vastImpUrl || null,
     playerWidth: bidResponse.playerWidth || null,
     playerHeight: bidResponse.playerHeight || null,
     meta: bidResponse.meta || {}
