@@ -139,7 +139,7 @@ function parseBidResponse(bid) {
         return window.parseFloat(Number(bid.getCpmInNewCurrency(CURRENCY_USD)).toFixed(BID_PRECISION));
       }
       logWarn(LOG_PRE_FIX + 'Could not determine the Net cpm in USD for the bid thus using bid.cpm', bid);
-      return bid.cpm
+      return bid.cpm;
     },
     'bidGrossCpmUSD', () => {
       if (typeof bid.originalCurrency === 'string' && bid.originalCurrency.toUpperCase() === CURRENCY_USD) {
@@ -150,7 +150,7 @@ function parseBidResponse(bid) {
         return window.parseFloat(Number(getGlobal().convertCurrency(bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
       }
       logWarn(LOG_PRE_FIX + 'Could not determine the Gross cpm in USD for the bid, thus using bid.originalCpm', bid);
-      return bid.originalCpm
+      return bid.originalCpm;
     },
     'dealId',
     'currency',
@@ -181,7 +181,7 @@ function getAdapterNameForAlias(aliasName) {
 }
 
 function isS2SBidder(bidder) {
-  return (s2sBidders.indexOf(bidder) > -1) ? 1 : 0
+  return (s2sBidders.indexOf(bidder) > -1) ? 1 : 0;
 }
 
 function isOWPubmaticBid(adapterName) {
@@ -193,7 +193,7 @@ function isOWPubmaticBid(adapterName) {
       return true;
     }
     return false;
-  })
+  });
 }
 
 function getAdUnit(adUnits, adUnitId) {
@@ -271,7 +271,7 @@ function getRootLevelDetails(auctionCache, auctionId) {
     s2sls: s2sBidders,
     dm: DISPLAY_MANAGER,
     dmv: '$prebid.version$' || '-1'
-  }
+  };
 }
 
 function executeBidsLoggerCall(event, highestCpmBids) {
@@ -294,7 +294,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
         let adapterName = getAdapterNameForAlias(bid.adapterCode || bid.bidder);
         bid.adapterName = adapterName;
         bid.bidder = adapterName;
-      })
+      });
     }
   });
 
@@ -388,7 +388,7 @@ const eventHandlers = {
     cacheEntry.floorData = {};
     cacheEntry.origAdUnits = args.adUnits;
     cacheEntry.referer = args.bidderRequests[0].refererInfo.topmostLocation;
-    cacheEntry.ortb2 = args.bidderRequests[0].ortb2
+    cacheEntry.ortb2 = args.bidderRequests[0].ortb2;
     cache.auctions[args.auctionId] = cacheEntry;
   },
 
@@ -408,7 +408,7 @@ const eventHandlers = {
       if (bid.floorData) {
         cache.auctions[args.auctionId].floorData['floorRequestData'] = bid.floorData;
       }
-    })
+    });
   },
 
   bidResponse: (args) => {
@@ -520,7 +520,7 @@ const eventHandlers = {
       }
     });
   }
-}
+};
 
 /// /////////// ADAPTER DEFINITION //////////////
 

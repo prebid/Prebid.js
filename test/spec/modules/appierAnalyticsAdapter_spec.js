@@ -52,7 +52,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
             originalCurrency: 'USD',
             ad: '<html>fake ad1</html>'
           },
-        ]
+        ];
         const result = getCpmInUsd(receivedBids[0]);
         expect(result).to.equal(0.1);
       });
@@ -527,7 +527,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
               originalCurrency: 'USD',
               ad: '<html>fake ad1</html>'
             },
-          ]
+          ];
 
           appierAnalyticsAdapter.handleBidWon(receivedBids[0]);
           sinon.assert.callCount(appierAnalyticsAdapter.createImpressionMessage, 1);

@@ -73,7 +73,7 @@ const eidsProvidersMap = {
   'sharedid': 'pubcid.org',
   'publishercommonid': 'pubcid.org',
   'pubcid.org': 'pubcid.org',
-}
+};
 
 // params
 let params = {
@@ -674,7 +674,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
 
       window.googletag.cmd.push(() => {
         window.googletag.pubads().getSlots().forEach(slot => {
-          if (typeof slot.setTargeting !== 'undefined' && sirdataMergedList.length > 0) {
+          if (sirdataMergedList.length > 0) {
             setSlotTargeting(slot, 'sd_rtd', sirdataMergedList);
           }
         });

@@ -164,7 +164,7 @@ describe('mediago:BidAdapterTests', function () {
         sandbox.stub(storage, 'setCookie');
         sandbox.stub(utils, 'generateUUID').returns('new-uuid');
         sandbox.stub(storage, 'cookiesAreEnabled');
-      })
+      });
 
       afterEach(() => {
         sandbox.restore();
@@ -192,7 +192,7 @@ describe('mediago:BidAdapterTests', function () {
         getPmgUID();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
-    })
+    });
   });
 
   it('mediago:validate_response_params', function () {
@@ -259,7 +259,7 @@ describe('mediago: getUserSyncs', function() {
   };
   const USP_CONSENT = {
     consentString: 'uspConsentString'
-  }
+  };
 
   let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
   syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
@@ -390,7 +390,7 @@ describe('mediago Bid Adapter Tests', function () {
       it('should return the current document description if top document is not accessible', function() {
         const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
         const fakeWindow = {
           get top() {
             throw new Error('Access denied');

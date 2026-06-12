@@ -179,7 +179,7 @@ const VALID_BID_REQUEST_WITH_ORTB2 = [{
   },
   'auctionsCount': 1
 }];
-  // Protected Audience API Request
+// Protected Audience API Request
 const VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
   'bidder': 'medianet',
   'params': {
@@ -1161,7 +1161,7 @@ const VALID_PAYLOAD_WITH_CRID = {
   'ortb2': {},
   'tmax': config.getConfig('bidderTimeout')
 };
-  // Protected Audience API Valid Payload
+// Protected Audience API Valid Payload
 const VALID_PAYLOAD_PAAPI = {
   'site': {
     'domain': 'media.net',
@@ -1469,7 +1469,7 @@ const SERVER_RESPONSE_VALID_BID = {
     }
   }
 };
-  // Protected Audience API Response
+// Protected Audience API Response
 const SERVER_RESPONSE_PAAPI = {
   body: {
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1527,7 +1527,7 @@ const SERVER_RESPONSE_PAAPI = {
     }
   }
 };
-  // Protected Audience API OpenRTB Response
+// Protected Audience API OpenRTB Response
 const SERVER_RESPONSE_PAAPI_ORTB = {
   body: {
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1938,10 +1938,10 @@ describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    sandbox.stub(window.top, 'innerHeight').value(780)
-    sandbox.stub(window.top, 'innerWidth').value(440)
-    sandbox.stub(window.top, 'scrollY').value(100)
-    sandbox.stub(window.top, 'scrollX').value(50)
+    sandbox.stub(window.top, 'innerHeight').value(780);
+    sandbox.stub(window.top, 'innerWidth').value(440);
+    sandbox.stub(window.top, 'scrollY').value(100);
+    sandbox.stub(window.top, 'scrollX').value(50);
   });
 
   afterEach(function () {
@@ -2045,8 +2045,8 @@ describe('Media.net bid adapter', function () {
     it('should have valid ortb2Imp param present in bid request', function() {
       let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_ORTB2, VALID_AUCTIONDATA);
       let actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
-      const expected = VALID_BID_REQUEST_WITH_ORTB2[0].ortb2Imp
-      assert.equal(JSON.stringify(actual), JSON.stringify(expected))
+      const expected = VALID_BID_REQUEST_WITH_ORTB2[0].ortb2Imp;
+      assert.equal(JSON.stringify(actual), JSON.stringify(expected));
 
       bidreq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
@@ -2160,9 +2160,9 @@ describe('Media.net bid adapter', function () {
       };
       elementStub.returns({
         getBoundingClientRect: () => boundingRect
-      })
+      });
 
-      const bidRequest = [{ ...VALID_BID_REQUEST[0], adUnitCode: code }]
+      const bidRequest = [{ ...VALID_BID_REQUEST[0], adUnitCode: code }];
       const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);
       const data = JSON.parse(bidReq.data);
       expect(data.imp[0].ext.visibility).to.equal(2);
@@ -2315,7 +2315,7 @@ describe('Media.net bid adapter', function () {
         reason: { message: 'Failed to fetch', status: 500 },
         timedOut: true,
         status: 0
-      }
+      };
       const bids = [{
         bidder: 'medianet',
         bidId: 'mnet-4644-442a-b5e0-93f268cf8d19',

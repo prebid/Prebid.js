@@ -50,7 +50,7 @@ export type DemandChainNode = Extensible & {
    * is absent or null, unless the buyer has literally no web presence.
    */
   domain?: string;
-}
+};
 
 export type DemandChain = Extensible & {
   /**
@@ -75,4 +75,4 @@ export type DemandChain = Extensible & {
    * spec, use the string “1.0” (numeric values are invalid)
    */
   ver: string;
-}
+};

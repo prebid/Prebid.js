@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { logError, isFn, isPlainObject, formatQS } from '../src/utils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
@@ -64,7 +64,7 @@ const converter = ortbConverter({
       if (request.imp[0].hasOwnProperty(mediaType)) {
         request.imp[0][mediaType].battr ??= ortb?.[mediaType]?.battr || bidParams?.battr;
       }
-    })
+    });
 
     return request;
   },
@@ -80,7 +80,7 @@ const converter = ortbConverter({
       return buildBidResponse(bid, context);
     }
 
-    logError('Bid type is incorrect for bid: ', bid['id'])
+    logError('Bid type is incorrect for bid: ', bid['id']);
   },
   context: {
     netRevenue: true,
@@ -127,7 +127,7 @@ export const spec = {
         url: ENDPOINT_URL,
         options: {
           contentType: 'text/plain',
-          withCredentials: false,
+          withCredentials: true,
           crossOrigin: true
         },
         data: data,

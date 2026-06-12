@@ -1059,7 +1059,7 @@ export const AUCTION_INIT_EVENT = {
     'requestBids.makeRequests': 1
   },
   'seatNonBids': []
-}
+};
 
 export const AUCTION_INIT_EVENT_NOT_LI = {
   'auctionId': '87b4a93d-19ae-432a-96f0-8c2d4cc1c539',
@@ -2112,7 +2112,7 @@ export const AUCTION_INIT_EVENT_NOT_LI = {
     'requestBids.makeRequests': 1
   },
   'seatNonBids': []
-}
+};
 
 export const BID_WON_EVENT = {
   'bidderCode': 'appnexus',
@@ -2232,7 +2232,7 @@ export const BID_WON_EVENT = {
       'placementId': 13144370
     }
   ]
-}
+};
 
 export const BID_WON_EVENT_UNDEFINED = {
   'bidderCode': undefined,
@@ -2352,4 +2352,4 @@ export const BID_WON_EVENT_UNDEFINED = {
       'placementId': 13144370
     }
   ]
-}
+};

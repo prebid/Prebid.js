@@ -9,7 +9,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
-const GPP_CONSENT_STR = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
+const GPP_CONSENT_STR = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
@@ -62,7 +62,7 @@ describe('triplelift adapter', function () {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
     };
-  })
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -874,17 +874,17 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.exist;
       expect(url).to.be.a('string');
-      expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
-      expect(url).to.match(/(?:lib=prebid)/)
-      expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
+      expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/);
+      expect(url).to.match(/(?:lib=prebid)/);
+      expect(url).to.match(new RegExp('(?:' + prebid.version + ')'));
       expect(url).to.match(/(?:referrer)/);
     });
     it('should use refererInfo.page for referrer', function () {
-      bidderRequest.refererInfo.page = 'https://topmostlocation.com?foo=bar'
+      bidderRequest.refererInfo.page = 'https://topmostlocation.com?foo=bar';
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.match(/(\?|&)referrer=https%3A%2F%2Ftopmostlocation.com%3Ffoo%3Dbar/);
-      delete bidderRequest.refererInfo.page
+      delete bidderRequest.refererInfo.page;
     });
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
@@ -934,7 +934,7 @@ describe('triplelift adapter', function () {
     it('should call getFloor with the correct parameters based on mediaType', function() {
       bidRequests.forEach(request => {
         request.getFloor = () => {};
-        sinon.spy(request, 'getFloor')
+        sinon.spy(request, 'getFloor');
       });
 
       tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -1032,7 +1032,7 @@ describe('triplelift adapter', function () {
         user: {
           sens: sens,
         }
-      }
+      };
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
       const { data: payload } = request;
       expect(payload.ext.fpd.user).to.not.exist;
@@ -1062,7 +1062,7 @@ describe('triplelift adapter', function () {
             }
           ]
         }
-      })
+      });
     });
     it('should append 1PlusX data to existing user.data entries if localStorage is available', function() {
       bidderRequest.ortb2 = {
@@ -1071,7 +1071,7 @@ describe('triplelift adapter', function () {
             { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
           ]
         }
-      }
+      };
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.ext.fpd).to.deep.equal({
@@ -1088,7 +1088,7 @@ describe('triplelift adapter', function () {
             }
           ]
         }
-      })
+      });
     });
     it('should not append anything if getDataFromLocalStorage returns null', function() {
       bidderRequest.ortb2 = {
@@ -1097,7 +1097,7 @@ describe('triplelift adapter', function () {
             { name: 'dataprovider.com', ext: { segtax: 4 }, segment: [{ id: '1' }] }
           ]
         }
-      }
+      };
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => null);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.ext.fpd).to.deep.equal({
@@ -1106,7 +1106,7 @@ describe('triplelift adapter', function () {
             { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
           ]
         }
-      })
+      });
     });
     it('should add gpp consent data to bid request object if gpp data exists', function() {
       bidderRequest.ortb2 = {
@@ -1114,12 +1114,12 @@ describe('triplelift adapter', function () {
           'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
           'gpp_sid': [7]
         }
-      }
+      };
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.regs).to.deep.equal({
         'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
         'gpp_sid': [7]
-      })
+      });
     });
     it('should cast playbackmethod as an array if it is an integer and it exists', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -1314,7 +1314,7 @@ describe('triplelift adapter', function () {
           gdprApplies: true
         }
       };
-    })
+    });
 
     it('should get correct bid response', function () {
       const expectedResponse = [
@@ -1368,7 +1368,7 @@ describe('triplelift adapter', function () {
       expect(result[2].vastXml).to.include('aid=148508128401385324170&inv_code=testing_mobile_outstream');
       // banner bid on banner+outstream request
       expect(result[3].meta.mediaType).to.equal('banner');
-    })
+    });
 
     it('should return multiple responses to support SRA', function () {
       const result = tripleliftAdapterSpec.interpretResponse(response, { bidderRequest });
@@ -1420,7 +1420,7 @@ describe('triplelift adapter', function () {
         pixelEnabled: true
       };
       const result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
-      expect(result[0].type).to.equal('image')
+      expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal(expectedImageSyncUrl);
     });
 
@@ -1447,7 +1447,7 @@ describe('triplelift adapter', function () {
       const gppConsent = {
         'applicableSections': [2, 8],
         'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
-      }
+      };
       const result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, null, gppConsent);
       expect(result[0].url).to.equal(expectedGppSyncUrl);
     });
