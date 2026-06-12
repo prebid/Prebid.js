@@ -1,4 +1,3 @@
-/* COPYRIGHT SCALEABLE LLC 2026 */
 /**
  * Prebid.js analytics adapter for Scaleable (https://scaleable.ai). One batched
  * POST per auction, sent a short delay after AUCTION_END so late BID_WON and
