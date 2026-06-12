@@ -114,8 +114,8 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
             timeToRespond: args.timeToRespond,
             requestTimestamp: args.requestTimestamp,
             responseTimestamp: args.responseTimestamp,
-            playerWidth: args.playerWidth || null,
-            playerHeight: args.playerHeight || null,
+            playerWidth: args.playerWidth ?? null,
+            playerHeight: args.playerHeight ?? null,
             ...winFields
           }
         });
@@ -258,8 +258,8 @@ function mapBidResponse(bidResponse, status) {
     adId: bidResponse.adId,
     adserverTargeting: bidResponse.adserverTargeting,
     videoCacheKey: bidResponse.videoCacheKey,
-    playerWidth: bidResponse.playerWidth || null,
-    playerHeight: bidResponse.playerHeight || null,
+    playerWidth: bidResponse.playerWidth ?? null,
+    playerHeight: bidResponse.playerHeight ?? null,
     meta: bidResponse.meta || {}
   };
 }
