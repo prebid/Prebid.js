@@ -37,6 +37,5 @@ export const spec = {
     return Response;
   }
 }
-  
+
 registerBidder(spec);
-  
