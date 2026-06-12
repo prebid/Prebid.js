@@ -90,7 +90,7 @@ const interpretResponse = (
 
   const result = converter.fromORTB({ request: bidderRequest.data as ORTBRequest, response: ortbResponse }) as ExtendedResponse;
   return result.bids ?? [];
-}
+};
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
