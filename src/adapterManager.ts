@@ -41,7 +41,7 @@ import {
   incrementRequestsCounter
 } from './adUnits.js';
 import { getRefererInfo, type RefererInfo } from './refererDetection.js';
-import { GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
+import { allConsent, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
 import { EVENTS, S2S } from './constants.js';
 import { type Metrics, useMetrics } from './utils/perfMetrics.js';
@@ -84,7 +84,7 @@ export const dep = {
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number } } = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: AnalyticsConfig<P> } } = {};
 
 let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
@@ -245,6 +245,7 @@ export type AliasBidderOptions = {
 export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & {
   code?: P;
   enableAnalytics(config: AnalyticsConfig<P>): void;
+  disableAnalytics?: () => void;
   gvlid?: number | ((config: AnalyticsConfig<P>) => number);
 };
 
@@ -475,6 +476,10 @@ function tidFactory() {
       fpdTid != null ? 'pub' : tidSource
     ];
   };
+}
+
+function isAnalyticsAllowed(analyticsConfig) {
+  return dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, analyticsConfig.provider, { [ACTIVITY_PARAM_ANL_CONFIG]: analyticsConfig }));
 }
 
 const adapterManager = {
@@ -936,11 +941,42 @@ const adapterManager = {
     config.forEach(adapterConfig => {
       const entry = _analyticsRegistry[adapterConfig.provider];
       if (entry && entry.adapter) {
-        if (dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, adapterConfig.provider, { [ACTIVITY_PARAM_ANL_CONFIG]: adapterConfig }))) {
-          entry.adapter.enableAnalytics(adapterConfig);
+        entry.config = adapterConfig;
+        if (isAnalyticsAllowed(adapterConfig)) {
+          try {
+            entry.adapter.enableAnalytics(adapterConfig);
+            entry.enabled = true;
+          } catch (e) {
+            logError(`Could not enable '${adapterConfig.provider}' analytics`, e);
+          }
         }
       } else {
         logError(`Prebid Error: no analytics adapter found in registry for '${adapterConfig.provider}'.`);
+      }
+    });
+  },
+  disableAnalytics(adapterCode: AnalyticsProvider) {
+    const entry = _analyticsRegistry[adapterCode];
+    if (entry && entry.enabled) {
+      if (typeof entry.adapter.disableAnalytics === 'function') {
+        try {
+          entry.adapter.disableAnalytics();
+          entry.enabled = false;
+        } catch (e) {
+          logError(`Could not disable '${adapterCode}' analytics`, e);
+        }
+      } else {
+        logWarn(`Could not disable '${adapterCode}' analytics: adapter does not provide a 'disableAnalytics' method`);
+      }
+    }
+  },
+  refreshAnalytics() {
+    Object.entries(_analyticsRegistry).forEach(([code, entry]) => {
+      const { enabled, config } = entry;
+      if (enabled && !isAnalyticsAllowed(config)) {
+        adapterManager.disableAnalytics(code);
+      } else if (!enabled && config != null) {
+        adapterManager.enableAnalytics(config);
       }
     });
   },
@@ -1070,4 +1106,5 @@ function resolveAlias(alias) {
   return alias;
 }
 
+allConsent.onChange(adapterManager.refreshAnalytics);
 export default adapterManager;

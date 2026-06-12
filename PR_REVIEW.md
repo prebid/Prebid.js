@@ -81,6 +81,8 @@ Follow steps above for general review process. In addition, please verify the fo
 
 Documentation: https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 
+Make sure a disableAnalytics method is provided.
+
 No additional steps above the general review process and making sure it conforms to the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html).
 
 Make sure there's a docs pull request
