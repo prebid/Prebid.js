@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
-import * as ajaxModule from 'src/ajax.js';
 import { spec } from 'modules/engerioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { server } from 'test/mocks/xhr.js';
 
 const ENDPOINT_URL = 'https://api.engerio.sk/api/v1/adserver/prebid/auction/';
 
@@ -332,29 +331,24 @@ describe('engerioBidAdapter', () => {
   // ── onBidWon ─────────────────────────────────────────────────────────────────
 
   describe('onBidWon', () => {
-    let ajaxStub;
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(ajaxModule, 'ajax');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
+    // The win notice is sent through Prebid's `ajax` helper. The `ajax` binding is
+    // rewritten at build time by the callerContext babel plugin and is a `const`
+    // export, so it can't be stubbed on the module namespace; instead we assert
+    // against the global fetch mock's recorded requests (server.requests).
     it('fires a GET request to the nurl', () => {
       const bid = {
         nurl: 'https://api.engerio.sk/api/v1/adserver/prebid/win/abc-123/',
       };
       spec.onBidWon(bid);
-      expect(ajaxStub.calledOnce).to.be.true;
-      expect(ajaxStub.firstCall.args[0]).to.equal(bid.nurl);
-      expect(ajaxStub.firstCall.args[3]).to.deep.include({ method: 'GET', keepalive: true });
+      const winRequests = server.requests.filter((req) => req.url === bid.nurl);
+      expect(winRequests.length).to.equal(1);
+      expect(winRequests[0].method).to.equal('GET');
+      expect(winRequests[0].fetch.request.keepalive).to.be.true;
     });
 
     it('does nothing when nurl is absent', () => {
       spec.onBidWon({ cpm: 1.5 });
-      expect(ajaxStub.called).to.be.false;
+      expect(server.requests.length).to.equal(0);
     });
   });
 });
