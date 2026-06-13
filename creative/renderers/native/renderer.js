@@ -30,10 +30,12 @@ export function getReplacer(adId, { assets = [], ortb, nativeKeys = {} }) {
       )
     );
   }
-  repl = Object.entries(repl).concat([[/##hb_native_asset_(link_)?id_\d+##/g]]);
+
+  const replEntries = Object.entries(repl);
+  replEntries.push([/##hb_native_asset_(link_)?id_\d+##/g, '']);
 
   return function (template) {
-    return repl.reduce((text, [pattern, value]) => text.replaceAll(pattern, value || ''), template);
+    return replEntries.reduce((text, [pattern, value]) => text.replaceAll(pattern, value || ''), template);
   };
 }
 
