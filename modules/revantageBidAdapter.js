@@ -17,7 +17,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    // Handle null/empty bid requestsa
+    // Handle null/empty bid requests
     if (!validBidRequests || validBidRequests.length === 0) {
       return [];
     }
