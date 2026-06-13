@@ -704,7 +704,6 @@ magniteAdapter.disableAnalytics = function () {
   magniteAdapter._oldEnable = enableMgniAnalytics;
   endpoint = undefined;
   accountId = undefined;
-  cookieless = undefined;
   auctionIndex = 0;
   resetConfs();
   getHook('callPrebidCache').getHooks({ hook: callPrebidCacheHook }).remove();
