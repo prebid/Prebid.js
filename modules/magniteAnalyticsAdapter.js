@@ -336,7 +336,8 @@ const getTopLevelDetails = () => {
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
     let rule = rubiConf.rule_name;
-    if (cookieless) {
+    const isCookieless = !!(rubiConf.cookieless || deepAccess(cache, 'sessionData.cookieless'));
+    if (isCookieless) {
       rule = rule ? rule.concat('_cookieless') : 'cookieless';
     }
     payload.wrapper = {
