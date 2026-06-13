@@ -53,7 +53,6 @@ let pageReferer;
 let auctionIndex = 0; // count of auctions on page
 let accountId;
 let endpoint;
-let cookieless;
 
 const prebidGlobal = getGlobal();
 const {
