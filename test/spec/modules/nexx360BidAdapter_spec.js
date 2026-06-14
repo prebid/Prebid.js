@@ -98,7 +98,7 @@ describe('Nexx360 bid adapter tests', () => {
       };
     });
 
-    it('We verify isBidRequestValid with unvalid adUnitName', () => {
+    it('We verify isBidRequestValid with invalid adUnitName', () => {
       bannerBid.params = { adUnitName: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
