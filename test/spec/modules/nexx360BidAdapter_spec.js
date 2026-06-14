@@ -98,7 +98,7 @@ describe('Nexx360 bid adapter tests', () => {
       };
     });
 
-    it('We verify isBidRequestValid with unvalid adUnitName', () => {
+    it('We verify isBidRequestValid with invalid adUnitName', () => {
       bannerBid.params = { adUnitName: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -113,17 +113,17 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with unvalid divId', () => {
+    it('We verify isBidRequestValid with invalid divId', () => {
       bannerBid.params = { divId: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid unvalid allBids', () => {
+    it('We verify isBidRequestValid invalid allBids', () => {
       bannerBid.params = { allBids: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
