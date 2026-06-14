@@ -118,7 +118,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid unvalid allBids', () => {
+    it('We verify isBidRequestValid invalid allBids', () => {
       bannerBid.params = { allBids: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
