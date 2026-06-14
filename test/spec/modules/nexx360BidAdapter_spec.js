@@ -113,7 +113,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with unvalid divId', () => {
+    it('We verify isBidRequestValid with invalid divId', () => {
       bannerBid.params = { divId: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
