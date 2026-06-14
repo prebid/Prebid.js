@@ -123,7 +123,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
