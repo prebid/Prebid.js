@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/alliance_gravityBidAdapter.js';
+import { createRenderer, mediaTypeOverride, videoResponseOverride } from 'libraries/alliance_gravityUtils/index.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import sinon from 'sinon';
 const sandbox = sinon.createSandbox();
 
@@ -230,6 +232,34 @@ describe('Alliance Gravity bid adapter tests', () => {
         });
       }
     });
+    describe('Slot dimensions', () => {
+      it('adds slot dimensions to imp.ext.dimensions when the ad unit element exists in the DOM', () => {
+        const bid = {
+          bidder: 'alliance_gravity',
+          params: { srid: '12345' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          adUnitCode: 'div-1',
+          transactionId: '469a570d-f187-488d-b1cb-48c1a2009be9',
+          sizes: [[300, 250]],
+          bidId: '44a2706ac3574',
+          bidderRequestId: '359bf8a3c06b2e',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+        };
+        const bidderRequest = {
+          bidderCode: 'alliance_gravity',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+          bidderRequestId: '359bf8a3c06b2e',
+        };
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.imp[0].ext.dimensions).to.eql({
+          slotW: 200,
+          slotH: 250,
+          cssMaxW: '400px',
+          cssMaxH: '350px',
+        });
+      });
+    });
+
     after(() => {
       sandbox.restore();
     });
@@ -668,6 +698,108 @@ describe('Alliance Gravity bid adapter tests', () => {
       expect(syncs).to.eql([]);
       syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
+    });
+  });
+
+  describe('alliance_gravityUtils', () => {
+    describe('createRenderer()', () => {
+      afterEach(() => {
+        delete window.ANOutstreamVideo;
+      });
+
+      it('returns undefined when the bid response has no VAST', () => {
+        const renderer = createRenderer({
+          requestId: '226175918ebeda',
+          vastXml: '',
+          adUnitCode: 'div-1',
+          width: 640,
+          height: 480,
+        });
+        expect(renderer).to.be.undefined;
+      });
+
+      it('renders the outstream creative via ANOutstreamVideo', () => {
+        const vastXml = '<VAST>test</VAST>';
+        const renderer = createRenderer({
+          requestId: '226175918ebeda',
+          vastXml,
+          adUnitCode: 'div-1',
+          width: 640,
+          height: 480,
+        });
+        renderer.loaded = true;
+        window.ANOutstreamVideo = { renderAd: sinon.stub() };
+        renderer._render({ renderer, vastXml });
+        sinon.assert.calledOnceWithExactly(window.ANOutstreamVideo.renderAd, {
+          sizes: [640, 480],
+          targetId: 'div-1',
+          adResponse: vastXml,
+          rendererOptions: {
+            showBigPlayButton: false,
+            showProgressBar: 'bar',
+            showVolume: false,
+            allowFullscreen: true,
+            skippable: false,
+            content: vastXml,
+          },
+        });
+      });
+    });
+
+    describe('mediaTypeOverride()', () => {
+      it('defers to orig when bidResponse.mediaType is already set', () => {
+        const orig = sinon.stub();
+        const bidResponse = { mediaType: BANNER };
+        const bid = {};
+        const context = {};
+        mediaTypeOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+      });
+
+      it('defers to orig when bid.mtype is a known ORTB media type', () => {
+        const orig = sinon.stub();
+        const bidResponse = {};
+        const bid = { mtype: 2 };
+        const context = {};
+        mediaTypeOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+      });
+
+      it('sets mediaType from ext.prebid.type when mediaType and mtype are unknown', () => {
+        const orig = sinon.stub();
+        const bidResponse = {};
+        const bid = { ext: { prebid: { type: VIDEO } } };
+        mediaTypeOverride(orig, bidResponse, bid, {});
+        expect(bidResponse.mediaType).to.equal(VIDEO);
+        sinon.assert.notCalled(orig);
+      });
+
+      it('falls back to orig when no mediaType can be determined', () => {
+        const orig = sinon.stub();
+        const bidResponse = {};
+        const bid = { ext: {} };
+        const context = {};
+        mediaTypeOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+      });
+    });
+
+    describe('videoResponseOverride()', () => {
+      it('logs when no renderer can be created for an outstream video bid', () => {
+        const orig = sinon.stub();
+        const bidResponse = { mediaType: VIDEO, vastXml: '' };
+        const bid = {};
+        const context = {
+          bidRequest: {
+            adUnitCode: 'div-1',
+            mediaTypes: { video: { context: 'outstream' } },
+          },
+        };
+        videoResponseOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+        expect(bidResponse.renderer).to.be.undefined;
+        expect(bidResponse.adUnitCode).to.be.undefined;
+      });
     });
   });
 });
