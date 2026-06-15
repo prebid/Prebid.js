@@ -322,6 +322,14 @@ describe('Prebid Adapter: Startio', function () {
       expect(request.imp[0].banner.battr).to.deep.equal([3, 4]);
     });
 
+    it('should advertise the prebid channel (name + version) so the endpoint can identify the version', function () {
+      const request = spec.buildRequests([DEFAULT_REQUEST_DATA], DEFAULT_BIDDER_REQUEST)[0].data;
+
+      expect(request.ext.prebid.channel).to.be.an('object');
+      expect(request.ext.prebid.channel.name).to.equal('pbjs');
+      expect(request.ext.prebid.channel.version).to.be.a('string').that.is.not.empty;
+    });
+
     it('should map params.placementId to imp.tagid', function () {
       let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
       bidRequest.params.placementId = 'placement-abc';
