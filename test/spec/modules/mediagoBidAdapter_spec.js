@@ -139,6 +139,11 @@ describe('mediago:BidAdapterTests', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     const req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
+
+    const banner = req_data.imp[0].banner;
+    expect(banner.w).to.equal(300);
+    expect(banner.h).to.equal(250);
+    expect(banner.format).to.deep.equal([{ w: 300, h: 250 }]);
   });
 
   it('mediago:validate_transactionId_in_request', function () {
@@ -263,7 +268,7 @@ describe('mediago: getUserSyncs', function() {
 
   let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
   syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
-  const expectedIframeSyncs = [
+  const expectedIframeSyncs = [ 
     {
       type: 'iframe',
       url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`

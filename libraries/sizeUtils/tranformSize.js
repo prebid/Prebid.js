@@ -14,15 +14,15 @@ export function transformSizes(requestSizes) {
       requestSizes.length === 2 &&
       !utils.isArray(requestSizes[0])
   ) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
+    sizeObj.w = parseInt(requestSizes[0], 10);
+    sizeObj.h = parseInt(requestSizes[1], 10);
     sizes.push(sizeObj);
   } else if (typeof requestSizes === 'object') {
     for (let i = 0; i < requestSizes.length; i++) {
       const size = requestSizes[i];
       sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
+      sizeObj.w = parseInt(size[0], 10);
+      sizeObj.h = parseInt(size[1], 10);
       sizes.push(sizeObj);
     }
   }

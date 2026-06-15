@@ -138,15 +138,15 @@ function getItems(validBidRequests, bidderRequest) {
     const sizes = transformSizes(getProperty(req, 'sizes'));
     let matchSize;
 
-    // Validate size meets requirements
-    for (const size of sizes) {
-      matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
+    // 确认尺寸是否符合我们要求
+    for (let size of sizes) {
+      matchSize = mediagoAdSize.find(item => size.w === item.w && size.h === item.h);
       if (matchSize) {
         break;
       }
     }
     if (!matchSize) {
-      matchSize = sizes[0] ? { h: sizes[0].height || 0, w: sizes[0].width || 0 } : { h: 0, w: 0 };
+      matchSize = sizes[0] ? { h: sizes[0].h || 0, w: sizes[0].w || 0 } : { h: 0, w: 0 };
     }
 
     const bidFloor = getBidFloor(req);
