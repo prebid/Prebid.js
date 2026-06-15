@@ -85,6 +85,17 @@ describe('ConnectAd Adapter', function () {
       expect(data.imp[0].bidfloorcur).to.equal('USD');
     });
 
+    it('should fallback to floorprice param if bidfloor is not set', function () {
+      const bidWithFloorprice = Object.assign({}, bidRequests[0]);
+      bidWithFloorprice.params.bidfloor = undefined;
+      bidWithFloorprice.params.floorprice = 0.75;
+
+      const request = spec.buildRequests([bidWithFloorprice], bidderRequest);
+      const data = request.data;
+      expect(data.imp[0].bidfloor).to.equal(0.75);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
     it('should not overwrite bidfloor if floor module provides one', function () {
       const bidWithFloor = Object.assign({}, bidRequests[0]);
       bidWithFloor.getFloor = () => ({ currency: 'EUR', floor: 1.23 });
@@ -93,6 +104,14 @@ describe('ConnectAd Adapter', function () {
       const data = request.data;
       expect(data.imp[0].bidfloor).to.equal(1.23);
       expect(data.imp[0].bidfloorcur).to.equal('EUR');
+    });
+
+    it('should allow endpointUrl override in params', function () {
+      const bidWithCustomEndpoint = Object.assign({}, bidRequests[0]);
+      bidWithCustomEndpoint.params.endpointUrl = 'https://custom.connectad.io/api/v3';
+
+      const request = spec.buildRequests([bidWithCustomEndpoint], bidderRequest);
+      expect(request.url).to.equal('https://custom.connectad.io/api/v3');
     });
 
     it('should map standard GDPR Consent parameters', function () {
@@ -143,6 +162,25 @@ describe('ConnectAd Adapter', function () {
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.user.ext.eids).to.deep.equal(bidderRequest.ortb2.user.ext.eids);
+    });
+
+    it('should handle viewability measurement for banner ads', function () {
+      const bidWithViewability = Object.assign({}, bidRequests[0]);
+      bidWithViewability.getAdUnitElement = () => {
+        return {
+          getBoundingClientRect: () => ({ top: 100, left: 100, bottom: 200, right: 200 })
+        };
+      };
+
+      const request = spec.buildRequests([bidWithViewability], bidderRequest);
+      // Viewability is set via the converter, just verify request was built
+      expect(request).to.exist;
+      expect(request.data.imp[0]).to.exist;
+    });
+
+    it('should return empty array for empty bidRequests', function () {
+      const request = spec.buildRequests([], bidderRequest);
+      expect(request).to.be.an('array').that.is.empty;
     });
   });
 
@@ -198,6 +236,39 @@ describe('ConnectAd Adapter', function () {
       expect(bids[0].meta.primaryCatId).to.equal('IAB1-1');
     });
 
+    it('should detect video media type from mtype=2', function () {
+      const videoBidRequests = [{
+        bidder: 'connectad',
+        params: { siteId: 123456, networkId: 123456 },
+        adUnitCode: 'video-slot',
+        mediaTypes: { video: { context: 'instream' } },
+        bidId: 'video-imp'
+      }];
+      const videoResponse = {
+        body: {
+          id: 'video-auction',
+          seatbid: [{
+            bid: [{
+              id: 'bid-video',
+              impid: 'video-imp',
+              price: 7.65,
+              adm: '<VAST></VAST>',
+              crid: 'creative-video',
+              mtype: 2,
+              w: 640,
+              h: 480
+            }]
+          }]
+        }
+      };
+
+      const request = spec.buildRequests(videoBidRequests, bidderRequest);
+      const bids = spec.interpretResponse(videoResponse, request);
+
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('video');
+    });
+
     it('should parse audio responses correctly', function () {
       const globalFeatures = window.FEATURES || {};
       if (!globalFeatures.AUDIO) {
@@ -235,6 +306,7 @@ describe('ConnectAd Adapter', function () {
                   price: 3.50,
                   adm: '<VAST>Audio VAST XML</VAST>',
                   crid: 'creative-2',
+                  mtype: 3,
                   ext: {
                     dsa: { dsarequired: 1 }
                   }
@@ -255,6 +327,44 @@ describe('ConnectAd Adapter', function () {
       expect(bids[0].cpm).to.equal(3.50);
       expect(bids[0].mediaType).to.equal('audio');
       expect(bids[0].vastXml).to.equal('<VAST>Audio VAST XML</VAST>');
+    });
+
+    it('should detect native media type from mtype=4', function () {
+      const nativeBidRequests = [{
+        bidder: 'connectad',
+        params: { siteId: 123456, networkId: 123456 },
+        adUnitCode: 'native-slot',
+        mediaTypes: { native: { title: { required: true } } },
+        bidId: 'native-imp'
+      }];
+
+      const nativeResponse = {
+        body: {
+          id: 'native-auction',
+          seatbid: [{
+            bid: [{
+              id: 'bid-native',
+              impid: 'native-imp',
+              price: 5.50,
+              adm: JSON.stringify({
+                native: {
+                  assets: [
+                    { id: 0, title: { text: 'Test Native Ad' } }
+                  ]
+                }
+              }),
+              crid: 'creative-native',
+              mtype: 4
+            }]
+          }]
+        }
+      };
+
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const bids = spec.interpretResponse(nativeResponse, request);
+
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('native');
     });
 
     it('should fallback to adid or id for creativeId if crid is missing', function () {
@@ -286,6 +396,36 @@ describe('ConnectAd Adapter', function () {
 
       expect(bids).to.be.an('array').with.lengthOf(1);
       expect(bids[0].creativeId).to.equal('creative-adid-3');
+    });
+
+    it('should fallback to id for creativeId if both crid and adid are missing', function () {
+      const responseWithId = {
+        body: {
+          id: '1c56ad30b9b8ca8',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: 'creative-id-fallback',
+                  impid: '2f95c00074b931',
+                  price: 2.50,
+                  adm: '<html>Ad Markup</html>',
+                  w: 300,
+                  h: 250
+                }
+              ],
+              seat: 'connectad'
+            }
+          ],
+          cur: 'USD'
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const bids = spec.interpretResponse(responseWithId, request);
+
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      expect(bids[0].creativeId).to.equal('creative-id-fallback');
     });
 
     it('should split/expand bids when impid is returned as an array of IDs', function () {
