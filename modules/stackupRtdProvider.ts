@@ -524,7 +524,7 @@ function getBidRequestData(
   callback: () => void,
   config: RTDProviderConfig<"stackupRtd">,
   _userConsent: AllConsentData,
-  timeout: number
+  timeout?: number
 ): void {
   const requestedTimeout = config.params?.timeout;
   const ownTimeout =
