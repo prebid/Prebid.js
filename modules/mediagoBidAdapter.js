@@ -8,7 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
-import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
@@ -135,7 +135,7 @@ function getItems(validBidRequests, bidderRequest) {
     let ret = {};
     const mediaTypes = getProperty(req, 'mediaTypes');
 
-    const sizes = transformSizes(getProperty(req, 'sizes'));
+    let sizes = transformSizesOrtb(getProperty(req, 'sizes'));
     let matchSize;
 
     // 确认尺寸是否符合我们要求

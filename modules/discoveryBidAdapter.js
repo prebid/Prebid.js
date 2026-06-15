@@ -5,7 +5,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice, getScreenSize } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
-import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
@@ -182,7 +182,7 @@ function getItems(validBidRequests, bidderRequest) {
     }
     // banner
     if (mediaTypes.banner) {
-      const sizes = transformSizes(getKv(req, 'sizes'));
+      let sizes = transformSizesOrtb(getKv(req, 'sizes'));
       let matchSize;
 
       for (const size of sizes) {
