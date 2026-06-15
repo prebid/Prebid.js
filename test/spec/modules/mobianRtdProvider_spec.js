@@ -11,6 +11,8 @@ import {
   MAX_CACHE_SIZE,
   RISK,
   SENTIMENT,
+  TQ,
+  TG,
   THEMES,
   TONES,
   extendBidRequestConfig,
@@ -20,7 +22,7 @@ import {
   makeMemoizedFetch,
   makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
-  setTargeting,
+  setTargeting, dep,
 } from 'modules/mobianRtdProvider.js';
 
 describe('Mobian RTD Submodule', function () {
@@ -40,6 +42,8 @@ describe('Mobian RTD Submodule', function () {
       mobianGenres: [],
       mobianRisk: 'low',
       mobianSentiment: 'positive',
+      mobian_tq: 1,
+      mobian_tg: 3,
       mobianThemes: [],
       mobianTones: [],
     }
@@ -52,9 +56,11 @@ describe('Mobian RTD Submodule', function () {
     [GENRES]: [],
     [RISK]: 'low',
     [SENTIMENT]: 'positive',
+    [TQ]: 1,
+    [TG]: 3,
     [THEMES]: [],
     [TONES]: [],
-  }
+  };
 
   const mockKeyValues = {
     'mobian_ap_a1': ['2313', '12'],
@@ -63,13 +69,15 @@ describe('Mobian RTD Submodule', function () {
     'mobian_emotions': ['affection'],
     'mobian_risk': 'low',
     'mobian_sentiment': 'positive',
-  }
+    'mobian_tq': 1,
+    'mobian_tg': 3,
+  };
 
   const mockConfig = {
     prefix: 'mobian',
-    publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
-    advertiserTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
-  }
+    publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, TQ, TG, THEMES, TONES, GENRES],
+    advertiserTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, TQ, TG, THEMES, TONES, GENRES],
+  };
 
   beforeEach(function () {
     bidReqConfig = {
@@ -94,7 +102,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('fetchContextData', function () {
     it('should return fetched context data', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
         callbacks.success(mockResponse);
       });
 
@@ -112,7 +120,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('getContextData', function () {
     it('should return formatted context data', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
         callbacks.success(mockResponse);
       });
 
@@ -125,17 +133,19 @@ describe('Mobian RTD Submodule', function () {
     it('should set targeting key-value pairs as per config', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
+        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, TQ, TG, THEMES, TONES, GENRES],
       };
       setTargeting(parsedConfig, mockContextData);
 
-      expect(setKeyValueSpy.callCount).to.equal(6);
+      expect(setKeyValueSpy.callCount).to.equal(8);
       expect(setKeyValueSpy.calledWith('mobian_ap_a1', ['2313', '12'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_ap_p0', ['1231231', '212'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_ap_p1', ['231', '419'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_sentiment', 'positive')).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_tq', 1)).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_tg', 3)).to.equal(true);
 
       expect(setKeyValueSpy.calledWith('mobian_ap_a0')).to.equal(false);
       expect(setKeyValueSpy.calledWith('mobian_themes')).to.equal(false);
@@ -146,7 +156,7 @@ describe('Mobian RTD Submodule', function () {
     it('should not set key-value pairs if context data is empty', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
+        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, TQ, TG, THEMES, TONES, GENRES],
       };
       setTargeting(parsedConfig, {});
 
@@ -156,14 +166,15 @@ describe('Mobian RTD Submodule', function () {
     it('should only set key-value pairs for the keys specified in config', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: [EMOTIONS, RISK],
+        publisherTargeting: [EMOTIONS, RISK, TQ],
       };
 
       setTargeting(parsedConfig, mockContextData);
 
-      expect(setKeyValueSpy.callCount).to.equal(2);
+      expect(setKeyValueSpy.callCount).to.equal(3);
       expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_tq', 1)).to.equal(true);
 
       expect(setKeyValueSpy.calledWith('mobian_ap_a0')).to.equal(false);
       expect(setKeyValueSpy.calledWith('mobian_ap_a1')).to.equal(false);
@@ -172,6 +183,7 @@ describe('Mobian RTD Submodule', function () {
       expect(setKeyValueSpy.calledWith('mobian_themes')).to.equal(false);
       expect(setKeyValueSpy.calledWith('mobian_tones')).to.equal(false);
       expect(setKeyValueSpy.calledWith('mobian_genres')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_tg')).to.equal(false);
     });
   });
 
@@ -279,13 +291,36 @@ describe('Mobian RTD Submodule', function () {
       const keyValuesObject = Object.fromEntries(keyValues);
       expect(keyValuesObject).to.deep.equal(mockKeyValues);
     });
+
+    it('should add scalar tq and tg values when called directly with those entries', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          prefix: 'mobian',
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      const reducer = makeContextDataToKeyValuesReducer(config);
+
+      const keyValues = [
+        [TQ, 1],
+        [TG, 3],
+        [TG, null],
+      ].reduce(reducer, []);
+
+      expect(keyValues).to.deep.equal([
+        ['mobian_tq', 1],
+        ['mobian_tg', 3],
+      ]);
+    });
   });
 
   describe('makeMemoizedFetch cache eviction', function () {
     it('should evict the oldest entry when cache exceeds maxSize', async function () {
       const maxSize = 2;
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.success(mockResponse);
       });
@@ -322,7 +357,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should fall back to MAX_CACHE_SIZE when given an invalid maxSize', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.success(mockResponse);
       });
@@ -359,7 +394,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should floor fractional maxSize to an integer', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.success(mockResponse);
       });
@@ -385,7 +420,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should share a single in-flight request for concurrent calls to the same URL', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         setTimeout(() => callbacks.success(mockResponse), 10);
       });
@@ -405,7 +440,7 @@ describe('Mobian RTD Submodule', function () {
 
     it('should delete failed cache entries so subsequent calls refetch after an error', async function () {
       let fetchCount = 0;
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         callbacks.error(new Error('network error'));
       });
@@ -425,7 +460,7 @@ describe('Mobian RTD Submodule', function () {
       let fetchCount = 0;
       let shouldError = true;
 
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         if (shouldError) {
           setTimeout(() => callbacks.error(new Error('server error')), 10);

@@ -1,11 +1,10 @@
-import analyticsAdapter, { log } from 'modules/33acrossAnalyticsAdapter.js';
+import analyticsAdapter, { log, DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from 'modules/33acrossAnalyticsAdapter.js';
 
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as events from 'src/events.js';
 import * as faker from 'faker';
 import { EVENTS } from 'src/constants.js';
 import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
-import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from '../../../modules/33acrossAnalyticsAdapter.js';
 
 describe('33acrossAnalyticsAdapter:', function () {
   let sandbox;
@@ -124,7 +123,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           },
         });
         window.googletag.cmd.forEach(cmd => cmd());
-      }
+      };
     });
 
     context('when an auction is complete', function () {
@@ -373,7 +372,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           const fakeBidWonEvent = Object.assign(auction.BID_WON[0], {
             transactionId: 'foo'
-          })
+          });
 
           events.emit(EVENTS.BID_WON, fakeBidWonEvent);
 
@@ -461,7 +460,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
             assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
           });
-        })
+        });
       });
 
       context('and the `slotRenderEnded` event fired for all bids, but not all bids have won', function () {
@@ -774,7 +773,7 @@ function getLocalAssert() {
   function calledOnceWithStringJsonEquivalent(sinonSpy, ...args) {
     sinon.assert.calledOnce(sinonSpy);
     args.forEach((arg, i) => {
-      const stubCallArgs = sinonSpy.firstCall.args[i]
+      const stubCallArgs = sinonSpy.firstCall.args[i];
 
       if (typeof arg === 'object') {
         assert.deepEqual(JSON.parse(stubCallArgs), arg);
@@ -795,7 +794,7 @@ function getLocalAssert() {
     isValidBidResponse,
     isValidMediaType,
     isValidSizeString,
-  }
+  };
 };
 
 function createReportWithThreeBidWonEvents() {

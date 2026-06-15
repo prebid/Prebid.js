@@ -1,6 +1,6 @@
 import 'src/prebid.js';
 import { expect } from 'chai';
-import { PbVideo } from 'modules/videoModule';
+import { PbVideo } from 'modules/videoModule/index.js';
 import { EVENTS } from 'src/constants.js';
 
 let ortbVideoMock;
@@ -81,7 +81,7 @@ const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, v
   );
   pbVideo.init();
   return pbVideo;
-}
+};
 
 describe('Prebid Video', function () {
   beforeEach(() => resetTestVars());
@@ -226,7 +226,7 @@ describe('Prebid Video', function () {
       emit: () => {},
       on: (event, callback) => {
         if (event === EVENTS.AUCTION_END) {
-          auctionEndCallback = callback
+          auctionEndCallback = callback;
         }
       },
       off: () => {}
@@ -290,7 +290,7 @@ describe('Prebid Video', function () {
         .then(() => {
           sinon.assert.notCalled(gamSubmoduleMock.getAdTagUrl);
         });
-    })
+    });
 
     it('should load ad tag when ad server returns ad tag', function () {
       const expectedAdTag = 'resulting ad tag';

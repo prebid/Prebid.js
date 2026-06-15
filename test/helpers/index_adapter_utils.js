@@ -91,7 +91,7 @@ exports.createBidSlots = function(numSlot, numSize) {
     });
   }
   return bids;
-}
+};
 
 exports.parseIndexRequest = function(url) {
   if (typeof url === 'undefined') return {};
@@ -108,7 +108,7 @@ exports.parseIndexRequest = function(url) {
     }
   }
   return requestJSON;
-}
+};
 
 exports.getExpectedIndexSlots = function(bids) {
   var size = 0;
@@ -116,7 +116,7 @@ exports.getExpectedIndexSlots = function(bids) {
     size += bids[i].sizes.length;
   }
   return size;
-}
+};
 
 function clone(x) {
   return deepClone(x);
@@ -170,7 +170,7 @@ exports.expandSizes = function(bid) {
   }
 
   return result;
-}
+};
 
 exports.matchOnPlacementCode = function(expected, prebid) {
   var compared = compareOnKeys(expected, prebid);
@@ -202,10 +202,10 @@ exports.matchBidsOnSID = function(lhs, rhs) {
   var rstore = createObjectFromArray(rhs.map(bid => [bid.ext.sid, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name }; });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
-}
+};
 
 exports.matchBidsOnSize = function(lhs, rhs) {
   var lonly = [];
@@ -224,10 +224,10 @@ exports.matchBidsOnSize = function(lhs, rhs) {
   var rstore = createObjectFromArray(rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name }; });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
-}
+};
 
 exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, optionalResponseIdentifier, optionalPassOnBid, optionalResponseParam) {
   if (typeof configuredBids === 'undefined' || typeof urlJSON === 'undefined') return {};
@@ -285,7 +285,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
     response.seatbid.push(bidObj);
   }
   return response;
-}
+};
 
 exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
   var asAllBids = asResponse.seatbid;
@@ -322,4 +322,4 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
     }
   }
   return expectedResponse;
-}
+};

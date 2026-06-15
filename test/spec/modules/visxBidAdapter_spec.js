@@ -75,7 +75,7 @@ describe('VisxAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(videoBid)).to.equal(true);
-    })
+    });
   });
 
   describe('buildRequests', function () {
@@ -350,7 +350,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
-      config.setConfig({ currency: { bidderCurrencyDefault: { visx: 'GBP' } } })
+      config.setConfig({ currency: { bidderCurrencyDefault: { visx: 'GBP' } } });
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -405,7 +405,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should add currency from currency.adServerCurrency', function () {
-      setCurrencyConfig({ adServerCurrency: 'USD' })
+      setCurrencyConfig({ adServerCurrency: 'USD' });
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const request = spec.buildRequests(bidRequests, res);
         const payload = parseRequest(request.url);
@@ -415,7 +415,7 @@ describe('VisxAdapter', function () {
         const postData = request.data;
         expect(postData).to.be.an('object');
         expect(postData.cur).to.deep.equal(['USD']);
-        setCurrencyConfig({})
+        setCurrencyConfig({});
       });
     });
 
@@ -781,7 +781,7 @@ describe('VisxAdapter', function () {
 
     it('if gpid is present payload must have gpid param', function () {
       const firstBid = Object.assign({}, bidRequests[0]);
-      firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } }
+      firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } };
       const bids = [firstBid];
       const request = spec.buildRequests(bids, bidderRequest);
       const postData = request.data;
@@ -1035,7 +1035,7 @@ describe('VisxAdapter', function () {
       sandbox = sinon.createSandbox();
       sandbox.stub(adUnits, 'getAdUnitElement').callsFake(({ adUnitCode }) => {
         return ['visx-adunit-code-1', 'visx-adunit-code-2'].includes(adUnitCode);
-      })
+      });
 
       getGlobal().bidderSettings = {
         visx: {
@@ -2257,7 +2257,7 @@ describe('VisxAdapter', function () {
             ]
           }
         }
-      }
+      };
       const userReq = mergeDeep(user, userOrtb2);
       expect(userReq.ext.vads).not.to.be.undefined;
     });

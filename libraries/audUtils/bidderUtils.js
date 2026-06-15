@@ -58,16 +58,16 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
       contentType: 'application/json',
     }
   };
-}
+};
 // Function to get Response
 export const getBannerResponse = (bidResponse, mediaType) => {
   return formatResponse(bidResponse, mediaType);
-}
+};
 // Function to get NATIVE Response
 export const getNativeResponse = (bidResponse, bidRequest, mediaType) => {
   const assets = JSON.parse(JSON.parse(bidRequest.data)[0].imp[0].native.request).assets;
   return formatResponse(bidResponse, mediaType, assets);
-}
+};
 // Function to format response
 const formatResponse = (bidResponse, mediaType, assets) => {
   const responseArray = [];
@@ -113,7 +113,7 @@ const formatResponse = (bidResponse, mediaType, assets) => {
     }
   }
   return responseArray;
-}
+};
 // Function to get imp based on Media Type
 const getImpDetails = (bidReq) => {
   const imp = {};
@@ -128,7 +128,7 @@ const getImpDetails = (bidReq) => {
     }
   }
   return imp;
-}
+};
 // Function to get banner object
 const getBannerDetails = (bidReq) => {
   const response = {};
@@ -146,12 +146,12 @@ const getBannerDetails = (bidReq) => {
     }
   }
   return response;
-}
+};
 // Function to get floor price
 const getFloorPrice = (bidReq) => {
   const bidfloor = bidReq?.params?.bid_floor ?? 0;
   return bidfloor;
-}
+};
 // Function to get site object
 const getSiteDetails = (bidderRequest) => {
   let page = '';
@@ -161,7 +161,7 @@ const getSiteDetails = (bidderRequest) => {
     name = bidderRequest.refererInfo.domain;
   }
   return { page: page, name: name };
-}
+};
 // Function to build the user object
 const getUserDetails = (bidReq) => {
   const user = {};
@@ -179,7 +179,7 @@ const getUserDetails = (bidReq) => {
     user.ext = {};
   }
   return user;
-}
+};
 // Function to get asset data for response
 const getNativeAssestData = (params, assets) => {
   const response = {};
@@ -197,10 +197,10 @@ const getNativeAssestData = (params, assets) => {
       url: params.img.url,
       height: params.img.h,
       width: params.img.w
-    }
+    };
   }
   return response;
-}
+};
 // Function to get asset data types based on id
 const getAssetData = (paramId, asset) => {
   let resp = '';
@@ -217,7 +217,7 @@ const getAssetData = (paramId, asset) => {
     }
   }
   return resp;
-}
+};
 // Function to get image type based on the id
 const getAssetImageDataType = (paramId, asset) => {
   let resp = '';
@@ -232,7 +232,7 @@ const getAssetImageDataType = (paramId, asset) => {
     }
   }
   return resp;
-}
+};
 // Function to get Media Type
 const getMediaType = (bidReq) => {
   if (bidReq.mediaTypes.native) {
@@ -240,4 +240,4 @@ const getMediaType = (bidReq) => {
   } else if (bidReq.mediaTypes.banner) {
     return 'banner';
   }
-}
+};

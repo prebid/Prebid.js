@@ -492,7 +492,7 @@ describe('Consumable BidAdapter', function () {
       const request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
       const data = JSON.parse(request.data);
 
-      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.ortb2.source.ext.schain)
+      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.ortb2.source.ext.schain);
     });
 
     it('should not contain schain if it does not exist in the bidRequest', function () {
@@ -533,7 +533,7 @@ describe('Consumable BidAdapter', function () {
         return {
           currency: 'USD',
           floor: 0.15
-        }
+        };
       };
       const request1 = spec.buildRequests(bidderRequest1.bidRequest, BIDDER_REQUEST_1);
       const data1 = JSON.parse(request1.data);
@@ -598,7 +598,7 @@ describe('Consumable BidAdapter', function () {
         expect(b.vastXml).to.be.undefined;
         expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a');
       });
-    })
+    });
 
     it('registers video bids with vastXml', function () {
       const bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_2, BUILD_REQUESTS_VIDEO_OUTPUT);
@@ -611,10 +611,10 @@ describe('Consumable BidAdapter', function () {
         expect(b.ad).to.equal('<VAST version="3.0">');
         expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a');
       });
-    })
+    });
 
     it('handles nobid responses', function () {
-      const EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, { 'body': { 'decisions': null } })
+      const EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, { 'body': { 'decisions': null } });
       const bids = spec.interpretResponse(EMPTY_RESP, BUILD_REQUESTS_OUTPUT);
 
       expect(bids).to.be.empty;
@@ -663,45 +663,45 @@ describe('Consumable BidAdapter', function () {
       const gdprConsent = {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
-      }
+      };
       const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING');
-    })
+    });
 
     it('should return a sync url if iframe syncs are enabled and GDPR is undefined', function () {
       const gdprConsent = {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: undefined,
-      }
+      };
       const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=0&gdpr_consent=GDPR_CONSENT_STRING');
-    })
+    });
 
     it('should return a sync url if iframe syncs are enabled and has GPP consent with applicable sections', function () {
       const gppConsent = {
         applicableSections: [1, 2],
         gppString: 'GPP_CONSENT_STRING'
-      }
+      };
       const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING&gpp_sid=1%2C2');
-    })
+    });
 
     it('should return a sync url if iframe syncs are enabled and has GPP consent without applicable sections', function () {
       const gppConsent = {
         applicableSections: [],
         gppString: 'GPP_CONSENT_STRING'
-      }
+      };
       const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING');
-    })
+    });
 
     it('should return a sync url if iframe syncs are enabled and USP applies', function () {
       const uspConsent = 'USP_CONSENT_STRING';
@@ -709,19 +709,19 @@ describe('Consumable BidAdapter', function () {
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?us_privacy=USP_CONSENT_STRING');
-    })
+    });
 
     it('should return a sync url if iframe syncs are enabled, GDPR and USP applies', function () {
       const gdprConsent = {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
-      }
+      };
       const uspConsent = 'USP_CONSENT_STRING';
       const opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent, uspConsent);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING&us_privacy=USP_CONSENT_STRING');
-    })
+    });
 
     it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
       const syncOptions = { 'pixelEnabled': true };

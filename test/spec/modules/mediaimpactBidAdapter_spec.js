@@ -239,12 +239,12 @@ describe('MediaimpactAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(miUtils, 'postRequest')
-    })
+      ajaxStub = sinon.stub(miUtils, 'postRequest');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('calls mediaimpact callback endpoint', () => {
       const result = spec.onBidWon(bid);

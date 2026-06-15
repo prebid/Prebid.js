@@ -1,6 +1,6 @@
-import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/resetdigitalBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/resetdigitalBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const br = {
   body: {
@@ -17,7 +17,7 @@ const br = {
       { type: 'iframe', url: 'https://reset.com/iframe' }
     ]
   }
-}
+};
 
 const vr = {
   body: {
@@ -34,10 +34,10 @@ const vr = {
       { type: 'iframe', url: 'https://reset.com/iframe' }
     ]
   }
-}
+};
 
 describe('resetdigitalBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   const bannerRequest = {
     bidId: '123',
@@ -50,7 +50,7 @@ describe('resetdigitalBidAdapter', function () {
     params: {
       pubId: '12345'
     }
-  }
+  };
 
   const videoRequest = {
     bidId: 'abc',
@@ -63,57 +63,99 @@ describe('resetdigitalBidAdapter', function () {
     params: {
       pubId: 'CK6gUYp58EGopLJnUvM2'
     }
-  }
+  };
 
   describe('codes', function () {
     it('should return a bidder code of resetdigital', function () {
-      expect(spec.code).to.equal('resetdigital')
-    })
-  })
+      expect(spec.code).to.equal('resetdigital');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true if all params present', function () {
-      expect(spec.isBidRequestValid(bannerRequest)).to.be.true
-    })
+      expect(spec.isBidRequestValid(bannerRequest)).to.be.true;
+    });
 
     it('should return false if zone id and pub id missing', function () {
-      expect(spec.isBidRequestValid(Object.assign(bannerRequest, { params: { pubId: null, zoneId: null } }))).to.be.false
-    })
-  })
+      expect(spec.isBidRequestValid(Object.assign(bannerRequest, { params: { pubId: null, zoneId: null } }))).to.be.false;
+    });
+  });
 
   describe('buildRequests', function () {
-    const req = spec.buildRequests([bannerRequest], { refererInfo: { } })
-    let rdata
+    const req = spec.buildRequests([bannerRequest], { refererInfo: { } });
+    let rdata;
 
     it('should return request object', function () {
-      expect(req).to.not.be.null
-    })
+      expect(req).to.not.be.null;
+    });
 
     it('should build request data', function () {
-      expect(req.data).to.not.be.null
-    })
+      expect(req.data).to.not.be.null;
+    });
 
     it('should include one request', function () {
-      rdata = JSON.parse(req.data)
-      expect(rdata.imps.length).to.equal(1)
-    })
+      rdata = JSON.parse(req.data);
+      expect(rdata.imps.length).to.equal(1);
+    });
 
     it('should include all publisher params', function () {
-      expect(rdata.imps[0].zone_id !== null).to.be.true
-    })
+      expect(rdata.imps[0].zone_id !== null).to.be.true;
+    });
 
     it('should include media types', function () {
-      expect(rdata.imps[0].media_types !== null).to.be.true
-    })
-  })
+      expect(rdata.imps[0].media_types !== null).to.be.true;
+    });
+
+    it('should pass user id eids in OpenRTB format', function () {
+      const liverampEid = {
+        source: 'liveramp.com',
+        uids: [{
+          id: 'XiR-liveRamp-envelope',
+          atype: 1,
+          ext: {
+            rtiPartner: 'idl',
+            stype: 'ppuid'
+          }
+        }]
+      };
+      const sharedIdEid = {
+        source: 'sharedid.org',
+        uids: [{
+          id: 'shared-id',
+          atype: 1
+        }]
+      };
+      const eids = [liverampEid, sharedIdEid];
+
+      const request = spec.buildRequests([{
+        ...bannerRequest,
+        userIdAsEids: eids
+      }], { refererInfo: {} });
+      const payload = JSON.parse(request.data);
+
+      expect(payload.user.eids).to.deep.equal(eids);
+      expect(payload.user_ids).to.deep.equal({
+        'liveramp.com': {
+          id: 'XiR-liveRamp-envelope',
+          ext: {
+            rtiPartner: 'idl',
+            stype: 'ppuid'
+          }
+        },
+        'sharedid.org': {
+          id: 'shared-id'
+        }
+      });
+    });
+  });
 
   describe('interpretResponse', function () {
     it('should form compliant banner bid object response', function () {
-      const ir = spec.interpretResponse(br, bannerRequest)
+      const ir = spec.interpretResponse(br, bannerRequest);
 
-      expect(ir.length).to.equal(1)
+      expect(ir.length).to.equal(1);
 
-      const en = ir[0]
+      const en = ir[0];
 
       expect(en.requestId != null &&
             en.cpm != null && typeof en.cpm === 'number' &&
@@ -121,14 +163,14 @@ describe('resetdigitalBidAdapter', function () {
             en.height != null && typeof en.height === 'number' &&
             en.ad != null &&
             en.creativeId != null
-      ).to.be.true
-    })
+      ).to.be.true;
+    });
     it('should form compliant video object response', function () {
-      const ir = spec.interpretResponse(vr, videoRequest)
+      const ir = spec.interpretResponse(vr, videoRequest);
 
-      expect(ir.length).to.equal(1)
+      expect(ir.length).to.equal(1);
 
-      const en = ir[0]
+      const en = ir[0];
 
       expect(en.requestId != null &&
             en.cpm != null && typeof en.cpm === 'number' &&
@@ -136,25 +178,25 @@ describe('resetdigitalBidAdapter', function () {
             en.height != null && typeof en.height === 'number' &&
             (en.vastUrl != null || en.vastXml != null) &&
             en.creativeId != null
-      ).to.be.true
-    })
-  })
+      ).to.be.true;
+    });
+  });
 
   describe('getUserSyncs', function () {
     it('should return iframe sync', function () {
-      const sync = spec.getUserSyncs({ iframeEnabled: true }, [br])
-      expect(sync.length).to.equal(1)
-      expect(sync[0].type === 'iframe')
-      expect(typeof sync[0].url === 'string')
-    })
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, [br]);
+      expect(sync.length).to.equal(1);
+      expect(sync[0].type === 'iframe');
+      expect(typeof sync[0].url === 'string');
+    });
 
     it('should return pixel sync', function () {
-      const sync = spec.getUserSyncs({ pixelEnabled: true }, [br])
-      expect(sync.length).to.equal(1)
-      expect(sync[0].type === 'image')
-      expect(typeof sync[0].url === 'string')
-    })
-  })
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, [br]);
+      expect(sync.length).to.equal(1);
+      expect(sync[0].type === 'image');
+      expect(typeof sync[0].url === 'string');
+    });
+  });
 
   describe('schain support', function () {
     it('should include schain in the payload if present in bidderRequest', function () {
@@ -218,4 +260,4 @@ describe('resetdigitalBidAdapter', function () {
       expect(payload).to.not.have.property('schain');
     });
   });
-})
+});

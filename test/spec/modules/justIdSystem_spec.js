@@ -10,41 +10,41 @@ describe('JustIdSystem', function () {
   describe('configWrapper', function() {
     it('invalid mode', function() {
       expect(() => new ConfigWrapper({ params: { mode: 'invalidmode' } })).to.throw(EX_INVALID_MODE);
-    })
+    });
 
     it('url is required', function() {
       expect(() => new ConfigWrapper(configModeCombined())).to.throw(EX_URL_REQUIRED);
-    })
+    });
 
     it('defaultPartner', function() {
       expect(new ConfigWrapper(configModeCombined(url)).getUrl()).to.eq(expectedUrl(url, DEFAULT_PARTNER));
-    })
+    });
 
     it('customPartner', function() {
       const partner = 'abc';
       expect(new ConfigWrapper(configModeCombined(url, partner)).getUrl()).to.eq(expectedUrl(url, partner));
-    })
+    });
   });
 
   describe('decode', function() {
     it('decode justId', function() {
       const justId = 'aaa';
       expect(justIdSubmodule.decode({ uid: justId })).to.deep.eq({ justId: justId });
-    })
+    });
   });
 
   describe('getId basic', function() {
     var atmMock = (cmd, param) => {
       switch (cmd) {
         case 'getReadyState':
-          param('ready')
+          param('ready');
           return;
         case 'getVersion':
           return Promise.resolve('1.0');
         case 'getUid':
           param('user123');
       }
-    }
+    };
 
     var currentAtm;
 
@@ -71,7 +71,7 @@ describe('JustIdSystem', function () {
         } catch (err) {
           done(err);
         }
-      })
+      });
 
       const atmVarName = '__fakeAtm';
 
@@ -84,21 +84,21 @@ describe('JustIdSystem', function () {
       currentAtm = (cmd, param) => {
         switch (cmd) {
           case 'getReadyState':
-            param('ready')
+            param('ready');
         }
-      }
+      };
 
       const callbackSpy = sinon.stub();
 
       callbackSpy.callsFake(idObj => {
         try {
           expect(logErrorStub.calledOnce).to.be.true;
-          expect(idObj).to.be.undefined
+          expect(idObj).to.be.undefined;
           done();
         } catch (err) {
           done(err);
         }
-      })
+      });
 
       justIdSubmodule.getId({}).callback(callbackSpy);
     });
@@ -107,7 +107,7 @@ describe('JustIdSystem', function () {
       var calls = [];
       currentAtm = (cmd, param) => {
         calls.push({ cmd: cmd, param: param });
-      }
+      };
 
       const callbackSpy = sinon.stub();
 
@@ -118,14 +118,14 @@ describe('JustIdSystem', function () {
         } catch (err) {
           done(err);
         }
-      })
+      });
 
       justIdSubmodule.getId({}).callback(callbackSpy);
 
       currentAtm = atmMock;
       expect(calls.length).to.equal(1);
       expect(calls[0].cmd).to.equal('getReadyState');
-      calls[0].param('ready')
+      calls[0].param('ready');
     });
   });
 
@@ -138,7 +138,7 @@ describe('JustIdSystem', function () {
       scriptTag.dispatchEvent(new CustomEvent('justIdReady', { detail: { justId: justId } }));
     });
 
-    scriptTag.addEventListener('prebidGetId', onPrebidGetId)
+    scriptTag.addEventListener('prebidGetId', onPrebidGetId);
 
     var scriptTagCallback;
 
@@ -147,7 +147,7 @@ describe('JustIdSystem', function () {
         scriptTagCallback = callback;
         return scriptTag;
       });
-    })
+    });
 
     var logErrorStub;
 
@@ -187,8 +187,8 @@ describe('JustIdSystem', function () {
       const callbackSpy = sinon.spy();
 
       const a = configModeCombined(url);
-      const b = { y: 'y' }
-      const c = { z: 'z' }
+      const b = { y: 'y' };
+      const c = { z: 'z' };
 
       justIdSubmodule.getId(a, { gdpr: b }, c).callback(callbackSpy);
 
@@ -200,7 +200,7 @@ describe('JustIdSystem', function () {
 });
 
 function expectedUrl(url, srcId) {
-  return `${url}?sourceId=${srcId}`
+  return `${url}?sourceId=${srcId}`;
 }
 
 function configModeCombined(url, partner) {
@@ -208,7 +208,7 @@ function configModeCombined(url, partner) {
     params: {
       mode: 'COMBINED'
     }
-  }
+  };
   if (url) {
     conf.params.url = url;
   }

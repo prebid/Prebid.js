@@ -13,12 +13,12 @@ window.describe = window.context = ((orig) => {
               clearEvents();
             });
             return result;
-          }
-        })(fn)
+          };
+        })(fn);
       }
       return orig.call(this, name, fn, ...args);
     } finally {
       level--;
     }
-  }
+  };
 })(window.describe);

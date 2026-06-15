@@ -16,7 +16,7 @@ describe('SmartyTechDSPAdapter: inherited functions', function () {
   });
   it(`bidder code is ${BIDDER_CODE}`, function () {
     expect(spec.code).to.be.equal(BIDDER_CODE);
-  })
+  });
 });
 
 describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
@@ -25,17 +25,17 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
       params: {
         use_id: 13144375
       }
-    }
+    };
 
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false;
   });
   it('Valid bid request. Should return true', function () {
     const bidFixture = {
       params: {
         endpointId: 13144375
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.true
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.true;
   });
 
   it('Invalid bid request. Check video block', function () {
@@ -46,8 +46,8 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
       mediaTypes: {
         video: {}
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false;
   });
 
   it('Invalid bid request. Check playerSize', function () {
@@ -60,8 +60,8 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
           playerSize: '300x250'
         }
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false;
   });
 
   it('Invalid bid request. Check context', function () {
@@ -74,8 +74,8 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
           playerSize: [300, 250]
         }
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false;
   });
 
   it('Valid bid request. valid video bid', function () {
@@ -89,8 +89,8 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
           context: 'instream'
         }
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.true
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.true;
   });
 
   it('Invalid bid request. Check banner block', function () {
@@ -101,8 +101,8 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
       mediaTypes: {
         banner: {}
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false;
   });
 
   it('Invalid bid request. Check banner sizes', function () {
@@ -115,8 +115,8 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
           sizes: '300x250'
         }
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false;
   });
 
   it('Valid bid request. valid banner bid', function () {
@@ -129,14 +129,14 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
           sizes: [[300, 250]]
         }
       }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.true
+    };
+    expect(spec.isBidRequestValid(bidFixture)).to.be.true;
   });
 });
 
 function mockRandomSizeArray(len) {
   return Array.apply(null, { length: len }).map(i => {
-    return [Math.floor(Math.random() * 800), Math.floor(Math.random() * 800)]
+    return [Math.floor(Math.random() * 800), Math.floor(Math.random() * 800)];
   });
 }
 
@@ -146,7 +146,7 @@ function mockBidRequestListData(mediaType, size, customSizes) {
     let mediaTypes;
     const params = {
       endpointId: id
-    }
+    };
 
     if (mediaType === 'video') {
       mediaTypes = {
@@ -154,17 +154,17 @@ function mockBidRequestListData(mediaType, size, customSizes) {
           playerSize: mockRandomSizeArray(1),
           context: 'instream'
         },
-      }
+      };
     } else {
       mediaTypes = {
         banner: {
           sizes: mockRandomSizeArray(index + 1)
         }
-      }
+      };
     }
 
     if (customSizes === undefined || customSizes.length > 0) {
-      params.sizes = customSizes
+      params.sizes = customSizes;
     }
 
     return {
@@ -172,7 +172,7 @@ function mockBidRequestListData(mediaType, size, customSizes) {
       mediaTypes: mediaTypes,
       bidId: `bidId-${id}`,
       params: params
-    }
+    };
   });
 }
 
@@ -181,7 +181,7 @@ function mockRefererData() {
     refererInfo: {
       page: 'https://some-test.page'
     }
-  }
+  };
 }
 
 function mockBidderRequestWithConsents() {
@@ -195,7 +195,7 @@ function mockBidderRequestWithConsents() {
       addtlConsent: '1~1.35.41.101'
     },
     uspConsent: '1YNN'
-  }
+  };
 }
 
 function mockBidRequestWithUserIds(mediaType, size, customSizes) {
@@ -222,7 +222,7 @@ function mockBidRequestWithUserIds(mediaType, size, customSizes) {
 }
 
 function mockResponseData(requestData) {
-  const data = {}
+  const data = {};
   requestData.data.forEach((request, index) => {
     const rndIndex = Math.floor(Math.random() * 800);
     let width, height, mediaType;
@@ -252,7 +252,7 @@ function mockResponseData(requestData) {
   });
   return {
     body: data
-  }
+  };
 };
 
 describe('SmartyTechDSPAdapter: buildRequests', () => {
@@ -269,13 +269,13 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   it('correct request URL', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer);
     request.forEach(req => {
-      expect(req.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`)
+      expect(req.url).to.be.equal(`${ENDPOINT_PROTOCOL}://${ENDPOINT_DOMAIN}${ENDPOINT_PATH}`);
     });
   });
   it('correct request method', () => {
     const request = spec.buildRequests(mockBidRequest, mockReferer);
     request.forEach(req => {
-      expect(req.method).to.be.equal(`POST`)
+      expect(req.method).to.be.equal(`POST`);
     });
   });
   it('correct request data', () => {
@@ -287,7 +287,7 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
       expect(req.bidId).to.be.equal(mockBidRequest[index].bidId);
       expect(req.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
       expect(req.referer).to.be.equal(mockReferer.refererInfo.page);
-    })
+    });
   });
 });
 
@@ -304,7 +304,7 @@ describe('SmartyTechDSPAdapter: buildRequests banner custom size', () => {
     const data = request.flatMap(resp => resp.data);
     data.forEach((req, index) => {
       expect(req.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
-    })
+    });
   });
 });
 
@@ -321,7 +321,7 @@ describe('SmartyTechDSPAdapter: buildRequests video custom size', () => {
     const data = request.flatMap(resp => resp.data);
     data.forEach((req, index) => {
       expect(req.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
-    })
+    });
   });
 });
 
@@ -336,12 +336,12 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
     request = spec.buildRequests(brData, mockReferer)[0];
     mockBidRequest = {
       data: brData
-    }
+    };
     mockResponse = mockResponseData(request);
   });
 
   it('interpretResponse: empty data request', () => {
-    delete mockResponse['body']
+    delete mockResponse['body'];
     const data = spec.interpretResponse(mockResponse, mockBidRequest);
     expect(data.length).to.be.equal(0);
   });
@@ -382,7 +382,7 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
     request = spec.buildRequests(brData, mockReferer)[0];
     mockBidRequest = {
       data: brData
-    }
+    };
     mockResponse = mockResponseData(request);
   });
 

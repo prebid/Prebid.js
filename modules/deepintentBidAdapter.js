@@ -231,9 +231,9 @@ function buildCustomParams(bid) {
     return {
       deepintent: bid.params.custom
 
-    }
+    };
   } else {
-    return {}
+    return {};
   }
 }
 function buildUser(bid) {
@@ -245,7 +245,7 @@ function buildUser(bid) {
       gender: bid.params.user.gender && typeof bid.params.user.gender === 'string' ? bid.params.user.gender : undefined,
       keywords: bid.params.user.keywords && typeof bid.params.user.keywords === 'string' ? bid.params.user.keywords : undefined,
       customdata: bid.params.user.customdata && typeof bid.params.user.customdata === 'string' ? bid.params.user.customdata : undefined
-    }
+    };
   }
 }
 
@@ -267,14 +267,14 @@ function buildBanner(bid) {
           h: sizes[0][1],
           w: sizes[0][0],
           pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
-        }
+        };
       }
     } else {
       return {
         h: bid.params.height,
         w: bid.params.width,
         pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
-      }
+      };
     }
   }
 }
@@ -296,7 +296,7 @@ function buildDevice() {
     h: screen.height,
     w: screen.width,
     language: navigator.language
-  }
+  };
 }
 
 registerBidder(spec);

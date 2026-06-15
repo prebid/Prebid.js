@@ -173,7 +173,7 @@ export const spec = {
         netRevenue: !!rec.pecpm,
         ttl: 360,
         meta: { advertiserDomains: rec.domain ? [rec.domain] : [] },
-      }
+      };
       if (isNative) {
         bid.native = parseNativeResponse(rec, response);
       } else {

@@ -19,7 +19,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
-import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js'
+import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -108,7 +108,8 @@ export const spec = {
     { code: 'qohere' },
     { code: 'blutonic' },
     { code: 'appmonsta', gvlid: 1283 },
-    { code: 'intlscoop' }
+    { code: 'intlscoop' },
+    { code: 'reload' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -428,7 +429,7 @@ function makeSiteOrApp(bidderRequest, fpd) {
   const { refererInfo } = bidderRequest;
   const appConfig = config.getConfig('app');
   if (isEmpty(appConfig)) {
-    return { site: createSite(refererInfo, fpd) }
+    return { site: createSite(refererInfo, fpd) };
   } else {
     return { app: appConfig };
   }
