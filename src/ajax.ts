@@ -18,11 +18,11 @@ export const dep = {
     return {
       signal: ctl.signal,
       done() {
-        cancelTimer && clearTimeout(cancelTimer)
+        cancelTimer && clearTimeout(cancelTimer);
       }
-    }
+    };
   }
-}
+};
 
 const GET = 'GET';
 const POST = 'POST';
@@ -76,7 +76,7 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   const rqOpts: any = {
     method,
     headers
-  }
+  };
   if (method !== GET && data) {
     rqOpts.body = data;
   }
@@ -90,7 +90,7 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
       if (options[opt]) {
         rqOpts[opt] = true;
       }
-    })
+    });
     if (options.suppressTopicsEnrollmentWarning != null) {
       rqOpts.suppressTopicsEnrollmentWarning = options.suppressTopicsEnrollmentWarning;
     }
@@ -114,19 +114,19 @@ function callerContext(callers = []) {
         } finally {
           stack.pop();
         }
-      }
+      };
     },
     getCallers() {
       return stack[stack.length - 1];
     }
-  }
+  };
 }
 
 function fixedCallerContext(moduleType, moduleName) {
   return {
     attach: (fn) => fn,
     getCallers: () => [[moduleType, moduleName]]
-  }
+  };
 }
 
 /**
@@ -142,8 +142,8 @@ export function fetcherFactory(timeout = 3000, { request, done }: any = {}, modu
   // this is not intended to be used directly; see plugins/callerContext.js
   return (...args) => {
     return fetcherFactoryImpl(callerContext(callers), ...args);
-  }
-}
+  };
+};
 
 function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}, moduleType?: string, moduleName?: string): typeof window.fetch {
   if (moduleName && moduleType) {
@@ -221,10 +221,10 @@ function toXHR({ status, statusText = '', headers, url }: {
   function getXML(onError?) {
     if (xml === undefined) {
       try {
-        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0] as any)
+        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0] as any);
       } catch (e) {
         xml = null;
-        onError && onError(e)
+        onError && onError(e);
       }
     }
     return xml;
@@ -243,10 +243,10 @@ function toXHR({ status, statusText = '', headers, url }: {
     },
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
     toJSON() {
-      return Object.assign({ responseXML: getXML() }, this)
+      return Object.assign({ responseXML: getXML() }, this);
     },
     timedOut: false
-  }
+  };
 }
 
 /**
@@ -280,8 +280,8 @@ export function ajaxBuilder(timeout = 3000, { request, done } = {} as any, modul
   // this is not intended to be used directly; see plugins/callerContext.js
   return (...args) => {
     return ajaxBuilderImpl(callerContext(callers), ...args);
-  }
-}
+  };
+};
 
 function ajaxBuilderImpl(context, timeout = 3000, { request, done } = {} as any, moduleType?: string, moduleName?: string) {
   const fetcher = fetcherFactoryImpl(context, timeout, { request, done }, moduleType, moduleName);

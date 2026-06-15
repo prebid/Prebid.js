@@ -135,6 +135,59 @@ describe('tercept analytics adapter', function () {
     cpm: 0.5
   };
 
+  const videoAdUnit = {
+    code: AD_UNIT_CODE,
+    mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]] } },
+    bids: [{ bidder: 'appnexus', params: { placementId: 13144370 } }],
+    ortb2Imp: adUnit.ortb2Imp
+  };
+
+  const videoBidRequested = {
+    bidderCode: 'appnexus',
+    auctionId: AUCTION_ID,
+    bidderRequestId: BIDDER_REQUEST_ID,
+    bids: [{
+      bidder: 'appnexus',
+      mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]] } },
+      adUnitCode: AD_UNIT_CODE,
+      transactionId: '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+      bidId: BID_ID,
+      bidderRequestId: BIDDER_REQUEST_ID,
+      auctionId: AUCTION_ID
+    }],
+    auctionStart: 1576823893836,
+    timeout: 1000
+  };
+
+  const videoBidResponse = {
+    ...bidResponse,
+    mediaType: 'video',
+    width: 640,
+    height: 480,
+    playerWidth: 640,
+    playerHeight: 480,
+    videoCacheKey: 'vc-key-123'
+  };
+
+  const videoBidWon = {
+    ...bidWon,
+    mediaType: 'video',
+    size: '640x480',
+    playerWidth: 640,
+    playerHeight: 480
+  };
+
+  const multiFormatBidRequested = {
+    ...bidRequested,
+    bids: [{
+      ...bidRequested.bids[0],
+      mediaTypes: {
+        banner: { sizes: [[300, 250]] },
+        video: { context: 'outstream', playerSize: [[300, 250]] }
+      }
+    }]
+  };
+
   function emitFullAuction(id = AUCTION_ID) {
     const init = id === AUCTION_ID ? auctionInit : { ...auctionInit, auctionId: id };
     const req = id === AUCTION_ID ? bidRequested : {
@@ -256,6 +309,8 @@ describe('tercept analytics adapter', function () {
       expect(bids[0].sizes).to.equal('300x250,300x600');
       expect(bids[0].bidderCode).to.equal('appnexus');
       expect(bids[0].requestId).to.equal(BIDDER_REQUEST_ID);
+      expect(bids[0].mediaType).to.equal('banner');
+      expect(bids[0].videoContext).to.be.null;
     });
   });
 
@@ -286,6 +341,17 @@ describe('tercept analytics adapter', function () {
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(3);
     });
+
+    it('preserves mediaType set at request time — timeout event must not overwrite it with undefined', function () {
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
+      events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
+      events.emit(EVENTS.BID_TIMEOUT, [{ auctionId: AUCTION_ID, bidId: BID_ID, adUnitCode: AD_UNIT_CODE }]);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      clock.tick(0);
+      const { bids } = JSON.parse(server.requests[0].requestBody);
+      expect(bids[0].renderStatus).to.equal(3);
+      expect(bids[0].mediaType).to.equal('video');
+    });
   });
 
   // ─── NO_BID ───────────────────────────────────────────────────────────────
@@ -299,6 +365,17 @@ describe('tercept analytics adapter', function () {
       clock.tick(0);
       const { bids } = JSON.parse(server.requests[0].requestBody);
       expect(bids[0].renderStatus).to.equal(5);
+    });
+
+    it('preserves mediaType set at request time — no_bid event must not overwrite it with undefined', function () {
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
+      events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
+      events.emit(EVENTS.NO_BID, { auctionId: AUCTION_ID, bidId: BID_ID, adUnitCode: AD_UNIT_CODE, bidder: 'appnexus' });
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      clock.tick(0);
+      const { bids } = JSON.parse(server.requests[0].requestBody);
+      expect(bids[0].renderStatus).to.equal(5);
+      expect(bids[0].mediaType).to.equal('video');
     });
   });
 
@@ -347,6 +424,15 @@ describe('tercept analytics adapter', function () {
       expect(bids[0].adserverAdSlot).to.equal('/1234567/homepage-banner');
     });
 
+    it('host in win beacon matches host in auctionInit — same property, no port discrepancy', function () {
+      emitFullAuction();
+      events.emit(EVENTS.BID_WON, bidWon);
+      clock.tick(0);
+      const beacon = JSON.parse(server.requests[0].requestBody);
+      const batch = JSON.parse(server.requests[1].requestBody);
+      expect(beacon.bidWon.host).to.equal(batch.auctionInit.host);
+    });
+
     it('sends win beacon even after the batch timer has already flushed the auction', function () {
       emitFullAuction();
       clock.tick(0); // batch fires, auction deleted from pendingAuctions
@@ -357,6 +443,15 @@ describe('tercept analytics adapter', function () {
       const { bidWon: bw } = JSON.parse(server.requests[1].requestBody);
       expect(bw.renderStatus).to.equal(4);
       expect(bw.bidId).to.equal(BID_ID);
+    });
+
+    it('late BID_WON beacon still resolves adserverAdSlot after batch has flushed', function () {
+      emitFullAuction();
+      clock.tick(0); // batch flushed — pendingAuctions cleared, adUnitMap must survive
+      events.emit(EVENTS.BID_WON, bidWon);
+      const { bidWon: bw } = JSON.parse(server.requests[1].requestBody);
+      expect(bw.adserverAdSlot).to.equal('/1234567/homepage-banner');
+      expect(bw.pbAdSlot).to.equal('homepage-banner-pbadslot');
     });
   });
 
@@ -675,6 +770,71 @@ describe('tercept analytics adapter', function () {
       const p2 = JSON.parse(server.requests[3].requestBody);
       expect(p1.auctionInit.auctionId).to.equal(id1);
       expect(p2.auctionInit.auctionId).to.equal(id2);
+    });
+  });
+
+  // ─── Video media type ─────────────────────────────────────────────────────
+
+  describe('video media type', function () {
+    it('captures mediaType, videoContext and playerSize-based sizes for a video-only bid', function () {
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
+      events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      clock.tick(0);
+      const { bids } = JSON.parse(server.requests[0].requestBody);
+      expect(bids[0].mediaType).to.equal('video');
+      expect(bids[0].videoContext).to.equal('instream');
+      expect(bids[0].sizes).to.equal('640x480');
+    });
+
+    it('does not throw when there is no banner mediaType on the ad unit', function () {
+      expect(() => {
+        events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
+        events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
+        events.emit(EVENTS.AUCTION_END, auctionEnd);
+      }).not.to.throw();
+    });
+
+    it('captures playerWidth and playerHeight from bid response', function () {
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
+      events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
+      events.emit(EVENTS.BID_RESPONSE, videoBidResponse);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      clock.tick(0);
+      const { bids } = JSON.parse(server.requests[0].requestBody);
+      expect(bids[0].playerWidth).to.equal(640);
+      expect(bids[0].playerHeight).to.equal(480);
+      expect(bids[0].mediaType).to.equal('video');
+    });
+
+    it('captures playerWidth, playerHeight and mediaType in the BID_WON beacon', function () {
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, adUnits: [videoAdUnit] });
+      events.emit(EVENTS.BID_REQUESTED, videoBidRequested);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_WON, videoBidWon);
+      const { bidWon: bw } = JSON.parse(server.requests[0].requestBody);
+      expect(bw.playerWidth).to.equal(640);
+      expect(bw.playerHeight).to.equal(480);
+      expect(bw.mediaType).to.equal('video');
+    });
+
+    it('sets mediaType null for multi-format ad units at request time', function () {
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, multiFormatBidRequested);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      clock.tick(0);
+      const { bids } = JSON.parse(server.requests[0].requestBody);
+      expect(bids[0].mediaType).to.be.null;
+    });
+
+    it('multi-format bid gets correct mediaType from the bid response', function () {
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, multiFormatBidRequested);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse); // mediaType: 'banner'
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      clock.tick(0);
+      const { bids } = JSON.parse(server.requests[0].requestBody);
+      expect(bids[0].mediaType).to.equal('banner');
     });
   });
 

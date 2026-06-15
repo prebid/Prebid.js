@@ -344,7 +344,7 @@ atsAnalyticsAdapter.setSamplingCookie = function (samplRate) {
   const now = new Date();
   now.setTime(now.getTime() + 604800000);
   storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
-}
+};
 
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
@@ -372,7 +372,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
     let events = [];
     setTimeout(() => {
       const winningBids = getGlobal().getAllWinningBids();
-      logInfo('ATS Analytics - winning bids: ', winningBids)
+      logInfo('ATS Analytics - winning bids: ', winningBids);
       // prepare format data for sending to analytics endpoint
       if (handlerRequest.length) {
         const wonEvent = {};
@@ -396,7 +396,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
                 }
               });
               return event;
-            })
+            });
           }
         } else {
           events = handlerRequest;
@@ -420,7 +420,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
       }
     }, bidWonTimeout);
   }
-}
+};
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,

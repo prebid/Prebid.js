@@ -528,7 +528,7 @@ describe('kargo adapter tests', function() {
         topmostLocation: 'https://random.com/this/is/a/url'
       });
 
-      delete bidderRequest.refererInfo
+      delete bidderRequest.refererInfo;
       payload = getPayloadFromTestBids(testBids);
       expect(payload.ext).to.be.undefined;
     });

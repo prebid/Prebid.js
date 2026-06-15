@@ -143,7 +143,7 @@ const getNativendoID = () => {
   }
 
   return nativendoID;
-}
+};
 
 const getEids = (bidRequest) => {
   const eids = [];
@@ -168,7 +168,7 @@ const getEids = (bidRequest) => {
   }
 
   return eids;
-}
+};
 
 function flatten(arr) {
   return [].concat(...arr);
@@ -205,7 +205,7 @@ function parseNative(bid, nativeParams) {
   if (native.eventtrackers) {
     native.eventtrackers.forEach(function(eventtracker, index) {
       native.eventtrackers[index].url = eventtracker.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
-    })
+    });
   }
 
   return {

@@ -194,7 +194,7 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    const partnerResponse = getPartnerResponse(value, config.params)
+    const partnerResponse = getPartnerResponse(value, config.params);
     // get generic/legacy response in case no partner specific
     // it may happen in case old cached value found
     // or overwritten by other integration (older version)
@@ -213,7 +213,7 @@ export const id5IdSubmodule = {
       const eids = {};
       Object.entries(value.ids).forEach(([key, value]) => {
         const eid = value.eid;
-        const uid = eid?.uids?.[0]
+        const uid = eid?.uids?.[0];
         responseObj[key] = {
           uid: uid?.id,
           ext: uid?.ext
@@ -592,10 +592,10 @@ function updateTargeting(fetchResponse, config) {
         setTimeout(() => tagsCallback(tags), 0);
       });
       window.id5tags.cmd.push = function (tagsCallback) {
-        tagsCallback(tags)
+        tagsCallback(tags);
         Array.prototype.push.call(window.id5tags.cmd, tagsCallback);
       };
-      window.id5tags.tags = tags
+      window.id5tags.tags = tags;
     }
   }
 }
@@ -632,7 +632,7 @@ function getPartnerResponse(response, config) {
  *  @returns {Id5PrebidResponse}
  */
 function createResponse(response, config, cacheIdObj) {
-  let responseObj = {}
+  let responseObj = {};
   if (isPlainObject(cacheIdObj) && (cacheIdObj.universal_uid !== undefined || isPlainObject(cacheIdObj.pbjs))) {
     Object.assign(responseObj, deepClone(cacheIdObj));
   }

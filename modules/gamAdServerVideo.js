@@ -35,7 +35,7 @@ import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 
 export const dep = {
   ri: getRefererInfo
-}
+};
 
 export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
@@ -168,7 +168,7 @@ export function buildGamVideoUrl(options) {
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
       PublisherProvidedTaxonomySignals: signals
-    }))
+    }));
   }
 
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
@@ -326,7 +326,7 @@ function retrieveUspInfoFromGpp(gpp) {
   if (parsedSections) {
     if (parsedSections.uspv1) {
       const usp = parsedSections.uspv1;
-      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`;
     } else {
       let saleOptOut;
       let saleOptOutNotice;
@@ -348,7 +348,7 @@ function retrieveUspInfoFromGpp(gpp) {
       }
     }
   }
-  return undefined
+  return undefined;
 }
 
 export async function getBase64BlobContent(blobUrl) {

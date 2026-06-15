@@ -702,7 +702,7 @@ describe('fluctAdapter', function () {
     it('sends no instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.instl).to.eql(0);
-    })
+    });
 
     it('sends ortb2Imp.instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({

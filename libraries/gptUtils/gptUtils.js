@@ -17,7 +17,7 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
   return (slot) => {
     const match = isAdUnitCodeMatchingSlot(slot);
     return match(adUnitCode);
-  }
+  };
 }
 
 /**
@@ -26,14 +26,14 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 export function setKeyValue(key, value) {
   if (!key || typeof key !== 'string') return false;
   window.googletag = window.googletag || { cmd: [] };
-  setKeyValueOn(key, value, window.googletag)
+  setKeyValueOn(key, value, window.googletag);
 }
 
 export function setKeyValueOn(key, value, gpt = window.googletag) {
   gpt.cmd = gpt.cmd || [];
   gpt.cmd.push(() => {
     setPageTargeting(key, value, gpt);
-  })
+  });
 }
 
 /**
@@ -88,7 +88,7 @@ export function getSegments(fpd, sections, segtax) {
     .filter(datum => datum.ext?.segtax === segtax)
     .flatMap(datum => datum.segment?.map(seg => seg.id))
     .filter(ob => ob)
-    .filter(uniques)
+    .filter(uniques);
 }
 
 /**
@@ -152,5 +152,5 @@ export function subscribeToGamEvent(event, callback) {
  * @param {SlotRenderEndedEventCallback} callback
  */
 export function subscribeToGamSlotRenderEndedEvent(callback) {
-  subscribeToGamEvent('slotRenderEnded', callback)
+  subscribeToGamEvent('slotRenderEnded', callback);
 }

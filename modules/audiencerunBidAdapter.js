@@ -79,7 +79,7 @@ function getPageReferer() {
  * @return {string}
  */
 function getPageUrl(bidderRequest) {
-  return bidderRequest?.refererInfo?.page
+  return bidderRequest?.refererInfo?.page;
 }
 
 export const spec = {
@@ -144,7 +144,7 @@ export const spec = {
 
     payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
     payload.schain = deepAccess(bidRequests, '0.ortb2.source.ext.schain');
-    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || [];
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

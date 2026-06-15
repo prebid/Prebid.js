@@ -20,8 +20,8 @@ describe('reducers', () => {
     }).forEach(([t, [a, b, expected]]) => {
       it(`returns ${expected} when a ${t} b`, () => {
         expect(simpleCompare(a, b)).to.equal(expected);
-      })
-    })
+      });
+    });
   });
 
   describe('keyCompare', () => {
@@ -32,8 +32,8 @@ describe('reducers', () => {
     }).forEach(([t, [a, b, expected]]) => {
       it(`returns ${expected} when key(a) ${t} key(b)`, () => {
         expect(keyCompare(item => item.k)(a, b)).to.equal(expected);
-      })
-    })
+      });
+    });
   });
 
   describe('tiebreakCompare', () => {
@@ -47,8 +47,8 @@ describe('reducers', () => {
       it(`should return ${expected} when ${t}`, () => {
         const cmp = tiebreakCompare(keyCompare(item => item.main), keyCompare(item => item.tie));
         expect(cmp(a, b)).to.equal(expected);
-      })
-    })
+      });
+    });
   });
 
   const SAMPLE_ARR = [-10, 20, 20, 123, 400];
@@ -64,7 +64,7 @@ describe('reducers', () => {
       it(`should find ${reversed[0]} using reverse compare`, () => {
         expect(SAMPLE_ARR.reduce(fn(reverseCompare()))).to.equal(reversed[1]);
       });
-    })
+    });
   });
 
   describe('getHighestCpm', function () {
@@ -177,4 +177,4 @@ describe('reducers', () => {
       expect(getLatestHighestCpmBid(b, a)).to.eql(b);
     });
   });
-})
+});

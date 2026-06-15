@@ -61,7 +61,7 @@ export function generateOrtbDataObject(segtax, segment, maxTier) {
       if (tier <= maxTier) {
         segmentIds.push(...segment[tier].map((id) => {
           return { id };
-        }))
+        }));
       }
     });
   } catch (error) {
@@ -89,7 +89,7 @@ export function generatePersonaOrtbDataObject(segtax, personaIds) {
   try {
     segmentIds.push(...personaIds.map((id) => {
       return { id };
-    }))
+    }));
   } catch (error) {
     logError(LOG_PREFIX, error);
   }
