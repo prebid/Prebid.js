@@ -1,6 +1,6 @@
-import {bidderSettings, ScopedSettings} from '../../../../src/bidderSettings.js';
-import {expect} from 'chai';
-import * as prebidGlobal from '../../../../src/prebidGlobal';
+import { bidderSettings, ScopedSettings } from '../../../../src/bidderSettings.js';
+import { expect } from 'chai';
+import * as prebidGlobal from '../../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
 describe('ScopedSettings', () => {
@@ -14,17 +14,17 @@ describe('ScopedSettings', () => {
   describe('get', () => {
     it('should retrieve setting from scope', () => {
       data = {
-        scope: {key: 'value'}
+        scope: { key: 'value' }
       };
       expect(settings.get('scope', 'key')).to.equal('value');
     });
 
     it('can retrieve nested settings', () => {
       data = {
-        scope: {outer: {key: 'value'}}
-      }
+        scope: { outer: { key: 'value' } }
+      };
       expect(settings.get('scope', 'outer.key')).to.equal('value');
-    })
+    });
 
     it('should fallback to fallback scope', () => {
       data = {
@@ -53,9 +53,9 @@ describe('ScopedSettings', () => {
         fallback: {
           key: true
         }
-      }
+      };
       expect(settings.get('scope', 'key')).to.equal(false);
-    })
+    });
   });
 
   describe('getOwn', () => {
@@ -98,19 +98,19 @@ describe('ScopedSettings', () => {
         scope: {
           skey: 'value'
         }
-      }
+      };
       expect(settings.settingsFor('scope')).to.eql({
         dkey: 'value',
         skey: 'value'
-      })
-    })
+      });
+    });
   });
 });
 
 describe('bidderSettings', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(prebidGlobal, 'getGlobal').returns({
       bidderSettings: {
         scope: {
@@ -118,13 +118,13 @@ describe('bidderSettings', () => {
         }
       }
     });
-  })
+  });
 
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   it('should fetch data from getGlobal().bidderSettings', () => {
     expect(bidderSettings.get('scope', 'key')).to.equal('value');
-  })
+  });
 });

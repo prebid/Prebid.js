@@ -16,14 +16,14 @@ const {
   AUCTION_TIMEOUT
 } = EVENTS;
 
-const URL = 'https://ps.itdsmr.com';
+const URL = 'https://ps.ivcsmrt.com';
 const ANALYTICS_TYPE = 'endpoint';
 const BIDDER_CODE = 'smartyads';
 const GVLID = 534;
 
-let smartyParams = {};
+const smartyParams = {};
 
-let smartyadsAdapter = Object.assign({},
+const smartyadsAdapter = Object.assign({},
   adapter({
     url: URL,
     analyticsType: ANALYTICS_TYPE,
@@ -65,7 +65,7 @@ let smartyadsAdapter = Object.assign({},
 
 const sendDataToServer = (data) => {
   ajax(URL, () => {}, JSON.stringify(data));
-}
+};
 
 const auctionHandler = (eventType, data) => {
   const auctionData = {
@@ -78,18 +78,18 @@ const auctionHandler = (eventType, data) => {
       delete bidderRequest.refererInfo;
       return bidderRequest;
     }).filter(request => request.bidderCode === BIDDER_CODE),
-  }
+  };
 
   sendDataToServer({ eventType, auctionData });
-}
+};
 
 const bidHandler = (eventType, bid) => {
-  let bids = bid.length ? bid : [ bid ];
+  const bids = bid.length ? bid : [bid];
 
   for (const bidObj of bids) {
     let bidToSend;
 
-    if (bidObj.bidderCode != BIDDER_CODE) {
+    if (bidObj.bidderCode !== BIDDER_CODE) {
       if (eventType === BID_WON) {
         bidToSend = {
           cpm: bidObj.cpm,
@@ -106,7 +106,7 @@ const bidHandler = (eventType, bid) => {
 
     sendDataToServer({ eventType, bid: bidToSend });
   }
-}
+};
 
 const onBidderError = (data) => {
   sendDataToServer({
@@ -114,20 +114,20 @@ const onBidderError = (data) => {
     error: data.error,
     bidderRequests: data?.bidderRequests?.length
       ? data.bidderRequests.filter(request => request.bidderCode === BIDDER_CODE)
-      : [ data.bidderRequest ]
+      : [data.bidderRequest]
   });
-}
+};
 
 const onAdRender = (eventType, data) => {
   if (data?.bid?.bidderCode === BIDDER_CODE) {
     sendDataToServer({ eventType, renderData: data });
   }
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: smartyadsAdapter,
   code: BIDDER_CODE,
   gvlid: GVLID
-})
+});
 
 export default smartyadsAdapter;

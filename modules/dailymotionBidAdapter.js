@@ -5,6 +5,12 @@ import { deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { userSync } from '../src/userSync.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const DAILYMOTION_VENDOR_ID = 573;
 
 const dailymotionOrtbConverter = ortbConverter({
@@ -53,7 +59,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     ? deepAccess(bidderRequest, 'ortb2.site')
     : deepAccess(bidderRequest, 'ortb2.app');
   // Content object is either from Object: Site or Object: App
-  const contentObj = deepAccess(siteOrAppObj, 'content')
+  const contentObj = deepAccess(siteOrAppObj, 'content');
 
   const contentCattax = deepAccess(contentObj, 'cattax', 0);
   const isContentCattaxV1 = contentCattax === 1;
@@ -88,13 +94,13 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     iabcat1: isArrayFilled(videoParams.iabcat1)
       ? videoParams.iabcat1
       : (isArrayFilled(deepAccess(contentObj, 'cat')) && isContentCattaxV1)
-        ? contentObj.cat
-        : Object.keys(parsedContentData.iabcat1),
+          ? contentObj.cat
+          : Object.keys(parsedContentData.iabcat1),
     iabcat2: isArrayFilled(videoParams.iabcat2)
       ? videoParams.iabcat2
       : (isArrayFilled(deepAccess(contentObj, 'cat')) && isContentCattaxV2)
-        ? contentObj.cat
-        : Object.keys(parsedContentData.iabcat2),
+          ? contentObj.cat
+          : Object.keys(parsedContentData.iabcat2),
     id: videoParams.id || deepAccess(contentObj, 'id', ''),
     lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
     livestream: typeof videoParams.livestream === 'number'

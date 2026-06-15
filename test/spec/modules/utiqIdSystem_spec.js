@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import { utiqIdSubmodule } from 'modules/utiqIdSystem.js';
-import { storage } from 'modules/utiqIdSystem.js';
+import { utiqIdSubmodule, storage } from 'modules/utiqIdSystem.js';
 
 describe('utiqIdSystem', () => {
   const utiqPassKey = 'utiqPass';
@@ -8,13 +7,13 @@ describe('utiqIdSystem', () => {
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
-      idGraph = {id: 501, domain: ''};
+      idGraph = { id: 501, domain: '' };
     }
     return {
       'connectId': {
         'idGraph': [idGraph],
       }
-    }
+    };
   };
 
   it('should have the correct module name declared', () => {
@@ -72,8 +71,8 @@ describe('utiqIdSystem', () => {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
           expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
+          done();
+        });
       }
     });
 
@@ -95,8 +94,8 @@ describe('utiqIdSystem', () => {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
           expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
+          done();
+        });
       }
     });
 
@@ -106,7 +105,7 @@ describe('utiqIdSystem', () => {
         'atid': 'atidValue',
       };
 
-      const response = utiqIdSubmodule.getId({params: {maxDelayTime: 200}});
+      const response = utiqIdSubmodule.getId({ params: { maxDelayTime: 200 } });
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -116,8 +115,8 @@ describe('utiqIdSystem', () => {
         }, 500);
         response.callback(function (result) {
           expect(result).to.be.null;
-          done()
-        })
+          done();
+        });
       }
     });
   });
@@ -140,12 +139,12 @@ describe('utiqIdSystem', () => {
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the utiq for a payload with {utiq: value}', () => {
         expect(utiqIdSubmodule.decode(responseData.payload)).to.deep.equal(
-          {utiq: responseData.expected}
+          { utiq: responseData.expected }
         );
       });
     });
 
-    [{}, '', {foo: 'bar'}].forEach((response) => {
+    [{}, '', { foo: 'bar' }].forEach((response) => {
       it(`should return null for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(utiqIdSubmodule.decode(response)).to.be.null;
       });

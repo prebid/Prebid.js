@@ -1,5 +1,3 @@
- 
- 
 import * as lockrAIMSystem from "../../../modules/lockrAIMIdSystem.js";
 import { hook } from "../../../src/hook.js";
 import { expect } from "chai";
@@ -21,11 +19,17 @@ const getDataFromStorage = (dataKey) => {
 
 const mockHTTPRequestSuccess = (key, value) => {
   coreStorage.setDataInLocalStorage(key, value);
-}
+};
 
 describe("lockr AIM ID System", function () {
   before(() => {
     hook.ready();
+  });
+
+  afterEach(() => {
+    coreStorage.removeDataFromLocalStorage(LIVE_RAMP_COOKIE);
+    coreStorage.removeDataFromLocalStorage(UID2_COOKIE);
+    coreStorage.removeDataFromLocalStorage(ID5_COOKIE);
   });
 
   describe("Check for invalid publisher config and GDPR", function () {

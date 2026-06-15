@@ -1,8 +1,8 @@
-import {logError} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import { logError } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
-import {EVENTS} from '../src/constants.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { EVENTS } from '../src/constants.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 const ADAPTER_CODE = 'uniquest';
@@ -68,8 +68,8 @@ function auctionEndHandler(eventType, args, pageUrl) {
   }
 }
 
-let baseAdapter = adapter({analyticsType: 'endpoint'});
-let uniquestAdapter = Object.assign({}, baseAdapter, {
+const baseAdapter = adapter({ analyticsType: 'endpoint' });
+const uniquestAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(config = {}) {
     if (config.options && config.options.sid) {
@@ -85,9 +85,9 @@ let uniquestAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track({ eventType, args }) {
     const refererInfo = getRefererInfo();
-    let pageUrl = refererInfo.page;
+    const pageUrl = refererInfo.page;
 
     switch (eventType) {
       case EVENTS.AD_RENDER_SUCCEEDED:

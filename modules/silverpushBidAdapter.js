@@ -42,10 +42,10 @@ export const spec = {
   interpretResponse,
   onBidWon,
   getRequest: function(endpoint) {
-    ajax(endpoint, null, undefined, {method: 'GET'});
+    ajax(endpoint, null, undefined, { method: 'GET' });
   },
   getOS: function(ua) {
-    if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+    if (ua.indexOf('Windows') !== -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') !== -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') !== -1) { return 'Linux'; } else { return 'Unknown'; }
   }
 };
 
@@ -82,9 +82,9 @@ export const CONVERTER = ortbConverter({
       ext: {
         bc: `${bidderConfig}_${bidderVersion}`
       }
-    })
+    });
 
-    let userAgent = navigator.userAgent;
+    const userAgent = navigator.userAgent;
     utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
     utils.deepSetValue(req, 'device.devicetype', _isMobile() ? 1 : _isConnectedTV() ? 3 : 2);
 
@@ -111,28 +111,13 @@ export const CONVERTER = ortbConverter({
     }
 
     bidResponse = buildVideoVastResponse(bidResponse);
-    bidResponse = buildVideoOutstreamResponse(bidResponse, context)
+    bidResponse = buildVideoOutstreamResponse(bidResponse, context);
 
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-
-    let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
-          bidId,
-          auctionSignals: {}
-        }, cfg);
-      });
-      return {
-        bids: response.bids,
-        paapi: fledgeAuctionConfigs,
-      }
-    } else {
-      return response.bids
-    }
+    return response.bids;
   }
 });
 
@@ -141,8 +126,8 @@ function isBidRequestValid(bidRequest) {
 }
 
 function isPublisherIdValid(bidRequest) {
-  let pubId = utils.deepAccess(bidRequest, 'params.publisherId');
-  return (pubId != null && utils.isStr(pubId) && pubId != '');
+  const pubId = utils.deepAccess(bidRequest, 'params.publisherId');
+  return (pubId !== undefined && utils.isStr(pubId) && pubId !== '');
 }
 
 function isValidBannerRequest(bidRequest) {
@@ -159,9 +144,9 @@ function isValidVideoRequest(bidRequest) {
 }
 
 function buildRequests(validBids, bidderRequest) {
-  let videoBids = validBids.filter(bid => isVideoBid(bid));
-  let bannerBids = validBids.filter(bid => isBannerBid(bid));
-  let requests = [];
+  const videoBids = validBids.filter(bid => isVideoBid(bid));
+  const bannerBids = validBids.filter(bid => isBannerBid(bid));
+  const requests = [];
 
   bannerBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, BANNER));
@@ -209,7 +194,7 @@ function buildBannerImp(bidRequest, imp) {
     utils.deepSetValue(imp, 'banner.h', bannerSizes[0][1]);
   }
 
-  return {...imp};
+  return { ...imp };
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
@@ -218,15 +203,15 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     url: REQUEST_URL,
     data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } }),
     bidderRequest
-  }
+  };
 }
 
 function buildVideoVastResponse(bidResponse) {
-  if (bidResponse.mediaType == VIDEO && bidResponse.vastXml) {
+  if (bidResponse.mediaType === VIDEO && bidResponse.vastXml) {
     bidResponse.vastUrl = bidResponse.vastXml;
   }
 
-  return { ...bidResponse }
+  return { ...bidResponse };
 }
 
 function buildVideoOutstreamResponse(bidResponse, context) {
@@ -240,12 +225,10 @@ function buildVideoOutstreamResponse(bidResponse, context) {
       url: bidResponse.rendererUrl
     });
 
-    bidResponse.renderer.setRender(_renderer(bidResponse));
-
-    bidResponse.renderer.render(bidResponse);
+    bidResponse.renderer.setRender(() => _renderer(bidResponse));
   }
 
-  return {...bidResponse};
+  return { ...bidResponse };
 }
 
 function getBidFloor(bid, bidderRequest) {
@@ -273,7 +256,7 @@ function _renderer(bid) {
       });
 
       try {
-        let vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
+        const vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
         spoplayer.load(vastUrlbt).then(function() {
           window.spoplayer = spoplayer;
         }).catch(function(reason) {

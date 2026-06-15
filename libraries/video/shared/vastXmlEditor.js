@@ -1,4 +1,3 @@
-
 import XMLUtil from '../../xmlUtils/xmlUtils.js';
 import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
@@ -46,7 +45,7 @@ export function VastXmlEditor(xmlUtil_) {
   return {
     getVastXmlWithTracking,
     buildVastWrapper
-  }
+  };
 
   function getImpressionDoc(impressionUrl, impressionId) {
     if (!impressionUrl) {

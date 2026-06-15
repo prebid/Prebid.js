@@ -9,7 +9,7 @@ const BIDDER_CODE = 'lasso';
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
 const GET_IUD_URL = 'https://secure.adnxs.com/getuid?';
 const COOKIE_NAME = 'aim-xr';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -28,7 +28,7 @@ export const spec = {
     }
 
     return validBidRequests.map(bidRequest => {
-      let sizes = []
+      let sizes = [];
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       }
@@ -37,7 +37,9 @@ export const spec = {
 
       let npi = params.npi || '';
       let dgid = params.dgid || '';
+      let aimOnly = params.aimOnly || '';
       let test = false;
+      let testDk = '';
 
       if (params.testNPI) {
         npi = params.testNPI;
@@ -46,6 +48,11 @@ export const spec = {
 
       if (params.testDGID) {
         dgid = params.testDGID;
+        test = true;
+      }
+
+      if (params.testDk) {
+        testDk = params.testDk;
         test = true;
       }
 
@@ -68,10 +75,12 @@ export const spec = {
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
         version: 4,
-        coppa: config.getConfig('coppa') == true ? 1 : 0,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined,
-        test
-      }
+        test,
+        testDk,
+        aimOnly
+      };
 
       if (
         bidderRequest &&
@@ -142,14 +151,15 @@ export const spec = {
   },
 
   supportedMediaTypes: [BANNER]
-}
+};
 
 function getBidRequestUrl(aimXR, params) {
+  const { npi, dgid, npiHash, testNPI, testDGID, aimOnly, testDk, dtc } = params;
   let path = '/request';
-  if (params && params.dtc) {
+  if (dtc) {
     path = '/dtc-request';
   }
-  if (aimXR || params.npi || params.dgid || params.npiHash || params.testNPI || params.testDGID) {
+  if (aimXR || npi || dgid || npiHash || testNPI || testDGID || aimOnly || testDk) {
     return ENDPOINT_URL + path;
   }
   return GET_IUD_URL + ENDPOINT_URL + path;
@@ -163,7 +173,7 @@ function getDeviceData() {
     width: winDimensions.innerWidth || winDimensions.document.documentElement.clientWidth || win.document.body.clientWidth,
     height: winDimensions.innerHeight || winDimensions.document.documentElement.clientHeight || win.document.body.clientHeight,
     browserLanguage: navigator.language,
-  }
+  };
 }
 
 registerBidder(spec);

@@ -1,5 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
-'use strict'
+'use strict';
 
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -40,6 +40,7 @@ export const spec = {
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // TODO: consider using the Prebid-generated page view ID instead of generating a custom one
     topUsableWindow.carodaPageViewId = topUsableWindow.carodaPageViewId || Math.floor(Math.random() * 1e9);
     const pageViewId = topUsableWindow.carodaPageViewId;
     const ortbCommon = getORTBCommon(bidderRequest);
@@ -49,7 +50,7 @@ export const spec = {
     const test = getFirstWithKey(validBidRequests, 'params.test');
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
-    const schain = getFirstWithKey(validBidRequests, 'schain');
+    const schain = getFirstWithKey(validBidRequests, 'ortb2.source.ext.schain');
     const request = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bidderRequest.auctionId,
@@ -95,7 +96,7 @@ export const spec = {
     if (!serverResponse.body) {
       return;
     }
-    const { ok, error } = serverResponse.body
+    const { ok, error } = serverResponse.body;
     if (error) {
       logError(BIDDER_CODE, ': server caught', error.message);
       return;
@@ -117,20 +118,20 @@ export const spec = {
             },
             ad: bid.ad,
             placementId: bid.placement_id
-          }
+          };
           if (bid.adserver_targeting) {
-            ret.adserverTargeting = bid.adserver_targeting
+            ret.adserverTargeting = bid.adserver_targeting;
           }
-          return ret
+          return ret;
         })
         .filter(Boolean);
     } catch (e) {
       logError(BIDDER_CODE, ': caught', e);
     }
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 
 function getFirstWithKey (collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
@@ -154,9 +155,9 @@ function getTopUsableWindow () {
 function getORTBCommon (bidderRequest) {
   let app, site;
   const commonFpd = bidderRequest.ortb2 || {};
-  let { user } = commonFpd;
+  const { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
-    app = getConfig('app') || {}
+    app = getConfig('app') || {};
     if (commonFpd.app) {
       mergeDeep(app, commonFpd.app);
     }
@@ -213,5 +214,5 @@ function getImps (validBidRequests, common) {
       imp.video = videoParams;
     }
     return imp;
-  })
+  });
 }

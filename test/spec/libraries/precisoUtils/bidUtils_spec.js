@@ -1,13 +1,12 @@
-
 import { expect } from 'chai';
 import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js';
 
-const DEFAULT_PRICE = 1
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_BANNER_WIDTH = 300
-const DEFAULT_BANNER_HEIGHT = 250
+const DEFAULT_PRICE = 1;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_BANNER_WIDTH = 300;
+const DEFAULT_BANNER_HEIGHT = 250;
 const BIDDER_CODE = 'preciso';
-const TESTDOMAIN = 'test.org'
+const TESTDOMAIN = 'test.org';
 const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
 
 describe('bidUtils', function () {
@@ -76,7 +75,7 @@ describe('bidUtils', function () {
       expect(serverRequest.url).to.equal(`https://${TESTDOMAIN}/bid_request/openrtb`);
     });
     it('Returns valid data if array of bids is valid', function () {
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data.device).to.be.a('object');
       expect(data.user).to.be.a('object');
@@ -86,14 +85,14 @@ describe('bidUtils', function () {
     it('Returns data.device is undefined  if no valid device object is passed', function () {
       delete bid.ortb2.device;
       serverRequest = spec.buildRequests([bid]);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.device).to.be.undefined;
     });
   });
 
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
-      let response = {
+      const response = {
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
         seatbid: [
           {
@@ -113,8 +112,8 @@ describe('bidUtils', function () {
             seat: BIDDER_CODE
           }
         ],
-      }
-      let expectedResponse = [
+      };
+      const expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
           cpm: DEFAULT_PRICE,
@@ -127,10 +126,10 @@ describe('bidUtils', function () {
           ttl: 300,
           meta: { advertiserDomains: [] },
         }
-      ]
-      let result = spec.interpretResponse({ body: response })
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
+      ];
+      const result = spec.interpretResponse({ body: response });
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
   });
   // describe('getUserSyncs', function () {
   //   const syncUrl = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?/iframe?pbjs=1&coppa=0`;

@@ -5,7 +5,7 @@
 <html>
 <head>
   <script async src="../../build/dev/prebid.js"></script>
-  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
   <script>
     var FAILSAFE_TIMEOUT = 33000;
     var PREBID_TIMEOUT = 10000;
@@ -101,10 +101,14 @@
       if (pbjs.adserverRequestSent) return;
       pbjs.adserverRequestSent = true;
       googletag.cmd.push(function() {
-        pbjs.que.push(function() {
-          pbjs.setTargetingForGPTAsync();
+        if (pbjs.libLoaded) {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        } else {
           googletag.pubads().refresh();
-        });
+        }
       });
     }
 

@@ -1,4 +1,3 @@
-
 import { submodule } from '../src/hook.js';
 import { mergeDeep, logError, logMessage, deepSetValue, generateUUID } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -8,7 +7,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
  */
 
 const SUBMODULE_NAME = 'oneKey';
-const prefixLog = 'OneKey.RTD-module'
+const prefixLog = 'OneKey.RTD-module';
 
 // Pre-init OneKey if it has not load yet.
 window.OneKey = window.OneKey || {};
@@ -22,9 +21,8 @@ window.OneKey.queue = window.OneKey.queue || [];
  * https://docs.prebid.org/dev-docs/add-rtd-submodule.html#getbidrequestdata
  *
  * @param {Object} reqBidsConfigObj
- * @param {function} callback
+ * @param {function} done
  * @param {Object} rtdConfig
- * @param {Object} userConsent
  */
 const getTransmissionInBidRequest = (reqBidsConfigObj, done, rtdConfig) => {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
@@ -38,7 +36,7 @@ const getTransmissionInBidRequest = (reqBidsConfigObj, done, rtdConfig) => {
       .catch((err) => { logError(SUBMODULE_NAME, err.message); })
       .finally(done);
   });
-}
+};
 
 const onGetSeed = (reqBidsConfigObj, rtdConfig, adUnits, transactionIds) => {
   return (seed) => {
@@ -72,7 +70,7 @@ const addTransmissionToOrtb2 = (reqBidsConfigObj, rtdConfig, seed) => {
         }
       }
     }
-  }
+  };
 
   const shareSeedWithAllBidders = !rtdConfig.params || !rtdConfig.params.bidders;
   if (shareSeedWithAllBidders) {

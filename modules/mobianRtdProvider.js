@@ -36,15 +36,20 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
  */
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
-
+const MOBIAN_TCF_ID = 1348;
 export const AP_VALUES = 'apValues';
 export const CATEGORIES = 'categories';
 export const EMOTIONS = 'emotions';
 export const GENRES = 'genres';
 export const RISK = 'risk';
 export const SENTIMENT = 'sentiment';
+export const TQ = 'tq';
+export const TG = 'tg';
 export const THEMES = 'themes';
 export const TONES = 'tones';
+export const dep = {
+  ajaxBuilder
+};
 
 export const CONTEXT_KEYS = [
   AP_VALUES,
@@ -53,31 +58,57 @@ export const CONTEXT_KEYS = [
   GENRES,
   RISK,
   SENTIMENT,
+  TQ,
+  TG,
   THEMES,
   TONES
 ];
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
+export const MAX_CACHE_SIZE = 10;
+
+// eslint-disable-next-line no-restricted-syntax
 const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };
 
-function makeMemoizedFetch() {
-  let cachedResponse = null;
-  return async function () {
-    if (cachedResponse) {
-      return Promise.resolve(cachedResponse);
+function getNormalizedPageUrl() {
+  try {
+    const { origin, pathname } = window.location;
+    return origin + pathname;
+  } catch (e) {
+    // Fallback to href if origin/pathname are not available, but keep normalization consistent
+    const href = window.location && window.location.href;
+    if (typeof href === 'string') {
+      // Strip query string and hash to match origin + pathname behavior
+      return href.split(/[?#]/)[0];
     }
-    try {
-      const response = await fetchContextData();
-      cachedResponse = makeDataFromResponse(response);
-      return cachedResponse;
-    } catch (error) {
-      logMessage('error', error);
-      return Promise.resolve({});
-    }
+    return '';
   }
+}
+
+export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
+  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
+  const cache = new Map();
+  return function () {
+    const pageUrl = getNormalizedPageUrl();
+    if (cache.has(pageUrl)) {
+      return cache.get(pageUrl);
+    }
+    if (cache.size >= sanitizedMaxSize) {
+      cache.delete(cache.keys().next().value);
+    }
+    const pending = fetchContextData()
+      .then((response) => makeDataFromResponse(response))
+      .catch((error) => {
+        logMessage('error', error);
+        cache.delete(pageUrl);
+        return {};
+      });
+    cache.set(pageUrl, pending);
+    return pending;
+  };
 }
 
 export const getContextData = makeMemoizedFetch();
@@ -92,18 +123,19 @@ export function makeContextDataToKeyValuesReducer(config) {
         if (!value?.[apKey]?.length) return;
         keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))]);
       });
-    }
-    if (value?.length) {
+    } else if ((key === TQ || key === TG) && value != null) {
+      keyValues.push([`${prefix}_${key}`, value]);
+    } else if (value?.length) {
       keyValues.push([`${prefix}_${key}`, value]);
     }
     return keyValues;
-  }
+  };
 }
 
 export async function fetchContextData() {
   const pageUrl = encodeURIComponent(window.location.href);
   const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
-  const request = ajaxBuilder();
+  const request = dep.ajaxBuilder();
 
   return new Promise((resolve, reject) => {
     request(requestUrl, { success: resolve, error: reject });
@@ -135,7 +167,7 @@ export function setTargeting(config, contextData) {
   logMessage('context', contextData);
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
-    .reduce(makeContextDataToKeyValuesReducer(config), [])
+    .reduce(makeContextDataToKeyValuesReducer(config), []);
 
   keyValues.forEach(([key, value]) => setKeyValue(key, value));
 }
@@ -157,6 +189,8 @@ export function makeDataFromResponse(contextData) {
     [GENRES]: results.mobianGenres,
     [RISK]: results.mobianRisk || 'unknown',
     [SENTIMENT]: results.mobianSentiment || 'unknown',
+    [TQ]: results.mobian_tq,
+    [TG]: results.mobian_tg,
     [THEMES]: results.mobianThemes,
     [TONES]: results.mobianTones,
   };
@@ -220,7 +254,8 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
 export const mobianBrandSafetySubmodule = {
   name: 'mobianBrandSafety',
   init: init,
-  getBidRequestData: getBidRequestData
+  getBidRequestData: getBidRequestData,
+  gvlid: MOBIAN_TCF_ID
 };
 
 submodule('realTimeData', mobianBrandSafetySubmodule);

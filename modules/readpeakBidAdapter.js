@@ -16,9 +16,11 @@ const NATIVE_DEFAULTS = {
 };
 
 const BIDDER_CODE = 'readpeak';
+const GVLID = 290;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
 
   supportedMediaTypes: [NATIVE, BANNER],
 
@@ -69,7 +71,7 @@ export const spec = {
   },
 
   interpretResponse: (response, request) => {
-    return bidResponseAvailable(request, response)
+    return bidResponseAvailable(request, response);
   },
 
   onBidWon: (bid) => {
@@ -112,15 +114,15 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       if (idToImpMap[id].native) {
         bid.native = nativeResponse(idToImpMap[id], idToBidMap[id]);
       } else if (idToImpMap[id].banner) {
-        bid.ad = idToBidMap[id].adm
-        bid.width = idToBidMap[id].w
-        bid.height = idToBidMap[id].h
-        bid.burl = idToBidMap[id].burl
+        bid.ad = idToBidMap[id].adm;
+        bid.width = idToBidMap[id].w;
+        bid.height = idToBidMap[id].h;
+        bid.burl = idToBidMap[id].burl;
       }
       if (idToBidMap[id].adomain) {
         bid.meta = {
           advertiserDomains: idToBidMap[id].adomain
-        }
+        };
       }
       bids.push(bid);
     }
@@ -129,12 +131,12 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 }
 
 function impression(slot) {
-  let bidFloorFromModule
+  let bidFloorFromModule;
   if (typeof slot.getFloor === 'function') {
     const floorInfo = slot.getFloor({
       currency: 'USD',
       mediaType: 'native',
-      size: '\*'
+      size: '*'
     });
     bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
   }
@@ -150,7 +152,7 @@ function impression(slot) {
   } else if (slot.mediaTypes.banner) {
     imp.banner = bannerImpression(slot);
   }
-  return imp
+  return imp;
 }
 
 function nativeImpression(slot) {
@@ -217,27 +219,27 @@ function titleAsset(id, params, defaultLen) {
 function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
   return params
     ? {
-      id,
-      required: params.required ? 1 : 0,
-      img: {
-        type,
-        wmin: params.wmin || defaultMinWidth,
-        hmin: params.hmin || defaultMinHeight
+        id,
+        required: params.required ? 1 : 0,
+        img: {
+          type,
+          wmin: params.wmin || defaultMinWidth,
+          hmin: params.hmin || defaultMinHeight
+        }
       }
-    }
     : null;
 }
 
 function dataAsset(id, params, type, defaultLen) {
   return params
     ? {
-      id,
-      required: params.required ? 1 : 0,
-      data: {
-        type,
-        len: params.len || defaultLen
+        id,
+        required: params.required ? 1 : 0,
+        data: {
+          type,
+          len: params.len || defaultLen
+        }
       }
-    }
     : null;
 }
 
@@ -247,7 +249,7 @@ function bannerImpression(slot) {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
     w: sizes[0][0],
     h: sizes[0][1],
-  }
+  };
 }
 
 function site(bidRequests, bidderRequest) {
@@ -292,12 +294,12 @@ function app(bidderRequest) {
 }
 
 function isMobile() {
-  return /(ios|ipod|ipad|iphone|android)/i.test(global.navigator.userAgent);
+  return /(ios|ipod|ipad|iphone|android)/i.test(window.navigator.userAgent);
 }
 
 function isConnectedTV() {
   return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(
-    global.navigator.userAgent
+    window.navigator.userAgent
   );
 }
 
@@ -341,10 +343,10 @@ function nativeResponse(imp, bid) {
         keys.image =
           asset.img && asset.id === 2
             ? {
-              url: asset.img.url,
-              width: asset.img.w || 750,
-              height: asset.img.h || 500
-            }
+                url: asset.img.url,
+                width: asset.img.w || 750,
+                height: asset.img.h || 500
+              }
             : keys.image;
         keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
       });

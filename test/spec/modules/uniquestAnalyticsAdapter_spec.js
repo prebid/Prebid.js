@@ -1,9 +1,9 @@
 import uniquestAnalyticsAdapter from 'modules/uniquestAnalyticsAdapter.js';
-import {config} from 'src/config';
-import {EVENTS} from 'src/constants.js';
-import {server} from '../../mocks/xhr.js';
+import { config } from 'src/config';
+import { EVENTS } from 'src/constants.js';
+import { server } from '../../mocks/xhr.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 const SAMPLE_EVENTS = {
   AUCTION_END: {
@@ -266,7 +266,6 @@ const SAMPLE_EVENTS = {
         'bidderCode': 'uniquest',
         'width': 300,
         'height': 300,
-        'statusMessage': 'Bid available',
         'adId': '53c5a9c1947c57',
         'requestId': '4d9eec3fe27a43',
         'mediaType': 'banner',
@@ -331,7 +330,6 @@ const SAMPLE_EVENTS = {
       'bidderCode': 'uniquest',
       'width': 300,
       'height': 300,
-      'statusMessage': 'Bid available',
       'adId': '53c5a9c1947c57',
       'requestId': '4d9eec3fe27a43',
       'mediaType': 'banner',
@@ -376,14 +374,14 @@ const SAMPLE_EVENTS = {
       ]
     }
   }
-}
+};
 
 describe('Uniquest Analytics Adapter', function () {
   let sandbox;
   let requests;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
   });

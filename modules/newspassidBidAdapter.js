@@ -24,7 +24,7 @@ const converter = ortbConverter({
     deepSetValue(imp, 'ext.newspassid', {
       publisher: resolveNewpassidPublisherId(bidRequest),
       placementId: bidRequest.params.placementId,
-    })
+    });
     return imp;
   },
   context: {
@@ -150,7 +150,7 @@ export const spec = {
       params.publisher = globalPublisherId;
     }
 
-    let syncs = [];
+    const syncs = [];
 
     // iframe sync
     syncs.push({

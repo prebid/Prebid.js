@@ -6,8 +6,8 @@
  */
 
 import { logError, logInfo } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -26,9 +26,13 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
 
+export const dep = {
+  ajax
+};
+
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
- * @param {string} the current pseudorandom number generator
+ * @param {string} currPrng the current pseudorandom number generator
  * @returns {function(*=): *}
  */
 function factory(currPrng) {
@@ -45,7 +49,7 @@ function factory(currPrng) {
 
 /**
  * gets a a random charcter from generated pseudorandom number
- * @param {string} the generated pseudorandom number
+ * @param {string} prng the generated pseudorandom number
  * @returns {string}
  */
 function randomChar(prng) {
@@ -58,8 +62,8 @@ function randomChar(prng) {
 
 /**
  * encodes random character
- * @param len
- * @param prng
+ * @param {number} len
+ * @param {function(): number} prng
  * @returns {string}
  */
 function encodeRandom(len, prng) {
@@ -72,8 +76,8 @@ function encodeRandom(len, prng) {
 
 /**
  * encodes the time based on the length
- * @param now
- * @param len
+ * @param {number} now
+ * @param {number} len
  * @returns {string} encoded time.
  */
 function encodeTime(now, len) {
@@ -112,7 +116,7 @@ function encodeTime(now, len) {
 /**
  * creates and logs the error message
  * @function
- * @param {string} error message
+ * @param {string} message error message
  * @returns {Error}
  */
 function createError(message) {
@@ -125,7 +129,7 @@ function createError(message) {
 /**
  * detects the pseudorandom number generator and generates the random number
  * @function
- * @param {string} error message
+ * @param {string} root
  * @returns {string} a random number
  */
 function detectPrng(root) {
@@ -145,9 +149,8 @@ function detectPrng(root) {
 
 /**
  * existing id generation call back
- * @param result
- * @param callback
- * @returns {{success: success, error: error}}
+ * @param {string} storedId
+ * @returns {{success: function(Object): void, error: function(): void}}
  */
 function syncId(storedId) {
   return {
@@ -157,7 +160,7 @@ function syncId(storedId) {
     error: function () {
       logInfo('KinessoId: Sync error for id : ' + storedId);
     }
-  }
+  };
 }
 
 /**
@@ -178,11 +181,12 @@ function encodeId(value) {
 
 /**
  * Builds and returns the shared Id URL with attached consent data if applicable
+ * @param {number} accountId
  * @param {Object} consentData
  * @return {string}
  */
 function kinessoSyncUrl(accountId, consentData) {
-  const {gdpr, usp: usPrivacyString} = consentData ?? {};
+  const { gdpr, usp: usPrivacyString } = consentData ?? {};
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
     kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
@@ -190,7 +194,7 @@ function kinessoSyncUrl(accountId, consentData) {
   if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
   kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
-  return kinessoSyncUrl
+  return kinessoSyncUrl;
 }
 
 /** @type {Submodule} */
@@ -206,7 +210,7 @@ export const kinessoIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{kpuid:{ id: string}} or undefined if value doesn't exists
+   * @returns {{kpuid:{id: string}}|undefined}
    */
   decode(value) {
     return (value) ? encodeId(value) : undefined;
@@ -217,7 +221,7 @@ export const kinessoIdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData|undefined} consentData
-   * @returns {knssoId}
+   * @returns {string|undefined}
    */
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
@@ -235,8 +239,8 @@ export const kinessoIdSubmodule = {
     const kinessoIdPayload = {};
     kinessoIdPayload.id = knnsoId;
     const payloadString = JSON.stringify(kinessoIdPayload);
-    ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, {method: 'POST', withCredentials: true});
-    return {'id': knnsoId};
+    dep.ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
+    return { 'id': knnsoId };
   },
   eids: {
     'kpuid': {

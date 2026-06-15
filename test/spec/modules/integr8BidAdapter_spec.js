@@ -145,7 +145,7 @@ describe('integr8AdapterTest', () => {
     it('all keys present', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
-      let keys = [
+      const keys = [
         'requestId',
         'cpm',
         'width',
@@ -161,11 +161,11 @@ describe('integr8AdapterTest', () => {
         'meta'
       ];
 
-      let resultKeys = Object.keys(result[0]);
+      const resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function (key) {
         expect(keys.indexOf(key) !== -1).to.equal(true);
       });
-    })
+    });
 
     it('all values correct', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
@@ -180,7 +180,7 @@ describe('integr8AdapterTest', () => {
       expect(result[0].referrer).to.equal('http://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true');
       expect(result[0].ad).to.equal('<div>Test ad</div>');
       expect(result[0].meta.advertiserDomains).to.deep.equal(['somedomain.com']);
-    })
+    });
   });
 
   describe('floor pricing', () => {

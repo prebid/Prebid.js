@@ -1,14 +1,14 @@
-import asteriobidAnalytics, {storage} from 'modules/asteriobidAnalyticsAdapter.js';
-import {expect} from 'chai';
-import {server} from 'test/mocks/xhr.js';
+import asteriobidAnalytics, { storage } from 'modules/asteriobidAnalyticsAdapter.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('AsterioBid Analytics Adapter', function () {
-  let bidWonEvent = {
+  const bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
     'height': 250,
@@ -45,7 +45,7 @@ describe('AsterioBid Analytics Adapter', function () {
     });
 
     it('support custom endpoint', function () {
-      let custom_url = 'custom url';
+      const custom_url = 'custom url';
       asteriobidAnalytics.enableAnalytics({
         provider: 'asteriobid',
         options: {
@@ -58,7 +58,7 @@ describe('AsterioBid Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      const bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       asteriobidAnalytics.enableAnalytics({
         provider: 'asteriobid',
         options: {
@@ -99,7 +99,7 @@ describe('AsterioBid Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
-    this.timeout(4000)
+    this.timeout(4000);
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -110,7 +110,7 @@ describe('AsterioBid Analytics Adapter', function () {
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
-      asteriobidAnalytics.disableAnalytics()
+      asteriobidAnalytics.disableAnalytics();
     });
     it('should build utm data from local storage', function () {
       asteriobidAnalytics.enableAnalytics({
@@ -119,6 +119,8 @@ describe('AsterioBid Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      asteriobidAnalytics.flush();
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
@@ -132,7 +134,7 @@ describe('AsterioBid Analytics Adapter', function () {
 
   describe('build page info', function () {
     afterEach(function () {
-      asteriobidAnalytics.disableAnalytics()
+      asteriobidAnalytics.disableAnalytics();
     });
     it('should build page info', function () {
       asteriobidAnalytics.enableAnalytics({
@@ -141,6 +143,8 @@ describe('AsterioBid Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      asteriobidAnalytics.flush();
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 

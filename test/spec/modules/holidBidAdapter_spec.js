@@ -34,15 +34,15 @@ describe('holidBidAdapterTests', () => {
     }
   };
 
-  describe('isBidRequestValid', () => {
-    const bid = JSON.parse(JSON.stringify(bidRequestData));
+  const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
+  describe('isBidRequestValid', () => {
     it('should return true', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(clone(bidRequestData))).to.equal(true);
     });
 
     it('should return false when required params are not passed', () => {
-      const bid = JSON.parse(JSON.stringify(bidRequestData));
+      const bid = clone(bidRequestData);
       delete bid.params.adUnitID;
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -50,7 +50,7 @@ describe('holidBidAdapterTests', () => {
   });
 
   describe('buildRequests', () => {
-    const bid = JSON.parse(JSON.stringify(bidRequestData));
+    const bid = clone(bidRequestData);
     const request = spec.buildRequests([bid], bidderRequest);
     const payload = JSON.parse(request[0].data);
 
@@ -81,6 +81,85 @@ describe('holidBidAdapterTests', () => {
       expect(payload.device.h).to.equal(410);
       expect(payload.user.ext.consent).to.equal('G4ll0p1ng_Un1c0rn5');
       expect(payload.regs.gdpr).to.equal(1);
+    });
+  });
+
+  // NEW: cover tmax behavior introduced in the PR
+  describe('buildRequests - tmax behavior', () => {
+    it('should set tmax from bidderRequest.timeout when no params.tmax is provided', () => {
+      const bid = clone(bidRequestData);
+      const br = { bidderRequestId: 'test-id', timeout: 1200 };
+
+      const request = spec.buildRequests([bid], br);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.tmax).to.equal(1200);
+    });
+
+    it('should cap params.tmax to bidderRequest.timeout when provided', () => {
+      const bid = clone(bidRequestData);
+      bid.params.tmax = 2500;
+
+      const br = { bidderRequestId: 'test-id', timeout: 900 };
+
+      const request = spec.buildRequests([bid], br);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.tmax).to.equal(900);
+    });
+
+    it('should use params.tmax when bidderRequest.timeout is missing', () => {
+      const bid = clone(bidRequestData);
+      bid.params.tmax = 750;
+
+      const br = { bidderRequestId: 'test-id' };
+
+      const request = spec.buildRequests([bid], br);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.tmax).to.equal(750);
+    });
+  });
+
+  // NEW: ensure ORTB fields are merged rather than clobbered
+  describe('buildRequests - ORTB merge safety', () => {
+    it('should merge storedrequest into ext.prebid without clobbering existing ext fields', () => {
+      const bid = clone(bidRequestData);
+      bid.ortb2.ext = { someExtKey: 'keep-me', prebid: { somePrebidKey: 'keep-me-too' } };
+
+      const br = { bidderRequestId: 'test-id', timeout: 1000 };
+      const request = spec.buildRequests([bid], br);
+      const payload = JSON.parse(request[0].data);
+
+      // existing ext preserved
+      expect(payload.ext).to.exist;
+      expect(payload.ext.someExtKey).to.equal('keep-me');
+      expect(payload.ext.prebid).to.exist;
+      expect(payload.ext.prebid.somePrebidKey).to.equal('keep-me-too');
+
+      // storedrequest merged in
+      expect(payload.ext.prebid.storedrequest).to.exist;
+      expect(payload.ext.prebid.storedrequest.id).to.equal('12345');
+    });
+
+    it('should merge schain into source.ext.schain without clobbering source fields', () => {
+      const bid = clone(bidRequestData);
+      bid.ortb2.source = {
+        tid: 'tid-123',
+        ext: {
+          other: 'keep-me',
+          schain: { ver: '1.0', complete: 1, nodes: [{ asi: 'example.com', sid: '123', hp: 1 }] }
+        }
+      };
+
+      const br = { bidderRequestId: 'test-id', timeout: 1000 };
+      const request = spec.buildRequests([bid], br);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.source).to.exist;
+      expect(payload.source.tid).to.equal('tid-123');
+      expect(payload.source.ext.other).to.equal('keep-me');
+      expect(payload.source.ext.schain).to.deep.equal(bid.ortb2.source.ext.schain);
     });
   });
 
@@ -130,6 +209,50 @@ describe('holidBidAdapterTests', () => {
       );
       expect(interpretedResponse[0].currency).to.equal(serverResponse.body.cur);
     });
+
+    it('should map adomain to meta.advertiserDomains and preserve existing meta fields', () => {
+      const serverResponseWithAdomain = {
+        body: {
+          id: 'test-id',
+          cur: 'USD',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: 'testbidid-2',
+                  impid: 'bid-id',
+                  price: 0.55,
+                  adm: '<div>ad</div>',
+                  crid: 'cr-2',
+                  w: 300,
+                  h: 250,
+                  // intentionally mixed-case + protocol + www to test normalization
+                  adomain: ['https://Holid.se', 'www.Example.COM'],
+                  ext: {
+                    prebid: {
+                      meta: {
+                        networkId: 42
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      const out = spec.interpretResponse(serverResponseWithAdomain, bidRequestData);
+      expect(out).to.have.length(1);
+      expect(out[0].requestId).to.equal('bid-id');
+
+      // critical assertion: advertiserDomains normalized and present
+      expect(out[0].meta).to.have.property('advertiserDomains');
+      expect(out[0].meta.advertiserDomains).to.deep.equal(['holid.se', 'example.com']);
+
+      // ensure any existing meta (e.g., networkId) is preserved
+      expect(out[0].meta.networkId).to.equal(42);
+    });
   });
 
   describe('getUserSyncs', () => {
@@ -156,7 +279,6 @@ describe('holidBidAdapterTests', () => {
       };
       const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
 
-      // Updated 'usp_consent' to 'us_privacy' to match adapter code
       const expectedUserSyncs = [
         {
           type: 'image',
@@ -211,6 +333,55 @@ describe('holidBidAdapterTests', () => {
       );
 
       expect(userSyncs).to.deep.equal(expectedUserSyncs);
+    });
+
+    // NEW: verify seatbid[].seat fallback is used when responsetimemillis is missing
+    it('should derive bidders from seatbid[].seat when responsetimemillis is missing', () => {
+      const optionsType = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponse = [
+        {
+          body: {
+            seatbid: [
+              { seat: 'rubicon', bid: [] },
+              { seat: 'pubmatic', bid: [] },
+            ]
+          }
+        }
+      ];
+
+      const userSyncs = spec.getUserSyncs(optionsType, serverResponse);
+
+      const iframe = userSyncs.find(s => s.type === 'iframe');
+      expect(iframe).to.exist;
+      expect(iframe.url).to.include('bidders=');
+
+      const decoded = decodeURIComponent(iframe.url.split('bidders=')[1].split('&')[0]);
+      expect(decoded).to.include('rubicon');
+      expect(decoded).to.include('pubmatic');
+    });
+
+    // NEW: verify pixel-based fallback is used when iframe is disabled
+    it('should add an extra image sync when iframe is disabled but pixelEnabled is true', () => {
+      const optionsType = { iframeEnabled: false, pixelEnabled: true };
+      const serverResponse = [
+        {
+          body: {
+            ext: { responsetimemillis: { pubmatic: 12 } }
+          }
+        }
+      ];
+
+      const userSyncs = spec.getUserSyncs(optionsType, serverResponse);
+
+      // base Adform pixel always exists
+      expect(userSyncs[0].type).to.equal('image');
+
+      // additional image sync from our endpoint should exist
+      const extraImages = userSyncs.filter(s => s.type === 'image');
+      expect(extraImages.length).to.be.greaterThan(1);
+      const urls = extraImages.map(s => s.url).join(' ');
+      expect(urls).to.include('bidders=');
+      expect(urls).to.include('type=image');
     });
   });
 });

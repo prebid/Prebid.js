@@ -87,7 +87,7 @@ describe('AdButler adapter', function () {
         const requests = spec.buildRequests(validBidRequests);
         const request = requests[0];
 
-        let [domain] = request.url.split('/adserve/');
+        const [domain] = request.url.split('/adserve/');
 
         expect(domain).to.equal('https://servedbyadbutler.com');
       });
@@ -200,7 +200,7 @@ describe('AdButler adapter', function () {
             ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
             tracking_pixels: [],
           },
-        }
+        };
       });
 
       describe('with a minimum CPM', function () {
@@ -237,7 +237,7 @@ describe('AdButler adapter', function () {
             ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
             tracking_pixels: [],
           },
-        }
+        };
       });
 
       describe('with a maximum CPM', function () {

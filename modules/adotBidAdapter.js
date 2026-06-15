@@ -4,10 +4,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { find } from '../src/polyfill.js';
 import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';
 import { OUTSTREAM } from '../src/video.js';
 import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -70,7 +70,7 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
 /**
  * @typedef {Object} OpenRtbBidResponse
  * @property {string} id - ID of the bid response
- * @property {Array<{bid: Array<OpenRTBBid>}>} seatbid - Array of seat bids, each containing a list of bids
+ * @property {Array<{bid: Array<OpenRtbBid>}>} seatbid - Array of seat bids, each containing a list of bids
  * @property {string} cur - Currency in which bid amounts are expressed
  */
 
@@ -124,7 +124,7 @@ function getOpenRTBSiteObject(bidderRequest) {
       id: publisherId
     },
     ext: {
-      schain: bidderRequest.schain
+      schain: bidderRequest?.ortb2?.source?.ext?.schain
     }
   };
 }
@@ -150,7 +150,6 @@ function getOpenRTBUserObject(bidderRequest) {
   return {
     ext: {
       consent: bidderRequest.gdprConsent.consentString,
-      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
     },
   };
 }
@@ -326,7 +325,7 @@ function buildImpFromAdUnit(adUnit, bidderRequest) {
 
   if (!mediaType) return null;
 
-  const media = IMP_BUILDER[mediaType](mediaTypes[mediaType], bidderRequest, adUnit)
+  const media = IMP_BUILDER[mediaType](mediaTypes[mediaType], bidderRequest, adUnit);
   const currency = getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
   const bidfloor = getMainFloor(adUnit, media.format, mediaType, currency);
 
@@ -484,8 +483,8 @@ function buildRenderer(bid, mediaType) {
     bid.ext.adot.video &&
     bid.ext.adot.video.type === OUTSTREAM)) return null;
 
-  const container = bid.ext.adot.container
-  const adUnitCode = bid.ext.adot.adUnitCode
+  const container = bid.ext.adot.container;
+  const adUnitCode = bid.ext.adot.adUnitCode;
 
   const renderer = Renderer.install({
     url: OUTSTREAM_VIDEO_PLAYER_URL,
@@ -497,7 +496,7 @@ function buildRenderer(bid, mediaType) {
     ad.renderer.push(() => {
       const domContainer = container
         ? document.querySelector(container)
-        : document.getElementById(adUnitCode);
+        : getAdUnitElement(ad);
 
       const player = new window.VASTPlayer(domContainer);
 
@@ -509,7 +508,7 @@ function buildRenderer(bid, mediaType) {
       try {
         isStr(ad.adUrl)
           ? player.load(ad.adUrl)
-          : player.loadXml(ad.ad)
+          : player.loadXml(ad.ad);
       } catch (err) {
         logError(err);
       }
@@ -590,7 +589,7 @@ function buildBidResponse(bid, bidResponse, imp) {
 function getImpfromBid(bid, bidRequest) {
   if (!bidRequest || !bidRequest.imp) return null;
   const imps = bidRequest.imp;
-  return find(imps, (imp) => imp.id === bid.impid);
+  return ((imps) || []).find((imp) => imp.id === bid.impid);
 }
 
 /**
@@ -675,7 +674,7 @@ function getMainFloor(adUnit, formats, mediaType, currency) {
   if (!formats) return getFloor(adUnit, '*', mediaType, currency);
 
   return formats.reduce((bidFloor, format) => {
-    const floor = getFloor(adUnit, [format.w, format.h], mediaType, currency)
+    const floor = getFloor(adUnit, [format.w, format.h], mediaType, currency);
     const maxFloor = bidFloor || Number.MAX_SAFE_INTEGER;
     return floor !== 0 && floor < maxFloor ? floor : bidFloor;
   }, null) || 0;

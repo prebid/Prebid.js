@@ -2,17 +2,17 @@ import {
   _each,
   createTrackPixelHtml, getBidIdParameter,
   getUniqueIdentifierStr,
-  getWindowSelf,
   getWindowTop,
   isArray,
-  isFn,
-  isPlainObject,
   logError,
   logWarn
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getBidFloor, isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -38,10 +38,10 @@ function buildRequests(bidReqs, bidderRequest) {
       let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 
-      const element = document.getElementById(bid.adUnitCode);
-      const minSize = _getMinSize(processedSizes);
+      const element = getAdUnitElement(bid);
+      const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
         ? _getViewability(element, getWindowTop(), minSize)
         : 'na';
@@ -57,7 +57,7 @@ function buildRequests(bidReqs, bidderRequest) {
         },
         tagid: String(bid.adUnitCode)
       };
-      const bidFloor = _getBidFloor(bid);
+      const bidFloor = getBidFloor(bid);
       if (bidFloor) {
         imp.bidfloor = bidFloor;
       }
@@ -86,15 +86,15 @@ function buildRequests(bidReqs, bidderRequest) {
       method: 'POST',
       url: URL,
       data: JSON.stringify(onomagicBidReq),
-      options: {contentType: 'text/plain', withCredentials: false}
+      options: { contentType: 'text/plain', withCredentials: false }
     };
   } catch (e) {
-    logError(e, {bidReqs, bidderRequest});
+    logError(e, { bidReqs, bidderRequest });
   }
 }
 
 function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+  if (typeof bid.params === 'undefined') {
     return false;
   }
 
@@ -106,11 +106,11 @@ function isBidRequestValid(bid) {
 }
 
 function interpretResponse(serverResponse) {
-  if (!serverResponse.body || typeof serverResponse.body != 'object') {
+  if (!serverResponse.body || typeof serverResponse.body !== 'object') {
     logWarn('Onomagic server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
   }
-  const { body: {id, seatbid} } = serverResponse;
+  const { body: { id, seatbid } } = serverResponse;
   try {
     const onomagicBidResponses = [];
     if (id &&
@@ -118,7 +118,7 @@ function interpretResponse(serverResponse) {
       seatbid.length > 0 &&
       seatbid[0].bid &&
       seatbid[0].bid.length > 0) {
-      seatbid[0].bid.map(onomagicBid => {
+      seatbid[0].bid.forEach(onomagicBid => {
         onomagicBidResponses.push({
           requestId: onomagicBid.impid,
           cpm: parseFloat(onomagicBid.price),
@@ -138,7 +138,7 @@ function interpretResponse(serverResponse) {
     }
     return onomagicBidResponses;
   } catch (e) {
-    logError(e, {id, seatbid});
+    logError(e, { id, seatbid });
   }
 }
 
@@ -168,41 +168,13 @@ function _getAdMarkup(bid) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
   return getWindowTop().document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
     : 0;
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
-}
-
-function _getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
-}
-
-function _getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.bidFloor ? bid.params.bidFloor : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
 }
 
 registerBidder(spec);

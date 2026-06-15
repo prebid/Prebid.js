@@ -6,16 +6,18 @@
  */
 
 import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./ftrackIdSystem.d.ts').FtrackIdSystemModuleName} FtrackIdSystemModuleName
  */
 
 const MODULE_NAME = 'ftrackId';
@@ -24,9 +26,9 @@ const LOCAL_STORAGE_EXP_DAYS = 30;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-let consentInfo = {
+const consentInfo = {
   gdpr: {
     applies: 0,
     consentString: null,
@@ -37,7 +39,7 @@ let consentInfo = {
   }
 };
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<FtrackIdSystemModuleName>} */
 export const ftrackIdSubmodule = {
   /**
    * used to link submodule with config
@@ -63,7 +65,7 @@ export const ftrackIdSubmodule = {
         uid: '',
         ext: {}
       }
-    }
+    };
 
     // Loop over the value's properties:
     // -- if string, assign value as is.
@@ -191,7 +193,7 @@ export const ftrackIdSubmodule = {
 
   isThereConsent: function(consentData) {
     let consentValue = true;
-    const {gdpr, usp} = consentData ?? {};
+    const { gdpr, usp } = consentData ?? {};
     /*
      * Scenario 1: GDPR
      *   if GDPR Applies is true|1, we do not have consent
@@ -223,7 +225,7 @@ export const ftrackIdSubmodule = {
       usPrivacyOptOutSale = usp[2];
       // usPrivacyLSPA = usp[3];
     }
-    if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
+    if (usPrivacyVersion === '1' && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
   },

@@ -8,7 +8,7 @@ describe('responsiveAdsBidAdapter', function() {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'isSafeFrameWindow').returns(false);
     sandbox.stub(utils, 'canAccessWindowTop').returns(true);
     bidRequests = [{
@@ -30,7 +30,7 @@ describe('responsiveAdsBidAdapter', function() {
 
     bidderRequest = {
       timeout: 3000,
-    }
+    };
   });
 
   afterEach(function () {

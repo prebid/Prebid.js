@@ -22,7 +22,7 @@ const BASE_URL = 'https://' + CUSTOM_DOMAIN + '/track' +
 const LURL = `${BASE_URL}&e=AV_M40&rcd=\${AUCTION_LOSS}`;
 const NURL = `${BASE_URL}&e=AV_M4`;
 
-const VIDEO_VAST = `<VAST version="3.0"><Tracking><![CDATA[${NURL}]]></Tracking></VAST>`
+const VIDEO_VAST = `<VAST version="3.0"><Tracking><![CDATA[${NURL}]]></Tracking></VAST>`;
 const BANNER_VAST = VIDEO_VAST;
 const BANNER_HTML = '<h1>HTML BANNER</h1>';
 
@@ -146,7 +146,7 @@ const MOCK = {
       ]
     },
   })
-}
+};
 
 describe('Aniview Bid Adapter', function () {
   const adapter = newBidder(spec);
@@ -222,6 +222,20 @@ describe('Aniview Bid Adapter', function () {
       expect(imp.bidfloorcur).not.exist;
     });
 
+    it('should have vastUrl if adm is not provided but nurl is', function () {
+      const bidRequests = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      const bidderResponse = MOCK.bidderResponse();
+
+      delete bidderResponse.body.seatbid[0].bid[0].adm;
+
+      const bids = spec.interpretResponse(bidderResponse, bidRequests[0]);
+      const bid = bids[0];
+
+      expect(bid.vastXml).to.not.exist;
+      expect(bid.vastUrl).to.exist.and.to.not.have.string('${AUCTION_PRICE}');
+      expect(bid.vastUrl).to.have.string('cpm=' + PRICE);
+    });
+
     it('should use dev environment', function () {
       const DEV_ENDPOINT = 'https://dev.aniview.com/sspRTB2';
       videoBidRequest.bids[0].params.dev = { endpoint: DEV_ENDPOINT };
@@ -257,8 +271,7 @@ describe('Aniview Bid Adapter', function () {
         expect(bids.length).to.greaterThan(0);
         expect(bid.vastXml).to.exist.and.to.not.have.string('${AUCTION_PRICE}');
         expect(bid.vastXml).to.have.string('cpm=' + PRICE);
-        expect(bid.vastUrl).to.exist.and.to.not.have.string('${AUCTION_PRICE}');
-        expect(bid.vastUrl).to.have.string('cpm=' + PRICE);
+        expect(bid.vastUrl).to.not.exist;
         expect(bid.requestId).to.equal(bidRequests[0].data.imp[0].id);
         expect(bid.cpm).to.equal(PRICE);
         expect(bid.ttl).to.equal(TTL);
@@ -395,7 +408,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should return empty array of syncs if no syncs in response', function () {
-      delete bidderResponse.body.ext.aniview.sync
+      delete bidderResponse.body.ext.aniview.sync;
 
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
 
@@ -403,7 +416,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should return empty array of syncs if no body in response', function () {
-      delete bidderResponse.body
+      delete bidderResponse.body;
 
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
 

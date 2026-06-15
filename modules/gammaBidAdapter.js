@@ -1,3 +1,4 @@
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
@@ -11,7 +12,7 @@ const ENDPOINTS = {
   JPN: 'https://hb-jp.gammaplatform.com',
   US_WEST: 'https://hb-us.gammaplatform.com',
   EU: 'https://hb-eu.gammaplatform.com'
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -67,7 +68,7 @@ export const spec = {
 
     return bids;
   }
-}
+};
 
 /**
  * Get endpoint url by region
@@ -81,8 +82,7 @@ function getAdUrlByRegion(bid) {
     ENDPOINT = ENDPOINTS[bid.params.region];
   } else {
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const region = timezone.split('/')[0];
+      const region = getTimeZone().split('/')[0];
 
       switch (region) {
         case 'Europe':
@@ -130,7 +130,7 @@ function newBid(serverBid) {
     }
   };
 
-  if (serverBid.type == 'video') {
+  if (serverBid.type === 'video') {
     Object.assign(bid, {
       vastXml: serverBid.seatbid[0].bid[0].vastXml,
       vastUrl: serverBid.seatbid[0].bid[0].vastUrl,

@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import {
-  spec, STORAGE, getLocalStorage,
+  spec, STORAGE, getAdgridLocalStorage,
 } from 'modules/adgridBidAdapter.js';
-import { sandbox } from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils';
+import sinon from 'sinon';
+const sandbox = sinon.createSandbox();
 
 describe('adgrid bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -44,7 +44,7 @@ describe('adgrid bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
     it('We verify isBidRequestValid unvalid domainId', () => {
@@ -73,13 +73,13 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false);
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
-      expect(output).to.be.eql(false);
+      const output = getAdgridLocalStorage();
+      expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
-  })
+  });
 
   describe('getLocalStorage enabled but nothing', () => {
     before(() => {
@@ -88,13 +88,13 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
+      const output = getAdgridLocalStorage();
       expect(typeof output.adgridId).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
-  })
+  });
 
   describe('getLocalStorage enabled but wrong payload', () => {
     before(() => {
@@ -103,11 +103,11 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
-      expect(output).to.be.eql(false);
+      const output = getAdgridLocalStorage();
+      expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -118,11 +118,11 @@ describe('adgrid bid adapter tests', () => {
       sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"adgridId":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
     });
     it('We test if we get the adgridId', () => {
-      const output = getLocalStorage();
+      const output = getAdgridLocalStorage();
       expect(output.adgridId).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -203,7 +203,7 @@ describe('adgrid bid adapter tests', () => {
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         }
-      ]
+      ];
       const bidderRequest = {
         bidderCode: 'adgrid',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
@@ -298,6 +298,8 @@ describe('adgrid bid adapter tests', () => {
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
             bidderVersion: '2.0',
+            requestCounter: 0,
+            sessionId: requestContent.ext.sessionId,
           },
           cur: [
             'USD',
@@ -362,7 +364,7 @@ describe('adgrid bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -513,6 +515,7 @@ describe('adgrid bid adapter tests', () => {
                     mediaType: 'outstream',
                     ssp: 'test',
                     adUnitCode: 'div-1',
+                    divId: 'div-1',
                   },
                 },
               ],
@@ -535,6 +538,7 @@ describe('adgrid bid adapter tests', () => {
         currency: 'USD',
         netRevenue: true,
         ttl: 120,
+        divId: 'div-1',
         mediaType: 'video',
         meta: { advertiserDomains: ['adgrid.com'], demandSource: 'test' },
         vastXml: '<VAST>vast</VAST>',
@@ -563,9 +567,9 @@ describe('adgrid bid adapter tests', () => {
       expect(syncs).to.eql([]);
     });
     it('Verifies user sync with no bid body response', () => {
-      var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      let syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
-      var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
   });

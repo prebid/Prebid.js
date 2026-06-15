@@ -1,4 +1,4 @@
-import * as priceFloors from '../../../modules/priceFloors';
+import * as priceFloors from '../../../modules/priceFloors.js';
 import {
   FLOORS_END_POINT,
   storage,
@@ -13,8 +13,8 @@ import {
   setFloorsApiStatus,
   setFloorsConfig,
   setPriceFloors,
-} from '../../../modules/pubxaiRtdProvider';
-import { config } from '../../../src/config';
+} from '../../../modules/pubxaiRtdProvider.js';
+import { config } from '../../../src/config.js';
 import * as hook from '../../../src/hook.js';
 import { server } from '../../mocks/xhr.js';
 
@@ -75,7 +75,7 @@ const stubConfig = () => {
 describe('pubxaiRtdProvider', () => {
   describe('beforeInit', () => {
     it('should register RTD submodule provider', function () {
-      let submoduleStub = sinon.stub(hook, 'submodule');
+      const submoduleStub = sinon.stub(hook, 'submodule');
       beforeInit();
       assert(submoduleStub.calledOnceWith('realTimeData', pubxaiSubmodule));
       submoduleStub.restore();
@@ -396,12 +396,12 @@ describe('pubxaiRtdProvider', () => {
     });
     it('dispatch event', () => {
       setFloorsApiStatus(FloorsApiStatus.SUCCESS);
-      assert(
-        window.dispatchEvent.calledOnceWith(
-          new CustomEvent(FLOORS_EVENT_HANDLE, {
-            detail: { status: FloorsApiStatus.SUCCESS },
-          })
-        )
+      sinon.assert.calledWith(
+        window.dispatchEvent,
+        sinon.match({
+          type: FLOORS_EVENT_HANDLE,
+          detail: { status: FloorsApiStatus.SUCCESS },
+        })
       );
     });
   });

@@ -66,9 +66,9 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bids, bidderRequest) {
-  let videoBids = bids.filter((bid) => isVideoBid(bid));
-  let bannerBids = bids.filter((bid) => isBannerBid(bid));
-  let requests = bannerBids.length
+  const videoBids = bids.filter((bid) => isVideoBid(bid));
+  const bannerBids = bids.filter((bid) => isBannerBid(bid));
+  const requests = bannerBids.length
     ? [createRequest(bannerBids, bidderRequest, BANNER)]
     : [];
   videoBids.forEach((bid) => {
@@ -103,7 +103,7 @@ function interpretResponse(resp, req) {
 
 function getBidFloor(bid) {
   if (utils.isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
+    const floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: '*',
       size: '*',

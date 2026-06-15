@@ -21,7 +21,7 @@ import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { includes } from '../src/polyfill.js';
+
 import { getGlobal } from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
@@ -56,19 +56,12 @@ let _browsiData = null;
 /** @type {null | function} */
 let _dataReadyCallback = null;
 /** @type {null|Object} */
-let _ic = {};
+const _ic = {};
 /** @type {null|number} */
 let TIMESTAMP = null;
 
 export function setTimestamp() {
   TIMESTAMP = timestamp();
-}
-
-export function initAnalytics() {
-  getGlobal().enableAnalytics({
-    provider: 'browsi',
-    options: {}
-  })
 }
 
 export function sendPageviewEvent(eventType) {
@@ -78,8 +71,8 @@ export function sendPageviewEvent(eventType) {
         vendor: 'browsi',
         type: 'pageview',
         billingId: generateUUID()
-      })
-    })
+      });
+    });
   }
 }
 
@@ -145,14 +138,14 @@ function waitForData(callback) {
  * @param {Object} data
  */
 export function addBrowsiTag(data) {
-  let script = loadExternalScript(data.u, MODULE_TYPE_RTD, 'browsi');
+  const script = loadExternalScript(data.u, MODULE_TYPE_RTD, 'browsi');
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data);
   script.brwRandom = RANDOM;
   Object.assign(script.prebidData, { pvid: PVID || data.pvid, t: TIMESTAMP, apik: API_KEY });
   if (_moduleParams.keyName) {
@@ -202,7 +195,7 @@ function getServerData(auc) {
       _ic[uc] = _ic[uc] || 0;
       const _c = _ic[uc];
       if (!uc) {
-        return rp
+        return rp;
       }
       rp[uc] = {};
       Object.assign(rp[uc], _pg);
@@ -210,7 +203,7 @@ function getServerData(auc) {
       const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
       const _pd = _plc[identifier];
       if (!_pd) {
-        return rp
+        return rp;
       }
       Object.entries(_pd).forEach(([key, value]) => {
         const kv = getKVObject(key, getCurrentData(value, _c));
@@ -267,7 +260,7 @@ function getKVObject(k, p) {
  * @param {string} url server url with query params
  */
 function getPredictionsFromServer(url) {
-  let ajax = ajaxBuilder();
+  const ajax = ajaxBuilder();
 
   ajax(url,
     {
@@ -286,7 +279,7 @@ function getPredictionsFromServer(url) {
             addBrowsiTag(data);
           } catch (err) {
             logError('unable to parse data');
-            setBrowsiData({})
+            setBrowsiData({});
           }
         } else if (req.status === 204) {
           // unrecognized site key
@@ -313,7 +306,7 @@ function getAdUnitCodes(bidObj) {
   let adUnitCodes = bidObj.adUnitCodes;
   let adUnits = bidObj.adUnits || getGlobal().adUnits || [];
   if (adUnitCodes) {
-    adUnits = adUnits.filter(au => includes(adUnitCodes, au.code));
+    adUnits = adUnits.filter(au => adUnitCodes.includes(au.code));
   } else {
     adUnitCodes = adUnits.map(au => au.code);
   }
@@ -390,7 +383,7 @@ function getGptTargeting(uc) {
           ...(viewabilityValue ? { [viewabilityKey]: viewabilityValue } : {}),
           ...(scrollValue ? { [scrollKey]: scrollValue } : {}),
           ...(revenueValue ? { [revenueKey]: revenueValue } : {}),
-        }
+        };
         return [key, result];
       })
     );
@@ -415,10 +408,10 @@ function getTargetingData(uc, c, us, a) {
         billingId: generateUUID(),
         transactionId: transactionId,
         auctionId: auctionId
-      })
+      });
     }
   });
-  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
+  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc);
   return targetingData;
 }
 
@@ -426,7 +419,6 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
   _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
-  initAnalytics();
   setTimestamp();
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     sendModuleInitEvent();

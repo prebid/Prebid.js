@@ -4,9 +4,10 @@
  * @module modules/operaadsIdSystem
  * @requires module:modules/userId
  */
-import * as ajax from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { logMessage, logError } from '../src/utils.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
@@ -18,18 +19,18 @@ const ID_KEY = MODULE_NAME;
 const version = '1.0';
 const SYNC_URL = 'https://t.adx.opera.com/identity/';
 const AJAX_TIMEOUT = 300;
-const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'application/json'};
+const AJAX_OPTIONS = { method: 'GET', withCredentials: true, contentType: 'application/json' };
 
 function constructUrl(pairs) {
   const queries = [];
-  for (let key in pairs) {
+  for (const key in pairs) {
     queries.push(`${key}=${encodeURIComponent(pairs[key])}`);
   }
   return `${SYNC_URL}?${queries.join('&')}`;
 }
 
 function asyncRequest(url, cb) {
-  ajax.ajaxBuilder(AJAX_TIMEOUT)(
+  qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME, AJAX_TIMEOUT)(
     url,
     {
       success: response => {
@@ -72,7 +73,7 @@ export const operaIdSubmodule = {
    * @returns {{'operaId': string}}
    */
   decode: (id) =>
-    id != null && id.length > 0
+    typeof id === 'string' && id.length > 0
       ? { [ID_KEY]: id }
       : undefined,
 
@@ -85,7 +86,7 @@ export const operaIdSubmodule = {
   getId(config, consentData) {
     logMessage(`${MODULE_NAME}: start synchronizing opera uid`);
     const params = (config && config.params) || {};
-    if (typeof params.pid !== 'string' || params.pid.length == 0) {
+    if (typeof params.pid !== 'string' || params.pid.length === 0) {
       logError(`${MODULE_NAME}: submodule requires a publisher ID to be defined`);
       return;
     }
@@ -97,7 +98,7 @@ export const operaIdSubmodule = {
       callback: (cb) => {
         asyncRequest(url, cb);
       }
-    }
+    };
   },
 
   eids: {

@@ -17,7 +17,7 @@ export const spec = {
   },
   isGdprConsentPresent: (bid) => {
     const { gdpr, gdprconsent } = bid.params;
-    if (gdpr == '1') {
+    if (gdpr === '1') {
       return !!gdprconsent;
     }
     return true;
@@ -90,7 +90,7 @@ const handleConsent = (consentValue) => {
 
   }
   return consentValue;
-}
+};
 
 export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
@@ -153,7 +153,7 @@ export function getPayload(bid, userData, bidderRequest) {
       data['consent'] = {
         'gdpr': gdprApplies ? 1 : 0,
         'gdprstr': consentString || '',
-      }
+      };
     }
   } catch (error) {
 

@@ -193,12 +193,12 @@ describe('a4gAdapterTests', function () {
       ];
       const result = spec.interpretResponse(bidResponseWithoutCrid, bidRequest);
       expect(result[0]).to.deep.equal(expectedParse[0]);
-    })
+    });
 
     it('required keys', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
-      let requiredKeys = [
+      const requiredKeys = [
         'requestId',
         'creativeId',
         'adId',
@@ -212,21 +212,21 @@ describe('a4gAdapterTests', function () {
         'meta'
       ];
 
-      let resultKeys = Object.keys(result[0]);
+      const resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
         expect(requiredKeys.indexOf(key) !== -1).to.equal(true);
       });
-    })
+    });
 
     it('adId should not be equal to requestId', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
       expect(result[0].requestId).to.not.equal(result[0].adId);
-    })
+    });
 
     it('advertiserDomains is included when sent by server', function () {
       bidResponse.body[0].adomain = ['test_adomain'];
-      let response = spec.interpretResponse(bidResponse, bidRequest);
+      const response = spec.interpretResponse(bidResponse, bidRequest);
       expect(Object.keys(response[0].meta)).to.include.members(['advertiserDomains']);
       expect(response[0].meta.advertiserDomains).to.deep.equal(['test_adomain']);
       delete bidResponse.body[0].adomain;

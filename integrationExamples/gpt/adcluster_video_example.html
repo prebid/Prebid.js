@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Adcluster Adapter – Outstream Test with Fallback</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+        background: #f9f9f9;
+      }
+
+      #video-slot {
+        width: 300px;
+        height: 250px;
+        background: #000;
+        position: relative;
+      }
+
+      .log {
+        margin-top: 20px;
+        font-family: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+
+      #playBtn {
+        margin-top: 12px;
+        padding: 8px 14px;
+      }
+    </style>
+
+    <!-- Prebid build (must include your adapter) -->
+    <script src="../../build/dev/prebid.js"></script>
+    <!-- IMA for fallback -->
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+  </head>
+
+  <body>
+    <h2>Adcluster Adapter – Outstream Test (AN renderer + IMA fallback)</h2>
+    <div id="video-slot"></div>
+    <button id="playBtn">Start Test</button>
+    <div class="log" id="log"></div>
+
+    <script>
+      // ---------- logger ----------
+      const logEl = document.getElementById("log");
+      const log = (...args) => {
+        console.log(...args);
+        logEl.textContent +=
+          args
+            .map((a) =>
+              typeof a === "string" ? a : JSON.stringify(a, null, 2)
+            )
+            .join(" ") + "\n";
+      };
+
+      // ---------- simple CORS sanity check for the VAST URL ----------
+      async function corsProbe(url) {
+        try {
+          const res = await fetch(url, {
+            method: "GET",
+            mode: "cors",
+          });
+          log(
+            "[CORS probe] status:",
+            res.status,
+            "ok:",
+            res.ok,
+            "type:",
+            res.type
+          );
+          // Log a tiny piece of text to verify readable body (CORS allowed)
+          const txt = await res.text();
+          log(
+            "[CORS probe] first 120 chars:",
+            txt.slice(0, 120).replace(/\s+/g, " ")
+          );
+        } catch (e) {
+          log("[CORS probe] FAILED:", String(e));
+        }
+      }
+
+      // ---------- IMA fallback wiring ----------
+      let adsLoader, adsManager, adDisplayContainer;
+      const adContainer = document.getElementById("video-slot");
+
+      function initIMA() {
+        adDisplayContainer = new google.ima.AdDisplayContainer(adContainer);
+        adDisplayContainer.initialize(); // must be on user gesture
+        adsLoader = new google.ima.AdsLoader(adDisplayContainer);
+        adsLoader.addEventListener(
+          google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+          (e) => {
+            const w = adContainer.clientWidth,
+              h = adContainer.clientHeight;
+            adsManager = e.getAdsManager(adContainer);
+            adsManager.addEventListener(
+              google.ima.AdErrorEvent.Type.AD_ERROR,
+              (err) => log("IMA AdError:", err.getError().toString())
+            );
+            try {
+              adsManager.init(w, h, google.ima.ViewMode.NORMAL);
+              adsManager.start();
+            } catch (err) {
+              log("IMA start error:", err);
+            }
+          }
+        );
+        adsLoader.addEventListener(
+          google.ima.AdErrorEvent.Type.AD_ERROR,
+          (err) => log("IMA Loader Error:", err.getError().toString())
+        );
+      }
+
+      function playViaIMA(vastUrl) {
+        // show the <video> (not strictly required visually, but good practice)
+        if (!adDisplayContainer) initIMA();
+        const req = new google.ima.AdsRequest();
+        req.adTagUrl = vastUrl; // let IMA resolve wrappers
+        req.linearAdSlotWidth = adContainer.clientWidth;
+        req.linearAdSlotHeight = adContainer.clientHeight;
+        req.nonLinearAdSlotWidth = adContainer.clientWidth;
+        req.nonLinearAdSlotHeight = Math.round(adContainer.clientHeight / 3);
+        adsLoader.requestAds(req);
+      }
+
+      // ---------- Prebid ----------
+      window.pbjs = window.pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      document.getElementById("playBtn").addEventListener("click", () => {
+        // user gesture satisfies autoplay/IMA requirement
+        runAuctionAndRender();
+      });
+
+      function runAuctionAndRender() {
+        pbjs.que.push(function () {
+          pbjs.setConfig({
+            debug: true,
+            bidderTimeout: 1500,
+          });
+
+          const adUnits = [
+            {
+              code: "video-slot",
+              mediaTypes: {
+                video: {
+                  context: "outstream",
+                  playerSize: [300, 250],
+                  mimes: ["video/mp4"],
+                },
+                banner: {
+                  sizes: [[300, 250]],
+                },
+              },
+              bids: [
+                {
+                  bidder: "adcluster",
+                  params: {
+                    unitId: "37dd91b2-049d-4027-94b9-d63760fc10d3",
+                    previewMediaId: "908e7564-d1ff-493e-acb1-a896a6722805",
+                  },
+                },
+              ],
+              // Let Prebid load AN script and call our renderer when ready.
+              renderer: {
+                url: "https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js",
+                render: (bid) => {
+                  bid.renderer.push(() => {
+                    renderWithAN(bid);
+                  });
+                },
+              },
+            },
+          ];
+
+          pbjs.addAdUnits(adUnits);
+
+          // Debug hooks
+          pbjs.onEvent("bidResponse", (e) =>
+            log("[bidResponse]", {
+              bidder: e.bidder,
+              cpm: e.cpm,
+              mediaType: e.mediaType,
+              vastUrl: e.vastUrl,
+            })
+          );
+          pbjs.onEvent("bidWon", (e) =>
+            log("[bidWon]", {
+              bidder: e.bidder,
+              cpm: e.cpm,
+            })
+          );
+          pbjs.onEvent("auctionEnd", () => log("[auctionEnd]"));
+
+          pbjs.requestBids({
+            adUnitCodes: ["video-slot"],
+            bidsBackHandler: (_bids) => {
+              const win = _bids["video-slot"] && _bids["video-slot"].bids[0];
+              if (!win) {
+                log("No winning bid.");
+                return;
+              }
+              log("Winning bid:", {
+                bidder: win.bidder,
+                cpm: win.cpm,
+                vastUrl: win.vastUrl || "(none)",
+              });
+
+              if (!win.vastUrl) {
+                log("❌ No vastUrl on bid.");
+                return;
+              }
+
+              // quick client-side CORS probe (AN also needs this!)
+              corsProbe(win.vastUrl);
+
+              // Kick the AN renderer path
+              if (win.renderer && typeof win.renderer.render === "function") {
+                // set a watchdog: if AN container doesn't expand in ~2.5s, fallback to IMA
+                const watchdog = setTimeout(() => {
+                  const anDiv = document.querySelector(
+                    '[id^="video-slot_apn_"]'
+                  );
+                  const h = anDiv ? anDiv.getBoundingClientRect().height : 0;
+                  if (!anDiv || h < 50) {
+                    log("⚠️ AN renderer didn't expand — falling back to IMA.");
+                    playViaIMA(win.vastUrl);
+                  }
+                }, 2500);
+
+                // AN renderer call (will cancel fallback if it expands)
+                win.__an_watchdog__ = watchdog;
+                win.renderer.render(win);
+              } else {
+                log("No AN renderer attached — using IMA fallback.");
+                playViaIMA(win.vastUrl);
+              }
+            },
+          });
+        });
+      }
+
+      function renderWithAN(bid) {
+        if (
+          !window.ANOutstreamVideo ||
+          typeof window.ANOutstreamVideo.renderAd !== "function"
+        ) {
+          log(
+            "❌ ANOutstreamVideo not available (should be after .renderer.push). Using IMA fallback."
+          );
+          playViaIMA(bid.vastUrl);
+          return;
+        }
+
+        log("Rendering via ANOutstreamVideo with VAST URL:", bid.vastUrl);
+
+        try {
+          const adResponse = {
+            ad: {
+              video: {
+                vastUrl: bid.vastUrl,
+              },
+            },
+          };
+          window.ANOutstreamVideo.renderAd({
+            targetId: bid.adUnitCode, // "video-slot"
+            adResponse,
+          });
+          log("✅ AN renderer invoked.");
+
+          // If AN expands, cancel watchdog
+          setTimeout(() => {
+            const anDiv = document.querySelector('[id^="video-slot_apn_"]');
+            const h = anDiv ? anDiv.getBoundingClientRect().height : 0;
+            log("[AN container height]", h);
+            if (h >= 50 && bid.__an_watchdog__) {
+              clearTimeout(bid.__an_watchdog__);
+              bid.__an_watchdog__ = null;
+              log("✅ AN expanded; no fallback needed.");
+            }
+          }, 800);
+        } catch (err) {
+          log("Renderer exception:", err && (err.message || String(err)));
+          playViaIMA(bid.vastUrl);
+        }
+      }
+    </script>
+  </body>
+</html>

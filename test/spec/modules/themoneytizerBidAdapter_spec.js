@@ -1,4 +1,4 @@
-import { spec } from '../../../modules/themoneytizerBidAdapter.js'
+import { spec } from '../../../modules/themoneytizerBidAdapter.js';
 
 const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 
@@ -22,7 +22,7 @@ const VALID_BID_BANNER = {
   userIdAsEids: [],
   auctionId: '123456-abcdef-7890',
   schain: {},
-}
+};
 
 const VALID_TEST_BID_BANNER = {
   bidder: 'themoneytizer',
@@ -46,7 +46,7 @@ const VALID_TEST_BID_BANNER = {
   userIdAsEids: [],
   auctionId: '123456-abcdef-7890',
   schain: {}
-}
+};
 
 const BIDDER_REQUEST_BANNER = {
   bids: [VALID_BID_BANNER, VALID_TEST_BID_BANNER],
@@ -58,7 +58,7 @@ const BIDDER_REQUEST_BANNER = {
     gdprApplies: true,
     consentString: 'abcdefghxyz'
   }
-}
+};
 
 const SERVER_RESPONSE = {
   c_sync: {
@@ -99,12 +99,6 @@ describe('The Moneytizer Bidder Adapter', function () {
   describe('codes', function () {
     it('should return a bidder code of themoneytizer', function () {
       expect(spec.code).to.equal('themoneytizer');
-    });
-  });
-
-  describe('gvlid', function () {
-    it('should expose gvlid', function () {
-      expect(spec.gvlid).to.equal(1265)
     });
   });
 
@@ -252,7 +246,7 @@ describe('The Moneytizer Bidder Adapter', function () {
     });
     it('should include timeoutData', function () {
       expect(spec.onTimeout(timeoutData)).to.be.undefined;
-    })
+    });
   });
 
   describe('getUserSyncs', function () {

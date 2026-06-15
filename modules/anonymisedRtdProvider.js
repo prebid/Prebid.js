@@ -5,11 +5,11 @@
  * @module modules/anonymisedRtdProvider
  * @requires module:modules/realTimeData
  */
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logWarn, logError} from '../src/utils.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-import {loadExternalScript} from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
@@ -55,15 +55,20 @@ export function createRtdProvider(moduleName) {
       return;
     }
     logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`);
-    // Check if the script is already loaded
-    if (document.querySelector(`script[src*="${config.params.tagUrl ?? MARKETING_TAG_URL}"]`)) {
+    let tagBaseUrl = MARKETING_TAG_URL;
+    if (config.params?.tagUrl) {
+      logWarn(`${SUBMODULE_NAME}RtdProvider: params.tagUrl is deprecated and will be removed in a future release.`);
+      tagBaseUrl = config.params.tagUrl;
+    }
+    // Check if the script is already loaded (match on host/path only to handle http://, https://, and protocol-relative URLs)
+    if (document.querySelector(`script[src*="${tagBaseUrl.replace(/^https?:\/\//, '')}"]`)) {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
       return;
     }
-    const tagConfig = config.params?.tagConfig ? {...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId} : {};
+    const tagConfig = config.params?.tagConfig ? { ...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId } : {};
     delete tagConfig.clientId;
 
-    const tagUrl = config.params.tagUrl ? config.params.tagUrl : `${MARKETING_TAG_URL}?ref=prebid`;
+    const tagUrl = `${tagBaseUrl}?ref=prebid&d=${window.location.hostname}`;
 
     loadExternalScript(tagUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`);
@@ -83,7 +88,7 @@ export function createRtdProvider(moduleName) {
       const bidders = config.params.bidders;
 
       if (cohortStorageKey !== 'cohort_ids') {
-        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`)
+        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
         return;
       }
 
@@ -100,8 +105,8 @@ export function createRtdProvider(moduleName) {
           ext: {
             segtax: config.params.segtax
           },
-          segment: segments.map(x => ({id: x}))
-        }
+          segment: segments.map(x => ({ id: x }))
+        };
 
         logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
         const data = {

@@ -1,8 +1,9 @@
 import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js'
-import {config} from '../src/config.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
@@ -12,7 +13,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER];
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 138,
-  aliases: [ BIDDER_CODE_ALIAS ],
+  aliases: [BIDDER_CODE_ALIAS],
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {
@@ -20,7 +21,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let ret = {
+    const ret = {
       method: 'POST',
       url: '',
       data: '',
@@ -40,7 +41,7 @@ export const spec = {
       url: bidderRequest.refererInfo?.page,
       referrer: bidderRequest.refererInfo?.ref,
       screensize: getScreenSize(),
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      dnt: getDNT() ? 1 : 0,
       language: navigator.language,
       ua: navigator.userAgent,
       pversion: '$prebid.version$',
@@ -67,8 +68,9 @@ export const spec = {
     }
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(data, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(data, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params
@@ -105,13 +107,13 @@ export const spec = {
       deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
-    const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+    const tid = deepAccess(bidderRequest, 'ortb2.source.tid');
     if (tid) {
-      deepSetValue(data, 'source.tid', tid)
+      deepSetValue(data, 'source.tid', tid);
     }
     data.tmax = bidderRequest.timeout;
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const placement = Object.assign({
         id: generateUUID(),
         divName: bid.bidId,
@@ -124,7 +126,7 @@ export const spec = {
         tid: bid.ortb2Imp?.ext?.tid
       });
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         placement.gpid = gpid;
       }
@@ -146,7 +148,7 @@ export const spec = {
     let bids;
     let bidId;
     let bidObj;
-    let bidResponses = [];
+    const bidResponses = [];
 
     bids = bidRequest.bidRequest;
 
@@ -176,10 +178,10 @@ export const spec = {
           bid.netRevenue = true;
 
           if (decision.dsa) {
-            bid.meta = Object.assign({}, bid.meta, { dsa: decision.dsa })
+            bid.meta = Object.assign({}, bid.meta, { dsa: decision.dsa });
           }
           if (decision.category) {
-            bid.meta = Object.assign({}, bid.meta, { primaryCatId: decision.category })
+            bid.meta = Object.assign({}, bid.meta, { primaryCatId: decision.category });
           }
 
           bidResponses.push(bid);
@@ -191,10 +193,10 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
-    let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncEndpoint;
 
-    if (pixelType == 'iframe') {
+    if (pixelType === 'iframe') {
       syncEndpoint = 'https://sync.connectad.io/iFrameSyncer?';
     } else {
       syncEndpoint = 'https://sync.connectad.io/ImageSyncer?';
@@ -243,7 +245,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  let floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
+  const floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
 
   return floor;
 }

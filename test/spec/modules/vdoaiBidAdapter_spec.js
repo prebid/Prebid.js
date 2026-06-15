@@ -43,18 +43,24 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
-  }
+  };
   const bid2 = {
     bidId: '58ee9870c3164a',
     bidder: 'vdoai',
@@ -91,23 +97,29 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
-        },
-        {
-          asi: 'example1.com',
-          sid: '2',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              },
+              {
+                asi: 'example1.com',
+                sid: '2',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
-  }
+  };
   const bid3 = {
     bidId: '019645c7d69460',
     bidder: 'vdoai',
@@ -148,18 +160,24 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
-  }
+  };
   const bid4 = {
     bidId: '019645c7d69460',
     bidder: 'vdoai',
@@ -198,18 +216,24 @@ describe('vdoaiBidAdapter', function () {
         ]
       }
     ],
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     }
-  }
+  };
 
   describe('buildRequests', function () {
     const bidderRequest = {
@@ -226,24 +250,24 @@ describe('vdoaiBidAdapter', function () {
       refererInfo: {
         page: 'testPage'
       }
-    }
-    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
+    };
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest);
     it('Creates two ServerRequests', function() {
-      expect(serverRequests).to.exist
-      expect(serverRequests).to.have.lengthOf(2)
-    })
+      expect(serverRequests).to.exist;
+      expect(serverRequests).to.have.lengthOf(2);
+    });
     serverRequests.forEach(serverRequest => {
       it('Creates a ServerRequest object with method, URL and data', function () {
-        expect(serverRequest).to.exist
-        expect(serverRequest.method).to.exist
-        expect(serverRequest.url).to.exist
-        expect(serverRequest.data).to.exist
-      })
+        expect(serverRequest).to.exist;
+        expect(serverRequest.method).to.exist;
+        expect(serverRequest.url).to.exist;
+        expect(serverRequest.data).to.exist;
+      });
       it('Returns POST method', function () {
-        expect(serverRequest.method).to.equal('POST')
-      })
+        expect(serverRequest.method).to.equal('POST');
+      });
       it('Returns valid data if array of bids is valid', function () {
-        let data = serverRequest.data;
+        const data = serverRequest.data;
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys(
           'deviceWidth',
@@ -288,7 +312,7 @@ describe('vdoaiBidAdapter', function () {
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
           expect(adUnit.ortb2Imp).to.be.an('object');
-        })
+        });
         expect(data.sua.browsers).to.be.a('array');
         expect(data.sua.platform).to.be.a('array');
         expect(data.sua.mobile).to.be.a('number');
@@ -296,36 +320,36 @@ describe('vdoaiBidAdapter', function () {
         expect(data.page).to.be.a('string');
         expect(data.page).to.be.equal('testPage');
         expect(data.ortb2).to.be.an('object');
-      })
-    })
+      });
+    });
     it('Returns valid URL', function () {
-      expect(serverRequests[0].url).to.equal('https://exchange.ortb.net/hb')
-      expect(serverRequests[1].url).to.equal('https://ads.vdo.ai/hb')
-    })
+      expect(serverRequests[0].url).to.equal('https://exchange.ortb.net/hb');
+      expect(serverRequests[1].url).to.equal('https://ads.vdo.ai/hb');
+    });
     it('Returns valid adUnits', function () {
-      validateAdUnit(serverRequests[0].data.adUnits[0], bid1)
-      validateAdUnit(serverRequests[1].data.adUnits[0], bid2)
-      validateAdUnit(serverRequests[0].data.adUnits[1], bid3)
-    })
+      validateAdUnit(serverRequests[0].data.adUnits[0], bid1);
+      validateAdUnit(serverRequests[1].data.adUnits[0], bid2);
+      validateAdUnit(serverRequests[0].data.adUnits[1], bid3);
+    });
     it('Returns empty data if no valid requests are passed', function () {
-      const serverRequests = spec.buildRequests([])
-      expect(serverRequests).to.be.an('array').that.is.empty
-    })
+      const serverRequests = spec.buildRequests([]);
+      expect(serverRequests).to.be.an('array').that.is.empty;
+    });
     it('Returns request with page field value from ortb2 object if ortb2 has page field', function () {
       bidderRequest.ortb2.site = {
         page: 'testSitePage'
-      }
-      const serverRequests = spec.buildRequests([bid1], bidderRequest)
-      expect(serverRequests).to.have.lengthOf(1)
+      };
+      const serverRequests = spec.buildRequests([bid1], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
       serverRequests.forEach(serverRequest => {
         expect(serverRequest.data.page).to.be.a('string');
         expect(serverRequest.data.page).to.be.equal('testSitePage');
-      })
-    })
-  })
+      });
+    });
+  });
   describe('interpretBannerResponse', function () {
-    let resObject = {
-      body: [ {
+    const resObject = {
+      body: [{
         requestId: '123',
         cpm: 0.3,
         width: 320,
@@ -339,13 +363,13 @@ describe('vdoaiBidAdapter', function () {
           advertiserDomains: ['example.com'],
           mediaType: 'banner'
         }
-      } ]
+      }]
     };
     let serverResponses = spec.interpretResponse(resObject);
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -367,8 +391,8 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('interpretVideoResponse', function () {
-    let resObject = {
-      body: [ {
+    const resObject = {
+      body: [{
         requestId: '123',
         cpm: 0.3,
         width: 320,
@@ -382,13 +406,13 @@ describe('vdoaiBidAdapter', function () {
           advertiserDomains: ['example.com'],
           mediaType: 'video'
         }
-      } ]
+      }]
     };
     let serverResponses = spec.interpretResponse(resObject);
     it('Returns an array of valid server responses if response object is valid', function () {
       expect(serverResponses).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+        const dataItem = serverResponses[i];
         expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
           'netRevenue', 'currency', 'meta');
         expect(dataItem.requestId).to.be.a('string');
@@ -410,7 +434,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('isBidRequestValid', function() {
-    let bid = {
+    const bid = {
       bidId: '2dd581a2b6281d',
       bidder: 'vdoai',
       bidderRequestId: '145e1d6a7837c9',
@@ -437,7 +461,7 @@ describe('vdoaiBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function() {
-      let bidFailed = {
+      const bidFailed = {
         bidder: 'vdoai',
         bidderRequestId: '145e1d6a7837c9',
         params: {
@@ -453,7 +477,7 @@ describe('vdoaiBidAdapter', function () {
     });
   });
   describe('interpretResponse', function() {
-    let resObject = {
+    const resObject = {
       requestId: '123',
       cpm: 0.3,
       width: 320,
@@ -469,8 +493,8 @@ describe('vdoaiBidAdapter', function () {
       }
     };
     it('should skip responses which do not contain required params', function() {
-      let bidResponses = {
-        body: [ {
+      const bidResponses = {
+        body: [{
           cpm: 0.3,
           ttl: 1000,
           currency: 'USD',
@@ -478,36 +502,36 @@ describe('vdoaiBidAdapter', function () {
             advertiserDomains: ['example.com'],
             mediaType: 'banner'
           }
-        }, resObject ]
-      }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+        }, resObject]
+      };
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
     it('should skip responses which do not contain advertiser domains', function() {
-      let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
-      let bidResponses = {
-        body: [ resObjectWithoutAdvertiserDomains, resObject ]
-      }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+      const bidResponses = {
+        body: [resObjectWithoutAdvertiserDomains, resObject]
+      };
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
     it('should return responses which contain empty advertiser domains', function() {
-      let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
+      const resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
-      let bidResponses = {
-        body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
-      }
+      const bidResponses = {
+        body: [resObjectWithEmptyAdvertiserDomains, resObject]
+      };
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
     it('should skip responses which do not contain meta media type', function() {
-      let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
+      const resObjectWithoutMetaMediaType = Object.assign({}, resObject);
       resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutMetaMediaType.meta.mediaType;
-      let bidResponses = {
-        body: [ resObjectWithoutMetaMediaType, resObject ]
-      }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+      const bidResponses = {
+        body: [resObjectWithoutMetaMediaType, resObject]
+      };
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
   });
   describe('getUserSyncs', function () {
@@ -735,10 +759,10 @@ function validateAdUnit(adUnit, bid) {
     return {
       width: size[0],
       height: size[1]
-    }
+    };
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
-  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
+  expect(adUnit.supplyChain).to.deep.equal(bid.ortb2?.source?.ext?.schain);
   expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
 }
