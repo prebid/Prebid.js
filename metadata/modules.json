@@ -2278,6 +2278,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "engerio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "eplanning",
       "aliasOf": null,
       "gvlid": null,
@@ -4220,6 +4227,13 @@
       "componentName": "revantage",
       "aliasOf": null,
       "gvlid": 1588,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "revbidortb",
+      "aliasOf": "revantage",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
