@@ -268,7 +268,7 @@ describe('mediago: getUserSyncs', function() {
 
   let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
   syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
-  const expectedIframeSyncs = [ 
+  const expectedIframeSyncs = [
     {
       type: 'iframe',
       url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
