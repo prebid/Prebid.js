@@ -110,7 +110,7 @@ function shouldCallSrv(logstr) {
   if (!(tsStr.length === 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
     ts = undefined;
   }
-  return (ts === undefined || (ts && now > ts));
+  return (ts === undefined || now > ts);
 }
 
 /** @type {Submodule} */
