@@ -113,7 +113,7 @@ describe('Performax adapter', function () {
           ]
         }]
     },
-  }
+  };
 
   describe('isBidRequestValid', function () {
     const bid = {};
@@ -128,7 +128,7 @@ describe('Performax adapter', function () {
       bid.params = { tagid: 'sample' };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-  })
+  });
 
   describe('buildRequests', function () {
     let sandbox;

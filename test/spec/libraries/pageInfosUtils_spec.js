@@ -35,7 +35,7 @@ describe('pageInfosUtils', () => {
         document: {
           querySelector: sinon.stub().returns(null)
         }
-      }
+      };
     });
 
     it('should return the title from the top-level document', () => {
@@ -47,10 +47,10 @@ describe('pageInfosUtils', () => {
       winMock.top.document = {
         title: '',
         querySelector: sinon.stub().throws(new Error('Cross-origin restriction'))
-      }
+      };
       winMock.document.querySelector = sinon.stub().returns({
         content: 'Current Document Title'
-      })
+      });
       const result = getPageTitle(winMock);
       expect(result).to.equal('Current Document Title');
     });
@@ -69,7 +69,7 @@ describe('pageInfosUtils', () => {
         document: {
           querySelector: sinon.stub().returns(null)
         }
-      }
+      };
     });
 
     it('should return the description from the top-level document', () => {

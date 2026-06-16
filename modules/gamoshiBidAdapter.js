@@ -279,7 +279,7 @@ function imp(buildImp, bidRequest, context) {
     logWarn('Gamoshi: Failed to build imp for bid request:', bidRequest);
     return null;
   }
-  let isVideo = bidRequest.mediaTypes.mediaType === VIDEO
+  let isVideo = bidRequest.mediaTypes.mediaType === VIDEO;
   if (isVideo) {
     if (!imp.video) {
       imp.video = {};

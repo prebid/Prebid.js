@@ -21,7 +21,7 @@ function ortb2EnrichRules(isAllowed = isActivityAllowed) {
       paths: ORTB_UFPD_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_ENRICH_UFPD, isAllowed)
     }
-  ].map(writeProtectRule)
+  ].map(writeProtectRule);
 }
 
 export function ortb2GuardFactory(isAllowed = isActivityAllowed) {
@@ -45,7 +45,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
         get(target, prop, receiver) {
           let bidderData = Reflect.get(target, prop, receiver);
           if (bidderData != null) {
-            bidderData = guardOrtb2(bidderData, params)
+            bidderData = guardOrtb2(bidderData, params);
           }
           return bidderData;
         },
@@ -60,7 +60,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
           bidderData = guardOrtb2(bidderData, params);
           Object.entries(newValue).forEach(([prop, value]) => {
             bidderData[prop] = value;
-          })
+          });
           return true;
         }
       })
@@ -72,8 +72,8 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
         // disallow overwriting of the top level `global` / `bidder`
         Object.entries(guard).map(([prop, obj]) => [prop, { get: () => obj }])
       )
-    )
-  }
+    );
+  };
 }
 
 /**

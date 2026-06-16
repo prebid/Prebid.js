@@ -17,7 +17,7 @@ describe('adbroBidAdapter', function () {
         },
       },
       params: params,
-    }
+    };
   };
 
   const validBid = makeBid({ placementId: '1234' }, [[300, 250]]);

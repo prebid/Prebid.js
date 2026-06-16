@@ -97,7 +97,7 @@ function appendFirstPartyData(url, firstPartyData, partnerData) {
   url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
   url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
   url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
-  return url
+  return url;
 }
 
 function verifyIdType(value) {
@@ -127,14 +127,14 @@ function appendCMPData(url, cmpData) {
   } else {
     url += '&gdpr=0';
   }
-  return url
+  return url;
 }
 
 function appendCounters(url) {
   url += '&jaesc=' + encodeURIComponent(callCount);
   url += '&jafc=' + encodeURIComponent(failCount);
   url += '&jaensc=' + encodeURIComponent(noDataCount);
-  return url
+  return url;
 }
 
 /**
@@ -164,11 +164,11 @@ function addMetaData(url, data) {
 
 export function initializeGlobalIIQ(partnerId) {
   if (!globalName || !window[globalName]) {
-    globalName = `iiq_identity_${partnerId}`
-    window[globalName] = {}
-    return true
+    globalName = `iiq_identity_${partnerId}`;
+    window[globalName] = {};
+    return true;
   }
-  return false
+  return false;
 }
 
 export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
@@ -199,15 +199,15 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
 
 function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) {
   const lastSyncDate = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
-  const lastSyncElapsedTime = Date.now() - lastSyncDate
+  const lastSyncElapsedTime = Date.now() - lastSyncDate;
 
   if (firstPartyData.isOptedOut) {
-    const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL
+    const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL;
     if (newUser || needToDoSync) {
       ajax(url, () => {
       }, undefined, { method: 'GET', withCredentials: true });
       if (firstPartyData?.date) {
-        firstPartyData.date = Date.now()
+        firstPartyData.date = Date.now();
         storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
       }
     }
@@ -322,16 +322,16 @@ export const intentIqIdSubmodule = {
         if (data?.eids?.length === 1 && typeof data.eids[0] === 'string') data = data.eids[0];
         configParams.callback(data);
       }
-      updateGlobalObj()
-    }
+      updateGlobalObj();
+    };
 
     if (typeof configParams.partner !== 'number') {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
-      firePartnerCallback()
+      firePartnerCallback();
       return;
     }
 
-    initializeGlobalIIQ(configParams.partner)
+    initializeGlobalIIQ(configParams.partner);
 
     let decryptedData, callbackTimeoutID;
     let callbackFired = false;
@@ -412,7 +412,7 @@ export const intentIqIdSubmodule = {
           logError('CH fetch failed', err);
           if (clientHints !== '') {
             clientHints = '';
-            removeDataByKey(CLIENT_HINTS_KEY, allowedStorage)
+            removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
           }
           return '';
         });
@@ -425,7 +425,7 @@ export const intentIqIdSubmodule = {
       });
     } else {
       clientHints = '';
-      removeDataByKey(CLIENT_HINTS_KEY, allowedStorage)
+      removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
     }
 
     function waitOnCH(timeoutMs) {
@@ -450,16 +450,16 @@ export const intentIqIdSubmodule = {
 
     function updateGlobalObj() {
       if (globalName) {
-        window[globalName].partnerData = partnerData
-        window[globalName].firstPartyData = firstPartyData
-        window[globalName].clientHints = clientHints
-        window[globalName].actualABGroup = actualABGroup
-        window[globalName].abPercentage = getEffectiveAbPercentage(configParams.abPercentage)
-        window[globalName].userProvidedAbPercentage = configParams.abPercentage
+        window[globalName].partnerData = partnerData;
+        window[globalName].firstPartyData = firstPartyData;
+        window[globalName].clientHints = clientHints;
+        window[globalName].actualABGroup = actualABGroup;
+        window[globalName].abPercentage = getEffectiveAbPercentage(configParams.abPercentage);
+        window[globalName].userProvidedAbPercentage = configParams.abPercentage;
       }
     }
 
-    const pdLength = Object.keys(partnerData).length
+    const pdLength = Object.keys(partnerData).length;
     const hasPartnerData = pdLength && pdLength > 1; // in OptOut case we keep one property inside
 
     if ((!isCMPStringTheSame(firstPartyData, cmpData)) ||
@@ -480,11 +480,11 @@ export const intentIqIdSubmodule = {
 
     if (firstPartyData.isOptedOut) {
       partnerData.data = runtimeEids = { eids: [] };
-      firePartnerCallback()
+      firePartnerCallback();
     }
 
     if (runtimeEids?.eids?.length) {
-      firePartnerCallback()
+      firePartnerCallback();
     }
 
     function buildAndSendPixel(ch) {
@@ -499,7 +499,7 @@ export const intentIqIdSubmodule = {
 
       if (chSupported) {
         if (clientHints) {
-          buildAndSendPixel(clientHints)
+          buildAndSendPixel(clientHints);
         } else {
           waitOnCH(chTimeout)
             .then(ch => buildAndSendPixel(ch || ''));
@@ -516,7 +516,7 @@ export const intentIqIdSubmodule = {
       return { id: runtimeEids.eids };
     }
 
-    updateGlobalObj() // update global object before server request, to make sure analytical adapter will have it even if the server is "not in time"
+    updateGlobalObj(); // update global object before server request, to make sure analytical adapter will have it even if the server is "not in time"
 
     // use protocol relative urls for http or https
     let url = `${getIiqServerAddress(configParams)}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
@@ -535,19 +535,19 @@ export const intentIqIdSubmodule = {
       url += '&testPercentage=' + encodeURIComponent(getEffectiveAbPercentage(configParams.abPercentage));
     }
     url = handleAdditionalParams(currentBrowserLowerCase, url, 1, additionalParams);
-    url = appendSPData(url, partnerData)
+    url = appendSPData(url, partnerData);
     url += '&source=' + PREBID;
-    url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource
-    url += '&abtg=' + encodeURIComponent(actualABGroup)
+    url += '&ABTestingConfigurationSource=' + configParams.ABTestingConfigurationSource;
+    url += '&abtg=' + encodeURIComponent(actualABGroup);
 
     // Add vrref and fui to the URL
     url = appendVrrefAndFui(url, configParams.domainName);
 
     const storeFirstPartyData = () => {
-      partnerData.eidl = runtimeEids?.eids?.length || -1
+      partnerData.eidl = runtimeEids?.eids?.length || -1;
       storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
       storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
-    }
+    };
 
     const resp = function (callback) {
       const callbacks = {
@@ -562,11 +562,11 @@ export const intentIqIdSubmodule = {
             firstPartyData.sCal = Date.now();
             const defineEmptyDataAndFireCallback = () => {
               respJson.data = partnerData.data = runtimeEids = { eids: [] };
-              storeFirstPartyData()
-              firePartnerCallback()
-              callback(runtimeEids)
-            }
-            if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
+              storeFirstPartyData();
+              firePartnerCallback();
+              callback(runtimeEids);
+            };
+            if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
             if ('cttl' in respJson) {
               partnerData.cttl = respJson.cttl;
             } else partnerData.cttl = HOURS_72;
@@ -593,7 +593,7 @@ export const intentIqIdSubmodule = {
                 storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
                 firePartnerCallback();
                 callback(runtimeEids);
-                return
+                return;
               }
             }
             if ('pid' in respJson) {
@@ -604,8 +604,8 @@ export const intentIqIdSubmodule = {
             }
             if ('ls' in respJson) {
               if (respJson.ls === false) {
-                defineEmptyDataAndFireCallback()
-                return
+                defineEmptyDataAndFireCallback();
+                return;
               }
               // If data is empty, means we should save as INVALID_ID
               if (respJson.data === '') {
@@ -613,7 +613,7 @@ export const intentIqIdSubmodule = {
               } else {
                 // If data is a single string, assume it is an id with source intentiq.com
                 if (respJson.data && typeof respJson.data === 'string') {
-                  respJson.data = { eids: [respJson.data] }
+                  respJson.data = { eids: [respJson.data] };
                 }
               }
               partnerData.data = respJson.data;
@@ -642,24 +642,24 @@ export const intentIqIdSubmodule = {
               // GAM prediction reporting
               partnerData.gpr = respJson.gpr;
             } else {
-              delete partnerData.gpr // remove prediction flag in case server doesn't provide it
+              delete partnerData.gpr; // remove prediction flag in case server doesn't provide it
             }
 
             if (respJson.data?.eids) {
-              runtimeEids = respJson.data
+              runtimeEids = respJson.data;
               callback(respJson.data.eids);
-              firePartnerCallback()
+              firePartnerCallback();
               const encryptedData = encryptData(JSON.stringify(respJson.data));
               partnerData.data = encryptedData;
             } else {
               callback(runtimeEids);
-              firePartnerCallback()
+              firePartnerCallback();
             }
             updateCountersAndStore(runtimeEids, allowedStorage, partnerData);
             storeFirstPartyData();
           } else {
             callback(runtimeEids);
-            firePartnerCallback()
+            firePartnerCallback();
           }
         },
         error: error => {
@@ -679,7 +679,7 @@ export const intentIqIdSubmodule = {
       const sendAjax = uh => {
         if (uh) url += '&uh=' + encodeURIComponent(uh);
         ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-      }
+      };
 
       if (chSupported) {
         if (clientHints) {
@@ -690,7 +690,7 @@ export const intentIqIdSubmodule = {
           waitOnCH(chTimeout).then(ch => {
             // Send with received CH or without it
             sendAjax(ch || '');
-          })
+          });
         }
       } else {
         // CH not supported: send without uh
@@ -700,7 +700,7 @@ export const intentIqIdSubmodule = {
     const respObj = { callback: resp };
 
     if (runtimeEids?.eids?.length) respObj.id = runtimeEids.eids;
-    return respObj
+    return respObj;
   },
   eids: {
     'intentIqId': {
@@ -711,15 +711,15 @@ export const intentIqIdSubmodule = {
       },
       getValue: function (data) {
         if (data?.uids?.length) {
-          return data.uids[0].id
+          return data.uids[0].id;
         }
-        return null
+        return null;
       },
       getUidExt: function (data) {
         if (data?.uids?.length) {
           return data.uids[0].ext;
         }
-        return null
+        return null;
       }
     },
   }

@@ -122,7 +122,7 @@ describe('SharedId System', function () {
       sinon.assert.match(eids[0], {
         source: 'pubcid.org',
         inserter: 'mock-inserter'
-      })
-    })
-  })
+      });
+    });
+  });
 });

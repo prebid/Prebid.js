@@ -10,7 +10,7 @@ describe('Geolocation RTD Provider', function () {
 
   before(() => {
     if (!navigator.permissions) {
-      navigator.permissions = { mock: true, query: false }
+      navigator.permissions = { mock: true, query: false };
     }
   });
 
@@ -26,7 +26,7 @@ describe('Geolocation RTD Provider', function () {
 
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   describe('Geolocation not supported', function() {
     Object.entries({
@@ -60,10 +60,10 @@ describe('Geolocation RTD Provider', function () {
         sandbox.stub(navigator.permissions, 'query').value(() => {
           permGiven = Promise.resolve({
             state: permState,
-          })
+          });
           return permGiven;
         });
-      })
+      });
       geolocationSubmodule.init(rtdConfig);
     });
 
@@ -98,15 +98,15 @@ describe('Geolocation RTD Provider', function () {
             lat: 1,
             lon: 2,
             lastfix: 10
-          })
-        })
-      })
-    })
+          });
+        });
+      });
+    });
 
     Object.entries({
       'transmitPreciseGeo is denied': () => sandbox.stub(activityRules, 'isActivityAllowed').callsFake(activity => activity !== ACTIVITY_TRANSMIT_PRECISE_GEO),
-      'permissions are required, but requestPermission is not set': () => { delete rtdConfig.params.requestPermission; permState = 'prompt' },
-      'permissions are required, but requestPermission is false': () => { rtdConfig.params.requestPermission = false; permState = 'prompt' }
+      'permissions are required, but requestPermission is not set': () => { delete rtdConfig.params.requestPermission; permState = 'prompt'; },
+      'permissions are required, but requestPermission is false': () => { rtdConfig.params.requestPermission = false; permState = 'prompt'; }
     }).forEach(([t, setup]) => {
       describe(`when ${t}`, () => {
         beforeEach(setup);
@@ -116,8 +116,8 @@ describe('Geolocation RTD Provider', function () {
           geolocationSubmodule.getBidRequestData(req, onDone, rtdConfig);
           clock.tick(300);
           expect(req.ortb2Fragments.global.device?.geo).to.not.exist;
-        })
-      })
+        });
+      });
     });
   });
 });

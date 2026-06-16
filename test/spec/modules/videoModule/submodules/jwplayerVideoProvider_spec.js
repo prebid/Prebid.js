@@ -53,7 +53,7 @@ function getPlayerMock() {
 function makePlayerFactoryMock(playerMock_) {
   const playerFactory = function () {
     return playerMock_;
-  }
+  };
   playerFactory.version = '8.21.0';
   return playerFactory;
 }

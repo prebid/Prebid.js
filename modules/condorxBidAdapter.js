@@ -223,11 +223,11 @@ export const bidderSpec = {
 
         let subid;
         try {
-          let url
+          let url;
           try {
             url = new URL(pageUrl);
           } catch (e) {
-            url = new URL(getBidderRequestUrl(bidderRequest))
+            url = new URL(getBidderRequestUrl(bidderRequest));
           }
           subid = url.hostname;
         } catch (e) {

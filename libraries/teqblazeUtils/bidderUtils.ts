@@ -206,7 +206,7 @@ const checkIfObjectHasKey = (keys: string[], obj: Record<string, unknown>, mode:
   }
 
   return mode === 'every';
-}
+};
 
 export const isBidRequestValid =
     (keys: string[] = ['placementId', 'endpointId'], mode?: Mode) =>
@@ -309,7 +309,7 @@ export function interpretResponseBuilder({ addtlBidValidation = (_bid: any): boo
     }
 
     return response;
-  }
+  };
 }
 
 export const interpretResponse = interpretResponseBuilder();

@@ -27,7 +27,7 @@ const defaultConfigParams = { params: { partner } };
 const paiConfigParams = { params: { partner, pai } };
 const pcidConfigParams = { params: { partner, partnerClientIdType, partnerClientId } };
 const allConfigParams = { params: { partner, pai, partnerClientIdType, partnerClientId, sourceMetaData } };
-const responseHeader = { 'Content-Type': 'application/json' }
+const responseHeader = { 'Content-Type': 'application/json' };
 
 export const testClientHints = {
   architecture: 'x86',
@@ -104,8 +104,8 @@ async function waitForClientHints() {
   }
 }
 
-const testAPILink = 'https://new-test-api.intentiq.com'
-const syncTestAPILink = 'https://new-test-sync.intentiq.com'
+const testAPILink = 'https://new-test-api.intentiq.com';
+const syncTestAPILink = 'https://new-test-sync.intentiq.com';
 const mockGAM = () => {
   const targetingObject = {};
   return {
@@ -147,13 +147,13 @@ describe('IntentIQ tests', function () {
     'date': Date.now(),
     'cttl': 2000,
     'rrtt': 123
-  }
+  };
   const testLSValueWithData = {
     'date': Date.now(),
     'cttl': 9999999999999,
     'rrtt': 123,
     'data': '81.8.79.67.78.89.8.16.113.81.8.94.79.89.94.8.16.8.89.69.71.79.10.78.75.94.75.8.87.119.87'
-  }
+  };
   const testResponseWithValues = {
     'abPercentage': 90,
     'adt': 1,
@@ -163,7 +163,7 @@ describe('IntentIQ tests', function () {
     'ls': true,
     'mde': true,
     'tc': 4
-  }
+  };
 
   beforeEach(function () {
     localStorage.clear();
@@ -187,21 +187,21 @@ describe('IntentIQ tests', function () {
   });
 
   it('should create global IIQ identity object', async () => {
-    const globalName = `iiq_identity_${partner}`
+    const globalName = `iiq_identity_${partner}`;
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId({ params: { partner } }).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
-    expect(window[globalName]).to.be.not.undefined
-    expect(window[globalName].partnerData).to.be.not.undefined
-    expect(window[globalName].firstPartyData).to.be.not.undefined
-  })
+    await waitForClientHints();
+    expect(window[globalName]).to.be.not.undefined;
+    expect(window[globalName].partnerData).to.be.not.undefined;
+    expect(window[globalName].firstPartyData).to.be.not.undefined;
+  });
 
   it('should not create a global IIQ identity object in case it was already created', () => {
-    intentIqIdSubmodule.getId({ params: { partner } })
-    const secondTimeCalling = initializeGlobalIIQ(partner)
-    expect(secondTimeCalling).to.be.false
-  })
+    intentIqIdSubmodule.getId({ params: { partner } });
+    const secondTimeCalling = initializeGlobalIIQ(partner);
+    expect(secondTimeCalling).to.be.false;
+  });
 
   it('should log an error if no configParams were passed when getId', function () {
     const submodule = intentIqIdSubmodule.getId({ params: {} });
@@ -265,7 +265,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
     request.respond(
@@ -302,7 +302,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
     request.respond(
@@ -330,7 +330,7 @@ describe('IntentIQ tests', function () {
     const currentBrowserLowerCase = detectBrowser();
 
     if (currentBrowserLowerCase === usedBrowser) {
-      await waitForClientHints()
+      await waitForClientHints();
       const at20request = server.requests[0];
       expect(at20request.url).to.contain(`&source=${PREBID}`);
       expect(at20request.url).to.contain(`at=20`);
@@ -539,7 +539,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
     request.respond(
@@ -554,7 +554,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
     request.respond(
@@ -569,7 +569,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     request.respond(
@@ -585,7 +585,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     request.respond(
@@ -598,11 +598,11 @@ describe('IntentIQ tests', function () {
   });
 
   it('send addition parameters if were found in localstorage', async function () {
-    localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValue))
+    localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValue));
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     expect(request.url).to.contain('cttl=' + testLSValue.cttl);
@@ -734,7 +734,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true, spd: spdValue })
     );
 
-    const storedLs = readData(FIRST_PARTY_KEY + '_' + partner, ['html5', 'cookie'], storage);
+    const storedLs = readData(FIRST_PARTY_KEY + '_' + partner, ['html5', 'cookie']);
     const parsedLs = JSON.parse(storedLs);
 
     expect(storedLs).to.not.be.null;
@@ -797,8 +797,8 @@ describe('IntentIQ tests', function () {
     });
 
     it("Should call the server for new partner if FPD has been updated by other partner, and 72 hours have not yet passed.", async () => {
-      const allowedStorage = ['html5']
-      const newPartnerId = 12345
+      const allowedStorage = ['html5'];
+      const newPartnerId = 12345;
       const FPD = {
         pcid: 'c869aa1f-fe40-47cb-810f-4381fec28fc9',
         pcidDate: 1747720820757,
@@ -808,18 +808,18 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage)
-      const callBackSpy = sinon.spy()
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      const callBackSpy = sinon.spy();
       const submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } }).callback;
       submoduleCallback(callBackSpy);
       await waitForClientHints();
       const request = server.requests[0];
-      expect(request.url).contain("ProfilesEngineServlet?at=39") // server was called
-    })
+      expect(request.url).contain("ProfilesEngineServlet?at=39"); // server was called
+    });
 
     it("Should NOT call the server if FPD has been updated user Opted Out, and 72 hours have not yet passed.", async () => {
-      const allowedStorage = ['html5']
-      const newPartnerId = 12345
+      const allowedStorage = ['html5'];
+      const newPartnerId = 12345;
       const FPD = {
         pcid: 'c869aa1f-fe40-47cb-810f-4381fec28fc9',
         pcidDate: 1747720820757,
@@ -830,12 +830,12 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage)
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
       const returnedObject = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } });
       await waitForClientHints();
-      expect(returnedObject.callback).to.be.undefined
-      expect(server.requests.length).to.equal(0) // no server requests
-    })
+      expect(returnedObject.callback).to.be.undefined;
+      expect(server.requests.length).to.equal(0); // no server requests
+    });
 
     it('should NOT call the server on page reload when CMP has not loaded yet but partner data TTL is still fresh', async function () {
       // Simulates page reload: FPD has a GDPR string from the previous session,
@@ -998,7 +998,7 @@ describe('IntentIQ tests', function () {
 
       const callBackSpy = sinon.spy();
       const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-      const data = { eids: { key1: 'value1', key2: 'value2' } }
+      const data = { eids: { key1: 'value1', key2: 'value2' } };
 
       submoduleCallback(callBackSpy);
       await waitForClientHints();
@@ -1135,7 +1135,7 @@ describe('IntentIQ tests', function () {
     });
 
     it('should make request to correct address with iiqPixelServerAddress parameter', async function() {
-      let wasCallbackCalled = false
+      let wasCallbackCalled = false;
       const callbackConfigParams = {
         params: {
           partner: partner,
@@ -1145,7 +1145,7 @@ describe('IntentIQ tests', function () {
           browserBlackList: 'Chrome',
           iiqPixelServerAddress: syncTestAPILink,
           callback: () => {
-            wasCallbackCalled = true
+            wasCallbackCalled = true;
           }
         }
       };
@@ -1218,7 +1218,7 @@ describe('IntentIQ tests', function () {
     intentIqIdSubmodule.getId(defaultConfigParams);
     await waitForClientHints();
 
-    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
     const expectedClientHints = handleClientHints(testClientHints);
     expect(savedClientHints).to.equal(expectedClientHints);
   });
@@ -1315,7 +1315,7 @@ describe('IntentIQ tests', function () {
 
     // LS must be updated; no extra network calls
     const expectedFresh = handleClientHints(testClientHints);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedFresh);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedFresh);
     expect(server.requests.length).to.equal(1);
 
     stub.restore();
@@ -1337,7 +1337,7 @@ describe('IntentIQ tests', function () {
 
     await waitForClientHints();
 
-    const saved = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const saved = readData(CLIENT_HINTS_KEY, ['html5']);
     expect(saved === '' || saved === null).to.be.true;
     expect(server.requests.length).to.equal(1);
 
@@ -1354,7 +1354,7 @@ describe('IntentIQ tests', function () {
     await waitForClientHints();
 
     const req = server.requests[0];
-    const saved = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const saved = readData(CLIENT_HINTS_KEY, ['html5']);
 
     expect(req).to.exist;
     expect(req.url).to.not.include('&uh=');
@@ -1383,7 +1383,7 @@ describe('IntentIQ tests', function () {
 
     // LS updated, network not re-fired
     const expectedFresh = handleClientHints(testClientHints);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedFresh);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedFresh);
     expect(server.requests.length).to.equal(1);
 
     stub.restore();
@@ -1413,7 +1413,7 @@ describe('IntentIQ tests', function () {
     expect(req).to.exist;
     expect(req.url).to.include('at=20');
     expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedCH);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
 
     uadStub.restore();
   });
@@ -1440,7 +1440,7 @@ describe('IntentIQ tests', function () {
     expect(req).to.exist;
     expect(req.url).to.include('at=20');
     expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedCH);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
   });
 
   it('should return true if CMP strings are the same', function () {
@@ -1597,7 +1597,7 @@ describe('IntentIQ tests', function () {
   });
 
   it('should run callback from params', async () => {
-    let wasCallbackCalled = false
+    let wasCallbackCalled = false;
     const callbackConfigParams = {
       params: {
         partner: partner,
@@ -1606,7 +1606,7 @@ describe('IntentIQ tests', function () {
         partnerClientId,
         browserBlackList: 'Chrome',
         callback: () => {
-          wasCallbackCalled = true
+          wasCallbackCalled = true;
         }
       }
     };
@@ -1616,16 +1616,16 @@ describe('IntentIQ tests', function () {
   });
 
   it('should send sourceMetaData in AT=39 if it exists in configParams', async function () {
-    const translatedMetaDataValue = translateMetadata(sourceMetaData)
+    const translatedMetaDataValue = translateMetadata(sourceMetaData);
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
 
-    expect(request.url).to.include('?at=39')
-    expect(request.url).to.include(`fbp=${translatedMetaDataValue}`)
+    expect(request.url).to.include('?at=39');
+    expect(request.url).to.include(`fbp=${translatedMetaDataValue}`);
   });
 
   it('should NOT send sourceMetaData and sourceMetaDataExternal in AT=39 if it is undefined', async function () {
@@ -1633,12 +1633,12 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, sourceMetaData: undefined } };
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
 
-    expect(request.url).to.include('?at=39')
-    expect(request.url).not.to.include('fbp=')
+    expect(request.url).to.include('?at=39');
+    expect(request.url).not.to.include('fbp=');
   });
 
   it('should NOT send sourceMetaData in AT=39 if value is NAN', async function () {
@@ -1646,30 +1646,30 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, sourceMetaData: NaN } };
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
-    expect(request.url).to.include('?at=39')
-    expect(request.url).not.to.include('fbp=')
+    expect(request.url).to.include('?at=39');
+    expect(request.url).not.to.include('fbp=');
   });
 
   it('should send sourceMetaData in AT=20 if it exists in configParams', async function () {
-    const translatedMetaDataValue = translateMetadata(sourceMetaData)
+    const translatedMetaDataValue = translateMetadata(sourceMetaData);
     const configParams = { params: { ...allConfigParams.params, browserBlackList: 'chrome' } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
     expect(request.url).to.include('?at=20');
-    expect(request.url).to.include(`fbp=${translatedMetaDataValue}`)
+    expect(request.url).to.include(`fbp=${translatedMetaDataValue}`);
   });
 
   it('should NOT send sourceMetaData in AT=20 if value is NAN', async function () {
     const configParams = { params: { ...allConfigParams.params, sourceMetaData: NaN, browserBlackList: 'chrome' } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
     expect(request.url).to.include('?at=20');
@@ -1682,7 +1682,7 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, browserBlackList: 'chrome', partnerClientId, partnerClientIdType } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
     expect(request.url).to.include('?at=20');
@@ -1696,7 +1696,7 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, browserBlackList: 'chrome', partnerClientId, partnerClientIdType } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
     expect(request.url).to.include('?at=20');
@@ -1710,7 +1710,7 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, browserBlackList: 'chrome', partnerClientId, partnerClientIdType } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
     expect(request.url).to.include('?at=20');
@@ -1725,11 +1725,11 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, partnerClientId, partnerClientIdType } };
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
 
-    expect(request.url).to.include('?at=39')
+    expect(request.url).to.include('?at=39');
     expect(request.url).to.include(`&pcid=${encodeURIComponent(partnerClientId)}`);
     expect(request.url).to.include(`&idtype=${partnerClientIdType}`);
   });
@@ -1741,11 +1741,11 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, partnerClientId, partnerClientIdType } };
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
 
-    expect(request.url).to.include('?at=39')
+    expect(request.url).to.include('?at=39');
     expect(request.url).not.to.include(`&pcid=${partnerClientId}`);
     expect(request.url).not.to.include(`&idtype=${partnerClientIdType}`);
   });
@@ -1757,11 +1757,11 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, partnerClientId, partnerClientIdType } };
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
 
-    expect(request.url).to.include('?at=39')
+    expect(request.url).to.include('?at=39');
     expect(request.url).not.to.include(`&pcid=${partnerClientId}`);
     expect(request.url).not.to.include(`&idtype=${partnerClientIdType}`);
   });
@@ -1770,7 +1770,7 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, browserBlackList: 'chrome', sourceMetaDataExternal: 123 } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
 
     expect(request.url).to.include('?at=20');
@@ -1781,7 +1781,7 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, siloEnabled: true } };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const expectedKey = FIRST_PARTY_KEY + '_p_' + configParams.params.partner;
     const storedData = localStorage.getItem(expectedKey);
     const parsed = JSON.parse(storedData);
@@ -1796,7 +1796,7 @@ describe('IntentIQ tests', function () {
     const configParams = { params: { ...allConfigParams.params, siloEnabled: true } };
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
 
@@ -1814,7 +1814,7 @@ describe('IntentIQ tests', function () {
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     const callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
     request.respond(200, responseHeader, JSON.stringify(responseData));
@@ -1832,7 +1832,7 @@ describe('IntentIQ tests', function () {
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     const callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
     request.respond(503, responseHeader, 'Service Unavailable');
@@ -1852,7 +1852,7 @@ describe('IntentIQ tests', function () {
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     const callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
     request.respond(200, responseHeader, JSON.stringify(responseData));
@@ -1875,7 +1875,7 @@ describe('IntentIQ tests', function () {
     };
 
     intentIqIdSubmodule.getId(configParams);
-    await waitForClientHints()
+    await waitForClientHints();
     const syncRequest = server.requests[0];
 
     expect(syncRequest.url).to.include('general=Lee');
@@ -1895,7 +1895,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const vrRequest = server.requests[0];
 
     expect(vrRequest.url).to.include('general=Lee');
@@ -1916,7 +1916,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const vrRequest = server.requests[0];
 
     expect(vrRequest.url).not.to.include('general=');
@@ -1938,7 +1938,7 @@ describe('IntentIQ tests', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const vrRequest = server.requests[0];
 
     expect(vrRequest.url).not.to.include('general=');
@@ -1956,7 +1956,7 @@ describe('IntentIQ tests', function () {
 
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
     request.respond(
@@ -1985,7 +1985,7 @@ describe('IntentIQ tests', function () {
 
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
 
     const request = server.requests[0];
     request.respond(
@@ -2005,8 +2005,8 @@ describe('IntentIQ tests', function () {
   it('should use group provided by partner', async function () {
     const groupChangedSpy = sinon.spy();
     const callBackSpy = sinon.spy();
-    const usedGroup = 'B'
-    const ABTestingConfigurationSource = 'group'
+    const usedGroup = 'B';
+    const ABTestingConfigurationSource = 'group';
     const configParams = {
       params: {
         ...defaultConfigParams.params,
@@ -2018,7 +2018,7 @@ describe('IntentIQ tests', function () {
 
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    await waitForClientHints()
+    await waitForClientHints();
     const request = server.requests[0];
     request.respond(
       200,

@@ -785,6 +785,216 @@ describe('floxisBidAdapter', function () {
     });
   });
 
+  describe('onTimeout', function () {
+    let politeStub;
+
+    beforeEach(function () {
+      // Telemetry beacons route through politeTriggerPixel(url, 'omit'); stub it to capture the call.
+      politeStub = sinon.stub(utils, 'politeTriggerPixel');
+    });
+
+    afterEach(function () {
+      politeStub.restore();
+    });
+
+    const beaconUrl = (i = 0) => politeStub.getCall(i).args[0];
+
+    it('should fire a timeout event beacon to the pinned us-e host', function () {
+      spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
+      expect(politeStub.calledOnce).to.be.true;
+      const url = beaconUrl();
+      expect(url).to.include('https://px-us-e.floxis.tech/event');
+      expect(url).to.include('event=timeout');
+      expect(url).to.include('seat=Gmtb');
+      expect(url).to.include('region=us-e');
+      expect(url).to.include('duration=2000');
+      expect(url).to.include('auctionId=a1');
+    });
+
+    it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
+      spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
+      expect(politeStub.calledOnce).to.be.true;
+      expect(politeStub.firstCall.args[1]).to.equal('omit'); // no Floxis sync cookie rides along
+    });
+
+    it('should beacon to px-us-e even when region is eu (host is NOT region-derived)', function () {
+      spec.onTimeout([{ params: { seat: 'Gmtb', region: 'eu' }, timeout: 1500, auctionId: 'a2' }]);
+      const url = beaconUrl();
+      expect(url).to.include('https://px-us-e.floxis.tech/event');
+      expect(url).to.include('region=eu');
+      expect(url).not.to.include('px-eu');
+    });
+
+    it('should deduplicate beacons for the same seat+region across entries', function () {
+      spec.onTimeout([
+        { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' },
+        { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }
+      ]);
+      expect(politeStub.callCount).to.equal(1);
+    });
+
+    it('should emit one beacon per distinct seat+region pair', function () {
+      spec.onTimeout([
+        { params: { seat: 'Gmtb', region: 'us-e' }, timeout: 1000, auctionId: 'a1' },
+        { params: { seat: 'Seat2', region: 'us-e' }, timeout: 1000, auctionId: 'a1' }
+      ]);
+      expect(politeStub.callCount).to.equal(2);
+    });
+
+    it('should not throw on an empty array', function () {
+      expect(() => spec.onTimeout([])).not.to.throw();
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('should not throw when called with a non-array', function () {
+      expect(() => spec.onTimeout(null)).not.to.throw();
+      expect(() => spec.onTimeout(undefined)).not.to.throw();
+    });
+
+    it('should skip entries with missing params', function () {
+      expect(() => spec.onTimeout([{ timeout: 2000, auctionId: 'a1' }])).not.to.throw();
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('should skip entries with no seat', function () {
+      spec.onTimeout([{ params: { region: 'us-e' }, timeout: 2000 }]);
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('should default region to us-e when region is absent from params', function () {
+      spec.onTimeout([{ params: { seat: 'Gmtb' }, timeout: 500 }]);
+      expect(politeStub.calledOnce).to.be.true;
+      const url = beaconUrl();
+      expect(url).to.include('region=us-e');
+    });
+  });
+
+  describe('onBidderError', function () {
+    let politeStub;
+
+    beforeEach(function () {
+      politeStub = sinon.stub(utils, 'politeTriggerPixel');
+    });
+
+    afterEach(function () {
+      politeStub.restore();
+    });
+
+    const beaconUrl = (i = 0) => politeStub.getCall(i).args[0];
+
+    const makeBidderRequest = (overrides = {}) => ({
+      auctionId: 'a1',
+      bids: [{ params: { seat: 'Gmtb', region: 'us-e' } }],
+      refererInfo: { page: 'https://pub.example.com/page?q=secret', domain: 'pub.example.com' },
+      ...overrides
+    });
+
+    it('should fire a bidder-error beacon to the pinned us-e host', function () {
+      spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest: makeBidderRequest() });
+      expect(politeStub.calledOnce).to.be.true;
+      const url = beaconUrl();
+      expect(url).to.include('https://px-us-e.floxis.tech/event');
+      expect(url).to.include('event=bidder-error');
+      expect(url).to.include('seat=Gmtb');
+      expect(url).to.include('region=us-e');
+      expect(url).to.include('status=500');
+      expect(url).to.include('timedout=0');
+      expect(url).to.include('auctionId=a1');
+    });
+
+    it('should send the beacon cookieless via politeTriggerPixel (credentials omitted)', function () {
+      spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest: makeBidderRequest() });
+      expect(politeStub.calledOnce).to.be.true;
+      expect(politeStub.firstCall.args[1]).to.equal('omit');
+    });
+
+    it('should beacon to px-us-e even when region is eu (host is NOT region-derived)', function () {
+      spec.onBidderError({
+        error: { status: 503, timedOut: false },
+        bidderRequest: makeBidderRequest({ bids: [{ params: { seat: 'Gmtb', region: 'eu' } }] })
+      });
+      const url = beaconUrl();
+      expect(url).to.include('https://px-us-e.floxis.tech/event');
+      expect(url).to.include('region=eu');
+      expect(url).not.to.include('px-eu');
+    });
+
+    it('should set timedout=1 when error.timedOut is true', function () {
+      spec.onBidderError({ error: { timedOut: true }, bidderRequest: makeBidderRequest() });
+      const url = beaconUrl();
+      expect(url).to.include('timedout=1');
+    });
+
+    it('should omit status when error.status is absent', function () {
+      spec.onBidderError({ error: { timedOut: false }, bidderRequest: makeBidderRequest() });
+      const url = beaconUrl();
+      expect(url).not.to.match(/[?&]status=/);
+    });
+
+    it('should include puburl as the publisher domain (no query string identifiers)', function () {
+      spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest: makeBidderRequest() });
+      const url = beaconUrl();
+      expect(url).to.include('puburl=pub.example.com');
+      expect(url).not.to.include('secret'); // the page query string never leaves the browser
+    });
+
+    it('should deduplicate beacons for the same seat+region across bids', function () {
+      spec.onBidderError({
+        error: { status: 503, timedOut: false },
+        bidderRequest: {
+          auctionId: 'a1',
+          bids: [
+            { params: { seat: 'Gmtb', region: 'us-e' } },
+            { params: { seat: 'Gmtb', region: 'us-e' } }
+          ]
+        }
+      });
+      expect(politeStub.callCount).to.equal(1);
+    });
+
+    it('should emit one beacon per distinct seat+region pair', function () {
+      spec.onBidderError({
+        error: { status: 503, timedOut: false },
+        bidderRequest: {
+          auctionId: 'a1',
+          bids: [
+            { params: { seat: 'Gmtb', region: 'us-e' } },
+            { params: { seat: 'Seat2', region: 'us-e' } }
+          ]
+        }
+      });
+      expect(politeStub.callCount).to.equal(2);
+    });
+
+    it('should not throw when bidderRequest is missing', function () {
+      expect(() => spec.onBidderError({ error: { status: 500 } })).not.to.throw();
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('should not throw when bidderRequest.bids is empty', function () {
+      expect(() => spec.onBidderError({ error: {}, bidderRequest: { bids: [] } })).not.to.throw();
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('should skip bids with no seat', function () {
+      spec.onBidderError({ error: {}, bidderRequest: { bids: [{ params: { region: 'us-e' } }] } });
+      expect(politeStub.called).to.be.false;
+    });
+
+    it('should append consent params when bidderRequest carries them', function () {
+      const bidderRequest = {
+        ...makeBidderRequest(),
+        gdprConsent: { gdprApplies: true, consentString: 'CONSENT123' },
+        uspConsent: '1YNN'
+      };
+      spec.onBidderError({ error: { status: 500, timedOut: false }, bidderRequest });
+      const url = beaconUrl();
+      expect(url).to.include('gdpr=1');
+      expect(url).to.include('gdpr_consent=CONSENT123');
+      expect(url).to.include('us_privacy=1YNN');
+    });
+  });
+
   describe('bid response meta', function () {
     function responseWithExt(ext) {
       const request = spec.buildRequests([validBannerBid], { bidderCode: 'floxis', auctionId: 'a-meta' })[0];

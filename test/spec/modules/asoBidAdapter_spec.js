@@ -125,18 +125,18 @@ describe('Adserver.Online bidding adapter', function () {
           'https://example.com/iframe1.html'
         ]
       }
-    }).then(br => { bidderRequest = br });
-  })
+    }).then(br => { bidderRequest = br; });
+  });
 
   const uspConsent = 'usp_consent';
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found in bidVideo', function () {
-      expect(spec.isBidRequestValid(videoRequest)).to.be.true
+      expect(spec.isBidRequestValid(videoRequest)).to.be.true;
     });
 
     it('should return true when required params found in bidBanner', function () {
-      expect(spec.isBidRequestValid(bannerRequest)).to.be.true
+      expect(spec.isBidRequestValid(bannerRequest)).to.be.true;
     });
 
     it('should return false when required params not found', function () {
@@ -147,7 +147,7 @@ describe('Adserver.Online bidding adapter', function () {
       const bid = Object.assign({}, bannerRequest);
       delete bid.params;
       bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
     it('should return false when required zone param not found', function () {
@@ -165,7 +165,7 @@ describe('Adserver.Online bidding adapter', function () {
         return {
           currency: 'USD',
           floor: 0.5
-        }
+        };
       };
 
       const payload = spec.buildRequests([bidRequest], bidderRequest)[0].data;
@@ -291,7 +291,7 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.user.ext.consent).to.equal('consentString');
         expect(payload.regs.ext.us_privacy).to.equal(uspConsent);
         expect(payload.regs.ext.gdpr).to.equal(1);
-      })
+      });
     });
 
     it('should not send GDPR/USP consent data if it does not apply', function () {

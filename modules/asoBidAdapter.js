@@ -41,7 +41,7 @@ export const spec = {
           crossOrigin: true
         },
         bidderRequest
-      })
+      });
     });
     return requests;
   },
