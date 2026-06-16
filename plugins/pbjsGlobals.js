@@ -26,7 +26,7 @@ module.exports = function(api, options) {
     if (source) {
       if (source.endsWith('.d.ts')) {
         // assuming .d.ts files are just definitions, they are not relevant at runtime
-        path.remove(path.node);
+        path.remove();
       } else if (source.endsWith('.ts')) {
         path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
       }
@@ -102,7 +102,7 @@ module.exports = function(api, options) {
           path.node.object.name === FEATURES_GLOBAL &&
           !path.scope.hasBinding(FEATURES_GLOBAL) &&
           t.isIdentifier(path.node.property) &&
-          features.hasOwnProperty(path.node.property.name)
+          Object.prototype.hasOwnProperty.call(features, path.node.property.name)
         ) {
           path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
         }
