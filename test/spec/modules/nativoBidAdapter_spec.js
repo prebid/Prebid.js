@@ -669,3 +669,214 @@ describe('Prebid Native', function () {
     expect(isValid).to.be.true;
   });
 });
+
+describe('interpretResponse - additional branch coverage', function () {
+  const buildBannerRequest = () => {
+    const bidRequest = [{
+      bidId: '1',
+      bidder: 'nativo',
+      params: { placementId: 1 },
+      adUnitCode: 'test-ad-unit',
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      sizes: [[300, 250]],
+    }];
+    return spec.buildRequests(bidRequest, { bidderRequestId: '126456', bids: bidRequest });
+  };
+
+  const makeResponse = (bidOverrides) => ({
+    id: '126456',
+    cur: 'USD',
+    seatbid: [{
+      seat: 'seat_0',
+      bid: [Object.assign({
+        id: 'f70362ac-f3cf-4225-82a5-948b690927a6',
+        impid: '1',
+        price: 3.569,
+        adm: '<creative>',
+        h: 300,
+        w: 250,
+        cat: [],
+        adomain: ['test.com'],
+        crid: '1060_72_6760217',
+      }, bidOverrides)],
+    }],
+  });
+
+  it('parses a JSON string response body', function () {
+    const result = spec.interpretResponse(
+      { body: JSON.stringify(makeResponse({ mtype: 1 })) },
+      buildBannerRequest()
+    );
+    expect(result).to.be.an('array').with.lengthOf(1);
+  });
+
+  it('returns [] when the response body is invalid JSON', function () {
+    const result = spec.interpretResponse({ body: '{not valid json' }, buildBannerRequest());
+    expect(result).to.be.an('array').with.lengthOf(0);
+  });
+
+  it('infers banner media type when mtype is missing', function () {
+    const result = spec.interpretResponse({ body: makeResponse({ adm: '<creative>' }) }, buildBannerRequest());
+    expect(result).to.be.an('array');
+  });
+
+  it('infers native media type from a JSON adm when mtype is missing', function () {
+    const result = spec.interpretResponse({ body: makeResponse({ adm: '{"native":{}}' }) }, buildBannerRequest());
+    expect(result).to.be.an('array');
+  });
+
+  it('infers native media type from bid.mediaTypes.native when mtype is missing', function () {
+    const result = spec.interpretResponse({ body: makeResponse({ mediaTypes: { native: {} } }) }, buildBannerRequest());
+    expect(result).to.be.an('array');
+  });
+
+  it('infers video media type from bid.mediaTypes.video when mtype is missing', function () {
+    const result = spec.interpretResponse({ body: makeResponse({ mediaTypes: { video: {} } }) }, buildBannerRequest());
+    expect(result).to.be.an('array');
+  });
+});
+
+describe('getUserSyncs - additional branch coverage', function () {
+  const syncResponse = [{
+    body: {
+      cur: 'USD',
+      id: 'x',
+      seatbid: [{
+        seat: 'seat_0',
+        bid: [{}],
+        syncUrls: [
+          { type: 'image', url: 'pixel-tracker/?{GDPR_params}' },
+          { type: 'iframe', url: 'iframe-tracker/?{GDPR_params}' },
+        ],
+      }],
+    },
+  }];
+
+  it('handles gdprApplies=false and a missing consentString', function () {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: false },
+      syncResponse,
+      { gdprApplies: false },
+      undefined
+    );
+    expect(syncs).to.be.an('array').with.lengthOf(1);
+    expect(syncs[0].url).to.contain('gdpr=0&gdpr_consent=');
+  });
+
+  it('appends gpp and gpp_sid params when GPP consent is present', function () {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: false },
+      syncResponse,
+      undefined,
+      undefined,
+      { gppString: 'DBABMA~1', applicableSections: [7, 8] }
+    );
+    expect(syncs[0].url).to.contain('gpp=DBABMA');
+    expect(syncs[0].url).to.contain('gpp_sid=7%2C8');
+  });
+
+  it('appends gpp without gpp_sid when applicableSections is empty', function () {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: false },
+      syncResponse,
+      undefined,
+      undefined,
+      { gppString: 'DBABMA~1', applicableSections: [] }
+    );
+    expect(syncs[0].url).to.contain('gpp=DBABMA');
+    expect(syncs[0].url).to.not.contain('gpp_sid');
+  });
+
+  it('skips empty and malformed server responses', function () {
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: true, pixelEnabled: true },
+      [null, {}, { body: {} }, { body: '{bad json' }, { body: { seatbid: [] } }],
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(syncs).to.be.an('array').with.lengthOf(0);
+  });
+
+  it('parses a JSON string body and skips seatbids without syncUrls', function () {
+    const stringBody = JSON.stringify({
+      seatbid: [
+        { seat: 'no-syncs' },
+        { seat: 'seat_0', syncUrls: [{ type: 'image', url: 'pixel-tracker/?{GDPR_params}' }] },
+      ],
+    });
+    const syncs = spec.getUserSyncs(
+      { iframeEnabled: false, pixelEnabled: true },
+      [{ body: stringBody }],
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(syncs).to.be.an('array').with.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
+  });
+});
+
+describe('onBidWon - additional branch coverage', function () {
+  it('does nothing when the bid is not an object', function () {
+    expect(() => spec.onBidWon(null)).to.not.throw();
+    expect(() => spec.onBidWon('not-an-object')).to.not.throw();
+  });
+
+  it('does nothing when bid.requestId is missing', function () {
+    expect(() => spec.onBidWon({ cpm: 1 })).to.not.throw();
+  });
+
+  it('does nothing when no ext data is cached for the requestId', function () {
+    expect(() => spec.onBidWon({ requestId: 'unknown-request-id' })).to.not.throw();
+  });
+});
+
+describe('buildRequests - url parameter branch coverage', function () {
+  const makeBid = (params) => ([{
+    bidder: 'nativo',
+    params,
+    adUnitCode: 'adunit-code',
+    sizes: [[300, 250]],
+    bidId: '27b02036ccfa6e',
+    mediaTypes: { banner: { sizes: [[300, 250]] } },
+  }]);
+
+  it('builds site from url when bidderRequest has no ortb2', function () {
+    const request = spec.buildRequests(
+      makeBid({ url: 'https://www.example.com/path?a=b' }),
+      { bidderRequestId: 1, refererInfo: { page: 'https://www.other.com' } }
+    );
+    expect(request.data.site.page).to.equal('https://www.example.com/path?a=b');
+    expect(request.data.site.domain).to.equal('example.com');
+  });
+
+  it('builds site from url when ortb2 exists but has no site', function () {
+    const request = spec.buildRequests(
+      makeBid({ url: 'https://www.example.com/path' }),
+      { bidderRequestId: 1, refererInfo: { page: 'https://www.other.com' }, ortb2: {} }
+    );
+    expect(request.data.site.page).to.equal('https://www.example.com/path');
+  });
+
+  it('falls back to the hostname when no root domain can be extracted', function () {
+    const request = spec.buildRequests(
+      makeBid({ url: 'https://localhost/path' }),
+      { bidderRequestId: 1, refererInfo: { page: 'https://www.other.com' }, ortb2: {} }
+    );
+    expect(request.data.site.domain).to.equal('localhost');
+  });
+
+  it('handles a bid request that has no params object', function () {
+    const request = spec.buildRequests(
+      [{ bidder: 'nativo', adUnitCode: 'adunit-code', sizes: [[300, 250]], bidId: '1', mediaTypes: { banner: { sizes: [[300, 250]] } } }],
+      { bidderRequestId: 1, refererInfo: { page: 'https://www.other.com' } }
+    );
+    expect(request.method).to.equal('POST');
+  });
+
+  it('does not throw when the valid bid request list is empty', function () {
+    const request = spec.buildRequests([], { bidderRequestId: 1, refererInfo: { page: 'https://www.other.com' } });
+    expect(request.method).to.equal('POST');
+  });
+});
