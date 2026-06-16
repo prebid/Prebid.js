@@ -20,4 +20,4 @@ jobs:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
           fetch-depth: 0
       - name: Scan
-        uses: prebid/code-scanner
+        uses: prebid/code-scanner@master
