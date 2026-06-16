@@ -136,13 +136,9 @@ describe('novatiqIdSystem', function () {
   });
 
   describe('persistEphemeralHyperId', function () {
-    afterEach(function () {
-      sinon.restore();
-    });
-
     it('stores nvq_hid as cookie with ~60s expiry when cookies are enabled', function () {
-      sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(true);
-      sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
+      const cookiesEnabled = sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(true);
+      const hasLocalStorage = sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
       const removeLs = sinon.stub(novatiqStorage, 'removeDataFromLocalStorage');
       const setCookie = sinon.stub(novatiqStorage, 'setCookie');
       novatiqIdSubmodule.persistEphemeralHyperId('test-hyper-id');
@@ -152,31 +148,35 @@ describe('novatiqIdSystem', function () {
       expect(setCookie.firstCall.args[3]).to.equal('Lax');
       const expMs = new Date(setCookie.firstCall.args[2]).getTime();
       expect(expMs).to.be.closeTo(Date.now() + 60000, 3000);
+      cookiesEnabled.restore();
+      hasLocalStorage.restore();
+      removeLs.restore();
+      setCookie.restore();
     });
 
     it('stores nvq_hid in localStorage when cookies are not enabled', function () {
-      sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(false);
-      sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
+      const cookiesEnabled = sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(false);
+      const hasLocalStorage = sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
       const setLs = sinon.stub(novatiqStorage, 'setDataInLocalStorage');
       novatiqIdSubmodule.persistEphemeralHyperId('hid-local');
       expect(setLs.firstCall.args[0]).to.equal('nvq_hid');
       const payload = JSON.parse(setLs.firstCall.args[1]);
       expect(payload.hyperId).to.equal('hid-local');
       expect(payload.expiresAt).to.be.closeTo(Date.now() + 60000, 3000);
+      cookiesEnabled.restore();
+      hasLocalStorage.restore();
+      setLs.restore();
     });
   });
 
   describe('getId nvq_hid', function () {
-    afterEach(function () {
-      sinon.restore();
-    });
-
     it('persists ephemeral hyper id when sync runs', function () {
       const stub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
       const config = { params: { sourceid: '123' } };
       novatiqIdSubmodule.getId(config);
       expect(stub.calledOnce).to.equal(true);
       expect(stub.firstCall.args[0]).to.have.length(40);
+      stub.restore();
     });
   });
 
