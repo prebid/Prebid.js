@@ -106,6 +106,7 @@ function mockFetchServer() {
         // tests expect respond() to run everything immediately,
         // so make body available syncronously
         resp.text = () => GreedyPromise.resolve(body || '');
+        resp.json = () => resp.text().then(text => JSON.parse(text));
         Object.assign(mockReq.fetch, {
           response: resp,
           responseBody: body || ''

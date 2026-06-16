@@ -31,6 +31,12 @@ export const runAuction = async () => {
   });
 };
 
+const waitForPromiseTurns = async (turns = 5) => {
+  while (turns-- > 0) {
+    await Promise.resolve();
+  }
+};
+
 export const apiHelpers = {
   makeTokenResponse: (token, shouldRefresh = false, expired = false, refreshExpired = false) => ({
     advertising_token: token,
@@ -40,9 +46,13 @@ export const apiHelpers = {
     refresh_expires: refreshExpired ? Date.now() - 1000 : Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     refresh_response_key: 'wR5t6HKMfJ2r4J7fEGX9Gw==', // Fake data
   }),
-  respondAfterDelay: (delay, srv = server) => new Promise((resolve) => setTimeout(() => {
+  respondAfterDelay: (delay, srv = server) => new Promise((resolve) => setTimeout(async () => {
     srv.respond();
-    setTimeout(() => resolve());
+    // The UID2 refresh path chains several native promises after ajax success
+    // (WebCrypto import/decrypt, then storage writes). Resolve only after those
+    // promise turns have had a chance to run so Safari does not assert early.
+    await waitForPromiseTurns();
+    resolve();
   }, delay)),
 };
 
