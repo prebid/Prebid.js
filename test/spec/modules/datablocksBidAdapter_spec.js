@@ -525,7 +525,7 @@ describe('DatablocksAdapter', function() {
       });
 
       it('Returns an empty array if invalid response is passed', function() {
-        serverResponses = spec.interpretResponse('invalid_response');
+        const serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
     });

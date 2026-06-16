@@ -106,7 +106,7 @@ describe('Yahoo ConnectID Submodule', () => {
           expected: { connectId: 'foo' }
         },
         {
-          detail: 'local storage data if only it local storage data exists',
+          detail: 'local storage data if only local storage data exists',
           cookie: undefined,
           localStorage: JSON.stringify({ connectId: 'bar' }),
           expected: { connectId: 'bar' }
@@ -938,7 +938,7 @@ describe('Yahoo ConnectID Submodule', () => {
         expect(connectIdSubmodule.userHasOptedOut).to.be.a('function');
       });
 
-      it('should return false when local storage key has not been set function', () => {
+      it('should return false when local storage key has not been set', () => {
         expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
       });
 
@@ -980,7 +980,7 @@ describe('Yahoo ConnectID Submodule', () => {
       }
     }];
     VALID_API_RESPONSES.forEach(responseData => {
-      it('should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)', () => {
+      it(`should return a newly constructed object with the connect ID for a payload with ${responseData.key} key(s)`, () => {
         expect(connectIdSubmodule.decode(responseData.payload)).to.deep.equal(
           { connectId: responseData.expected }
         );
