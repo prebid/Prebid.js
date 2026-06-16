@@ -1,0 +1,23 @@
+name: Prebid code scanning
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  scan:
+    name: "Scan for blacklisted domains"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          fetch-depth: 0
+      - name: Scan
+        uses: prebid/code-scanner
