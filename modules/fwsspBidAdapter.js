@@ -56,7 +56,7 @@ export const spec = {
         data: dataString,
         bidRequest: currentBidRequest
       };
-    }
+    };
 
     const constructSupplyChain = (currentBidRequest, bidderRequest) => {
       // Add schain object
@@ -68,8 +68,8 @@ export const spec = {
         schain = currentBidRequest.schain;
       }
 
-      return this.serializeSupplyChain(schain)
-    }
+      return this.serializeSupplyChain(schain);
+    };
 
     const constructGlobalParams = currentBidRequest => {
       const sdkVersion = getSDKVersion(currentBidRequest);
@@ -86,17 +86,17 @@ export const spec = {
         mode: currentBidRequest.params.mode ? currentBidRequest.params.mode : 'on-demand',
         vclr: `js-${sdkVersion}-prebid-${prebidVersion}`
       };
-    }
+    };
 
     const getRandomNumber = () => {
       return (new Date().getTime() * Math.random()).toFixed(0);
-    }
+    };
 
     const setFlagParameter = optionalFlags => {
       logInfo('setFlagParameter, optionalFlags: ', optionalFlags);
       const requiredFlags = '+fwssp+emcr+nucr+aeti+rema+exvt+fwpbjs';
       return optionalFlags ? optionalFlags + requiredFlags : requiredFlags;
-    }
+    };
 
     const constructKeyValues = (currentBidRequest, bidderRequest) => {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
@@ -208,7 +208,7 @@ export const spec = {
         keyValues._fw_is_lat = lmt;
       }
 
-      PRIVACY_VALUES = {}
+      PRIVACY_VALUES = {};
       if (keyValues._fw_coppa != null) {
         PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
       }
@@ -221,7 +221,7 @@ export const spec = {
       }
 
       return keyValues;
-    }
+    };
 
     const constructSlotParams = currentBidRequest => {
       /**
@@ -243,7 +243,7 @@ export const spec = {
         ptgt: 'a',   // Currently only support temporal slot
         slid: currentBidRequest.params.slid ? currentBidRequest.params.slid : 'Preroll_1',
         slau: currentBidRequest.params.slau ? currentBidRequest.params.slau : 'preroll',
-      }
+      };
       const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {};
       const mind = video.minduration || currentBidRequest.params.minD;
       const maxd = video.maxduration || currentBidRequest.params.maxD;
@@ -254,8 +254,8 @@ export const spec = {
       if (maxd) {
         slotParams.maxd = maxd;
       }
-      return slotParams
-    }
+      return slotParams;
+    };
 
     const constructDataString = (globalParams, keyValues, serializedSChain, slotParams) => {
       const globalParamsString = appendParams(globalParams) + ';';
@@ -264,7 +264,7 @@ export const spec = {
       const slotParamsString = appendParams(slotParams) + ';';
 
       return globalParamsString + keyValuesString + slotParamsString;
-    }
+    };
 
     return bidRequests.map(function(currentBidRequest) {
       return buildRequest(currentBidRequest, bidderRequest);
@@ -410,7 +410,7 @@ export const spec = {
 
     return syncs;
   }
-}
+};
 
 /**
  * Generates structured HTML for FreeWheel MRM ad integration with Prebid.js
@@ -422,8 +422,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true;
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false;
 
   let playerParams = null;
   try {
@@ -496,7 +496,7 @@ function getSdkUrl(bidrequest) {
   const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
-  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
+  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`;
 }
 
 /**
@@ -541,10 +541,6 @@ function getSdkVersionFromBidRequest(bidRequest) {
  * @returns {number} Returns 1 if versionA is greater, -1 if versionB is greater, 0 if equal
  */
 function compareVersions(versionA, versionB) {
-  if (!versionA || !versionB) {
-    return 0;
-  }
-
   const normalize = (v) => v.split('.').map(Number);
 
   const partsA = normalize(versionA);

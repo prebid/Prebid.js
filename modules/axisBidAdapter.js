@@ -76,6 +76,6 @@ export const spec = {
       url: syncUrl
     }];
   }
-}
+};
 
 registerBidder(spec);

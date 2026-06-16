@@ -50,7 +50,7 @@ describe('admaticBidAdapter', () => {
           floor: 1.0
         };
       } else {
-        return {}
+        return {};
       }
     },
     'schain': {
@@ -323,7 +323,7 @@ describe('admaticBidAdapter', () => {
           floor: 1.0
         };
       } else {
-        return {}
+        return {};
       }
     },
     'schain': {
@@ -741,7 +741,7 @@ describe('admaticBidAdapter', () => {
                 floor: 2.0
               };
             } else {
-              return {}
+              return {};
             }
           }
         },
@@ -778,7 +778,7 @@ describe('admaticBidAdapter', () => {
                 floor: 1.0
               };
             } else {
-              return {}
+              return {};
             }
           }
         },

@@ -394,7 +394,7 @@ describe('the rubicon adapter', function () {
         'playerWidth': 640,
         'size_id': 203
       }
-    }
+    };
     return bidderRequest;
   }
 
@@ -700,16 +700,6 @@ describe('the rubicon adapter', function () {
           expect(data.get('p_pos')).to.equal('atf;;btf;;');
         });
 
-        it('should correctly send cdep signal when requested', () => {
-          var badposRequest = utils.deepClone(bidderRequest);
-          badposRequest.bids[0].ortb2 = { device: { ext: { cdep: 3 } } };
-
-          const [request] = spec.buildRequests(badposRequest.bids, badposRequest);
-          const data = new URLSearchParams(request.data);
-
-          expect(data.get('o_cdep')).to.equal('3');
-        });
-
         it('should correctly send ip signal when ortb2.device.ip is provided', () => {
           const ipRequest = utils.deepClone(bidderRequest);
           ipRequest.bids[0].ortb2 = { device: { ip: '123.45.67.89' } };
@@ -999,11 +989,11 @@ describe('the rubicon adapter', function () {
                 likes: undefined
               },
             };
-            const undefinedKeys = ['tg_i.rating', 'tg_v.ucat', 'tg_v.likes']
+            const undefinedKeys = ['tg_i.rating', 'tg_v.ucat', 'tg_v.likes'];
             const expectedQuery = {
               'tg_v.lastsearch': 'iphone',
               'tg_i.prodtype': 'tech,mobile',
-            }
+            };
 
             // Overwrite the bidder request params with the above ones
             Object.assign(bidderRequest.bids[0].params, params);
@@ -1085,7 +1075,7 @@ describe('the rubicon adapter', function () {
             const ortb2 = {
               site,
               user
-            }
+            };
 
             const expectedQuery = {
               'kw': 'a,b,c,d',
@@ -1664,7 +1654,7 @@ describe('the rubicon adapter', function () {
                   pbadslot: 'abc'
                 }
               }
-            }
+            };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = new URLSearchParams(request.data);
@@ -1681,7 +1671,7 @@ describe('the rubicon adapter', function () {
                   pbadslot: '/a/b/c'
                 }
               }
-            }
+            };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = new URLSearchParams(request.data);
@@ -1696,7 +1686,7 @@ describe('the rubicon adapter', function () {
               ext: {
                 gpid: '/1233/sports&div1'
               }
-            }
+            };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = new URLSearchParams(request.data);
@@ -1727,7 +1717,7 @@ describe('the rubicon adapter', function () {
                   }
                 }
               }
-            }
+            };
             it('should send valid dsaparams but filter out invalid ones', function () {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
               ortb2Clone.regs.ext.dsa.transparency = [
@@ -1746,7 +1736,7 @@ describe('the rubicon adapter', function () {
               const data = new URLSearchParams(request.data);
 
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
-            })
+            });
             it('should send dsaparams if \"ortb2.regs.ext.dsa.transparancy[0].params\"', function() {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
@@ -1760,7 +1750,7 @@ describe('the rubicon adapter', function () {
               const data = new URLSearchParams(request.data);
 
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
-            })
+            });
             it('should pass an empty transparency param if \"ortb2.regs.ext.dsa.transparency[0].params\" is empty', function() {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
@@ -1771,8 +1761,8 @@ describe('the rubicon adapter', function () {
 
               const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest);
               const data = new URLSearchParams(request.data);
-              expect(data.get('dsatransparency')).to.be.null
-            })
+              expect(data.get('dsatransparency')).to.be.null;
+            });
             it('should send an empty transparency if \"ortb2.regs.ext.dsa.transparency[0].domain\" is empty', function() {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
@@ -1784,11 +1774,11 @@ describe('the rubicon adapter', function () {
               const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest);
               const data = new URLSearchParams(request.data);
 
-              expect(data.get('dsatransparency')).to.be.null
-            })
+              expect(data.get('dsatransparency')).to.be.null;
+            });
             it('should send dsa signals if \"ortb2.regs.ext.dsa\"', function() {
-              const expectedTransparency = 'testdomain.com~1~~testdomain2.com~1_2'
-              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2 })), bidderRequest)
+              const expectedTransparency = 'testdomain.com~1~~testdomain2.com~1_2';
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2 })), bidderRequest);
               const data = new URLSearchParams(request.data);
 
               expect(typeof data).to.equal('object');
@@ -1801,19 +1791,19 @@ describe('the rubicon adapter', function () {
               expect(data.get('dsapubrender')).to.equal(ortb2.regs.ext.dsa.pubrender.toString());
               expect(data.get('dsadatatopubs')).to.equal(ortb2.regs.ext.dsa.datatopub.toString());
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
-            })
+            });
             it('should return one transparency param', function() {
               const expectedTransparency = 'testdomain.com~1';
               const ortb2Clone = deepClone(ortb2);
-              ortb2Clone.regs.ext.dsa.transparency.pop()
-              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest)
+              ortb2Clone.regs.ext.dsa.transparency.pop();
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest);
               const data = new URLSearchParams(request.data);
 
               expect(typeof data).to.equal('object');
               expect(data.get('dsatransparency')).to.be.exist;
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
-            })
-          })
+            });
+          });
 
           it('should send gpid and pbadslot since it is preferred over dfp code', function () {
             bidderRequest.bids[0].ortb2Imp = {
@@ -1827,7 +1817,7 @@ describe('the rubicon adapter', function () {
                   }
                 }
               }
-            }
+            };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = new URLSearchParams(request.data);
@@ -1893,7 +1883,7 @@ describe('the rubicon adapter', function () {
                   }
                 }
               }
-            }
+            };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = new URLSearchParams(request.data);
@@ -1969,7 +1959,7 @@ describe('the rubicon adapter', function () {
               model: '',
               bitness: '64',
               architecture: 'x86'
-            }
+            };
           });
           it('should send m_ch_* params if ortb2.device.sua object is there with igh entropy', function () {
             const bidRequestSua = utils.deepClone(bidderRequest);
@@ -1984,7 +1974,7 @@ describe('the rubicon adapter', function () {
               m_ch_mobile: '?0',
               m_ch_platform: 'macOS',
               m_ch_platform_ver: '12.6.0'
-            }
+            };
 
             // Build Fastlane call
             const [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
@@ -1992,7 +1982,7 @@ describe('the rubicon adapter', function () {
 
             // Loop through expected values and if they do not match push an error
             const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
-              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`);
               return accum;
             }, []);
 
@@ -2080,7 +2070,7 @@ describe('the rubicon adapter', function () {
               m_ch_ua: `"Not A(Brand"|v="8","Chromium"|v="132","Google Chrome"|v="132"`,
               m_ch_mobile: '?0',
               m_ch_platform: 'macOS',
-            }
+            };
 
             // Build Fastlane call
             const [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
@@ -2088,7 +2078,7 @@ describe('the rubicon adapter', function () {
 
             // Loop through expected values and if they do not match push an error
             const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
-              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`);
               return accum;
             }, []);
 
@@ -2117,7 +2107,7 @@ describe('the rubicon adapter', function () {
             // How should fastlane query be constructed with default SUA
             const expectedValues = {
               m_ch_ua: `"Not A(Brand"|v="undefined"`,
-            }
+            };
 
             // Build Fastlane call
             const [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
@@ -2125,7 +2115,7 @@ describe('the rubicon adapter', function () {
 
             // Loop through expected values and if they do not match push an error
             const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
-              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`);
               return accum;
             }, []);
 
@@ -2246,7 +2236,7 @@ describe('the rubicon adapter', function () {
                     }
                   }
                 }
-              }
+              };
 
               const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
               const post = request.data;
@@ -2353,7 +2343,7 @@ describe('the rubicon adapter', function () {
             bidderRequest.bids[0].floorData = {
               skipped: false,
               location: 'fetch',
-            }
+            };
             const [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
           });
@@ -2475,7 +2465,7 @@ describe('the rubicon adapter', function () {
             expect(request.data.imp[0].video.pos).to.equal(undefined);
 
             positionBidderRequest = utils.deepClone(bidderRequest);
-            positionBidderRequest.bids[0].params.position = 'atf'
+            positionBidderRequest.bids[0].params.position = 'atf';
             positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
             [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
             expect(request.data.imp[0].video.pos).to.equal(1);
@@ -2504,7 +2494,7 @@ describe('the rubicon adapter', function () {
                 linearity: 1,
                 api: [2]
               }
-            }
+            };
             bid.params.video = {};
 
             sandbox.stub(Date, 'now').callsFake(() =>
@@ -2709,7 +2699,7 @@ describe('the rubicon adapter', function () {
                   pbadslot: '1234567890'
                 }
               }
-            }
+            };
 
             sandbox.stub(Date, 'now').callsFake(() =>
               bidderRequest.auctionStart + 100
@@ -2727,7 +2717,7 @@ describe('the rubicon adapter', function () {
                   storedrequest: 'no-send-top-level-sr'
                 }
               }
-            }
+            };
 
             bidderRequest.bids[0].ortb2Imp = {
               ext: {
@@ -2735,7 +2725,7 @@ describe('the rubicon adapter', function () {
                   storedrequest: 'no-send-imp-sr'
                 }
               }
-            }
+            };
 
             sandbox.stub(Date, 'now').callsFake(() =>
               bidderRequest.auctionStart + 100
@@ -2786,7 +2776,7 @@ describe('the rubicon adapter', function () {
             const [request] = spec.buildRequests(bidderRequest.bids, await addFPDToBidderRequest(bidderRequest));
             const post = request.data;
 
-            expect(post).to.have.property('imp')
+            expect(post).to.have.property('imp');
             // .with.length.of(1);
             const imp = post.imp[0];
             expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
@@ -2820,7 +2810,7 @@ describe('the rubicon adapter', function () {
             expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
             expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
             expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
-          })
+          });
         });
       }
 
@@ -2970,7 +2960,7 @@ describe('the rubicon adapter', function () {
 
         it('Should return true and create a params.video object if one is not already present', function () {
           removeVideoParamFromBidderRequest(bidderRequest);
-          const bid = bidderRequest.bids[0]
+          const bid = bidderRequest.bids[0];
           expect(classifiedAsVideo(bid)).to.equal(true);
           expect(bid.params.video).to.not.be.undefined;
         });
@@ -2983,7 +2973,7 @@ describe('the rubicon adapter', function () {
               const bidReq = addNativeToBidRequest(bidderRequest);
               bidReq.bids[0].params = {
                 video: {}
-              }
+              };
               const [request] = spec.buildRequests(bidReq.bids, bidReq);
               expect(request.method).to.equal('POST');
               expect(request.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
@@ -2995,7 +2985,7 @@ describe('the rubicon adapter', function () {
               delete bidReq.bids[0].mediaTypes.banner;
               bidReq.bids[0].params = {
                 position: 'atf'
-              }
+              };
               const [request] = spec.buildRequests(bidReq.bids, bidReq);
               expect(request.method).to.equal('POST');
               expect(request.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
@@ -3007,7 +2997,7 @@ describe('the rubicon adapter', function () {
                 const bidReq = addNativeToBidRequest(bidderRequest);
                 bidReq.bids[0].mediaTypes.banner = {
                   sizes: [[300, 250]]
-                }
+                };
                 const [request] = spec.buildRequests(bidReq.bids, bidReq);
                 expect(request.method).to.equal('GET');
                 expect(request.url).to.include('https://fastlane.rubiconproject.com/a/api/fastlane.json');
@@ -3025,7 +3015,7 @@ describe('the rubicon adapter', function () {
                     }
                   },
                   params: bidReq.bids[0].params
-                })
+                });
                 const [request1, request2] = spec.buildRequests(bidReq.bids, bidReq);
                 expect(request1.method).to.equal('POST');
                 expect(request1.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
@@ -3111,7 +3101,7 @@ describe('the rubicon adapter', function () {
               // by adding this, when bidonmultiformat is false, the native request will be sent to pbs
               bidReq.bids[0].params = {
                 video: {}
-              }
+              };
               const [fastlaneRequest, ...other] = spec.buildRequests(bidReq.bids, bidReq);
               expect(fastlaneRequest.method).to.equal('GET');
               expect(fastlaneRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
@@ -3578,7 +3568,7 @@ describe('the rubicon adapter', function () {
 
           // if we dont have dsa field in response or the dsa object is empty
           expect(bids[0].meta).to.not.have.property('dsa');
-        })
+        });
 
         it('should create bids with matching requestIds if imp id matches', function () {
           const bidRequests = [{
@@ -4186,7 +4176,7 @@ describe('the rubicon adapter', function () {
             const request = converter.toORTB({ bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids });
             const response = getNativeResponse({ impid: request.imp[0].id });
             delete response.seatbid[0].bid[0].w;
-            delete response.seatbid[0].bid[0].h
+            delete response.seatbid[0].bid[0].h;
             const bids = spec.interpretResponse({ body: response }, { data: request });
             expect(bids[0].width).to.equal(0);
             expect(bids[0].height).to.equal(0);
@@ -4212,7 +4202,7 @@ describe('the rubicon adapter', function () {
               renderAd: function() {
                 return null;
               }
-            }
+            };
           });
 
           afterEach(function () {
@@ -4323,7 +4313,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
-            const adUnitSelector = `#${bid.adUnitCode}`
+            const adUnitSelector = `#${bid.adUnitCode}`;
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4393,7 +4383,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
-            const adUnitSelector = `#${bid.adUnitCode}`
+            const adUnitSelector = `#${bid.adUnitCode}`;
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4591,7 +4581,7 @@ describe('the rubicon adapter', function () {
         expect(typeof result).to.equal('object');
         expect(result).to.haveOwnProperty('ranges');
         expect(Array.isArray(result.ranges)).to.equal(true);
-        expect(result.ranges.length).to.be.greaterThan(0)
+        expect(result.ranges.length).to.be.greaterThan(0);
         expect(result.ranges[0]).to.deep.equal(kvPair.val);
       });
     });
@@ -4765,7 +4755,7 @@ function addNativeToBidRequest(bidderRequest, options = { twin: false }) {
   };
   bidderRequest.refererInfo = {
     page: 'localhost'
-  }
+  };
   const numBids = !options.twin ? 1 : 2;
   for (let i = 0; i < numBids; i++) {
     bidderRequest.bids[i] = {
@@ -4789,7 +4779,7 @@ function addNativeToBidRequest(bidderRequest, options = { twin: false }) {
         }
       },
       nativeOrtbRequest
-    }
+    };
   }
   return bidderRequest;
 }

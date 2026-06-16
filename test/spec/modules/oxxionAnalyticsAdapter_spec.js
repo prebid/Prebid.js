@@ -152,7 +152,6 @@ describe('Oxxion Analytics', function () {
         'bidderCode': 'appnexus',
         'width': 970,
         'height': 250,
-        'statusMessage': 'Bid available',
         'adId': '65d16ef039a97a',
         'requestId': '2bd3e8ff8a113f',
         'transactionId': '8b2a8629-d1ea-4bb1-aff0-e335b96dd002',
@@ -207,7 +206,6 @@ describe('Oxxion Analytics', function () {
     'bidderCode': 'appnexus',
     'width': 970,
     'height': 250,
-    'statusMessage': 'Bid available',
     'adId': '65d16ef039a97a',
     'requestId': '2bd3e8ff8a113f',
     'transactionId': '8b2a8629-d1ea-4bb1-aff0-e335b96dd002',
@@ -340,7 +338,7 @@ describe('Oxxion Analytics', function () {
       expect(server.requests.length).to.equal(1);
       const message = JSON.parse(server.requests[0].requestBody);
       expect(message).not.to.have.property('ad');
-      expect(message).to.have.property('adId')
+      expect(message).to.have.property('adId');
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
       expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true);
       expect(message).to.have.property('ova').and.to.equal('cleared');

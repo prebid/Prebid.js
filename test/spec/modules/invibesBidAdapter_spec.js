@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { spec, resetInvibes, stubDomainOptions, readGdprConsent, storage } from 'modules/invibesBidAdapter.js';
+import { resetInvibes, spec, storage } from 'modules/invibesBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
@@ -159,7 +159,7 @@ describe('invibesBidAdapter:', function () {
       page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
     },
     auctionStart: Date.now()
-  }
+  };
 
   const StubbedPersistence = function (initialValue) {
     var value = initialValue;
@@ -174,7 +174,7 @@ describe('invibesBidAdapter:', function () {
       save: function (obj) {
         value = JSON.stringify(obj);
       }
-    }
+    };
   };
 
   const SetBidderAccess = function() {
@@ -186,7 +186,7 @@ describe('invibesBidAdapter:', function () {
         storageAllowed: true
       }
     };
-  }
+  };
 
   let sandbox;
 
@@ -216,17 +216,17 @@ describe('invibesBidAdapter:', function () {
           params: {
             placementId: PLACEMENT_ID
           }
-        }
+        };
 
         expect(spec.isBidRequestValid(validBid)).to.be.true;
-      })
+      });
     });
 
     context('invalid bid request:', function () {
       it('returns false when no params', function () {
         const invalidBid = {
           bidder: BIDDER_CODE
-        }
+        };
 
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
@@ -237,7 +237,7 @@ describe('invibesBidAdapter:', function () {
           params: {
             id: '5'
           }
-        }
+        };
 
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
@@ -248,7 +248,7 @@ describe('invibesBidAdapter:', function () {
           params: {
             placementId: PLACEMENT_ID
           }
-        }
+        };
 
         top.window.invibes.bidResponse = { prop: 'prop' };
         expect(spec.isBidRequestValid(validBid)).to.be.true;
@@ -447,7 +447,7 @@ describe('invibesBidAdapter:', function () {
       const now = new Date().getTime();
       localStorage.ivvcap = JSON.stringify({
         9731: [1, now + (24 * 60 * 60 * 1000)]
-      })
+      });
       SetBidderAccess();
 
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
@@ -512,7 +512,7 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.invibbvlog).to.equal(true);
     });
 
-    it('does not send query string params from localstorage if unknwon', function () {
+    it('does not send query string params from localstorage if unknown', function () {
       localStorage.ivbs = JSON.stringify({ someparam: true });
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.someparam).to.be.undefined;
@@ -573,7 +573,7 @@ describe('invibesBidAdapter:', function () {
     it('does not send handIid when it doesnt exist in cookie', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
-      sandbox.stub(storage, 'getCookie').returns(null)
+      sandbox.stub(storage, 'getCookie').returns(null);
       const bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -1286,7 +1286,7 @@ describe('invibesBidAdapter:', function () {
           }],
           ShouldSetLId: true,
           LId: 'dvdjkams6nkq'
-        }
+        };
       }
 
       return {

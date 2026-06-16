@@ -7,7 +7,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import { deepAccess, deepSetValue, generateUUID, isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils.js';
 
-const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
+const ENDPOINT_URL = 'https://rtb.upremium.asia/ortb/open/auction';
 
 export const spec = {
   code: 'mediaeyes',
@@ -27,15 +27,15 @@ export const spec = {
         imp: [cookingImp(bidRequest)],
         device: bidRequest.ortb2?.device,
         site: bidRequest.ortb2?.site,
-      }
+      };
       requests.push({
         method: 'POST',
         url: ENDPOINT_URL + "?item_id=" + itemId,
         data: JSON.stringify(requestData),
       });
-    })
+    });
 
-    return requests
+    return requests;
   },
 
   interpretResponse: (serverResponse, serverRequest) => {
@@ -91,12 +91,12 @@ export const spec = {
         }
       }
 
-      return prBid
+      return prBid;
     });
 
-    return data
+    return data;
   }
-}
+};
 
 registerBidder(spec);
 
@@ -126,10 +126,16 @@ const cookImpBanner = ({ mediaTypes, params }) => {
   if (!mediaTypes?.banner) return {};
 
   const { sizes } = mediaTypes.banner;
+
+  const format = sizes
+    .filter(s => Array.isArray(s) && typeof s[0] === 'number' && typeof s[1] === 'number')
+    .map(([w, h]) => ({ w, h }));
+
+  if (!format.length) return {};
+
   return {
-    w: sizes[0][0],
-    h: sizes[0][1]
-  }
+    format
+  };
 };
 
 function cookImpVideo({ mediaTypes }) {
@@ -160,7 +166,7 @@ function cookImpVideo({ mediaTypes }) {
 }
 
 function getBidFloor(bidRequest) {
-  let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
+  let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0);
 
   if (!bidfloor && isFn(bidRequest.getFloor)) {
     const floor = bidRequest.getFloor({

@@ -442,7 +442,7 @@ describe('AdrelevantisAdapter', function () {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           topmostLocation: 'http://example.com/page.html',
@@ -454,7 +454,7 @@ describe('AdrelevantisAdapter', function () {
             'http://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -480,7 +480,7 @@ describe('AdrelevantisAdapter', function () {
 
       config.getConfig.restore();
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -555,7 +555,7 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
@@ -603,11 +603,12 @@ describe('AdrelevantisAdapter', function () {
             }
           }
         }]
-      }
+      };
 
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastXml');
-      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('vastTrackers');
+      expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
@@ -638,11 +639,12 @@ describe('AdrelevantisAdapter', function () {
             }
           }
         }]
-      }
+      };
 
       const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastUrl');
-      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('vastTrackers');
+      expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
@@ -687,7 +689,7 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
 
       const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
       expect(result[0].native.title).to.equal('Native Creative');
@@ -733,7 +735,7 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseWithDeal }, { bidderRequest });
       expect(Object.keys(result[0].adrelevantis)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
@@ -747,9 +749,9 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
-    })
+    });
   });
 });

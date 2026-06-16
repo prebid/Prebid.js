@@ -27,7 +27,7 @@ describe('discovery:BidAdapterTests', function () {
       }
     });
     sandbox.stub(storage, 'cookiesAreEnabled');
-  })
+  });
 
   afterEach(() => {
     sandbox.restore();
@@ -261,7 +261,7 @@ describe('discovery:BidAdapterTests', function () {
         expect(storage.getCookie.called).to.be.true;
         expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
-    })
+    });
     describe('buildUTMTagData function', function() {
       it('should set UTM cookie', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
@@ -276,14 +276,11 @@ describe('discovery:BidAdapterTests', function () {
         buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
-    })
+    });
   });
 
   it('discovery:validate_response_params', function () {
-    let tempAdm = '<link rel=\"stylesheet\" href=\"https://cdn.mediago.io/js/style/style_banner_336x280_standard.css\"><div id=\"mgcontainer-e1746bcc817beaba9d63bd4254aad533\" class=\"mediago-placement_46ee9c c336x280_standard_46ee9c mediago-placement c336x280_standard\" style=\"width:336px;height:280px;overflow:hidden\"><a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-placement-top_46ee9c mediago-placement-top\" style=\"background-image:url(https://d2cli4kgl5uxre.cloudfront.net/ML/d8e9b4aa20fae1739d2aad8c926d3f15__scv1__306x304.png)\"></div></a><div class=\"mediago-placement-bottom_46ee9c mediago-placement-bottom\"><div class=\"mediago-middle_46ee9c mediago-middle\"><a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-title_46ee9c mediago-title\">秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた</div></a><div style=\"margin-top:10px;\"><a class=\"mediago-ad-icon_46ee9c mediago-ad-icon\" title=\"ad\" href=\"//www.mediago.io/privacy\" target=\"_blank\">AD</a> <a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-brand-name_46ee9c mediago-brand-name\">Factable</div></a></div></div></div></div>'
-    tempAdm += '%3Cscr';
-    tempAdm += 'ipt%3E';
-    tempAdm += '!function(){\"use strict\";function f(t){return(f=\"function\"==typeof Symbol&&\"symbol\"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&\"function\"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?\"symbol\":typeof t})(t)}function l(t){var e=0<arguments.length&&void 0!==t?t:{};try{e.random_t=(new Date).getTime(),g(function(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:\"\";if(\"object\"!==f(t))return e;var n=function(t){for(var e,n=[],o=0,i=Object.keys(t);o<i.length;o++)e=i[o],n.push(\"\".concat(e,\"=\").concat(t[e]));return n}(t).join(\"&\"),o=e.indexOf(\"#\"),i=e,t=\"\";return-1!==o&&(i=e.slice(0,o),t=e.slice(o)),n&&(i&&-1!==i.indexOf(\"?\")?i+=\"&\"+n:i+=\"?\"+n),i+t}(e,\"https://trace.mediago.io/api/log/track\"))}catch(e){}}function g(t,e,n){(t=t?t.split(\";;;\"):[]).map(function(t){try{0<=t.indexOf(\"/api/bidder/track\")&&n&&(t+=\"&inIframe=\".concat(!(!self.frameElement||\"IFRAME\"!=self.frameElement.tagName)||window.frames.length!=parent.frames.length||self!=top),t+=\"&pos_x=\".concat(n.left,\"&pos_y=\").concat(n.top,\"&page_w=\").concat(n.page_width,\"&page_h=\").concat(n.page_height))}catch(t){l({tn:p,winloss:1,fe:2,pos_err_c:1002,pos_err_m:t.toString()})}var e=new Image;e.src=t,e.style.display=\"none\",e.style.visibility=\"hidden\",e.width=0,e.height=0,document.body.appendChild(e)})}var d=[\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=101&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&de=infoseek.co.jp&iv=0\",\"${ITRACKER2}\",\"${ITRACKER3}\",\"${ITRACKER4}\",\"${ITRACKER5}\",\"${ITRACKER6}\"],u=[\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=104&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&sid=38__149__12__24__144__163__47__1__99&format=&crid=d8e9b4aa20fae1739d2aad8c926d3f15&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&de=infoseek.co.jp&iv=0\",\"${VTRACKER2}\",\"${VTRACKER3}\",\"${VTRACKER4}\",\"${VTRACKER5}\",\"${VTRACKER6}\"],p=\"f9f2b1ef23fe2759c2cad0953029a94b\",n=document.getElementById(\"mgcontainer-e1746bcc817beaba9d63bd4254aad533\");n&&function(){var a=n.getElementsByClassName(\"mediago-placement-track\");if(a&&a.length){var t,e=function(t){var e,n,o,i,c,r;\"object\"===f(r=a[t])&&(e=function(t){try{var e=t.getBoundingClientRect(),n=e&&e.top||-1,o=e&&e.left||-1,i=document.body.scrollWidth||-1,c=document.body.scrollHeight||-1;return{top:n.toFixed(0),left:o.toFixed(0),page_width:i,page_height:c}}catch(t){return l({tn:p,winloss:1,fe:2,pos_err_c:1001,pos_err_m:t.toString()}),{top:\"-1\",left:\"-1\",page_width:\"-1\",page_height:\"-1\"}}}(r),(n=d[t])&&g(n,0,e),o=u[t],c=!(i=function(){o&&g(o)}),function n(){setTimeout(function(){var t,e;!c&&(t=r,e=window.innerHeight||document.documentElement.clientHeight||document.body.clientHeight,(t.getBoundingClientRect()&&t.getBoundingClientRect().top)<=e-.75*(t.offsetHeight||t.clientHeight))?(c=!0,i()):n()},500)}())};for(t in a)e(t)}}()}();'
+    const tempAdm = '<div class="discovery-adm">Simple discovery test creative</div>';
     const serverResponse = {
       body: {
         id: 'pp_hbjs_2405029787417735524',
@@ -335,7 +332,7 @@ describe('discovery:BidAdapterTests', function () {
     };
     const USP_CONSENT = {
       consentString: 'uspConsentString'
-    }
+    };
 
     let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
     syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
@@ -467,7 +464,7 @@ describe('discovery Bid Adapter Tests', function () {
       it('should return the current document description if top document is not accessible', function() {
         const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
         const fakeWindow = {
           get top() {
             throw new Error('Access denied');
@@ -660,5 +657,197 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).be.undefined;
       });
     });
+  });
+});
+
+describe('discovery: isBidRequestValid with bcat/badv', function() {
+  it('should handle bcat and badv params', function() {
+    const result = spec.isBidRequestValid({
+      bidder: 'discovery',
+      params: {
+        token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
+        publisher: '52',
+        bcat: ['IAB1', 'IAB2'],
+        badv: ['blocked.com'],
+      },
+    });
+    expect(result).to.equal(true);
+  });
+
+  it('should set bcat to empty array if not an array', function() {
+    const result = spec.isBidRequestValid({
+      bidder: 'discovery',
+      params: {
+        token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
+        bcat: 'not-array',
+        badv: 'not-array',
+      },
+    });
+    expect(result).to.equal(true);
+  });
+});
+
+describe('discovery: native response parsing', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({ search: {} });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should parse native response correctly', function() {
+    const bidRequestData = {
+      bidderCode: 'discovery',
+      auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+      bidderRequestId: '4fec04e87ad785',
+      bids: [
+        {
+          bidder: 'discovery',
+          params: { token: 'd0f4902b616cc5c38cbe0a08676d0ed9' },
+          mediaTypes: {
+            native: { title: { required: true } }
+          },
+          adUnitCode: 'native_ad',
+          sizes: [[300, 250]],
+          bidId: 'native_bid_1',
+          bidderRequestId: '4fec04e87ad785',
+          auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+          userIdAsEids: [],
+        }
+      ],
+    };
+
+    spec.isBidRequestValid(bidRequestData.bids[0]);
+    spec.buildRequests(bidRequestData.bids, bidRequestData);
+
+    const nativeAdm = JSON.stringify({
+      assets: [
+        { title: { text: 'Test Title' } },
+        { data: { value: 'Test Data' } },
+        { img: { type: 3, url: 'https://img.test.com/main.jpg', w: 300, h: 174 } },
+        { img: { type: 1, url: 'https://img.test.com/icon.jpg', w: 50, h: 50 } },
+      ],
+      link: { url: 'https://click.test.com' },
+      eventtrackers: [
+        { event: 1, method: 1, url: 'https://track.test.com/imp' },
+        { event: 2, method: 1, url: 'https://track.test.com/view' },
+      ],
+      purl: 'https://track.test.com/purl',
+    });
+
+    const serverResponse = {
+      body: {
+        id: 'test_response',
+        seatbid: [{
+          bid: [{
+            id: 'bid_1',
+            impid: '1',
+            price: 1.5,
+            adm: nativeAdm,
+            cid: '12345',
+            nurl: 'https://trace.test.com/win',
+          }]
+        }],
+        cur: 'USD',
+      }
+    };
+
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].mediaType).to.equal('native');
+    expect(bids[0].native.title).to.equal('Test Title');
+    expect(bids[0].native.data).to.equal('Test Data');
+    expect(bids[0].native.image.url).to.equal('https://img.test.com/main.jpg');
+    expect(bids[0].native.icon.url).to.equal('https://img.test.com/icon.jpg');
+    expect(bids[0].native.clickUrl).to.equal('https://click.test.com');
+    expect(bids[0].native.impressionTrackers).to.include('https://track.test.com/imp');
+    expect(bids[0].native.purl).to.equal('https://track.test.com/purl');
+  });
+});
+
+describe('discovery: onBidWon and onTimeout', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'triggerPixel');
+    sandbox.stub(utils, 'logError');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should call triggerPixel when nurl exists on bid win', function() {
+    spec.onBidWon({ nurl: 'https://trace.test.com/win?id=123' });
+    expect(utils.triggerPixel.calledOnce).to.be.true;
+    expect(utils.triggerPixel.calledWith('https://trace.test.com/win?id=123')).to.be.true;
+  });
+
+  it('should not call triggerPixel when nurl is missing', function() {
+    spec.onBidWon({});
+    expect(utils.triggerPixel.called).to.be.false;
+  });
+
+  it('should log error on timeout', function() {
+    spec.onTimeout({});
+    expect(utils.logError.calledOnce).to.be.true;
+  });
+});
+
+describe('discovery: buildRequests with non-standard size', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({ search: {} });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should use fallback size when no standard size matches', function() {
+    const bidRequestData = {
+      bidderCode: 'discovery',
+      auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+      bidderRequestId: '4fec04e87ad785',
+      bids: [
+        {
+          bidder: 'discovery',
+          params: { token: 'd0f4902b616cc5c38cbe0a08676d0ed9' },
+          mediaTypes: {
+            banner: { sizes: [[999, 777]] }
+          },
+          adUnitCode: 'test_ad',
+          sizes: [[999, 777]],
+          bidId: 'bid_fallback',
+          bidderRequestId: '4fec04e87ad785',
+          auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+          userIdAsEids: [],
+        }
+      ],
+    };
+
+    spec.isBidRequestValid(bidRequestData.bids[0]);
+    const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const reqData = JSON.parse(request.data);
+    expect(reqData.imp[0].banner.w).to.equal(999);
+    expect(reqData.imp[0].banner.h).to.equal(777);
+    expect(reqData.imp[0].banner.format).to.deep.equal([{ w: 999, h: 777 }]);
   });
 });

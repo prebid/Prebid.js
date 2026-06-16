@@ -56,7 +56,7 @@ describe('ConcertAnalyticsAdapter', function() {
 
       for (let i = 0; i < eventsToReport.length; i++) {
         expect(concertAnalytics.eventsStorage.some(function(event) {
-          return event.event === eventsToReport[i]
+          return event.event === eventsToReport[i];
         })).to.equal(true);
       }
     });
@@ -95,7 +95,6 @@ describe('ConcertAnalyticsAdapter', function() {
     'bidderCode': 'concert',
     'width': 1030,
     'height': 590,
-    'statusMessage': 'Bid available',
     'adId': '642f13fe18ab7dc',
     'requestId': '4062fba2e039919',
     'mediaType': 'banner',
@@ -120,7 +119,7 @@ describe('ConcertAnalyticsAdapter', function() {
         'partnerId': 'cst'
       }
     ]
-  }
+  };
 
   const bidWon = {
     'adId': '642f13fe18ab7dc',
@@ -132,14 +131,13 @@ describe('ConcertAnalyticsAdapter', function() {
     'netRevenue': false,
     'ttl': 360,
     'auctionId': '9f894496-10fe-4652-863d-623462bf82b8',
-    'statusMessage': 'Bid available',
     'responseTimestamp': 1591213790366,
     'requestTimestamp': 1591213790017,
     'bidder': 'concert',
     'adUnitCode': 'desktop_leaderboard_variable',
     'sizes': [[1030, 590]],
     'size': [1030, 590]
-  }
+  };
 
   function fireBidEvents(events) {
     events.emit(EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits });

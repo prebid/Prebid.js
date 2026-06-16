@@ -79,7 +79,7 @@ describe('Deepintent adapter', function () {
             'crid': '13665',
             'w': 300,
             'h': 250,
-            'dealId': 'dee_12312stdszzsx'
+            'dealid': 'dee_12312stdszzsx'
           }],
           'seat': '10000'
         }],
@@ -198,7 +198,7 @@ describe('Deepintent adapter', function () {
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
-    })
+    });
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {
@@ -355,7 +355,7 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['deepintent.com']);
       expect(bResponse[0].ttl).to.equal(300);
       expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
-      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
+      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealid);
     });
     it('bid response check: valid video bid response', function() {
       const request = spec.buildRequests(videoBidRequests);

@@ -9,7 +9,6 @@ import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
-import { deepSetValue } from 'src/utils.js';
 import {
   extractPID,
   extractCID,
@@ -93,7 +92,7 @@ const VIDEO_BID = {
       'placement': 1
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -419,8 +418,7 @@ describe('TwistDigitalBidAdapter', function () {
             }
           }
         }
-      })
-      ;
+      });
     });
 
     it('should build banner request for each size', function () {
@@ -641,6 +639,17 @@ describe('TwistDigitalBidAdapter', function () {
       expect(requests).to.have.length(2);
     });
 
+    it('should build video request with right url domain despite params.host', function () {
+      const videoBidWithHost = VIDEO_BID;
+      videoBidWithHost.params.host = "example.com";
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
     after(function () {
       getGlobal().bidderSettings = {};
       config.resetConfig();
@@ -820,10 +829,10 @@ describe('TwistDigitalBidAdapter', function () {
           "source": "audigent.com",
           "uids": [{ "id": "fakeidi6j6dlc6e" }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
+    });
     it("should include user ids from bid.userIdAsEids (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.userIdAsEids = [
@@ -835,11 +844,11 @@ describe('TwistDigitalBidAdapter', function () {
           "source": "rwdcntrl.net",
           "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
       expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
+    });
     // testing user.ext.eid handling
     it("should include user ids from user.ext.eid (length=1)", function() {
       const bid = utils.deepClone(BID);
@@ -852,10 +861,10 @@ describe('TwistDigitalBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
+    });
     it("should include user ids from user.ext.eid (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.user = {
@@ -871,11 +880,11 @@ describe('TwistDigitalBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
       expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
+    });
   });
 
   describe('alternate param names extractors', function () {
@@ -926,7 +935,7 @@ describe('TwistDigitalBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -942,7 +951,7 @@ describe('TwistDigitalBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
@@ -973,7 +982,7 @@ describe('TwistDigitalBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);

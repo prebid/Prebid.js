@@ -22,7 +22,7 @@ describe('Consent interpretation', () => {
       TargetedAdvertisingOptOut: 2,
       TargetedAdvertisingOptOutNotice: 1,
       Version: 1
-    }, flags)
+    }, flags);
   }
   describe('isBasicConsentDenied', () => {
     it('should be false (basic consent conditions pass) with variety of notice and opt in', () => {
@@ -52,7 +52,7 @@ describe('Consent interpretation', () => {
         Version: 2,
         KnownChildSensitiveDataConsents: [null, null, 1]
       }))).to.be.true;
-    })
+    });
   });
 
   describe('isConsentDenied', () => {
@@ -82,7 +82,7 @@ describe('Consent interpretation', () => {
       expect(isConsentDenied(mkConsent({
         SharingNotice: 0
       }))).to.be.true;
-    })
+    });
   });
 
   describe('isTransmitUfpdConsentDenied', () => {
@@ -130,7 +130,7 @@ describe('Consent interpretation', () => {
           const flagDescription = ({
             1: 'denied',
             2: 'given'
-          })[flagValue]
+          })[flagValue];
           describe(`consent is ${flagValue} (${flagDescription})`, () => {
             let consent;
             beforeEach(() => {
@@ -141,11 +141,11 @@ describe('Consent interpretation', () => {
               it(`should ${shouldBeDenied ? 'deny' : 'allow'} (version ${version})`, () => {
                 consent.Version = version;
                 expect(isTransmitUfpdConsentDenied(consent)).to.eql(shouldBeDenied);
-              })
-            })
-          })
-        })
-      })
+              });
+            });
+          });
+        });
+      });
     });
 
     ['SharingNotice', 'SensitiveDataLimitUseNotice'].forEach(flag => {
@@ -153,7 +153,7 @@ describe('Consent interpretation', () => {
         expect(isTransmitUfpdConsentDenied(mkConsent({
           [flag]: 2
         }))).to.be.true;
-      })
+      });
     });
 
     ['SaleOptOut', 'TargetedAdvertisingOptOut'].forEach(flag => {
@@ -161,7 +161,7 @@ describe('Consent interpretation', () => {
         expect(isTransmitUfpdConsentDenied(mkConsent({
           [flag]: 1
         }))).to.be.true;
-      })
+      });
     });
 
     it('should be true (basic consent conditions do not pass) with sensitive opt in but no notice', () => {
@@ -183,7 +183,7 @@ describe('Consent interpretation', () => {
       const cd = mkConsent();
       cd.SensitiveDataProcessing[6] = null;
       expect(isTransmitUfpdConsentDenied(cd)).to.be.false;
-    })
+    });
   });
 
   describe('isTransmitGeoConsentDenied', () => {
@@ -206,7 +206,7 @@ describe('Consent interpretation', () => {
       const result = isTransmitGeoConsentDenied(geoConsent(2));
       expect(result).to.equal(false);
     });
-  })
+  });
 });
 
 describe('mspaRule', () => {
@@ -223,7 +223,7 @@ describe('mspaRule', () => {
   describe('when SID is applicable', () => {
     let consent, denies;
     function mkRule() {
-      return mspaRule([1, 2], () => consent, denies, () => [2])
+      return mspaRule([1, 2], () => consent, denies, () => [2]);
     }
 
     beforeEach(() => {
@@ -238,7 +238,7 @@ describe('mspaRule', () => {
     it('should deny when consent is using version other than 1/2', () => {
       consent = { Version: 3 };
       expect(mkRule()().allow).to.equal(false);
-    })
+    });
 
     Object.entries({
       'denies': true,
@@ -254,9 +254,9 @@ describe('mspaRule', () => {
         } else {
           expect(result).to.not.exist;
         }
-      })
-    })
-  })
+      });
+    });
+  });
 });
 
 describe('setupRules', () => {
@@ -280,21 +280,21 @@ describe('setupRules', () => {
   });
 
   function runSetup(api, sids, normalize) {
-    return setupRules(api, sids, normalize, rules, registerRule, () => consent)
+    return setupRules(api, sids, rules, normalize, registerRule, () => consent);
   }
 
   it('should use flatten section data for the given api', () => {
     runSetup('mockApi', [1]);
     expect(isAllowed('mockActivity', {})).to.equal(false);
-    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi[0])
+    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi[0]);
   });
 
   it('should accept already flattened section data', () => {
     consent.parsedSections.mockApi = { flat: 'consent', Version: 1 };
     runSetup('mockApi', [1]);
     isAllowed('mockActivity', {});
-    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi)
-  })
+    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi);
+  });
 
   it('should not choke when no consent data is available', () => {
     consent = null;
@@ -308,7 +308,7 @@ describe('setupRules', () => {
   });
 
   it('should pass flattened consent through normalizeConsent', () => {
-    const normalize = sinon.stub().returns({ normalized: 'consent', Version: 1 })
+    const normalize = sinon.stub().returns({ normalized: 'consent', Version: 1 });
     runSetup('mockApi', [1], normalize);
     expect(isAllowed('mockActivity', {})).to.equal(false);
     sinon.assert.calledWith(normalize, { mock: 'consent', Version: 1 });
@@ -320,4 +320,4 @@ describe('setupRules', () => {
     dereg();
     expect(isAllowed('mockActivity', {})).to.equal(true);
   });
-})
+});

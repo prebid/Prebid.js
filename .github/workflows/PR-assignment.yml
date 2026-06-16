@@ -18,7 +18,7 @@ jobs:
           ref: master
       - name: Generate app token
         id: token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.PR_BOT_ID }}
           private-key: ${{ secrets.PR_BOT_PEM }}
@@ -35,7 +35,7 @@ jobs:
           npm install @aws-sdk/client-s3
       - name: Get PR properties
         id: get-props
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           AWS_ACCESS_KEY_ID: ${{ vars.PR_BOT_AWS_AK }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PR_BOT_AWS_SAK }}
@@ -58,10 +58,25 @@ jobs:
             return props;
       - name: Assign reviewers
         if: ${{ !fromJSON(steps.get-props.outputs.result).review.ok }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const assignReviewers = require('./.github/workflows/scripts/assignReviewers.js')
             const reviewers = await assignReviewers({github, context, prData: ${{ steps.get-props.outputs.result }} });
             console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
+      - name: Auto-label core PR
+        if: ${{ fromJSON(steps.get-props.outputs.result).isCoreChange }}
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const ghRequester = require('.github/workflows/scripts/ghRequest.js');
+            const request = ghRequester(github);
+            const prData = ${{ steps.get-props.outputs.result }};
+            await request('POST /repos/{owner}/{repo}/issues/{issue_number}/labels', {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prData.pr,
+              labels: ['core'],
+            });

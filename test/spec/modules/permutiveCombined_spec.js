@@ -11,29 +11,29 @@ import {
   PERMUTIVE_STANDARD_KEYWORD,
   PERMUTIVE_STANDARD_AUD_KEYWORD,
   PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
-} from 'modules/permutiveRtdProvider.js'
-import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
-import { config } from 'src/config.js'
-import { permutiveIdentityManagerIdSubmodule, storage as permutiveIdStorage } from '../../../modules/permutiveIdentityManagerIdSystem.js'
+} from 'modules/permutiveRtdProvider.js';
+import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js';
+import { config } from 'src/config.js';
+import { permutiveIdentityManagerIdSubmodule, storage as permutiveIdStorage } from '../../../modules/permutiveIdentityManagerIdSystem.js';
 
 describe('permutiveRtdProvider', function () {
   beforeEach(function () {
-    const data = getTargetingData()
-    setLocalStorage(data)
-    config.resetConfig()
-  })
+    const data = getTargetingData();
+    setLocalStorage(data);
+    config.resetConfig();
+  });
 
   afterEach(function () {
-    const data = getTargetingData()
-    removeLocalStorage(data)
-    config.resetConfig()
-  })
+    const data = getTargetingData();
+    removeLocalStorage(data);
+    config.resetConfig();
+  });
 
   describe('permutiveSubmodule', function () {
     it('should initialise and return true', function () {
-      expect(permutiveSubmodule.init()).to.equal(true)
-    })
-  })
+      expect(permutiveSubmodule.init()).to.equal(true);
+    });
+  });
 
   describe('consent handling', function () {
     const publisherPurposeConsent = {
@@ -45,7 +45,7 @@ describe('permutiveRtdProvider', function () {
           purpose: { consents: {}, legitimateInterests: {} },
         }
       }
-    }
+    };
 
     const vendorPurposeConsent = {
       gdpr: {
@@ -56,7 +56,7 @@ describe('permutiveRtdProvider', function () {
           purpose: { consents: { 1: true }, legitimateInterests: {} },
         }
       }
-    }
+    };
 
     const missingVendorConsent = {
       gdpr: {
@@ -67,59 +67,59 @@ describe('permutiveRtdProvider', function () {
           purpose: { consents: { 1: true }, legitimateInterests: {} },
         }
       }
-    }
+    };
 
     it('allows publisher consent path when vendor check is disabled', function () {
-      expect(permutiveSubmodule.init({}, publisherPurposeConsent)).to.equal(true)
-    })
+      expect(permutiveSubmodule.init({}, publisherPurposeConsent)).to.equal(true);
+    });
 
     it('requires vendor consent when enforceVendorConsent is enabled', function () {
-      expect(permutiveSubmodule.init({ params: { enforceVendorConsent: true } }, missingVendorConsent)).to.equal(false)
-    })
+      expect(permutiveSubmodule.init({ params: { enforceVendorConsent: true } }, missingVendorConsent)).to.equal(false);
+    });
 
     it('allows vendor consent path when enforceVendorConsent is enabled', function () {
-      expect(permutiveSubmodule.init({ params: { enforceVendorConsent: true } }, vendorPurposeConsent)).to.equal(true)
-    })
+      expect(permutiveSubmodule.init({ params: { enforceVendorConsent: true } }, vendorPurposeConsent)).to.equal(true);
+    });
 
     describe('identity manager gating', function () {
-      const idKey = 'permutive-prebid-id'
-      const idPayload = { providers: { id5id: { userId: 'abc', expiryTime: Date.now() + 10000 } } }
+      const idKey = 'permutive-prebid-id';
+      const idPayload = { providers: { id5id: { userId: 'abc', expiryTime: Date.now() + 10000 } } };
 
       beforeEach(function () {
-        permutiveIdStorage.setDataInLocalStorage(idKey, JSON.stringify(idPayload))
-      })
+        permutiveIdStorage.setDataInLocalStorage(idKey, JSON.stringify(idPayload));
+      });
 
       afterEach(function () {
-        permutiveIdStorage.removeDataFromLocalStorage(idKey)
-      })
+        permutiveIdStorage.removeDataFromLocalStorage(idKey);
+      });
 
       it('returns ids with publisher consent when vendor enforcement is disabled', function () {
-        const response = permutiveIdentityManagerIdSubmodule.getId({}, publisherPurposeConsent)
+        const response = permutiveIdentityManagerIdSubmodule.getId({}, publisherPurposeConsent);
 
-        expect(response).to.deep.equal({ id: { id5id: 'abc' } })
-      })
+        expect(response).to.deep.equal({ id: { id5id: 'abc' } });
+      });
 
       it('blocks ids when vendor consent is missing and enforcement is enabled', function () {
-        const response = permutiveIdentityManagerIdSubmodule.getId({ params: { enforceVendorConsent: true } }, missingVendorConsent)
+        const response = permutiveIdentityManagerIdSubmodule.getId({ params: { enforceVendorConsent: true } }, missingVendorConsent);
 
-        expect(response).to.be.undefined
-      })
+        expect(response).to.be.undefined;
+      });
 
       it('returns ids when vendor consent is present and enforcement is enabled', function () {
-        const response = permutiveIdentityManagerIdSubmodule.getId({ params: { enforceVendorConsent: true } }, vendorPurposeConsent)
+        const response = permutiveIdentityManagerIdSubmodule.getId({ params: { enforceVendorConsent: true } }, vendorPurposeConsent);
 
-        expect(response).to.deep.equal({ id: { id5id: 'abc' } })
-      })
-    })
-  })
+        expect(response).to.deep.equal({ id: { id5id: 'abc' } });
+      });
+    });
+  });
 
   describe('getModuleConfig', function () {
     beforeEach(function () {
       // Reads data from the cache
-      permutiveSubmodule.init()
-    })
+      permutiveSubmodule.init();
+    });
 
-    const liftToParams = (params) => ({ params })
+    const liftToParams = (params) => ({ params });
 
     const getDefaultConfig = () => ({
       waitForIt: false,
@@ -128,158 +128,159 @@ describe('permutiveRtdProvider', function () {
         acBidders: [],
         overwrites: {},
         enforceVendorConsent: false,
+        bidders: {},
       },
-    })
+    });
 
     const storeConfigInCacheAndInit = (data) => {
-      const dataToStore = { [PERMUTIVE_SUBMODULE_CONFIG_KEY]: data }
-      setLocalStorage(dataToStore)
+      const dataToStore = { [PERMUTIVE_SUBMODULE_CONFIG_KEY]: data };
+      setLocalStorage(dataToStore);
       // Reads data from the cache
-      permutiveSubmodule.init()
+      permutiveSubmodule.init();
 
       // Cleanup
-      return () => removeLocalStorage(dataToStore)
-    }
+      return () => removeLocalStorage(dataToStore);
+    };
 
     const setWindowPermutivePrebid = (getPermutiveRtdConfig) => {
       // Read from Permutive
-      const backup = window.permutive
+      const backup = window.permutive;
 
       deepSetValue(window, 'permutive.addons.prebid', {
         getPermutiveRtdConfig,
-      })
+      });
 
       // Cleanup
-      return () => window.permutive = backup
-    }
+      return () => window.permutive = backup;
+    };
 
     it('should return default values', function () {
-      const config = getModuleConfig({})
-      expect(config).to.deep.equal(getDefaultConfig())
-    })
+      const config = getModuleConfig({});
+      expect(config).to.deep.equal(getDefaultConfig());
+    });
 
     it('should override deeply on custom config', function () {
-      const defaultConfig = getDefaultConfig()
+      const defaultConfig = getDefaultConfig();
 
-      const customModuleConfig = { waitForIt: true, params: { acBidders: ['123'] } }
-      const config = getModuleConfig(customModuleConfig)
+      const customModuleConfig = { waitForIt: true, params: { acBidders: ['123'] } };
+      const config = getModuleConfig(customModuleConfig);
 
-      expect(config).to.deep.equal(mergeDeep(defaultConfig, customModuleConfig))
-    })
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, customModuleConfig));
+    });
 
     it('should override deeply on cached config', function () {
-      const defaultConfig = getDefaultConfig()
+      const defaultConfig = getDefaultConfig();
 
-      const cachedParamsConfig = { acBidders: ['123'] }
-      const cleanupCache = storeConfigInCacheAndInit(cachedParamsConfig)
+      const cachedParamsConfig = { acBidders: ['123'] };
+      const cleanupCache = storeConfigInCacheAndInit(cachedParamsConfig);
 
-      const config = getModuleConfig({})
+      const config = getModuleConfig({});
 
-      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(cachedParamsConfig)))
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(cachedParamsConfig)));
 
       // Cleanup
-      cleanupCache()
-    })
+      cleanupCache();
+    });
 
     it('should override deeply on Permutive Rtd config', function () {
-      const defaultConfig = getDefaultConfig()
+      const defaultConfig = getDefaultConfig();
 
-      const permutiveRtdConfigParams = { acBidders: ['123'], overwrites: { '123': true } }
+      const permutiveRtdConfigParams = { acBidders: ['123'], overwrites: { '123': true } };
       const cleanupPermutive = setWindowPermutivePrebid(function () {
-        return permutiveRtdConfigParams
-      })
+        return permutiveRtdConfigParams;
+      });
 
-      const config = getModuleConfig({})
+      const config = getModuleConfig({});
 
-      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(permutiveRtdConfigParams)))
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(permutiveRtdConfigParams)));
 
       // Cleanup
-      cleanupPermutive()
-    })
+      cleanupPermutive();
+    });
 
     it('should NOT use cached Permutive Rtd config if window.permutive is available', function () {
-      const defaultConfig = getDefaultConfig()
+      const defaultConfig = getDefaultConfig();
 
       // As Permutive is available on the window object, this value won't be used.
-      const cachedParamsConfig = { acBidders: ['123'] }
-      const cleanupCache = storeConfigInCacheAndInit(cachedParamsConfig)
+      const cachedParamsConfig = { acBidders: ['123'] };
+      const cleanupCache = storeConfigInCacheAndInit(cachedParamsConfig);
 
-      const permutiveRtdConfigParams = { acBidders: ['456'], overwrites: { '123': true } }
+      const permutiveRtdConfigParams = { acBidders: ['456'], overwrites: { '123': true } };
       const cleanupPermutive = setWindowPermutivePrebid(function () {
-        return permutiveRtdConfigParams
-      })
+        return permutiveRtdConfigParams;
+      });
 
-      const config = getModuleConfig({})
+      const config = getModuleConfig({});
 
-      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(permutiveRtdConfigParams)))
+      expect(config).to.deep.equal(mergeDeep(defaultConfig, liftToParams(permutiveRtdConfigParams)));
 
       // Cleanup
-      cleanupCache()
-      cleanupPermutive()
-    })
+      cleanupCache();
+      cleanupPermutive();
+    });
 
     it('should handle calling Permutive method throwing error', function () {
-      const defaultConfig = getDefaultConfig()
+      const defaultConfig = getDefaultConfig();
 
       const cleanupPermutive = setWindowPermutivePrebid(function () {
-        throw new Error()
-      })
+        throw new Error();
+      });
 
-      const config = getModuleConfig({})
+      const config = getModuleConfig({});
 
-      expect(config).to.deep.equal(defaultConfig)
+      expect(config).to.deep.equal(defaultConfig);
 
       // Cleanup
-      cleanupPermutive()
-    })
+      cleanupPermutive();
+    });
 
     it('should override deeply in priority order', function () {
-      const defaultConfig = getDefaultConfig()
+      const defaultConfig = getDefaultConfig();
 
       // As Permutive is available on the window object, this value won't be used.
-      const cachedConfig = { acBidders: ['123'] }
-      const cleanupCache = storeConfigInCacheAndInit(cachedConfig)
+      const cachedConfig = { acBidders: ['123'] };
+      const cleanupCache = storeConfigInCacheAndInit(cachedConfig);
 
       // Read from Permutive
-      const permutiveRtdConfig = { acBidders: ['456'] }
+      const permutiveRtdConfig = { acBidders: ['456'] };
       const cleanupPermutive = setWindowPermutivePrebid(function () {
-        return permutiveRtdConfig
-      })
+        return permutiveRtdConfig;
+      });
 
-      const customModuleConfig = { params: { acBidders: ['789'], maxSegs: 499 } }
-      const config = getModuleConfig(customModuleConfig)
+      const customModuleConfig = { params: { acBidders: ['789'], maxSegs: 499 } };
+      const config = getModuleConfig(customModuleConfig);
 
       // The configs are in reverse priority order as configs are merged left to right. So the priority is,
       // 1. customModuleConfig <- set by publisher with pbjs.setConfig
       // 2. permutiveRtdConfig <- set by the publisher using Permutive.
       // 3. defaultConfig
-      const configMergedInPriorityOrder = mergeDeep(defaultConfig, liftToParams(permutiveRtdConfig), customModuleConfig)
-      expect(config).to.deep.equal(configMergedInPriorityOrder)
+      const configMergedInPriorityOrder = mergeDeep(defaultConfig, liftToParams(permutiveRtdConfig), customModuleConfig);
+      expect(config).to.deep.equal(configMergedInPriorityOrder);
 
       // Cleanup
-      cleanupCache()
-      cleanupPermutive()
-    })
-  })
+      cleanupCache();
+      cleanupPermutive();
+    });
+  });
 
   describe('ortb2 config', function () {
     beforeEach(function () {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
 
     it('should add ortb2 config', function () {
-      const moduleConfig = getConfig()
+      const moduleConfig = getConfig();
       const bidderConfig = {};
-      const acBidders = moduleConfig.params.acBidders
-      const segmentsData = transformedTargeting()
+      const acBidders = moduleConfig.params.acBidders;
+      const segmentsData = transformedTargeting();
       const expectedTargetingData = segmentsData.ac.map(seg => {
-        return { id: seg }
-      })
+        return { id: seg };
+      });
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
-        const customCohorts = segmentsData[bidder] || []
+        const customCohorts = segmentsData[bidder] || [];
         expect(bidderConfig[bidder].user.data).to.deep.include.members([
           {
             name: 'permutive.com',
@@ -289,7 +290,7 @@ describe('permutiveRtdProvider', function () {
           {
             name: 'permutive',
             segment: customCohorts.map(seg => {
-              return { id: seg }
+              return { id: seg };
             }),
           },
           {
@@ -314,17 +315,17 @@ describe('permutiveRtdProvider', function () {
               { id: '102' },
             ],
           },
-        ])
-      })
-    })
+        ]);
+      });
+    });
 
     it('should override existing ortb2.user.data reserved by permutive RTD', function () {
-      const reservedPermutiveStandardName = 'permutive.com'
-      const reservedPermutiveCustomCohortName = 'permutive'
+      const reservedPermutiveStandardName = 'permutive.com';
+      const reservedPermutiveCustomCohortName = 'permutive';
 
-      const moduleConfig = getConfig()
-      const acBidders = moduleConfig.params.acBidders
-      const segmentsData = transformedTargeting()
+      const moduleConfig = getConfig();
+      const acBidders = moduleConfig.params.acBidders;
+      const segmentsData = transformedTargeting();
 
       const sampleOrtbConfig = {
         user: {
@@ -339,16 +340,16 @@ describe('permutiveRtdProvider', function () {
             }
           ]
         }
-      }
+      };
 
-      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]));
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
-        const customCohorts = segmentsData[bidder] || []
+        const customCohorts = segmentsData[bidder] || [];
 
-        expect(bidderConfig[bidder].user.data).to.not.deep.include.members([...sampleOrtbConfig.user.data])
+        expect(bidderConfig[bidder].user.data).to.not.deep.include.members([...sampleOrtbConfig.user.data]);
         expect(bidderConfig[bidder].user.data).to.deep.include.members([
           {
             name: reservedPermutiveCustomCohortName,
@@ -358,18 +359,18 @@ describe('permutiveRtdProvider', function () {
             name: reservedPermutiveStandardName,
             segment: segmentsData.ac.map(id => ({ id })),
           },
-        ])
-      })
-    })
+        ]);
+      });
+    });
 
     it('should include ortb2 user data transformation for IAB audience taxonomy', function() {
-      const moduleConfig = getConfig()
-      const bidderConfig = {}
-      const acBidders = moduleConfig.params.acBidders
-      const segmentsData = transformedTargeting()
+      const moduleConfig = getConfig();
+      const bidderConfig = {};
+      const acBidders = moduleConfig.params.acBidders;
+      const segmentsData = transformedTargeting();
       const expectedTargetingData = segmentsData.ac.map(seg => {
-        return { id: seg }
-      })
+        return { id: seg };
+      });
 
       Object.assign(
         moduleConfig.params,
@@ -385,9 +386,9 @@ describe('permutiveRtdProvider', function () {
             }
           }]
         }
-      )
+      );
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].user.data).to.deep.include.members([
@@ -400,13 +401,13 @@ describe('permutiveRtdProvider', function () {
             ext: { segtax: 4 },
             segment: [{ id: '9000009' }, { id: '9000008' }]
           }
-        ])
-      })
-    })
+        ]);
+      });
+    });
     it('should not overwrite ortb2 config', function () {
-      const moduleConfig = getConfig()
-      const acBidders = moduleConfig.params.acBidders
-      const segmentsData = transformedTargeting()
+      const moduleConfig = getConfig();
+      const acBidders = moduleConfig.params.acBidders;
+      const segmentsData = transformedTargeting();
 
       const sampleOrtbConfig = {
         site: {
@@ -421,27 +422,27 @@ describe('permutiveRtdProvider', function () {
             }
           ]
         }
-      }
+      };
 
-      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]));
 
       const transformedUserData = {
         name: 'transformation',
         ext: { test: true },
         segment: [1, 2, 3]
-      }
+      };
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
-        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
-        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
-      })
-    })
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name);
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]]);
+      });
+    });
     it('should update user.keywords and not override existing values', function () {
-      const moduleConfig = getConfig()
-      const acBidders = moduleConfig.params.acBidders
-      const segmentsData = transformedTargeting()
+      const moduleConfig = getConfig();
+      const acBidders = moduleConfig.params.acBidders;
+      const segmentsData = transformedTargeting();
 
       const sampleOrtbConfig = {
         site: {
@@ -457,42 +458,42 @@ describe('permutiveRtdProvider', function () {
             }
           ]
         }
-      }
+      };
 
-      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]));
 
       const transformedUserData = {
         name: 'transformation',
         ext: { test: true },
         segment: [1, 2, 3]
-      }
+      };
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
-        const customCohortsData = segmentsData[bidder] || []
+        const customCohortsData = segmentsData[bidder] || [];
         const keywordGroups = {
           [PERMUTIVE_STANDARD_KEYWORD]: segmentsData.ac,
           [PERMUTIVE_STANDARD_AUD_KEYWORD]: segmentsData.ssp.cohorts,
           [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData
-        }
+        };
 
         // Transform groups of key-values into a single array of strings
         // i.e { permutive: ['1', '2'], p_standard: ['3', '4'] } => ['permutive=1', 'permutive=2', 'p_standard=3',' p_standard=4']
         const transformedKeywordGroups = Object.entries(keywordGroups)
-          .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
+          .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`));
 
-        const keywords = `${sampleOrtbConfig.user.keywords},${transformedKeywordGroups.join(',')}`
+        const keywords = `${sampleOrtbConfig.user.keywords},${transformedKeywordGroups.join(',')}`;
 
-        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
-        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
-        expect(bidderConfig[bidder].user.keywords).to.deep.equal(keywords)
-      })
-    })
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name);
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]]);
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal(keywords);
+      });
+    });
     it('should deduplicate keywords', function () {
-      const moduleConfig = getConfig()
-      const acBidders = moduleConfig.params.acBidders
-      const segmentsData = transformedTargeting()
+      const moduleConfig = getConfig();
+      const acBidders = moduleConfig.params.acBidders;
+      const segmentsData = transformedTargeting();
 
       // Includes to the existing keywords all segments for `p_standard` and `p_standard_aud`
       // which will be also present in the new bid: they should *not* be duplicated
@@ -501,7 +502,7 @@ describe('permutiveRtdProvider', function () {
         'some_key=some_value',
         ...segmentsData.ac.map(c => `p_standard=${c}`),
         ...segmentsData.ssp.cohorts.map(c => `p_standard_aud=${c}`),
-      ]
+      ];
 
       const sampleOrtbConfig = {
         site: { name: 'example' },
@@ -515,26 +516,26 @@ describe('permutiveRtdProvider', function () {
             }
           ]
         }
-      }
+      };
 
-      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]));
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
-        const customCohortsData = segmentsData[bidder] || []
+        const customCohortsData = segmentsData[bidder] || [];
 
         const expectedKeywords = [
           ...existingKeywords,
           // both `standard` and `standard_aud` were already included in existing keywords
           ...customCohortsData.map(c => `permutive=${c}`)
-        ]
+        ];
 
-        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
-        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
-        expect(bidderConfig[bidder].user.keywords).to.deep.equal(expectedKeywords.join(','))
-      })
-    })
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name);
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]]);
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal(expectedKeywords.join(','));
+      });
+    });
     it('should merge ortb2 correctly for ac and ssps', function () {
       const customTargetingData = {
         ...getTargetingData(),
@@ -545,9 +546,9 @@ describe('permutiveRtdProvider', function () {
           ssps: ['foo', 'bar'],
           cohorts: ['xyz', 'uvw'],
         }
-      }
-      const segmentsData = transformedTargeting(customTargetingData)
-      setLocalStorage(customTargetingData)
+      };
+      const segmentsData = transformedTargeting(customTargetingData);
+      setLocalStorage(customTargetingData);
 
       const moduleConfig = {
         name: 'permutive',
@@ -556,10 +557,10 @@ describe('permutiveRtdProvider', function () {
           acBidders: ['foo', 'other'],
           maxSegs: 30
         }
-      }
+      };
       const bidderConfig = {};
 
-      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       // include both ac and ssp cohorts, as foo is both in ac bidders and ssps
       const expectedFooTargetingData = [
@@ -567,40 +568,40 @@ describe('permutiveRtdProvider', function () {
         { id: 'def' },
         { id: 'xyz' },
         { id: 'uvw' },
-      ]
+      ];
       expect(bidderConfig['foo'].user.data).to.deep.include.members([{
         name: 'permutive.com',
         segment: expectedFooTargetingData
-      }])
+      }]);
 
       // don't include ac targeting as it's not in ac bidders
       const expectedBarTargetingData = [
         { id: 'xyz' },
         { id: 'uvw' },
-      ]
+      ];
       expect(bidderConfig['bar'].user.data).to.deep.include.members([{
         name: 'permutive.com',
         segment: expectedBarTargetingData
-      }])
+      }]);
 
       // only include ac targeting as this ssp is not in ssps list
       const expectedOtherTargetingData = [
         { id: 'abc' },
         { id: 'def' },
         { id: 'xyz' },
-      ]
+      ];
       expect(bidderConfig['other'].user.data).to.deep.include.members([{
         name: 'permutive.com',
         segment: expectedOtherTargetingData
-      }])
-    })
+      }]);
+    });
 
     describe('ortb2.user.ext tests', function () {
       it('should add nothing if there are no cohorts data', function () {
         // Empty module config means we default
-        const moduleConfig = getConfig()
+        const moduleConfig = getConfig();
 
-        const bidderConfig = {}
+        const bidderConfig = {};
 
         // Passing empty values means there is no segment data
         const segmentsData = transformedTargeting({
@@ -613,230 +614,324 @@ describe('permutiveRtdProvider', function () {
           _pindexs: [],
           _pssps: { ssps: [], cohorts: [] },
           _ppsts: {},
-        })
+        });
 
-        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
         moduleConfig.params.acBidders.forEach(bidder => {
-          expect(bidderConfig[bidder].user).to.not.have.property('ext')
-        })
-      })
+          expect(bidderConfig[bidder].user).to.not.have.property('ext');
+        });
+      });
 
       it('should add standard and custom cohorts', function () {
-        const moduleConfig = getConfig()
+        const moduleConfig = getConfig();
 
-        const bidderConfig = {}
+        const bidderConfig = {};
 
-        const segmentsData = transformedTargeting()
+        const segmentsData = transformedTargeting();
 
-        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
         moduleConfig.params.acBidders.forEach(bidder => {
           const userExtData = {
             // Default targeting
             p_standard: segmentsData.ac,
-          }
+          };
 
-          const customCohorts = segmentsData[bidder] || []
+          const customCohorts = segmentsData[bidder] || [];
           if (customCohorts.length > 0) {
-            deepSetValue(userExtData, 'permutive', customCohorts)
+            deepSetValue(userExtData, 'permutive', customCohorts);
           }
 
           expect(bidderConfig[bidder].user.ext.data).to.deep
-            .eq(userExtData)
-        })
-      })
+            .eq(userExtData);
+        });
+      });
 
       it('should add ac cohorts ONLY', function () {
-        const moduleConfig = getConfig()
+        const moduleConfig = getConfig();
 
-        const bidderConfig = {}
+        const bidderConfig = {};
 
-        const segmentsData = transformedTargeting()
+        const segmentsData = transformedTargeting();
         moduleConfig.params.acBidders.forEach((bidder) => {
           // Remove custom cohorts
-          delete segmentsData[bidder]
-        })
+          delete segmentsData[bidder];
+        });
 
-        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
         moduleConfig.params.acBidders.forEach((bidder) => {
           expect(bidderConfig[bidder].user.ext.data).to.deep.equal({
             p_standard: segmentsData.ac
-          })
-        })
-      })
+          });
+        });
+      });
 
       it('should add custom cohorts ONLY', function () {
-        const moduleConfig = getConfig()
+        const moduleConfig = getConfig();
 
-        const bidderConfig = {}
+        const bidderConfig = {};
 
-        const segmentsData = transformedTargeting()
+        const segmentsData = transformedTargeting();
         // Empty the AC cohorts
-        segmentsData['ac'] = []
+        segmentsData['ac'] = [];
 
-        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
         moduleConfig.params.acBidders.forEach(bidder => {
-          const customCohorts = segmentsData[bidder] || []
+          const customCohorts = segmentsData[bidder] || [];
           if (customCohorts.length > 0) {
             expect(bidderConfig[bidder].user.ext.data).to.deep
-              .eq({ permutive: customCohorts })
+              .eq({ permutive: customCohorts });
           } else {
-            expect(bidderConfig[bidder].user).to.not.have.property('ext')
+            expect(bidderConfig[bidder].user).to.not.have.property('ext');
           }
-        })
-      })
-    })
-  })
+        });
+      });
+    });
+
+    describe('bidders config with customCohorts', function () {
+      it('should read custom cohorts from localStorage for msft bidder using customCohorts config', function () {
+        const segmentsData = transformedTargeting();
+        const expectedAppnexusCohorts = segmentsData.appnexus;
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: ['msft'],
+            maxSegs: 500,
+            bidders: {
+              msft: {
+                customCohorts: { source: 'ls', key: '_papns' }
+              }
+            }
+          }
+        };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
+
+        expect(bidderConfig['msft'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ]);
+
+        expectedAppnexusCohorts.forEach(id => {
+          expect(bidderConfig['msft'].user.keywords).to.include(`permutive=${id}`);
+        });
+      });
+
+      it('should fall back to segmentData lookup when customCohorts is not configured', function () {
+        const segmentsData = transformedTargeting();
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: ['appnexus'],
+            maxSegs: 500,
+            bidders: {}
+          }
+        };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
+
+        const expectedAppnexusCohorts = segmentsData.appnexus;
+        expect(bidderConfig['appnexus'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ]);
+      });
+
+      it('should write ortb2 for a bidder configured only via params.bidders (not in acBidders or ssps)', function () {
+        const segmentsData = transformedTargeting();
+        const expectedAppnexusCohorts = segmentsData.appnexus;
+
+        const moduleConfig = {
+          name: 'permutive',
+          waitForIt: true,
+          params: {
+            acBidders: [],
+            maxSegs: 500,
+            bidders: {
+              msft: {
+                customCohorts: { source: 'ls', key: '_papns' }
+              }
+            }
+          }
+        };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
+
+        expect(bidderConfig['msft']).to.not.be.undefined;
+        expect(bidderConfig['msft'].user.data).to.deep.include.members([
+          {
+            name: 'permutive',
+            segment: expectedAppnexusCohorts.map(id => ({ id })),
+          },
+        ]);
+
+        expectedAppnexusCohorts.forEach(id => {
+          expect(bidderConfig['msft'].user.keywords).to.include(`permutive=${id}`);
+        });
+      });
+    });
+  });
 
   describe('Getting segments', function () {
     it('should retrieve segments in the expected structure', function () {
-      const data = transformedTargeting()
-      expect(getSegments(250)).to.deep.equal(data)
-    })
+      const data = transformedTargeting();
+      expect(getSegments(250)).to.deep.equal(data);
+    });
 
     it('should enforce max segments', function () {
-      const max = 1
-      const segments = getSegments(max)
+      const max = 1;
+      const segments = getSegments(max);
 
       for (const key in segments) {
         if (key === 'ssp') {
-          expect(segments[key].cohorts).to.have.length(max)
+          expect(segments[key].cohorts).to.have.length(max);
         } else if (key === 'topics') {
           for (const topic in segments[key]) {
-            expect(segments[key][topic]).to.have.length(max)
+            expect(segments[key][topic]).to.have.length(max);
           }
         } else {
-          expect(segments[key]).to.have.length(max)
+          expect(segments[key]).to.have.length(max);
         }
       }
-    })
+    });
 
     it('should coerce numbers to strings', function () {
-      setLocalStorage({ _prubicons: [1, 2, 3], _pssps: { ssps: ['foo', 'bar'], cohorts: [4, 5, 6] } })
+      setLocalStorage({ _prubicons: [1, 2, 3], _pssps: { ssps: ['foo', 'bar'], cohorts: [4, 5, 6] } });
 
-      const segments = getSegments(200)
+      const segments = getSegments(200);
 
-      expect(segments.rubicon).to.deep.equal(['1', '2', '3'])
-      expect(segments.ssp.ssps).to.deep.equal(['foo', 'bar'])
-      expect(segments.ssp.cohorts).to.deep.equal(['4', '5', '6'])
-    })
+      expect(segments.rubicon).to.deep.equal(['1', '2', '3']);
+      expect(segments.ssp.ssps).to.deep.equal(['foo', 'bar']);
+      expect(segments.ssp.cohorts).to.deep.equal(['4', '5', '6']);
+    });
 
     it('should return empty values on unexpected format', function () {
-      setLocalStorage({ _prubicons: 'a string instead?', _pssps: 123 })
+      setLocalStorage({ _prubicons: 'a string instead?', _pssps: 123 });
 
-      const segments = getSegments(200)
+      const segments = getSegments(200);
 
-      expect(segments.rubicon).to.deep.equal([])
-      expect(segments.ssp.ssps).to.deep.equal([])
-      expect(segments.ssp.cohorts).to.deep.equal([])
-    })
-  })
+      expect(segments.rubicon).to.deep.equal([]);
+      expect(segments.ssp.ssps).to.deep.equal([]);
+      expect(segments.ssp.cohorts).to.deep.equal([]);
+    });
+  });
 
   describe('Existing key-value targeting', function () {
     it('doesn\'t overwrite existing key-values for Xandr', function () {
-      const adUnits = getAdUnits()
-      const config = getConfig()
+      const adUnits = getAdUnits();
+      const config = getConfig();
 
-      readAndSetCohorts({ adUnits }, config)
+      readAndSetCohorts({ adUnits }, config);
 
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
+          const { bidder, params } = bid;
 
           if (bidder === 'appnexus') {
-            expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
+            expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true']);
           }
-        })
-      })
-    })
+        });
+      });
+    });
     it('doesn\'t overwrite existing key-values for Magnite', function () {
-      const adUnits = getAdUnits()
-      const config = getConfig()
+      const adUnits = getAdUnits();
+      const config = getConfig();
 
-      readAndSetCohorts({ adUnits }, config)
+      readAndSetCohorts({ adUnits }, config);
 
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
+          const { bidder, params } = bid;
 
           if (bidder === 'rubicon') {
-            expect(deepAccess(params, 'visitor.test_kv')).to.eql(['true'])
+            expect(deepAccess(params, 'visitor.test_kv')).to.eql(['true']);
           }
-        })
-      })
-    })
+        });
+      });
+    });
     it('doesn\'t overwrite existing key-values for Ozone', function () {
-      const adUnits = getAdUnits()
-      const config = getConfig()
+      const adUnits = getAdUnits();
+      const config = getConfig();
 
-      readAndSetCohorts({ adUnits }, config)
+      readAndSetCohorts({ adUnits }, config);
 
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
+          const { bidder, params } = bid;
 
           if (bidder === 'ozone') {
-            expect(deepAccess(params, 'customData.0.targeting.test_kv')).to.eql(['true'])
+            expect(deepAccess(params, 'customData.0.targeting.test_kv')).to.eql(['true']);
           }
-        })
-      })
-    })
+        });
+      });
+    });
     it('doesn\'t overwrite existing key-values for TrustX', function () {
-      const adUnits = getAdUnits()
-      const config = getConfig()
+      const adUnits = getAdUnits();
+      const config = getConfig();
 
-      readAndSetCohorts({ adUnits }, config)
+      readAndSetCohorts({ adUnits }, config);
 
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
+          const { bidder, params } = bid;
 
           if (bidder === 'trustx') {
-            expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
+            expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true']);
           }
-        })
-      })
-    })
-  })
+        });
+      });
+    });
+  });
 
   describe('Permutive on page', function () {
     it('checks if Permutive is on page', function () {
-      expect(isPermutiveOnPage()).to.equal(false)
-    })
-  })
+      expect(isPermutiveOnPage()).to.equal(false);
+    });
+  });
 
   describe('AC is enabled', function () {
     it('checks if AC is enabled for Xandr', function () {
-      expect(isAcEnabled({ params: { acBidders: ['appnexus'] } }, 'appnexus')).to.equal(true)
-      expect(isAcEnabled({ params: { acBidders: ['kjdbfkvb'] } }, 'appnexus')).to.equal(false)
-    })
+      expect(isAcEnabled({ params: { acBidders: ['appnexus'] } }, 'appnexus')).to.equal(true);
+      expect(isAcEnabled({ params: { acBidders: ['kjdbfkvb'] } }, 'appnexus')).to.equal(false);
+    });
     it('checks if AC is enabled for Magnite', function () {
-      expect(isAcEnabled({ params: { acBidders: ['rubicon'] } }, 'rubicon')).to.equal(true)
-      expect(isAcEnabled({ params: { acBidders: ['kjdbfkb'] } }, 'rubicon')).to.equal(false)
-    })
+      expect(isAcEnabled({ params: { acBidders: ['rubicon'] } }, 'rubicon')).to.equal(true);
+      expect(isAcEnabled({ params: { acBidders: ['kjdbfkb'] } }, 'rubicon')).to.equal(false);
+    });
     it('checks if AC is enabled for Ozone', function () {
-      expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true)
-      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false)
-    })
+      expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true);
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false);
+    });
     it('checks if AC is enabled for Index', function () {
-      expect(isAcEnabled({ params: { acBidders: ['ix'] } }, 'ix')).to.equal(true)
-      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ix')).to.equal(false)
-    })
-  })
-})
+      expect(isAcEnabled({ params: { acBidders: ['ix'] } }, 'ix')).to.equal(true);
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ix')).to.equal(false);
+    });
+  });
+});
 
 function setLocalStorage (data) {
   for (const key in data) {
-    storage.setDataInLocalStorage(key, JSON.stringify(data[key]))
+    storage.setDataInLocalStorage(key, JSON.stringify(data[key]));
   }
 }
 
 function removeLocalStorage (data) {
   for (const key in data) {
-    storage.removeDataFromLocalStorage(key)
+    storage.removeDataFromLocalStorage(key);
   }
 }
 
@@ -848,17 +943,17 @@ function getConfig () {
       acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
       maxSegs: 500
     }
-  }
+  };
 }
 
 function transformedTargeting (data = getTargetingData()) {
   const topics = (() => {
-    const topics = {}
+    const topics = {};
     for (const topic in data._ppsts) {
-      topics[topic] = data._ppsts[topic].map(String)
+      topics[topic] = data._ppsts[topic].map(String);
     }
-    return topics
-  })()
+    return topics;
+  })();
 
   return {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)].map(String),
@@ -871,7 +966,7 @@ function transformedTargeting (data = getTargetingData()) {
       cohorts: data._pssps.cohorts.map(String)
     },
     topics,
-  }
+  };
 }
 
 function getTargetingData () {
@@ -885,18 +980,18 @@ function getTargetingData () {
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
     _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] },
     _ppsts: { '600': [1, 2, 3], '601': [100, 101, 102] },
-  }
+  };
 }
 
 function getAdUnits () {
   const div1sizes = [
     [300, 250],
     [300, 600]
-  ]
+  ];
   const div2sizes = [
     [728, 90],
     [970, 250]
-  ]
+  ];
   return [
     {
       code: '/19968336/header-bid-tag-0',
@@ -1019,15 +1114,15 @@ function getAdUnits () {
         }
       }]
     }
-  ]
+  ];
 }
 
 describe('permutiveIdentityManagerIdSystem', () => {
-  const STORAGE_KEY = 'permutive-prebid-id'
+  const STORAGE_KEY = 'permutive-prebid-id';
 
   afterEach(() => {
-    storage.removeDataFromLocalStorage(STORAGE_KEY)
-  })
+    storage.removeDataFromLocalStorage(STORAGE_KEY);
+  });
 
   describe('decode', () => {
     it('returns the input unchanged for most IDs', () => {
@@ -1040,28 +1135,28 @@ describe('permutiveIdentityManagerIdSystem', () => {
             pba: 'somepba'
           }
         }
-      }
-      const result = permutiveIdentityManagerIdSubmodule.decode(input)
-      expect(result).to.be.equal(input)
-    })
+      };
+      const result = permutiveIdentityManagerIdSubmodule.decode(input);
+      expect(result).to.be.equal(input);
+    });
 
     it('decodes the base64-encoded array for pairId', () => {
       const input = {
         pairId: 'WyJBeVhiNUF0dmsvVS8xQ1d2ejJuRVk5aFl4T1g3TVFPUTJVQk1BMFdiV1ZFbSJd'
-      }
-      const result = permutiveIdentityManagerIdSubmodule.decode(input)
+      };
+      const result = permutiveIdentityManagerIdSubmodule.decode(input);
       const expected = {
         pairId: ["AyXb5Atvk/U/1CWvz2nEY9hYxOX7MQOQ2UBMA0WbWVEm"]
-      }
-      expect(result).to.deep.equal(expected)
-    })
-  })
+      };
+      expect(result).to.deep.equal(expected);
+    });
+  });
 
   describe('getId', () => {
     it('returns relevant IDs from localStorage and does not return unexpected IDs', () => {
-      const data = getUserIdData()
-      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
-      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      const data = getUserIdData();
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data));
+      const result = permutiveIdentityManagerIdSubmodule.getId({});
       const expected = {
         'id': {
           'id5id': {
@@ -1074,9 +1169,9 @@ describe('permutiveIdentityManagerIdSystem', () => {
             }
           }
         }
-      }
-      expect(result).to.deep.equal(expected)
-    })
+      };
+      expect(result).to.deep.equal(expected);
+    });
 
     it('handles idl_env without pairId', () => {
       const data = {
@@ -1085,16 +1180,16 @@ describe('permutiveIdentityManagerIdSystem', () => {
             'userId': 'ats_envelope_value'
           }
         }
-      }
-      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
-      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      };
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data));
+      const result = permutiveIdentityManagerIdSubmodule.getId({});
       const expected = {
         'id': {
           'idl_env': 'ats_envelope_value'
         }
-      }
-      expect(result).to.deep.equal(expected)
-    })
+      };
+      expect(result).to.deep.equal(expected);
+    });
 
     it('handles idl_env with pairId', () => {
       const data = {
@@ -1106,31 +1201,31 @@ describe('permutiveIdentityManagerIdSystem', () => {
             'userId': 'pair_id_encoded_value'
           }
         }
-      }
-      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
-      const result = permutiveIdentityManagerIdSubmodule.getId({})
+      };
+      storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data));
+      const result = permutiveIdentityManagerIdSubmodule.getId({});
       const expected = {
         'id': {
           'idl_env': 'ats_envelope_value',
           'pairId': 'pair_id_encoded_value'
         }
-      }
-      expect(result).to.deep.equal(expected)
-    })
+      };
+      expect(result).to.deep.equal(expected);
+    });
 
     it('returns undefined if no relevant IDs are found in localStorage', () => {
-      storage.setDataInLocalStorage(STORAGE_KEY, '{}')
-      const result = permutiveIdentityManagerIdSubmodule.getId({})
-      expect(result).to.be.undefined
-    })
+      storage.setDataInLocalStorage(STORAGE_KEY, '{}');
+      const result = permutiveIdentityManagerIdSubmodule.getId({});
+      expect(result).to.be.undefined;
+    });
 
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
-      const cleanup = setWindowPermutive()
+      const cleanup = setWindowPermutive();
       try {
-        const result = permutiveIdentityManagerIdSubmodule.getId({ params: { ajaxTimeout: 300 } })
-        expect(result).not.to.be.undefined
-        expect(result.id).to.be.undefined
-        expect(result.callback).not.to.be.undefined
+        const result = permutiveIdentityManagerIdSubmodule.getId({ params: { ajaxTimeout: 300 } });
+        expect(result).not.to.be.undefined;
+        expect(result.id).to.be.undefined;
+        expect(result.callback).not.to.be.undefined;
         const expected = {
           'id5id': {
             'uid': '0',
@@ -1141,31 +1236,31 @@ describe('permutiveIdentityManagerIdSystem', () => {
               'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
             }
           }
-        }
-        const r = await new Promise(result.callback)
-        expect(r).to.deep.equal(expected)
+        };
+        const r = await new Promise(result.callback);
+        expect(r).to.deep.equal(expected);
       } finally {
-        cleanup()
+        cleanup();
       }
-    })
-  })
-})
+    });
+  });
+});
 
 const setWindowPermutive = () => {
   // Read from Permutive
-  const backup = window.permutive
+  const backup = window.permutive;
 
   deepSetValue(window, 'permutive.ready', (f) => {
-    setTimeout(() => f(), 5)
-  })
+    setTimeout(() => f(), 5);
+  });
 
   deepSetValue(window, 'permutive.addons.identity_manager.prebid.onReady', (f) => {
-    setTimeout(() => f(sdkUserIdData()), 5)
-  })
+    setTimeout(() => f(sdkUserIdData()), 5);
+  });
 
   // Cleanup
-  return () => window.permutive = backup
-}
+  return () => window.permutive = backup;
+};
 
 const sdkUserIdData = () => ({
   'id5id': {
@@ -1177,7 +1272,7 @@ const sdkUserIdData = () => ({
       'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
     }
   },
-})
+});
 
 const getUserIdData = () => ({
   'providers': {
@@ -1198,4 +1293,4 @@ const getUserIdData = () => ({
       }
     }
   }
-})
+});

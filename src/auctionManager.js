@@ -31,7 +31,7 @@ import { AuctionIndex } from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
 import { useMetrics } from './utils/perfMetrics.js';
 import { ttlCollection } from './utils/ttlCollection.js';
-import { getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
+import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -42,8 +42,19 @@ import { getMinBidCacheTTL, onMinBidCacheTTLChange } from './bidTTL.js';
 export function newAuctionManager() {
   const _auctions = ttlCollection({
     startTime: (au) => au.end.then(() => au.getAuctionEnd()),
-    ttl: (au) => getMinBidCacheTTL() == null ? null : au.end.then(() => {
-      return Math.max(getMinBidCacheTTL(), ...au.getBidsReceived().map(bid => bid.ttl)) * 1000
+    ttl: (au) => au.end.then(() => {
+      const bids = au.getBidsReceived();
+      if (bids.length === 0) {
+        const minTTL = getMinBidCacheTTL();
+        return minTTL == null ? null : minTTL * 1000;
+      }
+      const ttls = bids.map(bid => {
+        const minTTL = getEffectiveMinBidCacheTTL(bid);
+        if (minTTL == null) return null;
+        return Math.max(minTTL, bid.ttl);
+      });
+      if (ttls.some(t => t == null)) return null;
+      return Math.max(...ttls) * 1000;
     }),
   });
 
@@ -95,19 +106,19 @@ export function newAuctionManager() {
       : (auction) => pre(auction) ? auction[name]() : [];
     const filter = post == null
       ? (items) => items
-      : (items) => items.filter(post)
+      : (items) => items.filter(post);
     auctionManager[mgrMethod] = () => {
       return filter(_auctions.toArray().flatMap(mapper));
-    }
-  })
+    };
+  });
 
   function allBidsReceived() {
-    return _auctions.toArray().flatMap(au => au.getBidsReceived())
+    return _auctions.toArray().flatMap(au => au.getBidsReceived());
   }
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()
-      .filter(bid => bid && bid.adUnitCode === adUnitCode)
+      .filter(bid => bid && bid.adUnitCode === adUnitCode);
   };
 
   auctionManager.createAuction = function(opts) {
@@ -131,18 +142,21 @@ export function newAuctionManager() {
 
     if (bid && status === BID_STATUS.BID_TARGETING_SET) {
       const auction = getAuction(bid.auctionId);
-      if (auction) auction.setBidTargeting(bid);
+      if (auction) {
+        auction.setBidTargeting(bid);
+        _auctions.refresh();
+      }
     }
-  }
+  };
 
   auctionManager.getLastAuctionId = function() {
     const auctions = _auctions.toArray();
-    return auctions.length && auctions[auctions.length - 1].getAuctionId()
+    return auctions.length && auctions[auctions.length - 1].getAuctionId();
   };
 
   auctionManager.clearAllAuctions = function() {
     _auctions.clear();
-  }
+  };
 
   function _addAuction(auction) {
     _auctions.add(auction);

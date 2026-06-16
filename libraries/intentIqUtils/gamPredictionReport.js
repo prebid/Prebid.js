@@ -1,37 +1,20 @@
 import { getEvents } from '../../src/events.js';
-import { isPlainObject, logError } from '../../src/utils.js';
+import { logError } from '../../src/utils.js';
+import { getSlotTargetingMap } from '../../src/utils/gptTargeting.js';
 
 export function gamPredictionReport (gamObjectReference, sendData) {
   try {
     if (!gamObjectReference || !sendData) {
       logError('Failed to get gamPredictionReport, required data is missed');
-      return
+      return;
     }
     const getSlotTargeting = (slot) => {
-      const kvs = {};
       try {
-        if (typeof slot.getConfig === 'function') {
-          const current = slot.getConfig('targeting');
-          const targeting = isPlainObject(current?.targeting)
-            ? current.targeting
-            : (isPlainObject(current) ? current : {});
-          for (const k in targeting) {
-            const v = targeting[k];
-            if (v == null) continue;
-            kvs[k] = Array.isArray(v) ? v : [typeof v === 'string' ? v : String(v)];
-          }
-          return kvs;
-        }
-        // Fallback in case an older version of Google Publisher Tag is used.
-        if (typeof slot.getTargetingKeys === 'function' && typeof slot.getTargeting === 'function') {
-          (slot.getTargetingKeys() || []).forEach((k) => {
-            kvs[k] = slot.getTargeting(k);
-          });
-        }
+        return getSlotTargetingMap(slot);
       } catch (e) {
         logError('Failed to get slot targeting: ' + e);
+        return {};
       }
-      return kvs;
     };
 
     const extractWinData = (gamEvent) => {

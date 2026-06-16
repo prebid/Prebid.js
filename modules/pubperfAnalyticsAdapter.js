@@ -26,7 +26,7 @@ pubperfAdapter.enableAnalytics = config => {
     return;
   }
   pubperfAdapter.originEnableAnalytics(config);
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pubperfAdapter,

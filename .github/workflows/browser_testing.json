@@ -18,8 +18,8 @@
   },
   "SafariNative": {
     "wdioName": "safari technology preview",
-    "bsName": "safari",
-    "runsOn": "macos-latest"
+    "runsOn": "macos-latest",
+    "bsName": "safari"
   },
   "FirefoxHeadless": {
     "wdioName": "firefox",

@@ -23,7 +23,7 @@ const detectAdType = (bid) =>
 
 const getReferrerInfo = (bidderRequest) => {
   return bidderRequest?.refererInfo?.page ?? '';
-}
+};
 
 const normalizeKeywords = (input) => {
   if (!input) return [];
@@ -156,7 +156,7 @@ const parseNativeAd = function (bid) {
     utils.logWarn('Invalid native JSON', e);
     return null;
   }
-}
+};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,

@@ -22,7 +22,7 @@ const GPT_SLOT = {
 
 const EVENT_OBJ = {
   slot: GPT_SLOT
-}
+};
 
 const VIEWABILITY_PIXEL_URLS = [
   'https://domain-1.com/end-point?a=1',
@@ -36,7 +36,6 @@ const PBJS_WINNING_BID = {
   'bidder': 'pubmatic',
   'width': 300,
   'height': 250,
-  'statusMessage': 'Bid available',
   'adId': 'id',
   'requestId': 1024,
   'source': 'client',
@@ -60,7 +59,7 @@ describe('#bidViewability', function() {
 
   describe('getMatchingWinningBidForGPTSlot', function() {
     let winningBidsArray;
-    let sandbox
+    let sandbox;
     beforeEach(function() {
       sandbox = sinon.createSandbox();
       // mocking winningBidsArray
@@ -74,7 +73,7 @@ describe('#bidViewability', function() {
 
     afterEach(function() {
       sandbox.restore();
-    })
+    });
 
     it('should find a match by using customGptSlotMatching provided in config', function() {
       config.setConfig({
@@ -151,7 +150,7 @@ describe('#bidViewability', function() {
 
     afterEach(function() {
       sandbox.restore();
-    })
+    });
 
     it('matching winning bid is found', function() {
       const moduleConfig = {
@@ -188,7 +187,7 @@ describe('#bidViewability', function() {
       const bid = {
         ...PBJS_WINNING_BID,
         deferBilling: true
-      }
+      };
       winningBidsArray.push(bid);
       bidViewability.impressionViewableHandler(moduleConfig, EVENT_OBJ);
       expect(triggerBillingSpy.callCount).to.equal(1);

@@ -53,7 +53,7 @@ function parseNativeResponse(ad) {
     nativeResponse.privacyLink = dsaurl;
   }
 
-  return nativeResponse
+  return nativeResponse;
 }
 
 function getGdeScriptUrl(adDataFields) {
@@ -184,7 +184,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     if (bid.params.slotSequence) {
       imp.ext = {
         pos: String(bid.params.slotSequence)
-      }
+      };
     }
 
     if (bid.mediaTypes?.banner) {
@@ -256,14 +256,14 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
       ext: {
         dsa: customParams.dsainfo,
       },
-    }
+    };
   }
 
   return request;
 }
 
 function prepareNativeMarkup(bid) {
-  const parsedNativeMarkup = safeJSONParse(bid.adm)
+  const parsedNativeMarkup = safeJSONParse(bid.adm);
   const ad = {
     data: parsedNativeMarkup || {},
     ems_link: bid.ext?.ems_link || '',

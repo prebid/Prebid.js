@@ -49,14 +49,14 @@ export const getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`;
 /** @type {function} */
 export const getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`;
 /** @type {string} */
-export let wrapper
-/** @type {boolean} */;
+export let wrapper;
+/** @type {boolean} */
 let wrapperReady;
-/** @type {boolean} */;
+/** @type {boolean} */
 let preloaded;
-/** @type {object} */;
+/** @type {object} */
 const refererInfo = getRefererInfo();
-/** @type {object} */;
+/** @type {object} */
 const overrides = window.grumi?.overrides;
 
 /**
@@ -120,7 +120,7 @@ export function preloadClient(key) {
 function replacer(str) {
   return function () {
     return str;
-  }
+  };
 }
 
 export function wrapHtml(wrapper, html) {

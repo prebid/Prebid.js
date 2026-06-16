@@ -55,7 +55,7 @@ describe('Caroda adapter', function () {
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://prebid.caroda.io/api/hb?entry_id=12345');
       assert.equal(request.options, undefined);
-      const data = JSON.parse(request.data)
+      const data = JSON.parse(request.data);
       assert.equal(data.ctok, 'adf232eef344');
       assert.ok(data.site);
       assert.ok(data.hb_version);
@@ -73,7 +73,7 @@ describe('Caroda adapter', function () {
       }];
       window.top.carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
-      const data = JSON.parse(request.data)
+      const data = JSON.parse(request.data);
       assert.equal(data.test, 1);
     });
 

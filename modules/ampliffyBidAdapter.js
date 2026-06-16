@@ -147,7 +147,9 @@ function interpretResponse(serverResponse, bidRequest) {
     bidResponse.adUrl = xmlData.creativeURL;
   }
   if (xmlData.trackingUrl) {
-    bidResponse.vastImpUrl = xmlData.trackingUrl;
+    bidResponse.vastTrackers = {
+      impression: [xmlData.trackingUrl]
+    };
     bidResponse.trackingUrl = xmlData.trackingUrl;
   }
   bidResponses.push(bidResponse);
@@ -166,7 +168,7 @@ const replaceMacros = (txt, cpm, bid) => {
   txt = txt.replaceAll('%%SIZES%%', size);
   txt = txt.replaceAll('@@SIZES@@', size);
   return txt;
-}
+};
 const encodePrice = (price) => {
   price = parseFloat(price);
   const s = 116.54;
@@ -189,7 +191,7 @@ function extractCT(xml) {
   let ct = null;
   try {
     try {
-      const vastAdTagURI = xml.getElementsByTagName('VASTAdTagURI')[0]
+      const vastAdTagURI = xml.getElementsByTagName('VASTAdTagURI')[0];
       if (vastAdTagURI) {
         let url = null;
         for (const childNode of vastAdTagURI.childNodes) {
@@ -198,7 +200,7 @@ function extractCT(xml) {
           }
         }
         const urlParams = new URLSearchParams(url);
-        ct = urlParams.get('ct')
+        ct = urlParams.get('ct');
       }
     } catch (e) {
     }
@@ -277,7 +279,7 @@ function extractTrackingURL(htmlContent, ret) {
   const trackingUrlDiv = htmlContent.querySelectorAll('[bidder-tracking-url]')[0];
   if (trackingUrlDiv) {
     const trackingUrl = trackingUrlDiv.getAttribute('bidder-tracking-url');
-    logInfo(LOG_PREFIX + 'parseXML: trackingUrl: ', trackingUrl)
+    logInfo(LOG_PREFIX + 'parseXML: trackingUrl: ', trackingUrl);
     ret.trackingUrl = trackingUrl;
   }
 }
@@ -320,7 +322,7 @@ export function isAllowedToBidUp(html, currentURL) {
       }
       domains.forEach((d) => {
         if (currentURL.includes(d) || d === 'all' || d === '*') allowedToPush = true;
-      })
+      });
     } else {
       allowedToPush = true;
     }
@@ -332,7 +334,7 @@ export function isAllowedToBidUp(html, currentURL) {
           const excluded = JSON.parse(excludedURLsString);
           excluded.forEach((d) => {
             if (currentURL.includes(d)) allowedToPush = false;
-          })
+          });
         }
       }
     }

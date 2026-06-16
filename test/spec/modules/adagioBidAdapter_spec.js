@@ -2,7 +2,6 @@ import * as utils from '../../../src/utils.js';
 import {
   BB_RENDERER_URL,
   ENDPOINT,
-  VERSION,
   _internal,
   setExtraParam,
   spec
@@ -110,7 +109,6 @@ describe('Adagio bid adapter', () => {
     window.ADAGIO.pbjsAdUnits = [];
     window.ADAGIO.queue = [];
     window.ADAGIO.versions = {};
-    window.ADAGIO.versions.adagioBidderAdapter = VERSION;
     window.ADAGIO.pageviewId = 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a';
 
     utilsMock = sinon.mock(utils);
@@ -151,7 +149,7 @@ describe('Adagio bid adapter', () => {
         return utils.deepAccess(config, key);
       });
 
-      setExtraParam(bid, 'pagetype')
+      setExtraParam(bid, 'pagetype');
       expect(bid.params.pagetype).to.equal('article');
 
       setExtraParam(bid, 'category');
@@ -163,10 +161,10 @@ describe('Adagio bid adapter', () => {
       sandbox.stub(config, 'getConfig').withArgs('adagio').returns({
         pagetype: 'ignore-me'
       });
-      setExtraParam(bid, 'pagetype')
+      setExtraParam(bid, 'pagetype');
       expect(bid.params.pagetype).to.equal('article');
     });
-  })
+  });
 
   describe('isBidRequestValid()', function() {
     it('should return true when required params have been found', function() {
@@ -186,7 +184,7 @@ describe('Adagio bid adapter', () => {
       }).build();
 
       expect(spec.isBidRequestValid(bid)).to.equal(true);
-    })
+    });
 
     it('should return false if bid.params is missing', function() {
       sandbox.spy(utils, 'logWarn');
@@ -300,7 +298,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should use a custom generated auctionId from ortb2.site.ext.data.adg_rtd.uid when available', function() {
-      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
+      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579';
 
       const bid01 = new BidRequestBuilder().withParams().build();
       const ortb = {
@@ -315,7 +313,7 @@ describe('Adagio bid adapter', () => {
             }
           }
         }
-      }
+      };
       const bidderRequest = new BidderRequestBuilder(ortb).build();
 
       const requests = spec.buildRequests([bid01], bidderRequest);
@@ -324,7 +322,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should use a custom generated auctionId when ortb2.site.ext.data.adg_rtd.uid is absent and remove transactionId', function() {
-      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
+      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579';
       sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
 
       const bid01 = new BidRequestBuilder().withParams().build();
@@ -444,7 +442,7 @@ describe('Adagio bid adapter', () => {
             }
           }
         }
-      }
+      };
       const rtdEnrichments = {
         ortb2: {
           site: {
@@ -460,7 +458,7 @@ describe('Adagio bid adapter', () => {
             }
           }
         }
-      }
+      };
 
       it('should add features and data to the request if exists', function() {
         const bid01 = new BidRequestBuilder(adUnitRtdEnrichments).withParams().build();
@@ -482,7 +480,7 @@ describe('Adagio bid adapter', () => {
           dom_loading: '111111111',
           adunit_position: '1x1',
           print_number: '1'
-        })
+        });
       });
 
       it('should add an only "print_number" in features object if ortb2 is not properly defined', function() {
@@ -569,52 +567,54 @@ describe('Adagio bid adapter', () => {
         });
       });
 
-      it('Update mediaTypes.video with OpenRTB options. Validate and sanitize whitelisted OpenRTB', function() {
-        sandbox.spy(utils, 'logWarn');
-        const bid01 = new BidRequestBuilder({
-          adUnitCode: 'adunit-code-01',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] },
+      if (FEATURES.VIDEO) {
+        it('Update mediaTypes.video with OpenRTB options. Validate and sanitize whitelisted OpenRTB', function() {
+          sandbox.spy(utils, 'logWarn');
+          const bid01 = new BidRequestBuilder({
+            adUnitCode: 'adunit-code-01',
+            mediaTypes: {
+              banner: { sizes: [[300, 250]] },
+              video: {
+                context: 'outstream',
+                playerSize: [[300, 250]],
+                mimes: ['video/mp4'],
+                api: 'val', // will be removed because invalid
+                playbackmethod: ['val'], // will be removed because invalid
+              }
+            },
+          }).withParams({
+            // options in video, will overide
             video: {
-              context: 'outstream',
-              playerSize: [[300, 250]],
-              mimes: ['video/mp4'],
-              api: 'val', // will be removed because invalid
-              playbackmethod: ['val'], // will be removed because invalid
+              skip: 1,
+              skipafter: 4,
+              minduration: 10,
+              maxduration: 30,
+              plcmt: 4,
+              protocols: [8]
             }
-          },
-        }).withParams({
-          // options in video, will overide
-          video: {
+          }).build();
+
+          const bidderRequest = new BidderRequestBuilder().build();
+          const expected = {
+            context: 'outstream',
+            playerSize: [[300, 250]],
+            playerName: 'adagio',
+            mimes: ['video/mp4'],
             skip: 1,
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
             plcmt: 4,
-            protocols: [8]
-          }
-        }).build();
+            protocols: [8],
+            w: 300,
+            h: 250
+          };
 
-        const bidderRequest = new BidderRequestBuilder().build();
-        const expected = {
-          context: 'outstream',
-          playerSize: [[300, 250]],
-          playerName: 'adagio',
-          mimes: ['video/mp4'],
-          skip: 1,
-          skipafter: 4,
-          minduration: 10,
-          maxduration: 30,
-          plcmt: 4,
-          protocols: [8],
-          w: 300,
-          h: 250
-        };
-
-        const requests = spec.buildRequests([bid01], bidderRequest);
-        expect(requests).to.have.lengthOf(1);
-        expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
-      });
+          const requests = spec.buildRequests([bid01], bidderRequest);
+          expect(requests).to.have.lengthOf(1);
+          expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
+        });
+      }
     });
 
     describe('with sChain', function() {
@@ -898,11 +898,11 @@ describe('Adagio bid adapter', () => {
         const bidderRequest = new BidderRequestBuilder().build();
 
         // delete the computed `sizes` prop as we are based on mediaTypes only.
-        delete bid01.sizes
+        delete bid01.sizes;
 
         bid01.getFloor = () => {
-          return { floor: 1, currency: 'USD' }
-        }
+          return { floor: 1, currency: 'USD' };
+        };
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].mediaTypes.banner.sizes.length).to.equal(2);
@@ -925,8 +925,8 @@ describe('Adagio bid adapter', () => {
         }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
         bid01.getFloor = () => {
-          return { floor: 1, currency: 'USD' }
-        }
+          return { floor: 1, currency: 'USD' };
+        };
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
@@ -944,8 +944,8 @@ describe('Adagio bid adapter', () => {
         }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
         bid01.getFloor = () => {
-          return { floor: NaN, currency: 'USD', mt: 'video' }
-        }
+          return { floor: NaN, currency: 'USD', mt: 'video' };
+        };
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
@@ -1031,7 +1031,7 @@ describe('Adagio bid adapter', () => {
             domain: 'domain.com',
             dsaparams: [1, 2]
           }]
-        }
+        };
 
         const bid01 = new BidRequestBuilder().withParams().build();
 
@@ -1054,7 +1054,7 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
         expect(requests[0].data.regs.dsa).to.be.undefined;
       });
-    })
+    });
 
     describe('with ORTB2', function() {
       it('should add ortb2 device data to the request', function() {
@@ -1133,7 +1133,7 @@ describe('Adagio bid adapter', () => {
             instl: undefined
           }
         }
-      ]
+      ];
 
       tests.forEach((t) => {
         it(t.n, function() {
@@ -1145,8 +1145,8 @@ describe('Adagio bid adapter', () => {
           expect(requests[0].data.adUnits[0].rwdd).to.equal(expected.rwdd);
           expect(requests[0].data.adUnits[0].instl).to.equal(expected.instl);
         });
-      })
-    })
+      });
+    });
 
     describe('with endpoint compression', function() {
       it('should always use the endpoint compression option', function() {
@@ -1291,7 +1291,7 @@ describe('Adagio bid adapter', () => {
     it('should populate ADAGIO queue with ssp-data', function() {
       sandbox.stub(Date, 'now').returns(12345);
       sandbox.stub(_internal, 'hasRtd').returns(true);
-      const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+      const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
       spec.interpretResponse(serverResponse, bidRequest);
 
@@ -1304,7 +1304,7 @@ describe('Adagio bid adapter', () => {
 
     it('should properly try-catch an exception and return an empty array', function() {
       sandbox.stub(_internal, 'hasRtd').returns(true);
-      sandbox.stub(_internal, 'getAdagioNs').returns({ queue: () => { throw new Error('test') } });
+      sandbox.stub(_internal, 'getAdagioNs').returns({ queue: () => { throw new Error('test'); } });
       const spy = sandbox.spy(utils, 'logError');
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.be.an('array').length(0);
       expect(spy.calledOnce).to.be.true;
@@ -1334,7 +1334,7 @@ describe('Adagio bid adapter', () => {
         expect(bidResponse.renderer.loaded).to.not.be.ok;
         expect(bidResponse.width).to.equal(300);
         expect(bidResponse.height).to.equal(250);
-        expect(bidResponse.vastUrl).to.match(/^data:text\/xml;/)
+        expect(bidResponse.vastUrl).to.match(/^data:text\/xml;/);
       });
 
       it('should execute Blue Billywig VAST Renderer bootstrap if defined', function() {
@@ -1343,7 +1343,7 @@ describe('Adagio bid adapter', () => {
         };
 
         const bidResponse = spec.interpretResponse(serverResponseWithOutstream, bidRequestWithOutstream)[0];
-        executeRenderer(bidResponse.renderer, bidResponse)
+        executeRenderer(bidResponse.renderer, bidResponse);
         sinon.assert.calledOnce(window.bluebillywig.renderers[0].bootstrap);
 
         delete window.bluebillywig;
@@ -1356,16 +1356,16 @@ describe('Adagio bid adapter', () => {
         localServerResponseWithOutstream.body.bids[0].mediaType = 'video';
 
         const bidResponse = spec.interpretResponse(localServerResponseWithOutstream, bidRequestWithOutstream)[0];
-        executeRenderer(bidResponse.renderer, bidResponse)
+        executeRenderer(bidResponse.renderer, bidResponse);
 
         utilsMock.verify();
-      })
+      });
 
       it('should logError if Blue Billywig API is not defined', function() {
         utilsMock.expects('logError').withExactArgs('Adagio: no BlueBillywig renderers found!').once();
 
         const bidResponse = spec.interpretResponse(serverResponseWithOutstream, bidRequestWithOutstream)[0];
-        executeRenderer(bidResponse.renderer, bidResponse)
+        executeRenderer(bidResponse.renderer, bidResponse);
 
         utilsMock.verify();
       });
@@ -1376,7 +1376,7 @@ describe('Adagio bid adapter', () => {
         utilsMock.expects('logError').withExactArgs('Adagio: couldn\'t find a renderer with ID adagio-renderer').once();
 
         const bidResponse = spec.interpretResponse(serverResponseWithOutstream, bidRequestWithOutstream)[0];
-        executeRenderer(bidResponse.renderer, bidResponse)
+        executeRenderer(bidResponse.renderer, bidResponse);
 
         delete window.bluebillywig;
         utilsMock.verify();
@@ -1384,7 +1384,7 @@ describe('Adagio bid adapter', () => {
     });
 
     describe('Response with native add', function() {
-      const serverResponseWithNative = utils.deepClone(serverResponse)
+      const serverResponseWithNative = utils.deepClone(serverResponse);
       serverResponseWithNative.body.bids[0].mediaType = 'native';
       serverResponseWithNative.body.bids[0].admNative = {
         ver: '1.2',
@@ -1463,7 +1463,7 @@ describe('Adagio bid adapter', () => {
         ]
       };
 
-      const bidRequestNative = utils.deepClone(bidRequest)
+      const bidRequestNative = utils.deepClone(bidRequest);
       bidRequestNative.nativeParams = {
         clickUrl: {
           required: true,
@@ -1493,7 +1493,7 @@ describe('Adagio bid adapter', () => {
 
       it('Should ignore native parsing due to missing raw admNative property', () => {
         const alternateServerResponse = utils.deepClone(serverResponseWithNative);
-        delete alternateServerResponse.body.bids[0].admNative
+        delete alternateServerResponse.body.bids[0].admNative;
         const r = spec.interpretResponse(alternateServerResponse, bidRequestNative);
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).not.ok;
@@ -1539,7 +1539,7 @@ describe('Adagio bid adapter', () => {
             adagio_bvw: 'test'
           },
           privacyLink: 'http://www.myprivacyurl.url'
-        }
+        };
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).ok;
         expect(r[0].native).to.deep.equal(expected);
@@ -1552,7 +1552,7 @@ describe('Adagio bid adapter', () => {
             event: 1,
             method: 2,
             url: 'https://eventrack.local/impression-2'
-          },)
+          },);
         const r = spec.interpretResponse(serverResponseWithNativeCopy, bidRequestNative);
         const expected = '<script async src=\"https://eventrack.local/impression\"></script>\n<script async src=\"https://eventrack.local/impression-2\"></script>';
         expect(r[0].native.javascriptTrackers).to.equal(expected);
@@ -1575,7 +1575,7 @@ describe('Adagio bid adapter', () => {
 
       const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequest)[0];
       expect(bidResponse.meta.dsa).to.to.deep.equals(dsaResponseObj);
-    })
+    });
   });
 
   describe('getUserSyncs()', function() {
@@ -1687,11 +1687,11 @@ describe('Adagio bid adapter', () => {
         refererInfo: info
       }).build();
 
-      const s = _internal.getSite(bidderRequest)
-      expect(s.domain).equal('example.com')
-      expect(s.page).equal('http://example.com/iframe1.html')
+      const s = _internal.getSite(bidderRequest);
+      expect(s.domain).equal('example.com');
+      expect(s.page).equal('http://example.com/iframe1.html');
       expect(s.referrer).match(/^https?:\/\/.+/);
-      expect(s.top).equal(false)
+      expect(s.top).equal(false);
     });
   });
 });

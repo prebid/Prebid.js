@@ -25,7 +25,7 @@ function enableInstreamTracking(regex) {
 }
 
 function mockPerformanceApi({ adServerCallSent, videoPresent }) {
-  const performanceStub = sandbox.stub(window.performance, 'getEntriesByType');
+  const performanceStub = window.performance.getEntriesByType = sandbox.stub();
   const entries = [{
     name: 'https://domain.com/img.png',
     initiatorType: 'img'
@@ -63,7 +63,6 @@ function mockBidResponse(adUnit, requestId) {
     'bidderCode': adUnit.bids[0].bidder,
     'width': adUnit.sizes[0][0],
     'height': adUnit.sizes[0][1],
-    'statusMessage': 'Bid available',
     'adId': 'id',
     'requestId': requestId,
     'source': 'client',
@@ -73,11 +72,11 @@ function mockBidResponse(adUnit, requestId) {
     'creativeId': 'id',
     'netRevenue': true,
     'currency': 'USD',
-  }
+  };
   if (adUnit.mediaTypes.video) {
     bid.videoCacheKey = VIDEO_CACHE_KEY;
   }
-  return bid
+  return bid;
 }
 
 function mockBidRequest(adUnit, bidResponse) {
@@ -146,7 +145,9 @@ function getMockInput(mediaType) {
 }
 
 describe('Instream Tracking', function () {
+  let origPerf;
   beforeEach(function () {
+    origPerf = window.performance.getEntriesByType;
     sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
   });
@@ -154,6 +155,7 @@ describe('Instream Tracking', function () {
   afterEach(function () {
     sandbox.restore();
     clock.restore();
+    window.performance.getEntriesByType = origPerf;
   });
 
   describe('gaurd checks', function () {
@@ -173,10 +175,10 @@ describe('Instream Tracking', function () {
 
     it('checks for instream bids', function () {
       enableInstreamTracking();
-      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput('banner')), 'should not start tracking when banner bids are present')
-      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput(OUTSTREAM)), 'should not start tracking when outstream bids are present')
+      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput('banner')), 'should not start tracking when banner bids are present');
+      assert.isNotOk(trackInstreamDeliveredImpressions(getMockInput(OUTSTREAM)), 'should not start tracking when outstream bids are present');
       mockPerformanceApi({});
-      assert.isOk(trackInstreamDeliveredImpressions(getMockInput(INSTREAM)), 'should start tracking when instream bids are present')
+      assert.isOk(trackInstreamDeliveredImpressions(getMockInput(INSTREAM)), 'should start tracking when instream bids are present');
       clock.tick(10);
     });
   });

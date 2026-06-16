@@ -27,7 +27,7 @@ describe('AppNexusAdapter', function () {
       } else {
         expect(match.value).to.not.exist;
       }
-    })
+    });
   }
 
   describe('isBidRequestValid', function () {
@@ -51,7 +51,7 @@ describe('AppNexusAdapter', function () {
       const bid1 = deepClone(bid);
       bid1.params = {
         'placement_id': 123423
-      }
+      };
       expect(spec.isBidRequestValid(bid1)).to.equal(true);
     });
 
@@ -374,7 +374,7 @@ describe('AppNexusAdapter', function () {
           skippable: true,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should include ORTB video values when video params is empty - case 1', function () {
@@ -401,7 +401,7 @@ describe('AppNexusAdapter', function () {
           skippable: false,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should include ORTB video values when video params is empty - case 2', function () {
@@ -429,7 +429,7 @@ describe('AppNexusAdapter', function () {
           skippable: true,
           context: 8
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should include ORTB video values when video params is empty - case 1', function () {
@@ -456,7 +456,7 @@ describe('AppNexusAdapter', function () {
           skippable: false,
           context: 1
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should convert and include ORTB2 device data when available', function () {
@@ -892,7 +892,7 @@ describe('AppNexusAdapter', function () {
         }, {
           'key': 'emptyArr'
         }
-      ])
+      ]);
     });
 
     it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
@@ -1251,7 +1251,7 @@ describe('AppNexusAdapter', function () {
             'https://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -1279,7 +1279,7 @@ describe('AppNexusAdapter', function () {
             'https://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -1399,7 +1399,7 @@ describe('AppNexusAdapter', function () {
         getParamStub.callsFake(function(par) {
           if (par === 'ast_override_div') return 'adunit-code;adUnit_code_2:5678';
           return '';
-        }); ;
+        });
 
         const request = spec.buildRequests([bidRequest, bidRequest2]);
         const payload = JSON.parse(request.data);
@@ -1411,7 +1411,7 @@ describe('AppNexusAdapter', function () {
       it('should not set forced creative id if `ast_override_div` is missing', function () {
         getParamStub.callsFake(function(par) {
           return '';
-        }); ;
+        });
 
         const request = spec.buildRequests([bidRequest, bidRequest2]);
         const payload = JSON.parse(request.data);
@@ -1590,7 +1590,7 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].video_frameworks).to.not.exist;
       }
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     let bidderSettingsStorage;
@@ -1788,11 +1788,12 @@ describe('AppNexusAdapter', function () {
               }
             }
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).to.have.property('vastXml');
-        expect(result[0]).to.have.property('vastImpUrl');
+        expect(result[0]).to.have.property('vastTrackers');
+        expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
         expect(result[0]).to.have.property('mediaType', 'video');
       });
 
@@ -1823,11 +1824,12 @@ describe('AppNexusAdapter', function () {
               }
             }
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).to.have.property('vastUrl');
-        expect(result[0]).to.have.property('vastImpUrl');
+        expect(result[0]).to.have.property('vastTrackers');
+        expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
         expect(result[0]).to.have.property('mediaType', 'video');
       });
     }
@@ -1879,7 +1881,7 @@ describe('AppNexusAdapter', function () {
             bidId: '3db3773286ee59',
             adUnitCode: 'code'
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
         expect(result[0].native.title).to.equal('Native Creative');
@@ -2005,7 +2007,7 @@ describe('AppNexusAdapter', function () {
             bidId: '3db3773286ee59',
             adUnitCode: 'code'
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
         expect(result[0].native.ext).to.deep.equal({
@@ -2154,7 +2156,7 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
@@ -2168,7 +2170,7 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseBrandId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
@@ -2182,7 +2184,7 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(result[0].meta.advertiserDomains).to.deep.equal(['123']);
@@ -2203,7 +2205,7 @@ describe('AppNexusAdapter', function () {
             }
           }
         }
-      }
+      };
     });
 
     describe('pixel', function () {
@@ -2238,7 +2240,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('iframeEnabled on with gdpr purpose1 off', function () {
-        gdprConsent.vendorData.purpose.consents['1'] = false
+        gdprConsent.vendorData.purpose.consents['1'] = false;
 
         const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
         expect(result).to.be.undefined;

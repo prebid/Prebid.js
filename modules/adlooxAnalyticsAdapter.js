@@ -70,13 +70,13 @@ MACRO['gpid'] = function(b, c) {
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
 const PARAMS_DEFAULT = {
-  'id1': function(b) { return b.adUnitCode },
+  'id1': function(b) { return b.adUnitCode; },
   'id2': '%%gpid%%',
-  'id3': function(b) { return b.bidder },
-  'id4': function(b) { return b.adId },
-  'id5': function(b) { return b.dealId },
-  'id6': function(b) { return b.creativeId },
-  'id7': function(b) { return b.size },
+  'id3': function(b) { return b.bidder; },
+  'id4': function(b) { return b.adId; },
+  'id5': function(b) { return b.dealId; },
+  'id6': function(b) { return b.creativeId; },
+  'id7': function(b) { return b.size; },
   'id11': '$ADLOOX_WEBSITE'
 };
 
@@ -145,7 +145,7 @@ analyticsAdapter.enableAnalytics = function(config) {
       } catch (_) {
         code = code.replace(/^\d/, '\\3$& ');
       }
-      return `#${code}`
+      return `#${code}`;
     },
     client: config.options.client,
     clientid: config.options.clientid,
@@ -167,7 +167,7 @@ analyticsAdapter.enableAnalytics = function(config) {
   Object.keys(COMMAND_QUEUE).forEach(commandProcess);
 
   analyticsAdapter.originEnableAnalytics(config);
-}
+};
 
 analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics;
 analyticsAdapter.disableAnalytics = function() {
@@ -175,7 +175,7 @@ analyticsAdapter.disableAnalytics = function() {
   if (this.enabled) {
     analyticsAdapter.originDisableAnalytics();
   }
-}
+};
 
 analyticsAdapter.url = function(url, args, bid) {
   // utils.formatQS outputs PHP encoded querystrings... (╯°□°)╯ ┻━┻
@@ -221,7 +221,7 @@ analyticsAdapter.url = function(url, args, bid) {
   }
 
   return url + a2qs(args);
-}
+};
 
 const preloaded = {};
 analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
@@ -241,7 +241,7 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   insertElement(link);
 
   preloaded[href] = true;
-}
+};
 
 analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   if (deepAccess(bid, 'ext.adloox.video.adserver')) {
@@ -270,7 +270,7 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   ]);
 
   loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,

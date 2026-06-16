@@ -45,13 +45,13 @@ export type TCFConsentData = {
   /**
    * The response from the CMP.
    */
-  vendorData: Record<string, unknown>;
+  vendorData: Record<string, any>;
   /**
    * Additional consent string, if provided by the CMP.
    * @see https://support.google.com/admanager/answer/9681920?hl=en
    */
   addtlConsent?: `${number}~${string}~${string}`;
-}
+};
 
 export interface TCFConfig {
   /**
@@ -101,7 +101,7 @@ function lookupIabConsent(setProvisionalConsent) {
           }
         }
       } else {
-        reject(Error('CMP unable to register callback function.  Please check CMP setup.'))
+        reject(Error('CMP unable to register callback function.  Please check CMP setup.'));
       }
     }
 
@@ -112,7 +112,7 @@ function lookupIabConsent(setProvisionalConsent) {
     });
 
     if (!cmp) {
-      reject(new Error('TCF2 CMP not found.'))
+      reject(new Error('TCF2 CMP not found.'));
     }
     if ((cmp as any).isDirect) {
       logInfo('Detected CMP API is directly accessible, calling it now...');
@@ -129,8 +129,8 @@ function lookupIabConsent(setProvisionalConsent) {
     cmp({
       command: 'addEventListener',
       callback: cmpResponseCallback
-    })
-  })
+    });
+  });
 }
 
 function parseConsentData(consentObject): TCFConsentData {
@@ -145,7 +145,7 @@ function parseConsentData(consentObject): TCFConsentData {
   }
 
   if (checkData()) {
-    throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), { args: [consentObject] })
+    throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), { args: [consentObject] });
   } else {
     return toConsentData(consentObject);
   }
@@ -189,7 +189,7 @@ const parseConfig = configParser({
   parseConsentData,
   getNullConsent: () => toConsentData(null),
   cmpEventCleanup: removeCmpListener
-} as any)
+} as any);
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
@@ -234,4 +234,4 @@ export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
   }
 }
 
-registerOrtbProcessor({ type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent })
+registerOrtbProcessor({ type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent });

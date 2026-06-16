@@ -271,13 +271,13 @@ describe('etarget adapter', function () {
         serverResponse.body = [serverResponse.body[0]];
         bidRequest.bids = [bidRequest.bids[0]];
 
-        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
+        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']];
         const result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(result[0].width, 300);
         assert.equal(result[0].height, 600);
       });
-    })
+    });
   });
 
   beforeEach(function () {

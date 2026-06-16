@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { Renderer } from 'src/Renderer.js';
 import { REQUEST_URL, SP_OUTSTREAM_PLAYER_URL, CONVERTER, spec } from '../../../modules/silverpushBidAdapter.js';
 
 const bannerBid = {
@@ -85,7 +86,7 @@ const bannerReponse = {
   ],
   'bidid': 'ARUYoUZx',
   'cur': 'USD'
-}
+};
 
 const videoResponse = {
   'id': 'brid00000000',
@@ -112,7 +113,7 @@ const videoResponse = {
   ],
   'bidid': 'soCWeklh',
   'cur': 'USD'
-}
+};
 
 describe('Silverpush Adapter', function () {
   describe('isBidRequestValid()', () => {
@@ -158,7 +159,7 @@ describe('Silverpush Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should reutrn false if player size is not set', () => {
+    it('should return false if player size is not set', () => {
       const bid = utils.deepClone(videoBid);
       delete bid.mediaTypes.video.playerSize;
 
@@ -358,6 +359,31 @@ describe('Silverpush Adapter', function () {
         expect(bids[0].width).to.equal(1024);
         expect(bids[0].height).to.equal(768);
       });
+
+      it('should defer outstream rendering until the renderer is executed', () => {
+        const response = utils.deepClone(videoResponse);
+        const outstreamBid = utils.deepClone(videoBid);
+        outstreamBid.mediaTypes.video.context = 'outstream';
+
+        const fakeRenderer = {
+          url: SP_OUTSTREAM_PLAYER_URL,
+          setRender: sinon.spy(),
+          render: sinon.spy()
+        };
+        const installStub = sinon.stub(Renderer, 'install').returns(fakeRenderer);
+
+        try {
+          const requests = spec.buildRequests([outstreamBid], bidderRequest);
+          const bids = spec.interpretResponse({ body: response }, requests[0]);
+
+          expect(installStub.calledOnce).to.equal(true);
+          expect(fakeRenderer.setRender.calledOnce).to.equal(true);
+          expect(fakeRenderer.render.called).to.equal(false);
+          expect(bids[0].renderer).to.equal(fakeRenderer);
+        } finally {
+          installStub.restore();
+        }
+      });
     }
   });
 
@@ -365,18 +391,18 @@ describe('Silverpush Adapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'getRequest')
-    })
+      ajaxStub = sinon.stub(spec, 'getRequest');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('Should not trigger pixel if bid does not contain burl', function() {
       const result = spec.onBidWon({});
 
       expect(ajaxStub.calledOnce).to.equal(false);
-    })
+    });
 
     it('Should trigger pixel with correct macros if bid burl is present', function() {
       const result = spec.onBidWon({
@@ -389,6 +415,6 @@ describe('Silverpush Adapter', function () {
       });
 
       expect(ajaxStub.calledOnceWith('http://won.foo.bar/trk?ap=1.5&aid=auc123&imp=req123&adid=ad1234&sid=sea123')).to.equal(true);
-    })
-  })
+    });
+  });
 });

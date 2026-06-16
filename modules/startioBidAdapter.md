@@ -10,6 +10,14 @@ Maintainer: prebid@start.io
 
 The Start.io Bid Adapter enables publishers to integrate with Start.io's demand sources for banner, video and native ad formats. The adapter supports OpenRTB standards and processes bid requests efficiently using the Prebid.js framework.
 
+# Build
+
+To build Prebid.js with the Start.io User ID submodule and bid adapter, include the following modules:
+
+```bash
+gulp build --modules=startioBidAdapter,userId,startioIdSystem,consentManagementTcf,consentManagementGpp,consentManagementUsp,...
+```
+
 # Test Parameters
 ```
 var adUnits = [

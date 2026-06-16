@@ -3,6 +3,7 @@ let prebid = require('../package.json');
 const path = require('path');
 const {buildOptions} = require('./buildOptions.js');
 const FEATURES_GLOBAL = 'FEATURES';
+const {getModuleName, relPath, getFreeName} = require('./utils.js');
 
 module.exports = function(api, options) {
   const {features, distUrlBase, skipCalls} = buildOptions(options);
@@ -20,33 +21,15 @@ module.exports = function(api, options) {
     '$$REPO_AND_VERSION$$'
   ];
 
-  const PREBID_ROOT = path.resolve(__dirname, '..');
-  // on Windows, require paths are not filesystem paths
-  const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
-
-  function relPath(from, toRelToProjectRoot) {
-    return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
-  }
-
-  function getModuleName(filename) {
-    const modPath = path.parse(path.relative(PREBID_ROOT, filename));
-    if (!['.ts', '.js'].includes(modPath.ext.toLowerCase())) {
-      return null;
-    }
-    if (modPath.dir === 'modules') {
-      // modules/moduleName.js -> moduleName
-      return modPath.name;
-    }
-    if (modPath.name.toLowerCase() === 'index' && path.dirname(modPath.dir) === 'modules') {
-      // modules/moduleName/index.js -> moduleName
-      return path.basename(modPath.dir);
-    }
-    return null;
-  }
-
   function translateToJs(path, state) {
-    if (path.node.source?.value?.endsWith('.ts')) {
-      path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+    const source = path.node.source?.value;
+    if (source) {
+      if (source.endsWith('.d.ts')) {
+        // assuming .d.ts files are just definitions, they are not relevant at runtime
+        path.remove();
+      } else if (source.endsWith('.ts')) {
+        path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+      }
     }
   }
 
@@ -62,11 +45,7 @@ module.exports = function(api, options) {
         const modName = getModuleName(state.filename);
         if (modName != null) {
           // append "registration" of module file to getGlobal().installedModules
-          let i = 0;
-          let registerName;
-          do {
-            registerName = `__r${i++}`
-          } while (path.scope.hasBinding(registerName))
+          const registerName = getFreeName(path, '__r');
           path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
@@ -123,7 +102,7 @@ module.exports = function(api, options) {
           path.node.object.name === FEATURES_GLOBAL &&
           !path.scope.hasBinding(FEATURES_GLOBAL) &&
           t.isIdentifier(path.node.property) &&
-          features.hasOwnProperty(path.node.property.name)
+          Object.prototype.hasOwnProperty.call(features, path.node.property.name)
         ) {
           path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
         }
