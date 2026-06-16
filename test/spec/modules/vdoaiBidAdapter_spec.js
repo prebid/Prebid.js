@@ -328,11 +328,11 @@ describe('vdoaiBidAdapter', function () {
       expect(serverRequests[1].url).to.equal('https://ads.vdo.ai/hb');
     });
     it('Returns valid adUnits', function () {
-      validateAdUnit(serverRequests[0].data.adUnits[0], bid1)
-      validateAdUnit(serverRequests[1].data.adUnits[0], bid2)
-      validateAdUnit(serverRequests[0].data.adUnits[1], bid3)
+      validateAdUnit(serverRequests[0].data.adUnits[0], bid1);
+      validateAdUnit(serverRequests[1].data.adUnits[0], bid2);
+      validateAdUnit(serverRequests[0].data.adUnits[1], bid3);
       // validateAdUnit(serverRequests[1].data.adUnits[1], bid4)
-    })
+    });
     it('normalizes single video playerSize into one size', function () {
       const videoBid = {
         ...bid3,
@@ -347,7 +347,7 @@ describe('vdoaiBidAdapter', function () {
       expect(serverRequests[0].data.adUnits[0].sizes).to.deep.equal([
         { width: 800, height: 600 }
       ]);
-    })
+    });
     it('normalizes video playerSize array of arrays', function () {
       const videoBid = {
         ...bid3,
@@ -362,7 +362,7 @@ describe('vdoaiBidAdapter', function () {
       expect(serverRequests[0].data.adUnits[0].sizes).to.deep.equal([
         { width: 800, height: 600 }
       ]);
-    })
+    });
     it('Returns empty data if no valid requests are passed', function () {
       const serverRequests = spec.buildRequests([]);
       expect(serverRequests).to.be.an('array').that.is.empty;
@@ -376,18 +376,18 @@ describe('vdoaiBidAdapter', function () {
       serverRequests.forEach(serverRequest => {
         expect(serverRequest.data.page).to.be.a('string');
         expect(serverRequest.data.page).to.be.equal('testSitePage');
-      })
-    })
+      });
+    });
     it('should include bidfloor from floor module when getFloor is available', function () {
       const bidWithFloor = {
         ...bid1,
         getFloor: function () {
-          return { currency: 'USD', floor: 2.5 }
+          return { currency: 'USD', floor: 2.5 };
         }
-      }
-      const serverRequests = spec.buildRequests([bidWithFloor], bidderRequest)
-      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(2.5)
-    })
+      };
+      const serverRequests = spec.buildRequests([bidWithFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(2.5);
+    });
     it('should use bidfloor from params when floor module returns invalid value', function () {
       const bidWithInvalidFloor = {
         ...bid1,
@@ -396,12 +396,12 @@ describe('vdoaiBidAdapter', function () {
           bidfloor: 1.5
         },
         getFloor: function () {
-          return { currency: 'EUR', floor: 2.5 }
+          return { currency: 'EUR', floor: 2.5 };
         }
-      }
-      const serverRequests = spec.buildRequests([bidWithInvalidFloor], bidderRequest)
-      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5)
-    })
+      };
+      const serverRequests = spec.buildRequests([bidWithInvalidFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5);
+    });
     it('should use bidfloor from params when getFloor is not available', function () {
       const bidWithParamFloor = {
         ...bid1,
@@ -409,14 +409,14 @@ describe('vdoaiBidAdapter', function () {
           ...bid1.params,
           bidfloor: 1.5
         }
-      }
-      const serverRequests = spec.buildRequests([bidWithParamFloor], bidderRequest)
-      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5)
-    })
+      };
+      const serverRequests = spec.buildRequests([bidWithParamFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5);
+    });
     it('should return undefined for bidfloor when neither floor module nor bidfloor param is available', function () {
-      const serverRequests = spec.buildRequests([bid1], bidderRequest)
-      expect(serverRequests[0].data.adUnits[0].bidfloor).to.be.undefined
-    })
+      const serverRequests = spec.buildRequests([bid1], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.be.undefined;
+    });
     it('should return fallback value for bidfloor when getFloor returns NaN', function () {
       const bidWithNaNFloor = {
         ...bid1,
@@ -425,13 +425,13 @@ describe('vdoaiBidAdapter', function () {
           bidfloor: 1.5
         },
         getFloor: function () {
-          return { currency: 'USD', floor: NaN }
+          return { currency: 'USD', floor: NaN };
         }
-      }
-      const serverRequests = spec.buildRequests([bidWithNaNFloor], bidderRequest)
-      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5)
-    })
-  })
+      };
+      const serverRequests = spec.buildRequests([bidWithNaNFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5);
+    });
+  });
   describe('interpretBannerResponse', function () {
     const resObject = {
       body: [{
