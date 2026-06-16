@@ -15,7 +15,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { BID_STATUS, EVENTS, REJECTION_REASON, S2S, TARGETING_KEYS } from '../src/constants.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
-import { getPriceGranularity } from '../src/auction.js';
+import { getPriceByGranularity } from '../src/auction.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { registerVastTrackers } from '../libraries/vastTrackers/vastTrackers.js';
 import {
@@ -500,7 +500,7 @@ function getDfpCurrencyInfo(bidResponse) {
   // dfpBd
   let dfpbd = deepAccess(adserverTargeting, `${TARGETING_KEYS.PRICE_BUCKET}`);
   if (!dfpbd) {
-    const priceGranularityKey = getPriceGranularity(bidResponse);
+    const priceGranularityKey = getPriceByGranularity()(bidResponse);
     dfpbd = bidResponse[priceGranularityKey] || bidResponse.cpm;
   }
   if (currency !== 'USD' && dfpbd) {
