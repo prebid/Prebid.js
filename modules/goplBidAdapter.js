@@ -363,6 +363,9 @@ const onTimeout = (timeoutData) => {
 };
 
 const onBidderError = (errorData) => {
+  // XMLHttpRequest error and the bid request object
+  logWarn('Bidder error', errorData);
+
   const payload = getNotificationPayload(errorData);
   if (payload) {
     payload.event = 'parseError';
@@ -398,10 +401,55 @@ const onBidWon = (bid) => {
   }
 };
 
+const onAdRenderSucceeded = (bid) => {
+  const payload = getNotificationPayload(bid);
+  if (payload) {
+    payload.event = 'adRenderSucceeded';
+    sendNotification(payload);
+    return payload;
+  }
+};
+
+const onAdRenderFailed = (errorData) => {
+  logWarn('Render failed', errorData);
+
+  // errorData has reason and message
+  const payload = getNotificationPayload(errorData);
+  if (payload) {
+    payload.event = 'adRenderFailed';
+    sendNotification(payload);
+    return payload;
+  }
+};
+
+const onSetTargeting = (bid) => {
+  const payload = getNotificationPayload(bid);
+  if (payload) {
+    payload.event = 'setTargeting';
+    sendNotification(payload);
+    return payload;
+  }
+};
+
+const onBidRejected = (bid) => {
+  const payload = getNotificationPayload(bid);
+  if (payload) {
+    payload.event = 'bidRejected';
+    sendNotification(payload);
+    return payload;
+  }
+};
+
 const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ["sspBC"],
+  aliases: [
+    'sspBC',
+    {
+      code: 'sspBC',
+      gvlid: 676
+    },
+  ],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid,
   buildRequests,
@@ -411,7 +459,11 @@ const spec = {
   onBidderError,
   onBidViewable,
   onBidBillable,
-  onBidWon
+  onBidWon,
+  onAdRenderSucceeded,
+  onSetTargeting,
+  onBidRejected,
+  onAdRenderFailed,
 };
 
 registerBidder(spec);

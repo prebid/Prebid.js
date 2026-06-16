@@ -2467,6 +2467,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "gopl",
+      "aliasOf": null,
+      "gvlid": 690,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "sspBC",
+      "aliasOf": "gopl",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "greenbids",
       "aliasOf": null,
       "gvlid": null,
@@ -3783,6 +3797,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "playstream",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "prebidServer",
       "aliasOf": null,
       "gvlid": null,
@@ -4542,13 +4563,6 @@
       "componentName": "ssmas",
       "aliasOf": null,
       "gvlid": 1183,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "sspBC",
-      "aliasOf": null,
-      "gvlid": 676,
       "disclosureURL": null
     },
     {
@@ -5577,7 +5591,7 @@
       "componentType": "rtd",
       "componentName": "wurfl",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/wurflRtdProvider.json"
     },
     {
       "componentType": "userId",

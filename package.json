@@ -154,6 +154,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^1.1.0",
     "gulp-babel": "^8.0.0",
+    "gulp-cli": "^3.1.0",
     "gulp-wrap": "^0.15.0",
     "iab-adcom": "^1.0.6",
     "iab-native": "^1.0.0",
