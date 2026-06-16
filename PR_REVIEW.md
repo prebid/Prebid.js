@@ -29,6 +29,7 @@ General gulp commands include separate commands for serving the codebase on a bu
 - Make sure the code is not setting cookies or localstorage directly -- it must use the `StorageManager`.
 - Review for obvious errors or bad coding practice / use best judgement here.
 - Don't allow needless code duplication with other js files; require both files import common code. Do not allow commits designed to fool the code duplication checker.
+- Module filenames should match module codes. Exceptions in https://github.com/prebid/Prebid.js/blob/master/metadata/overrides.mjs should almost never be needed.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
@@ -48,6 +49,7 @@ Follow steps above for general review process. In addition, please verify the fo
     - The bidder code should be unique for the first 6 characters
     - Reserved words that cannot be used as bidder names: all, context, data, general, prebid, and skadn
 - Verify that bidder has submitted valid bid params and that bids are being received.
+- Verify filenames are correct, eg bidderCode must match {{biddermodule}}BidAdapter
 - Verify that bidder is not manipulating the prebid.js auction in any way or doing things that go against the principles of the project. If unsure check with the Tech Lead.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
@@ -75,7 +77,7 @@ Follow steps above for general review process. In addition, please verify the fo
     - If their bidder doesn't work well with safeframed creatives, add `safeframes_ok: false`. This will alert publishers to not use safeframed creatives when creating the ad server entries for their bidder.
     - If they're setting a deal ID in some scenarios, add `bidder_supports_deals: true`
     - If they have an IAB Global Vendor List ID, add `gvl_id: ID`. There's no default.
-- After a new adapter is approved, let the submitter know they may open a PR in the [headerbid-expert repository](https://github.com/prebid/headerbid-expert) to have their adapter recognized by the [Headerbid Expert extension](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop). The PR should be to the [bidder patterns file](https://github.com/prebid/headerbid-expert/blob/master/bidderPatterns.js), adding an entry with their adapter's name and the url the adapter uses to send and receive bid responses.
+
 
 ### Reviewing a New or Updated Analytics Adapter
 
