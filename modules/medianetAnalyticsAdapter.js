@@ -500,8 +500,8 @@ function getDfpCurrencyInfo(bidResponse) {
   // dfpBd
   let dfpbd = deepAccess(adserverTargeting, `${TARGETING_KEYS.PRICE_BUCKET}`);
   if (!dfpbd) {
-    const priceGranularityKey = getPriceByGranularity()(bidResponse);
-    dfpbd = bidResponse[priceGranularityKey] || bidResponse.cpm;
+    const priceGetter = getPriceByGranularity();
+    dfpbd = priceGetter(bidResponse) || bidResponse.cpm;
   }
   if (currency !== 'USD' && dfpbd) {
     dfpbd = convertCurrency(dfpbd, currency, 'USD');
