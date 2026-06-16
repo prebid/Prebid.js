@@ -21,3 +21,5 @@ jobs:
           fetch-depth: 0
       - name: Scan
         uses: prebid/code-scanner@main
+        with:
+          token: ${{ github.token }}
