@@ -8,7 +8,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 
 ### Running Tests and Verifying Integrations
 
-General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combinese those into one command.
+General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combines those into one command.
 
 - Run `gulp review-start`, adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
     - A page will open which provides a hub for common reviewer tools.
