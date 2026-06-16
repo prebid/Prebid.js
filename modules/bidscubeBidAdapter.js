@@ -9,6 +9,7 @@ const URL_SYNC = 'https://supply.bidscube.com/?c=o&m=cookie';
 
 export const spec = {
   code: BIDDER_CODE,
+  
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (opts) {
