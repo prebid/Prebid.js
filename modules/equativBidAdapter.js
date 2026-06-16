@@ -93,6 +93,22 @@ export const spec = {
 
     bidRequests.forEach(bid => {
       const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
+
+      if (!data) {
+        logWarn(`${LOG_PREFIX} Skipping bid: converter returned empty data.`, bid);
+        return;
+      }
+
+      if (!data.id) {
+        logWarn(`${LOG_PREFIX} Skipping bid: request is missing required id field.`, bid);
+        return;
+      }
+
+      if (!data.imp?.length) {
+        logWarn(`${LOG_PREFIX} Skipping bid: no valid impressions after processing.`, bid);
+        return;
+      }
+
       requests.push({
         data,
         method: 'POST',
