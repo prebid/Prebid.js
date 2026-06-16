@@ -734,7 +734,7 @@ describe('apsBidAdapter', () => {
           ]);
         });
 
-        it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
+        it('when both iframe and pixel sync are disabled, should return empty array', () => {
           syncOptions = { iframeEnabled: false, pixelEnabled: false };
           const result = spec.getUserSyncs(
             syncOptions,
