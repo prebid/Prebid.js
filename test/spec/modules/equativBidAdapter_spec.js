@@ -292,6 +292,44 @@ describe('Equativ bid adapter tests', () => {
       expect(request.data.imp[0].ext.bidder).to.be.undefined;
     });
 
+    it('should add ext.bidder with placementuuid to imp object when placementuuid is defined', () => {
+      const bidRequests = [
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { placementuuid: 'abc-123' } },
+      ];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].ext.bidder).to.deep.equal({
+        placementuuid: 'abc-123',
+      });
+    });
+
+    it('should let placementuuid take precedence over siteId, pageId, formatId when both are provided', () => {
+      const bidRequests = [
+        {
+          ...DEFAULT_BANNER_BID_REQUESTS[0],
+          params: { placementuuid: 'abc-123', siteId: 123, pageId: 456, formatId: 789 },
+        },
+      ];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].ext.bidder).to.deep.equal({
+        placementuuid: 'abc-123',
+      });
+    });
+
+    it('should still add deprecated ext.bidder params when placementuuid is not provided', () => {
+      const bidRequests = [
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { siteId: 123, pageId: 456, formatId: 789 } },
+      ];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].ext.bidder).to.deep.equal({
+        siteId: 123,
+        pageId: 456,
+        formatId: 789,
+      });
+    });
+
     it('should add site.publisher.id param', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
