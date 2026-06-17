@@ -130,7 +130,7 @@ function lookupIabConsent(setProvisionalConsent) {
     pollForCmp(cmpApiConfig, Date.now() + timeout).then((found: any) => {
       if (found) { subscribe(found); }
     });
-  })
+  });
 }
 
 function parseConsentData(consentObject): TCFConsentData {
