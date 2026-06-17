@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { spec, storage } from 'modules/criteoBidAdapter.js';
+import { dep, spec, storage } from 'modules/criteoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
-import * as ajax from 'src/ajax.js';
 import { config } from '../../../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -27,7 +26,7 @@ describe('The Criteo bidding adapter', function () {
     localStorage.removeItem('criteo_fast_bid');
     sandbox = sinon.createSandbox();
     logWarnStub = sandbox.stub(utils, 'logWarn');
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub(dep, 'ajax');
   });
 
   afterEach(function () {
@@ -271,7 +270,7 @@ describe('The Criteo bidding adapter', function () {
       };
       const lsData = {
         'cto_bundle': 'a'
-      }
+      };
       getCookieStub.callsFake(cookieName => cookieData[cookieName]);
       setCookieStub.callsFake((cookieName, value, expires) => cookieData[cookieName] = value);
       getDataFromLocalStorageStub.callsFake(name => lsData[name]);
@@ -292,7 +291,7 @@ describe('The Criteo bidding adapter', function () {
       };
       const lsData = {
         'cto_bundle': ''
-      }
+      };
       getCookieStub.callsFake(cookieName => cookieData[cookieName]);
       setCookieStub.callsFake((cookieName, value, expires) => cookieData[cookieName] = value);
       getDataFromLocalStorageStub.callsFake(name => lsData[name]);
@@ -300,7 +299,7 @@ describe('The Criteo bidding adapter', function () {
       spec.onDataDeletionRequest([]);
       expect(getCookieStub.calledOnce).to.be.true;
       expect(setCookieStub.called).to.be.false;
-      expect(getDataFromLocalStorageStub.calledOnce).to.be.true
+      expect(getDataFromLocalStorageStub.calledOnce).to.be.true;
       expect(removeDataFromLocalStorageStub.called).to.be.false;
       expect(ajaxStub.called).to.be.false;
     });
@@ -673,7 +672,7 @@ describe('The Criteo bidding adapter', function () {
         banner: { sizes: [[728, 90]] }
       },
       params: {}
-    }]
+    }];
 
     let sandbox, localStorageIsEnabledStub, bidderConfigStub;
 
@@ -684,7 +683,7 @@ describe('The Criteo bidding adapter', function () {
     this.beforeEach(function () {
       sandbox = sinon.createSandbox();
       localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
-      bidderConfigStub = sandbox.stub(config, "getBidderConfig")
+      bidderConfigStub = sandbox.stub(config, "getBidderConfig");
       localStorageIsEnabledStub.returns(true);
     });
 
@@ -845,7 +844,7 @@ describe('The Criteo bidding adapter', function () {
             }
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(br));
       const ortbRequest = request.data;
       expect(ortbRequest.user.ext.eids).to.deep.equal([
@@ -1130,7 +1129,7 @@ describe('The Criteo bidding adapter', function () {
         platform: {
           brand: 'abc'
         }
-      }
+      };
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -1611,7 +1610,7 @@ describe('The Criteo bidding adapter', function () {
         publisher: { ...ortbRequest.site.publisher, domain: 'criteo.com' }
       });
       expect(ortbRequest.imp[0].ext.bidfloor).to.equal(0.75);
-      expect(ortbRequest.imp[0].ext.data.someContextAttribute).to.equal('abc')
+      expect(ortbRequest.imp[0].ext.data.someContextAttribute).to.equal('abc');
     });
 
     it('should properly build a request when coppa flag is true', async function () {
@@ -1663,7 +1662,7 @@ describe('The Criteo bidding adapter', function () {
                 floor: 2.0
               };
             } else {
-              return {}
+              return {};
             }
           }
         },
@@ -1731,7 +1730,7 @@ describe('The Criteo bidding adapter', function () {
                 floor: 2.0
               };
             } else {
-              return {}
+              return {};
             }
           }
         },
@@ -1794,7 +1793,7 @@ describe('The Criteo bidding adapter', function () {
                   floor: 4.99
                 };
               } else {
-                return {}
+                return {};
               }
             }
           },
@@ -1942,7 +1941,7 @@ describe('The Criteo bidding adapter', function () {
 
       const request = spec.buildRequests(defaultBidRequests, await addFPDToBidderRequest(bidderRequest));
       expect(request.options.endpointCompression).to.be.true;
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -2119,7 +2118,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].mediaType).to.equal(BANNER);
       expect(bids[0].requestId).to.equal('test-bidId');
-      expect(bids[0].seatBidId).to.equal('test-bidderId')
+      expect(bids[0].seatBidId).to.equal('test-bidderId');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].currency).to.equal('CUR');
       expect(bids[0].width).to.equal(728);
@@ -2157,7 +2156,7 @@ describe('The Criteo bidding adapter', function () {
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].requestId).to.equal('test-bidId');
-        expect(bids[0].seatBidId).to.equal('test-bidderId')
+        expect(bids[0].seatBidId).to.equal('test-bidderId');
         expect(bids[0].cpm).to.equal(1.23);
         expect(bids[0].currency).to.equal('CUR');
         expect(bids[0].vastUrl).to.equal('http://test-ad');
@@ -2193,7 +2192,7 @@ describe('The Criteo bidding adapter', function () {
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].requestId).to.equal('test-bidId');
-        expect(bids[0].seatBidId).to.equal('test-bidderId')
+        expect(bids[0].seatBidId).to.equal('test-bidderId');
         expect(bids[0].cpm).to.equal(1.23);
         expect(bids[0].currency).to.equal('CUR');
         expect(bids[0].vastUrl).to.equal('http://test-ad');
@@ -2224,7 +2223,7 @@ describe('The Criteo bidding adapter', function () {
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].requestId).to.equal('test-bidId');
-        expect(bids[0].seatBidId).to.equal('test-bidderId')
+        expect(bids[0].seatBidId).to.equal('test-bidderId');
         expect(bids[0].cpm).to.equal(1.23);
         expect(bids[0].currency).to.equal('CUR');
         expect(bids[0].width).to.equal(728);
@@ -2275,7 +2274,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].mediaType).to.equal(BANNER);
       expect(bids[0].requestId).to.equal('test-bidId2');
-      expect(bids[0].seatBidId).to.equal('test-bidderId')
+      expect(bids[0].seatBidId).to.equal('test-bidderId');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].currency).to.equal('CUR');
       expect(bids[0].width).to.equal(728);
@@ -2324,7 +2323,7 @@ describe('The Criteo bidding adapter', function () {
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].requestId).to.equal('test-bidId');
-        expect(bids[0].seatBidId).to.equal('test-bidderId')
+        expect(bids[0].seatBidId).to.equal('test-bidderId');
         expect(bids[0].cpm).to.equal(1.23);
         expect(bids[0].currency).to.equal('CUR');
         expect(bids[0].vastUrl).to.equal('http://test-ad');
@@ -2364,7 +2363,7 @@ describe('The Criteo bidding adapter', function () {
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
         expect(bids[0].requestId).to.equal('test-bidId');
-        expect(bids[0].seatBidId).to.equal('test-bidderId')
+        expect(bids[0].seatBidId).to.equal('test-bidderId');
         expect(bids[0].cpm).to.equal(1.23);
         expect(bids[0].currency).to.equal('CUR');
         expect(bids[0].width).to.equal(728);
@@ -2457,7 +2456,7 @@ describe('The Criteo bidding adapter', function () {
           expect(bids[0].meta).not.to.deep.equal(expectedBidMetaPafData);
         }
       })
-    )
+    );
   });
 
   describe('when pubtag prebid adapter is not available', function () {

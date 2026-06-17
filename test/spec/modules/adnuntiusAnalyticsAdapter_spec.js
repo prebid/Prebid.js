@@ -298,7 +298,7 @@ describe('Adnuntius analytics adapter', function () {
       getAttribute: function() {
         return 'adunitid';
       }
-    }
+    };
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(utils, 'timestamp').returns(1519149562416);
     sandbox.stub(adUnits, 'getAdUnitElement').returns(element);

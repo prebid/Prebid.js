@@ -34,7 +34,7 @@ describe('storage manager', function() {
 
   afterEach(function () {
     config.resetConfig();
-  })
+  });
 
   it('should allow to set cookie for core modules without checking gdpr enforcements', function () {
     const coreStorage = getCoreStorageManager();
@@ -106,11 +106,11 @@ describe('storage manager', function() {
       sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
         [ACTIVITY_PARAM_STORAGE_WRITE]: false
       }));
-    })
+    });
 
     it('should pass write = true on writes', () => {
       const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
-      mgr.setDataInLocalStorage('foo', 'bar')
+      mgr.setDataInLocalStorage('foo', 'bar');
       try {
         sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
           [ACTIVITY_PARAM_STORAGE_WRITE]: true
@@ -118,7 +118,7 @@ describe('storage manager', function() {
       } finally {
         mgr.removeDataFromLocalStorage('foo');
       }
-    })
+    });
 
     it('should NOT pass storage key if advertiseKeys = false', () => {
       newStorageManager({
@@ -127,7 +127,7 @@ describe('storage manager', function() {
         advertiseKeys: false
       }, { isAllowed }).getCookie('foo');
       expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.not.exist;
-    })
+    });
 
     it('should not pass storage key when not relevant', () => {
       mkManager(MODULE_TYPE_PREBID, 'mockMod').cookiesAreEnabled();
@@ -142,8 +142,8 @@ describe('storage manager', function() {
           mgr[`setDataIn${type}Storage`]('testKey', 'val');
           expect(mgr[`getDataFrom${type}Storage`]('testKey')).to.not.exist;
         });
-      })
-    })
+      });
+    });
 
     it('should use bidder aliases when possible', () => {
       adapterManager.registerBidAdapter({ callBids: sinon.stub(), getSpec: () => ({}) }, 'mockBidder');
@@ -152,8 +152,8 @@ describe('storage manager', function() {
       config.runWithBidder('mockAlias', () => mgr.cookiesAreEnabled());
       sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
         [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockAlias'
-      }))
-    })
+      }));
+    });
   });
 
   ['localStorage', 'sessionStorage'].forEach(storage => {
@@ -164,7 +164,7 @@ describe('storage manager', function() {
       let originalStorage;
       const storageMock = {
         get: () => {
-          throw Error
+          throw Error;
         }
       };
 
@@ -177,7 +177,7 @@ describe('storage manager', function() {
       afterEach(function () {
         Object.defineProperty(window, storage, { get: () => originalStorage });
         errorLogSpy.restore();
-      })
+      });
 
       it('should not throw if storage is not accessible when setting/getting/removing', function () {
         const coreStorage = newStorageManager();
@@ -202,7 +202,7 @@ describe('storage manager', function() {
 
       afterEach(function () {
         store.clear();
-      })
+      });
 
       it('should remove side-effect after checking', function () {
         const storageMgr = newStorageManager();
@@ -219,7 +219,7 @@ describe('storage manager', function() {
 
   describe('deviceAccess control', () => {
     afterEach(() => {
-      config.resetConfig()
+      config.resetConfig();
     });
 
     it('should allow by default', () => {
@@ -230,7 +230,7 @@ describe('storage manager', function() {
     it('should deny access when set', () => {
       config.setConfig({ deviceAccess: false });
       sinon.assert.match(deviceAccessRule(), { allow: false });
-    })
+    });
   });
 
   describe('allowStorage access control rule', () => {
@@ -246,7 +246,7 @@ describe('storage manager', function() {
             return undefined;
           }
         }
-      }
+      };
     }
 
     Object.entries({
@@ -313,7 +313,7 @@ describe('storage manager', function() {
                     sinon.assert.match(res, { allow: false });
                   }
                 });
-              })
+              });
             }));
           });
         });
@@ -330,12 +330,12 @@ describe('canSetCookie', () => {
       if (params.component === 'prebid.storage') {
         return { allow };
       }
-    })
+    });
   });
   afterEach(() => {
     unregisterACRule();
     canSetCookie.clear();
-  })
+  });
 
   it('should return true when allowed', () => {
     expect(canSetCookie()).to.be.true;
@@ -354,5 +354,5 @@ describe('canSetCookie', () => {
     expect(canSetCookie()).to.be.true;
     allow = false;
     expect(canSetCookie()).to.be.true;
-  })
-})
+  });
+});

@@ -1,4 +1,4 @@
-import { spec } from '../../../modules/targetVideoBidAdapter.js'
+import { spec } from '../../../modules/targetVideoBidAdapter.js';
 import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
 import { deepClone } from '../../../src/utils.js';
 
@@ -13,7 +13,7 @@ describe('TargetVideo Bid Adapter', function() {
       context: 'instream',
       playbackmethod: [1, 2, 3, 4]
     }
-  }
+  };
 
   const defaultBidderRequest = {
     bidderRequestId: 'mock-uuid',
@@ -69,7 +69,7 @@ describe('TargetVideo Bid Adapter', function() {
       version: '$prebid.version$'
     });
     expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal(12345);
-  })
+  });
 
   it('Test the VIDEO request schain sending', function() {
     const globalSchain = {
@@ -189,7 +189,7 @@ describe('TargetVideo Bid Adapter', function() {
 
     const bidResponse = spec.interpretResponse({ body: responseBody }, { bidderRequest });
     expect(bidResponse.length).to.equal(0);
-  })
+  });
 
   it('Test the BANNER response parsing function', function() {
     const responseBody = {
@@ -229,8 +229,8 @@ describe('TargetVideo Bid Adapter', function() {
     expect(bid.cpm).to.equal(0.5);
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
-    expect(bid.ad).to.include('<script src="https://player.target-video.com/custom/targetvideo-banner.js"></script>')
-    expect(bid.ad).to.include('initPlayer')
+    expect(bid.ad).to.include('<script src="https://player.target-video.com/custom/targetvideo-banner.js"></script>');
+    expect(bid.ad).to.include('initPlayer');
   });
 
   it('Test the VIDEO response parsing function', function() {
@@ -381,9 +381,9 @@ describe('TargetVideo Bid Adapter', function() {
         },
         mediaTypes: videoMediaTypes,
       }
-    ]
+    ];
 
-    const bids = spec.buildRequests(requests, defaultBidderRequest)
+    const bids = spec.buildRequests(requests, defaultBidderRequest);
 
     const payload1 = JSON.parse(bids[0].data);
     const payload2 = JSON.parse(bids[1].data);

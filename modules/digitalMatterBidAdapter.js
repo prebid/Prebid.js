@@ -7,7 +7,7 @@ import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'digitalMatter';
 const GVLID = 1345;
-const ENDPOINT_URL = 'https://adx.digitalmatter.services/'
+const ENDPOINT_URL = 'https://adx.digitalmatter.services/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,7 +24,7 @@ export const spec = {
       return false;
     }
 
-    return !!(bid.params.accountId && bid.params.siteId)
+    return !!(bid.params.accountId && bid.params.siteId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const common = bidderRequest.ortb2 || {};
@@ -39,7 +39,7 @@ export const spec = {
     const device = getDevice(common.device);
     const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
     const eids = getByKey(validBidRequests, 'userIdAsEids');
-    const currency = config.getConfig('currency')
+    const currency = config.getConfig('currency');
     const cur = currency && [currency];
 
     const imp = validBidRequests.map((bid, id) => {
@@ -134,7 +134,7 @@ export const spec = {
       });
     }
 
-    return bids
+    return bids;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (usersSynced) {
@@ -167,7 +167,7 @@ export const spec = {
                   userSyncs.push({ type: 'iframe', url: url });
                 }
               }
-            })
+            });
           } catch (e) {
             //
           }
@@ -177,7 +177,7 @@ export const spec = {
 
     return userSyncs;
   }
-}
+};
 
 const usersSynced = false;
 
@@ -198,7 +198,7 @@ function getDevice(data) {
     ua: data.ua || navigator.userAgent,
     dnt: dnt,
     language: data.language || navigator.language,
-  }
+  };
 }
 
 function getByKey(collection, key) {

@@ -53,7 +53,7 @@ describe('consentManagement', function () {
       }
     });
     expect(uspDataHandler.getConsentData()).to.equal('1YYY');
-  })
+  });
 
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
@@ -174,7 +174,7 @@ describe('consentManagement', function () {
         setConsentConfig(staticConfig);
         expect(consentAPI).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
-        expect(uspDataHandler.getConsentData()).to.eql(staticConfig.usp.consentData.getUSPData.uspString)
+        expect(uspDataHandler.getConsentData()).to.eql(staticConfig.usp.consentData.getUSPData.uspString);
         expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
       });
     });
@@ -307,7 +307,7 @@ describe('consentManagement', function () {
           expect(uspDataHandler.ready).to.be.true;
           expect(uspDataHandler.getConsentData()).to.equal(null);
           done();
-        }, 20)
+        }, 20);
       });
     });
 
@@ -349,7 +349,7 @@ describe('consentManagement', function () {
                   returnValue: response,
                   success: true
                 }
-              }
+              };
               event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
               replySent.resolve();
             }
@@ -367,9 +367,9 @@ describe('consentManagement', function () {
           stringifyResponse = messageFormatString;
           mockApi.callsFake((cmd) => {
             if (cmd === 'getUSPData') {
-              return { uspString: '1YY' }
+              return { uspString: '1YY' };
             }
-          })
+          });
           setConsentConfig(goodConfig);
           requestBidsHook(() => {
             const consent = uspDataHandler.getConsentData();
@@ -383,16 +383,16 @@ describe('consentManagement', function () {
 
       it('fires deletion request on registerDeletion', (done) => {
         mockApi.callsFake((cmd) => {
-          return cmd === 'registerDeletion'
-        })
+          return cmd === 'registerDeletion';
+        });
         sinon.assert.notCalled(adapterManager.callDataDeletionRequest);
         setConsentConfig(goodConfig);
         replySent.promise.then(() => {
           setTimeout(() => { // defer again to give time for the message to get through
             sinon.assert.calledOnce(adapterManager.callDataDeletionRequest);
-            done()
-          }, 200)
-        })
+            done();
+          }, 200);
+        });
       });
     });
 
@@ -534,7 +534,30 @@ describe('consentManagement', function () {
         });
         setConsentConfig(goodConfig);
         sinon.assert.notCalled(adapterManager.callDataDeletionRequest);
-      })
+      });
+    });
+
+    describe('polling behavior:', function () {
+      afterEach(function () {
+        delete window.__uspapi;
+        config.resetConfig();
+        requestBids.removeAll();
+        resetConsentData();
+      });
+
+      it('should find USP CMP and load consent when it appears during the polling window', async function () {
+        config.setConfig({ consentManagement: { usp: { cmpApi: 'iab', timeout: 1000 } } });
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 1000 } });
+        setTimeout(() => {
+          window.__uspapi = (...args) => {
+            if (args[0] === 'getUSPData') args[2]({ uspString: '1YNY' }, true);
+          };
+        }, 50);
+        await new Promise(resolve => {
+          requestBidsHook(() => { resolve(); }, {});
+        });
+        expect(uspDataHandler.getConsentData()).to.eql('1YNY');
+      });
     });
 
     describe('polling behavior:', function () {

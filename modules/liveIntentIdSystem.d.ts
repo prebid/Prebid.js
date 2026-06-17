@@ -59,7 +59,7 @@ export type LiveIntentFpid = {
    * Either from the cookie jar, `cookie`, or from the local storage, `html5`.
    */
   strategy?: 'cookie' | 'html5';
-}
+};
 
 export type LiveIntentIdSystemParams = {
   /**
@@ -118,7 +118,7 @@ export type LiveIntentIdSystemParams = {
    * Delay expressed in milliseconds
    */
   fireEventDelay?: number;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -139,4 +139,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

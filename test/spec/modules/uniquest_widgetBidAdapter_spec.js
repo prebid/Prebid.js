@@ -21,14 +21,14 @@ describe('uniquest_widgetBidAdapter', function () {
           wid: 'wid_0001',
         },
       };
-      expect(spec.isBidRequestValid(request)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(request)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      expect(spec.isBidRequestValid({})).to.equal(false)
-      expect(spec.isBidRequestValid({ wid: '' })).to.equal(false)
-    })
-  })
+      expect(spec.isBidRequestValid({})).to.equal(false);
+      expect(spec.isBidRequestValid({ wid: '' })).to.equal(false);
+    });
+  });
 
   describe('buildRequest', function () {
     const bids = [
@@ -47,14 +47,14 @@ describe('uniquest_widgetBidAdapter', function () {
     ];
     const bidderRequest = {
       timeout: 1500,
-    }
+    };
     it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bids, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('bid=359d7a594535852&wid=wid_0001&widths=1&heights=1&timeout=1500&')
-    })
-  })
+      expect(requests[0].data).to.equal('bid=359d7a594535852&wid=wid_0001&widths=1&heights=1&timeout=1500&');
+    });
+  });
 
   describe('interpretResponse', function() {
     it('should return a valid bid response', function () {
@@ -92,11 +92,11 @@ describe('uniquest_widgetBidAdapter', function () {
       const result = spec.interpretResponse({ body: serverResponse }, {});
       expect(result).to.have.lengthOf(1);
       expect(result).to.deep.have.same.members(expectResponse);
-    })
+    });
 
     it('should return an empty array to indicate no valid bids', function () {
-      const result = spec.interpretResponse({ body: {} }, {})
+      const result = spec.interpretResponse({ body: {} }, {});
       expect(result).is.an('array').is.empty;
-    })
-  })
-})
+    });
+  });
+});

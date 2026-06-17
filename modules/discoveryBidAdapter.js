@@ -5,7 +5,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice, getScreenSize } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
-import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
@@ -182,20 +182,20 @@ function getItems(validBidRequests, bidderRequest) {
     }
     // banner
     if (mediaTypes.banner) {
-      const sizes = transformSizes(getKv(req, 'sizes'));
+      let sizes = transformSizesOrtb(getKv(req, 'sizes'));
       let matchSize;
 
       for (const size of sizes) {
         matchSize = popInAdSize.find(
-          (item) => size.width === item.w && size.height === item.h
+          (item) => size.w === item.w && size.h === item.h
         );
         if (matchSize) {
           break;
         }
       }
       if (!matchSize) {
-        const { height = 0, width = 0 } = sizes[0] || {};
-        matchSize = { h: height, w: width };
+        const { h = 0, w = 0 } = sizes[0] || {};
+        matchSize = { h, w };
       }
       ret = {
         id: id,
@@ -236,7 +236,7 @@ export const buildUTMTagData = (url) => {
   UTMValue = JSON.parse(storage.getCookie(UTM_KEY) || '{}');
   Object.assign(UTMValue, UTMParams);
   storage.setCookie(UTM_KEY, JSON.stringify(UTMValue), getCookieTimeToUTCString());
-}
+};
 
 /**
  * get rtb qequest params
@@ -288,7 +288,7 @@ function getParam(validBidRequests, bidderRequest) {
       device: {
         nbw: getConnectionDownLink(),
       }
-    }
+    };
   } catch (error) {}
   try {
     buildUTMTagData(page);

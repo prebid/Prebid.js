@@ -23,13 +23,13 @@ type RelevantCMPData = {
   applicableSections: number[]
   gppString: string;
   parsedSections: Record<string, unknown>
-}
+};
 
 type CMPData = RelevantCMPData & { [key: string]: unknown };
 
 export type GPPConsentData = RelevantCMPData & {
   gppData: CMPData;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GPPConfig {

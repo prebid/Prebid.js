@@ -6,8 +6,8 @@
  */
 
 import { logInfo, logError, logWarn } from '../src/utils.js';
-import * as ajaxLib from '../src/ajax.js';
-import { submodule } from '../src/hook.js'
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
@@ -62,14 +62,14 @@ function generateId(configParams, configStorage) {
   const url = constructUrl(configParams);
 
   const resp = function (callback) {
-    ajaxLib.ajaxBuilder()(
+    qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME)(
       url,
       response => {
         let responseObj;
         if (response) {
           try {
             responseObj = JSON.parse(response);
-            setSession(configStorage, responseObj)
+            setSession(configStorage, responseObj);
             logInfo('Merkle responseObj ' + JSON.stringify(responseObj));
           } catch (error) {
             logError(error);
@@ -111,7 +111,7 @@ export const merkleIdSubmodule = {
     logInfo('Merkle id ' + JSON.stringify(id));
 
     if (id) {
-      return { 'merkleId': id }
+      return { 'merkleId': id };
     }
 
     // Supports multiple IDs for different SSPs
@@ -150,7 +150,7 @@ export const merkleIdSubmodule = {
 
     if (typeof configParams.endpoint !== 'string') {
       logWarn('User ID - merkleId submodule endpoint string is not defined');
-      configParams.endpoint = ID_URL
+      configParams.endpoint = ID_URL;
     }
 
     if (typeof configParams.sv_domain !== 'string') {
@@ -158,7 +158,7 @@ export const merkleIdSubmodule = {
     }
 
     const configStorage = (config && config.storage) || {};
-    const resp = generateId(configParams, configStorage)
+    const resp = generateId(configParams, configStorage);
     return { callback: resp };
   },
   extendId: function (config = {}, consentData, storedId) {
@@ -209,9 +209,9 @@ export const merkleIdSubmodule = {
       atype: 3,
       getSource: function(data) {
         if (data?.ext?.ssp) {
-          return `${data.ext.ssp}.merkleinc.com`
+          return `${data.ext.ssp}.merkleinc.com`;
         }
-        return 'merkleinc.com'
+        return 'merkleinc.com';
       },
       getValue: function(data) {
         return data.id;
@@ -220,7 +220,7 @@ export const merkleIdSubmodule = {
         if (data.keyID) {
           return {
             keyID: data.keyID
-          }
+          };
         }
         if (data.ext) {
           return data.ext;
