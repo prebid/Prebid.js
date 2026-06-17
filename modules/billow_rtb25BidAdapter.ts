@@ -1,4 +1,4 @@
-import { deepAccess, replaceMacros } from '../src/utils.js';
+import { deepAccess,deepSetValue, replaceMacros } from '../src/utils.js';
 import { BidderSpec, ExtendedResponse, registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
@@ -23,6 +23,23 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     netRevenue: true,
     ttl: 30,
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    let sharedId: string | undefined;
+    const eids = deepAccess(request, 'user.ext.eids');
+    if (Array.isArray(eids)) {
+        const sharedEid = eids.find((eid) => eid?.source === 'sharedid.org' || eid?.source === 'pubcid.org');
+        const id = deepAccess(sharedEid, 'uids.0.id');
+        if (id) sharedId = String(id);
+    }
+    if (!sharedId) {
+        sharedId = deepAccess(bidderRequest, 'bidRequests.0.crumbs.pubcid');
+    }
+    if (sharedId) {
+        deepSetValue(request, 'user.buyeruid', String(sharedId));
+    }
+    return request;
   },
 
   imp(buildImp, bidRequest, context) {
