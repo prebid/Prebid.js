@@ -34,9 +34,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       if (id) sharedId = String(id);
     }
     if (!sharedId) {
-        sharedId =
-            deepAccess(bidderRequest, 'bids.0.crumbs.pubcid') ||
-            deepAccess(context, 'bidRequests.0.crumbs.pubcid');
+      sharedId =
+        deepAccess(bidderRequest, 'bids.0.crumbs.pubcid') ||
+        deepAccess(context, 'bidRequests.0.crumbs.pubcid');
     }
     if (sharedId) {
       deepSetValue(request, 'user.buyeruid', String(sharedId));
