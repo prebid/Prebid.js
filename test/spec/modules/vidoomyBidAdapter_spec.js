@@ -165,6 +165,18 @@ describe('vidoomyBidAdapter', function() {
       expect('' + request[1].data.multiBidsSupport).to.equal('1');
     });
 
+    it('should default gpid to empty string when ortb2Imp.ext.gpid is absent', function () {
+      expect(request[0].data.gpid).to.equal('');
+      expect(request[1].data.gpid).to.equal('');
+    });
+
+    it('should send gpid from ortb2Imp.ext.gpid when present', function () {
+      const gpid = 'example.com/vidoomyad/12345';
+      const bidRequest = { ...bidRequests[0], ortb2Imp: { ext: { gpid } } };
+      const req = spec.buildRequests([bidRequest], bidderRequest)[0];
+      expect(req.data.gpid).to.equal(gpid);
+    });
+
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com!exchange2.com,abcd,1,,,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com';
       expect(request[0].data).to.include.any.keys('schain');
