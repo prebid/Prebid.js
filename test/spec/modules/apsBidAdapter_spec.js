@@ -273,11 +273,15 @@ describe('apsBidAdapter', () => {
 
       expect(result.data.user.gender).to.be.undefined;
       expect(result.data.user.yob).to.be.undefined;
-      expect(result.data.user.keywords).to.be.undefined;
       expect(result.data.user.kwarry).to.be.undefined;
       expect(result.data.user.customdata).to.be.undefined;
       expect(result.data.user.geo).to.be.undefined;
-      expect(result.data.user.data).to.be.undefined;
+      expect(result.data.user.data).to.deep.equal([
+        {
+          id: 'segment1',
+        },
+      ]);
+      expect(result.data.user.keywords).to.equal('sports,tech');
       expect(result.data.user.id).to.equal('user123');
     });
 
