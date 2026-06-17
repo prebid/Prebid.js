@@ -1,0 +1,37 @@
+name: Prebid code scanner
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+      - '*-legacy'
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  scan:
+    name: "Prebid code scanner"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (PR)
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v6
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          fetch-depth: 0
+      - name: Checkout (Push)
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v6
+      - name: Scan
+        uses: prebid/code-scanner@main
+        with:
+          token: ${{ github.token }}
+          pem: ${{ secrets.CODE_SCANNER_PEM }}
+          appId: ${{ vars.CODE_SCANNER_APPID }}
+          installationId: ${{ vars.CODE_SCANNER_INSTALLATION }}
