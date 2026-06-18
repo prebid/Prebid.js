@@ -133,9 +133,18 @@ jobs:
           name: ${{ needs.build.outputs.built-key }}
 
       - name: Install safari
+        id: setup-safari
         if: ${{ inputs.install-safari }}
         run: |
           brew install --cask safari-technology-preview
+      - name: Clear cache and attempt Safari install again
+        if: ${{ inputs.install-safari && steps.setup-safari.result !=  'success' }}
+        run: |
+          brew cleanup --prune=all
+          brew install --cask safari-technology-preview
+      - name: Setup Safari
+        if: ${{ inputs.install-safari }}
+        run: |
           defaults write com.apple.Safari IncludeDevelopMenu YES
           defaults write com.apple.Safari AllowRemoteAutomation 1
           sudo safaridriver --enable
