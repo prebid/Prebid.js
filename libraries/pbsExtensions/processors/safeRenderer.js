@@ -13,6 +13,6 @@ export function setBidResponseSafeRenderer(bidResponse, bid) {
   if (rendererUrl) {
     bidResponse.safeRenderer = {
       url: rendererUrl,
-    }
+    };
   }
 }
