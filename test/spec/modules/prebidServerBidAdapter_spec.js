@@ -23,6 +23,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
+import { setEnforcementConfig } from 'modules/tcfControl.js';
 import * as redactor from 'src/activities/redactor.js';
 import * as activityRules from 'src/activities/rules.js';
 import { hook } from '../../../src/hook.js';
@@ -1094,6 +1095,60 @@ describe('S2S Adapter', function () {
 
         expect(requestBid.regs).to.not.exist;
         expect(requestBid.user).to.not.exist;
+      });
+    });
+
+    describe('hostGvlid endpoint selection', function () {
+      const HOST_GVLID = '52';
+      const P1_ENDPOINT = 'https://pbs.example/p1-auction';
+      const NO_P1_ENDPOINT = 'https://pbs.example/no-p1-auction';
+
+      function mockHostConsent({ purposeConsent = true, vendorConsent = true } = {}) {
+        return {
+          vendorData: {
+            purpose: {
+              consents: { 1: purposeConsent },
+              legitimateInterests: { 1: false }
+            },
+            vendor: {
+              consents: { [HOST_GVLID]: vendorConsent },
+              legitimateInterests: { [HOST_GVLID]: false }
+            }
+          },
+          apiVersion: 2,
+          gdprApplies: true
+        };
+      }
+
+      function bidRequestsWithConsent(consent) {
+        const bidRequests = utils.deepClone(BID_REQUESTS);
+        bidRequests[0].gdprConsent = consent;
+        return bidRequests;
+      }
+
+      function hostGvlidConfig(overrides = {}) {
+        return Object.assign({}, CONFIG, {
+          hostGvlid: HOST_GVLID,
+          endpoint: {
+            p1Consent: P1_ENDPOINT,
+            noP1Consent: NO_P1_ENDPOINT
+          }
+        }, overrides);
+      }
+
+      beforeEach(function () {
+        setEnforcementConfig({});
+      });
+
+      it('uses noP1Consent auction endpoint when purpose 1 consent is given but host vendor consent is not', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ purposeConsent: true, vendorConsent: false })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(NO_P1_ENDPOINT);
       });
     });
 

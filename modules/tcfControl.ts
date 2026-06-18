@@ -21,6 +21,7 @@ import {
   ACTIVITY_PARAM_COMPONENT_TYPE
 } from '../src/activities/params.js';
 import { registerActivityControl } from '../src/activities/rules.js';
+import { getHook, setupBeforeHookFnOnce } from '../src/hook.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
   ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
@@ -334,6 +335,19 @@ export function validateRules(rule, consentData, currentModule, gvlId, params = 
   return (!rule.enforcePurpose || purpose) && (!useVendorsLegalBasis || gvlId === VENDORLESS_GVLID || vendor);
 }
 
+/**
+ * Before hook for PBS getMatchingConsentUrl. When s2sConfig.hostGvlid is set,
+ * selects p1Consent vs noP1Consent based on purpose 1 and vendor consent for the host,
+ * not only global purpose 1 consent.
+ */
+function hostGvlidConsentUrlHook(next, urlProp, gdprConsent, hostGvlid) {
+  if (!hostGvlid) {
+    return next(urlProp, gdprConsent, hostGvlid);
+  }
+  const allowed = validateRules(ACTIVE_RULES.purpose[1], gdprConsent, 'prebidServer', hostGvlid);
+  next.bail(allowed ? urlProp.p1Consent : urlProp.noP1Consent);
+}
+
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = () => null) {
   return function (params) {
     const consentData = gdprDataHandler.getConsentData();
@@ -510,6 +524,7 @@ export function setEnforcementConfig(config) {
   if (!hooksAdded) {
     if (ACTIVE_RULES.purpose[1] != null) {
       hooksAdded = true;
+      setupBeforeHookFnOnce(getHook('getMatchingConsentUrl'), hostGvlidConsentUrlHook);
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
