@@ -437,21 +437,20 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
 export function insertUserSyncIframe(url, done, timeout) {
-  if (url) {
-    const iframe = createIframe(document, {
-      sandbox: 'allow-scripts allow-same-origin',
-      src: url,
-      style: {
-        width: '0px',
-        height: '0px',
-        display: 'none'
-      }
-    });
-    if (done && internal.isFn(done)) {
-      waitForElementToLoad(iframe, timeout).then(done);
+  if (!url) return;
+  const iframe = createIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+    style: {
+      width: '0px',
+      height: '0px',
+      display: 'none'
     }
-    internal.insertElement(iframe, document, 'html', true);
+  });
+  if (done && internal.isFn(done)) {
+    waitForElementToLoad(iframe, timeout).then(done);
   }
+  internal.insertElement(iframe, document, 'html', true);
 }
 
 /**
