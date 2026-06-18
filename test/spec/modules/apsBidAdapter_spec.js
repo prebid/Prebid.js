@@ -261,7 +261,7 @@ describe('apsBidAdapter', () => {
           gender: 'M',
           yob: 1990,
           keywords: 'sports,tech',
-          kwarry: 'alternate keywords',
+          kwarray: 'alternate keywords',
           customdata: 'custom user data',
           geo: { lat: 37.7749, lon: -122.4194 },
           data: [{ id: 'segment1' }],
@@ -273,7 +273,7 @@ describe('apsBidAdapter', () => {
 
       expect(result.data.user.gender).to.be.undefined;
       expect(result.data.user.yob).to.be.undefined;
-      expect(result.data.user.kwarry).to.be.undefined;
+      expect(result.data.user.kwarray).to.be.undefined;
       expect(result.data.user.customdata).to.be.undefined;
       expect(result.data.user.geo).to.be.undefined;
       expect(result.data.user.data).to.deep.equal([
