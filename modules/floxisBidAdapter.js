@@ -4,6 +4,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
 
 const BIDDER_CODE = 'floxis';
+const GVLID = 1609;
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
@@ -167,6 +168,7 @@ const CONVERTER = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid(bid) {
