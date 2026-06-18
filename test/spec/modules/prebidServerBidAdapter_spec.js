@@ -1103,7 +1103,7 @@ describe('S2S Adapter', function () {
       const P1_ENDPOINT = 'https://pbs.example/p1-auction';
       const NO_P1_ENDPOINT = 'https://pbs.example/no-p1-auction';
 
-      function mockHostConsent({ purposeConsent = true, vendorConsent = true } = {}) {
+      function mockHostConsent({ purposeConsent = true, vendorConsent = true, gdprApplies = true } = {}) {
         return {
           vendorData: {
             purpose: {
@@ -1116,7 +1116,7 @@ describe('S2S Adapter', function () {
             }
           },
           apiVersion: 2,
-          gdprApplies: true
+          gdprApplies
         };
       }
 
@@ -1149,6 +1149,17 @@ describe('S2S Adapter', function () {
 
         adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ purposeConsent: true, vendorConsent: false })), addBidResponse, done, ajax);
         expect(server.requests[0].url).to.equal(NO_P1_ENDPOINT);
+      });
+
+      it('uses p1Consent auction endpoint when gdpr does not apply', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ gdprApplies: false, vendorConsent: false })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(P1_ENDPOINT);
       });
     });
 

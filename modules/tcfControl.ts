@@ -336,12 +336,12 @@ export function validateRules(rule, consentData, currentModule, gvlId, params = 
 }
 
 /**
- * Before hook for PBS getMatchingConsentUrl. When s2sConfig.hostGvlid is set,
- * selects p1Consent vs noP1Consent based on purpose 1 and vendor consent for the host,
- * not only global purpose 1 consent.
+ * Before hook for PBS getMatchingConsentUrl. When s2sConfig.hostGvlid is set and GDPR applies,
+ * selects p1Consent vs noP1Consent based on purpose 1 and vendor consent for the host.
+ * Non-GDPR cases defer to the default PBS logic (hasPurpose1Consent).
  */
 function hostGvlidConsentUrlHook(next, urlProp, gdprConsent, hostGvlid) {
-  if (!hostGvlid) {
+  if (!hostGvlid || !gdprConsent?.gdprApplies) {
     return next(urlProp, gdprConsent, hostGvlid);
   }
   const allowed = validateRules(ACTIVE_RULES.purpose[1], gdprConsent, 'prebidServer', hostGvlid);
