@@ -799,11 +799,16 @@ describe('floxisBidAdapter', function () {
         expect(syncs[0].url).to.equal(IMAGE_URL);
       });
 
-      it('should fall back to the only available entry when its type does not match the enabled mode', function () {
-        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')])]);
+      it('should ignore a disabled-type body entry and fall through to the header', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')], 'seat=Gmtb&region=us-e')]);
         expect(syncs).to.have.lengthOf(1);
-        expect(syncs[0].type).to.equal('image');
-        expect(syncs[0].url).to.equal(IMAGE_URL);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal('https://px-us-e.floxis.tech/sync?seat=Gmtb');
+      });
+
+      it('should emit no sync when the body carries only a disabled-type entry and no header', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(0);
       });
 
       it('should prefer the body channel over the header when both are present', function () {

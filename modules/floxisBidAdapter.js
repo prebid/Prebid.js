@@ -224,6 +224,9 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
     if (!serverResponses || !serverResponses.length) return [];
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    // Only honor a body sync whose type is enabled here — core userSync drops a disabled-type sync.
+    const isEnabledSync = (e) => e && typeof e.url === 'string' && e.url &&
+      ((e.type === 'iframe' && syncOptions.iframeEnabled) || (e.type === 'image' && syncOptions.pixelEnabled));
     const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
     const consentSuffix = query.length ? '&' + query.join('&') : '';
     const seen = {};
@@ -232,13 +235,15 @@ export const spec = {
       // body.ext.sync is primary; serverResponse.headers is not a real Headers object in every Prebid build.
       const bodySyncs = serverResponse?.body?.ext?.sync;
       if (Array.isArray(bodySyncs) && bodySyncs.length) {
-        const entry = bodySyncs.find((e) => e && typeof e.url === 'string' && e.url && e.type === pixelType) ||
-          bodySyncs.find((e) => e && typeof e.url === 'string' && e.url);
-        if (entry && !seen[entry.url]) {
-          seen[entry.url] = true;
-          syncs.push({ type: entry.type, url: entry.url });
+        const entry = bodySyncs.find((e) => isEnabledSync(e) && e.type === pixelType) || bodySyncs.find(isEnabledSync);
+        if (entry) {
+          if (!seen[entry.url]) {
+            seen[entry.url] = true;
+            syncs.push({ type: entry.type, url: entry.url });
+          }
+          return;
         }
-        return;
+        // body carried no entry of an enabled sync type — fall through to the header path below
       }
       const target = parseSyncHeader(serverResponse?.headers?.get?.(SYNC_HEADER));
       if (!target) return;
