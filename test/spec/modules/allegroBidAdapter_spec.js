@@ -160,6 +160,62 @@ describe('Allegro Bid Adapter', () => {
       expect(bid.netRevenue).to.equal(true);
     });
 
+    it('maps adomain, advertiser id and product id onto bid.meta from proto-json extension key', () => {
+      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
+      const bidderRequest = buildBidderRequest(bidRequests);
+      const built = spec.buildRequests(bidRequests, bidderRequest);
+      const impId = built.data.imp[0].id;
+      const ortbResponse = {
+        id: 'resp1',
+        seatbid: [{
+          seat: 'seat1',
+          bid: [{
+            impid: impId,
+            price: 1.23,
+            crid: 'creative1',
+            w: 300,
+            h: 250,
+            adomain: ['advertiser.com'],
+            '[com.allegro.dsp.dsp_bid]': { client_id: '42', product_id: 'prod-123' }
+          }]
+        }]
+      };
+      const result = spec.interpretResponse({ body: ortbResponse }, built);
+      expect(result).to.be.an('array').with.lengthOf(1);
+      const bid = result[0];
+      expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+      expect(bid.meta.advertiserId).to.equal('42');
+      expect(bid.meta.productId).to.equal('prod-123');
+    });
+
+    it('maps advertiser id and product id from bid.ext extension key', () => {
+      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
+      const bidderRequest = buildBidderRequest(bidRequests);
+      const built = spec.buildRequests(bidRequests, bidderRequest);
+      const impId = built.data.imp[0].id;
+      const ortbResponse = {
+        id: 'resp1',
+        seatbid: [{
+          seat: 'seat1',
+          bid: [{
+            impid: impId,
+            price: 1.23,
+            crid: 'creative1',
+            w: 300,
+            h: 250,
+            ext: { '[com.allegro.dsp.dsp_bid]': { client_id: '42', product_id: 'prod-123' } }
+          }]
+        }]
+      };
+      const result = spec.interpretResponse({ body: ortbResponse }, built);
+      expect(result).to.be.an('array').with.lengthOf(1);
+      const bid = result[0];
+      expect(bid.meta.advertiserId).to.equal('42');
+      expect(bid.meta.productId).to.equal('prod-123');
+    });
+
     it('ignores bids with impid not present in original request', () => {
       configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];

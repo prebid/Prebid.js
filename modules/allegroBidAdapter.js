@@ -163,6 +163,33 @@ const converter = ortbConverter({
     }
 
     return request;
+  },
+
+  /**
+   * Post-processes each Prebid bid response, mapping Allegro DSP extension
+   * fields onto the standard `meta` object so publishers can consume them.
+   * The DSP extension is delivered as a proto-JSON bracketed key
+   * (`[com.allegro.dsp.dsp_bid]`). `adomain` is mapped to
+   * `meta.advertiserDomains` by the default ORTB processor.
+   *
+   * @param {Function} buildBidResponse Base builder provided by ortbConverter.
+   * @param bid Single ORTB bid object from the server response.
+   * @param context Shared converter context.
+   * @returns {Object} Prebid bid response object.
+   */
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    // Support both ORTB ext nesting and proto-json top-level extension key.
+    const dspBidExt = bid.ext?.['[com.allegro.dsp.dsp_bid]'] ?? bid['[com.allegro.dsp.dsp_bid]'];
+    if (dspBidExt?.clientId !== undefined) {
+      bidResponse.meta.advertiserId = dspBidExt.clientId;
+    }
+    if (dspBidExt?.productId !== undefined) {
+      bidResponse.meta.productId = dspBidExt.productId;
+    }
+
+    return bidResponse;
   }
 });
 
@@ -232,7 +259,9 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     if (!response.body) return;
-    return converter.fromORTB({ response: response.body, request: request.data }).bids;
+    let resp = converter.fromORTB({ response: response.body, request: request.data }).bids;
+    console.log('Allegro: interpretResponse', resp);
+    return resp;
   },
 
   /**

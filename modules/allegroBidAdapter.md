@@ -64,6 +64,39 @@ var adUnits = [{
 
 When `allegro.triggerImpressionPixel` is enabled, the adapter will automatically fire the provided `burl` (billing/impression) tracking URL when a bid wins.
 
+## Bid Metadata
+
+The adapter exposes advertiser metadata from the bid response on the standard `bid.meta` object:
+
+| `bid.meta` field    | Source in OpenRTB bid response               | Description           |
+|---------------------|----------------------------------------------|-----------------------|
+| `advertiserDomains` | `bid.adomain`                                | Advertiser domain(s)  |
+| `advertiserId`      | `bid.ext['[com.allegro.dsp.dsp_bid]'].client_id`  | Advertiser identifier |
+| `productId`         | `bid.ext['[com.allegro.dsp.dsp_bid]'].product_id` | Product identifier    |
+
+The DSP extension fields are delivered as a proto-JSON bracketed key (`[com.allegro.dsp.dsp_bid]`).
+
+Example server bid response:
+
+```json
+{
+  "seatbid": [{
+    "bid": [{
+      "impid": "abc",
+      "price": 1.5,
+      "adomain": ["advertiser.com"],
+      "ext": {
+        "[com.allegro.dsp.dsp_bid]": {
+          "client_id": "42",
+          "product_id": "prod-123"
+        }
+      }
+    }]
+  }],
+  "cur": "USD"
+}
+```
+
 # Technical Details
 
 - **Protocol**: OpenRTB 2.5
