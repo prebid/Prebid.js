@@ -18,7 +18,9 @@
 var v = location.search.substr(1);
 if (!(/^\d+(-canary)?$/.test(v))) return;
 var u = 'https://3p.ampproject.net/'+encodeURIComponent(v)+'/f.js';
-document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
+var s = document.createElement('script');
+s.src = u;
+(document.head || document.documentElement).appendChild(s);
 })();
 </script>
 
