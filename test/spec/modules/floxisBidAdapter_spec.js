@@ -759,6 +759,8 @@ describe('floxisBidAdapter', function () {
 
     describe('body.ext.sync (primary channel)', function () {
       const BODY_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&gdpr=1';
+      const IFRAME_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&type=iframe';
+      const IMAGE_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&type=image';
       function bodySync(url, type) { return { type, url }; }
       function bodyResponse(syncArray, headerValue = null) {
         return { body: { id: 'r', seatbid: [], ext: { sync: syncArray } }, headers: { get: (n) => (n === 'x-floxis-sync' && headerValue ? headerValue : null) } };
@@ -775,6 +777,33 @@ describe('floxisBidAdapter', function () {
         const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe'), bodySync(BODY_URL, 'image')])]);
         expect(syncs[0].type).to.equal('image');
         expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should select the iframe entry by enabled type when iframe and image urls differ', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IFRAME_URL, 'iframe'), bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal(IFRAME_URL);
+      });
+
+      it('should select the image entry by enabled type when only pixels are enabled and urls differ', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(IFRAME_URL, 'iframe'), bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(IMAGE_URL);
+      });
+
+      it('should pick the correct entry by type regardless of array order', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image'), bodySync(IFRAME_URL, 'iframe')])]);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(IMAGE_URL);
+      });
+
+      it('should fall back to the only available entry when its type does not match the enabled mode', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(IMAGE_URL);
       });
 
       it('should prefer the body channel over the header when both are present', function () {

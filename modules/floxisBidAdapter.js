@@ -232,10 +232,11 @@ export const spec = {
       // body.ext.sync is primary; serverResponse.headers is not a real Headers object in every Prebid build.
       const bodySyncs = serverResponse?.body?.ext?.sync;
       if (Array.isArray(bodySyncs) && bodySyncs.length) {
-        const entry = bodySyncs.find((e) => e && typeof e.url === 'string' && e.url);
+        const entry = bodySyncs.find((e) => e && typeof e.url === 'string' && e.url && e.type === pixelType) ||
+          bodySyncs.find((e) => e && typeof e.url === 'string' && e.url);
         if (entry && !seen[entry.url]) {
           seen[entry.url] = true;
-          syncs.push({ type: pixelType, url: entry.url });
+          syncs.push({ type: entry.type, url: entry.url });
         }
         return;
       }
