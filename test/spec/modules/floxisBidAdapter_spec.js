@@ -827,6 +827,25 @@ describe('floxisBidAdapter', function () {
         const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe')]), bodyResponse([bodySync(BODY_URL, 'iframe')])]);
         expect(syncs).to.have.lengthOf(1);
       });
+
+      it('should dedupe a body sync against a header sync that resolves to the same URL', function () {
+        const SHARED_URL = 'https://px-us-e.floxis.tech/sync?seat=Gmtb';
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
+          bodyResponse([bodySync(SHARED_URL, 'iframe')]),
+          bodyResponse([], 'seat=Gmtb&region=us-e')
+        ]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].url).to.equal(SHARED_URL);
+      });
+
+      it('should dedupe a header sync against a body sync regardless of response order', function () {
+        const SHARED_URL = 'https://px-us-e.floxis.tech/sync?seat=Gmtb';
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
+          bodyResponse([], 'seat=Gmtb&region=us-e'),
+          bodyResponse([bodySync(SHARED_URL, 'iframe')])
+        ]);
+        expect(syncs).to.have.lengthOf(1);
+      });
     });
   });
 

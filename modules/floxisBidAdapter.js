@@ -249,13 +249,12 @@ export const spec = {
       if (!target) return;
       const { seat, region } = target;
       const host = getSyncHost(region);
-      const key = `${seat}|${region}`;
-      if (!host || seen[key]) return;
-      seen[key] = true;
-      syncs.push({
-        type: pixelType,
-        url: `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`
-      });
+      if (!host) return;
+      // Dedupe on the final URL so a header sync collapses with a same-URL body.ext.sync entry in a mixed rollout.
+      const url = `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`;
+      if (seen[url]) return;
+      seen[url] = true;
+      syncs.push({ type: pixelType, url });
     });
     return syncs;
   },
