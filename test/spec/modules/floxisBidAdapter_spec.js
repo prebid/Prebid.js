@@ -756,6 +756,44 @@ describe('floxisBidAdapter', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
       expect(syncs).to.have.lengthOf(1);
     });
+
+    describe('body.ext.sync (primary channel)', function () {
+      const BODY_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&gdpr=1';
+      function bodySync(url, type) { return { type, url }; }
+      function bodyResponse(syncArray, headerValue = null) {
+        return { body: { id: 'r', seatbid: [], ext: { sync: syncArray } }, headers: { get: (n) => (n === 'x-floxis-sync' && headerValue ? headerValue : null) } };
+      }
+
+      it('should emit the server-baked sync URL from body.ext.sync with no header present', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe'), bodySync(BODY_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should use image type from the body channel when only pixels are enabled', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe'), bodySync(BODY_URL, 'image')])]);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should prefer the body channel over the header when both are present', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe')], 'seat=Gmtb&region=us-e')]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should fall back to the header when body.ext.sync is an empty array', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([], 'seat=Gmtb&region=us-e')]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].url).to.equal('https://px-us-e.floxis.tech/sync?seat=Gmtb');
+      });
+
+      it('should dedupe identical body sync URLs across responses', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe')]), bodyResponse([bodySync(BODY_URL, 'iframe')])]);
+        expect(syncs).to.have.lengthOf(1);
+      });
+    });
   });
 
   describe('onBidBillable', function () {
