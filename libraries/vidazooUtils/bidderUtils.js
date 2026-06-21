@@ -257,24 +257,6 @@ export function createUserSyncGetter(options = {
   };
 }
 
-export function appendUserIdsToRequestPayload(payloadRef, userIds) {
-  let key;
-  _each(userIds, (userId, idSystemProviderName) => {
-    key = `uid.${idSystemProviderName}`;
-
-    switch (idSystemProviderName) {
-      case 'lipb':
-        payloadRef[key] = userId.lipbid;
-        break;
-      case 'id5id':
-        payloadRef[key] = userId.uid;
-        break;
-      default:
-        payloadRef[key] = userId;
-    }
-  });
-}
-
 function appendUserIdsAsEidsToRequestPayload(payloadRef, userIds) {
   let key;
   userIds.forEach((userIdObj) => {
@@ -292,7 +274,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     params,
     bidId,
     adUnitCode,
-    schain,
     mediaTypes,
     ortb2Imp,
     bidderRequestId,
@@ -316,6 +297,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const contentLang = bidderRequest?.ortb2?.site?.content?.language || document.documentElement.lang;
   const coppa = bidderRequest?.ortb2?.regs?.coppa ?? 0;
   const device = bidderRequest?.ortb2?.device ? deepClone(bidderRequest?.ortb2?.device) : {};
+  const schain = bid?.ortb2?.source?.ext?.schain ||
+    bidderRequest?.ortb2?.source?.ext?.schain ||
+    bid.schain; // legacy fallback only
 
   // delete device.devicetype if invalid
   if (!Number.isInteger(device.devicetype)) {
@@ -374,9 +358,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   }
   if (bid.user?.ext?.eids?.length > 0) {
     appendUserIdsAsEidsToRequestPayload(data, bid.user.ext.eids);
-  }
-  if (bid.userId) {
-    appendUserIdsToRequestPayload(data, bid.userId);
   }
 
   const sua = bidderRequest?.ortb2?.device?.sua;

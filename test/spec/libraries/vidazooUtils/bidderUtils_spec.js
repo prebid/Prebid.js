@@ -699,57 +699,6 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
   });
 
-  describe('appendUserIdsToRequestPayload', function () {
-    it('should extract lipbid from lipb provider', function () {
-      const payload = {};
-      const userIds = {
-        lipb: { lipbid: 'lipb-id-123' }
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.lipb']).to.be.equal('lipb-id-123');
-    });
-
-    it('should extract uid from id5id provider', function () {
-      const payload = {};
-      const userIds = {
-        id5id: { uid: 'id5-uid-456' }
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.id5id']).to.be.equal('id5-uid-456');
-    });
-
-    it('should use raw value for other providers', function () {
-      const payload = {};
-      const userIds = {
-        tdid: 'tdid-value-789',
-        criteoId: 'criteo-value-000'
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.tdid']).to.be.equal('tdid-value-789');
-      expect(payload['uid.criteoId']).to.be.equal('criteo-value-000');
-    });
-
-    it('should handle all provider types together', function () {
-      const payload = {};
-      const userIds = {
-        lipb: { lipbid: 'lipb-id' },
-        id5id: { uid: 'id5-uid' },
-        tdid: 'tdid-value'
-      };
-      utilities.appendUserIdsToRequestPayload(payload, userIds);
-      expect(payload['uid.lipb']).to.be.equal('lipb-id');
-      expect(payload['uid.id5id']).to.be.equal('id5-uid');
-      expect(payload['uid.tdid']).to.be.equal('tdid-value');
-    });
-
-    it('should not modify payload when userIds is empty', function () {
-      const payload = { existing: 'value' };
-      utilities.appendUserIdsToRequestPayload(payload, {});
-      expect(Object.keys(payload)).to.have.lengthOf(1);
-      expect(payload.existing).to.be.equal('value');
-    });
-  });
-
   describe('getVidazooSessionId', function () {
     it('should call getStorageItem with SESSION_ID_KEY via storage mock', function () {
       const storageMock = {
@@ -1026,18 +975,6 @@ describe('Vidazoo Bidder Utils Tests', function () {
         bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
       );
       expect(data['uid.adserver.org']).to.equal('eid-123');
-    });
-
-    it('should append userId to request data', function () {
-      const bid = {
-        ...baseBid,
-        userId: { tdid: 'tdid-val', lipb: { lipbid: 'lipb-val' } }
-      };
-      const data = utilities.buildRequestData(
-        bid, 'https://publisher.com', [[300, 250]], baseBidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
-      );
-      expect(data['uid.tdid']).to.equal('tdid-val');
-      expect(data['uid.lipb']).to.equal('lipb-val');
     });
 
     it('should include ortb2 and ortb2Imp in data', function () {
@@ -1460,7 +1397,8 @@ describe('Vidazoo Bidder Utils Tests', function () {
         site: { cat: [], pagecat: [], content: { data: [], language: 'en' } },
         user: { data: [] },
         device: {},
-        regs: { coppa: 0 }
+        regs: { coppa: 0 },
+        source: { ext: { schain: null } }
       }
     };
 
