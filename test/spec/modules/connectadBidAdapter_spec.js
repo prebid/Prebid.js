@@ -199,6 +199,11 @@ describe('ConnectAd Adapter', function () {
       });
 
       it('should include viewability for video impressions using video dimensions', function () {
+        const globalFeatures = window.FEATURES || {};
+        if (!globalFeatures.VIDEO) {
+          this.skip();
+        }
+
         sandbox.stub(percentInView, 'getViewability').returns(60);
 
         const videoBidRequests = [{
@@ -669,7 +674,7 @@ describe('ConnectAd Adapter', function () {
         const renderer = bids[0].renderer;
 
         renderer.loaded = true;
-        renderer._render.call(renderer, {
+        renderer._render({
           renderer,
           width: 640,
           height: 480,
@@ -726,7 +731,7 @@ describe('ConnectAd Adapter', function () {
         const renderer = bids[0].renderer;
 
         renderer.loaded = true;
-        renderer._render.call(renderer, {
+        renderer._render({
           renderer,
           adUnitCode: 'video-slot'
         });
