@@ -2,13 +2,13 @@ import * as utilities from 'libraries/vidazooUtils/bidderUtils.js';
 import { expect } from "chai";
 import sinon from "sinon";
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
+import { config } from '../../../../src/config.js';
 import {
   IFRAME_SYNC_DEFAULT_URL,
   IMAGE_SYNC_DEFAULT_URL,
   SESSION_ID_KEY
 } from "../../../../libraries/vidazooUtils/constants.js";
-import { bidderSettings } from 'src/bidderSettings.js';
+import { bidderSettings } from '../../../../src/bidderSettings.js';
 
 describe('Vidazoo Bidder Utils Tests', function () {
   describe('createSessionId', function () {
