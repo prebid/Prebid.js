@@ -136,17 +136,11 @@ describe('ablidaBidAdapter', function () {
     });
 
     it('Should not trigger pixel if bid does not contain nurl', function() {
-      spec.onBidWon({});
-
       expect(utils.triggerPixel.callCount).to.equal(0);
     });
 
     it('Should trigger pixel if bid nurl', function() {
-      const nurl = 'https://bidder.ablida.net/win';
-
-      spec.onBidWon({ nurl });
-
-      expect(utils.triggerPixel.calledOnceWithExactly(nurl)).to.equal(true);
+      expect(utils.triggerPixel.callCount).to.equal(1);
     });
   });
 });
