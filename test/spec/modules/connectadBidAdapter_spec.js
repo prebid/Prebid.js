@@ -117,38 +117,31 @@ describe('ConnectAd Adapter', function () {
       expect(request.url).to.equal('https://custom.connectad.io/api/v3');
     });
 
-    it('should map standard GDPR Consent parameters', function () {
-      bidderRequest.gdprConsent = {
-        gdprApplies: true,
-        consentString: 'test-consent-string'
+    it('should preserve consent fields from bidderRequest.ortb2', function () {
+      bidderRequest.ortb2 = {
+        regs: {
+          ext: {
+            gdpr: 1,
+            us_privacy: '1YYN'
+          },
+          gpp: 'test-gpp-string',
+          gpp_sid: [2, 6]
+        },
+        user: {
+          ext: {
+            consent: 'test-consent-string'
+          }
+        }
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.regs.ext.gdpr).to.equal(1);
       expect(request.data.user.ext.consent).to.equal('test-consent-string');
-    });
-
-    it('should map standard GPP and CCPA parameters', function () {
-      bidderRequest.uspConsent = '1YYN';
-      bidderRequest.gppConsent = {
-        gppString: 'test-gpp-string',
-        applicableSections: [2, 6]
-      };
-      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.regs.ext.us_privacy).to.equal('1YYN');
       expect(request.data.regs.gpp).to.equal('test-gpp-string');
       expect(request.data.regs.gpp_sid).to.deep.equal([2, 6]);
     });
 
-    it('should copy first bid userIdAsEids into user.ext.eids', function () {
-      bidRequests[0].userIdAsEids = [{
-        source: 'id5-sync.com',
-        uids: [{ id: 'user-123', atype: 1 }]
-      }];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
-    });
-
-    it('should not overwrite existing user.ext.eids from ortb2', function () {
+    it('should preserve user.ext.eids from bidderRequest.ortb2', function () {
       bidRequests[0].userIdAsEids = [{
         source: 'id5-sync.com',
         uids: [{ id: 'user-123', atype: 1 }]
@@ -165,6 +158,15 @@ describe('ConnectAd Adapter', function () {
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.user.ext.eids).to.deep.equal(bidderRequest.ortb2.user.ext.eids);
+    });
+
+    it('should not map bid.userIdAsEids without bidderRequest.ortb2 user.ext.eids', function () {
+      bidRequests[0].userIdAsEids = [{
+        source: 'id5-sync.com',
+        uids: [{ id: 'user-123', atype: 1 }]
+      }];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user?.ext?.eids).to.be.undefined;
     });
 
     describe('viewability', function () {
@@ -636,6 +638,7 @@ describe('ConnectAd Adapter', function () {
       const bids = spec.interpretResponse(videoServerResponse, request);
       expect(bids).to.be.an('array').with.lengthOf(1);
       expect(bids[0].renderer).to.exist;
+      expect(bids[0].renderer.url).to.equal('https://cdn.connectad.io/video/outstream/connectad-outstream.js');
     });
 
     it('should invoke ConnectAdOutstream when outstream renderer is called', function () {

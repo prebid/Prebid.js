@@ -12,6 +12,13 @@ const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v3';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE, AUDIO];
+const MTYPE_TO_MEDIATYPE = {
+  1: BANNER,
+  2: VIDEO,
+  3: AUDIO,
+  4: NATIVE
+};
+const REQUEST_MEDIATYPE_PRIORITY = [BANNER, VIDEO, AUDIO, NATIVE];
 
 const converter = ortbConverter({
   context: {
@@ -50,46 +57,13 @@ const converter = ortbConverter({
         }
 
         const viewabilityAmount = getViewability(element, getWindowTop(), elementSize);
-        if (viewabilityAmount !== 'na') {
+        if (typeof viewabilityAmount === 'number') {
           imp.ext.viewability = Math.round(viewabilityAmount);
         }
       }
     }
 
     return imp;
-  },
-  request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
-
-    if (bidderRequest) {
-      if (bidderRequest.gdprConsent) {
-        const gdprConsent = bidderRequest.gdprConsent;
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          request.regs = request.regs || {};
-          request.regs.ext = request.regs.ext || {};
-          request.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-        }
-        if (gdprConsent.consentString !== undefined) {
-          request.user = request.user || {};
-          request.user.ext = request.user.ext || {};
-          request.user.ext.consent = gdprConsent.consentString;
-        }
-      }
-
-      if (bidderRequest.uspConsent) {
-        request.regs = request.regs || {};
-        request.regs.ext = request.regs.ext || {};
-        request.regs.ext.us_privacy = bidderRequest.uspConsent;
-      }
-
-      if (bidderRequest.gppConsent) {
-        request.regs = request.regs || {};
-        request.regs.gpp = bidderRequest.gppConsent.gppString;
-        request.regs.gpp_sid = bidderRequest.gppConsent.applicableSections;
-      }
-    }
-
-    return request;
   },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
@@ -135,27 +109,11 @@ const converter = ortbConverter({
   overrides: {
     bidResponse: {
       mediaType(orig, bidResponse, bid, context) {
-        if (!bidResponse.mediaType) {
-          if (bid.mtype === 1 || bid.mtype === '1') {
-            bidResponse.mediaType = BANNER;
-          } else if (bid.mtype === 2 || bid.mtype === '2') {
-            bidResponse.mediaType = VIDEO;
-          } else if (bid.mtype === 3 || bid.mtype === '3') {
-            bidResponse.mediaType = AUDIO;
-          } else if (bid.mtype === 4 || bid.mtype === '4') {
-            bidResponse.mediaType = NATIVE;
-          } else if (context.bidRequest && context.bidRequest.mediaTypes) {
-            if (context.bidRequest.mediaTypes.banner) {
-              bidResponse.mediaType = BANNER;
-            } else if (context.bidRequest.mediaTypes.video) {
-              bidResponse.mediaType = VIDEO;
-            } else if (context.bidRequest.mediaTypes.audio) {
-              bidResponse.mediaType = AUDIO;
-            } else if (context.bidRequest.mediaTypes.native) {
-              bidResponse.mediaType = NATIVE;
-            }
-          }
+        if (bidResponse.mediaType) {
+          return;
         }
+        bidResponse.mediaType = MTYPE_TO_MEDIATYPE[Number(bid.mtype)] ||
+          REQUEST_MEDIATYPE_PRIORITY.find((mediaType) => context.bidRequest?.mediaTypes?.[mediaType]);
         if (!bidResponse.mediaType) {
           orig(bidResponse, bid, context);
         }
@@ -180,14 +138,6 @@ export const spec = {
     }
 
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
-    const firstBidUserIdAsEids = validBidRequests[0]?.userIdAsEids;
-    if (Array.isArray(firstBidUserIdAsEids) && firstBidUserIdAsEids.length) {
-      data.user = data.user || {};
-      data.user.ext = data.user.ext || {};
-      if (!Array.isArray(data.user.ext.eids) || data.user.ext.eids.length === 0) {
-        data.user.ext.eids = firstBidUserIdAsEids;
-      }
-    }
 
     let url = ENDPOINT_URL;
     if (validBidRequests[0] && validBidRequests[0].params && validBidRequests[0].params.endpointUrl) {
@@ -230,11 +180,13 @@ export const spec = {
       const imps = request.imp;
       response.seatbid.forEach(seatbid => {
         if (seatbid.bid && seatbid.bid.length > 0) {
+          // ConnectAd may return one bid that references multiple imp IDs.
+          // Fan those out to one bid per impid for converter mapping.
           const processedBids = [];
           seatbid.bid.forEach(bid => {
             if (Array.isArray(bid.impid)) {
               bid.impid.forEach(id => {
-                const clonedBid = Object.assign({}, bid, { impid: id });
+                const clonedBid = { ...bid, impid: id };
                 processedBids.push(clonedBid);
               });
             } else {
@@ -243,6 +195,8 @@ export const spec = {
           });
           seatbid.bid = processedBids;
 
+          // Some responses return an impid that doesn't match the request.
+          // If there is exactly one imp, map the response bid back to it.
           seatbid.bid.forEach(bid => {
             const matchesAnyImp = imps.some(imp => imp.id === bid.impid);
             if (!matchesAnyImp && imps.length === 1) {
@@ -250,7 +204,7 @@ export const spec = {
             }
           });
 
-          // Align Native Asset IDs to match request asset IDs
+          // Normalize native payloads and align response asset IDs to request asset IDs.
           seatbid.bid.forEach(bid => {
             const imp = imps.find(i => i.id === bid.impid);
             const origBidRequest = bidRequest.bids && bidRequest.bids.find(b => b.bidId === bid.impid);
@@ -259,7 +213,7 @@ export const spec = {
               let nativeResponse;
               try {
                 nativeResponse = typeof bid.adm === 'string' ? JSON.parse(bid.adm) : bid.adm;
-              } catch (e) {
+              } catch {
                 // ignore
               }
               if (nativeResponse) {
@@ -274,7 +228,7 @@ export const spec = {
                   if (imp && imp.native) {
                     try {
                       nativeRequest = typeof imp.native.request === 'string' ? JSON.parse(imp.native.request) : imp.native.request;
-                    } catch (e) {
+                    } catch {
                       // ignore
                     }
                   } else if (origBidRequest && origBidRequest.nativeOrtbRequest) {
