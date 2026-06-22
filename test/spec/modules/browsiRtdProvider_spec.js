@@ -66,7 +66,7 @@ describe('browsi Real time data sub module', function () {
   });
 
   it('should return correct macro values', function () {
-    const slot = mockGpt.makeSlot({ code: '/123/abc', divId: 'browsiAd_1' });
+    mockGpt.makeSlot({ code: '/123/abc', divId: 'browsiAd_1' });
 
     slot.setTargeting('test', ['test', 'value']);
     // slot getTargeting doesn't act like GPT so we can't expect real value
@@ -369,13 +369,12 @@ describe('browsi Real time data sub module', function () {
   });
 
   describe('set targeting - valid params', function () {
-    let slot;
     const splitKey = 'splitTest';
     const random = Math.floor(Math.random() * 10) + 1;
     before(() => {
       mockGpt.reset();
       window.googletag.pubads().clearTargeting();
-      slot = mockGpt.makeSlot({ code: '/123/split', divId: 'split' });
+      mockGpt.makeSlot({ code: '/123/split', divId: 'split' });
       browsiUtils.setKeyValue(splitKey, random);
       window.googletag.cmd.forEach(cmd => cmd());
     });

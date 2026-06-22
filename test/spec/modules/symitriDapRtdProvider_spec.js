@@ -15,8 +15,6 @@ import { hook } from '../../../src/hook.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
-const events = require('src/events');
-
 describe('symitriDapRtdProvider', function() {
   const testReqBidsConfigObj = {
     adUnits: [
@@ -609,7 +607,7 @@ describe('symitriDapRtdProvider', function() {
 
   describe('Symitri-DAP-SS-ID test', function () {
     it('Symitri-DAP-SS-ID present in response header', function () {
-      const expiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
+      // in seconds
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone);
       const request = server.requests[0];
       request.requestHeaders['Content-Type'].should.equal('application/json');
@@ -621,7 +619,7 @@ describe('symitriDapRtdProvider', function() {
     });
 
     it('Test if Symitri-DAP-SS-ID is present in request header', function () {
-      const expiry = Math.round(Date.now() / 1000.0) + 100; // in seconds
+      // in seconds
       storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'));
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone);
       const request = server.requests[0];

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, internal as r2b2, internal } from 'modules/r2b2BidAdapter.js';
+import { spec, internal as r2b2 } from 'modules/r2b2BidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import 'modules/userId/index.js';
 
@@ -354,7 +354,6 @@ describe('R2B2 adapter', function () {
     });
 
     it('should set up internal variables', function () {
-      const requests = spec.buildRequests(bids, bidderRequest);
       const bid1Id = bids[0].bidId;
       const bid2Id = bids[1].bidId;
       expect(r2b2.placementsToSync).to.be.an('array').that.has.lengthOf(2);

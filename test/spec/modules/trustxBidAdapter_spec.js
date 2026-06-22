@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/trustxBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import sinon from 'sinon';
 import { config } from 'src/config.js';
 
@@ -196,22 +196,6 @@ const getBidderResponse = () => {
 describe('trustxBidAdapter', function() {
   let videoBidRequest;
 
-  const VIDEO_REQUEST = {
-    'bidderCode': 'trustx',
-    'auctionId': 'd2b62784-f134-4896-a87e-a233c3371413',
-    'bidderRequestId': 'trustx-video-request-1',
-    'bids': videoBidRequest,
-    'auctionStart': 1615982456880,
-    'timeout': 3000,
-    'start': 1615982456884,
-    'doneCbCallCount': 0,
-    'refererInfo': {
-      'numIframes': 1,
-      'reachedTop': true,
-      'referer': 'trustx-test.com'
-    }
-  };
-
   beforeEach(function () {
     videoBidRequest = {
       mediaTypes: {
@@ -294,7 +278,7 @@ describe('trustxBidAdapter', function() {
     });
 
     it('should return expected request object', function() {
-      const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(bidRequest.url).equal('https://ads.trustx.org/pbhb');
       expect(bidRequest.method).equal('POST');
     });
@@ -308,18 +292,6 @@ describe('trustxBidAdapter', function() {
     });
 
     it('returns true when banner sizes are defined', function () {
-      const bid = {
-        bidder: 'trustx',
-        mediaTypes: {
-          banner: {
-            sizes: [[250, 300]]
-          }
-        },
-        params: {
-          uid: 'trustx-placement-1',
-        }
-      };
-
       expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
     });
 
@@ -556,7 +528,7 @@ describe('trustxBidAdapter', function() {
           customBidderResponse.body.seatbid[0].bid[0].mtype = 1; // Banner type
         }
 
-        const bidRequest = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
+        spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
         const bids = spec.interpretResponse(customBidderResponse, bidRequest);
         expect(bids[0].mediaType).to.equal('banner');
       });
@@ -574,7 +546,6 @@ describe('trustxBidAdapter', function() {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           const data = requests.data;
           const [width, height] = videoBidRequest.sizes;
-          const VERSION = '1.0.0';
 
           expect(data.imp[1].video.w).to.equal(width);
           expect(data.imp[1].video.h).to.equal(height);
@@ -674,10 +645,10 @@ describe('trustxBidAdapter', function() {
 
   describe('interpretResponse', function() {
     context('when mediaType is banner', function() {
-      let bidRequest, bidderResponse;
+      let bidderResponse;
       beforeEach(function() {
         const bidderRequest = getBannerRequest();
-        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
       });
 
@@ -911,10 +882,10 @@ describe('trustxBidAdapter', function() {
     });
 
     context('when mediaType is video', function () {
-      let bidRequest, bidderResponse;
+      let bidderResponse;
       beforeEach(function() {
         const bidderRequest = getVideoRequest();
-        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
       });
 
@@ -987,10 +958,10 @@ describe('trustxBidAdapter', function() {
   });
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let bidderResponse;
     beforeEach(function() {
       const bidderRequest = getVideoRequest();
-      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
       bidderResponse = getBidderResponse();
     });
 

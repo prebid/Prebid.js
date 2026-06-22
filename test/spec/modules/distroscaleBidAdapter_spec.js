@@ -170,20 +170,6 @@ describe('distroscaleBidAdapter', function() {
       },
       'headers': {}
     };
-    const _SAMPLE_PARSED = [{
-      'requestId': '20b96f0310083c',
-      'cpm': 0.1,
-      'currency': 'USD',
-      'width': 970,
-      'height': 250,
-      'creativeId': 'bbbbbbbb-648d-4e03-a5e2-7198bcd07cfe',
-      'netRevenue': true,
-      'ttl': 300,
-      'ad': "<div class='dsunit-test' id='2f0dfc70a1c251' style='width:970px;height:250px;background-image:url(https://dummyimage.com/970x250/444444/ffffff?text=Test%20Ad);background-size:cover'></div>",
-      'meta': {
-        'advertiserDomains': []
-      }
-    }];
 
     it('valid bid response for banner ad', function() {
       const result = spec.interpretResponse(RESPONSE, REQUEST);

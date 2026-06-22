@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sovrnBidAdapter.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+
+import 'src/utils.js';
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 

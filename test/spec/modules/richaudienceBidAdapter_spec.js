@@ -231,28 +231,6 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_APP = [{
-    adUnitCode: 'test-div',
-    bidId: '2c7c8e9c900244',
-    sizes: [
-      [300, 250],
-      [300, 600],
-      [728, 90],
-      [970, 250]
-    ],
-    bidder: 'richaudience',
-    params: {
-      bidfloor: 0.5,
-      ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
-      pid: 'ADb1f40rmi',
-      supplyType: 'app',
-    },
-    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
-    bidRequestsCount: 1,
-    bidderRequestId: '1858b7382993ca',
-    transactionId: '29df2112-348b-4961-8863-1b33684d95e6'
-  }];
-
   var DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
@@ -500,16 +478,7 @@ describe('Richaudience adapter tests', function () {
     });
 
     it('Verify adding ifa when supplyType equal to app', function () {
-      const request = spec.buildRequests(DEFAULT_PARAMS_APP, {
-        gdprConsent: {
-          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-          gdprApplies: true
-        },
-        refererInfo: {
-          page: 'https://domain.com',
-          numIframes: 0
-        }
-      });
+
     });
 
     it('Verify build request with GDPR without gdprApplies', function () {

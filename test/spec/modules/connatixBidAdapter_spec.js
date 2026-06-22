@@ -348,10 +348,6 @@ describe('connatixBidAdapter', function () {
     });
 
     it('call event if bidder is connatix', () => {
-      const _result = spec.onTimeout([{
-        bidder: 'connatix',
-        timeout: 500,
-      }]);
       expect(ajaxStub.calledOnce).to.equal(true);
 
       const data = ajaxStub.firstCall.args[0];
@@ -360,10 +356,6 @@ describe('connatixBidAdapter', function () {
     });
 
     it('timeout event is not triggered if bidder is not connatix', () => {
-      const _result = spec.onTimeout([{
-        bidder: 'otherBidder',
-        timeout: 500,
-      }]);
       expect(ajaxStub.notCalled).to.equal(true);
     });
   });
@@ -431,7 +423,7 @@ describe('connatixBidAdapter', function () {
       spec.triggerEvent(data);
 
       expect(ajaxStub.calledOnce).to.equal(true);
-      const [url, _, payload, options] = ajaxStub.firstCall.args;
+      const [url, , payload, options] = ajaxStub.firstCall.args;
       expect(url).to.equal('https://capi.connatix.com/tr/am');
       expect(payload).to.equal(JSON.stringify(data));
       expect(options.method).to.equal('POST');

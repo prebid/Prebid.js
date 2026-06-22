@@ -111,7 +111,6 @@ describe('Reconciliation Real time data submodule', function () {
       it('should return null if there is an error in frames chain', function() {
         const topWin = {};
         const iframe1Win = mockFrameWin(topWin, null); // break chain
-        const iframe2Win = mockFrameWin(topWin, iframe1Win);
 
         expect(getTopIFrameWin(iframe1Win, topWin)).to.be.null;
       });
@@ -146,8 +145,6 @@ describe('Reconciliation Real time data submodule', function () {
         adSlotElement.id = 'reconciliationAd';
         document.body.appendChild(adSlotElement);
         document.body.appendChild(adSlotIframe); // iframe is not in ad slot
-
-        const adSlot = makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
 
         expect(getSlotByWin(adSlotIframe.contentWindow)).to.be.null;
       });

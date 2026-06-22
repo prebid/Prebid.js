@@ -10,7 +10,7 @@ import {
   SEENTHIS_EVENTS,
 } from "modules/seenthisBrandStories.ts";
 import * as boundingClientRect from "../../../libraries/boundingClientRect/boundingClientRect.js";
-import * as utils from "../../../src/utils.js";
+import "../../../src/utils.js";
 import * as winDimensions from "src/utils/winDimensions.js";
 
 describe("seenthisBrandStories", function () {
@@ -291,12 +291,9 @@ describe("seenthisBrandStories", function () {
   });
 
   describe("applyFullWidth", function () {
-    let findAdWrapperStub;
-    let addStyleToSingleChildAncestorsStub;
-
     beforeEach(function () {
-      findAdWrapperStub = sinon.stub();
-      addStyleToSingleChildAncestorsStub = sinon.stub();
+      sinon.stub();
+      sinon.stub();
     });
 
     afterEach(function () {

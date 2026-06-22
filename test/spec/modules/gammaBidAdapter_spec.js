@@ -1,10 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gammaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('gammaBidAdapter', function() {
-  const _adapter = newBidder(spec);
-
   const bid = {
     'bidder': 'gamma',
     'params': {

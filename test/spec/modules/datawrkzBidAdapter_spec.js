@@ -272,7 +272,7 @@ describe('datawrkzAdapterTests', function () {
 
     it('instream video bidRequest with deals and slot size as 1 dimensional array', function () {
       const requests = spec.buildRequests(instreamVideoBidRequestsSingleArraySlotAndDeals, bidderRequest);
-      const _payload = JSON.parse(requests[0].data);
+
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);
       expect(requests[0].bidRequest).to.exist;

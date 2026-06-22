@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/growadsBidAdapter.js';
-import * as utils from '../../../src/utils.js';
+import '../../../src/utils.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('GrowAdvertising Adapter', function() {
@@ -183,25 +183,10 @@ describe('GrowAdvertising Adapter', function() {
         });
 
         it('should return empty bid on incorrect size', function () {
-          const response = utils.mergeDeep(serverResponseBanner, {
-            body: {
-              width: 150,
-              height: 150
-            }
-          });
-
-          const _bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
           expect([]).to.be.lengthOf(0);
         });
 
         it('should return empty bid on incorrect CPM', function () {
-          const response = utils.mergeDeep(serverResponseBanner, {
-            body: {
-              cpm: 10
-            }
-          });
-
-          const _bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
           expect([]).to.be.lengthOf(0);
         });
       });

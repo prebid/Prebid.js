@@ -1,13 +1,9 @@
 import { expect } from 'chai';
 import { dep, spec } from 'modules/colombiaBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
 
-const _HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
 describe('colombiaBidAdapter', function () {
-  const _adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'colombia',
@@ -68,14 +64,6 @@ describe('colombiaBidAdapter', function () {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
-    const _bidderRequest = {
-      refererInfo: {
-        numIframes: 0,
-        reachedTop: true,
-        referer: 'http://example.com',
-        stack: ['http://example.com']
-      }
-    };
 
     const request = spec.buildRequests(bidRequests);
     it('sends bid request to our endpoint via POST', function () {

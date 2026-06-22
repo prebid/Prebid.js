@@ -654,7 +654,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const _customUserConsent = generateGdprConsent({ nodalsConsent: false });
+
       const callback = sinon.spy();
       nodalsAiRtdSubmodule.getBidRequestData(
         {}, callback, validConfig, vendorRestrictiveUserConsent
@@ -795,7 +795,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      const _userConsent = generateGdprConsent();
+
       const bidResponse = { dummy: 'obj', 'bid': 'foo' };
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, permissiveUserConsent
@@ -923,7 +923,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const _userConsent = generateGdprConsent();
+
       const auctionDetails = { dummy: 'obj', auction: 'foo' };
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, permissiveUserConsent

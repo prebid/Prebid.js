@@ -1,19 +1,15 @@
 import { expect } from 'chai';
-import { spec, STORAGE, STORAGE_KEY as _STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
+import { spec, STORAGE } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const _BIDDER_CODE = 'impactify';
-const _BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
-const _LOGGER_URI = 'https://logger.impactify.media';
+
 const AUCTIONURI = '/bidder';
-const _COOKIESYNCURI = '/static/cookie_sync.html';
-const _GVLID = 606;
 
 var gdprData = {
   'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
@@ -21,8 +17,6 @@ var gdprData = {
 };
 
 describe('ImpactifyAdapter', function () {
-  let _getLocalStorageStub;
-  let _localStorageIsEnabledStub;
   let sandbox;
 
   beforeEach(function () {
@@ -62,55 +56,6 @@ describe('ImpactifyAdapter', function () {
         }
       }
     ];
-
-    const videoBidRequests = [
-      {
-        bidder: 'impactify',
-        params: {
-          appId: '1',
-          format: 'screen',
-          style: 'inline'
-        },
-        mediaTypes: {
-          video: {
-            context: 'instream'
-          }
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]],
-        bidId: '123456789',
-        bidderRequestId: '987654321',
-        auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
-        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002',
-        userId: {
-          pubcid: '87a0327b-851c-4bb3-a925-0c7be94548f5'
-        },
-        userIdAsEids: [
-          {
-            source: 'pubcid.org',
-            uids: [
-              {
-                id: '87a0327b-851c-4bb3-a925-0c7be94548f5',
-                atype: 1
-              }
-            ]
-          }
-        ]
-      }
-    ];
-    const _videoBidderRequest = {
-      bidderRequestId: '98845765110',
-      auctionId: '165410516454',
-      bidderCode: 'impactify',
-      bids: [
-        {
-          ...videoBidRequests[0]
-        }
-      ],
-      refererInfo: {
-        referer: 'https://impactify.io'
-      }
-    };
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(validBids[0])).to.equal(true);
@@ -518,40 +463,6 @@ describe('ImpactifyAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const videoBidRequests = [
-      {
-        bidder: 'impactify',
-        params: {
-          appId: '1',
-          format: 'screen',
-          style: 'inline'
-        },
-        mediaTypes: {
-          video: {
-            context: 'instream'
-          }
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]],
-        bidId: '123456789',
-        bidderRequestId: '987654321',
-        auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
-        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
-      }
-    ];
-    const _videoBidderRequest = {
-      bidderRequestId: '98845765110',
-      auctionId: '165410516454',
-      bidderCode: 'impactify',
-      bids: [
-        {
-          ...videoBidRequests[0]
-        }
-      ],
-      refererInfo: {
-        referer: 'https://impactify.io'
-      }
-    };
     const validResponse = {
       id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
       seatbid: [

@@ -19,15 +19,12 @@ import { server } from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 import { enrichFPD } from '../../../src/fpd/enrichment.js';
 
-var _assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('currency', function () {
   let fakeCurrencyFileServer;
   let sandbox;
   let clock;
-
-  const _fn = sinon.spy();
 
   function makeBid(bidProps) {
     return Object.assign(createBid(), bidProps);

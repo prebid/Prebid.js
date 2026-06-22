@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/codefuelBidAdapter.js';
 import { config } from 'src/config.js';
-import * as _utils from 'src/utils.js';
-import { server as _server } from 'test/mocks/xhr';
+import 'src/utils.js';
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
 const DEFAULT_USER_AGENT = window.navigator.userAgent;

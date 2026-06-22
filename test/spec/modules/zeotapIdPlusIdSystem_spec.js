@@ -56,13 +56,12 @@ describe('Zeotap ID System', function() {
     });
 
     it('should check if cookies are enabled', function() {
-      const id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
     });
 
     it('should call getCookie if cookies are enabled', function() {
       cookiesAreEnabledStub.returns(true);
-      const id = zeotapIdPlusSubmodule.getId();
+
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.calledOnce).to.be.true;
       sinon.assert.calledWith(getCookieStub, 'IDP');
@@ -71,7 +70,7 @@ describe('Zeotap ID System', function() {
     it('should check for localStorage if cookies are disabled', function() {
       cookiesAreEnabledStub.returns(false);
       localStorageIsEnabledStub.returns(true);
-      const id = zeotapIdPlusSubmodule.getId();
+
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.called).to.be.false;
       expect(localStorageIsEnabledStub.calledOnce).to.be.true;

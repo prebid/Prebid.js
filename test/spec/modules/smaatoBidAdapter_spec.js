@@ -1228,44 +1228,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     describe('ad pod', () => {
-      const PRIMARY_CAT_ID = 1337;
-      const serverResponse = {
-        body: {
-          bidid: '04db8629-179d-4bcd-acce-e54722969006',
-          cur: 'USD',
-          ext: {},
-          id: '5ebea288-f13a-4754-be6d-4ade66c68877',
-          seatbid: [
-            {
-              bid: [
-                {
-                  adm: '<VAST version="2.0"></VAST>',
-                  adomain: [
-                    'smaato.com'
-                  ],
-                  bidderName: 'smaato',
-                  cid: 'CM6523',
-                  crid: 'CR69381',
-                  dealid: '12345',
-                  id: '6906aae8-7f74-4edd-9a4f-f49379a3cadd',
-                  impid: '226416e6e6bf41',
-                  iurl: 'https://prebid/iurl',
-                  nurl: 'https://prebid/nurl',
-                  price: 0.01,
-                  w: 350,
-                  h: 50,
-                  cat: [PRIMARY_CAT_ID],
-                  ext: {
-                    duration: 42
-                  }
-                }
-              ],
-              seat: 'CM6523'
-            }
-          ]
-        },
-        headers: { get: () => undefined }
-      };
+
     });
 
     it('uses correct TTL when expire header exists', () => {

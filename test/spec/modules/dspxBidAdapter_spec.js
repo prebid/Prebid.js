@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { deepClone } from '../../../src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
@@ -9,8 +9,6 @@ const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 
 describe('dspxAdapter', function () {
-  const _adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'dspx',

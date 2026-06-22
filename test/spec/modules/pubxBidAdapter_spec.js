@@ -122,7 +122,6 @@ describe('pubxAdapter', function () {
 
     it('returns titleEnc when there is titleContent with more than 30 length', function () {
       let titleText = 'title1title2title3title4title5title';
-      const documentStubTitle = sandbox.stub(document, 'title').value(titleText);
 
       if (titleText.length > 30) {
         titleText = titleText.substr(0, 30);

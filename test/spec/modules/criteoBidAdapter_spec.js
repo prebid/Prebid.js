@@ -127,7 +127,6 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub,
       setCookieStub,
       getDataFromLocalStorageStub,
-      _setDataInLocalStorageStub,
       removeDataFromLocalStorageStub,
       triggerPixelStub;
 
@@ -305,8 +304,6 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should trigger sync pixel from iframe response', function (done) {
-      const _userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
-
       const event = new MessageEvent('message', {
         data: {
           requestId: '123456',
@@ -330,8 +327,6 @@ describe('The Criteo bidding adapter', function () {
 
     it('should write cookie only on TLD+1 level', function(done) {
       const cookies = {};
-
-      const _userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
 
       setCookieStub.callsFake((name, value, expires, _, domain) => {
         if (domain !== '.com') {
@@ -2461,54 +2456,6 @@ describe('The Criteo bidding adapter', function () {
 
   describe('when pubtag prebid adapter is not available', function () {
     it('should not warn if sendId is provided on required fields for native bidRequest', async () => {
-      const bidderRequest = {};
-      const bidRequestsWithSendId = [
-        {
-          bidder: 'criteo',
-          adUnitCode: 'bid-123',
-          sizes: [[728, 90]],
-          mediaTypes: {
-            native: {}
-          },
-          nativeOrtbRequest: {
-            assets: [{
-              required: 1,
-              id: 1,
-              img: {
-                type: 3,
-                wmin: 100,
-                hmin: 100,
-              }
-            }]
-          },
-          params: {
-            zoneId: 123,
-            publisherSubId: '123'
-          },
-          nativeParams: {
-            image: {
-              sendId: true
-            },
-            icon: {
-              sendId: true
-            },
-            clickUrl: {
-              sendId: true
-            },
-            displayUrl: {
-              sendId: true
-            },
-            privacyLink: {
-              sendId: true
-            },
-            privacyIcon: {
-              sendId: true
-            }
-          }
-        }
-      ];
-
-      const _request = spec.buildRequests(bidRequestsWithSendId, await addFPDToBidderRequest(bidderRequest));
       expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').notCalled).to.be.true;
     });
 

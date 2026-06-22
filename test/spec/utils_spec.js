@@ -23,12 +23,6 @@ describe('Utils', function () {
   var obj_array = [];
   var obj_function = function () {};
 
-  var type_string = 'String';
-  var type_number = 'Number';
-  var type_object = 'Object';
-  var type_array = 'Array';
-  var type_function = 'Function';
-
   describe('canAccessWindowTop', function () {
     let sandbox;
 
@@ -576,6 +570,7 @@ describe('Utils', function () {
       var arr = ['hello', 'world'];
       var count = 0;
       for (var key in arr) {
+        void key;
         count++;
       }
       assert.equal(arr.length, count, 'Polyfill test fails');
@@ -1298,7 +1293,6 @@ describe('Utils', function () {
             if (typeof window.CompressionStream === 'undefined') {
               cachedResult = false;
             } else {
-              const newCompressionStream = new window.CompressionStream('gzip');
               cachedResult = true;
             }
           } catch (error) {

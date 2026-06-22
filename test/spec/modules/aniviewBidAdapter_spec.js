@@ -183,7 +183,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should return expected request object', function () {
-      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
 
       expect(bidRequest).to.exist.and.to.be.a('array').and.to.have.lengthOf(2);
 
@@ -198,7 +198,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should have floor data inside imp', function () {
-      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
       const imp = bidRequest[1].data.imp[0];
 
       expect(imp.bidfloor).equal(FLOOR_PRICE);
@@ -206,7 +206,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should have replacements in request', function () {
-      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
       const { replacements } = bidRequest[1].data.ext.aniview;
 
       expect(replacements.AV_CDIM1).equal(REPLACEMENT_1);
@@ -215,7 +215,7 @@ describe('Aniview Bid Adapter', function () {
     it('should not have floor data in imp if getFloor returns empty object', function () {
       videoBidRequest.bids[1].getFloor = () => ({});
 
-      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
       const imp = bidRequest[1].data.imp[0];
 
       expect(imp.bidfloor).not.exist;
@@ -240,7 +240,7 @@ describe('Aniview Bid Adapter', function () {
       const DEV_ENDPOINT = 'https://dev.aniview.com/sspRTB2';
       videoBidRequest.bids[0].params.dev = { endpoint: DEV_ENDPOINT };
 
-      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
 
       expect(bidRequest[0].url).to.equal(DEV_ENDPOINT);
     });
@@ -385,12 +385,12 @@ describe('Aniview Bid Adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let bidderResponse;
 
     beforeEach(function() {
       const videoBidRequest = MOCK.bidRequest();
 
-      bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      spec.buildRequests(videoBidRequest.bids, videoBidRequest);
       bidderResponse = MOCK.bidderResponse();
     });
 

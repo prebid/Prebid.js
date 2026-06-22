@@ -1291,11 +1291,6 @@ describe('Smart bid adapter tests', function () {
     });
 
     it('Verifiy that schain with null nodes produce null result', function () {
-      const schain = {
-        'ver': '1.0',
-        'complete': 1
-
-      };
       const actual = spec.serializeSupplyChain(null);
       expect(null, actual);
     });

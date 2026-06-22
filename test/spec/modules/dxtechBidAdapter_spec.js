@@ -192,8 +192,6 @@ const getBidderResponse = () => {
 };
 
 describe('dxtechBidAdapter', function() {
-  let _videoBidRequest;
-
   beforeEach(function () {
     videoBidRequest = {
       mediaTypes: {

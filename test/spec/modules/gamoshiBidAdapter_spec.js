@@ -12,7 +12,6 @@ describe('GamoshiAdapter', () => {
   let schainConfig,
     bidRequest,
     bannerBidRequest,
-    _bannerRequestWithEids,
     videoBidRequest,
     rtbResponse,
     videoResponse,

@@ -358,7 +358,6 @@ describe('contxtful bid adapter', function () {
       }
 
       // Add objects that should be caught by duck typing (constructor name patterns)
-      const _mockObjects = [];
 
       // Mock HTMLCanvasElement (constructor name contains 'HTML' and 'Canvas')
       function HTMLCanvasElement() {}

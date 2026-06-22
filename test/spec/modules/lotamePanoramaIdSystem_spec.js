@@ -12,13 +12,13 @@ const responseHeader = { 'Content-Type': 'application/json' };
 
 describe('LotameId', function() {
   let sandbox;
-  let _logErrorStub;
+
   let getCookieStub;
   let setCookieStub;
   let getLocalStorageStub;
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
-  let _timeStampStub;
+
   let requestHost;
 
   const nowTimestamp = new Date().getTime();

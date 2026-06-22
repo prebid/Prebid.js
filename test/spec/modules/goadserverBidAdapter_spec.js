@@ -398,8 +398,6 @@ describe('goadserverBidAdapter', function () {
   });
 
   describe('onBidWon', function () {
-    let _triggerPixelStub;
-
     beforeEach(function () {
       triggerPixelStub = sinon.stub();
     });

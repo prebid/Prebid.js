@@ -1,11 +1,8 @@
 import { spec } from 'modules/open8BidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 
 describe('Open8Adapter', function() {
-  const _adapter = newBidder(spec);
-
   describe('isBidRequestValid', function() {
     const bid = {
       'bidder': 'open8',

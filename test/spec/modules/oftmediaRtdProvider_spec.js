@@ -20,8 +20,6 @@ const RTD_CONFIG = {
   },],
 };
 
-const _TIMEOUT = 10;
-
 describe('oftmedia RTD Submodule', function() {
   let sandbox;
   let loadExternalScriptTag;

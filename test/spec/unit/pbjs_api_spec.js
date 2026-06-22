@@ -17,7 +17,7 @@ import * as auctionModule from 'src/auction.js';
 import { resetAuctionState } from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import * as pbjsModule from 'src/prebid.js';
-import pbjs, { resetQueSetup, startAuction } from 'src/prebid.js';
+import pbjs, { resetQueSetup } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { reset as resetDebugging } from '../../../src/debugging.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
@@ -42,7 +42,7 @@ require('modules/appnexusBidAdapter');
 var config = require('test/fixtures/config.json');
 
 var adUnits = getAdUnits();
-var adUnitCodes = getAdUnits().map(unit => unit.code);
+getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
 const timeout = 2000;
 const auctionId = generateUUID();
@@ -536,7 +536,7 @@ describe('Unit: Prebid Module', function () {
       ]
     };
     let currentPriceBucket;
-    let bid;
+
     let auction;
     let ajaxStub;
     let indexStub;
@@ -635,7 +635,6 @@ describe('Unit: Prebid Module', function () {
           }
         }]
       }];
-      const adUnitCodes = ['div-gpt-ad-1460505748561-0'];
       auction = auctionManagerInstance.createAuction({ adUnits, adUnitCodes });
       indexStub = sinon.stub(auctionManager, 'index');
       indexStub.get(() => auctionManagerInstance.index);
@@ -1530,7 +1529,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     let logMessageSpy;
-    let makeRequestsStub, createAuctionStub;
+    let makeRequestsStub;
     let adUnits;
     let clock;
     before(function () {
@@ -2175,9 +2174,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     var adUnitsBackup;
-    var auctionManagerStub;
     let logMessageSpy;
-    let logInfoSpy;
     let logErrorSpy;
 
     const spec = {
@@ -2195,14 +2192,14 @@ describe('Unit: Prebid Module', function () {
       beforeEach(function () {
         adUnitsBackup = auction.getAdUnits;
         auctionStarted = new Promise(resolve => {
-          auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
+          sinon.stub(auctionManager, 'createAuction').callsFake(function() {
             auctionArgs = arguments[0];
             resolve();
             return auction;
           });
         });
         logMessageSpy = sinon.spy(utils, 'logMessage');
-        logInfoSpy = sinon.spy(utils, 'logInfo');
+        sinon.spy(utils, 'logInfo');
         logErrorSpy = sinon.spy(utils, 'logError');
       });
 
@@ -2944,7 +2941,6 @@ describe('Unit: Prebid Module', function () {
             { bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }
           ]
         }];
-        adUnitCodes = ['adUnit-code'];
         configObj.setConfig({ maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999 });
         auctionStarted = new Promise(resolve => {
           sinon.stub(adapterManager, 'callBids').callsFake(function() {
@@ -3001,10 +2997,9 @@ describe('Unit: Prebid Module', function () {
         return;
       }
       let spyCallBids;
-      let adUnits, adUnitCodes;
+      let adUnits;
 
       beforeEach(function () {
-        adUnitCodes = ['adUnit-code'];
         spyCallBids = sinon.spy(adapterManager, 'callBids');
       });
 
@@ -3105,7 +3100,6 @@ describe('Unit: Prebid Module', function () {
 
     describe('part-3', function () {
       const auctionManagerInstance = newAuctionManager();
-      let auctionManagerStub;
       const adUnits1 = getAdUnits().filter((adUnit) => {
         return adUnit.code === '/19968336/header-bid-tag1';
       });
@@ -3155,7 +3149,7 @@ describe('Unit: Prebid Module', function () {
 
       beforeEach(function() {
         spyCallBids = sinon.spy(adapterManager, 'callBids');
-        auctionManagerStub = sinon.stub(auctionManager, 'createAuction');
+        sinon.stub(auctionManager, 'createAuction');
         auctionsStarted = Promise.all(
           [auction1, auction2].map((au, i) => new Promise((resolve) => {
             auctionManagerStub.onCall(i).callsFake(() => {
@@ -3587,7 +3581,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should set customPriceBucket with custom config buckets', function () {
-      const customPriceBucket = configObj.getConfig('customPriceBucket');
       const goodConfig = {
         'buckets': [{
           'max': 3,
@@ -3605,9 +3598,8 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('emit event', function () {
-    let auctionManagerStub;
     beforeEach(function () {
-      auctionManagerStub = sinon.stub(auctionManager, 'createAuction').callsFake(function() {
+      sinon.stub(auctionManager, 'createAuction').callsFake(function() {
         return auction;
       });
     });
@@ -4076,10 +4068,9 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getAllPrebidWinningBids', function () {
-    let auctionManagerStub;
     let logWarnSpy;
     beforeEach(function () {
-      auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
+      sinon.stub(auctionManager, 'getBidsReceived');
       logWarnSpy = sandbox.spy(utils, 'logWarn');
     });
 

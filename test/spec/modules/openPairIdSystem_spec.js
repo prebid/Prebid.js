@@ -2,15 +2,10 @@ import { storage, openPairIdSubmodule } from 'modules/openPairIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import {
-  attachIdSystem,
-  coreStorage as _coreStorage,
-  getConsentHash as _getConsentHash,
-  init as _init,
-  startAuctionHook as _startAuctionHook,
-  setSubmoduleRegistry as _setSubmoduleRegistry
+  attachIdSystem
 } from '../../../modules/userId/index.js';
 
-import { createEidsArray, getEids as _getEids } from '../../../modules/userId/eids.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 describe('openPairId', function () {
   let sandbox;

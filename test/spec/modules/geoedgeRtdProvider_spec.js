@@ -13,8 +13,7 @@ const {
   setWrapper,
   getMacros,
   WRAPPER_URL,
-  preloadClient,
-  markAsLoaded: _markAsLoaded
+  preloadClient
 } = geoedgeRtdModule;
 
 const key = '123123123';

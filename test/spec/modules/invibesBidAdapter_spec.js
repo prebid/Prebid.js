@@ -161,22 +161,6 @@ describe('invibesBidAdapter:', function () {
     auctionStart: Date.now()
   };
 
-  const _StubbedPersistence = function (initialValue) {
-    var value = initialValue;
-    return {
-      load: function () {
-        const str = value || '';
-        try {
-          return JSON.parse(str);
-        } catch (e) {
-        }
-      },
-      save: function (obj) {
-        value = JSON.stringify(obj);
-      }
-    };
-  };
-
   const SetBidderAccess = function() {
     config.setConfig({
       deviceAccess: true
@@ -1372,7 +1356,6 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('does not make multiple bids', function () {
-        const _result = spec.interpretResponse({ body: response }, { bidRequests });
         const secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1410,46 +1393,36 @@ describe('invibesBidAdapter:', function () {
 
     context('in multiposition context, with conflicting ads', function() {
       it('registers the second ad when no conflict', function() {
-        var firstResponse = buildResponse('12345', 1, [1], 123);
         var secondResponse = buildResponse('abcde', 2, [2], 456);
 
-        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
       it('registers the second ad when no conflict - empty arrays', function() {
-        var firstResponse = buildResponse('12345', 1, [], 123);
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
       it('doesnt register the second ad when it is blacklisted by the first', function() {
-        var firstResponse = buildResponse('12345', 1, [2], 123);
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
 
       it('doesnt register the second ad when it is blacklisting the first', function() {
-        var firstResponse = buildResponse('12345', 1, [], 123);
         var secondResponse = buildResponse('abcde', 2, [1], 456);
 
-        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
 
       it('doesnt register the second ad when it has same ids as the first', function() {
-        var firstResponse = buildResponse('12345', 1, [1], 123);
         var secondResponse = buildResponse('abcde', 1, [1], 456);
 
-        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });

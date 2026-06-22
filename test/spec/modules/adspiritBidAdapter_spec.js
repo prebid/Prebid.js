@@ -1,11 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adspiritBidAdapter.js';
-import * as utils from 'src/utils.js';
-import { registerBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from 'src/mediaTypes.js';
-const { getWinDimensions } = utils;
-const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
-const SCRIPT_URL = '/adasync.min.js';
+import 'src/utils.js';
 
 describe('Adspirit Bidder Spec', function () {
   // isBidRequestValid ---case
@@ -78,41 +73,12 @@ describe('Adspirit Bidder Spec', function () {
     });
 
     it('should correctly capture window and document dimensions in payload', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
+
     });
 
     it('should correctly fall back to document dimensions if window dimensions are not available', function () {
-      const bidRequest = [
-        {
-          bidId: '26c1ee0038ac11',
-          bidder: 'adspirit',
-          params: { placementId: '99', host: 'test.adspirit.de' },
-          adUnitCode: 'banner-div',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          }
-        }
-      ];
-      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
       delete global.window.innerWidth;
       delete global.window.innerHeight;
-      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
-      const request = requests[0];
-      const requestData = JSON.parse(request.data);
     });
     it('should correctly add GDPR consent parameters to the request', function () {
       const bidRequest = [

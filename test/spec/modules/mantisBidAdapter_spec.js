@@ -1,11 +1,8 @@
 import { expect } from 'chai';
 import { spec, storage, sfPostMessage, iframePostMessage } from 'modules/mantisBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('MantisAdapter', function () {
-  const _adapter = newBidder(spec);
   const sandbox = sinon.createSandbox();
-  let _clock;
 
   beforeEach(function () {
     clock = sandbox.useFakeTimers();

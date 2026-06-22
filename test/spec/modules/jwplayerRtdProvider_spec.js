@@ -366,7 +366,7 @@ describe('jwplayerRtdProvider', function() {
         id: contentIdForSuccess
       }
     };
-    let _bidRequestSpy;
+
     let clock;
 
     beforeEach(function () {
@@ -1792,7 +1792,6 @@ describe('jwplayerRtdProvider', function() {
       });
 
       it('excludes segments when absent', function () {
-        const _adUnitCode = 'test_ad_unit';
         const bid = {};
         const adUnit = {
           ortb2Imp: {

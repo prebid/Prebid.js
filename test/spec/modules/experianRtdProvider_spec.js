@@ -28,13 +28,7 @@ describe('Experian realtime module', () => {
     sandbox.restore();
   });
   // Bid request config
-  const _reqBidsConfigObj = {
-    adUnits: [{
-      bids: [
-        { bidder: 'appnexus' }
-      ]
-    }]
-  };
+
   describe('init', () => {
     it('succeeds when params have accountId', () => {
       const initResult = experianRtdSubmodule.init({ params: { accountId: 'ZylatYg' } });

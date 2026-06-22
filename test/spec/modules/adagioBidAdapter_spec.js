@@ -69,39 +69,8 @@ const BidderRequestBuilder = function BidderRequestBuilder(options) {
 describe('Adagio bid adapter', () => {
   let utilsMock;
   let sandbox;
-  let fakeRenderer;
-
-  const fixtures = {
-    getElementById(width, height, x, y) {
-      const obj = {
-        x: x || 800,
-        y: y || 300,
-        width: width || 300,
-        height: height || 250,
-      };
-
-      return {
-        ...obj,
-        getBoundingClientRect: () => {
-          return {
-            width: obj.width,
-            height: obj.height,
-            left: obj.x,
-            top: obj.y,
-            right: obj.x + obj.width,
-            bottom: obj.y + obj.height
-          };
-        }
-      };
-    }
-  };
 
   // safeFrame implementation
-  const $sf = {
-    ext: {
-      geom: function() {}
-    }
-  };
 
   beforeEach(() => {
     window.ADAGIO = {};

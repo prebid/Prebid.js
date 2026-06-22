@@ -146,12 +146,11 @@ describe('bidViewabilityPixels library', function () {
     });
 
     describe('when bid has native response with eventtrackers (viewable)', function () {
-      let indexStub;
       let getMediaTypesStub;
 
       beforeEach(function () {
         getMediaTypesStub = sinon.stub();
-        indexStub = sandbox.stub(auctionManager, 'index').get(() => ({ getMediaTypes: getMediaTypesStub }));
+        sandbox.stub(auctionManager, 'index').get(() => ({ getMediaTypes: getMediaTypesStub }));
       });
 
       it('should fire viewable trackers from bid.native.ortb.eventtrackers in addition to bid.eventtrackers', function () {

@@ -1,16 +1,9 @@
 import * as utils from 'src/utils.js';
-import { expect as _expect } from 'chai';
+
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import * as _events from 'src/events';
+import 'src/events';
 import { expectEvents } from '../../helpers/analytics.js';
-
-const _AD_UNIT_CODE = 'demo-adunit-1';
-const _PUBLISHER_CONFIG = {
-  pubId: 'optimon_test',
-  pubAdxAccount: 123456789,
-  pubTimezone: 'Asia/Jerusalem'
-};
 
 describe('Optimon Analytics Adapter', () => {
   const optmn_currentWindow = utils.getWindowSelf();

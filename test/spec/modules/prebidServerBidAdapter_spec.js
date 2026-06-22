@@ -7,7 +7,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import { deepAccess, deepClone, getWinDimensions, mergeDeep } from 'src/utils.js';
+import { deepAccess, deepClone, getWinDimensions } from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
@@ -1534,13 +1534,11 @@ describe('S2S Adapter', function () {
               }
             }).forEach(([t, { expectDesc, expectedFloor, expectedCur, conversionFn }]) => {
               describe(`and currency conversion ${t}`, () => {
-                let mockConvertCurrency;
                 const origConvertCurrency = getGlobal().convertCurrency;
                 beforeEach(() => {
                   if (conversionFn) {
-                    getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn);
+                    sinon.stub().callsFake(conversionFn);
                   } else {
-                    mockConvertCurrency = null;
                     delete getGlobal().convertCurrency;
                   }
                 });
@@ -3413,7 +3411,7 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledTwice(events.emit);
-      const event = events.emit.firstCall.args;
+
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('ttl', 30);

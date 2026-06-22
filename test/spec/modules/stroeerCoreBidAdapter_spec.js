@@ -135,26 +135,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const createWindow = (href, params = {}) => {
-    const { parent, top, frameElement, placementElements = [] } = params;
-
-    const protocol = href.startsWith('https') ? 'https:' : 'http:';
-    const win = {
-      frameElement,
-      parent,
-      top,
-      location: {
-        protocol, href
-      },
-      document: {
-        createElement: function () {
-          return {
-            setAttribute: function () {
-            }
-          };
-        },
-        getElementById: id => placementElements.find(el => el.id === id)
-      }
-    };
+    const { parent, top } = params;
 
     win.self = win;
 
@@ -195,13 +176,13 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const topWin = createWindow('http://www.abc.org/');
+    createWindow('http://www.abc.org/');
     topWin.innerHeight = 800;
 
     const midWin = createWindow('http://www.abc.org/', { parent: topWin, top: topWin, frameElement: createElement() });
     midWin.innerHeight = 400;
 
-    const win = createWindow('http://www.xyz.com/', {
+    createWindow('http://www.xyz.com/', {
       parent: midWin, top: topWin, frameElement: createElement(undefined, 304), placementElements
     });
 
@@ -333,9 +314,8 @@ describe('stroeerCore bid adapter', function () {
     });
 
     describe('url on server request info object', () => {
-      let win;
       beforeEach(() => {
-        win = setupSingleWindow(sandbox);
+        setupSingleWindow(sandbox);
       });
 
       afterEach(() => {
@@ -388,9 +368,6 @@ describe('stroeerCore bid adapter', function () {
     });
 
     describe('payload on server request info object', () => {
-      let topWin;
-      let win;
-
       let placementElements;
       beforeEach(() => {
         placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
@@ -1098,10 +1075,8 @@ describe('stroeerCore bid adapter', function () {
   });
 
   describe('get user syncs entry point', () => {
-    let win;
-
     beforeEach(() => {
-      win = setupSingleWindow(sandbox);
+      setupSingleWindow(sandbox);
 
       // fake
       win.document.createElement = function () {

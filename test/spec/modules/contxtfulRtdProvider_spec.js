@@ -64,7 +64,6 @@ function fakeGetElementById(width, height, x, y) {
 describe('contxtfulRtdProvider', function () {
   const sandbox = sinon.createSandbox();
   let loadExternalScriptTag;
-  let _eventsEmitSpy;
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -101,7 +100,6 @@ describe('contxtfulRtdProvider', function () {
 
     sandbox.stub(utils, 'generateUUID').returns(SM);
 
-    const _tagId = CUSTOMER;
     sessionStorage.clear();
   });
 
@@ -323,7 +321,6 @@ describe('contxtfulRtdProvider', function () {
         window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
-          const _ = contxtfulSubmodule.getTargetingData(adUnits, config);
           expect(RX_API_MOCK.receptivity.callCount).to.be.equal(0);
           done();
         }, TIMEOUT);
@@ -797,15 +794,6 @@ describe('contxtfulRtdProvider', function () {
       }
 
       if (withIframe) {
-        const _ws = {
-          frameElement: {
-            getBoundingClientRect: () => fakeElem.getBoundingClientRect()
-          },
-          document: {
-            getElementById: (id) => fakeElem,
-
-          }
-        };
         sandbox.stub(utils, 'getWindowSelf').returns(window.top);
         sandbox.stub(utils, 'inIframe').returns(true);
         sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);

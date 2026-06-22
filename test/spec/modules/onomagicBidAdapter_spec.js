@@ -1,14 +1,13 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/onomagicBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import * as winDimensions from 'src/utils/winDimensions.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://bidder.onomagic.com/hb';
 
 describe('onomagicBidAdapter', function() {
-  const _adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;

@@ -22,7 +22,7 @@ const refreshedToken = 'refreshed-advertising-token';
 const auctionDelayMs = 10;
 
 const makeEuidIdentityContainer = (token) => ({ euid: { id: token } });
-const _makeEuidOptoutContainer = (token) => ({ euid: { optout: true } });
+
 const useLocalStorage = true;
 
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({

@@ -7,7 +7,6 @@ import {
   readCache,
   writeCache,
   extractContent,
-  storage as _storage,
 } from 'modules/encypherRtdProvider.ts';
 import { server } from 'test/mocks/xhr.js';
 

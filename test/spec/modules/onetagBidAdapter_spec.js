@@ -784,7 +784,7 @@ describe('onetag', function () {
   describe('interpretResponse', function () {
     const request = getBannerVideoRequest();
     const response = getBannerVideoNativeResponse();
-    const _fledgeResponse = getFledgeBannerResponse();
+
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
@@ -1048,24 +1048,6 @@ function getBannerVideoNativeResponse() {
       ]
     }
   };
-}
-
-function getFledgeBannerResponse() {
-  const bannerVideoResponse = getBannerVideoNativeResponse();
-  bannerVideoResponse.body.fledgeAuctionConfigs = [
-    {
-      bidId: 'fledge',
-      config: {
-        seller: 'https://onetag-sys.com',
-        decisionLogicUrl:
-          'https://onetag-sys.com/paapi/decision_logic.js',
-        interestGroupBuyers: [
-          'https://onetag-sys.com'
-        ],
-      }
-    }
-  ];
-  return bannerVideoResponse;
 }
 
 function getBannerVideoRequest() {

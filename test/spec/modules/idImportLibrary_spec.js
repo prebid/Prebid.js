@@ -20,7 +20,6 @@ const mockMutationObserver = {
 describe('IdImportLibrary Tests', function () {
   let sandbox;
   let clock;
-  const _fn = sinon.spy();
 
   before(() => {
     hook.ready();
@@ -231,10 +230,9 @@ describe('IdImportLibrary Tests', function () {
   });
   describe('Tests with no user ids', function () {
     let mutationObserverStub;
-    let _userId;
+
     let jsonSpy;
     beforeEach(function() {
-      const _sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver');
       jsonSpy = sinon.spy(JSON, 'stringify');
