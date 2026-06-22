@@ -27,8 +27,8 @@ describe('ImpactifyAdapter', function () {
     };
     sinon.stub(document.body, 'appendChild');
     sandbox = sinon.createSandbox();
-    getLocalStorageStub = sandbox.stub(STORAGE, 'getDataFromLocalStorage');
-    localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled');
+    sandbox.stub(STORAGE, 'getDataFromLocalStorage');
+    sandbox.stub(STORAGE, 'localStorageIsEnabled');
   });
 
   afterEach(function () {

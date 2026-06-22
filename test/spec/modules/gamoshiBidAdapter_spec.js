@@ -83,37 +83,6 @@ describe('GamoshiAdapter', () => {
       refererInfo: { referer: 'http://examplereferer.com' }
     };
 
-    bannerRequestWithEids = {
-      'adUnitCode': 'adunit-code',
-      'auctionId': 'auction-id-12345',
-      'mediaTypes': {
-        banner: {}
-      },
-      'params': {
-        'supplyPartnerId': supplyPartnerId
-      },
-      userIdAsEids: [
-        {
-          source: '1.test.org',
-          uids: [{
-            id: '11111',
-            atype: 1,
-          }]
-        },
-        {
-          source: '2.test.org',
-          uids: [{
-            id: '11111',
-            atype: 1,
-          }]
-        }
-      ],
-      'sizes': [[300, 250], [300, 600]],
-      'transactionId': '1d1a030790a475',
-      'bidId': 'request-id-12345',
-      refererInfo: { referer: 'http://examplereferer.com' }
-    };
-
     videoBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': 'auction-id-12345',

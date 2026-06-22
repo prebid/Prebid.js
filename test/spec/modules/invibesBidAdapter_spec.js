@@ -1356,6 +1356,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('does not make multiple bids', function () {
+        spec.interpretResponse({ body: response }, { bidRequests });
         const secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1407,6 +1408,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('doesnt register the second ad when it is blacklisted by the first', function() {
+        spec.interpretResponse({ body: buildResponse('12345', 1, [2], 123) }, { bidRequests });
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
@@ -1414,6 +1416,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('doesnt register the second ad when it is blacklisting the first', function() {
+        spec.interpretResponse({ body: buildResponse('12345', 1, [], 123) }, { bidRequests });
         var secondResponse = buildResponse('abcde', 2, [1], 456);
 
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
@@ -1421,6 +1424,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('doesnt register the second ad when it has same ids as the first', function() {
+        spec.interpretResponse({ body: buildResponse('12345', 1, [], 123) }, { bidRequests });
         var secondResponse = buildResponse('abcde', 1, [1], 456);
 
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
