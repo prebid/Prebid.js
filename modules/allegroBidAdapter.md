@@ -68,13 +68,13 @@ When `allegro.triggerImpressionPixel` is enabled, the adapter will automatically
 
 The adapter exposes advertiser metadata from the bid response on the standard `bid.meta` object:
 
-| `bid.meta` field    | Source in OpenRTB bid response               | Description           |
-|---------------------|----------------------------------------------|-----------------------|
-| `advertiserDomains` | `bid.adomain`                                | Advertiser domain(s)  |
-| `advertiserId`      | `bid.ext['[com.allegro.dsp.dsp_bid]'].clientId`  | Advertiser identifier |
-| `productId`         | `bid.ext['[com.allegro.dsp.dsp_bid]'].productId` | Product identifier    |
+| `bid.meta` field    | Source in OpenRTB bid response                                                                 | Description           |
+|---------------------|------------------------------------------------------------------------------------------------|-----------------------|
+| `advertiserDomains` | `bid.adomain`                                                                                  | Advertiser domain(s)  |
+| `advertiserId`      | `bid.ext['[com.allegro.dsp.dsp_bid]'].clientId` or `bid['[com.allegro.dsp.dsp_bid]'].clientId` | Advertiser identifier |
+| `productId`         | `bid.ext['[com.allegro.dsp.dsp_bid]'].productId` or `bid['[com.allegro.dsp.dsp_bid]'].productId` | Product identifier    |
 
-The DSP extension fields are delivered as a proto-JSON bracketed key (`[com.allegro.dsp.dsp_bid]`).
+The DSP extension fields are delivered as a proto-JSON bracketed key (`[com.allegro.dsp.dsp_bid]`) and may appear either under `bid.ext` or as a top-level proto-JSON key (`bid['[com.allegro.dsp.dsp_bid]']`).
 
 Example server bid response:
 
