@@ -114,7 +114,7 @@ module.exports = {
 
         memo[modulePath] = module;
       } catch (err) {
-        // do something
+        console.warn(`Unable to resolve module "${module}": ${err && err.message ? err.message : err}`);
       }
       return memo;
     }, internalModules));
