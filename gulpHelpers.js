@@ -30,7 +30,11 @@ function isModuleDirectory(filePath) {
       const module = require(manifestPath);
       return module && module.main;
     }
-  } catch (error) {}
+  } catch (error) {
+    // Intentionally ignore filesystem/manifest parse errors while scanning folders;
+    // directories that cannot be read/parsed are treated as non-module directories.
+    return false;
+  }
 }
 
 module.exports = {
