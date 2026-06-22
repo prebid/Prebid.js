@@ -57,7 +57,7 @@ const removeTid = function(obj) {
   }
 
   return obj;
-}
+};
 
 /**
  * An ExpressJs middleware function that checks the incoming Request Body
