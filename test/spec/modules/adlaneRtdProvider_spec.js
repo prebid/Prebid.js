@@ -196,6 +196,12 @@ describe('adlane Module', () => {
 
   describe('adlaneSubmodule', () => {
     it('should init with AdlCmp present', () => {
+      sandbox.stub(utils, 'getWindowTop').returns({
+        AdlCmp: {
+          getAgeVerification: () => ({ status: 'accepted' })
+        }
+      });
+
       expect(adlaneSubmodule.init()).to.be.true;
     });
 
