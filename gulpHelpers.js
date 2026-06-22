@@ -24,9 +24,25 @@ const SOURCE_FOLDERS = [
 ]
 
 function execaCmd(cmd, args, opts = {}) {
+  // on Windows, .bin/ entries are .cmd shims; spawn() without shell:true needs the real extension.
+  const resolveCmd = (cmd) => {
+    if (process.platform === 'win32') {
+      const candidate = `${cmd}.cmd`;
+      if (fs.existsSync(candidate)) return candidate;
+    }
+    return cmd;
+  }
+  // wrap spawn in a promise
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, opts);
-    child.on('close', code => code === 0 ? resolve() : reject(new Error(`Command failed: ${cmd}`)));
+    const resolved = opts.shell ? cmd : resolveCmd(cmd);
+    const child = spawn(resolved, args, opts);
+    child.on('close', (code, signal) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command failed: ${cmd} (exit ${code ?? `signal ${signal}`})`));
+      }
+    });
     child.on('error', reject);
   });
 }
