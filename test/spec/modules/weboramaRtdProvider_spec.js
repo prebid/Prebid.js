@@ -261,9 +261,11 @@ describe('weboramaRtdProvider', function() {
 
   describe('Handle Set Targeting and Bid Request', function() {
     let sandbox;
+    let onDataResponse;
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
+      onDataResponse = undefined;
 
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
 
@@ -282,6 +284,7 @@ describe('weboramaRtdProvider', function() {
               token: 'foo',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -365,6 +368,7 @@ describe('weboramaRtdProvider', function() {
               assetID: 'datasource:docId',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -447,6 +451,7 @@ describe('weboramaRtdProvider', function() {
               assetID: () => 'datasource:docId',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -531,6 +536,7 @@ describe('weboramaRtdProvider', function() {
               },
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -579,6 +585,7 @@ describe('weboramaRtdProvider', function() {
               assetID: () => '',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -649,6 +656,7 @@ describe('weboramaRtdProvider', function() {
                   targetURL: 'https://prebid.org',
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -770,6 +778,7 @@ describe('weboramaRtdProvider', function() {
                   targetURL: 'https://prebid.org',
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -1153,6 +1162,7 @@ describe('weboramaRtdProvider', function() {
             setPrebidTargeting: false,
             sendToBidders: false,
             onData: (data, meta) => {
+              onDataResponse = { data, meta };
             },
             weboCtxConf: {
               token: 'foo',
@@ -1327,6 +1337,7 @@ describe('weboramaRtdProvider', function() {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -1418,6 +1429,7 @@ describe('weboramaRtdProvider', function() {
               },
               baseURLProfileAPI: 'ctx.test.weborama.com',
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -1544,6 +1556,7 @@ describe('weboramaRtdProvider', function() {
             weboUserDataConf: {
               accoundId: 12345,
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -1649,6 +1662,7 @@ describe('weboramaRtdProvider', function() {
                   accountId: 12345,
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -1770,6 +1784,7 @@ describe('weboramaRtdProvider', function() {
                   accountId: 12345,
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -2172,6 +2187,7 @@ describe('weboramaRtdProvider', function() {
             setPrebidTargeting: false,
             sendToBidders: false,
             onData: (data, meta) => {
+              onDataResponse = { data, meta };
             },
             weboUserDataConf: {
               accoundId: 12345,
@@ -2489,6 +2505,7 @@ describe('weboramaRtdProvider', function() {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -2574,6 +2591,7 @@ describe('weboramaRtdProvider', function() {
                 return true;
               },
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -2696,6 +2714,7 @@ describe('weboramaRtdProvider', function() {
           params: {
             sfbxLiteDataConf: {
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -2800,6 +2819,7 @@ describe('weboramaRtdProvider', function() {
                 sfbxLiteDataConf: {
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -2921,6 +2941,7 @@ describe('weboramaRtdProvider', function() {
                 sfbxLiteDataConf: {
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -3322,6 +3343,7 @@ describe('weboramaRtdProvider', function() {
             setPrebidTargeting: false,
             sendToBidders: false,
             onData: (data, meta) => {
+              onDataResponse = { data, meta };
             },
             sfbxLiteDataConf: {
               setPrebidTargeting: true, // submodule parameter will override module parameter
@@ -3563,6 +3585,7 @@ describe('weboramaRtdProvider', function() {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -3646,6 +3669,7 @@ describe('weboramaRtdProvider', function() {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -3728,6 +3752,7 @@ describe('weboramaRtdProvider', function() {
                 return true;
               },
               onData: (data, meta) => {
+                onDataResponse = { data, meta };
               },
             }
           }
