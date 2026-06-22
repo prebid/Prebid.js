@@ -6,7 +6,7 @@ const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
-const execaCmd = require('execa');
+const { spawn } = require('node:child_process');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const PRECOMPILED_PATH = './dist/src'
@@ -22,6 +22,14 @@ const SOURCE_FOLDERS = [
   'test',
   'public'
 ]
+
+function execaCmd(cmd, args, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, opts);
+    child.on('close', code => code === 0 ? resolve() : reject(new Error(`Command failed: ${cmd}`)));
+    child.on('error', reject);
+  });
+}
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -226,7 +234,14 @@ module.exports = {
     // test with all features disabled with exceptions for logging, as tests often assert logs
     return require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR')
   },
-  execaTask(cmd) {
-    return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  execaTask(cmd, { quiet } = {}) {
+    return () => execaCmd(cmd, [], {
+      shell: true,
+      // spawn only has the single stdio option.
+      // To control streams individually you use the array form: [stdin, stdout, stderr].
+      // There's no dedicated stderr key.
+      stdio: quiet ? ['ignore', 'ignore', 'inherit'] : 'inherit',
+    });
+  },
+  execaCmd,
 };
