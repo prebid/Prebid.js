@@ -135,11 +135,11 @@ module.exports = {
   },
 
   getCreativeRendererPath(renderer) {
-    let path = 'creative-renderers';
+    let rendererPath = 'creative-renderers';
     if (renderer != null) {
-      path = `${path}/${renderer}.js`;
+      rendererPath = `${rendererPath}/${renderer}.js`;
     }
-    return this.getPrecompiledPath(path);
+    return this.getPrecompiledPath(rendererPath);
   },
 
   getBuiltModules: function(dev, externalModules) {
