@@ -120,7 +120,6 @@
     "puppeteer": "^24.10.0",
     "resolve-from": "^5.0.0",
     "sinon": "^22.0.0",
-    "through2": "^4.0.2",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
     "url": "^0.11.0",
