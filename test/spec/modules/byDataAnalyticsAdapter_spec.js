@@ -6,6 +6,7 @@ const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
 const auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2';
 const bidWonAuctionId = 'c80ef967-5c5b-4602-831e-f2cf16e59af3';
+const bidResponseAuctionId = 'd90ef967-5c5b-4602-831e-f2cf16e59af4';
 const initOptions = {
   clientId: 'asc00000',
   logFrequency: 1,
@@ -108,6 +109,40 @@ const bidWonAuctionEndArgs = {
         mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
         sizes: [[300, 250], [250, 250]],
         transactionId: 'd8ee3914-1ee0-4ce6-9126-748d5692189d'
+      }
+    ]
+  }]
+};
+const bidResponseAuctionEndArgs = {
+  ...auctionEndArgs,
+  auctionId: bidResponseAuctionId,
+  bidsReceived: [{
+    auctionId: bidResponseAuctionId,
+    requestId: '34480e9832f2d2d',
+    bidder: 'appnexus',
+    width: 300,
+    height: 250,
+    cpm: 0.50,
+    currency: 'USD',
+    timeToRespond: 114,
+    adUnitCode: 'div-gpt-ad-mrec1'
+  }],
+  bidderRequests: [{
+    auctionId: bidResponseAuctionId,
+    auctionStart: 1627973484504,
+    bidderCode: 'appnexus',
+    bidderRequestId: '33b87b6c20d3638',
+    bids: [
+      {
+        adUnitCode: 'div-gpt-ad-mrec1',
+        auctionId: bidResponseAuctionId,
+        bidId: '34480e9832f2d2d',
+        bidder: 'appnexus',
+        bidderRequestId: '33b87b6c20d3638',
+        src: 'client',
+        mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
+        sizes: [[300, 250], [250, 250]],
+        transactionId: 'e8ee3914-1ee0-4ce6-9126-748d5692190e'
       }
     ]
   }]
@@ -220,6 +255,20 @@ describe('byData Analytics Adapter ', () => {
       delete newAuData._wins;
       newAuData['visitor_data'] = userToken;
       expect(newAuData).to.deep.equal(expectedBidWonDataArgs);
+    });
+
+    it('does not mark every received bid as a prebid winner ', function () {
+      var newAuData = ascAdapter.dataProcess(bidResponseAuctionEndArgs);
+      expect(newAuData.auctionData[0]).to.include({
+        brid: '34480e9832f2d2d',
+        bradv: 'appnexus',
+        br_pb_mg: 0.50,
+        cur: 'USD',
+        br_tr: 114,
+        brs: '300x250',
+        ipwb: 0,
+        iwb: 0
+      });
     });
   });
 });

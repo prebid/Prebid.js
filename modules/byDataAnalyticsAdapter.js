@@ -11,6 +11,7 @@ import { ajax } from '../src/ajax.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 const versionCode = '4.5.0';
 const secretKey = 'bydata@123456';
@@ -26,6 +27,7 @@ let initOptions = {};
 var payload = {};
 var isDataSend = false;
 var bdNbTo = {};
+var sentAuctions = {};
 
 function normalizeSize(size) {
   if (!size) return '';
@@ -88,6 +90,11 @@ function onBidWon(t) {
   const { isCorrectOption } = initOptions;
   if (!(isCorrectOption && (isDataSend || isBydata))) return;
 
+  if (sentAuctions[t.auctionId]) {
+    ascAdapter.sendPayload(ascAdapter.getBidWonData(t));
+    return;
+  }
+
   // initialize per-auction wins storage if not present
   if (!payload._wins) payload._wins = {};
   if (!payload._wins[t.auctionId]) payload._wins[t.auctionId] = [];
@@ -105,6 +112,7 @@ function onAuctionEnd(t) {
     if (isCorrectOption && (isDataSend || isBydata)) {
       ascAdapter.dataProcess(t);
       ascAdapter.sendPayload(payload);
+      sentAuctions[t.auctionId] = true;
 
       // cleanup this auction only
       if (payload._wins && payload._wins[t.auctionId]) {
@@ -172,9 +180,40 @@ ascAdapter.initConfig = function (config) {
     isDataSend = rndNum <= initOptions.logFrequency;
     window.asc_data = isDataSend; // persist for session
   }
+  sentAuctions = {};
   initOptions.isCorrectOption = isCorrectOption;
   this.initOptions = initOptions;
   return isCorrectOption;
+};
+
+ascAdapter.getBidWonData = function(t) {
+  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t;
+  const aun = getAdunitName(adUnitCode);
+  const bidWonPayload = {
+    visitor_data: payload['visitor_data'],
+    aid: auctionId,
+    as: '',
+    auctionData: []
+  };
+  var data = {};
+  data['au'] = aun;
+  data['auc'] = adUnitCode;
+  data['aus'] = normalizeSize(size);
+  data['bid'] = requestId;
+  data['bidadv'] = bidder;
+  data['br_pb_mg'] = cpm;
+  data['br_tr'] = timeToRespond;
+  data['bradv'] = bidder;
+  data['brid'] = requestId;
+  data['brs'] = normalizeSize(size);
+  data['cur'] = currency;
+  data['inb'] = 0;
+  data['ito'] = 0;
+  data['ipwb'] = 1;
+  data['iwb'] = 1;
+  data['mt'] = mediaType;
+  bidWonPayload['auctionData'].push(data);
+  return bidWonPayload;
 };
 
 ascAdapter.getVisitorData = function (data = {}) {
@@ -245,7 +284,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua["brv"] = info.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
-    ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
+    ua['tz'] = getTimeZone();
   }
   var signedToken = getJWToken(ua);
   payload['visitor_data'] = signedToken;
@@ -300,7 +339,6 @@ ascAdapter.dataProcess = function (t) {
     payload['auctionData'].forEach(row => {
       if (row.bid === bid.requestId && row.aus === size) {
         row.brid = bid.requestId;
-        row.ipwb = 1;
         row.bradv = bid.bidder;
         row.br_pb_mg = bid.cpm;
         row.cur = bid.currency;
@@ -365,22 +403,23 @@ ascAdapter.dataProcess = function (t) {
 };
 
 ascAdapter.sendPayload = function (data) {
-  // remove internal helper state
-  if (data._wins) {
-    delete data._wins;
-  }
+  const payloadToSend = {
+    ...data,
+    auctionData: (data.auctionData || []).map(item => ({ ...item }))
+  };
+  delete payloadToSend._wins;
 
   if (window.sType !== undefined && window.sType !== null && window.sType !== '') {
-    data.auctionData.forEach(item => {
+    payloadToSend.auctionData.forEach(item => {
       if (item.bidadv && !item.bidadv.endsWith(`_${window.sType}`)) {
         item.bidadv = `${item.bidadv}_${window.sType}`;
       }
     });
   }
 
-  _logInfo('payload: ', JSON.stringify(data));
+  _logInfo('payload: ', JSON.stringify(payloadToSend));
 
-  var obj = { 'records': [{ 'value': data }] };
+  var obj = { 'records': [{ 'value': payloadToSend }] };
   let strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 };
