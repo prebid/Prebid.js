@@ -36,7 +36,15 @@ exports.config = {
   ...shared.config,
   services: [
     ['browserstack', {
-      browserstackLocal: true
+      browserstackLocal: true,
+      testReporting: true,
+      testReportingOptions: {
+        projectName: "Prebid.js",
+        buildName: process.env.BROWSERSTACK_BUILD_NAME
+      },
+      opts: {
+        localIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
+      }
     }]
   ],
   user: process.env.BROWSERSTACK_USERNAME,
