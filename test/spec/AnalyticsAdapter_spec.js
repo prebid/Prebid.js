@@ -69,6 +69,16 @@ FEATURE: Analytics Adapters API
     sinon.assert.match(result, { eventType, args: { wat: 'wot' } });
   });
 
+  it('should not fire twice for the same event', () => {
+    events.emit(BID_WON, { n: 1 });
+    adapter.enableAnalytics();
+    adapter.disableAnalytics();
+    events.emit(BID_WON, { n: 2 });
+    adapter.enableAnalytics();
+    const sent = server.requests.map(req => JSON.parse(req.requestBody)).filter(({ eventType }) => eventType === BID_WON).map(({ args }) => args.n);
+    expect(sent).to.eql([1, 2]);
+  });
+
   describe('analyticsLabels', () => {
     let analyticsLabels;
     beforeEach(() => {

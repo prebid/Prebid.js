@@ -66,7 +66,9 @@ jobs:
               }
               return browsers;
             }).filter(browser => {
-             browser.os = ({'windows-latest': 'windows', 'macos-latest': 'macos'})[browser.runsOn] ?? 'linux'
+             browser.os = browser.runsOn?.startsWith('windows') ? 'windows'
+               : browser.runsOn?.startsWith('macos') ? 'macos'
+                 : 'linux'
              return !${{inputs.coverage-only}} || browser.coverage
             });            
             const bstackBrowsers = ${{inputs.coverage-only}} ? {} : Object.fromEntries(

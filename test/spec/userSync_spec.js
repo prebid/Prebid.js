@@ -230,9 +230,9 @@ describe('user sync', function () {
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
-    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[12]/);
     expect(triggerPixelStub.getCall(1)).to.not.be.null;
-    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[12]/);
     expect(triggerPixelStub.getCall(2)).to.be.null;
   });
 
@@ -243,11 +243,11 @@ describe('user sync', function () {
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
-    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2|3]/);
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[123]/);
     expect(triggerPixelStub.getCall(1)).to.not.be.null;
-    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2|3]/);
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[123]/);
     expect(triggerPixelStub.getCall(2)).to.not.be.null;
-    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2|3]/);
+    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[123]/);
   });
 
   it('should balance out bidder requests', function () {
