@@ -1141,9 +1141,7 @@ describe('IntentIQ tests', function () {
           partnerClientId,
           browserBlackList: 'Chrome',
           iiqPixelServerAddress: syncTestAPILink,
-          callback: () => {
-            wasCallbackCalled = true;
-          }
+          callback: () => {}
         }
       };
 

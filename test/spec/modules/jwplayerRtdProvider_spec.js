@@ -370,8 +370,6 @@ describe('jwplayerRtdProvider', function() {
     let clock;
 
     beforeEach(function () {
-      bidRequestSpy = sinon.spy();
-
       clock = sinon.useFakeTimers();
     });
 
