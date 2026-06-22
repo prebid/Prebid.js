@@ -354,6 +354,7 @@ describe('R2B2 adapter', function () {
     });
 
     it('should set up internal variables', function () {
+      spec.buildRequests(bids, bidderRequest);
       const bid1Id = bids[0].bidId;
       const bid2Id = bids[1].bidId;
       expect(r2b2.placementsToSync).to.be.an('array').that.has.lengthOf(2);

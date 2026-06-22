@@ -91,7 +91,7 @@ describe('pubxAdapter', function () {
     });
 
     afterEach(function () {
-      documentStubMeta.restore();
+      sandbox.restore();
     });
 
     let kwString = '';
@@ -126,6 +126,8 @@ describe('pubxAdapter', function () {
       if (titleText.length > 30) {
         titleText = titleText.substr(0, 30);
       }
+
+      sandbox.stub(document, 'title').value('title1title2title3title4title5title');
 
       const syncs = spec.getUserSyncs({ iframeEnabled: true });
       expect(syncs[0].url).to.include(`pt=${encodeURIComponent(titleText)}`);

@@ -1537,7 +1537,7 @@ describe('S2S Adapter', function () {
                 const origConvertCurrency = getGlobal().convertCurrency;
                 beforeEach(() => {
                   if (conversionFn) {
-                    sinon.stub().callsFake(conversionFn);
+                    getGlobal().convertCurrency = sinon.stub().callsFake(conversionFn);
                   } else {
                     delete getGlobal().convertCurrency;
                   }
