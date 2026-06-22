@@ -1,5 +1,4 @@
 var assert = require('chai').assert;
-var prebid = require('../../src/prebid.js');
 const { getGlobalVarName } = require('../../src/buildOptions.js');
 const { getGlobal } = require('../../src/prebidGlobal.js');
 
