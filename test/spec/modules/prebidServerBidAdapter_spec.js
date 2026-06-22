@@ -596,6 +596,7 @@ describe('s2s configuration', () => {
 
 describe('S2S Adapter', function () {
   let adapter;
+  let browserRestrictionStubs;
   let addBidResponse = sinon.spy();
   let done = sinon.spy();
 
@@ -614,6 +615,11 @@ describe('S2S Adapter', function () {
   });
 
   beforeEach(function () {
+    browserRestrictionStubs = sinon.createSandbox();
+    browserRestrictionStubs.stub(utils, 'isSafariBrowser').returns(false);
+    browserRestrictionStubs.stub(utils, 'isFirefoxBrowser').returns(false);
+    browserRestrictionStubs.stub(utils, 'isChromeIOSBrowser').returns(false);
+
     config.resetConfig();
     config.setConfig({ floors: { enabled: false } });
     adapter = new Adapter();
@@ -661,6 +667,7 @@ describe('S2S Adapter', function () {
   });
 
   afterEach(function () {
+    browserRestrictionStubs.restore();
     addBidResponse.resetHistory();
     addBidResponse.reject = sinon.spy();
     done.resetHistory();
@@ -3764,15 +3771,10 @@ describe('S2S Adapter', function () {
         'Chrome on iOS': 'isChromeIOSBrowser'
       }).forEach(([browser, detector]) => {
         it(`does not request PBS syncs on ${browser}`, () => {
-          const sandbox = sinon.createSandbox();
-          sandbox.stub(utils, detector).returns(true);
-          try {
-            adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
-            expect(server.requests).to.have.length(1);
-            expect(server.requests[0].url).to.equal(cfg.endpoint.p1Consent);
-          } finally {
-            sandbox.restore();
-          }
+          utils[detector].returns(true);
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          expect(server.requests).to.have.length(1);
+          expect(server.requests[0].url).to.equal(cfg.endpoint.p1Consent);
         });
       });
     });
