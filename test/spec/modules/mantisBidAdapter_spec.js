@@ -3,9 +3,9 @@ import { spec, storage, sfPostMessage, iframePostMessage } from 'modules/mantisB
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('MantisAdapter', function () {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
   const sandbox = sinon.createSandbox();
-  let clock;
+  let _clock;
 
   beforeEach(function () {
     clock = sandbox.useFakeTimers();

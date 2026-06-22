@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/dailyhuntBidAdapter.js';
 
 const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
+const _PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
 
 const _encodeURIComponent = function (a) {
   if (!a) { return; }

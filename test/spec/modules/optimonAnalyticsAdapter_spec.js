@@ -1,12 +1,12 @@
 import * as utils from 'src/utils.js';
-import { expect } from 'chai';
+import { expect as _expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import * as events from 'src/events';
+import * as _events from 'src/events';
 import { expectEvents } from '../../helpers/analytics.js';
 
-const AD_UNIT_CODE = 'demo-adunit-1';
-const PUBLISHER_CONFIG = {
+const _AD_UNIT_CODE = 'demo-adunit-1';
+const _PUBLISHER_CONFIG = {
   pubId: 'optimon_test',
   pubAdxAccount: 123456789,
   pubTimezone: 'Asia/Jerusalem'

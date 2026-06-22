@@ -1,7 +1,7 @@
 import { growthCodeIdSubmodule } from 'modules/growthCodeIdSystem.js';
 import * as utils from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+import { server as _server } from 'test/mocks/xhr.js';
+import { uspDataHandler as _uspDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
@@ -15,7 +15,7 @@ const GCID_EID_EID = '{"id": [{"source": "growthcode.io", "uids": [{"atype": 3,"
 
 const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-const getIdParams = {
+const _getIdParams = {
   params: {
     pid: 'TEST01',
     publisher_id: '_sharedid',

@@ -8,7 +8,7 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
+import adapterManager, { gdprDataHandler as _gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import { requestBids } from '../../../src/prebid.js';
 import { defer } from '../../../src/utils/promise.js';
 

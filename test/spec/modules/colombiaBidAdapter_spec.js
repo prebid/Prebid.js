@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import { dep, spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const HOST_NAME = document.location.protocol + '//' + window.location.host;
+const _HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
 describe('colombiaBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
     const bid = {
@@ -68,7 +68,7 @@ describe('colombiaBidAdapter', function () {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
-    const bidderRequest = {
+    const _bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,

@@ -8,7 +8,7 @@ const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_BID_TTL = 360;
 
 describe('mediasniperBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
   let utilsMock;
   let sandbox;
 
@@ -484,7 +484,7 @@ describe('mediasniperBidAdapter', function () {
     });
 
     it('Should trigger pixel if bid.burl exists', function () {
-      const result = spec.onBidWon({
+      const _result = spec.onBidWon({
         cpm: 4.2,
         burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar',
       });

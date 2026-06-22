@@ -3,7 +3,7 @@ import { spec } from 'modules/gammaBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('gammaBidAdapter', function() {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
 
   const bid = {
     'bidder': 'gamma',

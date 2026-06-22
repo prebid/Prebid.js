@@ -126,7 +126,7 @@ describe('Mobkoi bidding Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidderRequest, convertedBidRequest;
+    let bidderRequest, _convertedBidRequest;
 
     beforeEach(function () {
       bidderRequest = getBidderRequest();

@@ -28,7 +28,7 @@ describe('Experian realtime module', () => {
     sandbox.restore();
   });
   // Bid request config
-  const reqBidsConfigObj = {
+  const _reqBidsConfigObj = {
     adUnits: [{
       bids: [
         { bidder: 'appnexus' }

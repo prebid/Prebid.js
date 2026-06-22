@@ -3,14 +3,14 @@ import * as utils from 'src/utils.js';
 
 import {
   attachIdSystem,
-  coreStorage,
-  getConsentHash,
-  init,
-  startAuctionHook,
-  setSubmoduleRegistry
+  coreStorage as _coreStorage,
+  getConsentHash as _getConsentHash,
+  init as _init,
+  startAuctionHook as _startAuctionHook,
+  setSubmoduleRegistry as _setSubmoduleRegistry
 } from '../../../modules/userId/index.js';
 
-import { createEidsArray, getEids } from '../../../modules/userId/eids.js';
+import { createEidsArray, getEids as _getEids } from '../../../modules/userId/eids.js';
 
 describe('openPairId', function () {
   let sandbox;

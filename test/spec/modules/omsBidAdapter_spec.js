@@ -8,7 +8,7 @@ import * as adUnits from 'src/utils/adUnits';
 const URL = 'https://rt.marphezis.com/hb';
 
 describe('omsBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;

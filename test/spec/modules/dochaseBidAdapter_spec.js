@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils.js';
 
 describe('dochase adapter', function () {
   let bannerRequest, nativeRequest;
-  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse;
+  let bannerResponse, nativeResponse, invalidBannerResponse, _invalidNativeResponse;
 
   beforeEach(function () {
     bannerRequest = [
@@ -167,7 +167,7 @@ describe('dochase adapter', function () {
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
-      const bidRequest = spec.buildRequests(bannerRequest);
+      const _bidRequest = spec.buildRequests(bannerRequest);
       expect(bannerRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
@@ -234,7 +234,7 @@ describe('dochase adapter', function () {
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
-      const bidRequest = spec.buildRequests(nativeRequest);
+      const _bidRequest = spec.buildRequests(nativeRequest);
       expect(nativeRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {

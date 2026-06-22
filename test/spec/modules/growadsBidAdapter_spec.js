@@ -190,7 +190,7 @@ describe('GrowAdvertising Adapter', function() {
             }
           });
 
-          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
+          const _bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
           expect([]).to.be.lengthOf(0);
         });
 
@@ -201,7 +201,7 @@ describe('GrowAdvertising Adapter', function() {
             }
           });
 
-          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
+          const _bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
           expect([]).to.be.lengthOf(0);
         });
       });

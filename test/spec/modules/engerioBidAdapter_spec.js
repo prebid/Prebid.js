@@ -6,7 +6,7 @@ import { server } from 'test/mocks/xhr.js';
 const ENDPOINT_URL = 'https://api.engerio.sk/api/v1/adserver/prebid/auction/';
 
 describe('engerioBidAdapter', () => {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
 
   // ── Fixtures ────────────────────────────────────────────────────────────────
 

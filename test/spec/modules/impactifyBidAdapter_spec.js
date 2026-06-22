@@ -1,19 +1,19 @@
 import { expect } from 'chai';
-import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
+import { spec, STORAGE, STORAGE_KEY as _STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const BIDDER_CODE = 'impactify';
-const BIDDER_ALIAS = ['imp'];
+const _BIDDER_CODE = 'impactify';
+const _BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
-const LOGGER_URI = 'https://logger.impactify.media';
+const _LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
-const COOKIESYNCURI = '/static/cookie_sync.html';
-const GVLID = 606;
+const _COOKIESYNCURI = '/static/cookie_sync.html';
+const _GVLID = 606;
 
 var gdprData = {
   'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
@@ -21,8 +21,8 @@ var gdprData = {
 };
 
 describe('ImpactifyAdapter', function () {
-  let getLocalStorageStub;
-  let localStorageIsEnabledStub;
+  let _getLocalStorageStub;
+  let _localStorageIsEnabledStub;
   let sandbox;
 
   beforeEach(function () {
@@ -98,7 +98,7 @@ describe('ImpactifyAdapter', function () {
         ]
       }
     ];
-    const videoBidderRequest = {
+    const _videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',
@@ -539,7 +539,7 @@ describe('ImpactifyAdapter', function () {
         transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
       }
     ];
-    const videoBidderRequest = {
+    const _videoBidderRequest = {
       bidderRequestId: '98845765110',
       auctionId: '165410516454',
       bidderCode: 'impactify',

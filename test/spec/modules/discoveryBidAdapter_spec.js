@@ -126,7 +126,7 @@ describe('discovery:BidAdapterTests', function () {
   };
   let request = [];
 
-  const bidRequestDataNoParams = {
+  const _bidRequestDataNoParams = {
     bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
     bidderRequestId: '4fec04e87ad785',

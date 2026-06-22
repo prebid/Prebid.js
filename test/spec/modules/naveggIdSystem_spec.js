@@ -16,7 +16,7 @@ const MOCK_RESPONSE_NULL = {
   nvggid: null
 };
 
-function mockResponse(responseText, isSuccess = true) {
+function _mockResponse(responseText, isSuccess = true) {
   return function(url, callbacks) {
     if (isSuccess) {
       callbacks.success(responseText);

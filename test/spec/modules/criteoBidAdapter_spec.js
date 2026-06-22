@@ -127,7 +127,7 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub,
       setCookieStub,
       getDataFromLocalStorageStub,
-      setDataInLocalStorageStub,
+      _setDataInLocalStorageStub,
       removeDataFromLocalStorageStub,
       triggerPixelStub;
 
@@ -305,7 +305,7 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should trigger sync pixel from iframe response', function (done) {
-      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+      const _userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
 
       const event = new MessageEvent('message', {
         data: {
@@ -331,7 +331,7 @@ describe('The Criteo bidding adapter', function () {
     it('should write cookie only on TLD+1 level', function(done) {
       const cookies = {};
 
-      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+      const _userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
 
       setCookieStub.callsFake((name, value, expires, _, domain) => {
         if (domain !== '.com') {
@@ -2508,7 +2508,7 @@ describe('The Criteo bidding adapter', function () {
         }
       ];
 
-      const request = spec.buildRequests(bidRequestsWithSendId, await addFPDToBidderRequest(bidderRequest));
+      const _request = spec.buildRequests(bidRequestsWithSendId, await addFPDToBidderRequest(bidderRequest));
       expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').notCalled).to.be.true;
     });
 

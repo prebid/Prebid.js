@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import { init, getIds } from 'modules/userId/index.js';
-import * as utils from 'src/utils.js';
+import { config as _config } from 'src/config.js';
+import { init as _init, getIds as _getIds } from 'modules/userId/index.js';
+import * as _utils from 'src/utils.js';
 import { hook } from '../../../src/hook.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER as _BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 describe('E-Planning Adapter', function () {
@@ -376,7 +376,7 @@ describe('E-Planning Adapter', function () {
       }
     }
   };
-  const validBidNoSize = {
+  const _validBidNoSize = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
     'params': {
@@ -639,7 +639,7 @@ describe('E-Planning Adapter', function () {
     const bidRequests = [validBid];
     let sandbox;
     let getWindowTopStub;
-    let innerWidth;
+    let _innerWidth;
     beforeEach(() => {
       getGlobal().bidderSettings = {
         eplanning: {
@@ -721,7 +721,7 @@ describe('E-Planning Adapter', function () {
 
     it('should return correct e parameter with more than one adunit', function () {
       const NEW_CODE = ADUNIT_CODE + '2';
-      const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
+      const _CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
       const anotherBid = {
         'bidder': 'eplanning',
         'params': {
@@ -1125,9 +1125,9 @@ describe('E-Planning Adapter', function () {
     let hasLocalStorageStub;
     let clock;
     let element;
-    let getBoundingClientRectStub;
+    let _getBoundingClientRectStub;
     const sandbox = sinon.createSandbox();
-    let intersectionObserverStub;
+    let _intersectionObserverStub;
     let intersectionCallback;
 
     function setIntersectionObserverMock(params) {
@@ -1339,7 +1339,7 @@ describe('E-Planning Adapter', function () {
     });
 
     context('when element is partially in view', function() {
-      let respuesta;
+      let _respuesta;
       it('should register visibility with more than 50%', function() {
         createPartiallyVisibleElement();
         setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0.6, 'isIntersecting': true, 'width': 200, 'height': 200 } });
@@ -1360,7 +1360,7 @@ describe('E-Planning Adapter', function () {
       });
     });
     context('when element id is not equal to adunitcode', function() {
-      let respuesta;
+      let _respuesta;
       it('should register visibility with more than 50%', function() {
         const code = ADUNIT_CODE_VIEW;
         const divId = 'div-gpt-ad-123';

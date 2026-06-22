@@ -4,7 +4,7 @@ import {
 } from 'modules/inmobiBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER as _BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { hook } from '../../../src/hook.js';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -15,9 +15,9 @@ import 'modules/priceFloors.js';
 import sinon from 'sinon';
 
 // constants
-const GVLID = 333;
+const _GVLID = 333;
 export const ADAPTER_VERSION = 1.0;
-const BIDDER_CODE = 'inmobi';
+const _BIDDER_CODE = 'inmobi';
 export const EVENT_ENDPOINT = 'https://sync.inmobi.com';
 
 describe('The inmobi bidding adapter', function () {
@@ -118,8 +118,8 @@ describe('The inmobi bidding adapter', function () {
       };
       spec.onBidWon(bid);
       // expected url and payload
-      const expectedUrl = `${EVENT_ENDPOINT}/report/onBidWon`;
-      const expectedPayload = JSON.stringify({
+      const _expectedUrl = `${EVENT_ENDPOINT}/report/onBidWon`;
+      const _expectedPayload = JSON.stringify({
         domain: location.hostname,
         eventPayload: bid.meta
       });
@@ -266,8 +266,8 @@ describe('The inmobi bidding adapter', function () {
       };
       spec.onAdRenderSucceeded(bid);
       // expected url and payload
-      const expectedUrl = `${EVENT_ENDPOINT}/report/onAdRenderSucceeded`;
-      const expectedPayload = JSON.stringify({
+      const _expectedUrl = `${EVENT_ENDPOINT}/report/onAdRenderSucceeded`;
+      const _expectedPayload = JSON.stringify({
         domain: location.hostname,
         eventPayload: bid.meta
       });
@@ -415,8 +415,8 @@ describe('The inmobi bidding adapter', function () {
       };
       spec.onSetTargeting(bid);
       // expected url and payload
-      const expectedUrl = `${EVENT_ENDPOINT}/report/onSetTargeting`;
-      const expectedPayload = JSON.stringify({
+      const _expectedUrl = `${EVENT_ENDPOINT}/report/onSetTargeting`;
+      const _expectedPayload = JSON.stringify({
         domain: location.hostname,
         eventPayload: bid.meta
       });

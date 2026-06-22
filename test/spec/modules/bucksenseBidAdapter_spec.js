@@ -3,7 +3,7 @@ import { spec } from 'modules/bucksenseBidAdapter.js';
 
 describe('Bucksense Adapter', function() {
   const BIDDER_CODE = 'bucksense';
-  const BID_ID = '12345';
+  const _BID_ID = '12345';
   const PLACE_ID = '1000';
 
   function getValidBidObject() {

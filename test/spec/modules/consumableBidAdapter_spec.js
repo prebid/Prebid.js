@@ -3,10 +3,10 @@ import { spec } from 'modules/consumableBidAdapter.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import { createEidsArray as _createEidsArray } from 'modules/userId/eids.js';
 
-const ENDPOINT = 'https://e.serverbid.com/api/v2';
-const SMARTSYNC_CALLBACK = 'serverbidCallBids';
+const _ENDPOINT = 'https://e.serverbid.com/api/v2';
+const _SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
 const BIDDER_REQUEST_1 = {
   bidderCode: 'consumable',
@@ -403,7 +403,7 @@ const BUILD_REQUESTS_VIDEO_OUTPUT = {
 };
 
 describe('Consumable BidAdapter', function () {
-  const adapter = spec;
+  const _adapter = spec;
 
   describe('bid request validation', function () {
     it('should accept valid bid requests', function () {

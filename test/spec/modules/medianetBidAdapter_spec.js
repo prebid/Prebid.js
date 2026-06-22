@@ -180,7 +180,7 @@ const VALID_BID_REQUEST_WITH_ORTB2 = [{
   'auctionsCount': 1
 }];
 // Protected Audience API Request
-const VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
+const _VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
   'bidder': 'medianet',
   'params': {
     'crid': 'crid',
@@ -1162,7 +1162,7 @@ const VALID_PAYLOAD_WITH_CRID = {
   'tmax': config.getConfig('bidderTimeout')
 };
 // Protected Audience API Valid Payload
-const VALID_PAYLOAD_PAAPI = {
+const _VALID_PAYLOAD_PAAPI = {
   'site': {
     'domain': 'media.net',
     'page': 'http://media.net/prebidtest',
@@ -1470,7 +1470,7 @@ const SERVER_RESPONSE_VALID_BID = {
   }
 };
 // Protected Audience API Response
-const SERVER_RESPONSE_PAAPI = {
+const _SERVER_RESPONSE_PAAPI = {
   body: {
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'bidList': [{
@@ -1528,7 +1528,7 @@ const SERVER_RESPONSE_PAAPI = {
   }
 };
 // Protected Audience API OpenRTB Response
-const SERVER_RESPONSE_PAAPI_ORTB = {
+const _SERVER_RESPONSE_PAAPI_ORTB = {
   body: {
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'bidList': [{

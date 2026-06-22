@@ -402,7 +402,7 @@ describe('consentManagementGpp', function () {
       }
     };
 
-    let didHookReturn;
+    let _didHookReturn;
 
     beforeEach(resetConsentData);
     after(resetConsentData);

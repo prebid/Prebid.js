@@ -7,7 +7,7 @@ import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { OUTSTREAM } from '../../../src/video.js';
 
 describe('mediakeysBidAdapter', function () {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
   let utilsMock;
   let sandbox;
 
@@ -888,7 +888,7 @@ describe('mediakeysBidAdapter', function () {
     });
 
     it('Should trigger pixel if bid.burl exists', function() {
-      const result = spec.onBidWon({
+      const _result = spec.onBidWon({
         cpm: 4.2,
         burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar'
       });

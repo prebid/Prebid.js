@@ -4,7 +4,7 @@ import { filterBidData, init } from 'modules/dataControllerModule/index.js';
 import { startAuction } from 'src/prebid.js';
 
 describe('data controller', function () {
-  let spyFn;
+  let _spyFn;
 
   beforeEach(function () {
     spyFn = sinon.spy();
@@ -15,7 +15,7 @@ describe('data controller', function () {
   });
 
   describe('data controller', function () {
-    let result;
+    let _result;
     let callbackFn;
     let req;
 

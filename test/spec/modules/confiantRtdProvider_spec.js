@@ -6,7 +6,7 @@ import { EVENTS } from '../../../src/constants.js';
 import confiantModule from '../../../modules/confiantRtdProvider.js';
 
 const {
-  injectConfigScript,
+  injectConfigScript: _injectConfigScript,
   setupPage,
   subscribeToConfiantCommFrame,
   registerConfiantSubmodule
@@ -36,7 +36,7 @@ describe('Confiant RTD module', function () {
   });
 
   describe('Module initialization', function() {
-    let insertElementStub;
+    let _insertElementStub;
     beforeEach(function() {
       insertElementStub = sinon.stub(utils, 'insertElement');
     });
@@ -90,7 +90,7 @@ describe('Confiant RTD module', function () {
 
   describe('Sumbodule execution', function() {
     let submoduleStub;
-    let insertElementStub;
+    let _insertElementStub;
     beforeEach(function () {
       submoduleStub = sinon.stub(hook, 'submodule');
       insertElementStub = sinon.stub(utils, 'insertElement');

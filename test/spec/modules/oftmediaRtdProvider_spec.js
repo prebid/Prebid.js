@@ -20,7 +20,7 @@ const RTD_CONFIG = {
   },],
 };
 
-const TIMEOUT = 10;
+const _TIMEOUT = 10;
 
 describe('oftmedia RTD Submodule', function() {
   let sandbox;

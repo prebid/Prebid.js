@@ -273,7 +273,7 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
-    let createFirstPartyDataStub;
+    let _createFirstPartyDataStub;
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {

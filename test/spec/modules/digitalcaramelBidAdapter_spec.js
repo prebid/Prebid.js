@@ -16,7 +16,7 @@ describe('digitalcaramelBidAdapterTests', function () {
       }
     ]
   };
-  const request = [];
+  const _request = [];
 
   it('validate_pub_params', function () {
     expect(

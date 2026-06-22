@@ -1003,7 +1003,7 @@ describe('IndexexchangeAdapter', function () {
 
   const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
-  const DEFAULT_USERID_BID_DATA = {
+  const _DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
   };
 
@@ -1585,7 +1585,7 @@ describe('IndexexchangeAdapter', function () {
   describe('buildRequestsUserId', function () {
     let validIdentityResponse;
     let validUserIdPayload;
-    const serverResponse = {
+    const _serverResponse = {
       body: {
         ext: {
           pbjs_allow_all_eids: {
@@ -2981,7 +2981,7 @@ describe('IndexexchangeAdapter', function () {
       expect(request.data.sn).to.be.undefined;
 
       impressions.forEach((impression, impressionIndex) => {
-        const firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
+        const _firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
         const sidValue = bids[impressionIndex].params.id;
 
         expect(impression.banner.format).to.be.length(2);
@@ -3796,7 +3796,7 @@ describe('IndexexchangeAdapter', function () {
     it('should set creativeId to default value if not provided', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
       delete bidResponse.seatbid[0].bid[0].crid;
-      const expectedParse = [
+      const _expectedParse = [
         {
           requestId: '1a2b3c4d',
           cpm: 1,
@@ -3816,7 +3816,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse }, bannerBidderRequest);
+      const _result = spec.interpretResponse({ body: bidResponse }, bannerBidderRequest);
     });
 
     it('should set Japanese price correctly', function () {
@@ -5298,7 +5298,7 @@ describe('IndexexchangeAdapter', function () {
               sinon.assert.calledOnce(ajaxStub);
               const ajaxCall = ajaxStub.returnValues[0];
               sinon.assert.calledOnce(ajaxCall);
-              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
+              const [calledUrl, _callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
 
               expect(calledUrl).to.equal(request.url);
               expect(calledData).to.equal(request.data);

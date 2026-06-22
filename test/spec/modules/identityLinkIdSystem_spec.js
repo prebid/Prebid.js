@@ -23,7 +23,7 @@ function setTestEnvelopeCookie () {
 
 describe('IdentityLinkId tests', function () {
   let logErrorStub;
-  let gppConsentDataStub;
+  let _gppConsentDataStub;
 
   beforeEach(function () {
     defaultConfigParams = { params: { pid: pid } };

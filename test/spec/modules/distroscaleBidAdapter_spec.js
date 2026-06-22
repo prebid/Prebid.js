@@ -170,7 +170,7 @@ describe('distroscaleBidAdapter', function() {
       },
       'headers': {}
     };
-    const SAMPLE_PARSED = [{
+    const _SAMPLE_PARSED = [{
       'requestId': '20b96f0310083c',
       'cpm': 0.1,
       'currency': 'USD',

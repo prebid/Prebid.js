@@ -161,7 +161,7 @@ describe('invibesBidAdapter:', function () {
     auctionStart: Date.now()
   };
 
-  const StubbedPersistence = function (initialValue) {
+  const _StubbedPersistence = function (initialValue) {
     var value = initialValue;
     return {
       load: function () {
@@ -1372,7 +1372,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('does not make multiple bids', function () {
-        const result = spec.interpretResponse({ body: response }, { bidRequests });
+        const _result = spec.interpretResponse({ body: response }, { bidRequests });
         const secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1413,7 +1413,7 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [1], 123);
         var secondResponse = buildResponse('abcde', 2, [2], 456);
 
-        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult[0].creativeId).to.equal(456);
       });
@@ -1422,7 +1422,7 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [], 123);
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult[0].creativeId).to.equal(456);
       });
@@ -1431,7 +1431,7 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [2], 123);
         var secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1440,7 +1440,7 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [], 123);
         var secondResponse = buildResponse('abcde', 2, [1], 456);
 
-        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1449,7 +1449,7 @@ describe('invibesBidAdapter:', function () {
         var firstResponse = buildResponse('12345', 1, [1], 123);
         var secondResponse = buildResponse('abcde', 1, [1], 456);
 
-        var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
+        var _firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
         expect(secondResult).to.be.empty;
       });

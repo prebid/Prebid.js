@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import * as utils from 'src/utils.js';
+import * as _utils from 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import { config as _config } from 'src/config.js';
+import * as _bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -333,7 +333,7 @@ describe('Nobid Adapter', function () {
   });
 
   describe('isVideoBidRequestValid', function () {
-    const bid = {
+    const _bid = {
       bidder: 'nobid',
       params: {
         siteId: 2,
@@ -423,7 +423,7 @@ describe('Nobid Adapter', function () {
   });
 
   describe('isVideoBidRequestValid', function () {
-    const bid = {
+    const _bid = {
       bidder: 'nobid',
       params: {
         siteId: 2,
@@ -879,7 +879,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250
         }]
       };
-      const result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
+      const _result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
     });
   });

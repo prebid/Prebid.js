@@ -1,6 +1,6 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+import { uspDataHandler as _uspDataHandler } from 'src/adapterManager.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { attachIdSystem, init, setSubmoduleRegistry } from 'modules/userId/index.js';

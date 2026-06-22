@@ -77,7 +77,7 @@ describe('Merkle System', function () {
 
   describe('Merkle System getId()', function () {
     const callbackSpy = sinon.spy();
-    let sandbox;
+    let _sandbox;
     let ajaxStub;
 
     beforeEach(function () {
@@ -167,7 +167,7 @@ describe('Merkle System', function () {
 
   describe('Merkle System extendId()', function () {
     const callbackSpy = sinon.spy();
-    let sandbox;
+    let _sandbox;
     let ajaxStub;
 
     beforeEach(function () {

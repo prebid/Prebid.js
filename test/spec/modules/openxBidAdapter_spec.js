@@ -1070,7 +1070,7 @@ describe('OpenxRtbAdapter', function () {
       context('supply chain (schain)', function () {
         let bidRequests;
         let schainConfig;
-        const supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+        const _supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
 
         beforeEach(function () {
           schainConfig = {
@@ -1971,7 +1971,7 @@ describe('OpenxRtbAdapter', function () {
 
     describe('when gdpr applies', function () {
       let gdprConsent;
-      let gdprPixelUrl;
+      let _gdprPixelUrl;
       const consentString = 'gdpr-pixel-consent';
       const gdprApplies = '1';
       beforeEach(() => {
@@ -2106,7 +2106,7 @@ describe('OpenxRtbAdapter', function () {
 
     describe('when ccpa applies', function () {
       let usPrivacyConsent;
-      let uspPixelUrl;
+      let _uspPixelUrl;
       const privacyString = 'TEST';
       beforeEach(() => {
         usPrivacyConsent = 'TEST';

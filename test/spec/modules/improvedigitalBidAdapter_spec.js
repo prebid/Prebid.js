@@ -21,12 +21,12 @@ describe('Improve Digital Adapter Tests', function () {
   const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
   const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
   const PB_ENDPOINT = 'pb';
-  const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
-  const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
+  const _AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
+  const _BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
   const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
-  const INSTREAM_TYPE = 1;
-  const OUTSTREAM_TYPE = 3;
+  const _INSTREAM_TYPE = 1;
+  const _OUTSTREAM_TYPE = 3;
 
   const simpleBidRequest = {
     bidder: 'improvedigital',
@@ -117,7 +117,7 @@ describe('Improve Digital Adapter Tests', function () {
     bids: [simpleBidRequest],
   };
 
-  const extendBidderRequest = {
+  const _extendBidderRequest = {
     bids: [extendBidRequest],
   };
 
@@ -1001,7 +1001,7 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const serverResponseRazr = {
+  const _serverResponseRazr = {
     body: {
       'id': '2adac6a5fe04df',
       'cur': 'EUR',

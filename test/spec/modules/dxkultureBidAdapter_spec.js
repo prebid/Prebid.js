@@ -194,7 +194,7 @@ const getBidderResponse = () => {
 describe('dxkultureBidAdapter', function() {
   let videoBidRequest;
 
-  const VIDEO_REQUEST = {
+  const _VIDEO_REQUEST = {
     'bidderCode': 'dxkulture',
     'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
     'bidderRequestId': '34feaad34lkj2',
@@ -293,7 +293,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('returns true when banner sizes are defined', function () {
-      const bid = {
+      const _bid = {
         bidder: 'dxkulture',
         mediaTypes: {
           banner: {
@@ -498,7 +498,7 @@ describe('dxkultureBidAdapter', function() {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           const data = requests.data;
           const [width, height] = videoBidRequest.sizes;
-          const VERSION = '1.0.0';
+          const _VERSION = '1.0.0';
 
           expect(data.imp[1].video.w).to.equal(width);
           expect(data.imp[1].video.h).to.equal(height);
@@ -610,7 +610,7 @@ describe('dxkultureBidAdapter', function() {
   });
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let _bidRequest, bidderResponse;
     beforeEach(function() {
       const bidderRequest = getVideoRequest();
       bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);

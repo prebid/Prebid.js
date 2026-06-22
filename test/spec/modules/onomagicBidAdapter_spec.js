@@ -8,7 +8,7 @@ import * as adUnits from 'src/utils/adUnits';
 const URL = 'https://bidder.onomagic.com/hb';
 
 describe('onomagicBidAdapter', function() {
-  const adapter = newBidder(spec);
+  const _adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;

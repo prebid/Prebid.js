@@ -2,7 +2,7 @@ import { spec, ENDPOINT_URL, expandAuctionMacros } from 'modules/kimberliteBidAd
 import { assert } from 'chai';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
-const BIDDER_CODE = 'kimberlite';
+const _BIDDER_CODE = 'kimberlite';
 
 describe('kimberliteBidAdapter', function () {
   const sizes = [[640, 480]];

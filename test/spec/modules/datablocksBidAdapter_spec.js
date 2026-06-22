@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, BotClientTests } from '../../../modules/datablocksBidAdapter.js';
 
-import { getStorageManager } from '../../../src/storageManager.js';
+import { getStorageManager as _getStorageManager } from '../../../src/storageManager.js';
 import { deepClone } from '../../../src/utils.js';
 
 const bid = {

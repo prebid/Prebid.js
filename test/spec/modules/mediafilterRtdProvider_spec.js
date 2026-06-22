@@ -6,7 +6,7 @@ import { EVENTS } from '../../../src/constants.js';
 import {
   MediaFilter,
   MEDIAFILTER_EVENT_TYPE,
-  MEDIAFILTER_BASE_URL
+  MEDIAFILTER_BASE_URL as _MEDIAFILTER_BASE_URL
 } from '../../../modules/mediafilterRtdProvider.js';
 
 describe('The Media Filter RTD module', function () {

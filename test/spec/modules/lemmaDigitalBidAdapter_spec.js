@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/lemmaDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-const constants = require('src/constants.js');
+const _constants = require('src/constants.js');
 
 describe('lemmaDigitalBidAdapter', function () {
   let bidRequests;
@@ -205,7 +205,7 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('buildRequests function should not modify original bidRequests object', function () {
         const originalBidRequests = utils.deepClone(bidRequests);
-        const request = spec.buildRequests(bidRequests);
+        const _request = spec.buildRequests(bidRequests);
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
       it('bidRequest imp array check empty', function () {

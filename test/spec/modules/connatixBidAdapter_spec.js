@@ -348,7 +348,7 @@ describe('connatixBidAdapter', function () {
     });
 
     it('call event if bidder is connatix', () => {
-      const result = spec.onTimeout([{
+      const _result = spec.onTimeout([{
         bidder: 'connatix',
         timeout: 500,
       }]);
@@ -360,7 +360,7 @@ describe('connatixBidAdapter', function () {
     });
 
     it('timeout event is not triggered if bidder is not connatix', () => {
-      const result = spec.onTimeout([{
+      const _result = spec.onTimeout([{
         bidder: 'otherBidder',
         timeout: 500,
       }]);
