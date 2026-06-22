@@ -89,13 +89,14 @@ describe('AdPlayerProProvider', function () {
   let config;
   let callbackStorage;
   let utilsMock;
+  let player;
 
   beforeEach(() => {
     addDiv();
     config = { divId: 'test', playerConfig: { placementId: 'testId' } };
     callbackStorage = callbackStorageFactory();
     utilsMock = getUtilsMock();
-    getPlayerMock();
+    player = getPlayerMock();
   });
 
   afterEach(() => {
