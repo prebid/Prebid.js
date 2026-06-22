@@ -1978,8 +1978,6 @@ describe('OpenxRtbAdapter', function () {
           consentString,
           gdprApplies: true
         };
-
-        gdprPixelUrl = `${SYNC_URL}&gdpr=${gdprApplies}&gdpr_consent=${consentString}`;
       });
 
       it('when there is a response, it should have the gdpr query params', () => {
@@ -2109,7 +2107,6 @@ describe('OpenxRtbAdapter', function () {
       const privacyString = 'TEST';
       beforeEach(() => {
         usPrivacyConsent = 'TEST';
-        uspPixelUrl = `${DEFAULT_SYNC}&us_privacy=${privacyString}`;
       });
       it('should send the us privacy string, ', () => {
         const [{ url }] = spec.getUserSyncs(

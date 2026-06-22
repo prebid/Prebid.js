@@ -24,7 +24,7 @@ describe('LotameId', function() {
   const nowTimestamp = new Date().getTime();
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    logErrorStub = sandbox.stub(utils, 'logError');
+    sandbox.stub(utils, 'logError');
     getCookieStub = sandbox.stub(storage, 'getCookie');
     setCookieStub = sandbox.stub(storage, 'setCookie');
     getLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
@@ -35,7 +35,7 @@ describe('LotameId', function() {
       storage,
       'removeDataFromLocalStorage'
     );
-    timeStampStub = sandbox.stub(utils, 'timestamp').returns(nowTimestamp);
+    sandbox.stub(utils, 'timestamp').returns(nowTimestamp);
     if (navigator.userAgent && navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
       requestHost = 'https://c.ltmsphrcl.net/id';
     } else {
