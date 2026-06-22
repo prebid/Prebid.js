@@ -1,5 +1,4 @@
-// this will have all of a copy of the normal fs methods as well
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
 const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
@@ -121,7 +120,7 @@ module.exports = {
     }, internalModules));
   }),
   getMetadataEntry(moduleName) {
-    if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
+    if (fs.existsSync(`./metadata/modules/${moduleName}.json`)) {
       return `${moduleName}.metadata`;
     } else {
       return null;
