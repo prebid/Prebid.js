@@ -4,6 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const argv = require('yargs').argv;
 const fakeResponder = require('./fake-responder.js');
+const tripleLiftFakeResponder = require('./triplelift-fake-responder.js');
 const bundleMaker = require('./bundle.js');
 
 const PORT = argv.port || '4444';
@@ -29,6 +30,10 @@ app.get('/bundle', bundleMaker, (req, res) => {
 });
 
 app.post('/appnexus', fakeResponder, (req, res) => {
+  res.send();
+});
+
+app.post('/triplelift', tripleLiftFakeResponder, (req, res) => {
   res.send();
 });
 
