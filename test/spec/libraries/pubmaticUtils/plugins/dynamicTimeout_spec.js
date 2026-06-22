@@ -110,13 +110,12 @@ describe('DynamicTimeout Plugin', () => {
 
   describe('processBidRequest', () => {
     let logInfoStub;
-    let getGlobalStub;
     let calculateTimeoutModifierStub;
     let shouldThrottleStub;
 
     beforeEach(() => {
       logInfoStub = sandbox.stub(utils, 'logInfo');
-      getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns({
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({
         getConfig: sandbox.stub().returns(800),
         adUnits: [{ code: 'test-div' }]
       });

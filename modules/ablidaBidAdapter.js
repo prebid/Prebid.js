@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -90,7 +90,7 @@ export const spec = {
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) { return; }
-    utils.triggerPixel(bid['nurl']);
+    triggerPixel(bid['nurl']);
   }
 };
 
