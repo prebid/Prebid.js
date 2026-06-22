@@ -55,6 +55,7 @@ const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
 describe('User ID', function () {
+  let adUnits;
   function getConfigMock(...configArrays) {
     return {
       userSync: {
@@ -116,6 +117,10 @@ describe('User ID', function () {
       bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }, { bidder: 'anotherSampleBidder', params: { placementId: 'banner-only-bidder' } }]
     };
   }
+
+  beforeEach(() => {
+    adUnits = [getAdUnitMock()];
+  });
 
   function addConfig(cfg, name, value) {
     if (cfg && cfg.userSync && cfg.userSync.userIds) {
@@ -3228,6 +3233,10 @@ describe('User ID', function () {
     beforeEach(() => {
       next = sinon.stub();
       ortb2Fragments = {};
+      adUnits = [{
+        ...getAdUnitMock(),
+        bids: [{ bidder: 'bidderA' }, { bidder: 'bidderB' }]
+      }];
       auction = {
         getAdUnits: () => adUnits,
         getFPD: () => ortb2Fragments
