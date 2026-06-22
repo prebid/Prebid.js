@@ -112,8 +112,7 @@ describe('GreedyPromise', () => {
             const greedy = op(GreedyPromise);
             // note that we are not using `allSettled` & co to resolve our promises,
             // to avoid transformations those methods do under the hood
-            const actual = {};
-            const expected = {};
+            const { actual = {}, expected = {} } = {};
             return new Promise((resolve) => {
               let pending = 2;
               function collect(dest, slot) {
