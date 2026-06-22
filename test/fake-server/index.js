@@ -2,7 +2,7 @@
 
 const express = require('express');
 const morgan = require('morgan');
-const argv = require('yargs').argv;
+const argv = require('../../gulpHelpers.js').argv;
 const fakeResponder = require('./fake-responder.js');
 const bundleMaker = require('./bundle.js');
 

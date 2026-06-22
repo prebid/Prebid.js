@@ -1,13 +1,48 @@
 // this will have all of a copy of the normal fs methods as well
 const fs = require('fs-extra');
 const path = require('path');
-const argv = require('yargs').argv;
+const { parseArgs } = require('node:util');
 const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+
+const { values: argv } = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    // boolean flags
+    nolint:       { type: 'boolean' },
+    nolintfix:    { type: 'boolean' },
+    lintWarnings: { type: 'boolean' },
+    sourceMaps:   { type: 'boolean' },
+    manualEnable: { type: 'boolean' },
+    coverage:     { type: 'boolean' },
+    https:        { type: 'boolean' },
+    local:        { type: 'boolean' },
+    fetch:        { type: 'boolean' },
+    watch:        { type: 'boolean' },
+    browserstack: { type: 'boolean' },
+    notest:       { type: 'boolean' },
+    analytics:    { type: 'boolean' },
+    ES5:          { type: 'boolean' },
+    analyze:      { type: 'boolean' },
+    dev:          { type: 'boolean' },
+    // string options
+    host:        { type: 'string' },
+    file:        { type: 'string' },
+    modules:     { type: 'string' },
+    browsers:    { type: 'string' },
+    disable:     { type: 'string' },
+    enable:      { type: 'string' },
+    distUrlBase: { type: 'string' },
+    bundleName:  { type: 'string' },
+    tag:         { type: 'string' },
+    port:        { type: 'string' },
+  },
+});
 
 const PRECOMPILED_PATH = './dist/src'
 const MODULE_PATH = './modules';
@@ -228,5 +263,6 @@ module.exports = {
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  },
+  argv
 };

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const makeBundle = require('../../gulpfile.js');
-const argv = require('yargs').argv;
+const argv = require('../../gulpHelpers.js').argv;
 const host = argv.host || 'localhost';
 const port = argv.port || 4444;
 const dev = argv.dev || false;

@@ -2,7 +2,7 @@
 'use strict';
 
 var _ = require('lodash');
-var argv = require('yargs').argv;
+var argv = require('./gulpHelpers.js').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
