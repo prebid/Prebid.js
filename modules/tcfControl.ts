@@ -21,7 +21,6 @@ import {
   ACTIVITY_PARAM_COMPONENT_TYPE
 } from '../src/activities/params.js';
 import { registerActivityControl } from '../src/activities/rules.js';
-import { getHook, setupBeforeHookFnOnce } from '../src/hook.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
   ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
@@ -37,6 +36,7 @@ import {
 // @ts-expect-error the ts compiler is confused by build-time renaming of validate.mjs to validate.js
 import { validatePurposeDeclarations } from '../libraries/purposeDeclarations/validate.js';
 import type { TCFConsentData } from "./consentManagementTcf.ts";
+import { getPathConsent, getPurposeConsent, getVendorConsent } from '../libraries/consentManagement/tcfConsentUtils.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -295,8 +295,23 @@ export function getAcceptableFlags(consentData: TCFConsentData, type: 'purpose' 
 }
 
 function getConsentOrLI(consentData, path, id, acceptConsent, acceptLI) {
-  const data = deepAccess(consentData, `vendorData.${path}`);
-  return (acceptConsent && !!data?.consents?.[id]) || (acceptLI && !!data?.legitimateInterests?.[id]);
+  let hasConsent = false;
+  if (acceptConsent) {
+    if (path === 'purpose') {
+      hasConsent = getPurposeConsent(consentData, id);
+    } else if (path === 'vendor') {
+      hasConsent = getVendorConsent(consentData, id);
+    } else {
+      hasConsent = getPathConsent(consentData, path, id);
+    }
+  }
+  if (hasConsent) {
+    return true;
+  }
+  if (!acceptLI) {
+    return false;
+  }
+  return !!deepAccess(consentData, `vendorData.${path}.legitimateInterests.${id}`);
 }
 
 function getConsent(consentData, type, purposeNo, gvlId) {
@@ -333,19 +348,6 @@ export function validateRules(rule, consentData, currentModule, gvlId, params = 
   const useVendorsLegalBasis = !deferToS2S && rule.enforceVendor && !(rule.softVendorExceptions || []).includes(currentModule);
   const { purpose, vendor } = getConsent(consentData, ruleOptions.type, ruleOptions.id, useVendorsLegalBasis ? gvlId : null);
   return (!rule.enforcePurpose || purpose) && (!useVendorsLegalBasis || gvlId === VENDORLESS_GVLID || vendor);
-}
-
-/**
- * Before hook for PBS getMatchingConsentUrl. When s2sConfig.hostGvlid is set and GDPR applies,
- * selects p1Consent vs noP1Consent based on purpose 1 and vendor consent for the host.
- * Non-GDPR cases defer to the default PBS logic (hasPurpose1Consent).
- */
-function hostGvlidConsentUrlHook(next, urlProp, gdprConsent, hostGvlid) {
-  if (!hostGvlid || !gdprConsent?.gdprApplies) {
-    return next(urlProp, gdprConsent, hostGvlid);
-  }
-  const allowed = validateRules(ACTIVE_RULES.purpose[1], gdprConsent, 'prebidServer', hostGvlid);
-  next.bail(allowed ? urlProp.p1Consent : urlProp.noP1Consent);
 }
 
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = () => null) {
@@ -524,7 +526,6 @@ export function setEnforcementConfig(config) {
   if (!hooksAdded) {
     if (ACTIVE_RULES.purpose[1] != null) {
       hooksAdded = true;
-      setupBeforeHookFnOnce(getHook('getMatchingConsentUrl'), hostGvlidConsentUrlHook);
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));

@@ -23,7 +23,6 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
-import { setEnforcementConfig } from 'modules/tcfControl.js';
 import * as redactor from 'src/activities/redactor.js';
 import * as activityRules from 'src/activities/rules.js';
 import { hook } from '../../../src/hook.js';
@@ -1135,10 +1134,6 @@ describe('S2S Adapter', function () {
           }
         }, overrides);
       }
-
-      beforeEach(function () {
-        setEnforcementConfig({});
-      });
 
       it('uses noP1Consent auction endpoint when purpose 1 consent is given but host vendor consent is not', function () {
         const s2sConfig = hostGvlidConfig();

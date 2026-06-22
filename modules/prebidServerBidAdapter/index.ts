@@ -26,6 +26,7 @@ import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
+import { hasVendorPurposeConsent } from '../../libraries/consentManagement/tcfConsentUtils.js';
 import { buildPBSRequest, interpretPBSResponse } from './ortbConverter.js';
 import { useMetrics } from '../../src/utils/perfMetrics.js';
 import { isActivityAllowed } from '../../src/activities/rules.js';
@@ -415,14 +416,16 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   });
 }
 
-export const getMatchingConsentUrl = hook('sync', function getMatchingConsentUrl(urlProp, gdprConsent, hostGvlid?: string) {
-  const hasPurpose = hasPurpose1Consent(gdprConsent);
+function getMatchingConsentUrl(urlProp, gdprConsent, hostGvlid?: string) {
+  const hasPurpose = hostGvlid
+    ? hasVendorPurposeConsent(gdprConsent, 1, hostGvlid)
+    : hasPurpose1Consent(gdprConsent);
   const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent;
   if (!url) {
     logWarn('Missing matching consent URL when gdpr=' + hasPurpose);
   }
   return url;
-}, 'getMatchingConsentUrl');
+}
 
 function getConsentData(bidRequests) {
   let gdprConsent, uspConsent, gppConsent;
