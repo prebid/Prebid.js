@@ -319,7 +319,7 @@ describe('Automatad Analytics Adapter', () => {
       exports.retryCount = 0;
       exports.__atmtdAnalyticsQueue.length = 0;
 
-      clock = sandbox.useFakeTimers();
+      clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
 
       sandbox.spy(exports.__atmtdAnalyticsQueue, 'push');
     });
@@ -406,7 +406,7 @@ describe('Automatad Analytics Adapter', () => {
       sandbox.spy(exports, 'prettyLog');
       sandbox.spy(exports, 'processEvents');
 
-      clock = sandbox.useFakeTimers();
+      clock = sandbox.useFakeTimers({ shouldClearNativeTimers: true });
       exports.__atmtdAnalyticsQueue.length = 0;
     });
     afterEach(() => {
