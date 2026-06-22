@@ -50,16 +50,6 @@ describe('Mobkoi bidding Adapter', function () {
     ortb2: getOrtb2()
   });
 
-  const getConvertedBidRequest = () => ({
-    id: testRequestId,
-    imp: [{
-      id: testBidId,
-      tagid: testPlacementId,
-    }],
-    ...getOrtb2(),
-    test: 0
-  });
-
   const adm = '<div>test ad</div>';
   const lurl = 'test.com/loss';
   const nurl = 'test.com/win';
@@ -130,7 +120,6 @@ describe('Mobkoi bidding Adapter', function () {
 
     beforeEach(function () {
       bidderRequest = getBidderRequest();
-      convertedBidRequest = getConvertedBidRequest();
     });
 
     it('should include converted ORTB data in request', function () {

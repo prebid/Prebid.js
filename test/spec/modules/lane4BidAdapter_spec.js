@@ -114,29 +114,6 @@ describe('lane4 adapter', function () {
         'bidid': 'BIDDER_-1'
       }
     };
-    invalidNativeResponse = {
-      'body': {
-        'id': '453ade66-9113-4944-a674-5bbdcb9808ac',
-        'seatbid': [{
-          'bid': [{
-            'id': '652c9a4c-66ea-4579-998b-cefe7b4cfecd',
-            'impid': '2c3875bdbb1893',
-            'price': 1.1,
-            'adid': '368852',
-            'adm': 'invalid response',
-            'adomain': ['www.diabetesincontrol.com'],
-            'iurl': 'https://cdn.lane4.com/1_368852_0.png',
-            'cid': '468132/368852',
-            'crid': '368852',
-            'cat': ['IAB7']
-          }],
-          'seat': 'lane4',
-          'group': 0
-        }],
-        'cur': 'USD',
-        'bidid': 'BIDDER_-1'
-      }
-    };
   });
 
   describe('validations', function () {

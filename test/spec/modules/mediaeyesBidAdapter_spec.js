@@ -49,11 +49,6 @@ describe('mediaeyes adapter', function () {
         ]
       }
     };
-    invalidResponse = {
-      'body': {
-
-      }
-    };
     videoRequest = [
       {
         bidder: 'mediaeyes',

@@ -887,6 +887,7 @@ describe('mediakeysBidAdapter', function () {
     });
 
     it('Should trigger pixel if bid.burl exists', function() {
+      spec.onBidWon({ burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar', cpm: 4.2 });
       expect(utils.triggerPixel.callCount).to.equal(1);
       expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
         'https://example.com/p=4.2&foo=bar'

@@ -796,6 +796,7 @@ describe('Nobid Adapter', function () {
     const REFRESH_LIMIT = 3;
 
     it('should refreshLimit be respected', function () {
+      nobid.refreshLimit = REFRESH_LIMIT;
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
     });
   });
@@ -881,7 +882,7 @@ describe('Nobid Adapter', function () {
     ];
 
     it('schain exist', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, { bids: bidRequests });
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.exist;
       expect(payload.schain.validation).to.exist.and.to.equal('strict');

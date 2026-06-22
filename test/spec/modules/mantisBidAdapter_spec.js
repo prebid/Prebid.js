@@ -5,7 +5,7 @@ describe('MantisAdapter', function () {
   const sandbox = sinon.createSandbox();
 
   beforeEach(function () {
-    clock = sandbox.useFakeTimers();
+    sandbox.useFakeTimers();
   });
 
   afterEach(function () {

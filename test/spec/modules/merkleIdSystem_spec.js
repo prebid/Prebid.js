@@ -39,6 +39,7 @@ function mockResponse(
 }
 
 describe('Merkle System', function () {
+  let sandbox;
   describe('merkleIdSystem.decode()', function() {
     it('provides multiple Merkle IDs (EID) from a stored object', function() {
       const storage = {
@@ -78,22 +79,17 @@ describe('Merkle System', function () {
   describe('Merkle System getId()', function () {
     const callbackSpy = sinon.spy();
 
-    let ajaxStub;
-
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      sinon.stub(utils, 'logInfo');
-      sinon.stub(utils, 'logWarn');
-      sinon.stub(utils, 'logError');
+      sandbox.stub(utils, 'logInfo');
+      sandbox.stub(utils, 'logWarn');
+      sandbox.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      sandbox.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
-      utils.logInfo.restore();
-      utils.logWarn.restore();
-      utils.logError.restore();
-      ajaxStub.restore();
+      sandbox.restore();
     });
 
     it('getId() should fail on missing sv_pubid', function () {
@@ -168,22 +164,17 @@ describe('Merkle System', function () {
   describe('Merkle System extendId()', function () {
     const callbackSpy = sinon.spy();
 
-    let ajaxStub;
-
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      sinon.stub(utils, 'logInfo');
-      sinon.stub(utils, 'logWarn');
-      sinon.stub(utils, 'logError');
+      sandbox.stub(utils, 'logInfo');
+      sandbox.stub(utils, 'logWarn');
+      sandbox.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      sandbox.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
-      utils.logInfo.restore();
-      utils.logWarn.restore();
-      utils.logError.restore();
-      ajaxStub.restore();
+      sandbox.restore();
     });
 
     it('extendId() get storedid', function () {
