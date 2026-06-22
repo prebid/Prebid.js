@@ -277,7 +277,7 @@ function bundle(dev, moduleArr) {
   }
 
   const metadataModules = modules.find(module => MODULES_REQUIRING_METADATA.includes(module))
-    ? modules.concat(['prebid-core']).map(helpers.getMetadataEntry).filter(name => name != null)
+    ? modules.concat(['prebid-core']).map(helpers.getMetadataEntry).filter(name => name !== null && name !== undefined)
     : [];
 
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
