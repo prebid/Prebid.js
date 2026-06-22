@@ -453,23 +453,6 @@ describe('CondorX Bid Adapter Tests', function () {
           config: '{"css":".__condorx_banner_title{display:block!important;}"}'
         },
       };
-
-      ortbResponseData = {
-        id: 'response-123',
-        seatbid: [{
-          bid: [{
-            id: 'bid-123',
-            impid: 'condorx121212',
-            price: 0.5,
-            adm: '<div>Test Banner Ad</div>',
-            w: 300,
-            h: 250,
-            crid: '12345',
-            adomain: ['condorx.test']
-          }]
-        }],
-        cur: 'USD'
-      };
     });
 
     it('should return an empty array for missing response', function () {

@@ -4,9 +4,7 @@ import { filterBidData, init } from 'modules/dataControllerModule/index.js';
 import { startAuction } from 'src/prebid.js';
 
 describe('data controller', function () {
-  beforeEach(function () {
-    spyFn = sinon.spy();
-  });
+  let result; // eslint-disable-line no-unused-vars
 
   afterEach(function () {
     config.resetConfig();

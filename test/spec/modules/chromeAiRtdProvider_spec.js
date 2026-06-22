@@ -78,10 +78,6 @@ describe('Chrome AI RTD Provider', function () {
       addEventListener: sandbox.stub()
     };
 
-    // Reset mock availability to default values
-    mockLanguageDetectorAvailability = 'available';
-    mockSummarizerAvailability = 'available';
-
     // Mock global Chrome AI API constructors and their methods
     // LanguageDetector
     const MockLanguageDetectorFn = function () { /* This constructor body isn't called by the module */ };

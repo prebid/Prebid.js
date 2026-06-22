@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils.js';
 
 describe('dochase adapter', function () {
   let bannerRequest, nativeRequest;
-  let bannerResponse, nativeResponse, invalidBannerResponse;
+  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse; // eslint-disable-line no-unused-vars
 
   beforeEach(function () {
     bannerRequest = [

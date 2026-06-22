@@ -66,7 +66,7 @@ describe('browsi Real time data sub module', function () {
   });
 
   it('should return correct macro values', function () {
-    mockGpt.makeSlot({ code: '/123/abc', divId: 'browsiAd_1' });
+    const slot = mockGpt.makeSlot({ code: '/123/abc', divId: 'browsiAd_1' });
 
     slot.setTargeting('test', ['test', 'value']);
     // slot getTargeting doesn't act like GPT so we can't expect real value

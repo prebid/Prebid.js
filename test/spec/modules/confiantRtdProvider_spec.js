@@ -37,7 +37,7 @@ describe('Confiant RTD module', function () {
 
   describe('Module initialization', function() {
     beforeEach(function() {
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      sinon.stub(utils, 'insertElement');
     });
     afterEach(function() {
       utils.insertElement.restore();
@@ -92,7 +92,7 @@ describe('Confiant RTD module', function () {
 
     beforeEach(function () {
       submoduleStub = sinon.stub(hook, 'submodule');
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      sinon.stub(utils, 'insertElement');
     });
     afterEach(function () {
       utils.insertElement.restore();

@@ -192,6 +192,7 @@ const getBidderResponse = () => {
 };
 
 describe('dxtechBidAdapter', function() {
+  let videoBidRequest; // eslint-disable-line no-unused-vars
   beforeEach(function () {
     videoBidRequest = {
       mediaTypes: {
