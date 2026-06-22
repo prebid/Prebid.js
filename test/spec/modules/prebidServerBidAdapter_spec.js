@@ -3757,6 +3757,24 @@ describe('S2S Adapter', function () {
           expect(syncer().args[0]).to.include.members([123]);
         });
       });
+
+      Object.entries({
+        Safari: 'isSafariBrowser',
+        Firefox: 'isFirefoxBrowser',
+        'Chrome on iOS': 'isChromeIOSBrowser'
+      }).forEach(([browser, detector]) => {
+        it(`does not request PBS syncs on ${browser}`, () => {
+          const sandbox = sinon.createSandbox();
+          sandbox.stub(utils, detector).returns(true);
+          try {
+            adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+            expect(server.requests).to.have.length(1);
+            expect(server.requests[0].url).to.equal(cfg.endpoint.p1Consent);
+          } finally {
+            sandbox.restore();
+          }
+        });
+      });
     });
   });
 
