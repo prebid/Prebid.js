@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 import * as floorProvider from '../../../../../libraries/pubmaticUtils/plugins/floorProvider.js';
 import * as priceFloors from '../../../../../modules/priceFloors.js';
-import '../../../../../libraries/pubmaticUtils/pubmaticUtils.js';
+import * as pubmaticUtils from '../../../../../libraries/pubmaticUtils/pubmaticUtils.js';
 import { expect } from 'chai';
 
 describe('FloorProvider', () => {
@@ -154,6 +154,7 @@ describe('FloorProvider', () => {
     });
 
     it('getTimeOfDay should return result from getCurrentTimeOfDay', async () => {
+      sinon.stub(pubmaticUtils, 'getCurrentTimeOfDay').returns('evening');
       expect(floorProvider.getTimeOfDay()).to.equal('evening');
     });
 
@@ -162,10 +163,12 @@ describe('FloorProvider', () => {
     });
 
     it('getBrowser should return result from getBrowser', async () => {
+      sinon.stub(pubmaticUtils, 'getBrowserType').returns('Chrome');
       expect(floorProvider.getBrowser()).to.equal('Chrome');
     });
 
     it('getUtm should return result from getUtmValue', async () => {
+      sinon.stub(pubmaticUtils, 'getUtmValue').returns('evening');
       expect(floorProvider.getUtm()).to.equal('evening');
     });
 
@@ -176,9 +179,11 @@ describe('FloorProvider', () => {
       expect(floorProvider.getBidder(undefined)).to.equal(undefined);
     });
     it('getDOW should return result from getDayOfWeek', async () => {
+      sinon.stub(pubmaticUtils, 'getDayOfWeek').returns('0');
       expect(floorProvider.getDOW()).to.equal('0');
     });
     it('getHOD should return result from getHourOfDay', async () => {
+      sinon.stub(pubmaticUtils, 'getHourOfDay').returns('15');
       expect(floorProvider.getHOD()).to.equal('15');
     });
   });
