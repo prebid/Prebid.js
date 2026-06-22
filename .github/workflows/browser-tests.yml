@@ -159,20 +159,3 @@ jobs:
       test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
       chunks: 8
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
-
-  browserstack-tests:
-    needs: setup
-    if: ${{ needs.setup.outputs.bstack-key }}
-    name: "Browserstack tests"
-    uses:
-      ./.github/workflows/run-tests.yml
-    with:
-      built-key: ${{ needs.setup.outputs.bstack-key }}
-      test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage
-      chunks: 8
-      browserstack: true
-      browserstack-sessions: ${{ fromJSON(needs.setup.outputs.bstack-sessions) }}
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
