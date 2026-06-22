@@ -109,8 +109,7 @@ module.exports = {
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
         // prefer internal project modules before looking at project dependencies
-        var modulePath = require.resolve(module, {paths: ['./modules']});
-        if (modulePath === '') modulePath = require.resolve(module);
+        var modulePath = require.resolve(module, { paths: ['./modules'] });
 
         memo[modulePath] = module;
       } catch (err) {
