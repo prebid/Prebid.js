@@ -1,3 +1,11 @@
+const SCOPE_NODES = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  'ClassDeclaration',
+  'ClassExpression'
+]);
+
 function exits(node) {
   if (!node) return false;
   if (['ReturnStatement', 'ThrowStatement', 'ContinueStatement', 'BreakStatement'].includes(node.type)) return true;
@@ -5,13 +13,24 @@ function exits(node) {
   return false;
 }
 
-function collectNegatedIdentifiers(node, names = new Set()) {
+function unwrap(node) {
+  while (node && (node.type === 'ParenthesizedExpression' || node.type === 'ChainExpression')) {
+    node = node.expression;
+  }
+  return node;
+}
+
+function collectFalsyImpliedTruthyIdentifiers(node, names = new Set()) {
+  node = unwrap(node);
   if (!node) return names;
-  if (node.type === 'UnaryExpression' && node.operator === '!' && node.argument.type === 'Identifier') {
-    names.add(node.argument.name);
-  } else if (node.type === 'LogicalExpression') {
-    collectNegatedIdentifiers(node.left, names);
-    collectNegatedIdentifiers(node.right, names);
+  if (node.type === 'UnaryExpression' && node.operator === '!') {
+    const argument = unwrap(node.argument);
+    if (argument?.type === 'Identifier') {
+      names.add(argument.name);
+    }
+  } else if (node.type === 'LogicalExpression' && node.operator === '||') {
+    collectFalsyImpliedTruthyIdentifiers(node.left, names);
+    collectFalsyImpliedTruthyIdentifiers(node.right, names);
   }
   return names;
 }
@@ -25,12 +44,32 @@ module.exports = {
     schema: []
   },
   create(context) {
+    const sourceCode = context.sourceCode || context.getSourceCode();
+
+    function inspect(node, knownTruthy) {
+      node = unwrap(node);
+      if (!node || typeof node.type !== 'string' || SCOPE_NODES.has(node.type)) return;
+      if (node.type === 'LogicalExpression' && node.left.type === 'Identifier' && knownTruthy.has(node.left.name)) {
+        context.report({
+          node: node.left,
+          message: `Redundant conditional: '${node.left.name}' is already known to be truthy.`
+        });
+      }
+      for (const key of sourceCode.visitorKeys[node.type] || []) {
+        const child = node[key];
+        if (Array.isArray(child)) child.forEach(child => inspect(child, knownTruthy));
+        else inspect(child, knownTruthy);
+      }
+    }
+
     function checkStatements(statements) {
       const knownTruthy = new Set();
 
       for (const statement of statements) {
+        inspect(statement, knownTruthy);
+
         if (statement.type === 'IfStatement' && exits(statement.consequent) && statement.alternate == null) {
-          collectNegatedIdentifiers(statement.test).forEach(name => knownTruthy.add(name));
+          collectFalsyImpliedTruthyIdentifiers(statement.test).forEach(name => knownTruthy.add(name));
         }
 
         if (statement.type === 'BlockStatement') {
@@ -39,23 +78,12 @@ module.exports = {
           if (statement.consequent?.type === 'BlockStatement') checkStatements(statement.consequent.body);
           if (statement.alternate?.type === 'BlockStatement') checkStatements(statement.alternate.body);
         }
+      }
+    }
 
-        const sourceCode = context.sourceCode || context.getSourceCode();
-        const inspect = (node) => {
-          if (!node || typeof node.type !== 'string') return;
-          if (node.type === 'LogicalExpression' && node.left.type === 'Identifier' && knownTruthy.has(node.left.name)) {
-            context.report({
-              node: node.left,
-              message: `Redundant conditional: '${node.left.name}' is already known to be truthy.`
-            });
-          }
-          for (const key of sourceCode.visitorKeys[node.type] || []) {
-            const child = node[key];
-            if (Array.isArray(child)) child.forEach(inspect);
-            else inspect(child);
-          }
-        };
-        inspect(statement);
+    function checkFunction(node) {
+      if (node.body?.type === 'BlockStatement') {
+        checkStatements(node.body.body);
       }
     }
 
@@ -63,9 +91,9 @@ module.exports = {
       Program(node) {
         checkStatements(node.body);
       },
-      BlockStatement(node) {
-        checkStatements(node.body);
-      }
+      FunctionDeclaration: checkFunction,
+      FunctionExpression: checkFunction,
+      ArrowFunctionExpression: checkFunction
     };
   }
 };
