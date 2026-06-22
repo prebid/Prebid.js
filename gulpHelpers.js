@@ -1,4 +1,4 @@
-const fs = require('node:fs');
+const fs = require('fs');
 const path = require('path');
 const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
