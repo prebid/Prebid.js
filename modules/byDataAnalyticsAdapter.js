@@ -11,12 +11,11 @@ import { ajax } from '../src/ajax.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
-import { getTimeZone } from '../libraries/timezone/timezone.js';
 
-const versionCode = '4.4.1';
+const versionCode = '4.5.0';
 const secretKey = 'bydata@123456';
 const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS;
-const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid';
+const DEFAULT_EVENT_URL = 'https://telemetry.bydata.com/topics/prebid';
 const analyticsType = 'endpoint';
 const isBydata = isKeyInUrl('bydata_debug');
 const adunitsMap = {};
@@ -25,9 +24,16 @@ const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleNam
 
 let initOptions = {};
 var payload = {};
-var winPayload = {};
-var isDataSend = window.asc_data || false;
-var bdNbTo = { 'to': [], 'nb': [] };
+var isDataSend = false;
+var bdNbTo = {};
+
+function normalizeSize(size) {
+  if (!size) return '';
+  if (Array.isArray(size)) return size[0] + 'x' + size[1];
+  if (typeof size === 'string') return size;
+  if (size.width && size.height) return size.width + 'x' + size.height;
+  return '';
+}
 
 /* method used for testing parameters */
 function isKeyInUrl(name) {
@@ -49,6 +55,10 @@ function getAdunitName(code) {
 /* EVENT: auction init */
 function onAuctionStart(t) {
   /* map of ad unit code - ad unit full path */
+  if (!t || !t.auctionId) return;
+  // init per-auction storage
+  bdNbTo[t.auctionId] = { to: [], nb: [] };
+
   t.adUnits && t.adUnits.length && t.adUnits.forEach((adu) => {
     const { code, adunit } = adu;
     adunitsMap[code] = adunit;
@@ -57,25 +67,35 @@ function onAuctionStart(t) {
 
 /* EVENT: bid timeout */
 function onBidTimeout(t) {
-  if (payload['visitor_data'] && t && t.length > 0) {
-    bdNbTo['to'] = t;
-  }
+  if (!payload['visitor_data'] || !t || !t.length) return;
+  t.forEach(timeout => {
+    const { auctionId } = timeout;
+    if (!bdNbTo[auctionId]) bdNbTo[auctionId] = { to: [], nb: [] };
+    bdNbTo[auctionId].to.push(timeout);
+  });
 }
 
 /* EVENT: no bid */
 function onNoBidData(t) {
-  if (payload['visitor_data'] && t) {
-    bdNbTo['nb'].push(t);
-  }
+  if (!payload['visitor_data'] || !t) return;
+  const { auctionId } = t;
+  if (!bdNbTo[auctionId]) bdNbTo[auctionId] = { to: [], nb: [] };
+  bdNbTo[auctionId].nb.push(t);
 }
 
 /* EVENT: bid won */
 function onBidWon(t) {
   const { isCorrectOption } = initOptions;
-  if (isCorrectOption && (isDataSend || isBydata)) {
-    ascAdapter.getBidWonData(t);
-    ascAdapter.sendPayload(winPayload);
-  }
+  if (!(isCorrectOption && (isDataSend || isBydata))) return;
+
+  // initialize per-auction wins storage if not present
+  if (!payload._wins) payload._wins = {};
+  if (!payload._wins[t.auctionId]) payload._wins[t.auctionId] = [];
+  payload._wins[t.auctionId].push({
+    requestId: t.requestId,
+    size: normalizeSize(t.size),
+    auctionId: t.auctionId
+  });
 }
 
 /* EVENT: auction end */
@@ -85,8 +105,16 @@ function onAuctionEnd(t) {
     if (isCorrectOption && (isDataSend || isBydata)) {
       ascAdapter.dataProcess(t);
       ascAdapter.sendPayload(payload);
+
+      // cleanup this auction only
+      if (payload._wins && payload._wins[t.auctionId]) {
+        delete payload._wins[t.auctionId];
+      }
+      if (bdNbTo[t.auctionId]) {
+        delete bdNbTo[t.auctionId];
+      }
     }
-  }, 500);
+  }, 1500);
 }
 
 const ascAdapter = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType: analyticsType }), {
@@ -126,7 +154,7 @@ ascAdapter.enableAnalytics = function (config) {
 ascAdapter.initConfig = function (config) {
   let isCorrectOption = true;
   initOptions = {};
-  var rndNum = Math.floor(Math.random() * 10000 + 1);
+
   initOptions.options = deepClone(config.options);
   initOptions.clientId = initOptions.options.clientId || null;
   initOptions.logFrequency = initOptions.options.logFrequency;
@@ -134,37 +162,19 @@ ascAdapter.initConfig = function (config) {
     _logError('"options.clientId" should not empty!!');
     isCorrectOption = false;
   }
-  if (rndNum <= initOptions.logFrequency) { window.asc_data = isDataSend = true; }
+
+  // FIXED  (single source of truth)
+  const existingFlag = window.asc_data;
+  if (typeof existingFlag === 'boolean') {
+    isDataSend = existingFlag;
+  } else {
+    const rndNum = Math.floor(Math.random() * 10000 + 1);
+    isDataSend = rndNum <= initOptions.logFrequency;
+    window.asc_data = isDataSend; // persist for session
+  }
   initOptions.isCorrectOption = isCorrectOption;
   this.initOptions = initOptions;
   return isCorrectOption;
-};
-
-ascAdapter.getBidWonData = function(t) {
-  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t;
-  const aun = getAdunitName(adUnitCode);
-  winPayload['aid'] = auctionId;
-  winPayload['as'] = '';
-  winPayload['auctionData'] = [];
-  var data = {};
-  data['au'] = aun;
-  data['auc'] = adUnitCode;
-  data['aus'] = size;
-  data['bid'] = requestId;
-  data['bidadv'] = bidder;
-  data['br_pb_mg'] = cpm;
-  data['br_tr'] = timeToRespond;
-  data['bradv'] = bidder;
-  data['brid'] = requestId;
-  data['brs'] = size;
-  data['cur'] = currency;
-  data['inb'] = 0;
-  data['ito'] = 0;
-  data['ipwb'] = 1;
-  data['iwb'] = 1;
-  data['mt'] = mediaType;
-  winPayload['auctionData'].push(data);
-  return winPayload;
 };
 
 ascAdapter.getVisitorData = function (data = {}) {
@@ -235,93 +245,143 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua["brv"] = info.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
-    ua['tz'] = getTimeZone();
+    ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
   var signedToken = getJWToken(ua);
   payload['visitor_data'] = signedToken;
-  winPayload['visitor_data'] = signedToken;
+  // winPayload['visitor_data'] = signedToken;
   return signedToken;
 };
 
 ascAdapter.dataProcess = function (t) {
-  if (isBydata) { payload['bydata_debug'] = 'true'; }
-  _logInfo('fulldata - ', t);
-  payload['aid'] = t.auctionId;
+  if (!t || !t.auctionId) return payload;
+  const auctionId = t.auctionId;
+
+  if (isBydata) payload['bydata_debug'] = 'true';
+
+  payload['aid'] = auctionId;
   payload['as'] = t.timestamp;
   payload['auctionData'] = [];
-  var bidderRequestsData = []; var bidsReceivedData = [];
+
+  const timeoutData = bdNbTo[auctionId] || { to: [], nb: [] };
+
+  // Build request map
+  let requestMap = [];
+
   t.bidderRequests && t.bidderRequests.forEach(bidReq => {
-    var pObj = {}; pObj['bids'] = [];
     bidReq.bids.forEach(bid => {
-      var data = {};
-      data['adUnitCode'] = bid.adUnitCode;
-      data['sizes'] = bid.sizes;
-      data['bidder'] = bid.bidder;
-      data['bidId'] = bid.bidId;
-      data['mediaTypes'] = [];
-      var mt = bid.mediaTypes.banner ? 'display' : 'video';
-      data['mediaTypes'].push(mt);
-      pObj['bids'].push(data);
-    });
-    bidderRequestsData.push(pObj);
-  });
-  t.bidsReceived && t.bidsReceived.forEach(bid => {
-    const { requestId, bidder, width, height, cpm, currency, timeToRespond, adUnitCode } = bid;
-    bidsReceivedData.push({ requestId, bidder, width, height, cpm, currency, timeToRespond, adUnitCode });
-  });
-  bidderRequestsData.length > 0 && bidderRequestsData.forEach(bdObj => {
-    var bdsArray = bdObj['bids'];
-    bdsArray.forEach(bid => {
-      const { adUnitCode, sizes, bidder, bidId, mediaTypes } = bid;
-      sizes.forEach(size => {
-        var sstr = size[0] + 'x' + size[1];
-        payload['auctionData'].push({ au: getAdunitName(adUnitCode), auc: adUnitCode, aus: sstr, mt: mediaTypes[0], bidadv: bidder, bid: bidId, inb: 0, ito: 0, ipwb: 0, iwb: 0 });
+      const sizeList = bid.sizes || [];
+
+      sizeList.forEach(size => {
+        requestMap.push({
+          au: getAdunitName(bid.adUnitCode),
+          auc: bid.adUnitCode,
+          aus: normalizeSize(size),
+          mt: bid.mediaTypes?.banner ? 'display' : 'video',
+          bidadv: bid.bidder,
+          bid: bid.bidId,
+          inb: 0,
+          ito: 0,
+          ipwb: 0,
+          iwb: 0
+        });
       });
     });
   });
 
-  bidsReceivedData.length > 0 && bidsReceivedData.forEach(bdRecived => {
-    const { requestId, bidder, width, height, cpm, currency, timeToRespond } = bdRecived;
-    payload["auctionData"].forEach(rwData => {
-      if (rwData["bid"] === requestId && rwData["aus"] === width + "x" + height) {
-        rwData["brid"] = requestId; rwData["bradv"] = bidder; rwData["br_pb_mg"] = cpm;
-        rwData["cur"] = currency; rwData["br_tr"] = timeToRespond; rwData["brs"] = width + "x" + height;
+  payload['auctionData'] = requestMap;
+
+  //  Map bidsReceived (FILTER BY AUCTION)
+  const bidsReceived = (t.bidsReceived || []).filter(b => b.auctionId === auctionId);
+
+  bidsReceived.forEach(bid => {
+    const size = normalizeSize([bid.width, bid.height]);
+
+    payload['auctionData'].forEach(row => {
+      if (row.bid === bid.requestId && row.aus === size) {
+        row.brid = bid.requestId;
+        row.ipwb = 1;
+        row.bradv = bid.bidder;
+        row.br_pb_mg = bid.cpm;
+        row.cur = bid.currency;
+        row.br_tr = bid.timeToRespond;
+        row.brs = size;
       }
     });
   });
 
-  var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
-  prebidWinningBids && prebidWinningBids.length > 0 && prebidWinningBids.forEach(pbbid => {
-    payload['auctionData'] && payload['auctionData'].forEach(rwData => {
-      if (rwData['bid'] === pbbid.requestId && rwData['brs'] === pbbid.size) {
-        rwData['ipwb'] = 1;
+  // Prebid targeting wins
+  const targetingWins = auctionManager.getBidsReceived()
+    .filter(b => b.auctionId === auctionId && b.status === BID_STATUS.BID_TARGETING_SET);
+
+  targetingWins.forEach(bid => {
+    const size = normalizeSize(bid.size);
+
+    payload['auctionData'].forEach(row => {
+      if (row.bid === bid.requestId && row.aus === size) {
+        row.ipwb = 1;
       }
     });
   });
 
-  var winningBids = auctionManager.getAllWinningBids();
-  winningBids && winningBids.length > 0 && winningBids.forEach(wBid => {
-    payload['auctionData'] && payload['auctionData'].forEach(rwData => {
-      if (rwData['bid'] === wBid.requestId && rwData['brs'] === wBid.size) {
-        rwData['iwb'] = 1;
+  // Actual wins (FILTERED) - this will include prebid wins + any direct integrations
+  const winningBids = auctionManager.getAllWinningBids()
+    .filter(b => b.auctionId === auctionId);
+
+  winningBids.forEach(bid => {
+    const size = normalizeSize(bid.size);
+
+    payload['auctionData'].forEach(row => {
+      if (row.bid === bid.requestId && row.aus === size) {
+        row.iwb = 1; row.ipwb = 1;
       }
     });
   });
 
-  payload['auctionData'] && payload['auctionData'].length > 0 && payload['auctionData'].forEach(u => {
-    bdNbTo['to'].forEach(i => {
-      if (u.bid === i.bidId) u.ito = 1;
+  // Handle any wins recorded via onBidWon (for direct integrations or if auctionManager misses any)
+  if (payload._wins && payload._wins[auctionId]) {
+    payload._wins[auctionId].forEach(w => {
+      payload['auctionData'].forEach(row => {
+        if (row.bid === w.requestId && row.aus === w.size) {
+          row.iwb = 1; row.ipwb = 1;
+        }
+      });
     });
-    bdNbTo['nb'].forEach(i => {
-      if (u.bidadv === i.bidder && u.bid === i.bidId) { u.inb = 1; }
+  }
+
+  // Timeout + NoBid
+  payload['auctionData'].forEach(row => {
+    timeoutData.to.forEach(t => {
+      if (row.bid === t.bidId) row.ito = 1;
+    });
+
+    timeoutData.nb.forEach(n => {
+      if (row.bid === n.bidId && row.bidadv === n.bidder) {
+        row.inb = 1;
+      }
     });
   });
   return payload;
 };
 
 ascAdapter.sendPayload = function (data) {
+  // remove internal helper state
+  if (data._wins) {
+    delete data._wins;
+  }
+
+  if (window.sType !== undefined && window.sType !== null && window.sType !== '') {
+    data.auctionData.forEach(item => {
+      if (item.bidadv && !item.bidadv.endsWith(`_${window.sType}`)) {
+        item.bidadv = `${item.bidadv}_${window.sType}`;
+      }
+    });
+  }
+
+  _logInfo('payload: ', JSON.stringify(data));
+
   var obj = { 'records': [{ 'value': data }] };
-  const strJSON = JSON.stringify(obj);
+  let strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 };
 
