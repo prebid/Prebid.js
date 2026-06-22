@@ -30,7 +30,11 @@ function isModuleDirectory(filePath) {
       const module = require(manifestPath);
       return module && module.main;
     }
-  } catch (error) {}
+  } catch (error) {
+    // Intentionally ignore filesystem/manifest parse errors while scanning folders;
+    // directories that cannot be read/parsed are treated as non-module directories.
+    return false;
+  }
 }
 
 module.exports = {
@@ -61,7 +65,7 @@ module.exports = {
       throw new PluginError('modules', 'failed reading: ' + argv.modules + '. Ensure the file exists and contains valid JSON.');
     }
 
-    // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
+    // we need to forcefully include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
     Object.keys(submodules).forEach(parentModule => {
       if (
         !modules.includes(parentModule) &&
@@ -109,12 +113,11 @@ module.exports = {
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
         // prefer internal project modules before looking at project dependencies
-        var modulePath = require.resolve(module, {paths: ['./modules']});
-        if (modulePath === '') modulePath = require.resolve(module);
+        var modulePath = require.resolve(module, { paths: ['./modules'] });
 
         memo[modulePath] = module;
       } catch (err) {
-        // do something
+        console.warn(`Unable to resolve module "${module}": ${err && err.message ? err.message : err}`);
       }
       return memo;
     }, internalModules));
@@ -135,11 +138,11 @@ module.exports = {
   },
 
   getCreativeRendererPath(renderer) {
-    let path = 'creative-renderers';
+    let rendererPath = 'creative-renderers';
     if (renderer != null) {
-      path = `${path}/${renderer}.js`;
+      rendererPath = `${rendererPath}/${renderer}.js`;
     }
-    return this.getPrecompiledPath(path);
+    return this.getPrecompiledPath(rendererPath);
   },
 
   getBuiltModules: function(dev, externalModules) {
