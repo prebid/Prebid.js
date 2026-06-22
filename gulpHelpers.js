@@ -61,7 +61,7 @@ module.exports = {
       throw new PluginError('modules', 'failed reading: ' + argv.modules + '. Ensure the file exists and contains valid JSON.');
     }
 
-    // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
+    // we need to forcefully include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
     Object.keys(submodules).forEach(parentModule => {
       if (
         !modules.includes(parentModule) &&
