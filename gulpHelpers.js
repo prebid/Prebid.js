@@ -3,7 +3,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
-const through = require('through2');
+const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
@@ -166,10 +166,13 @@ module.exports = {
 
   nameModules: function(externalModules) {
     var modules = this.getModules(externalModules);
-    return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid';
-      this.push(file);
-      done();
+    return new Transform({
+      objectMode: true,
+      transform(file, enc, done) {
+        file.named = modules[file.path] ? modules[file.path] : 'prebid';
+        this.push(file);
+        done();
+      }
     })
   },
 
