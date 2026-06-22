@@ -70,7 +70,7 @@ function requireNodeVersion(version) {
 
 // Dependant task for building postbid. It escapes postbid-config file.
 function escapePostbidConfig() {
-  gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
+  return gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
     .pipe(jsEscape())
     .pipe(gulp.dest('build/postbid/'));
 };
