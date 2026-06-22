@@ -194,6 +194,7 @@ const getBidderResponse = () => {
 };
 
 describe('trustxBidAdapter', function() {
+  let bidRequest;
   let videoBidRequest;
 
   beforeEach(function () {
@@ -278,7 +279,7 @@ describe('trustxBidAdapter', function() {
     });
 
     it('should return expected request object', function() {
-      spec.buildRequests(bidderRequest.bids, bidderRequest);
+      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(bidRequest.url).equal('https://ads.trustx.org/pbhb');
       expect(bidRequest.method).equal('POST');
     });
@@ -528,7 +529,7 @@ describe('trustxBidAdapter', function() {
           customBidderResponse.body.seatbid[0].bid[0].mtype = 1; // Banner type
         }
 
-        spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
+        bidRequest = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
         const bids = spec.interpretResponse(customBidderResponse, bidRequest);
         expect(bids[0].mediaType).to.equal('banner');
       });
@@ -648,7 +649,7 @@ describe('trustxBidAdapter', function() {
       let bidderResponse;
       beforeEach(function() {
         const bidderRequest = getBannerRequest();
-        spec.buildRequests(bidderRequest.bids, bidderRequest);
+        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
       });
 
@@ -885,7 +886,7 @@ describe('trustxBidAdapter', function() {
       let bidderResponse;
       beforeEach(function() {
         const bidderRequest = getVideoRequest();
-        spec.buildRequests(bidderRequest.bids, bidderRequest);
+        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
       });
 

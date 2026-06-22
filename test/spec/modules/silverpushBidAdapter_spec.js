@@ -399,10 +399,19 @@ describe('Silverpush Adapter', function () {
     });
 
     it('Should not trigger pixel if bid does not contain burl', function() {
+      spec.onBidWon({});
       expect(ajaxStub.calledOnce).to.equal(false);
     });
 
     it('Should trigger pixel with correct macros if bid burl is present', function() {
+      spec.onBidWon({
+        burl: 'http://won.foo.bar/trk?ap=${AUCTION_PRICE}&aid=${AUCTION_ID}&imp=${AUCTION_IMP_ID}&adid=${AUCTION_AD_ID}&sid=${AUCTION_SEAT_ID}',
+        cpm: 1.5,
+        auctionId: 'auc123',
+        requestId: 'req123',
+        adId: 'ad1234',
+        seatBidId: 'sea123'
+      });
       expect(ajaxStub.calledOnceWith('http://won.foo.bar/trk?ap=1.5&aid=auc123&imp=req123&adid=ad1234&sid=sea123')).to.equal(true);
     });
   });
