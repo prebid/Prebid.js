@@ -17,7 +17,6 @@
     "runsOn": "windows-latest"
   },
   "SafariNative": {
-    "wdioName": "safari technology preview",
     "runsOn": "macos-latest",
     "bsName": "safari"
   },

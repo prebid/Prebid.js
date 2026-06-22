@@ -2,12 +2,7 @@ const shared = require('./wdio.shared.conf.js');
 const process = require('process');
 
 const browsers = Object.fromEntries(
-  Object.entries(require('./browsers.json'))
-    .filter(([k, v]) => {
-      // run only on latest; exclude Safari
-      // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
-      return v.browser_version === 'latest' && v.browser !== 'safari'
-    })
+  Object.entries(require('./browsers-e2e.json'))
 );
 
 function getCapabilities() {

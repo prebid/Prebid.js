@@ -127,6 +127,22 @@ jobs:
       run-npm-install: ${{ matrix.browser.runsOn == 'windows-latest' }}
       browserstack: false
 
+  browserstack-e2e-tests:
+    needs: [setup, build]
+    if: ${{ !inputs.coverage-only }}
+    name: "Browserstack E2E tests"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.built-key }}
+      test-cmd: npx gulp e2e-test-nobuild
+      chunks: 1
+      browserstack: true
+      browserstack-sessions: 1
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
   unit-tests:
     needs: [setup, build]
     name: "Unit (browser: ${{ matrix.browser.name }} ${{ matrix.browser.version }})"
@@ -159,3 +175,4 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+

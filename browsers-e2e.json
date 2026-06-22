@@ -1,0 +1,10 @@
+{
+  "bs_safari_latest_mac": {
+    "base": "BrowserStack",
+    "os_version": "Tahoe",
+    "browser": "safari",
+    "browser_version": "latest",
+    "device": null,
+    "os": "OS X"
+  }
+}
