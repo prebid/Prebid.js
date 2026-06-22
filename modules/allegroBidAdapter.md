@@ -71,8 +71,8 @@ The adapter exposes advertiser metadata from the bid response on the standard `b
 | `bid.meta` field    | Source in OpenRTB bid response               | Description           |
 |---------------------|----------------------------------------------|-----------------------|
 | `advertiserDomains` | `bid.adomain`                                | Advertiser domain(s)  |
-| `advertiserId`      | `bid.ext['[com.allegro.dsp.dsp_bid]'].client_id`  | Advertiser identifier |
-| `productId`         | `bid.ext['[com.allegro.dsp.dsp_bid]'].product_id` | Product identifier    |
+| `advertiserId`      | `bid.ext['[com.allegro.dsp.dsp_bid]'].clientId`  | Advertiser identifier |
+| `productId`         | `bid.ext['[com.allegro.dsp.dsp_bid]'].productId` | Product identifier    |
 
 The DSP extension fields are delivered as a proto-JSON bracketed key (`[com.allegro.dsp.dsp_bid]`).
 
@@ -87,8 +87,8 @@ Example server bid response:
       "adomain": ["advertiser.com"],
       "ext": {
         "[com.allegro.dsp.dsp_bid]": {
-          "client_id": "42",
-          "product_id": "prod-123"
+          "clientId": "42",
+          "productId": "prod-123"
         }
       }
     }]

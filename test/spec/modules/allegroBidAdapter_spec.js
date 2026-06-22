@@ -177,7 +177,7 @@ describe('Allegro Bid Adapter', () => {
             w: 300,
             h: 250,
             adomain: ['advertiser.com'],
-            '[com.allegro.dsp.dsp_bid]': { client_id: '42', product_id: 'prod-123' }
+            '[com.allegro.dsp.dsp_bid]': { clientId: '42', productId: 'prod-123' }
           }]
         }]
       };
@@ -205,7 +205,7 @@ describe('Allegro Bid Adapter', () => {
             crid: 'creative1',
             w: 300,
             h: 250,
-            ext: { '[com.allegro.dsp.dsp_bid]': { client_id: '42', product_id: 'prod-123' } }
+            ext: { '[com.allegro.dsp.dsp_bid]': { clientId: '42', productId: 'prod-123' } }
           }]
         }]
       };
