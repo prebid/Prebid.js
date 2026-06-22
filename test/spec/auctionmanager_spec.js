@@ -1533,6 +1533,11 @@ describe('auctionmanager.js', function () {
       });
 
       it('should NOT emit BID_TIMEOUT for bidders that replied through S2S', () => {
+        const browserRestrictionStubs = sinon.createSandbox();
+        browserRestrictionStubs.stub(utils, 'isSafariBrowser').returns(false);
+        browserRestrictionStubs.stub(utils, 'isFirefoxBrowser').returns(false);
+        browserRestrictionStubs.stub(utils, 'isChromeIOSBrowser').returns(false);
+
         adapterManager.registerBidAdapter(new PrebidServer(), 'pbs');
         config.setConfig({
           s2sConfig: [{
@@ -1598,6 +1603,8 @@ describe('auctionmanager.js', function () {
             BIDDER_CODE,
             BIDDER_CODE1,
           ]);
+        }).finally(() => {
+          browserRestrictionStubs.restore();
         });
         respondToRequest(1);
         return pm;
