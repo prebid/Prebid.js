@@ -59,7 +59,7 @@ describe('Allegro Bid Adapter', () => {
       const bidderRequest = buildBidderRequest(bidRequests);
       const req = spec.buildRequests(bidRequests, bidderRequest);
       expect(req.method).to.equal('POST');
-      expect(req.url).to.equal('https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid');
+      expect(req.url).to.equal('https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid');
       expect(req.options.contentType).to.equal('text/plain');
       expect(req.data).to.exist;
       expect(req.data.imp).to.be.an('array').with.lengthOf(1);
