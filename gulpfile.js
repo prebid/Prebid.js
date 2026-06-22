@@ -366,7 +366,7 @@ function e2eTestTaskMaker() {
   }
 }
 
-function runWebdriver({file}) {
+function runWebdriver({ specFile }) {
   process.env.TEST_SERVER_HOST = argv.host || 'localhost';
 
   let local = argv.local || false;
@@ -376,11 +376,11 @@ function runWebdriver({file}) {
   let wdioConf = path.join(__dirname, wdioConfFile);
   let wdioOpts;
 
-  if (file) {
+  if (specFile) {
     wdioOpts = [
       wdioConf,
       `--spec`,
-      `${file}`
+      `${specFile}`
     ]
   } else {
     wdioOpts = [
