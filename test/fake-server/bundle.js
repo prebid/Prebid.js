@@ -1,7 +1,17 @@
 const fs = require('fs');
 const path = require('path');
 const makeBundle = require('../../gulpfile.js');
-const argv = require('../../gulpHelpers.js').argv;
+const { parseArgs } = require('node:util');
+
+const { values: argv } = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    host: { type: 'string' },
+    port: { type: 'string' },
+    dev: { type: 'boolean' },
+  },
+});
 const host = argv.host || 'localhost';
 const port = argv.port || 4444;
 const dev = argv.dev || false;

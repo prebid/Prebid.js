@@ -29,7 +29,6 @@ const { values: argv } = parseArgs({
     analytics:    { type: 'boolean' },
     ES5:          { type: 'boolean' },
     analyze:      { type: 'boolean' },
-    dev:          { type: 'boolean' },
     // string options
     host:        { type: 'string' },
     file:        { type: 'string' },
@@ -40,7 +39,6 @@ const { values: argv } = parseArgs({
     distUrlBase: { type: 'string' },
     bundleName:  { type: 'string' },
     tag:         { type: 'string' },
-    port:        { type: 'string' },
   },
 });
 

@@ -2,9 +2,17 @@
 
 const express = require('express');
 const morgan = require('morgan');
-const argv = require('../../gulpHelpers.js').argv;
+const { parseArgs } = require('node:util');
 const fakeResponder = require('./fake-responder.js');
 const bundleMaker = require('./bundle.js');
+
+const { values: argv } = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  options: {
+    port: { type: 'string' },
+  },
+});
 
 const PORT = argv.port || '4444';
 
