@@ -583,7 +583,7 @@ describe('dxkultureBidAdapter', function() {
     let bidderResponse;
     beforeEach(function() {
       const bidderRequest = getVideoRequest();
-      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
       bidderResponse = getBidderResponse();
     });
 

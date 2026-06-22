@@ -1114,6 +1114,7 @@ describe('E-Planning Adapter', function () {
     let getLocalStorageSpy;
     let setDataInLocalStorageSpy;
     let hasLocalStorageStub;
+    let respuesta;
     let clock;
     let element;
 
@@ -1134,7 +1135,7 @@ describe('E-Planning Adapter', function () {
         };
       };
 
-      intersectionObserverStub = sandbox.stub(window, 'IntersectionObserver').callsFake(fakeIntersectionObserver);
+      sandbox.stub(window, 'IntersectionObserver').callsFake(fakeIntersectionObserver);
     }
     function createElement(id) {
       element = document.createElement('div');
@@ -1266,7 +1267,6 @@ describe('E-Planning Adapter', function () {
     });
 
     context('when element is fully in view', function() {
-      let respuesta;
       beforeEach(function () {
         createElementVisible();
         setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 200, 'height': 200 } });
@@ -1304,7 +1304,6 @@ describe('E-Planning Adapter', function () {
     });
 
     context('when element is out of view', function() {
-      let respuesta;
       beforeEach(function () {
         createElementOutOfView();
         setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0, 'isIntersecting': false, 'width': 200, 'height': 200 } });
@@ -1407,7 +1406,6 @@ describe('E-Planning Adapter', function () {
       });
     });
     context('when there are multiple adunit', function() {
-      let respuesta;
       beforeEach(function () {
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
           storage.setDataInLocalStorage('pbsr_' + ac, 5);
@@ -1481,10 +1479,16 @@ describe('E-Planning Adapter', function () {
   });
   describe('Send eids', function() {
     let sandbox;
+    let addedGetUserIds;
     beforeEach(() => {
       sandbox = sinon.createSandbox();
+      const global = getGlobal();
+      addedGetUserIds = !global.getUserIds;
+      if (addedGetUserIds) {
+        global.getUserIds = () => {};
+      }
       // TODO: bid adapters should look at request data, not call getGlobal().getUserIds
-      sandbox.stub(getGlobal(), 'getUserIds').callsFake(() => ({
+      sandbox.stub(global, 'getUserIds').callsFake(() => ({
         pubcid: 'c29cb2ae-769d-42f6-891a-f53cadee823d',
         tdid: 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
         id5id: { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }
@@ -1493,6 +1497,9 @@ describe('E-Planning Adapter', function () {
 
     afterEach(() => {
       sandbox.restore();
+      if (addedGetUserIds) {
+        delete getGlobal().getUserIds;
+      }
     });
 
     it('should add eids to the request', function() {

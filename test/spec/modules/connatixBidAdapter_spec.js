@@ -348,6 +348,7 @@ describe('connatixBidAdapter', function () {
     });
 
     it('call event if bidder is connatix', () => {
+      spec.onTimeout([{ bidder: 'connatix', timeout: 500 }]);
       expect(ajaxStub.calledOnce).to.equal(true);
 
       const data = ajaxStub.firstCall.args[0];
@@ -356,6 +357,7 @@ describe('connatixBidAdapter', function () {
     });
 
     it('timeout event is not triggered if bidder is not connatix', () => {
+      spec.onTimeout([{ bidder: 'other', timeout: 500 }]);
       expect(ajaxStub.notCalled).to.equal(true);
     });
   });

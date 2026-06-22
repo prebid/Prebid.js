@@ -407,7 +407,6 @@ describe('consentManagementGpp', function () {
 
     describe('error checks:', function () {
       beforeEach(function () {
-        didHookReturn = false;
         sinon.stub(utils, 'logWarn');
         sinon.stub(utils, 'logError');
       });

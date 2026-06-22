@@ -151,7 +151,7 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub = sandbox.stub(storage, 'getCookie');
       setCookieStub = sandbox.stub(storage, 'setCookie');
       getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
-      setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'setDataInLocalStorage');
       removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage');
 
       triggerPixelStub = sandbox.stub(utils, 'triggerPixel');

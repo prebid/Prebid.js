@@ -96,7 +96,7 @@ describe('contxtfulRtdProvider', function () {
     RX_CONNECTOR_MOCK.rxApiBuilder.resetHistory();
     RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK)));
 
-    eventsEmitSpy = sandbox.spy(events, ['emit']);
+    sandbox.spy(events, ['emit']);
 
     sandbox.stub(utils, 'generateUUID').returns(SM);
 
