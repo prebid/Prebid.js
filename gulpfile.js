@@ -5,7 +5,7 @@ var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
-var fancyLog = require('fancy-log');
+var log = require('gulplog');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -295,10 +295,10 @@ function bundle(dev, moduleArr) {
   }
   const disclosureFile = path.parse(outputFileName).name + '_disclosures.json';
 
-  fancyLog('Concatenating files:\n', entries);
-  fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
-  fancyLog('Generating bundle:', outputFileName);
-  fancyLog('Generating storage use disclosure summary:', disclosureFile);
+  log.info('Concatenating files:\n', entries);
+  log.info('Appending ' + prebid.globalVarName + '.processQueue();');
+  log.info('Generating bundle:', outputFileName);
+  log.info('Generating storage use disclosure summary:', disclosureFile);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules, sm);
   const source = wrap(gulp.src(entries, {sourcemaps: sm}))
