@@ -1,22 +1,30 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   isBidRequestValid,
   interpretResponse,
   buildRequestsBase,
-  getUserSyncs
-} from '../libraries/teqblazeUtils/bidderUtils.js';
+  getUserSyncs,
+  type TeqBlazeBidParams
+} from '../libraries/teqblazeUtils/bidderUtils.ts';
+import type { BaseBidderRequest, BidRequest } from '../src/adapterManager.ts';
 
 const BIDDER_CODE = 'm152';
 const AD_URL = 'https://#{REGION}#.152media-ssp.com/pbjs';
 const GVLID = 1111;
 const SYNC_URL = 'https://cs.152media-ssp.com';
 
-const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
-  const request = buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest });
-  const region = validBidRequests[0].params?.region;
+declare module '../src/adUnits' {
+  interface BidderParams {
+    [BIDDER_CODE]: TeqBlazeBidParams;
+  }
+}
 
-  const regionMap = {
+const buildRequests = (validBidRequests: BidRequest<string>[] = [], bidderRequest: BaseBidderRequest<string>) => {
+  const request = buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest });
+  const region = validBidRequests[0].params?.region as string;
+
+  const regionMap: Record<string, string> = {
     eu: 'eu',
     'us-east': 'east'
   };
@@ -26,7 +34,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   return request;
 };
 
-export const spec = {
+export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],

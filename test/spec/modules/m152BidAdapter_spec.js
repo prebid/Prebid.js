@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/m152BidAdapter.js';
+import { spec } from '../../../modules/m152BidAdapter.ts';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
@@ -306,6 +306,8 @@ describe('M152BidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
+
+      expect(bidderRequest).to.have.property('ortb2');
     });
   });
 
@@ -487,6 +489,14 @@ describe('M152BidAdapter', function () {
   });
 
   describe('getUserSyncs', function() {
+    it('Should return an empty array if no sync enabled', function () {
+      const syncData = spec.getUserSyncs({}, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, undefined);
+      expect(syncData).to.be.an('array');
+      expect(syncData).to.be.an.deep.equal([]);
+    });
     it('Should return array of objects with proper sync config , include GDPR', function() {
       const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         consentString: 'ALL',
