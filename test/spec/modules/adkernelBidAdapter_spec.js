@@ -375,7 +375,7 @@ describe('Adkernel adapter', function () {
     let bidRequest, bidRequests;
 
     before(function () {
-      [_, bidRequests] = buildRequest([bid1_zone1]);
+      [, bidRequests] = buildRequest([bid1_zone1]);
       bidRequest = bidRequests[0];
     });
 
@@ -498,7 +498,7 @@ describe('Adkernel adapter', function () {
   describe('video request building', function () {
     let bidRequests;
     before(function () {
-      [_, bidRequests] = buildRequest([bid_video]);
+      [, bidRequests] = buildRequest([bid_video]);
     });
 
     it('should have video object', function () {
@@ -725,7 +725,7 @@ describe('Adkernel adapter', function () {
   describe('native support', () => {
     let bidRequests;
     before(function () {
-      [_, bidRequests] = buildRequest([bid_native]);
+      [, bidRequests] = buildRequest([bid_native]);
     });
 
     it('native request building', () => {
