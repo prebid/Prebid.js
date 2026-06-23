@@ -280,11 +280,11 @@ function clearCountersAndStore(allowedStorage, partnerData) {
   storeCounters(allowedStorage, partnerData);
 }
 
-function storeCounters(storage, partnerData) {
+function storeCounters(allowedStorage, partnerData) {
   partnerData.callCount = callCount;
   partnerData.failCount = failCount;
   partnerData.noDataCounter = noDataCount;
-  storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), storage, firstPartyData);
+  storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
 }
 
 /** @type {Submodule} */
