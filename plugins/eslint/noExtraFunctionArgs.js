@@ -43,7 +43,7 @@ function referencesArguments(functionNode) {
       }
       if (Array.isArray(child)) {
         child.forEach(traverse);
-      } else if (child.type) {
+      } else if (typeof child === 'object' && typeof child.type === 'string') {
         traverse(child);
       }
     }
