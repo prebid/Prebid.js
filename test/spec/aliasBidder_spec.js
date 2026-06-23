@@ -1,3 +1,4 @@
+import '../../src/prebid.js';
 import { pbjsTestOnly } from 'test/helpers/pbjs-test-only.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
