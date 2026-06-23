@@ -139,7 +139,7 @@ const getPlacementReqData = buildPlacementProcessingFunction({
       region: normalizeRegion(region)
     });
   }
-})
+});
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const bidsByKey = {};
@@ -156,7 +156,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
   return Object.values(bidsByKey).map((bids) => {
     const partner = getPartnerName(bids[0]);
-    const region = normalizeRegion(bids[0].params.region);
+    const region = normalizeRegion(bids[0].params?.region);
     const { seat, token } = bids[0].params || {};
     const endpoint = resolveEndpoint({ partner, region, seat, token });
 
@@ -176,7 +176,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 const baseInterpretResponse = interpretResponseBuilder({
   addtlBidValidation(bid) {
-    return bid.hasOwnProperty('netRevenue');
+    return Object.prototype.hasOwnProperty.call(bid, 'netRevenue');
   }
 });
 
@@ -200,7 +200,8 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   let res = serverResponses?.find?.(r => r.partner && r.area && r.pid);
 
   if (!res) {
-    res = ALIASES[DEFAULT_PROVIDER];
+    const fallbackAlias = ALIASES[DEFAULT_PROVIDER] || { area: '1', pid: '300' };
+    res = { partner: DEFAULT_PROVIDER, area: fallbackAlias.area, pid: fallbackAlias.pid };
   }
 
   const { area, pid } = res;

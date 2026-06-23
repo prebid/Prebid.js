@@ -503,5 +503,5 @@ describe('KubientAdapter', function () {
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
-  })
+  });
 });

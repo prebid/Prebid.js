@@ -663,13 +663,13 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(callback.called).to.be.true;
       expect(engine.init.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(window.$nodals.cmdQueue).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
 
     it('should not store function arguments in a queue when no data is in localstorage and make a HTTP request for data', () => {
       const callback = sinon.spy();
-      const requestObj = { dummy: 'obj' }
+      const requestObj = { dummy: 'obj' };
       nodalsAiRtdSubmodule.getBidRequestData(
         requestObj, callback, validConfig, permissiveUserConsent
       );
@@ -686,7 +686,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const callback = sinon.spy();
-      const reqBidsConfigObj = { dummy: 'obj' }
+      const reqBidsConfigObj = { dummy: 'obj' };
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, validConfig, permissiveUserConsent
       );
@@ -713,7 +713,7 @@ describe('NodalsAI RTD Provider', () => {
       });
       const engine = createTargetingEngineStub();
       const callback = sinon.spy();
-      const reqBidsConfigObj = { dummy: 'obj' }
+      const reqBidsConfigObj = { dummy: 'obj' };
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, validConfig, permissiveUserConsent
       );
@@ -739,7 +739,7 @@ describe('NodalsAI RTD Provider', () => {
       });
       const engine = createTargetingEngineStub();
       const callback = sinon.spy();
-      const reqBidsConfigObj = { dummy: 'obj' }
+      const reqBidsConfigObj = { dummy: 'obj' };
       const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, configWithManagedConsent, leastPermissiveUserConsent
@@ -775,7 +775,7 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(engine.init.called).to.be.false;
       expect(engine.onBidResponseEvent.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(window.$nodals.cmdQueue).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
 
@@ -878,7 +878,7 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(engine.init.called).to.be.false;
       expect(engine.onAuctionEndEvent.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(window.$nodals.cmdQueue).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
 

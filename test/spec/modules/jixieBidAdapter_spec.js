@@ -242,8 +242,8 @@ describe('jixie Adapter', function () {
       // The next next below we check
       const request = spec.buildRequests(bidRequests_, bidderRequest_);
       it('sends bid request to ENDPOINT via POST', function () {
-        expect(request.method).to.equal('POST')
-      })
+        expect(request.method).to.equal('POST');
+      });
       expect(request.data).to.be.an('string');
       const payload = JSON.parse(request.data);
       expect(payload).to.have.property('timeout', timeout_);
@@ -306,8 +306,8 @@ describe('jixie Adapter', function () {
       // actual api call:
       const request = spec.buildRequests(bidRequests_, bidderRequest_);
       it('sends bid request to ENDPOINT via POST', function () {
-        expect(request.method).to.equal('POST')
-      })
+        expect(request.method).to.equal('POST');
+      });
 
       expect(request.data).to.be.an('string');
       const payload = JSON.parse(request.data);
@@ -635,72 +635,72 @@ describe('jixie Adapter', function () {
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
-      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0)
-      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0)
+      expect(spec.interpretResponse({ body: {} }, { validBidRequests: [] }).length).to.equal(0);
+      expect(spec.interpretResponse({ body: [] }, { validBidRequests: [] }).length).to.equal(0);
     });
 
     it('should get correct bid response', function () {
       const setCookieSpy = sinon.spy(storage, 'setCookie');
       const setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
-      const result = spec.interpretResponse({ body: responseBody_ }, requestObj_)
+      const result = spec.interpretResponse({ body: responseBody_ }, requestObj_);
       expect(setLocalStorageSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setLocalStorageSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setCookieSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
       expect(setCookieSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
 
       // video ad with vastUrl returned by adserver
-      expect(result[0].requestId).to.equal('62847e4c696edcb')
-      expect(result[0].cpm).to.equal(2.19)
-      expect(result[0].width).to.equal(640)
-      expect(result[0].height).to.equal(360)
-      expect(result[0].creativeId).to.equal('jixie522')
-      expect(result[0].currency).to.equal('USD')
-      expect(result[0].netRevenue).to.equal(true)
-      expect(result[0].ttl).to.equal(300)
-      expect(result[0].vastUrl).to.include('https://ad.jixie.io/v1/video?creativeid=')
+      expect(result[0].requestId).to.equal('62847e4c696edcb');
+      expect(result[0].cpm).to.equal(2.19);
+      expect(result[0].width).to.equal(640);
+      expect(result[0].height).to.equal(360);
+      expect(result[0].creativeId).to.equal('jixie522');
+      expect(result[0].currency).to.equal('USD');
+      expect(result[0].netRevenue).to.equal(true);
+      expect(result[0].ttl).to.equal(300);
+      expect(result[0].vastUrl).to.include('https://ad.jixie.io/v1/video?creativeid=');
       // We will always make sure the meta->advertiserDomains property is there
       // If no info it is an empty array.
-      expect(result[0].meta.advertiserDomains.length).to.equal(0)
+      expect(result[0].meta.advertiserDomains.length).to.equal(0);
 
       // display ad
-      expect(result[1].requestId).to.equal('600c9ae6fda1acb')
-      expect(result[1].cpm).to.equal(1.999)
-      expect(result[1].width).to.equal(300)
-      expect(result[1].height).to.equal(250)
-      expect(result[1].creativeId).to.equal('jixie520')
-      expect(result[1].currency).to.equal('USD')
-      expect(result[1].netRevenue).to.equal(true)
-      expect(result[1].ttl).to.equal(300)
-      expect(result[1].ad).to.include('jxoutstream')
-      expect(result[1].meta.advertiserDomains.length).to.equal(3)
+      expect(result[1].requestId).to.equal('600c9ae6fda1acb');
+      expect(result[1].cpm).to.equal(1.999);
+      expect(result[1].width).to.equal(300);
+      expect(result[1].height).to.equal(250);
+      expect(result[1].creativeId).to.equal('jixie520');
+      expect(result[1].currency).to.equal('USD');
+      expect(result[1].netRevenue).to.equal(true);
+      expect(result[1].ttl).to.equal(300);
+      expect(result[1].ad).to.include('jxoutstream');
+      expect(result[1].meta.advertiserDomains.length).to.equal(3);
 
       // should pick up about using alternative outstream renderer
-      expect(result[2].requestId).to.equal('99bc539c81b00ce')
-      expect(result[2].cpm).to.equal(2.99)
-      expect(result[2].width).to.equal(640)
-      expect(result[2].height).to.equal(360)
-      expect(result[2].creativeId).to.equal('jixie521')
-      expect(result[2].currency).to.equal('USD')
-      expect(result[2].netRevenue).to.equal(true)
-      expect(result[2].ttl).to.equal(300)
-      expect(result[2].vastXml).to.include('<?xml version="1.0" encoding="UTF-8"?>')
-      expect(result[2].renderer.id).to.equal('demoslot4-div')
-      expect(result[2].meta.advertiserDomains.length).to.equal(0)
+      expect(result[2].requestId).to.equal('99bc539c81b00ce');
+      expect(result[2].cpm).to.equal(2.99);
+      expect(result[2].width).to.equal(640);
+      expect(result[2].height).to.equal(360);
+      expect(result[2].creativeId).to.equal('jixie521');
+      expect(result[2].currency).to.equal('USD');
+      expect(result[2].netRevenue).to.equal(true);
+      expect(result[2].ttl).to.equal(300);
+      expect(result[2].vastXml).to.include('<?xml version="1.0" encoding="UTF-8"?>');
+      expect(result[2].renderer.id).to.equal('demoslot4-div');
+      expect(result[2].meta.advertiserDomains.length).to.equal(0);
       expect(result[2].renderer.url).to.equal(JX_OTHER_OUTSTREAM_RENDERER_URL);
 
       // should know to use default outstream renderer
-      expect(result[3].requestId).to.equal('61bc539c81b00ce')
-      expect(result[3].cpm).to.equal(1.99)
-      expect(result[3].width).to.equal(640)
-      expect(result[3].height).to.equal(360)
-      expect(result[3].creativeId).to.equal('jixie521')
-      expect(result[3].currency).to.equal('USD')
-      expect(result[3].netRevenue).to.equal(true)
-      expect(result[3].ttl).to.equal(300)
-      expect(result[3].vastXml).to.include('<?xml version="1.0" encoding="UTF-8"?>')
-      expect(result[3].renderer.id).to.equal('demoslot2-div')
-      expect(result[3].meta.advertiserDomains.length).to.equal(0)
-      expect(result[3].renderer.url).to.equal(JX_OUTSTREAM_RENDERER_URL)
+      expect(result[3].requestId).to.equal('61bc539c81b00ce');
+      expect(result[3].cpm).to.equal(1.99);
+      expect(result[3].width).to.equal(640);
+      expect(result[3].height).to.equal(360);
+      expect(result[3].creativeId).to.equal('jixie521');
+      expect(result[3].currency).to.equal('USD');
+      expect(result[3].netRevenue).to.equal(true);
+      expect(result[3].ttl).to.equal(300);
+      expect(result[3].vastXml).to.include('<?xml version="1.0" encoding="UTF-8"?>');
+      expect(result[3].renderer.id).to.equal('demoslot2-div');
+      expect(result[3].meta.advertiserDomains.length).to.equal(0);
+      expect(result[3].renderer.url).to.equal(JX_OUTSTREAM_RENDERER_URL);
 
       setLocalStorageSpy.restore();
       setCookieSpy.restore();
@@ -719,19 +719,19 @@ describe('jixie Adapter', function () {
 
       miscDimsStub
         .returns({ device: device_, pageurl: pageurl_, domain: domain_, mkeywords: keywords_ });
-    })
+    });
 
     afterEach(function() {
       miscDimsStub.restore();
       ajaxStub.restore();
-    })
+    });
 
     const TRACKINGURL_ = 'https://abc.com/sync?action=bidwon';
 
     it('Should fire if the adserver trackingUrl flag says so', function() {
-      spec.onBidWon({ trackingUrl: TRACKINGURL_ })
+      spec.onBidWon({ trackingUrl: TRACKINGURL_ });
       expect(jixieaux.ajax.calledWith(TRACKINGURL_)).to.equal(true);
-    })
+    });
   }); // describe
 
   describe('getUserSyncs', function () {
@@ -739,7 +739,7 @@ describe('jixie Adapter', function () {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true,
-      }
+      };
       const response = {
         'userSyncs': [
           {
@@ -750,17 +750,17 @@ describe('jixie Adapter', function () {
             'up': 'https://syncstuff.jixie.io/image1.gif'
           }
         ]
-      }
+      };
       const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
-      expect(result[0].type).to.equal('iframe')
-      expect(result[1].type).to.equal('image')
-    })
+      expect(result[0].type).to.equal('iframe');
+      expect(result[1].type).to.equal('image');
+    });
 
     it('it should pick pixel if publisher not allow iframe', function () {
       const syncOptions = {
         'iframeEnabled': false,
         'pixelEnabled': true,
-      }
+      };
       const response = {
         'userSyncs': [
           {
@@ -771,17 +771,17 @@ describe('jixie Adapter', function () {
             'up': 'https://syncstuff.jixie.io/image1.gif'
           }
         ]
-      }
+      };
       const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
-      expect(result[0].type).to.equal('image')
-      expect(result[1].type).to.equal('image')
-    })
+      expect(result[0].type).to.equal('image');
+      expect(result[1].type).to.equal('image');
+    });
 
     it('it should return nothing if pub only allow pixel but all usersyncs are iframe only', function () {
       const syncOptions = {
         'iframeEnabled': false,
         'pixelEnabled': true,
-      }
+      };
       const response = {
         'userSyncs': [
           {
@@ -791,9 +791,9 @@ describe('jixie Adapter', function () {
             'uf': 'https://syncstuff2.jixie.io/',
           }
         ]
-      }
+      };
       const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
-      expect(result.length).to.equal(0)
-    })
-  })
+      expect(result.length).to.equal(0);
+    });
+  });
 });

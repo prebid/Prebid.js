@@ -110,7 +110,7 @@ function fetchAnalyticsConfig() {
     return `${CONFIG_URL}?${(formatQS({
       cid: mnetGlobals.configuration.cid,
       dn: mnetGlobals.refererInfo.domain
-    }))}`
+    }))}`;
   }
 
   // Debugging and default settings
@@ -279,7 +279,7 @@ function getDummyBids(auctionObj, adUnitCode, receivedResponse) {
 
   auctionObj.bidsRequested
     .forEach((bid) => {
-      if (bid.adUnitCode !== adUnitCode) return
+      if (bid.adUnitCode !== adUnitCode) return;
       const emptySizes = bid.sizes.filter(
         (size) => !deepAccess(receivedResponse, `${bid.bidId}.${size}`)
       );
@@ -360,7 +360,7 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
     if (fromSameAuction && !winningBidObj) {
       errorLogger(ERROR_IWB_BID_MISSING, pick(winner, ['adId', 'auctionId', 'bidder', 'requestId', 'cpm', 'adUnitCode'])).send();
     }
-  }
+  };
 
   Object.keys(auctionObj.adSlots).forEach((adUnitCode) => {
     const winner = getGlobal().getHighestCpmBids(adUnitCode)[0];

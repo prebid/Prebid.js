@@ -27,7 +27,7 @@ describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;
   beforeEach(() => {
     mockSetTimeout = sinon.stub().callsFake((fn) => fn());
-    const BidInterceptor = makebidInterceptor({ utils, VIDEO, BANNER, NATIVE, Renderer })
+    const BidInterceptor = makebidInterceptor({ utils, VIDEO, BANNER, NATIVE, Renderer });
     interceptor = new BidInterceptor({ setTimeout: mockSetTimeout, logger: prefixLog('TEST') });
   });
 
@@ -268,7 +268,7 @@ describe('bid interceptor', () => {
         });
         intercept({ bidRequest: REQUEST });
         sinon.assert.notCalled(addBid);
-      })
+      });
 
       it('should call done()', () => {
         intercept({ bidRequest: REQUEST });
@@ -293,7 +293,7 @@ describe('bid interceptor', () => {
 describe('Debugging config', () => {
   it('should behave gracefully when sessionStorage throws', () => {
     const logError = sinon.stub();
-    const getStorage = () => { throw new Error() };
+    const getStorage = () => { throw new Error(); };
     getConfig({ enabled: false }, { getStorage, logger: { logError }, hook, utils });
     expect(logError.called).to.be.true;
   });
@@ -315,11 +315,11 @@ describe('bidderBidInterceptor', () => {
       return function () {
         wrapped = true;
         try {
-          return cb.apply(this, arguments)
+          return cb.apply(this, arguments);
         } finally {
           wrapped = false;
         }
-      }
+      };
     });
     interceptBids = sinon.stub().callsFake((opts) => {
       done = opts.done;
@@ -354,7 +354,7 @@ describe('bidderBidInterceptor', () => {
       const onResponse = sinon.stub();
       bidderBidInterceptor(...interceptorArgs({ cbs: { onResponse } }));
       sinon.assert.called(onResponse);
-    })
+    });
 
     it('should not call next()', () => {
       bidderBidInterceptor(...interceptorArgs());

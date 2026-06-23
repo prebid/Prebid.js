@@ -132,7 +132,7 @@ describe('VibrantMediaBidAdapter', function () {
         delete bidRequest.mediaTypes.banner;
         bidRequest.mediaTypes.unsupported = {
           sizes: DEFAULT_BID_SIZES,
-        }
+        };
         expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
       });
 

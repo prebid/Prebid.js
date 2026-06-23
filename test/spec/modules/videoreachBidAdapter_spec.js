@@ -139,7 +139,7 @@ describe('videoreachBidAdapter', function () {
           type: 'image',
           url: 'https://SYNC_URL'
         });
-      })
+      });
     });
   });
 });

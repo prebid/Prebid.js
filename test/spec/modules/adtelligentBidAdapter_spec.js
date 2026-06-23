@@ -197,8 +197,8 @@ describe('adtelligentBidAdapter', () => {
 
         expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]]);
         expect(syncs.map(s => s.type)).to.deep.equal(['image']);
-      })
-    })
+      });
+    });
 
     describe('as iframe', () => {
       it('should be returned if iframe enabled', () => {
@@ -206,8 +206,8 @@ describe('adtelligentBidAdapter', () => {
 
         expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
         expect(syncs.map(s => s.type)).to.deep.equal(['iframe']);
-      })
-    })
+      });
+    });
 
     describe('user sync', () => {
       it('should not  be returned if passed syncs where already used', () => {
@@ -217,7 +217,7 @@ describe('adtelligentBidAdapter', () => {
         }, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
 
         expect(syncs).to.deep.equal([]);
-      })
+      });
 
       it('should not be returned if pixel not set', () => {
         const syncs = spec.getUserSyncs({}, [{ body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS }]);
@@ -262,25 +262,25 @@ describe('adtelligentBidAdapter', () => {
     it('rotates endpoints', () => {
       const bidReqUrls = [displayRequest[0], videoRequest[0], videoAndDisplayRequests[0], rotatingRequest[0]].map(br => br.url);
       expect(bidReqUrls).to.deep.equal(EXPECTED_ENDPOINTS);
-    })
+    });
 
     it('makes correct host for aliases', () => {
       for (const alias in aliasEP) {
-        const bidReq = deepClone(DISPLAY_REQUEST)
+        const bidReq = deepClone(DISPLAY_REQUEST);
         bidReq.bidder = alias;
         const [bidderRequest] = spec.buildRequests([bidReq], { bidderCode: alias });
         expect(bidderRequest.url).to.equal(aliasEP[alias]);
       }
-    })
+    });
 
     it('building requests as arrays', () => {
       expect(videoRequest).to.be.a('array');
       expect(displayRequest).to.be.a('array');
       expect(videoAndDisplayRequests).to.be.a('array');
-    })
+    });
 
     it('sending as POST', () => {
-      const postActionMethod = 'POST'
+      const postActionMethod = 'POST';
       const comparator = br => br.method === postActionMethod;
       expect(videoRequest.every(comparator)).to.be.true;
       expect(displayRequest.every(comparator)).to.be.true;
@@ -343,7 +343,7 @@ describe('adtelligentBidAdapter', () => {
         DistanceToView: 0,
         ElementHeight: 1,
         PlacementPercentView: 0,
-      }]
+      }];
 
       expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
     });
@@ -368,20 +368,20 @@ describe('adtelligentBidAdapter', () => {
       });
       it('sets USP', () => {
         expect(bidRequestWithPubSettingsData.USP).to.be.equal(displayBidderRequestWithConsents.uspConsent);
-      })
+      });
       it('sets Coppa', () => {
         expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1);
-      })
+      });
       it('sets Schain', () => {
         expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(DISPLAY_REQUEST.schain);
-      })
+      });
       it('sets UserId\'s', () => {
         expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);
-      })
+      });
       it('sets AgeVerification', () => {
         expect(bidRequestWithPubSettingsData.AgeVerification).to.deep.equal(ageVerificationData);
       });
-    })
+    });
   });
 
   describe('interpretResponse', () => {
@@ -440,7 +440,7 @@ describe('adtelligentBidAdapter', () => {
       it('should return renderer with expected outstream params config', () => {
         expect(!!videoBids[0].renderer).to.be.true;
         expect(videoBids[0].renderer.getConfig().video_controls).to.equal('show');
-      })
-    })
+      });
+    });
   });
 });

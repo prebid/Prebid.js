@@ -47,7 +47,7 @@ export const cadentAdapter = {
     bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? sizes = bid.mediaTypes.banner.sizes : sizes = bid.sizes;
     if (!cadentAdapter.validateSizes(sizes)) {
       logWarn(BIDDER_CODE + ': could not detect mediaType banner sizes. Assigning to bid sizes instead');
-      sizes = bid.sizes
+      sizes = bid.sizes;
     }
     return {
       format: sizes.map((size) => {
@@ -151,7 +151,7 @@ export const cadentAdapter = {
       domain: refInfo.domain || parseDomain(refInfo.topmostLocation),
       page: refInfo.page || refInfo.topmostLocation,
       ref: refInfo.ref || window.document.referrer
-    }
+    };
   },
   getGdpr: (bidRequests, cadentData) => {
     if (bidRequests.gdprConsent) {
@@ -182,7 +182,7 @@ export const cadentAdapter = {
         cadentData.regs = {
           gpp: gpp,
           gpp_sid: gppSid
-        }
+        };
       }
     }
     return cadentData;
@@ -281,7 +281,7 @@ export const spec = {
       // adding gpid support
       const gpid =
         deepAccess(bid, 'ortb2Imp.ext.gpid') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot')
+        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
 
       if (gpid) {
         data.ext = { gpid: gpid.toString() };

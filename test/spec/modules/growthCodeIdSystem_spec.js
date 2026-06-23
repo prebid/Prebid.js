@@ -8,10 +8,10 @@ import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 
 const MODULE_NAME = 'growthCodeId';
 const EIDS = '[{"source":"domain.com","uids":[{"id":"8212212191539393121","ext":{"stype":"ppuid"}}]}]';
-const GCID = 'e06e9e5a-273c-46f8-aace-6f62cf13ea71'
+const GCID = 'e06e9e5a-273c-46f8-aace-6f62cf13ea71';
 
-const GCID_EID = '{"id": [{"source": "growthcode.io", "uids": [{"atype": 3,"id": "e06e9e5a-273c-46f8-aace-6f62cf13ea71"}]}]}'
-const GCID_EID_EID = '{"id": [{"source": "growthcode.io", "uids": [{"atype": 3,"id": "e06e9e5a-273c-46f8-aace-6f62cf13ea71"}]},{"source": "domain.com", "uids": [{"id": "8212212191539393121", "ext": {"stype":"ppuid"}}]}]}'
+const GCID_EID = '{"id": [{"source": "growthcode.io", "uids": [{"atype": 3,"id": "e06e9e5a-273c-46f8-aace-6f62cf13ea71"}]}]}';
+const GCID_EID_EID = '{"id": [{"source": "growthcode.io", "uids": [{"atype": 3,"id": "e06e9e5a-273c-46f8-aace-6f62cf13ea71"}]},{"source": "domain.com", "uids": [{"id": "8212212191539393121", "ext": {"stype":"ppuid"}}]}]}';
 
 const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -84,4 +84,4 @@ describe('growthCodeIdSystem', () => {
     });
     expect(ids).to.deep.equal(JSON.parse('{"growthCodeId":"' + GCID + '"}'));
   });
-})
+});

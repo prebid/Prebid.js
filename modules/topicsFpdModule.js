@@ -31,7 +31,7 @@ const TAXONOMIES = {
   '2': 601,
   '3': 602,
   '4': 603
-}
+};
 
 function partitionBy(field, items) {
   return items.reduce((partitions, item) => {
@@ -84,7 +84,7 @@ export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
 }
 
 function isTopicsSupported(doc = document) {
-  return 'browsingTopics' in doc && doc.featurePolicy.allowsFeature('browsing-topics')
+  return 'browsingTopics' in doc && doc.featurePolicy.allowsFeature('browsing-topics');
 }
 
 export function getTopics(doc = document) {
@@ -132,14 +132,14 @@ export function getCachedTopics() {
   const topics = config.getConfig('userSync.topics');
   const bidderList = topics?.bidders || [];
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
-  storedSegments && storedSegments.forEach((value, cachedBidder) => {
+  storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
-    const bidderConfigObj = bidderList.find(({ bidder }) => cachedBidder === bidder)
+    const bidderConfigObj = bidderList.find(({ bidder }) => cachedBidder === bidder);
     if (bidderConfigObj && isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_BIDDER, cachedBidder))) {
       if (!isCachedDataExpired(value[lastUpdated], bidderConfigObj?.expiry || DEFAULT_EXPIRATION_DAYS)) {
         Object.keys(value).forEach((segData) => {
           segData !== lastUpdated && cachedTopicData.push(value[segData]);
-        })
+        });
       } else {
         // delete the specific bidder map from the store and store the updated maps
         storedSegments.delete(cachedBidder);
@@ -225,8 +225,8 @@ export function loadTopicsForBidders(doc = document) {
 
   if (topics) {
     listenMessagesFromTopicIframe();
-    const randomBidders = getRandomAllowedConfigs(topics.bidders || [], topics.maxTopicCaller || 1)
-    randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
+    const randomBidders = getRandomAllowedConfigs(topics.bidders || [], topics.maxTopicCaller || 1);
+    randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
         const ifrm = doc.createElement('iframe');
         ifrm.name = 'ifrm_'.concat(bidder);
@@ -254,7 +254,7 @@ export function loadTopicsForBidders(doc = document) {
             });
         }
       }
-    })
+    });
   } else {
     logWarn(`Topics config not defined under userSync Object`);
   }

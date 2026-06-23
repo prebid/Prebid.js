@@ -73,7 +73,7 @@ describe('ConnectAd Adapter', function () {
         consentString: 'consentDataString',
         vendorData: {}
       }
-    }
+    };
   });
 
   afterEach(function () {
@@ -132,7 +132,7 @@ describe('ConnectAd Adapter', function () {
           }
         };
         const isValid = spec.isBidRequestValid(validBid);
-        expect(isValid).to.equal(true)
+        expect(isValid).to.equal(true);
       });
 
       it('should reject if missing siteId/networkId', function () {
@@ -210,7 +210,7 @@ describe('ConnectAd Adapter', function () {
             gdprApplies: false,
             consentString: 'consentDataString',
           },
-        }
+        };
         const request = spec.buildRequests(bidRequests, localbidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -222,7 +222,7 @@ describe('ConnectAd Adapter', function () {
         const localbidderRequest = {
           timeout: 3000,
           gdprConsent: {}
-        }
+        };
         const request = spec.buildRequests(bidRequests, localbidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -230,8 +230,8 @@ describe('ConnectAd Adapter', function () {
       });
 
       it('should have CCPA Consent if defined', function () {
-        const uspConsent = '1YYN'
-        bidderRequest.uspConsent = uspConsent
+        const uspConsent = '1YYN';
+        bidderRequest.uspConsent = uspConsent;
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -239,7 +239,7 @@ describe('ConnectAd Adapter', function () {
       });
 
       it('should not have CCPA Consent if not defined', function () {
-        bidderRequest.uspConsent = undefined
+        bidderRequest.uspConsent = undefined;
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
         expect(requestparse.user.ext.us_privacy).to.be.undefined;
@@ -319,11 +319,11 @@ describe('ConnectAd Adapter', function () {
               tid: '9XSL9B79XM'
             }
           }
-        }
+        };
 
         const request = spec.buildRequests(bidRequest, localBidderRequest);
         const data = JSON.parse(request.data);
-        expect(data.source?.tid).to.equal('9XSL9B79XM')
+        expect(data.source?.tid).to.equal('9XSL9B79XM');
       });
 
       it('should pass gpid', function() {

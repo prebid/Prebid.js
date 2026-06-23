@@ -101,7 +101,7 @@ describe('Prisma bid adapter tests', function () {
       'bidderRequestsCount': 1,
       'bidderWinsCount': 0
     }
-  ]
+  ];
 
   const VIDEO_BID_RESPONSE = {
     'body': {

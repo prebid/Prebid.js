@@ -30,7 +30,7 @@ describe('user sync', function () {
     [regRule, isAllowed] = ruleRegistry();
     return newUserSync(Object.assign({
       regRule, isAllowed
-    }, deps))
+    }, deps));
   }
 
   function newTestUserSync(configOverrides, disableBrowserCookies) {
@@ -38,7 +38,7 @@ describe('user sync', function () {
     return mkUserSync({
       config: thisConfig,
       browserSupportsCookies: !disableBrowserCookies,
-    })
+    });
   }
   let clock;
   before(function () {
@@ -112,20 +112,20 @@ describe('user sync', function () {
   });
 
   it('should NOT fire a sync if a rule blocks syncUser', () => {
-    const userSync = newTestUserSync()
+    const userSync = newTestUserSync();
     regRule(ACTIVITY_SYNC_USER, 'testRule', (params) => {
       if (
         params[ACTIVITY_PARAM_COMPONENT] === `${MODULE_TYPE_BIDDER}.testBidder` &&
         params[ACTIVITY_PARAM_SYNC_TYPE] === 'image' &&
         params[ACTIVITY_PARAM_SYNC_URL] === 'http://example.com'
       ) {
-        return { allow: false }
+        return { allow: false };
       }
-    })
+    });
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.called).to.be.false;
-  })
+  });
 
   it('should clear queue after sync', function () {
     const userSync = newTestUserSync();
@@ -230,9 +230,9 @@ describe('user sync', function () {
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
-    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[12]/);
     expect(triggerPixelStub.getCall(1)).to.not.be.null;
-    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[12]/);
     expect(triggerPixelStub.getCall(2)).to.be.null;
   });
 
@@ -243,11 +243,11 @@ describe('user sync', function () {
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
-    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2|3]/);
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[123]/);
     expect(triggerPixelStub.getCall(1)).to.not.be.null;
-    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2|3]/);
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[123]/);
     expect(triggerPixelStub.getCall(2)).to.not.be.null;
-    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2|3]/);
+    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[123]/);
   });
 
   it('should balance out bidder requests', function () {

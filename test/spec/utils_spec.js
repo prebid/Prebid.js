@@ -60,7 +60,7 @@ describe('Utils', function () {
 
     afterEach(function() {
       delete window.$sf;
-    })
+    });
 
     it('should return true if window.$sf is accessible', function () {
       window.$sf = $sf;
@@ -208,9 +208,9 @@ describe('Utils', function () {
     }).forEach(([t, { in: input, out }]) => {
       it(`can parse ${t}`, () => {
         expect(sizesToSizeTuples(input)).to.eql(out);
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
@@ -349,7 +349,7 @@ describe('Utils', function () {
         var output = utils.isFn(fn);
         assert.deepEqual(output, true);
       });
-    })
+    });
 
     it('should return false with input string', function () {
       var output = utils.isFn(obj_string);
@@ -591,7 +591,7 @@ describe('Utils', function () {
       }
       assert(callback.notCalled);
       delayed(3);
-      assert(callback.called)
+      assert(callback.called);
       assert.equal(callback.firstCall.args[0], 3);
     });
   });
@@ -844,9 +844,9 @@ describe('Utils', function () {
       ].forEach(([input, expected]) => {
         it(`can encode ${input} -> ${expected}`, () => {
           expect(encodeMacroURI(input)).to.eql(expected);
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('insertElement', function () {
@@ -1133,7 +1133,7 @@ describe('Utils', function () {
             { minViewPort: [1000, 0], sizes: [[1000, 300], [728, 90]] },
           ],
         },
-      }
+      };
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
     it('should check types if {matchTypes: true}', () => {
@@ -1184,7 +1184,7 @@ describe('Utils', function () {
     function delay(delay = 0) {
       return new Promise((resolve) => {
         window.setTimeout(resolve, delay);
-      })
+      });
     }
 
     beforeEach(() => {
@@ -1205,7 +1205,7 @@ describe('Utils', function () {
         element.dispatchEvent(new Event(event));
         return delay().then(() => {
           expect(callbacks).to.equal(1);
-        })
+        });
       });
     });
   });
@@ -1240,9 +1240,9 @@ describe('Utils', function () {
       const obj = { key: 1, anotherKey: 'fred', third: ['fred'], fourth: { sub: { obj: 'test' } } };
       const array = utils.convertObjectToArray(obj);
 
-      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }))
-      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }))
-      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }))
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({ 'key': 1 }));
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({ 'anotherKey': 'fred' }));
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({ 'third': ['fred'] }));
       expect(JSON.stringify(array[3])).equal(JSON.stringify({ 'fourth': { sub: { obj: 'test' } } }));
       expect(array.length).to.equal(4);
     });
@@ -1418,7 +1418,7 @@ describe('memoize', () => {
   });
 
   it('allows setting cache keys', () => {
-    const mem = memoize(fn, (...args) => args.join(','))
+    const mem = memoize(fn, (...args) => args.join(','));
     mem('one', 'two');
     mem('one', 'three');
     expect(mem('one', 'three')).to.eql(['one', 'three']);
@@ -1461,9 +1461,9 @@ describe('memoize', () => {
           });
         });
       });
-    })
-  })
-})
+    });
+  });
+});
 
 describe('getWinDimensions', () => {
   let clock;

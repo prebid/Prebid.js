@@ -47,10 +47,10 @@ describe('MygaruID module', function () {
 
   it('should not modify while decoding', () => {
     const id = '222';
-    const newId = mygaruIdSubmodule.decode(id)
+    const newId = mygaruIdSubmodule.decode(id);
 
     expect(id).to.eq(newId);
-  })
+  });
   it('should buildUrl with consent data', () => {
     const result = mygaruIdSubmodule.getId({}, {
       gdpr: {
@@ -60,5 +60,5 @@ describe('MygaruID module', function () {
     });
 
     expect(result.url).to.eq('https://ident.mygaru.com/v2/id?gdprApplies=1&gdprConsentString=consentString');
-  })
+  });
 });

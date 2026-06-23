@@ -35,7 +35,7 @@ const liAnalytics = Object.assign(adapter({ URL, ANALYTICS_TYPE }), {
 });
 
 function handleAuctionInitEvent(auctionInitEvent) {
-  const liveIntentIdsPresent = checkLiveIntentIdsPresent(auctionInitEvent.bidderRequests)
+  const liveIntentIdsPresent = checkLiveIntentIdsPresent(auctionInitEvent.bidderRequests);
 
   // This is for old integration that enable or disable the user id module
   // dependeing on the result of rolling the dice outside of Prebid.
@@ -46,7 +46,7 @@ function handleAuctionInitEvent(auctionInitEvent) {
       parseSizesInput(adUnit?.mediaTypes?.banner?.sizes),
       parseSizesInput(adUnit?.mediaTypes?.video?.playerSize)
     ), []
-  )
+  );
 
   const data = {
     id: generateUUID(),
@@ -67,7 +67,7 @@ function handleAuctionInitEvent(auctionInitEvent) {
 
 function handleBidWonEvent(bidWonEvent) {
   const auction = auctionManager.index.getAuction({ auctionId: bidWonEvent.auctionId });
-  const liveIntentIdsPresent = checkLiveIntentIdsPresent(auction?.getBidRequests())
+  const liveIntentIdsPresent = checkLiveIntentIdsPresent(auction?.getBidRequests());
 
   // This is for old integration that enable or disable the user id module
   // depending on the result of rolling the dice outside of Prebid.
@@ -99,12 +99,12 @@ function handleBidWonEvent(bidWonEvent) {
 }
 
 function encodeBoolean(value) {
-  return value === undefined ? undefined : value ? 'y' : 'n'
+  return value === undefined ? undefined : value ? 'y' : 'n';
 }
 
 function checkLiveIntentIdsPresent(bidRequests) {
   const eids = bidRequests?.flatMap(r => r?.bids).flatMap(b => b?.userIdAsEids);
-  return !!eids.find(eid => eid?.source === 'liveintent.com') || !!eids.flatMap(e => e?.uids).find(u => u?.ext?.provider === 'liveintent.com')
+  return !!eids.find(eid => eid?.source === 'liveintent.com') || !!eids.flatMap(e => e?.uids).find(u => u?.ext?.provider === 'liveintent.com');
 }
 
 function sendData(path, data) {
@@ -124,7 +124,7 @@ function ignoreUndefined(data) {
 liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
-  const userIdModuleConfig = prebidConfig.getConfig('userSync.userIds').filter(m => m.name === 'liveIntentId')?.at(0)?.params
+  const userIdModuleConfig = prebidConfig.getConfig('userSync.userIds').filter(m => m.name === 'liveIntentId')?.at(0)?.params;
   partnerIdFromUserIdConfig = userIdModuleConfig?.liCollectConfig?.appId || userIdModuleConfig?.distributorId;
   sendAuctionInitEvents = config?.options.sendAuctionInitEvents;
   liAnalytics.originEnableAnalytics(config); // call the base class function
