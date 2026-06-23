@@ -26,6 +26,11 @@ const converter = ortbConverter({
       imp.bidfloorcur = 'USD';
     }
 
+    const placementId = bidRequest.params?.placementId;
+    if (placementId != null) {
+      imp.tagid = String(placementId);
+    }
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -41,6 +46,11 @@ const converter = ortbConverter({
     }
     request.ext = request.ext || {};
     request.ext.prebid = request.ext.prebid || {};
+    request.ext.prebid.channel = { name: 'pbjs', version: '$prebid.version$' };
+
+    if (bidParams?.testAdsEnabled) {
+      request.test = 1;
+    }
 
     const ortb = bidderRequest.ortb2;
     request.regs ??= {};
@@ -107,6 +117,10 @@ function isValidBidFloorCurrency(bid) {
   return !bid.ortb2Imp?.bidfloorcur || bid.ortb2Imp.bidfloorcur === 'USD';
 }
 
+function getEndpointUrl(bidRequest) {
+  return bidRequest.params?.testAdsEnabled ? `${ENDPOINT_URL}&testAdsEnabled=true` : ENDPOINT_URL;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
@@ -124,7 +138,7 @@ export const spec = {
 
       return {
         method: METHOD,
-        url: ENDPOINT_URL,
+        url: getEndpointUrl(bidRequest),
         options: {
           contentType: 'text/plain',
           withCredentials: true,
