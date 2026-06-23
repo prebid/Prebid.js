@@ -180,9 +180,9 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse == null) {
-       return bidResponse;
-     }
-     bidResponse.meta = bidResponse.meta || {};
+      return bidResponse;
+    }
+    bidResponse.meta = bidResponse.meta || {};
 
     // Support both ORTB ext nesting and proto-json top-level extension key.
     const dspBidExt = bid.ext?.['[com.allegro.dsp.dsp_bid]'] ?? bid['[com.allegro.dsp.dsp_bid]'];
