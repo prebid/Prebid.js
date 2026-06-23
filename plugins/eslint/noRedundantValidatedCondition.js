@@ -1,4 +1,6 @@
 const SCOPE_NODES = new Set([
+  'BlockStatement',
+  'CatchClause',
   'FunctionDeclaration',
   'FunctionExpression',
   'ArrowFunctionExpression',
@@ -35,6 +37,45 @@ function collectFalsyImpliedTruthyIdentifiers(node, names = new Set()) {
   return names;
 }
 
+function collectPatternIdentifiers(node, names) {
+  node = unwrap(node);
+  if (!node) return;
+  if (node.type === 'Identifier') {
+    names.add(node.name);
+  } else if (node.type === 'RestElement') {
+    collectPatternIdentifiers(node.argument, names);
+  } else if (node.type === 'AssignmentPattern') {
+    collectPatternIdentifiers(node.left, names);
+  } else if (node.type === 'ArrayPattern') {
+    node.elements.forEach(element => collectPatternIdentifiers(element, names));
+  } else if (node.type === 'ObjectPattern') {
+    node.properties.forEach((property) => {
+      if (property.type === 'Property') collectPatternIdentifiers(property.value, names);
+      else collectPatternIdentifiers(property.argument, names);
+    });
+  }
+}
+
+function collectInvalidatedIdentifiers(node, names = new Set()) {
+  node = unwrap(node);
+  if (!node || typeof node.type !== 'string' || SCOPE_NODES.has(node.type)) return names;
+
+  if (node.type === 'AssignmentExpression') {
+    collectPatternIdentifiers(node.left, names);
+  } else if (node.type === 'UpdateExpression') {
+    collectPatternIdentifiers(node.argument, names);
+  } else if (node.type === 'VariableDeclarator') {
+    collectPatternIdentifiers(node.id, names);
+  }
+
+  for (const key of collectInvalidatedIdentifiers.visitorKeys[node.type] || []) {
+    const child = node[key];
+    if (Array.isArray(child)) child.forEach(child => collectInvalidatedIdentifiers(child, names));
+    else collectInvalidatedIdentifiers(child, names);
+  }
+  return names;
+}
+
 module.exports = {
   meta: {
     type: 'problem',
@@ -45,6 +86,7 @@ module.exports = {
   },
   create(context) {
     const sourceCode = context.sourceCode || context.getSourceCode();
+    collectInvalidatedIdentifiers.visitorKeys = sourceCode.visitorKeys;
 
     function inspect(node, knownTruthy) {
       node = unwrap(node);
@@ -66,6 +108,7 @@ module.exports = {
       const knownTruthy = new Set();
 
       for (const statement of statements) {
+        collectInvalidatedIdentifiers(statement).forEach(name => knownTruthy.delete(name));
         inspect(statement, knownTruthy);
 
         if (statement.type === 'IfStatement' && exits(statement.consequent) && statement.alternate == null) {
