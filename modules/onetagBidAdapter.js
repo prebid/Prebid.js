@@ -295,7 +295,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.7'
+      adapter: '1.1.8'
     }
   };
 }
