@@ -557,8 +557,7 @@ describe('The smartx adapter', function () {
 
     it('should attempt to insert the script without outstream config options set', function () {
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function (script) {
-        })
+        appendChild: sinon.stub()
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -571,8 +570,7 @@ describe('The smartx adapter', function () {
 
     it('should attempt to insert the script with outstream config options set', function () {
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function (script) {
-        })
+        appendChild: sinon.stub()
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -597,8 +595,7 @@ describe('The smartx adapter', function () {
 
     it('should attempt to insert the script without defined slot', function () {
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function (script) {
-        })
+        appendChild: sinon.stub()
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 

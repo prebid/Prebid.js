@@ -291,17 +291,16 @@ describe("seenthisBrandStories", function () {
   });
 
   describe("applyFullWidth", function () {
-    beforeEach(function () {
-      sinon.stub();
-      sinon.stub();
-    });
-
     afterEach(function () {
       sinon.restore();
     });
 
     it("should call addStyleToSingleChildAncestors with width 100% when adWrapper exists", function () {
-      const mockTarget = {};
+      const adWrapper = document.createElement("div");
+      const parent = document.createElement("div");
+      const mockTarget = document.createElement("div");
+      parent.appendChild(mockTarget);
+      adWrapper.appendChild(parent);
 
       expect(() => applyFullWidth(mockTarget)).to.not.throw();
     });
