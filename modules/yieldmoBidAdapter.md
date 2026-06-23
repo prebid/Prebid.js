@@ -32,8 +32,7 @@ var adUnits = [{ // Banner adUnit
       placementId: '1779781193098233305', // string with at most 19 characters (may include numbers only)
       bidFloor: .28, // optional param
       lr_env: '***', // Optional. Live Ramp ATS envelope
-      bcat: ['IAB1-5', 'IAB1-6'], // optional, array of blocked IAB content categories (strings)
-      badv: ['ford.com', 'pepsi.com'] // optional, array of blocked advertiser domains (strings)
+      bcat: ['IAB1-5', 'IAB1-6'] // optional, array of blocked IAB content categories (strings)
     }
   }]
 }];
@@ -69,8 +68,7 @@ var adUnits = [{ // Video adUnit
         skipafter: 10       // optional, integer
       },
       lr_env: '***', // Optional. Live Ramp ATS envelope
-      bcat: ['IAB1-5', 'IAB1-6'], // optional, array of blocked IAB content categories (strings)
-      badv: ['ford.com', 'pepsi.com'] // optional, array of blocked advertiser domains (strings)
+      bcat: ['IAB1-5', 'IAB1-6'] // optional, array of blocked IAB content categories (strings)
     }
   }]
 }];
@@ -109,19 +107,18 @@ Please also note, that we support the following OpenRTB params:
 'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'.
 They can be specified in `mediaTypes.video` or in `bids[].params.video`.
 
-# Blocklists (bcat / badv)
+# Blocklist (bcat)
 
-`bcat` (blocked IAB content categories) and `badv` (blocked advertiser domains) are
-supported for **both banner and video**. Each is an optional array of strings and can
-be supplied from either source:
+`bcat` (blocked IAB content categories) is supported for **both banner and video**. It
+is an optional array of strings and can be supplied from either source:
 
-* the standardized first-party-data global — `ortb2.bcat` / `ortb2.badv`, or
-* the Yieldmo bid params — `bids[].params.bcat` / `bids[].params.badv`.
+* the standardized first-party-data global — `ortb2.bcat`, or
+* the Yieldmo bid param — `bids[].params.bcat`.
 
 When both sources are present they are **merged** (union) and de-duplicated — neither
 source overrides the other.
 
-Validation: a **missing** `bcat`/`badv` is always allowed, but if `params.bcat` /
-`params.badv` is **present and not an array** the bid is rejected (`isBidRequestValid`
-returns false). Non-string / empty elements inside an otherwise-valid array, and a
-malformed `ortb2` value, are dropped with a console warning rather than failing the bid.
+Validation: a **missing** `bcat` is always allowed, but if `params.bcat` is **present
+and not an array** the bid is rejected (`isBidRequestValid` returns false). Non-string /
+empty elements inside an otherwise-valid array, and a malformed `ortb2` value, are
+dropped with a console warning rather than failing the bid.
