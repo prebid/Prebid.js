@@ -5,6 +5,7 @@ var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
+// gulplog available transitively via gulp-cli
 var log = require('gulplog');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
