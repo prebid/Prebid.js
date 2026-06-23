@@ -209,12 +209,14 @@ describe('Engageya adapter', function () {
 
     it('buildRequests function should not modify original bidRequests object', function () {
       const originalBidRequests = utils.deepClone(bidRequests);
+      spec.buildRequests(bidRequests);
 
       expect(bidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('buildRequests function should not modify original nativeBidRequests object', function () {
       const originalBidRequests = utils.deepClone(nativeBidRequests);
+      spec.buildRequests(nativeBidRequests);
 
       expect(nativeBidRequests).to.deep.equal(originalBidRequests);
     });

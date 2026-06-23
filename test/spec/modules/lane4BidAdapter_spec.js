@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils.js';
 
 describe('lane4 adapter', function () {
   let bannerRequest, nativeRequest;
-  let bannerResponse, nativeResponse, invalidBannerResponse;
+  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse;
 
   beforeEach(function () {
     bannerRequest = [
@@ -114,6 +114,29 @@ describe('lane4 adapter', function () {
         'bidid': 'BIDDER_-1'
       }
     };
+    invalidNativeResponse = {
+      'body': {
+        'id': '453ade66-9113-4944-a674-5bbdcb9808ac',
+        'seatbid': [{
+          'bid': [{
+            'id': '652c9a4c-66ea-4579-998b-cefe7b4cfecd',
+            'impid': '2c3875bdbb1893',
+            'price': 1.1,
+            'adid': '368852',
+            'adm': 'invalid response',
+            'adomain': ['www.diabetesincontrol.com'],
+            'iurl': 'https://cdn.lane4.com/1_368852_0.png',
+            'cid': '468132/368852',
+            'crid': '368852',
+            'cat': ['IAB7']
+          }],
+          'seat': 'lane4',
+          'group': 0
+        }],
+        'cur': 'USD',
+        'bidid': 'BIDDER_-1'
+      }
+    };
   });
 
   describe('validations', function () {
@@ -144,6 +167,7 @@ describe('lane4 adapter', function () {
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
+      spec.buildRequests(bannerRequest);
 
       expect(bannerRequest).to.deep.equal(_Request);
     });
@@ -211,6 +235,7 @@ describe('lane4 adapter', function () {
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
+      spec.buildRequests(nativeRequest);
 
       expect(nativeRequest).to.deep.equal(_Request);
     });
@@ -247,6 +272,12 @@ describe('lane4 adapter', function () {
     });
   });
   describe('Validate native response ', function () {
+    it('Validate bid response : invalid bid response', function () {
+      const _Request = spec.buildRequests(nativeRequest);
+      const bResponse = spec.interpretResponse(invalidNativeResponse, _Request);
+      expect(bResponse).to.be.an('array').that.is.empty;
+    });
+
     it('Validate bid response : valid bid response', function () {
       const _Request = spec.buildRequests(nativeRequest);
       const bResponse = spec.interpretResponse(nativeResponse, _Request);
