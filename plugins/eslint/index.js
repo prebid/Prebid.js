@@ -27,12 +27,15 @@ function isImplicitTemplateConversionReference(context, node) {
   if (node.type !== 'Identifier') {
     return false;
   }
+  if (isUndefinedIdentifier(node)) {
+    return true;
+  }
   const variable = getVariable(context, node);
   return variable?.defs.some(def => {
     if (def.type === 'FunctionName') {
       return true;
     }
-    return def.node?.type === 'VariableDeclarator' && (isFunctionLike(def.node.init) || isUndefinedIdentifier(def.node.init));
+    return def.node?.type === 'VariableDeclarator' && (!def.node.init || isFunctionLike(def.node.init) || isUndefinedIdentifier(def.node.init));
   });
 }
 
