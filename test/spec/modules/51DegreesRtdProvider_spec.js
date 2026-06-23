@@ -761,6 +761,41 @@ describe('51DegreesRtdProvider', function() {
       const result = convert51DegreesFoDiDToOrtb2(fullFodid, TDL_URL);
       expect(result.user.eids[0]).to.not.have.property('matcher');
     });
+
+    it('emits a Random entry with mm 0 and atype 1', function() {
+      const result = convert51DegreesFoDiDToOrtb2(
+        { idrandlic: 'rand-lic', idrandglobal: 'rand-global' }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].mm).to.equal(0);
+      expect(result.user.eids[0].uids).to.deep.equal(
+        [{ id: 'rand-lic', atype: 1 }, { id: 'rand-global', atype: 1 }]);
+    });
+
+    it('emits a Hashed Email entry with mm 3 and atype 3', function() {
+      const result = convert51DegreesFoDiDToOrtb2(
+        { idhemlic: 'hem-lic', idhemglobal: 'hem-global' }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(1);
+      expect(result.user.eids[0].mm).to.equal(3);
+      expect(result.user.eids[0].uids).to.deep.equal(
+        [{ id: 'hem-lic', atype: 3 }, { id: 'hem-global', atype: 3 }]);
+    });
+
+    it('emits one entry per type in probabilistic, random, hashed-email order', function() {
+      const result = convert51DegreesFoDiDToOrtb2({
+        idproblic: 'p-lic',
+        idprobglobal: 'p-global',
+        idrandlic: 'r-lic',
+        idrandglobal: 'r-global',
+        idhemlic: 'h-lic',
+        idhemglobal: 'h-global',
+      }, TDL_URL);
+      expect(result.user.eids).to.have.lengthOf(3);
+      expect(result.user.eids.map((e) => e.mm)).to.deep.equal([5, 0, 3]);
+      expect(result.user.eids.every((e) => e.source === '51d.es')).to.equal(true);
+      expect(result.user.eids.every((e) => e.ext.tdl[0] === TDL_URL)).to.equal(true);
+      expect(result.user.eids[2].uids).to.deep.equal(
+        [{ id: 'h-lic', atype: 3 }, { id: 'h-global', atype: 3 }]);
+    });
   });
 
   describe('resolveIdUsage', function() {

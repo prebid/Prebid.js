@@ -389,15 +389,39 @@ export const convert51DegreesIpToOrtb2 = (ip) => {
   return ortb2;
 }
 
+// EID match method (mm) and agent type (atype) for each 51Did cloud
+// property. The cloud delivers a 51Did under a type-specific property
+// name, so the property name carries the type: idprob* is Probabilistic
+// (mm 5 Inference, atype 1), idrand* is Random (mm 0 Unknown, atype 1),
+// and idhem* is Hashed Email (mm 3 Authenticated, atype 3). mm is an
+// eid-level field, so values that share an mm share an entry.
+const FODID_EID = {
+  idproblic: { mm: 5, atype: 1 },
+  idprobglobal: { mm: 5, atype: 1 },
+  idrandlic: { mm: 0, atype: 1 },
+  idrandglobal: { mm: 0, atype: 1 },
+  idhemlic: { mm: 3, atype: 3 },
+  idhemglobal: { mm: 3, atype: 3 },
+};
+
 /**
- * Converts 51Degrees fodid (51DiD) data to an ORTB2 user.eids entry.
- * Builds a single 51d.es source entry whose uids carry idproblic and
- * idprobglobal in that order. ext.tdl is populated from the supplied URL
- * when present; omitted otherwise.
+ * Converts 51Degrees fodid (51DiD) data to ORTB2 user.eids entries.
+ * Each identifier type becomes its own 51d.es source entry, because the
+ * match method (mm) is an eid-level field and differs by type:
+ * Probabilistic is mm 5 (inference) atype 1, Random is mm 0 (unknown)
+ * atype 1, and Hashed Email is mm 3 (authenticated) atype 3. The type
+ * comes from which type-specific property the cloud populated (see
+ * FODID_EID). A type's license and global values share its entry,
+ * license value first. ext.tdl is populated from the supplied URL on
+ * every entry when present, and omitted otherwise.
  *
  * @param {Object} fodid 51Degrees fodid object
- * @param {string} [fodid.idproblic] License-tier 51DiD
- * @param {string} [fodid.idprobglobal] Global-tier 51DiD
+ * @param {string} [fodid.idproblic] License-tier Probabilistic 51DiD
+ * @param {string} [fodid.idprobglobal] Global-tier Probabilistic 51DiD
+ * @param {string} [fodid.idrandlic] License-tier Random 51DiD
+ * @param {string} [fodid.idrandglobal] Global-tier Random 51DiD
+ * @param {string} [fodid.idhemlic] License-tier Hashed Email 51DiD
+ * @param {string} [fodid.idhemglobal] Global-tier Hashed Email 51DiD
  * @param {string} [tdlUrl] TDL URL passed from module config
  * @returns {Object} Enriched ORTB2 fragment ({user:{eids:[...]}}) or {} when
  *                   no uids are available
@@ -407,30 +431,40 @@ export const convert51DegreesFoDiDToOrtb2 = (fodid, tdlUrl) => {
     return {};
   }
 
-  const uids = [];
-  if (fodid.idproblic) {
-    uids.push({ id: fodid.idproblic, atype: 1 });
-  }
-  if (fodid.idprobglobal) {
-    uids.push({ id: fodid.idprobglobal, atype: 1 });
-  }
-  if (uids.length === 0) {
+  // One eids entry per match method (mm is an eid-level field). Iterating
+  // FODID_EID keeps a stable order (Probabilistic, then Random, then
+  // Hashed Email) and license value before global within each type.
+  const byMm = new Map();
+  Object.keys(FODID_EID).forEach((prop) => {
+    const value = fodid[prop];
+    if (!value) {
+      return;
+    }
+    const { mm, atype } = FODID_EID[prop];
+    if (!byMm.has(mm)) {
+      byMm.set(mm, []);
+    }
+    byMm.get(mm).push({ id: value, atype });
+  });
+
+  if (byMm.size === 0) {
     return {};
   }
 
-  const entry = {
-    inserter: '51degrees.com',
-    source: '51d.es',
-    mm: 5,
-    uids,
-  };
-  if (tdlUrl) {
-    entry.ext = { tdl: [tdlUrl] };
-  } else {
-    logWarn('tdlUrl is not configured; emitting eids entry without ext.tdl');
+  const eids = [];
+  byMm.forEach((uids, mm) => {
+    const entry = { inserter: '51degrees.com', source: '51d.es', mm, uids };
+    if (tdlUrl) {
+      entry.ext = { tdl: [tdlUrl] };
+    }
+    eids.push(entry);
+  });
+
+  if (!tdlUrl) {
+    logWarn('tdlUrl is not configured; emitting eids entries without ext.tdl');
   }
 
-  return { user: { eids: [entry] } };
+  return { user: { eids } };
 }
 
 // PMP localStorage contract, duplicated from pmp/src/storage.ts of the
