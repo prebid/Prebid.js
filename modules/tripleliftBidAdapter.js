@@ -78,7 +78,7 @@ export const tripleliftAdapterSpec = {
   },
 
   interpretResponse: function(serverResponse, { bidderRequest }) {
-    logMessage('serverResponse: ' + serverResponse);
+    logMessage('serverResponse: ' + JSON.stringify(serverResponse));
 
     let bids = serverResponse.body.bids || [];
     return bids.map(bid => _buildResponseObject(bidderRequest, bid));
