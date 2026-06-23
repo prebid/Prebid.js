@@ -87,6 +87,7 @@
     "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.0.0",
     "gulp-tap": "^2.0.0",
+    "gulplog": "^2.2.0",
     "is-docker": "^2.2.1",
     "istanbul": "^0.4.5",
     "karma": "^6.4.4",
