@@ -154,9 +154,7 @@ describe(`UID2 module`, function () {
   const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
 
   beforeEach(function () {
-    debugOutput(`----------------- START TEST ------------------`);
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
-    debugOutput(fullTestTitle);
     testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
@@ -169,16 +167,13 @@ describe(`UID2 module`, function () {
     testSandbox.restore();
     if (timerSpy.timers.length > 0) {
       if (clearTimersAfterEachTest) {
-        debugOutput(`Cancelling ${timerSpy.timers.length} still-active timers.`);
         timerSpy.clearAllActiveTimers();
       } else {
-        debugOutput(`Waiting on ${timerSpy.timers.length} still-active timers...`, timerSpy.timers);
         await timerSpy.waitAllActiveTimers();
       }
     }
     cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
     coreStorage.removeDataFromLocalStorage(moduleCookieName);
-    debugOutput('----------------- END TEST ------------------');
   });
 
   describe('Configuration', function() {
@@ -469,7 +464,7 @@ describe(`UID2 module`, function () {
         apiHelpers.respondAfterDelay(1, server);
 
         const bid = await runAuction();
-        expectOptout(bid, optoutToken);
+        expectOptout(bid);
       });
       describe(`when the response doesn't arrive before the auction timer`, function() {
         testApiSuccessAndFailure(async function() {
