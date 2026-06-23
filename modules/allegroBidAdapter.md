@@ -23,7 +23,7 @@ The Allegro adapter supports the following configuration options:
 
 | Name                             | Scope    | Type    | Description                                                                 | Default                                                 |
 |----------------------------------|----------|---------|-----------------------------------------------------------------------------|---------------------------------------------------------|
-| `allegro.bidderUrl`              | optional | String  | Custom bidder endpoint URL                                                  | `https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid` |
+| `allegro.bidderUrl`              | optional | String  | Custom bidder endpoint URL                                                  | `https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid` |
 | `allegro.convertExtensionFields` | optional | Boolean | Enable/disable conversion of OpenRTB extension fields to DoubleClick format | `true`                                                  |
 | `allegro.triggerImpressionPixel` | optional | Boolean | Enable/disable triggering impression tracking pixels on bid won event       | `false`                                                 |
 
