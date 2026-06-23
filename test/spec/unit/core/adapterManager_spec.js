@@ -2434,13 +2434,15 @@ describe('adapterManager tests', function () {
     })
 
     describe('setBidderSequence', function () {
+      let randomStub;
+
       beforeEach(function () {
-        sinon.spy(utils, 'shuffle');
+        randomStub = sinon.stub(Math, 'random').returns(0);
       });
 
       afterEach(function () {
         config.resetConfig();
-        utils.shuffle.restore();
+        randomStub.restore();
       });
 
       it('setting to `random` uses shuffled order of adUnits', function () {
@@ -2452,7 +2454,7 @@ describe('adapterManager tests', function () {
           function callback() {},
           []
         );
-        sinon.assert.calledOnce(utils.shuffle);
+        expect(bidRequests.map(bidRequest => bidRequest.bidderCode)).to.deep.equal(['rubicon', 'appnexus']);
       });
     });
 

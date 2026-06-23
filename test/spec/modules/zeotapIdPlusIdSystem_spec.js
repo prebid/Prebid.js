@@ -26,6 +26,10 @@ describe('Zeotap ID System', function() {
       getStorageManagerSpy = sinon.spy(storageManager, 'getStorageManager');
     });
 
+    afterEach(function() {
+      getStorageManagerSpy.restore();
+    });
+
     it('when a stored Zeotap ID exists it is added to bids', function() {
       getStorage();
       expect(getStorageManagerSpy.calledOnce).to.be.true;
