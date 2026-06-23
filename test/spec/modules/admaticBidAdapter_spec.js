@@ -712,11 +712,11 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should properly build a video request with several player sizes with floors', function () {
-
+      spec.buildRequests(validRequest, bidderRequest);
     });
 
     it('should properly build a native request with floors', function () {
-
+      spec.buildRequests(validRequest, bidderRequest);
     });
   });
 
