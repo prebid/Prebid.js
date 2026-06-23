@@ -28,7 +28,7 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
 
     request.device.js = 1;
-    request.device.connectiontype = getConnectionType();
+    request.device.connectiontype ||= getConnectionType();
 
     return request;
   },
