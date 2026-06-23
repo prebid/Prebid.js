@@ -30,6 +30,19 @@ export function getVendorConsent(consentData: TcfConsentData | null | undefined,
 }
 
 /**
+ * Whether publisher restrictions allow using consent (not LI) for this vendor/purpose.
+ * Mirrors purpose restriction handling in tcfControl getAcceptableFlags.
+ */
+export function isPublisherConsentAllowed(
+  consentData: TcfConsentData | null | undefined,
+  purposeNo: number,
+  gvlId: number | string
+): boolean {
+  const restriction = deepAccess(consentData, `vendorData.publisher.restrictions.${purposeNo}.${gvlId}`);
+  return restriction !== 0 && restriction !== 2;
+}
+
+/**
  * Returns whether both global purpose consent and vendor consent are granted.
  * Non-GDPR requests are treated as allowed, matching hasPurpose1Consent.
  */
@@ -40,6 +53,9 @@ export function hasVendorPurposeConsent(
 ): boolean {
   if (!consentData?.gdprApplies) {
     return true;
+  }
+  if (!isPublisherConsentAllowed(consentData, purposeNo, gvlId)) {
+    return false;
   }
   return getPurposeConsent(consentData, purposeNo) && getVendorConsent(consentData, gvlId);
 }
