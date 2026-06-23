@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils.js';
 
 describe('dochase adapter', function () {
   let bannerRequest, nativeRequest;
-  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse; // eslint-disable-line no-unused-vars
+  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse;
 
   beforeEach(function () {
     bannerRequest = [
@@ -270,6 +270,12 @@ describe('dochase adapter', function () {
     });
   });
   describe('Validate native response ', function () {
+    it('Validate bid response : invalid bid response', function () {
+      const bRequest = spec.buildRequests(nativeRequest);
+      const response = spec.interpretResponse(invalidNativeResponse, bRequest);
+      expect(response).to.be.an('array').that.is.empty;
+    });
+
     it('Validate bid response : valid bid response', function () {
       const _Request = spec.buildRequests(nativeRequest);
       const bResponse = spec.interpretResponse(nativeResponse, _Request);

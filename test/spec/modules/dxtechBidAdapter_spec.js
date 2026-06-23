@@ -192,46 +192,6 @@ const getBidderResponse = () => {
 };
 
 describe('dxtechBidAdapter', function() {
-  let videoBidRequest; // eslint-disable-line no-unused-vars
-  beforeEach(function () {
-    videoBidRequest = {
-      mediaTypes: {
-        video: {
-          context: 'instream',
-          playerSize: [[640, 480]],
-        }
-      },
-      bidder: 'dxtech',
-      sizes: [640, 480],
-      bidId: '30b3efwfwe1e',
-      adUnitCode: 'video1',
-      params: {
-        video: {
-          playerWidth: 640,
-          playerHeight: 480,
-          mimes: ['video/mp4', 'application/javascript'],
-          protocols: [2, 5],
-          api: [2],
-          position: 1,
-          delivery: [2],
-          sid: 134,
-          rewarded: 1,
-          placement: 1,
-          plcmt: 1,
-          hp: 1,
-          inventoryid: 123
-        },
-        site: {
-          id: 1,
-          page: 'https://test.com',
-          referrer: 'http://test.com'
-        },
-        publisherId: 'km123',
-        bidfloor: 0
-      }
-    };
-  });
-
   describe('isBidRequestValid', function() {
     let bidderRequest;
 
@@ -330,6 +290,12 @@ describe('dxtechBidAdapter', function() {
           publisherId: 'publisherId',
         }
       };
+    });
+
+    it('returns true when video request includes required params', function () {
+      const videoBidRequest = getVideoRequest().bids[0];
+      videoBidRequest.params.placementId = 'placementId';
+      expect(spec.isBidRequestValid(videoBidRequest)).to.be.true;
     });
 
     it('should return true (skip validations) when e2etest = true', function () {
