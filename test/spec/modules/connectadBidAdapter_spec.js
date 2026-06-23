@@ -611,67 +611,77 @@ describe('ConnectAd Adapter', function () {
       expect(bids[0].ad).to.equal('<html>Ad Markup</html>');
     });
 
-    it('should install an outstream renderer for video bids with outstream context', function () {
-      const videoBidRequests = [{
-        bidder: 'connectad',
-        params: { siteId: 123456, networkId: 123456 },
-        adUnitCode: 'video-slot',
-        mediaTypes: { video: { context: 'outstream', playerSize: [640, 480] } },
-        bidId: 'video-imp'
-      }];
-      const videoServerResponse = {
-        body: {
-          id: 'video-auction',
-          seatbid: [{
-            bid: [{
-              id: 'bid-video',
-              impid: 'video-imp',
-              price: 7.65,
-              adm: '<VAST></VAST>',
-              crid: 'creative-video',
-              mtype: 2
+    describe('outstream rendering', function () {
+      let sandbox;
+
+      beforeEach(function () {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(function () {
+        sandbox.restore();
+        delete window.ConnectAdOutstream;
+      });
+
+      it('should install an outstream renderer for video bids with outstream context', function () {
+        const videoBidRequests = [{
+          bidder: 'connectad',
+          params: { siteId: 123456, networkId: 123456 },
+          adUnitCode: 'video-slot',
+          mediaTypes: { video: { context: 'outstream', playerSize: [640, 480] } },
+          bidId: 'video-imp'
+        }];
+        const videoServerResponse = {
+          body: {
+            id: 'video-auction',
+            seatbid: [{
+              bid: [{
+                id: 'bid-video',
+                impid: 'video-imp',
+                price: 7.65,
+                adm: '<VAST></VAST>',
+                crid: 'creative-video',
+                mtype: 2
+              }]
             }]
-          }]
-        }
-      };
-      const request = spec.buildRequests(videoBidRequests, bidderRequest);
-      const bids = spec.interpretResponse(videoServerResponse, request);
-      expect(bids).to.be.an('array').with.lengthOf(1);
-      expect(bids[0].renderer).to.exist;
-      expect(bids[0].renderer.url).to.equal('https://cdn.connectad.io/video/outstream/connectad-outstream.js');
-    });
+          }
+        };
+        const request = spec.buildRequests(videoBidRequests, bidderRequest);
+        const bids = spec.interpretResponse(videoServerResponse, request);
+        expect(bids).to.be.an('array').with.lengthOf(1);
+        expect(bids[0].renderer).to.exist;
+        expect(bids[0].renderer.url).to.equal('https://cdn.connectad.io/video/outstream/connectad-outstream.js');
+      });
 
-    it('should invoke ConnectAdOutstream when outstream renderer is called', function () {
-      const videoBidRequests = [{
-        bidder: 'connectad',
-        params: { siteId: 123456, networkId: 123456 },
-        adUnitCode: 'video-slot',
-        mediaTypes: { video: { context: 'outstream', playerSize: [640, 480] } },
-        bidId: 'video-imp'
-      }];
-      const videoServerResponse = {
-        body: {
-          id: 'video-auction',
-          seatbid: [{
-            bid: [{
-              id: 'bid-video',
-              impid: 'video-imp',
-              price: 7.65,
-              adm: '<VAST></VAST>',
-              crid: 'creative-video',
-              mtype: 2,
-              w: 640,
-              h: 480
+      it('should invoke ConnectAdOutstream when outstream renderer is called', function () {
+        const videoBidRequests = [{
+          bidder: 'connectad',
+          params: { siteId: 123456, networkId: 123456 },
+          adUnitCode: 'video-slot',
+          mediaTypes: { video: { context: 'outstream', playerSize: [640, 480] } },
+          bidId: 'video-imp'
+        }];
+        const videoServerResponse = {
+          body: {
+            id: 'video-auction',
+            seatbid: [{
+              bid: [{
+                id: 'bid-video',
+                impid: 'video-imp',
+                price: 7.65,
+                adm: '<VAST></VAST>',
+                crid: 'creative-video',
+                mtype: 2,
+                w: 640,
+                h: 480
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const renderAdStub = sinon.stub();
-      const originalOutstream = window.ConnectAdOutstream;
-      window.ConnectAdOutstream = { renderAd: renderAdStub };
+        const renderAdStub = sandbox.stub();
+        window.ConnectAdOutstream = { renderAd: renderAdStub };
 
-      try {
         const request = spec.buildRequests(videoBidRequests, bidderRequest);
         const bids = spec.interpretResponse(videoServerResponse, request);
         const renderer = bids[0].renderer;
@@ -691,44 +701,34 @@ describe('ConnectAd Adapter', function () {
           vastXml: '<VAST></VAST>',
           sizes: [640, 480]
         });
-      } finally {
-        if (originalOutstream) {
-          window.ConnectAdOutstream = originalOutstream;
-        } else {
-          delete window.ConnectAdOutstream;
-        }
-      }
-    });
+      });
 
-    it('should log a warning when outstream renderer script is unavailable', function () {
-      const videoBidRequests = [{
-        bidder: 'connectad',
-        params: { siteId: 123456, networkId: 123456 },
-        adUnitCode: 'video-slot',
-        mediaTypes: { video: { context: 'outstream', playerSize: [640, 480] } },
-        bidId: 'video-imp'
-      }];
-      const videoServerResponse = {
-        body: {
-          id: 'video-auction',
-          seatbid: [{
-            bid: [{
-              id: 'bid-video',
-              impid: 'video-imp',
-              price: 7.65,
-              adm: '<VAST></VAST>',
-              crid: 'creative-video',
-              mtype: 2
+      it('should log a warning when outstream renderer script is unavailable', function () {
+        const videoBidRequests = [{
+          bidder: 'connectad',
+          params: { siteId: 123456, networkId: 123456 },
+          adUnitCode: 'video-slot',
+          mediaTypes: { video: { context: 'outstream', playerSize: [640, 480] } },
+          bidId: 'video-imp'
+        }];
+        const videoServerResponse = {
+          body: {
+            id: 'video-auction',
+            seatbid: [{
+              bid: [{
+                id: 'bid-video',
+                impid: 'video-imp',
+                price: 7.65,
+                adm: '<VAST></VAST>',
+                crid: 'creative-video',
+                mtype: 2
+              }]
             }]
-          }]
-        }
-      };
+          }
+        };
 
-      const logWarnStub = sinon.stub(utils, 'logWarn');
-      const originalOutstream = window.ConnectAdOutstream;
-      delete window.ConnectAdOutstream;
+        const logWarnStub = sandbox.stub(utils, 'logWarn');
 
-      try {
         const request = spec.buildRequests(videoBidRequests, bidderRequest);
         const bids = spec.interpretResponse(videoServerResponse, request);
         const renderer = bids[0].renderer;
@@ -740,12 +740,7 @@ describe('ConnectAd Adapter', function () {
         });
 
         expect(logWarnStub.calledWith('ConnectAd: Outstream renderer script not loaded or window.ConnectAdOutstream not defined.')).to.equal(true);
-      } finally {
-        logWarnStub.restore();
-        if (originalOutstream) {
-          window.ConnectAdOutstream = originalOutstream;
-        }
-      }
+      });
     });
 
     it('should remap impid when response impid does not match a single imp', function () {
@@ -773,26 +768,6 @@ describe('ConnectAd Adapter', function () {
 
       expect(bids).to.be.an('array').with.lengthOf(1);
       expect(bids[0].requestId).to.equal('2f95c00074b931');
-    });
-
-    it('should parse bidRequest.data when provided as a JSON string', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      request.data = JSON.stringify(request.data);
-
-      expect(() => spec.interpretResponse(serverResponse, request)).to.throw('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
-    });
-
-    it('should warn when bidRequest.data string is invalid JSON', function () {
-      const logWarnStub = sinon.stub(utils, 'logWarn');
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      request.data = '{invalid-json';
-
-      try {
-        expect(() => spec.interpretResponse(serverResponse, request)).to.throw('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`');
-        expect(logWarnStub.called).to.equal(true);
-      } finally {
-        logWarnStub.restore();
-      }
     });
 
     it('should parse native responses correctly, unwrapping "native" property and aligning asset IDs', function () {

@@ -157,15 +157,7 @@ export const spec = {
       return [];
     }
     let response = serverResponse.body;
-    const ortbRequest = bidRequest.data;
-    let request = ortbRequest;
-    if (typeof request === 'string') {
-      try {
-        request = JSON.parse(request);
-      } catch (e) {
-        logWarn('ConnectAd: Failed to parse bidRequest.data string', e);
-      }
-    }
+    const request = bidRequest.data;
 
     if (Array.isArray(response)) {
       response = {
@@ -253,7 +245,7 @@ export const spec = {
       });
     }
 
-    return converter.fromORTB({ response, request: ortbRequest }).bids || [];
+    return converter.fromORTB({ response, request }).bids || [];
   },
 
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
