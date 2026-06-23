@@ -796,7 +796,10 @@ describe('Nobid Adapter', function () {
     const REFRESH_LIMIT = 3;
 
     it('should refreshLimit be respected', function () {
-      nobid.refreshLimit = REFRESH_LIMIT;
+      const response = { rlimit: REFRESH_LIMIT };
+
+      spec.interpretResponse({ body: response }, { bidderRequest: { bids: [] } });
+
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
     });
   });

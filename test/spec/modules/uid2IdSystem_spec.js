@@ -15,7 +15,7 @@ import { createEidsArray } from '../../../modules/userId/eids.js';
 const expect = require('chai').expect;
 
 const clearTimersAfterEachTest = true;
-const debugOutput = () => {};
+const debugTimerOutput = false;
 
 const moduleCookieName = '__uid2_advertising_token';
 const publisherCookieName = '__UID2_SERVER_COOKIE';
@@ -103,6 +103,13 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 
 describe(`UID2 module`, function () {
   let suiteSandbox; let testSandbox; let timerSpy; let fullTestTitle; let restoreSubtleToUndefined = false;
+  const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
+  const debugOutput = (message) => {
+    if (debugTimerOutput) {
+      utils.logMessage(`${fullTestTitle}: ${message}`);
+    }
+  };
+
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
@@ -150,8 +157,6 @@ describe(`UID2 module`, function () {
       await act(false);
     });
   };
-
-  const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
 
   beforeEach(function () {
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
