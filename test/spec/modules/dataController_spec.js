@@ -4,7 +4,7 @@ import { filterBidData, init } from 'modules/dataControllerModule/index.js';
 import { startAuction } from 'src/prebid.js';
 
 describe('data controller', function () {
-  let result; // eslint-disable-line no-unused-vars
+  let result;
 
   afterEach(function () {
     config.resetConfig();
@@ -91,6 +91,7 @@ describe('data controller', function () {
       };
       config.setConfig(dataControllerConfiguration);
       filterBidData(callbackFn, req);
+      expect(result).to.equal(req);
       expect(req.adUnits[0].bids[0].userIdAsEids).that.is.empty;
       expect(req.adUnits[0].bids[0].userId).that.is.empty;
       expect(req.ortb2Fragments.bidder.ix.user.ext.eids).that.is.empty;
