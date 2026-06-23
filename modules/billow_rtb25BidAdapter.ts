@@ -19,6 +19,34 @@ declare module '../src/adUnits' {
 const DEFAULT_ENDPOINT = 'https://adx-sg.billowlink.com/api/rtb/adsWeb';
 const BILLOW_BID_CURRENCY = 'USD';
 
+/**
+ * Resolve a buyer UID from Prebid user identity sources.
+ *
+ * Priority:
+ *  1. Look for sharedid.org or pubcid.org in the ORTB eids array.
+ *     If both are present, the first one encountered (by array order) wins.
+ *  2. Fall back to the legacy crumbs.pubcid value on the bid request.
+ */
+function resolveSharedId(request: any, bidderRequest: any, context: any): string | undefined {
+  // Check for sharedId or pubcid in the merged user.ext.eids array.
+  // .find() returns the first match, so array order determines priority
+  // when both sharedid.org and pubcid.org are present.
+  const eids = deepAccess(request, 'user.ext.eids');
+  if (Array.isArray(eids)) {
+    const sharedEid = eids.find((eid) => eid?.source === 'sharedid.org' || eid?.source === 'pubcid.org');
+    const id = deepAccess(sharedEid, 'uids.0.id');
+    if (id) return String(id);
+  }
+
+  // Legacy fallback: older Prebid versions stored PubCommonId on crumbs.pubcid.
+  const legacyId =
+    deepAccess(bidderRequest, 'bids.0.crumbs.pubcid') ||
+    deepAccess(context, 'bidRequests.0.crumbs.pubcid');
+  if (legacyId) return String(legacyId);
+
+  return undefined;
+}
+
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
     netRevenue: true,
@@ -26,20 +54,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    let sharedId: string | undefined;
-    const eids = deepAccess(request, 'user.ext.eids');
-    if (Array.isArray(eids)) {
-      const sharedEid = eids.find((eid) => eid?.source === 'sharedid.org' || eid?.source === 'pubcid.org');
-      const id = deepAccess(sharedEid, 'uids.0.id');
-      if (id) sharedId = String(id);
-    }
-    if (!sharedId) {
-      sharedId =
-        deepAccess(bidderRequest, 'bids.0.crumbs.pubcid') ||
-        deepAccess(context, 'bidRequests.0.crumbs.pubcid');
-    }
+    const sharedId = resolveSharedId(request, bidderRequest, context);
     if (sharedId) {
-      deepSetValue(request, 'user.buyeruid', String(sharedId));
+      deepSetValue(request, 'user.buyeruid', sharedId);
     }
     return request;
   },
