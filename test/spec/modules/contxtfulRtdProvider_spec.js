@@ -321,6 +321,7 @@ describe('contxtfulRtdProvider', function () {
         window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
+          contxtfulSubmodule.getTargetingData(adUnits, config);
           expect(RX_API_MOCK.receptivity.callCount).to.be.equal(0);
           done();
         }, TIMEOUT);

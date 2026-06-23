@@ -315,6 +315,8 @@ describe('The Criteo bidding adapter', function () {
         origin: 'https://gum.criteo.com'
       });
 
+      spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
       window.dispatchEvent(event);
       setTimeout(() => {
         expect(triggerPixelStub.calledTwice).to.be.true;
@@ -2456,6 +2458,40 @@ describe('The Criteo bidding adapter', function () {
 
   describe('when pubtag prebid adapter is not available', function () {
     it('should not warn if sendId is provided on required fields for native bidRequest', async () => {
+      const bidderRequest = {};
+      const bidRequests = [{
+        bidder: 'criteo',
+        adUnitCode: 'bid-123',
+        mediaTypes: {
+          native: {}
+        },
+        nativeOrtbRequest: {
+          assets: [{
+            required: 1,
+            id: 1,
+            img: {
+              type: 3,
+              wmin: 100,
+              hmin: 100,
+            }
+          }]
+        },
+        nativeParams: {
+          image: { sendId: true },
+          icon: { sendId: true },
+          clickUrl: { sendId: true },
+          displayUrl: { sendId: true },
+          privacyLink: { sendId: true },
+          privacyIcon: { sendId: true },
+        },
+        params: {
+          zoneId: 123,
+          publisherSubId: '123'
+        },
+      }];
+
+      spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+
       expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').notCalled).to.be.true;
     });
 

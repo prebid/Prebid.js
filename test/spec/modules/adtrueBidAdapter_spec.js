@@ -261,6 +261,10 @@ describe('AdTrueBidAdapter', function () {
       it('buildRequests function should not modify original bidRequests object', function () {
         const originalBidRequests = utils.deepClone(bidRequests);
 
+        spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
 
