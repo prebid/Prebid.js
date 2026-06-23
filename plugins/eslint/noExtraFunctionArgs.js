@@ -32,6 +32,9 @@ function referencesArguments(functionNode) {
     if (!node || found) {
       return;
     }
+    if (node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') {
+      return;
+    }
     if (node.type === 'Identifier' && node.name === 'arguments') {
       found = true;
       return;
