@@ -302,7 +302,7 @@ describe('onetag', function () {
       });
       it('Should return false when native.ortb if defined but it isn\'t an object', function () {
         const nativeBid = createNativeBid();
-        nativeBid.mediaTypes.native.ortb = 30 || 'string';
+        nativeBid.mediaTypes.native.ortb = 30;
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets is not an array', function () {
