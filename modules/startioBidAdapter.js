@@ -46,11 +46,7 @@ const converter = ortbConverter({
     }
     request.ext = request.ext || {};
     request.ext.prebid = request.ext.prebid || {};
-    request.ext.prebid.channel = { name: 'pbjs', version: '$prebid.version$' };
-
-    if (bidParams?.testAdsEnabled) {
-      request.test = 1;
-    }
+    request.ext.prebid.channel = Object.assign({}, request.ext.prebid.channel, { name: 'pbjs', version: '$prebid.version$' });
 
     const ortb = bidderRequest.ortb2;
     request.regs ??= {};
