@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
 const { checkDeclarationFilename } = require('./filename.js');
+const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
 
 const COMPARISON_OPERATORS = new Set(['<', '<=', '>', '>=']);
 
@@ -94,6 +95,7 @@ module.exports = {
         };
       }
     },
+    'no-extra-function-args': noExtraFunctionArgs,
     'validate-imports': {
       meta: {
         docs: {

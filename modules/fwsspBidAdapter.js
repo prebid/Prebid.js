@@ -357,7 +357,7 @@ export const spec = {
       };
 
       bidResponse.vastXml = serverResponse;
-      bidResponse.ad = formatAdHTML(bidrequest, playerSize, serverResponse);
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
 
