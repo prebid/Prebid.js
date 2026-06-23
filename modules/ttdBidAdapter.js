@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isNumber } from '../src/utils.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 /**
@@ -32,7 +32,7 @@ function getExt(firstPartyData) {
     ver: BIDADAPTERVERSION,
     pbjs: '$prebid.version$',
     keywords: firstPartyData.site?.keywords ? firstPartyData.site.keywords.split(',').map(k => k.trim()) : []
-  }
+  };
   return {
     ttdprebid: ext
   };
@@ -98,7 +98,7 @@ function getDevice(firstPartyData) {
     connectiontype: getConnectionType()
   };
 
-  utils.mergeDeep(device, firstPartyData.device)
+  utils.mergeDeep(device, firstPartyData.device);
 
   return device;
 };
@@ -109,12 +109,12 @@ function getUser(bidderRequest, firstPartyData) {
     utils.deepSetValue(user, 'ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
-  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
+  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
   if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
-  utils.mergeDeep(user, firstPartyData.user)
+  utils.mergeDeep(user, firstPartyData.user);
 
   return user;
 }
@@ -170,10 +170,10 @@ function getImpression(bidRequest) {
   }
 
   const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
-  impression.secure = isNumber(secure) ? secure : 1
+  impression.secure = isNumber(secure) ? secure : 1;
 
   const { video: _, ...ortb2ImpWithoutVideo } = bidRequest.ortb2Imp; // if enabled, video is already assigned above
-  utils.mergeDeep(impression, ortb2ImpWithoutVideo)
+  utils.mergeDeep(impression, ortb2ImpWithoutVideo);
 
   return impression;
 }
@@ -186,7 +186,7 @@ function getSizes(sizes) {
       return {
         width: parseInt(size[0]),
         height: parseInt(size[1]),
-      }
+      };
     });
 
   return sizeStructs;
@@ -197,7 +197,7 @@ function banner(bid) {
     return {
       w: x.width,
       h: x.height,
-    }
+    };
   });
   const pos = parseInt(utils.deepAccess(bid, 'mediaTypes.banner.pos'));
   const expdir = utils.deepAccess(bid, 'params.banner.expdir');
@@ -282,7 +282,7 @@ function video(bid) {
 
 function selectEndpoint(params) {
   if (params.customBidderEndpoint) {
-    return params.customBidderEndpoint
+    return params.customBidderEndpoint;
   }
 
   return BIDDER_ENDPOINT;
@@ -395,7 +395,7 @@ export const spec = {
       regs: getRegs(bidderRequest),
       source: getSource(validBidRequests, bidderRequest),
       ext: getExt(firstPartyData)
-    }
+    };
 
     if (firstPartyData && firstPartyData.bcat) {
       topLevel.bcat = firstPartyData.bcat;
@@ -549,4 +549,4 @@ export const spec = {
   },
 };
 
-registerBidder(spec)
+registerBidder(spec);

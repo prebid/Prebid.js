@@ -8,7 +8,7 @@ const ENDPOINT = 'https://pbjs.revealonmedia.live';
 export type RevealonBidParams = {
   pid: string;
   ext?: Record<string, unknown>;
-}
+};
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -23,6 +23,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   buildRequests: (validBidRequests, bidderRequest) => xeBuildRequests(validBidRequests, bidderRequest, ENDPOINT) as AdapterRequest,
   interpretResponse: (response: ServerResponse, request: AdapterRequest) => xeInterpretResponse(response, request as any),
   getUserSyncs
-}
+};
 
 registerBidder(spec);

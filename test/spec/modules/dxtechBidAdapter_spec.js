@@ -30,7 +30,7 @@ const getBannerRequest = () => {
     start: 1487883186070,
     auctionStart: 1487883186069,
     timeout: 3000
-  }
+  };
 };
 
 const getVideoRequest = () => {
@@ -189,7 +189,7 @@ const getBidderResponse = () => {
       }
     }
   };
-}
+};
 
 describe('dxtechBidAdapter', function() {
   let videoBidRequest;

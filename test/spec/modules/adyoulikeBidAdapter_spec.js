@@ -397,7 +397,7 @@ describe('Adyoulike Adapter', function () {
       'Height': 600,
       'AvailableSizes': '300x600'
     }
-  }
+  };
 
   const requestDataMultiPlacement = {
     'bid_id_0':
@@ -416,7 +416,7 @@ describe('Adyoulike Adapter', function () {
       'Height': 250,
       'AvailableSizes': '300x250'
     }
-  }
+  };
 
   const responseWithEmptyPlacement = [
     {
@@ -726,7 +726,7 @@ describe('Adyoulike Adapter', function () {
           'atype': 1,
           'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
         }]
-      }]
+      }];
 
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const payload = JSON.parse(request.data);
@@ -819,7 +819,7 @@ describe('Adyoulike Adapter', function () {
     beforeEach(function () {
       serverResponse = {
         body: {}
-      }
+      };
     });
 
     it('handles 204 responses', function () {
@@ -901,8 +901,8 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should expose gvlid', function() {
-      expect(spec.gvlid).to.equal(259)
-    })
+      expect(spec.gvlid).to.equal(259);
+    });
   });
 
   describe('getUserSyncs', function () {

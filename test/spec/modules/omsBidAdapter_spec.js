@@ -182,7 +182,7 @@ describe('omsBidAdapter', function () {
             }
           },
         }
-      ]
+      ];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].video.context).to.equal('instream');
@@ -263,7 +263,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends coppa', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } }).data)
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } }).data);
       expect(data.regs).to.not.be.undefined;
       expect(data.regs.coppa).to.equal(1);
     });
@@ -333,7 +333,7 @@ describe('omsBidAdapter', function () {
             'pbadslot': '/1111/home-left'
           }
         }
-      }
+      };
 
       const data = JSON.parse(spec.buildRequests(bidRequests).data);
       expect(data.imp[0].ext).to.not.be.undefined;

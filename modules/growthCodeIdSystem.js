@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
@@ -47,7 +47,7 @@ export const growthCodeIdSubmodule = {
     const configParams = (config && config.params) || {};
 
     let ids = [];
-    const gcid = storage.getDataFromLocalStorage(GCID_KEY, null)
+    const gcid = storage.getDataFromLocalStorage(GCID_KEY, null);
 
     if (gcid !== null) {
       const gcEid = {
@@ -56,18 +56,18 @@ export const growthCodeIdSubmodule = {
           id: gcid,
           atype: 3,
         }]
-      }
+      };
 
-      ids = ids.concat(gcEid)
+      ids = ids.concat(gcEid);
     }
 
-    const additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null)
+    const additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null);
     if (additionalEids !== null) {
-      const data = JSON.parse(additionalEids)
-      ids = ids.concat(data)
+      const data = JSON.parse(additionalEids);
+      ids = ids.concat(data);
     }
 
-    return { id: ids }
+    return { id: ids };
   },
 
 };

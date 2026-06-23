@@ -1382,7 +1382,7 @@ describe('E-Planning Adapter', function () {
       it('if the width is zero but the height is within the range', function() {
         element.style.width = '0px';
         setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 0.4, 'isIntersecting': true, 'width': 200, 'height': 200 } });
-        spec.buildRequests(bidRequests, bidderRequest)
+        spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -1391,7 +1391,7 @@ describe('E-Planning Adapter', function () {
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
         setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 500, 'height': 0 } });
-        spec.buildRequests(bidRequests, bidderRequest)
+        spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -1401,7 +1401,7 @@ describe('E-Planning Adapter', function () {
         element.style.height = '0px';
         element.style.width = '0px';
         setIntersectionObserverMock({ [ADUNIT_CODE_VIEW]: { 'ratio': 1, 'isIntersecting': true, 'width': 0, 'height': 0 } });
-        spec.buildRequests(bidRequests, bidderRequest)
+        spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -1499,12 +1499,12 @@ describe('E-Planning Adapter', function () {
         pubcid: 'c29cb2ae-769d-42f6-891a-f53cadee823d',
         tdid: 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
         id5id: { uid: 'ID5-ZHMOL_IfFSt7_lVYX8rBZc6GH3XMWyPQOBUfr4bm0g!', ext: { linkType: 1 } }
-      }))
+      }));
     });
 
     afterEach(() => {
       sandbox.restore();
-    })
+    });
 
     it('should add eids to the request', function() {
       const bidRequests = [validBidView];

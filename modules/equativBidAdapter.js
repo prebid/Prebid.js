@@ -97,7 +97,7 @@ export const spec = {
         data,
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-      })
+      });
     });
 
     return requests;

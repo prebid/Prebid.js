@@ -3,13 +3,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'pubx';
 const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';
-const USER_SYNC_URL = 'https://api.primecaster.net/primecaster_dmppv.html'
+const USER_SYNC_URL = 'https://api.primecaster.net/primecaster_dmppv.html';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
     if (!(bid.params.sid)) {
       return false;
-    } else { return true }
+    } else { return true; }
   },
   buildRequests: function(validBidRequests) {
     return validBidRequests.map(bidRequest => {
@@ -27,7 +27,7 @@ export const spec = {
         method: 'GET',
         url: BID_ENDPOINT,
         data: payload,
-      }
+      };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
@@ -98,5 +98,5 @@ export const spec = {
       url: USER_SYNC_URL + '?pkw=' + kwEnc + '&pd=' + descEnc + '&pu=' + pageEnc + '&pref=' + refEnc + '&pt=' + titleEnc
     }] : [];
   }
-}
+};
 registerBidder(spec);

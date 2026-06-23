@@ -12,7 +12,7 @@ describe('Bucksense Adapter', function() {
       params: {
         placementId: PLACE_ID,
       }
-    }
+    };
   };
 
   describe('isBidRequestValid', function() {

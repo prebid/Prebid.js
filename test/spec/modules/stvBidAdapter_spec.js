@@ -481,22 +481,22 @@ describe('stvAdapter', function() {
     });
     it(`we have valid sync url for iframe`, function() {
       const [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, { consentString: 'anyString' });
-      expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
+      expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString');
       expect(userSync.type).to.be.equal('iframe');
     });
     it(`we have valid sync url for image`, function() {
       const [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
-      expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString');
       expect(userSync.type).to.be.equal('image');
     });
     it(`we have valid sync url for image and iframe`, function() {
       const userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.length).to.be.equal(3);
-      expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
+      expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString');
       expect(userSync[0].type).to.be.equal('iframe');
-      expect(userSync[1].url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[1].url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString');
       expect(userSync[1].type).to.be.equal('image');
-      expect(userSync[2].url).to.be.equal('anyImageUrl2?gdpr=1&gdpr_consent=anyString')
+      expect(userSync[2].url).to.be.equal('anyImageUrl2?gdpr=1&gdpr_consent=anyString');
       expect(userSync[2].type).to.be.equal('image');
     });
   });

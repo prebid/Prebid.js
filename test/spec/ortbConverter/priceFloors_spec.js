@@ -15,7 +15,7 @@ describe('pbjs - ortb imp floor params', () => {
   Object.entries({
     'has no getFloor': {},
     'has getFloor that throws': {
-      getFloor: sinon.stub().callsFake(() => { throw new Error() }),
+      getFloor: sinon.stub().callsFake(() => { throw new Error(); }),
     },
     'returns invalid floor': {
       getFloor: sinon.stub().callsFake(() => ({ floor: NaN, currency: null }))
@@ -25,8 +25,8 @@ describe('pbjs - ortb imp floor params', () => {
       const imp = {};
       setOrtbImpBidFloor(imp, {}, {});
       expect(imp).to.eql({});
-    })
-  })
+    });
+  });
 
   it('sets bidfoor and bidfloorcur according to getFloor', () => {
     const imp = {};
@@ -35,14 +35,14 @@ describe('pbjs - ortb imp floor params', () => {
         return {
           currency: 'EUR',
           floor: '1.23'
-        }
+        };
       }
     };
     setOrtbImpBidFloor(imp, req, {});
     expect(imp).to.eql({
       bidfloor: 1.23,
       bidfloorcur: 'EUR'
-    })
+    });
   });
 
   Object.entries({
@@ -54,11 +54,11 @@ describe('pbjs - ortb imp floor params', () => {
       const imp = {};
       const req = {
         getFloor: () => floor
-      }
+      };
       setOrtbImpBidFloor(imp, req, {});
       expect(imp).to.eql({});
-    })
-  })
+    });
+  });
 
   describe('asks for floor in currency', () => {
     let req;
@@ -68,10 +68,10 @@ describe('pbjs - ortb imp floor params', () => {
           return {
             floor: 1.23,
             currency: opts.currency
-          }
+          };
         }
-      }
-    })
+      };
+    });
 
     it('from context.currency', () => {
       const imp = {};
@@ -80,7 +80,7 @@ describe('pbjs - ortb imp floor params', () => {
         currency: {
           adServerCurrency: 'EUR'
         }
-      })
+      });
       expect(imp.bidfloorcur).to.eql('JPY');
     });
 
@@ -99,7 +99,7 @@ describe('pbjs - ortb imp floor params', () => {
       const imp = {};
       setOrtbImpBidFloor(imp, req, {});
       expect(imp.bidfloorcur).to.eql('USD');
-    })
+    });
   });
 
   it('asks for specific mediaType if context.mediaType is set', () => {
@@ -108,10 +108,10 @@ describe('pbjs - ortb imp floor params', () => {
       getFloor(opts) {
         reqMediaType = opts.mediaType;
       }
-    }
+    };
     setOrtbImpBidFloor({}, req, { mediaType: 'banner' });
     expect(reqMediaType).to.eql('banner');
-  })
+  });
 });
 
 describe('setOrtbImpExtBidFloor', () => {
@@ -119,7 +119,7 @@ describe('setOrtbImpExtBidFloor', () => {
   beforeEach(() => {
     bidRequest = {
       getFloor: sinon.stub().callsFake(() => ({ floor, currency }))
-    }
+    };
     imp = {
       bidfloor: 1.23,
       bidfloorcur: 'EUR'
@@ -133,12 +133,12 @@ describe('setOrtbImpExtBidFloor', () => {
         expect(imp[mediaType]).to.not.exist;
       });
       it('should NOT be set if floor is same as imp.bidfloor', () => {
-        floor = 1.23
-        currency = 'EUR'
+        floor = 1.23;
+        currency = 'EUR';
         imp[mediaType] = {};
         setGranularBidfloors(imp, bidRequest);
         expect(imp[mediaType].ext).to.not.exist;
-        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType }))
+        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType }));
       });
       it('should be set otherwise', () => {
         floor = 3.21;
@@ -149,7 +149,7 @@ describe('setOrtbImpExtBidFloor', () => {
           bidfloor: 3.21,
           bidfloorcur: 'JPY'
         });
-        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType }))
+        sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType }));
       });
     });
   });
@@ -162,11 +162,11 @@ describe('setOrtbImpExtBidFloor', () => {
             { w: 3, h: 4 }
           ]
         }
-      }
+      };
     });
 
     it('should NOT be set if same as imp.bidfloor', () => {
-      floor = 1.23
+      floor = 1.23;
       currency = 'EUR';
       setGranularBidfloors(imp, bidRequest);
       expect(imp.banner.format.filter(fmt => fmt.bidfloor)).to.eql([]);
@@ -182,7 +182,7 @@ describe('setOrtbImpExtBidFloor', () => {
       imp.banner.format.forEach((fmt) => {
         expect(fmt.ext).to.eql({ bidfloor: 3.21, bidfloorcur: 'JPY' });
         sinon.assert.calledWith(bidRequest.getFloor, sinon.match({ mediaType: 'banner', size: [fmt.w, fmt.h] }));
-      })
+      });
     });
 
     it('should not be set if format is missing w/h', () => {
@@ -191,14 +191,14 @@ describe('setOrtbImpExtBidFloor', () => {
       delete imp.banner.format[0].w;
       setGranularBidfloors(imp, bidRequest);
       expect(imp.banner.format[0].ext).to.not.exist;
-    })
-  })
-})
+    });
+  });
+});
 
 describe('setOrtbExtPrebidFloors', () => {
   before(() => {
     config.setConfig({ floors: {} });
-  })
+  });
   after(() => {
     config.setConfig({ floors: { enabled: false } });
   });
@@ -207,7 +207,7 @@ describe('setOrtbExtPrebidFloors', () => {
     const req = {};
     setOrtbExtPrebidFloors(req);
     expect(req.ext.prebid.floors.enabled).to.equal(false);
-  })
+  });
 
   it('should respect fpd', () => {
     const req = {
@@ -218,8 +218,8 @@ describe('setOrtbExtPrebidFloors', () => {
           }
         }
       }
-    }
+    };
     setOrtbExtPrebidFloors(req);
     expect(req.ext.prebid.floors.enabled).to.equal(true);
-  })
-})
+  });
+});

@@ -36,7 +36,7 @@ const converter = ortbConverter({
     }
 
     if (!isFn(bidRequest.getFloor)) {
-      return imp
+      return imp;
     }
 
     const floor = bidRequest.getFloor({
@@ -67,7 +67,7 @@ const converter = ortbConverter({
     bidResponse.extra = bid.ext?.extra;
     return bidResponse;
   },
-})
+});
 
 const GVLID = 111;
 

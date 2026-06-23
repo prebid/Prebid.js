@@ -123,7 +123,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           },
         });
         window.googletag.cmd.forEach(cmd => cmd());
-      }
+      };
     });
 
     context('when an auction is complete', function () {
@@ -372,7 +372,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           const fakeBidWonEvent = Object.assign(auction.BID_WON[0], {
             transactionId: 'foo'
-          })
+          });
 
           events.emit(EVENTS.BID_WON, fakeBidWonEvent);
 
@@ -460,7 +460,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
             assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
           });
-        })
+        });
       });
 
       context('and the `slotRenderEnded` event fired for all bids, but not all bids have won', function () {
@@ -698,7 +698,7 @@ function getLocalAssert() {
   function isValidAnalyticsReport(report) {
     assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
     if ('usPrivacy' in report) {
-      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
+      assert.match(report.usPrivacy, /[01][YN-]{3}/);
     }
     if ('gdpr' in report) {
       assert.oneOf(report.gdpr, [0, 1]);
@@ -773,7 +773,7 @@ function getLocalAssert() {
   function calledOnceWithStringJsonEquivalent(sinonSpy, ...args) {
     sinon.assert.calledOnce(sinonSpy);
     args.forEach((arg, i) => {
-      const stubCallArgs = sinonSpy.firstCall.args[i]
+      const stubCallArgs = sinonSpy.firstCall.args[i];
 
       if (typeof arg === 'object') {
         assert.deepEqual(JSON.parse(stubCallArgs), arg);
@@ -794,7 +794,7 @@ function getLocalAssert() {
     isValidBidResponse,
     isValidMediaType,
     isValidSizeString,
-  }
+  };
 };
 
 function createReportWithThreeBidWonEvents() {

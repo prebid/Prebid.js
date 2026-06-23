@@ -7,7 +7,7 @@ const ENDPOINT_URL = 'https://s2s.yieldlove-ad-serving.net/openrtb2/auction';
 const DEFAULT_BID_TTL = 300; /* 5 minutes */
 const DEFAULT_CURRENCY = 'EUR';
 
-const participatedBidders = []
+const participatedBidders = [];
 
 export const spec = {
   gvlid: 251,
@@ -16,11 +16,11 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params.pid && bid.params.rid)
+    return !!(bid.params.pid && bid.params.rid);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const anyValidBidRequest = validBidRequests[0]
+    const anyValidBidRequest = validBidRequests[0];
 
     const impressions = validBidRequests.map(bidRequest => {
       return {
@@ -39,8 +39,8 @@ export const spec = {
         },
         secure: 1,
         id: bidRequest.bidId
-      }
-    })
+      };
+    });
 
     const s2sRequest = {
       device: {
@@ -79,7 +79,7 @@ export const spec = {
           gdpr: 1
         }
       }
-    }
+    };
 
     return {
       method: 'POST',
@@ -93,11 +93,11 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse) {
-    const bidResponses = []
-    const seatBids = serverResponse.body?.seatbid || []
+    const bidResponses = [];
+    const seatBids = serverResponse.body?.seatbid || [];
     seatBids.reduce((bids, cur) => {
-      if (cur.bid && cur.bid.length > 0) bids = bids.concat(cur.bid)
-      return bids
+      if (cur.bid && cur.bid.length > 0) bids = bids.concat(cur.bid);
+      return bids;
     }, []).forEach(bid => {
       bidResponses.push({
         requestId: bid.impid,
@@ -109,13 +109,13 @@ export const spec = {
         creativeId: bid.crid,
         netRevenue: true,
         currency: DEFAULT_CURRENCY
-      })
-    })
+      });
+    });
 
-    const bidders = serverResponse.body?.ext.responsetimemillis || {}
+    const bidders = serverResponse.body?.ext.responsetimemillis || {};
     Object.keys(bidders).forEach(bidder => {
-      if (!participatedBidders.includes(bidder)) participatedBidders.push(bidder)
-    })
+      if (!participatedBidders.includes(bidder)) participatedBidders.push(bidder);
+    });
 
     if (bidResponses.length === 0) {
       utils.logInfo('interpretResponse :: no bid');
@@ -125,23 +125,23 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
 
-    let gdprParams = ''
-    gdprParams = `gdpr=${Number(gdprConsent?.gdprApplies)}&`
-    gdprParams += `gdpr_consent=${gdprConsent?.consentString || ''}`
+    let gdprParams = '';
+    gdprParams = `gdpr=${Number(gdprConsent?.gdprApplies)}&`;
+    gdprParams += `gdpr_consent=${gdprConsent?.consentString || ''}`;
 
-    let bidderParams = ''
+    let bidderParams = '';
     if (participatedBidders.length > 0) {
-      bidderParams = `bidders=${participatedBidders.join(',')}`
+      bidderParams = `bidders=${participatedBidders.join(',')}`;
     }
 
     syncs.push({
       type: 'iframe',
       url: `https://cdn-a.yieldlove.com/load-cookie.html?endpoint=yieldlove&max_sync_count=100&${gdprParams}&${bidderParams}`
-    })
+    });
 
-    return syncs
+    return syncs;
   },
 
 };

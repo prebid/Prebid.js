@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const PREBID_ROOT = path.resolve(__dirname, '..');
 const TEST_DIR = path.resolve(__dirname, '../test');
 
@@ -18,11 +19,31 @@ function getModuleName(filename) {
   return null;
 }
 
+const getMetadata = (() => {
+  const cache = {};
+  return function(moduleName) {
+    if (!moduleName) return null;
+    if (!cache.hasOwnProperty(moduleName)) {
+      const metadataFile = path.resolve(__dirname, `../metadata/modules/${moduleName}.json`);
+      if (fs.existsSync(metadataFile)) {
+        cache[moduleName] = JSON.parse(fs.readFileSync(metadataFile).toString())
+      } else {
+        cache[moduleName] = null;
+      }
+    }
+    return cache[moduleName];
+  }
+})();
+
 // on Windows, require paths are not filesystem paths
 const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
 
+function toModulePath(path) {
+  return path.replace(SEP_PAT, '/')
+}
+
 function relPath(from, toRelToProjectRoot) {
-  let result = path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
+  let result = toModulePath(path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)));
   if (!result.startsWith('.')) {
     result = `./${result}`
   }
@@ -47,7 +68,9 @@ module.exports = {
   PREBID_ROOT,
   TEST_DIR,
   getModuleName,
+  getMetadata,
   relPath,
   isInDirectory,
-  getFreeName
+  getFreeName,
+  toModulePath
 };

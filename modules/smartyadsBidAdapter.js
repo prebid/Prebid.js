@@ -40,7 +40,7 @@ export const spec = {
 
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = bidderRequest.gdprConsent;
       }
       if (bidderRequest.gppConsent) {
         request.gpp = bidderRequest.gppConsent;
@@ -73,7 +73,7 @@ export const spec = {
       method: 'POST',
       url: adUrl,
       data: request
-    }
+    };
   },
 
   interpretResponse,

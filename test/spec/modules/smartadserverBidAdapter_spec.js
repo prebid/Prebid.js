@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
-import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
+import { getBidFloor } from 'libraries/equativUtils/equativUtils.js';
 import { spec } from 'modules/smartadserverBidAdapter.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -301,7 +301,7 @@ describe('Smart bid adapter tests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE_IS_NO_AD, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -345,7 +345,7 @@ describe('Smart bid adapter tests', function () {
     expect(function () {
       spec.interpretResponse(BID_RESPONSE, {
         data: 'invalid Json'
-      })
+      });
     }).to.not.throw();
   });
 
@@ -588,7 +588,7 @@ describe('Smart bid adapter tests', function () {
         }
       });
 
-      const uspConsentValue = '1YNN'
+      const uspConsentValue = '1YNN';
       const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
         uspConsent: uspConsentValue
       });
@@ -713,7 +713,7 @@ describe('Smart bid adapter tests', function () {
       expect(function () {
         spec.interpretResponse(INSTREAM_BID_RESPONSE, {
           data: 'invalid Json'
-        })
+        });
       }).to.not.throw();
     });
 
@@ -1056,7 +1056,7 @@ describe('Smart bid adapter tests', function () {
       expect(function () {
         spec.interpretResponse(OUTSTREAM_BID_RESPONSE, {
           data: 'invalid Json'
-        })
+        });
       }).to.not.throw();
     });
   });

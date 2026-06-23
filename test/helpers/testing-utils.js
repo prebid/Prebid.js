@@ -4,7 +4,7 @@ const utils = {
   host: (process.env.TEST_SERVER_HOST) ? process.env.TEST_SERVER_HOST : 'localhost',
   protocol: (process.env.TEST_SERVER_PROTOCOL) ? 'https' : 'http',
   testPageURL: function(name) {
-    return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`
+    return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`;
   },
   waitForElement: async function(elementRef, time = DEFAULT_TIMEOUT) {
     const element = $(elementRef);
@@ -49,6 +49,6 @@ const utils = {
       }
     });
   }
-}
+};
 
 module.exports = utils;

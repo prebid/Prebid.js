@@ -17,12 +17,12 @@ import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.3'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.3';
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
-const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
-const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
+const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p';
+const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -78,7 +78,7 @@ export const spec = {
               crossOrigin: true
             },
             bidderRequest
-          })
+          });
         }
       });
     });
@@ -196,7 +196,7 @@ export const spec = {
 
     return [];
   }
-}
+};
 registerBidder(spec);
 
 const converter = ortbConverter({
@@ -230,14 +230,14 @@ const converter = ortbConverter({
           consent: isGdprApplicable() ? bidderRequest.gdprConsent.consentString : null,
           eids: (eids && eids.length) ? eids : null
         }
-      }
+      };
     }
 
     if (request.site) {
-      request.site.id = window.location.hostname
+      request.site.id = window.location.hostname;
       setPublisherId(request.site);
     } else if (request.dooh) {
-      request.dooh.id = window.location.hostname
+      request.dooh.id = window.location.hostname;
       setPublisherId(request.dooh);
     } else {
       request.site = {
@@ -246,7 +246,7 @@ const converter = ortbConverter({
         page: bidderRequest.refererInfo.page || window.location.href,
         ref: bidderRequest.refererInfo.ref,
         content: null
-      }
+      };
       setPublisherId(request.site);
     }
 
@@ -268,7 +268,7 @@ const converter = ortbConverter({
           gdpr: isGdprApplicable() ? bidderRequest.gdprConsent.gdprApplies ? 1 : 0 : null,
           us_privacy: bidderRequest.uspConsent
         }
-      }
+      };
     }
 
     if (!request.device) {
@@ -278,7 +278,7 @@ const converter = ortbConverter({
         dnt: getDNT() ? 1 : 0,
         h: screen.height,
         w: screen.width
-      }
+      };
     }
     if (bidRequest.params.app) {
       if (!deepAccess(request.device, 'geo')) {
@@ -298,7 +298,7 @@ const converter = ortbConverter({
     };
     request.ext = {
       client: SMAATO_CLIENT
-    }
+    };
     return request;
   },
 
@@ -330,7 +330,7 @@ const converter = ortbConverter({
           imp.bidfloor = getBidFloor(bidRequest, VIDEO, videoParams.playerSize);
           deepSetValue(imp, 'video.ext', {
             rewarded: videoParams.ext && videoParams.ext.rewarded ? videoParams.ext.rewarded : 0
-          })
+          });
         }
 
         orig(imp, bidRequest, context);
@@ -351,11 +351,11 @@ const converter = ortbConverter({
 const createBannerAd = (bid) => {
   let clickEvent = '';
   if (bid.ext && bid.ext.curls) {
-    let clicks = ''
+    let clicks = '';
     bid.ext.curls.forEach(src => {
       clicks += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
-    })
-    clickEvent = `onclick="${clicks}"`
+    });
+    clickEvent = `onclick="${clicks}"`;
   }
 
   return `<div style="cursor:pointer" ${clickEvent}>${bid.adm}</div>`;
@@ -365,20 +365,20 @@ const createNativeAd = (adm) => {
   const nativeResponse = JSON.parse(adm).native;
   return {
     ortb: nativeResponse
-  }
+  };
 };
 
 function getNativeMainImageSize(nativeRequest) {
-  const mainImage = ((nativeRequest.assets) || []).find(asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  const mainImage = ((nativeRequest.assets) || []).find(asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN);
   if (mainImage) {
     if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
-      return [[mainImage.img.w, mainImage.img.h]]
+      return [[mainImage.img.w, mainImage.img.h]];
     }
     if (isNumber(mainImage.img.wmin) && isNumber(mainImage.img.hmin)) {
-      return [[mainImage.img.wmin, mainImage.img.hmin]]
+      return [[mainImage.img.wmin, mainImage.img.hmin]];
     }
   }
-  return []
+  return [];
 }
 
 function getBidFloor(bidRequest, mediaType, sizes) {

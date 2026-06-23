@@ -191,7 +191,7 @@ describe('AdgenerationAdapter', function () {
       // change the first bidRequest to debug mode
       const copyBidRequests = JSON.parse(JSON.stringify(bidRequests));
       for (const copyBid of copyBidRequests) {
-        copyBid.params.debug = true
+        copyBid.params.debug = true;
       }
       // check banner request
       const request = spec.buildRequests(copyBidRequests, bidderRequest);
@@ -211,7 +211,7 @@ describe('AdgenerationAdapter', function () {
             ]
           ]
         }
-      }
+      };
       const expectedBanner = {
         topframe: 0,
         format: [
@@ -220,7 +220,7 @@ describe('AdgenerationAdapter', function () {
             h: 250
           }
         ]
-      }
+      };
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       // check banner request
       const url = new URL(request.url);
@@ -264,7 +264,7 @@ describe('AdgenerationAdapter', function () {
             required: true
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       // check native request
       const url = new URL(request.url);
@@ -300,7 +300,7 @@ describe('AdgenerationAdapter', function () {
             ]
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: criteoParams })[0];
       expect(request.data.ortb.user).to.deep.equal(criteoParams.user);
     });
@@ -353,7 +353,7 @@ describe('AdgenerationAdapter', function () {
             schain: schainSmaple
           }
         },
-      }
+      };
       const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: idparams })[3];
       expect(request.data.ortb.user).to.deep.equal(idparams.user);
 
@@ -1101,7 +1101,7 @@ describe('AdgenerationAdapter', function () {
           'rotation': '0',
         }
       },
-    }
+    };
     serverResponse.emptyAdomain = {};
     serverResponse.emptyAdomain.banner = JSON.parse(JSON.stringify(serverResponse.normal.banner));
     serverResponse.emptyAdomain.banner.results[0].adomain = [];

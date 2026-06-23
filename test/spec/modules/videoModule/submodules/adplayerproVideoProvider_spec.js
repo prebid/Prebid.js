@@ -44,7 +44,7 @@ function getPlayerMock() {
       return this;
     },
     getAdWidth: function () {
-      return 600
+      return 600;
     },
     getAdHeight: function () {
       return 400;
@@ -115,7 +115,7 @@ describe('AdPlayerProProvider', function () {
     });
 
     it('should trigger failure when the div is not found', function () {
-      config.divId = 'fake-div'
+      config.divId = 'fake-div';
       const provider = AdPlayerProProvider(config, makePlayerFactoryMock(player), callbackStorage, utilsMock);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});

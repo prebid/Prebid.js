@@ -34,7 +34,7 @@ export const spec = {
       isprebid: true,
       slotid: slotId,
       bidRequest: validBidRequests[0]
-    }
+    };
 
     return {
       method: 'POST',
@@ -44,7 +44,7 @@ export const spec = {
         withCredentials: false,
       },
       bidId: validBidRequests[0].bidId
-    }
+    };
   },
 
   interpretResponse: function (serverResponse, bidRequest) {

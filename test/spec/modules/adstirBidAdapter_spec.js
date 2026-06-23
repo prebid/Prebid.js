@@ -11,7 +11,7 @@ describe('AdstirAdapter', function () {
           appId: 'MEDIA-XXXXXX',
           adSpaceNo: 6,
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should return false if appId is non-empty string, but adSpaceNo is not integer', function () {
@@ -20,7 +20,7 @@ describe('AdstirAdapter', function () {
           appId: 'MEDIA-XXXXXX',
           adSpaceNo: 'a',
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if appId is non-empty string, but adSpaceNo is null', function () {
@@ -29,7 +29,7 @@ describe('AdstirAdapter', function () {
           appId: 'MEDIA-XXXXXX',
           adSpaceNo: null,
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if appId is non-empty string, but adSpaceNo is undefined', function () {
@@ -37,7 +37,7 @@ describe('AdstirAdapter', function () {
         params: {
           appId: 'MEDIA-XXXXXX'
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if adSpaceNo is integer, but appId is empty string', function () {
@@ -46,7 +46,7 @@ describe('AdstirAdapter', function () {
           appId: '',
           adSpaceNo: 6,
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if adSpaceNo is integer, but appId is not string', function () {
@@ -55,7 +55,7 @@ describe('AdstirAdapter', function () {
           appId: 123,
           adSpaceNo: 6,
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if adSpaceNo is integer, but appId is null', function () {
@@ -64,7 +64,7 @@ describe('AdstirAdapter', function () {
           appId: null,
           adSpaceNo: 6,
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if adSpaceNo is integer, but appId is undefined', function () {
@@ -72,13 +72,13 @@ describe('AdstirAdapter', function () {
         params: {
           adSpaceNo: 6,
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false if params is empty', function () {
       const bid = {
         params: {}
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -351,7 +351,7 @@ describe('AdstirAdapter', function () {
         bitness: '64',
         model: 'Pixel 5',
         source: 2
-      }
+      };
 
       const validBidRequestsClone = utils.deepClone(validBidRequests);
       validBidRequestsClone[0] = utils.mergeDeep(validBidRequestsClone[0], {

@@ -1,6 +1,6 @@
 import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 import * as browsiUtils from '../../../libraries/browsiUtils/browsiUtils.js';
-import * as utils from '../../../src/utils.js'
+import * as utils from '../../../src/utils.js';
 import * as events from '../../../src/events.js';
 import * as sinon from 'sinon';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
@@ -44,7 +44,7 @@ describe('browsi Real time data sub module', function () {
     sandbox.stub(Global, 'getGlobal').callsFake(() => {
       return {
         enableAnalytics: () => { },
-      }
+      };
     });
   });
 
@@ -54,7 +54,7 @@ describe('browsi Real time data sub module', function () {
 
   it('should init and return true', function () {
     browsiRTD.collectData();
-    expect(browsiRTD.browsiSubmodule.init(conf.dataProviders[0])).to.equal(true)
+    expect(browsiRTD.browsiSubmodule.init(conf.dataProviders[0])).to.equal(true);
   });
 
   it('should create browsi script', function () {
@@ -129,7 +129,7 @@ describe('browsi Real time data sub module', function () {
       browsiRTD.setBrowsiData(data);
       expect(browsiRTD.browsiSubmodule.getTargetingData(['slot4'], null, null, auction)).to.eql({ 'slot4': { browsiScroll: '0.40' } });
     });
-  })
+  });
 
   describe('should return matching prediction', function () {
     const predictions = {
@@ -137,22 +137,22 @@ describe('browsi Real time data sub module', function () {
       1: 0.254,
       3: 0,
       4: 0.8
-    }
+    };
     const singlePrediction = {
       0: 0.123
-    }
+    };
     const numbericPrediction = 0.456;
     it('should return raw value if valid', function () {
       expect(browsiRTD.getCurrentData(predictions, 0)).to.equal(0.123);
       expect(browsiRTD.getCurrentData(predictions, 1)).to.equal(0.254);
-    })
+    });
     it('should return 0 for prediction = 0', function () {
       expect(browsiRTD.getCurrentData(predictions, 3)).to.equal(0);
-    })
+    });
     it('should return -1 for invalid params', function () {
       expect(browsiRTD.getCurrentData(null, 3)).to.equal(-1);
       expect(browsiRTD.getCurrentData(predictions, null)).to.equal(-1);
-    })
+    });
     it('should return prediction according to object keys length ', function () {
       expect(browsiRTD.getCurrentData(singlePrediction, 0)).to.equal(0.123);
       expect(browsiRTD.getCurrentData(singlePrediction, 1)).to.equal(-1);
@@ -160,11 +160,11 @@ describe('browsi Real time data sub module', function () {
       expect(browsiRTD.getCurrentData(predictions, 4)).to.equal(0.8);
       expect(browsiRTD.getCurrentData(predictions, 5)).to.equal(0.8);
       expect(browsiRTD.getCurrentData(predictions, 8)).to.equal(0.8);
-    })
+    });
     it('should return prediction if it is a number', function () {
       expect(browsiRTD.getCurrentData(numbericPrediction, 0)).to.equal(0.456);
-    })
-  })
+    });
+  });
 
   describe('should handle bid request data', function () {
     const data = {
@@ -174,7 +174,7 @@ describe('browsi Real time data sub module', function () {
       },
       pr: ['bidder1'],
       pmd: undefined
-    }
+    };
     const fakeAdUnits = [
       {
         code: 'adUnit1',
@@ -190,7 +190,7 @@ describe('browsi Real time data sub module', function () {
           { bidder: 'bidder2' }
         ]
       }
-    ]
+    ];
     before(async () => {
       browsiRTD.setBrowsiData(data);
       browsiRTD.browsiSubmodule.getBidRequestData({ adUnits: fakeAdUnits }, () => { }, {}, null);
@@ -198,12 +198,12 @@ describe('browsi Real time data sub module', function () {
     it('should set bidder params with prediction values', function () {
       expect(utils.deepAccess(fakeAdUnits[0].bids[0], 'ortb2Imp.ext.data.browsi')).to.eql({ keyA: 0.234 });
       expect(utils.deepAccess(fakeAdUnits[1].bids[0], 'ortb2Imp.ext.data.browsi')).to.eql({ keyB: 0.134 });
-    })
+    });
     it('should not set bidder params if bidder is not in pr', function () {
       expect(utils.deepAccess(fakeAdUnits[0].bids[1], 'ortb2Imp.ext.data.browsi')).to.eql(undefined);
       expect(utils.deepAccess(fakeAdUnits[1].bids[1], 'ortb2Imp.ext.data.browsi')).to.eql(undefined);
-    })
-  })
+    });
+  });
 
   describe('should not set bid request data', function () {
     const data = {
@@ -213,7 +213,7 @@ describe('browsi Real time data sub module', function () {
       },
       pr: [],
       pmd: undefined
-    }
+    };
     const fakeAdUnits = [
       {
         code: 'adUnit1',
@@ -229,7 +229,7 @@ describe('browsi Real time data sub module', function () {
           { bidder: 'bidder2' }
         ]
       }
-    ]
+    ];
     before(() => {
       browsiRTD.setBrowsiData(data);
       browsiRTD.browsiSubmodule.getBidRequestData({ adUnits: fakeAdUnits }, () => { }, {}, null);
@@ -239,8 +239,8 @@ describe('browsi Real time data sub module', function () {
       expect(utils.deepAccess(fakeAdUnits[1].bids[0], 'ortb2Imp.ext.data.browsi')).to.eql(undefined);
       expect(utils.deepAccess(fakeAdUnits[0].bids[1], 'ortb2Imp.ext.data.browsi')).to.eql(undefined);
       expect(utils.deepAccess(fakeAdUnits[1].bids[1], 'ortb2Imp.ext.data.browsi')).to.eql(undefined);
-    })
-  })
+    });
+  });
 
   describe('should emit ad request billable event', function () {
     before(() => {
@@ -253,10 +253,10 @@ describe('browsi Real time data sub module', function () {
         bet: 'AD_REQUEST'
       };
       browsiRTD.setBrowsiData(data);
-    })
+    });
     beforeEach(() => {
       eventsEmitSpy.resetHistory();
-    })
+    });
     it('should send one event per ad unit code', function () {
       const auction = {
         adUnits: [
@@ -277,7 +277,7 @@ describe('browsi Real time data sub module', function () {
 
       browsiRTD.browsiSubmodule.getTargetingData(['a', 'b'], null, null, auction);
       expect(eventsEmitSpy.callCount).to.equal(2);
-    })
+    });
     it('should send events only for received ad unit codes', function () {
       const auction = {
         adUnits: [
@@ -300,7 +300,7 @@ describe('browsi Real time data sub module', function () {
       expect(eventsEmitSpy.callCount).to.equal(1);
       browsiRTD.browsiSubmodule.getTargetingData(['b'], null, null, auction);
       expect(eventsEmitSpy.callCount).to.equal(2);
-    })
+    });
     it('should use 1st transaction ID in case of twin ad unit codes', function () {
       const auction = {
         auctionId: '123',
@@ -321,52 +321,52 @@ describe('browsi Real time data sub module', function () {
         type: 'adRequest',
         transactionId: 1,
         auctionId: '123'
-      }
+      };
 
       browsiRTD.browsiSubmodule.getTargetingData(['a'], null, null, auction);
       const callArguments = eventsEmitSpy.getCalls()[0].args[1];
       // billing id is random, we can't check its value
       delete callArguments['billingId'];
       expect(callArguments).to.eql(expectedCall);
-    })
-  })
+    });
+  });
 
   describe('should emit pageveiw billable event', function () {
     beforeEach(() => {
       eventsEmitSpy.resetHistory();
-    })
+    });
     it('should send event if type is correct', function () {
-      browsiRTD.sendPageviewEvent('PAGEVIEW')
+      browsiRTD.sendPageviewEvent('PAGEVIEW');
       const pageViewEvent = new CustomEvent('browsi_pageview', {});
       window.dispatchEvent(pageViewEvent);
       const expectedCall = {
         vendor: 'browsi',
         type: 'pageview',
-      }
+      };
 
       expect(eventsEmitSpy.callCount).to.equal(1);
       const callArguments = eventsEmitSpy.getCalls()[0].args[1];
       // billing id is random, we can't check its value
       delete callArguments['billingId'];
       expect(callArguments).to.eql(expectedCall);
-    })
+    });
     it('should not send event if type is incorrect', function () {
       browsiRTD.sendPageviewEvent('AD_REQUEST');
       browsiRTD.sendPageviewEvent('INACTIVE');
       browsiRTD.sendPageviewEvent(undefined);
       expect(eventsEmitSpy.callCount).to.equal(0);
-    })
-  })
+    });
+  });
 
   describe('set targeting - invalid params', function () {
     const random = Math.floor(Math.random() * 10) + 1;
     it('should return false if key is undefined', function () {
       expect(browsiUtils.setKeyValue(undefined, random)).to.equal(false);
-    })
+    });
     it('should return false if key is not string', function () {
       expect(browsiUtils.setKeyValue(1, random)).to.equal(false);
-    })
-  })
+    });
+  });
 
   describe('set targeting - valid params', function () {
     let slot;
@@ -378,13 +378,13 @@ describe('browsi Real time data sub module', function () {
       slot = mockGpt.makeSlot({ code: '/123/split', divId: 'split' });
       browsiUtils.setKeyValue(splitKey, random);
       window.googletag.cmd.forEach(cmd => cmd());
-    })
+    });
     it('should place numeric key value on all slots', function () {
       const targetingValue = window.googletag.pubads().getTargeting(splitKey);
       expect(targetingValue).to.be.an('array').that.is.not.empty;
       expect(targetingValue[0]).to.be.a('string');
-    })
-  })
+    });
+  });
 
   describe('should get latest avg highest bid', function () {
     it('should return lahb', function () {
@@ -404,7 +404,7 @@ describe('browsi Real time data sub module', function () {
 
       expect(browsiUtils.getLahb(lahb, currentTimestemp)).to.deep.equal({ avg: 0.02, age: diffInDays });
     });
-  })
+  });
 
   describe('should get recent avg highest bid', function () {
     it('should return rahb', function () {
@@ -446,7 +446,7 @@ describe('browsi Real time data sub module', function () {
       };
       expect(browsiUtils.getRahbByTs(rahb, currentTimestemp)).to.deep.equal({});
     });
-  })
+  });
 
   describe('should get avg highest bid metrics', function () {
     const currentTimestemp = new Date().getTime();
@@ -463,8 +463,8 @@ describe('browsi Real time data sub module', function () {
         rahb: +(2.5).toFixed(3),
         lahb: +bus.lahb?.avg.toFixed(3),
         lbsa: +(1).toFixed(3),
-      }
-    }
+      };
+    };
 
     before(() => {
       timestampStub.returns(currentTimestemp);
@@ -518,5 +518,5 @@ describe('browsi Real time data sub module', function () {
         lbsa: getExpected(bus).lbsa
       });
     });
-  })
+  });
 });

@@ -126,7 +126,7 @@ const VIDEO_BID_RESPONSE = {
       ]
     }
   ]
-}
+};
 
 describe('BidtheatreAdapter', function () {
   describe('isBidRequestValid', function () {

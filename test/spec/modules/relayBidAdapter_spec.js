@@ -3,7 +3,7 @@ import { spec } from '../../../modules/relayBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'relay'
+const bidder = 'relay';
 const endpoint = 'https://e.relay.bid/p/openrtb2';
 
 describe('RelayBidAdapter', function () {
@@ -63,7 +63,7 @@ describe('RelayBidAdapter', function () {
       }
     },
     params: {}
-  }
+  };
 
   const bidderRequest = {};
 

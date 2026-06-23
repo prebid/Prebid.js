@@ -32,7 +32,7 @@ const getBannerRequest = () => {
     start: 1615982436070,
     auctionStart: 1615982436069,
     timeout: 2000
-  }
+  };
 };
 
 const getVideoRequest = () => {
@@ -191,7 +191,7 @@ const getBidderResponse = () => {
       }
     }
   };
-}
+};
 
 describe('trustxBidAdapter', function() {
   let videoBidRequest;
@@ -281,7 +281,7 @@ describe('trustxBidAdapter', function() {
     });
 
     it('returns false when banner mediaType does not exist', function () {
-      bidderRequest.bids[0].mediaTypes = {}
+      bidderRequest.bids[0].mediaTypes = {};
       expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false;
     });
   });
@@ -401,12 +401,12 @@ describe('trustxBidAdapter', function() {
         'invalid',
         1,
         []
-      ]
+      ];
 
       invalidMimes.forEach((mimes) => {
         this.bid.mediaTypes.video.mimes = mimes;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      })
+      });
     });
 
     it('returns false when video protocols is invalid', function () {
@@ -415,12 +415,12 @@ describe('trustxBidAdapter', function() {
         'invalid',
         1,
         []
-      ]
+      ];
 
       invalidProtocols.forEach((protocols) => {
         this.bid.mediaTypes.video.protocols = protocols;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      })
+      });
     });
 
     it('should accept outstream context', function () {
@@ -481,7 +481,7 @@ describe('trustxBidAdapter', function() {
 
     context('when mediaType is banner', function () {
       it('creates request data', function () {
-        let request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
+        let request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
 
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;

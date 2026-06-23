@@ -19,7 +19,7 @@ const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
-}
+};
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
@@ -61,7 +61,7 @@ export const spec = {
         url: spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
         bidRequest: bid
-      }
+      };
     });
   },
 
@@ -220,7 +220,7 @@ function getMediaType(mediaTypes) {
   } else if (mediaTypes != null && mediaTypes.video) {
     return 'video';
   } else if (mediaTypes != null && mediaTypes.native) {
-    return 'native'
+    return 'native';
   }
   return 'banner';
 }
@@ -249,7 +249,7 @@ function addBidData(bidData, key, value) {
 }
 
 function getFormat(size) {
-  const formatList = []
+  const formatList = [];
   for (var i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
   }

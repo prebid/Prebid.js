@@ -65,7 +65,7 @@ export const spec = {
       bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
       bapp: deepAccess(validBidRequests[0], 'params.bapp') || [],
       device: ortb2.device || {}
-    }
+    };
 
     if (validBidRequests[0].auctionId) {
       payload.auctionId = validBidRequests[0].auctionId;
@@ -96,19 +96,19 @@ export const spec = {
       payload.gdpr = {
         consent: '',
         required: false
-      }
+      };
     }
 
     if (bidderRequest?.gppConsent?.gppString) {
       payload.gpp = {
         consent: bidderRequest.gppConsent.gppString,
         sid: bidderRequest.gppConsent.applicableSections
-      }
+      };
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
       payload.gpp = {
         consent: bidderRequest.ortb2.regs.gpp,
         sid: bidderRequest.ortb2.regs.gpp_sid
-      }
+      };
     }
 
     if (window.location.href.indexOf('optidigitalTestMode=true') !== -1) {
@@ -122,7 +122,7 @@ export const spec = {
     if (_getEids(validBidRequests[0])) {
       payload.user = {
         eids: _getEids(validBidRequests[0])
-      }
+      };
     }
 
     const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');

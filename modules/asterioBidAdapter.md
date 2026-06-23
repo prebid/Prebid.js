@@ -9,7 +9,7 @@ Maintainer: mnikulin@asteriosoft.com
 # Description
 
 Connects to Asterio Bidder for bids.
-Asterio bid adapter supports Banner and Video ads.
+Asterio bid adapter supports Banner, Video and Native ads.
 
 # Bid Params
 

@@ -28,7 +28,7 @@ const scope: any = !shouldDefineGlobal() ? {} : window;
 const global: PrebidJS = scope[getGlobalVarName()] = scope[getGlobalVarName()] || {};
 global.cmd = global.cmd || [];
 global.que = global.que || [];
-global.installedModules = global.installedModules || []
+global.installedModules = global.installedModules || [];
 
 // create a pbjs global pointer
 if (scope === window) {

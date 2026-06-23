@@ -99,7 +99,7 @@ describe('onetag', function () {
         required: 1,
         sendId: 1
       }
-    }
+    };
     bid = addNativeParams(bid);
     const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
     bid.mediaTypes.native = {};
@@ -114,7 +114,7 @@ describe('onetag', function () {
       values: {
         'native|*': 1.10
       }
-    }
+    };
     bid.getFloor = getFloor;
     return bid;
   }
@@ -184,7 +184,7 @@ describe('onetag', function () {
       values: {
         'native|*': 1.10
       }
-    }
+    };
     bid.getFloor = getFloor;
 
     return bid;
@@ -205,7 +205,7 @@ describe('onetag', function () {
       values: {
         'banner|300x250': 0.10
       }
-    }
+    };
     bid.getFloor = getFloor;
 
     return bid;
@@ -228,7 +228,7 @@ describe('onetag', function () {
       values: {
         'video|640x480': 0.10
       }
-    }
+    };
     bid.getFloor = getFloor;
     return bid;
   }
@@ -250,7 +250,7 @@ describe('onetag', function () {
       values: {
         'video|640x480': 0.10
       }
-    }
+    };
     bid.getFloor = getFloor;
     return bid;
   }
@@ -266,7 +266,7 @@ describe('onetag', function () {
     outstreamVideoBid = createOutstreamVideoBid();
     nativeBid = createNativeBid();
     nativeLegacyBid = createNativeLegacyBid();
-  })
+  });
 
   describe('isBidRequestValid', function () {
     it('Should return true when required params are found', function () {
@@ -503,10 +503,10 @@ describe('onetag', function () {
       expect(data.wHeight).to.be.a('number');
       expect(data.hLength).to.be.a('number');
       expect(data.networkConnectionType).to.satisfy(function (value) {
-        return value === null || typeof value === 'string'
+        return value === null || typeof value === 'string';
       });
       expect(data.networkEffectiveConnectionType).to.satisfy(function (value) {
-        return value === null || typeof value === 'string'
+        return value === null || typeof value === 'string';
       });
       expect(data.fledgeEnabled).to.be.a('boolean');
       expect(data.bids).to.be.an('array');
@@ -574,7 +574,7 @@ describe('onetag', function () {
             expect(priceFloor.currency).to.be.a('string');
             expect(priceFloor.floor).to.be.a('number');
             expect(priceFloor.size).to.satisfy(function (size) {
-              if (typeof size !== 'object' && size !== null && typeof size !== 'undefined') {
+              if (typeof size !== 'object' && typeof size !== 'undefined') {
                 return false;
               }
               if (size !== null) {
@@ -733,7 +733,7 @@ describe('onetag', function () {
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'ortb2': firtPartyData
-      }
+      };
       const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
@@ -761,7 +761,7 @@ describe('onetag', function () {
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
         'ortb2': dsa
-      }
+      };
       const serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
       expect(payload.ortb2).to.exist;
@@ -963,7 +963,7 @@ describe('onetag', function () {
         ]
       };
       expect(isSchainValid(validSchain)).to.be.true;
-    })
+    });
   });
 });
 
@@ -1064,7 +1064,7 @@ function getFledgeBannerResponse() {
         ],
       }
     }
-  ]
+  ];
   return bannerVideoResponse;
 }
 
@@ -1115,5 +1115,5 @@ function getBannerVideoRequest() {
       },
       onetagSid: 'user_id'
     })
-  }
+  };
 }

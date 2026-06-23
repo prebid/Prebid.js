@@ -18,7 +18,7 @@ describe('Engageya adapter', function () {
           pageUrl: '[PAGE_URL]'
         }
       }
-    ]
+    ];
 
     nativeBidRequests = [
       {
@@ -42,8 +42,8 @@ describe('Engageya adapter', function () {
           }
         }
       }
-    ]
-  })
+    ];
+  });
 
   describe('isValidSize', function () {
     const bid = {
@@ -145,7 +145,7 @@ describe('Engageya adapter', function () {
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.be.false;
     });
-  })
+  });
 
   describe('isBidRequestValid', function () {
     it('Valid bid case', function () {
@@ -157,7 +157,7 @@ describe('Engageya adapter', function () {
           pageUrl: '[PAGE_URL]'
         },
         sizes: [[300, 250]]
-      }
+      };
       const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.be.true;
     });
@@ -166,10 +166,10 @@ describe('Engageya adapter', function () {
       const validBid = {
         bidder: 'engageya',
         params: {}
-      }
+      };
       const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.be.false;
-    })
+    });
 
     it('Invalid bid case: widget id must be number', function () {
       const invalidBid = {
@@ -180,10 +180,10 @@ describe('Engageya adapter', function () {
           pageUrl: '[PAGE_URL]'
         },
         sizes: [[300, 250]]
-      }
+      };
       const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
-    })
+    });
 
     it('Invalid bid case: unsupported sizes', function () {
       const invalidBid = {
@@ -194,11 +194,11 @@ describe('Engageya adapter', function () {
           pageUrl: '[PAGE_URL]'
         },
         sizes: [[250, 250]]
-      }
+      };
       const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
-    })
-  })
+    });
+  });
 
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via GET', function () {
@@ -233,7 +233,7 @@ describe('Engageya adapter', function () {
       const urlParams = new URL(request.url).searchParams;
       expect(urlParams.get('url')).to.exist.and.to.equal(pageUrl);
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     let nativeResponse;
@@ -267,7 +267,7 @@ describe('Engageya adapter', function () {
       nativeResponse = {
         ...recsResponse,
         pbtypeId: 1,
-      }
+      };
 
       bannerResponse = {
         ...recsResponse,
@@ -275,12 +275,12 @@ describe('Engageya adapter', function () {
         widget: {
           additionalData: '{"css":".eng_tag_ttl{display:block!important}"}'
         },
-      }
-    })
+      };
+    });
 
     it('should return empty array if no response', function () {
-      const result = spec.interpretResponse({}, [])
-      expect(result).to.be.an('array').that.is.empty
+      const result = spec.interpretResponse({}, []);
+      expect(result).to.be.an('array').that.is.empty;
     });
 
     it('should return empty array if no valid bids', function () {
@@ -293,8 +293,8 @@ describe('Engageya adapter', function () {
         viewPxl: '//view.pixel',
       };
       const request = spec.buildRequests(bidRequests)[0];
-      const result = spec.interpretResponse({ body: response }, request)
-      expect(result).to.be.an('array').that.is.empty
+      const result = spec.interpretResponse({ body: response }, request);
+      expect(result).to.be.an('array').that.is.empty;
     });
 
     it('should interpret native response', function () {
@@ -520,5 +520,5 @@ describe('Engageya adapter', function () {
       const result = spec.interpretResponse({ body: bannerResponse }, request);
       expect(result).to.deep.equal(expectedResult);
     });
-  })
-})
+  });
+});

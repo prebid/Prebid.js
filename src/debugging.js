@@ -53,10 +53,10 @@ export function debuggingModuleLoader({ alreadyInstalled = isDebuggingInstalled,
             }).then(resolve, reject);
           }
         });
-      })
+      });
     }
     return loading;
-  }
+  };
 }
 
 export function debuggingControls({ load = debuggingModuleLoader(), hook = getHook('requestBids') } = {}) {
@@ -67,7 +67,7 @@ export function debuggingControls({ load = debuggingModuleLoader(), hook = getHo
       .catch((e) => {
         logError(`Could not load debugging module`, e);
       })
-      .then(() => next.apply(this, args))
+      .then(() => next.apply(this, args));
   }
   function enable() {
     if (!enabled) {

@@ -60,7 +60,7 @@ describe('DSL', () => {
       it('accepts arrays of enums that are in range', () => {
         scan({ inner: { enumArray: [12, 13] } });
         sinon.assert.notCalled(onError);
-      })
+      });
       it('detects enum values out of range', () => {
         const obj = { inner: { enum: -1 } };
         scan(obj);
@@ -72,7 +72,7 @@ describe('DSL', () => {
         scan(obj);
         sinon.assert.calledOnce(onError);
         sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enum', obj.inner, 'enum', 'err');
-      })
+      });
       it('detects arrays of enums that are out of range', () => {
         const obj = { inner: { enumArray: [12, 13, -1, 14] } };
         scan(obj);
@@ -90,7 +90,7 @@ describe('DSL', () => {
         scan(obj);
         sinon.assert.calledOnce(onError);
         sinon.assert.calledWith(onError, ERR_TYPE, 'inner.enumArray.1', obj.inner.enumArray, 1, 'err');
-      })
+      });
     });
     describe('into arrays', () => {
       it('detects if inner array is not an array', () => {
@@ -135,7 +135,7 @@ describe('DSL', () => {
             { p21: 1, ext: { e: 1 } }
           ]
         });
-      })
-    })
-  })
+      });
+    });
+  });
 });

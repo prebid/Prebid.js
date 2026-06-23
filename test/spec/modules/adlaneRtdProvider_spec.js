@@ -131,12 +131,12 @@ describe('adlane Module', () => {
         status: 'accepted',
         id: '123456789123456789',
         decisionDate: '2011-10-05T14:48:00.000Z'
-      }
+      };
       const resultAgeVerification = {
         id: '123456789123456789',
         status: 'accepted',
         decisionDate: '2011-10-05T14:48:00.000Z'
-      }
+      };
       const win = {
         AdlCmp: {
           getAgeVerification: () => mockAgeVerification

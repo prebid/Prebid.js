@@ -3,7 +3,7 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const analyticsType = 'endpoint';
@@ -14,7 +14,7 @@ const MODULE = `${MODULE_NAME}AnalyticProvider`;
  * Custom tracking server that gets internal events from EightPod's ad unit
  */
 const trackerUrl = 'https://demo.8pod.com/tracker/track';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
 
 const {
   BID_WON
@@ -151,7 +151,7 @@ function sendEvents() {
         error: (e) => {
           logError(MODULE, 'Cant send events', e);
         }
-      })
+      });
     } catch (e) {
       logError(MODULE, 'Cant send events', e);
     }
@@ -170,7 +170,7 @@ function sendEventsApi(eventList, callbacks) {
  */
 const resetLocalStorage = () => {
   storage.setDataInLocalStorage(`EIGHT_POD_EVENTS`, JSON.stringify([]), null);
-}
+};
 
 // save the base class function
 eightPodAnalytics.originEnableAnalytics = eightPodAnalytics.enableAnalytics;
@@ -191,8 +191,8 @@ eightPodAnalytics.disableAnalytics = ((orig) => {
       this._interval = null;
     }
     return orig.apply(this, arguments);
-  }
-})(eightPodAnalytics.disableAnalytics)
+  };
+})(eightPodAnalytics.disableAnalytics);
 
 /**
  * Register Analytics Adapter

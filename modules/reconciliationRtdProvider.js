@@ -232,7 +232,7 @@ export const track = {
       }
     );
   }
-}
+};
 
 /**
  * Set custom targetings for provided adUnits

@@ -45,8 +45,8 @@ describe('Nexx360 bid adapter tests', () => {
       sandbox.restore();
     });
 
-    it('defaults to true when no config and no URL override', () => {
-      expect(getGzipSetting()).to.equal(true);
+    it('defaults to false when no config and no URL override', () => {
+      expect(getGzipSetting()).to.equal(false);
     });
 
     it('returns false when bidder config gzipEnabled is the string "false"', () => {
@@ -70,9 +70,16 @@ describe('Nexx360 bid adapter tests', () => {
       expect(getGzipSetting()).to.equal(false);
     });
 
-    it('returns true when URL has nexx360_debug with a value other than 1', () => {
+    it('returns false (the default) when URL has nexx360_debug with a value other than 1', () => {
       getParamStub.withArgs('nexx360_debug').returns('0');
-      expect(getGzipSetting()).to.equal(true);
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('reads the config of the passed alias bidder code', () => {
+      config.setBidderConfig({ bidders: ['revenuemaker'], config: { gzipEnabled: true } });
+      expect(getGzipSetting('revenuemaker')).to.equal(true);
+      // the nexx360 bucket is untouched, so it falls back to the default
+      expect(getGzipSetting('nexx360')).to.equal(false);
     });
   });
 
@@ -88,10 +95,10 @@ describe('Nexx360 bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
-    it('We verify isBidRequestValid with unvalid adUnitName', () => {
+    it('We verify isBidRequestValid with invalid adUnitName', () => {
       bannerBid.params = { adUnitName: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -106,17 +113,17 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with unvalid divId', () => {
+    it('We verify isBidRequestValid with invalid divId', () => {
       bannerBid.params = { divId: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid unvalid allBids', () => {
+    it('We verify isBidRequestValid invalid allBids', () => {
       bannerBid.params = { allBids: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -141,7 +148,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -156,7 +163,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(typeof output.nexx360Id).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -171,7 +178,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -186,7 +193,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -201,7 +208,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -216,7 +223,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql('abcdef');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -464,7 +471,7 @@ describe('Nexx360 bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 

@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import { submodule } from '../src/hook.js'
-import { loadExternalScript } from '../src/adloader.js'
+import * as utils from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
@@ -67,7 +67,7 @@ export const justIdSubmodule = {
   getId(config, consentData, cacheIdObj) {
     utils.logInfo(LOG_PREFIX, 'getId', config, consentData, cacheIdObj);
 
-    var configWrapper
+    var configWrapper;
     try {
       configWrapper = new ConfigWrapper(config);
     } catch (e) {
@@ -111,30 +111,30 @@ export const justIdSubmodule = {
 export const ConfigWrapper = function(config) {
   this.getConfig = function() {
     return config;
-  }
+  };
 
   this.getMode = function() {
     return (params().mode || DEFAULT_MODE).toUpperCase();
-  }
+  };
 
   this.getPartner = function() {
     return params().partner || DEFAULT_PARTNER;
-  }
+  };
 
   this.isCombinedMode = function() {
     return this.getMode() === MODE_COMBINED;
-  }
+  };
 
   this.getAtmVarName = function() {
     return params().atmVarName || DEFAULT_ATM_VAR_NAME;
-  }
+  };
 
   this.getUrl = function() {
     const u = params().url;
     const url = new URL(u);
     url.searchParams.append('sourceId', this.getPartner());
     return url.toString();
-  }
+  };
 
   function params() {
     return config.params || {};
@@ -149,7 +149,7 @@ export const ConfigWrapper = function(config) {
   if (this.isCombinedMode() && (utils.isEmptyStr(url) || !utils.isStr(url))) {
     throw EX_URL_REQUIRED;
   }
-}
+};
 
 const CombinedUidProvider = function(configWrapper, consentData, cacheIdObj) {
   const url = configWrapper.getUrl();
@@ -164,10 +164,10 @@ const CombinedUidProvider = function(configWrapper, consentData, cacheIdObj) {
           consentData: consentData,
           cacheIdObj: cacheIdObj
         }
-      }
+      };
 
       scriptTag.dispatchEvent(new CustomEvent('prebidGetId', eventDetails));
-    })
+    });
 
     scriptTag.addEventListener('justIdReady', event => {
       utils.logInfo(LOG_PREFIX, 'received justId', event);
@@ -175,8 +175,8 @@ const CombinedUidProvider = function(configWrapper, consentData, cacheIdObj) {
     });
 
     scriptTag.onerror = errCallback;
-  }
-}
+  };
+};
 
 const BasicUidProvider = function(configWrapper) {
   const atmVarName = configWrapper.getAtmVarName();
@@ -186,12 +186,12 @@ const BasicUidProvider = function(configWrapper) {
     if (typeof atm !== 'function') { // it may be AsyncFunction, so we can't use utils.isFn
       utils.logInfo(LOG_PREFIX, 'ATM function not found!', atmVarName, atm);
       errCallback('ATM not found');
-      return
+      return;
     }
 
     atm = function() { // stub is replaced after ATM is loaded so we must refer them directly by global variable
       return getAtm().apply(this, arguments);
-    }
+    };
 
     atm('getReadyState', () => {
       Promise.resolve(atm('getVersion')) // atm('getVersion') returns string || Promise<string>
@@ -202,19 +202,19 @@ const BasicUidProvider = function(configWrapper) {
           } else {
             errCallback('ATM getUid not supported');
           }
-        })
+        });
     });
-  }
+  };
 
   function getAtm() {
     return jtUtils.getAtm(atmVarName);
   }
-}
+};
 
 export const jtUtils = {
   getAtm(atmVarName) {
     return window[atmVarName];
   }
-}
+};
 
 submodule('userId', justIdSubmodule);

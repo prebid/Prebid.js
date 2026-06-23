@@ -17,7 +17,7 @@ const countryMap = {
   10: 'co',
   11: 'de',
   255: 'en'
-}
+};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,

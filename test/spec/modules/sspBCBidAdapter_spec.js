@@ -15,7 +15,7 @@ describe('SSPBC adapter', function () {
     const gdprConsent = {
       consentString: 'BOtq-3dOtq-30BIABCPLC4-AAAAthr_7__7-_9_-_f__9uj3Or_v_f__30ccL59v_h_7v-_7fi_20nV4u_1vft9yfk1-5ctDztp505iakivHmqNeb9v_mz1_5pRP78k89r7337Ew_v8_v-b7JCON_Ig',
       gdprApplies: true,
-    }
+    };
     const bids = [{
       adUnitCode: 'test_wideboard',
       bidder: BIDDER_CODE,
@@ -498,7 +498,7 @@ describe('SSPBC adapter', function () {
       'body': {
         'id': bidderRequestId,
       }
-    }
+    };
     return {
       bid_OneCode,
       bids,
@@ -647,8 +647,8 @@ describe('SSPBC adapter', function () {
         note that payload comes from first, and payloadSingle from second auction in the test run
         also, since both have same adUnitName, value of pbsize property should be the same
       */
-      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
-      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
+      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1');
+      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1');
     });
 
     it('should send supply chain data', function () {
@@ -662,7 +662,7 @@ describe('SSPBC adapter', function () {
             hp: 1
           },
         ]
-      }
+      };
       const bidWithSupplyChain = Object.assign(bids[0], { ortb2: { source: { ext: { schain: supplyChain } } } });
       const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest);
       const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false };

@@ -142,7 +142,7 @@ describe('Finative adapter', function () {
       const result = spec.interpretResponse(badResponse, bidRequest);
       assert.equal(result.length, 0);
 
-      delete badResponse.body
+      delete badResponse.body;
 
       const result1 = spec.interpretResponse(badResponse, bidRequest);
       assert.equal(result.length, 0);

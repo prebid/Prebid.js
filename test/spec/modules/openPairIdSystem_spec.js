@@ -34,7 +34,7 @@ describe('openPairId', function () {
           storageKey: 'habu_pairId_custom'
         }
       }
-    })
+    });
 
     expect(id).to.be.deep.equal({ id: publisherIds });
   });
@@ -54,7 +54,7 @@ describe('openPairId', function () {
         },
         liveramp: {}
       }
-    })
+    });
 
     expect(id).to.be.deep.equal({ id: habuPublisherIds.concat(liveRampPublisherIds) });
   });
@@ -87,8 +87,8 @@ describe('openPairId', function () {
       params: {
         liveramp: {}
       }
-    })
-    expect(id).to.be.deep.equal({ id: publisherIds })
+    });
+    expect(id).to.be.deep.equal({ id: publisherIds });
   });
 
   it('should read publisher id from default liveramp envelope cookie entry if configured', function() {
@@ -98,8 +98,8 @@ describe('openPairId', function () {
       params: {
         liveramp: {}
       }
-    })
-    expect(id).to.be.deep.equal({ id: publisherIds })
+    });
+    expect(id).to.be.deep.equal({ id: publisherIds });
   });
 
   it('should read publisher id from specified liveramp envelope cookie entry if configured with storageKey', function() {
@@ -111,8 +111,8 @@ describe('openPairId', function () {
           storageKey: 'lr_pairId_custom'
         }
       }
-    })
-    expect(id).to.be.deep.equal({ id: publisherIds })
+    });
+    expect(id).to.be.deep.equal({ id: publisherIds });
   });
 
   it('should not get data from storage if local storage and cookies are disabled', function () {
@@ -124,8 +124,8 @@ describe('openPairId', function () {
           storageKey: 'lr_pairId_custom'
         }
       }
-    })
-    expect(id).to.equal(undefined)
+    });
+    expect(id).to.equal(undefined);
   });
 
   it('honors inserter, matcher', () => {

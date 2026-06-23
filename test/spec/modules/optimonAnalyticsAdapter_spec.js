@@ -16,7 +16,7 @@ describe('Optimon Analytics Adapter', () => {
   const optmn_currentWindow = utils.getWindowSelf();
 
   beforeEach(() => {
-    optmn_currentWindow.OptimonAnalyticsAdapter = sinon.stub()
+    optmn_currentWindow.OptimonAnalyticsAdapter = sinon.stub();
     adapterManager.enableAnalytics({
       provider: 'optimon'
     });

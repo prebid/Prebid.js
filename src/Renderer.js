@@ -46,14 +46,14 @@ export function Renderer(options) {
 
   // use a function, not an arrow, in order to be able to pass "arguments" through
   this.render = function () {
-    const renderArgs = arguments
+    const renderArgs = arguments;
     const runRender = () => {
       if (this._render) {
-        this._render.apply(this, renderArgs)
+        this._render.apply(this, renderArgs);
       } else {
         logWarn(`No render function was provided, please use .setRender on the renderer`);
       }
-    }
+    };
 
     if (isRendererPreferredFromAdUnit(adUnitCode)) {
       logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
@@ -62,7 +62,7 @@ export function Renderer(options) {
       runRender();
     } else {
       // we expect to load a renderer url once only so cache the request to load script
-      this.cmd.unshift(runRender) // should render run first ?
+      this.cmd.unshift(runRender); // should render run first ?
       loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, this.callback, this.documentContext);
     }
   }.bind(this); // bind the function to this object to avoid 'this' errors
@@ -144,7 +144,7 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   });
 
   if (!adUnit) {
-    return false
+    return false;
   }
 
   // renderer defined at adUnit level
@@ -153,7 +153,7 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
 
   // renderer defined at adUnit.mediaTypes level
   const mediaTypeRenderer = adUnit?.mediaTypes?.video?.renderer;
-  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
+  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render);
 
   return !!(
     (hasValidAdUnitRenderer && !(adUnitRenderer.backupOnly === true)) ||

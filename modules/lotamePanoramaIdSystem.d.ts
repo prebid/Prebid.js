@@ -16,4 +16,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

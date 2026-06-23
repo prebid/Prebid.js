@@ -221,7 +221,7 @@ const sampleValidBidRequests = [
     'bidderRequestsCount': 1,
     'bidderWinsCount': 0
   }
-]
+];
 
 const sampleBidderBannerRequest = {
   'bidder': 'pubwise',
@@ -593,8 +593,8 @@ describe('PubWiseAdapter', function () {
 
   describe('Properly Parses AdSlot Data', function () {
     it('parses banner', function() {
-      const testBid = utils.deepClone(sampleValidBannerBidRequest)
-      _parseAdSlot(testBid)
+      const testBid = utils.deepClone(sampleValidBannerBidRequest);
+      _parseAdSlot(testBid);
       expect(testBid).to.deep.equal(sampleBidderBannerRequest);
     });
   });
@@ -602,7 +602,7 @@ describe('PubWiseAdapter', function () {
   describe('Properly Handles Response', function () {
     it('handles response with muiltiple responses', function() {
       // the request when it comes back is on the data object
-      const pbResponse = spec.interpretResponse(sampleRTBResponse, { 'data': sampleRequest })
+      const pbResponse = spec.interpretResponse(sampleRTBResponse, { 'data': sampleRequest });
       expect(pbResponse).to.deep.equal(samplePBBidObjects);
     });
   });
@@ -869,7 +869,7 @@ describe('PubWiseAdapter', function () {
         skipmin: 10,
         minduration: 10,
         mimes: ['video/mp4', 'video/x-flv'],
-      }
+      };
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
         sandbox = sinon.createSandbox();
@@ -879,18 +879,18 @@ describe('PubWiseAdapter', function () {
       afterEach(() => {
         utilsMock.restore();
         sandbox.restore();
-      })
+      });
 
       it('should log Video.Placement param missing', function() {
         _checkVideoPlacement(videoData, adUnit);
         // when failing this gives an odd message about "AssertError: expected logWarn to be called with arguments" it means the specific message expected
         sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
-      })
+      });
       it('should not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
         _checkVideoPlacement(videoData, adUnit);
         sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
-      })
+      });
     });
     // end video testing
   });

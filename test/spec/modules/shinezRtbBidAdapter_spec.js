@@ -94,7 +94,7 @@ const VIDEO_BID = {
       'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -447,7 +447,7 @@ describe('ShinezRtbBidAdapter', function () {
     });
 
     it('should build video request with right url domain despite params.host', function () {
-      const videoBidWithHost = VIDEO_BID
+      const videoBidWithHost = VIDEO_BID;
       videoBidWithHost.params.host = "example6.com";
       config.setConfig({
         bidderTimeout: 3000
@@ -611,10 +611,10 @@ describe('ShinezRtbBidAdapter', function () {
           "source": "audigent.com",
           "uids": [{ "id": "fakeidi6j6dlc6e" }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
+    });
     it("should include user ids from bid.userIdAsEids (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.userIdAsEids = [
@@ -626,11 +626,11 @@ describe('ShinezRtbBidAdapter', function () {
           "source": "rwdcntrl.net",
           "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
       expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
+    });
     // testing user.ext.eid handling
     it("should include user ids from user.ext.eid (length=1)", function() {
       const bid = utils.deepClone(BID);
@@ -643,10 +643,10 @@ describe('ShinezRtbBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
+    });
     it("should include user ids from user.ext.eid (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.user = {
@@ -662,11 +662,11 @@ describe('ShinezRtbBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
       expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
+    });
   });
 
   describe('alternate param names extractors', function () {
@@ -757,7 +757,7 @@ describe('ShinezRtbBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);

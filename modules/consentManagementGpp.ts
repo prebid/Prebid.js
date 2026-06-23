@@ -23,13 +23,13 @@ type RelevantCMPData = {
   applicableSections: number[]
   gppString: string;
   parsedSections: Record<string, unknown>
-}
+};
 
 type CMPData = RelevantCMPData & { [key: string]: unknown };
 
 export type GPPConsentData = RelevantCMPData & {
   gppData: CMPData;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GPPConfig {
@@ -191,7 +191,7 @@ export class GPPClient {
 }
 
 function lookupIabConsent() {
-  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()))
+  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()));
 }
 
 // add new CMPs here, with their dedicated lookup function

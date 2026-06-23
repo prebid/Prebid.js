@@ -686,7 +686,7 @@ describe('contxtful bid adapter', function () {
         contxtful: { customer: CUSTOMER, version: VERSION }
       });
       const bidRequest = spec.buildRequests(bidRequests);
-      expect(bidRequest.url).to.eq('https://' + BIDDER_ENDPOINT + `/${VERSION}/prebid/${CUSTOMER}/bid`)
+      expect(bidRequest.url).to.eq('https://' + BIDDER_ENDPOINT + `/${VERSION}/prebid/${CUSTOMER}/bid`);
     });
 
     it('will take specific ortb2 configuration parameters and returns it in ortb2 object', () => {
@@ -713,7 +713,7 @@ describe('contxtful bid adapter', function () {
     });
 
     it('will take custom parameters in the bid request and within the bidRequests array', () => {
-      expect(bidRequest.data.bidRequests[0].custom_param_1).to.equal('value_1')
+      expect(bidRequest.data.bidRequests[0].custom_param_1).to.equal('value_1');
     });
 
     it('will return any supply chain parameters within the bidRequests array', () => {
@@ -737,8 +737,8 @@ describe('contxtful bid adapter', function () {
     it('will contains the registration on ortb2.regs object', () => {
       expect(bidRequest.data.ortb2.regs).not.to.be.undefined;
       expect(bidRequest.data.ortb2.regs.coppa).to.equal(1);
-      expect(bidRequest.data.ortb2.regs.ext.us_privacy).to.equal('12345')
-    })
+      expect(bidRequest.data.ortb2.regs.ext.us_privacy).to.equal('12345');
+    });
 
     it('will contains the eids modules within the ortb2.user.ext.eids', () => {
       expect(bidRequest.data.ortb2.user.ext.eids).not.to.be.undefined;
@@ -849,7 +849,7 @@ describe('contxtful bid adapter', function () {
     it('will return empty response if bid response is empty', () => {
       const bids = spec.interpretResponse({ body: [] }, bidRequest);
       expect(bids).to.have.lengthOf(0);
-    })
+    });
 
     it('will trigger user sync if enable pixel mode', () => {
       const syncOptions = {
@@ -971,11 +971,11 @@ describe('contxtful bid adapter', function () {
         const payload = {
           adata: "hello"
         };
-        payload.ref = payload
+        payload.ref = payload;
         spec.onBidWon(payload);
         expect(ajaxStub.calledOnce).to.be.true;
         expect(beaconStub.returned(false)).to.be.true;
-      })
+      });
     });
 
     describe('on onBidBillable callback', () => {

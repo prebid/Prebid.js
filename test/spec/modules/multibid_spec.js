@@ -419,7 +419,7 @@ describe('multibid adapter', function () {
             gptSlot: 'test.div',
             mediaType: 'banner'
           }
-        }
+        };
 
         return bid;
       });
@@ -488,7 +488,7 @@ describe('multibid adapter', function () {
             gptSlot: 'test.div',
             mediaType: 'banner'
           }
-        }
+        };
 
         return bid;
       });

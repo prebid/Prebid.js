@@ -48,7 +48,7 @@ export const getOrtb2Data = (options = {}) => {
     return {
       site: win.agma?.ortb2?.site ?? options.ortb2?.site ?? configData.ortb2?.site,
       user: win.agma?.ortb2?.user ?? options.ortb2?.user ?? configData.ortb2?.user,
-    }
+    };
   } catch (e) {
     return {};
   }

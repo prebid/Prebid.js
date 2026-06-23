@@ -161,7 +161,7 @@ describe('relevadRtdProvider', function() {
         },
         'metrics': {},
         'defer': { 'promise': {} }
-      }
+      };
 
       const data = {
         segments: ['segment1', 'segment2'],

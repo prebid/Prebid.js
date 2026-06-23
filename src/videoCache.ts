@@ -206,7 +206,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
     success: function (responseBody) {
       let ids;
       try {
-        ids = JSON.parse(responseBody).responses
+        ids = JSON.parse(responseBody).responses;
       } catch (e) {
         done(e, []);
         return;
@@ -221,7 +221,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
     error: function (statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
     }
-  }
+  };
 }
 
 /**
@@ -293,7 +293,7 @@ export function handleVideoBidCaching({
 
 export const updateVast = hook('sync', function (bidResponse: VideoBidResponse | AudioBidResponse) {
   if (!bidResponse.vastXml && bidResponse.vastUrl) {
-    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers)
+    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers);
   }
 }, 'updateVast');
 
@@ -302,23 +302,23 @@ const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {
   if (!bid.vastUrl) {
     bid.vastUrl = vastUrl;
   }
-}
+};
 
 export const _internal = {
   store
-}
+};
 
 export function storeBatch(batch) {
-  const bids = batch.map(entry => entry.bidResponse)
+  const bids = batch.map(entry => entry.bidResponse);
   function err(msg) {
-    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
+    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids);
   }
   const cacheUrl = config.getConfig('cache.url');
   _internal.store(bids, function (error, cacheIds) {
     if (error) {
-      err(error)
+      err(error);
     } else if (batch.length !== cacheIds.length) {
-      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`)
+      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`);
     } else {
       cacheIds.forEach((cacheId, i) => {
         const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
@@ -350,12 +350,12 @@ if (FEATURES.VIDEO || FEATURES.AUDIO) {
       cleanupHandler = auctionManager.onExpiry((auction) => {
         auction.getBidsReceived()
           .forEach((bid) => {
-            const vastUrl = vastLocalCache.get(bid.videoCacheKey)
+            const vastUrl = vastLocalCache.get(bid.videoCacheKey);
             if (vastUrl && vastUrl.startsWith('blob')) {
               URL.revokeObjectURL(vastUrl);
             }
             vastLocalCache.delete(bid.videoCacheKey);
-          })
+          });
       });
     }
   });

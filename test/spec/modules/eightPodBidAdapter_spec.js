@@ -1,18 +1,18 @@
-import { expect } from 'chai'
-import { spec, getPageKeywords, parseUserAgent } from 'modules/eightPodBidAdapter'
-import 'modules/priceFloors.js'
-import { config } from 'src/config.js'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { expect } from 'chai';
+import { spec, getPageKeywords, parseUserAgent } from 'modules/eightPodBidAdapter';
+import 'modules/priceFloors.js';
+import { config } from 'src/config.js';
+import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from '../../../src/utils.js';
 import sinon from 'sinon';
 
 describe('eightPodBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const validBid = {
@@ -25,7 +25,7 @@ describe('eightPodBidAdapter', function () {
       params: {
         placementId: 'placementId1',
       },
-    }
+    };
     const invalidBid = {
       bidder: 'eightPod',
       adUnitCode: '/adunit-code/test-path',
@@ -33,23 +33,23 @@ describe('eightPodBidAdapter', function () {
       bidderRequestId: 'test-bid-request-1',
       auctionId: 'test-auction-1',
       transactionId: 'test-transactionId-1',
-    }
+    };
 
     beforeEach(() => {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(validBid)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(validBid)).to.equal(true);
+    });
 
     it('should return false when required params found and invalid bid', function () {
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false)
-    })
-  })
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
-    let bidRequests, bidderRequest
+    let bidRequests, bidderRequest;
     beforeEach(function () {
       bidRequests = [
         {
@@ -71,7 +71,7 @@ describe('eightPodBidAdapter', function () {
             placementId: 'placementId1',
           }
         }
-      ]
+      ];
       bidderRequest = {
         refererInfo: {},
         ortb2: {
@@ -82,26 +82,26 @@ describe('eightPodBidAdapter', function () {
             js: 1,
           }
         }
-      }
-    })
+      };
+    });
 
     it('should return an empty array when no bid requests', function () {
-      const bidRequest = spec.buildRequests([], bidderRequest)
-      expect(bidRequest).to.be.an('array')
-      expect(bidRequest.length).to.equal(0)
-    })
+      const bidRequest = spec.buildRequests([], bidderRequest);
+      expect(bidRequest).to.be.an('array');
+      expect(bidRequest.length).to.equal(0);
+    });
 
     it('should return a valid bid request object', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const request = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(request).to.be.an('array')
-      expect(request[0].data).to.be.an('object')
-      expect(request[0].method).to.equal('POST')
-      expect(request[0].url).to.not.equal('')
-      expect(request[0].url).to.not.equal(undefined)
-      expect(request[0].url).to.not.equal(null)
-    })
-  })
+      expect(request).to.be.an('array');
+      expect(request[0].data).to.be.an('object');
+      expect(request[0].method).to.equal('POST');
+      expect(request[0].url).to.not.equal('');
+      expect(request[0].url).to.not.equal(undefined);
+      expect(request[0].url).to.not.equal(null);
+    });
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
@@ -113,16 +113,16 @@ describe('eightPodBidAdapter', function () {
 
     it('Should not trigger pixel if bid does not contain nurl', function() {
       spec.onBidWon({});
-      expect(utils.triggerPixel.callCount).to.equal(0)
-    })
+      expect(utils.triggerPixel.callCount).to.equal(0);
+    });
 
     it('Should trigger pixel if bid nurl', function() {
       spec.onBidWon({
         burl: 'https://example.com/some-tracker'
       });
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
 
   describe('getPageKeywords function', function() {
     let sandbox;
@@ -199,6 +199,6 @@ describe('eightPodBidAdapter', function () {
       expect(result.platform).to.equal('android');
       expect(result.version).to.equal('5.0');
       expect(result.device).to.equal('');
-    })
-  })
-})
+    });
+  });
+});

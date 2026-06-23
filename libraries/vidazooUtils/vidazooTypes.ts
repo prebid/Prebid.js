@@ -32,8 +32,8 @@ export type Ext = {
   [key: string]: Record<string, any>
 } & {
   customParameters?: CustomParameters;
-}
+};
 
 type CustomParameters = {
   mediaTypes?: MediaTypes
-}
+};

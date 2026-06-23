@@ -205,7 +205,7 @@ describe('R2B2 adapter', function () {
       bid.params = { random: 'param' };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
       bid.params = { d: 'd', g: 'g', p: 'p', m: 1 };
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when "pid" is malformed', function () {
@@ -247,7 +247,7 @@ describe('R2B2 adapter', function () {
     });
     it('should return true for selfpromo unit', function () {
       bid.params = { pid: 'selfpromo' };
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
   });
 
@@ -260,7 +260,7 @@ describe('R2B2 adapter', function () {
     it('should set correct request method and url and pass bids', function () {
       const requests = spec.buildRequests([bids[0]], bidderRequest);
       expect(requests).to.be.an('array').that.has.lengthOf(1);
-      const request = requests[0]
+      const request = requests[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://hb.r2b2.cz/openrtb2/bid');
       expect(request.data).to.be.an('object');
@@ -393,7 +393,7 @@ describe('R2B2 adapter', function () {
           { asi: 'example.com', hp: 1, sid: '00001' }
         ],
         ver: '1.0'
-      })
+      });
     });
 
     it('should pass extended ids', function () {
@@ -420,7 +420,7 @@ describe('R2B2 adapter', function () {
           ],
         },
       ];
-      bidderRequest.ortb2 = { user: { ext: { eids: eidsArray } } }
+      bidderRequest.ortb2 = { user: { ext: { eids: eidsArray } } };
       const requests = spec.buildRequests(bids, bidderRequest);
       const request = requests[0];
       const eids = request.data.user.ext.eids;
@@ -665,7 +665,7 @@ describe('R2B2 adapter', function () {
       it('should return nothing and trigger a pixel', function () {
         const bidderRequest = { bids: [bid1, bid2] };
         const response = spec.onBidderError({ bidderRequest });
-        expect(response).to.be.an('undefined')
+        expect(response).to.be.an('undefined');
         expect(utils.triggerPixel.callCount).to.equal(1);
       });
       it('should not trigger a pixel if no bids available', function () {
@@ -674,7 +674,7 @@ describe('R2B2 adapter', function () {
         expect(utils.triggerPixel.callCount).to.equal(0);
       });
       it('should call triggerEvent with correct ids and a cache buster', function () {
-        const bids = [bid1, bid2, bidWithBadSetup]
+        const bids = [bid1, bid2, bidWithBadSetup];
         const bidderRequest = { bids };
         const expectedIds = [id1Object, id2Object];
         const expectedEncodedIds = encodePlacementIds(expectedIds);

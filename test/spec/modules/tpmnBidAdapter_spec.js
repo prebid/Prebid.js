@@ -303,7 +303,7 @@ describe('tpmnAdapterTests', function () {
             startdelay: 0,
             skip: 1,
             plcmt: 4
-          }
+          };
 
           expect(spec.isBidRequestValid(NEW_VIDEO_BID)).to.equal(true);
           const requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);

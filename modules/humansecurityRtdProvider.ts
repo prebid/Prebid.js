@@ -88,7 +88,7 @@ const load = (config: RTDProviderConfig<'humansecurity'>) => {
   const scriptUrl = `${SCRIPT_URL}?r=${refDomain}${clientId ? `&c=${clientId}` : ''}&mv=${MODULE_VERSION}`;
 
   loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => onImplLoaded(config), null, scriptAttrs);
-}
+};
 
 /**
  * Retrieves the implementation object created by the loaded script
@@ -109,7 +109,7 @@ const getImpl = () => {
   }
   implRef = impl;
   return impl;
-}
+};
 
 /**
  * The callback to loadExternalScript
@@ -122,7 +122,7 @@ const onImplLoaded = (config: RTDProviderConfig<'humansecurity'>) => {
 
   // And set up a bridge between the RTD submodule and the implementation.
   impl.connect(getGlobal(), null, config);
-}
+};
 
 /**
  * The bridge function will be called by the implementation script
@@ -147,7 +147,7 @@ const getBidRequestData = (
   }
 
   impl.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
-}
+};
 
 /**
  * Event hooks
@@ -158,7 +158,7 @@ const onAuctionInitEvent = (auctionDetails: AuctionProperties, config: RTDProvid
   const impl = getImpl();
   if (!impl || typeof impl.onAuctionInitEvent !== 'function') return;
   impl.onAuctionInitEvent(getGlobal(), auctionDetails, config, userConsent);
-}
+};
 
 /**
  * Submodule registration
@@ -186,7 +186,7 @@ const subModule: RtdProviderSpecWithHooks<'humansecurity'> = ({
   onAuctionInitEvent,
 });
 
-const registerSubModule = () => { submodule('realTimeData', subModule); }
+const registerSubModule = () => { submodule('realTimeData', subModule); };
 registerSubModule();
 
 /**

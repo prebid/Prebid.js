@@ -5,11 +5,11 @@ import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { parseDomain } from '../src/refererDetection.js';
 import { getDNT } from '../libraries/dnt/index.js';
 const BIDDER_CODE = 'apacdex';
-const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
-const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
+const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs';
+const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs';
 
 var bySlotTargetKey = {};
-var bySlotSizesCount = {}
+var bySlotSizesCount = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -51,11 +51,11 @@ export const spec = {
     validBidRequests.forEach(bidReq => {
       const bidSchain = bidReq?.ortb2?.source?.ext?.schain;
       if (bidSchain) {
-        schain = schain || bidSchain
+        schain = schain || bidSchain;
       }
 
       if (bidReq.userIdAsEids) {
-        eids = eids || bidReq.userIdAsEids
+        eids = eids || bidReq.userIdAsEids;
       }
 
       if (bidReq.params && bidReq.params.geo) {
@@ -71,11 +71,11 @@ export const spec = {
         var biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
           if (bySlotSizesCount[biggestSize] !== undefined && bySlotSizesCount[biggestSize] !== null) {
-            bySlotSizesCount[biggestSize]++
+            bySlotSizesCount[biggestSize]++;
             targetKey = bySlotSizesCount[biggestSize];
           } else {
             bySlotSizesCount[biggestSize] = 0;
-            targetKey = 0
+            targetKey = 0;
           }
         }
       }
@@ -148,7 +148,7 @@ export const spec = {
         bidId: bid.bidId,
         adUnitCode: bid.adUnitCode,
         bidFloor: bid.bidFloor
-      }
+      };
     });
 
     return {
@@ -246,7 +246,7 @@ export const spec = {
 };
 
 function _getBiggestSize(sizes) {
-  if (sizes.length <= 0) return false
+  if (sizes.length <= 0) return false;
   var acreage = 0;
   var index = 0;
   for (var i = 0; i < sizes.length; i++) {

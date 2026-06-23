@@ -138,7 +138,7 @@ export const spec = {
       url: '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D'
     }];
   }
-}
+};
 
 function newBid(bid, currency) {
   const { adomain } = bid;

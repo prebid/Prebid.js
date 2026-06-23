@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   notify:
+    if: github.repository_owner == 'prebid'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

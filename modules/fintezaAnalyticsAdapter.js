@@ -27,7 +27,7 @@ const UNIQ_ID_KEY = '_fz_uniq';
 function getPageInfo() {
   const pageInfo = {
     domain: window.location.hostname,
-  }
+  };
 
   if (document.referrer) {
     pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
@@ -71,7 +71,7 @@ function initFirstVisit() {
 
   try {
     // TODO: commented out because of rule violations
-    cookies = {} // parseCookies(document.cookie);
+    cookies = {}; // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -176,7 +176,7 @@ function initSession() {
 
   try {
     // TODO: commented out because of rule violations
-    cookies = {} // parseCookies(document.cookie);
+    cookies = {}; // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -268,7 +268,7 @@ function getTrackRequestLastTime() {
     }
 
     // TODO: commented out because of rule violations
-    cookie = {} // parseCookies(document.cookie);
+    cookie = {}; // parseCookies(document.cookie);
     cookie = cookie[TRACK_TIME_KEY];
     if (cookie) {
       return parseInt(cookie, 10);
@@ -328,7 +328,7 @@ function prepareBidTimeoutParams(args) {
       value: bid.timeout,
       unit: 'ms'
     };
-  })
+  });
 }
 
 function prepareTrackData(evtype, args) {
@@ -365,7 +365,7 @@ function prepareTrackData(evtype, args) {
       scr_res: fntzAnalyticsAdapter.context.screenResolution,
       fv_date: fntzAnalyticsAdapter.context.firstVisit,
       ac: getAntiCacheParam(),
-    })
+    });
 
     if (fntzAnalyticsAdapter.context.uniqId) {
       trackData.fz_uniq = fntzAnalyticsAdapter.context.uniqId;

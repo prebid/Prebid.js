@@ -152,21 +152,21 @@ export const getSections = (() => {
       const ov = sections[sid] || {};
       const normalizeAs = ov.normalizeAs || sid;
       if (!NORMALIZATIONS.hasOwnProperty(normalizeAs)) {
-        logger.logError(`no normalization rules are known for SID ${normalizeAs}`)
+        logger.logError(`no normalization rules are known for SID ${normalizeAs}`);
         return null;
       }
       const api = ov.name || DEFAULT_SID_MAPPING[sid];
       if (typeof api !== 'string') {
-        logger.logError(`cannot determine GPP section name`)
+        logger.logError(`cannot determine GPP section name`);
         return null;
       }
       return [
         api,
         [sid],
         NORMALIZATIONS[normalizeAs]
-      ]
+      ];
     }).filter(el => el != null);
-  }
+  };
 })();
 
 const handles = [];

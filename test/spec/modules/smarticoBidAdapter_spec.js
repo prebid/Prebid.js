@@ -22,7 +22,7 @@ describe('smarticoBidAdapter', function () {
       [300, 250]
     ],
     transactionId: '34562345-4dg7-46g7-4sg6-45gdsdj8fd56'
-  }
+  };
   const bidderRequests = {
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
     auctionStart: 1579746300522,
@@ -34,7 +34,7 @@ describe('smarticoBidAdapter', function () {
       numIframes: 0,
       reachedTop: true
     }
-  }
+  };
   describe('isBidRequestValid', function () {
     it('should return true where required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -50,11 +50,11 @@ describe('smarticoBidAdapter', function () {
       expect(request.data.bidParams[0].token).to.equal('FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya');
     });
     it('must contain auctionId', function() {
-      expect(request.data.auctionId).to.exist.and.to.be.a('string')
+      expect(request.data.auctionId).to.exist.and.to.be.a('string');
     });
     it('must contain valid width and height', function() {
-      expect(request.data.bidParams[0]['banner-format-width']).to.exist.and.to.be.a('number')
-      expect(request.data.bidParams[0]['banner-format-height']).to.exist.and.to.be.a('number')
+      expect(request.data.bidParams[0]['banner-format-width']).to.exist.and.to.be.a('number');
+      expect(request.data.bidParams[0]['banner-format-height']).to.exist.and.to.be.a('number');
     });
   });
 
@@ -103,34 +103,34 @@ describe('smarticoBidAdapter', function () {
     }];
     const result = spec.interpretResponse(serverResponse, bidRequest);
     it('should contain correct creativeId', function () {
-      expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId)
+      expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId);
     });
     it('should contain correct cpm', function () {
-      expect(result[0].cpm).to.equal(expectedResponse[0].cpm)
+      expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
     });
     it('should contain correct width', function () {
-      expect(result[0].width).to.equal(expectedResponse[0].width)
+      expect(result[0].width).to.equal(expectedResponse[0].width);
     });
     it('should contain correct height', function () {
-      expect(result[0].height).to.equal(expectedResponse[0].height)
+      expect(result[0].height).to.equal(expectedResponse[0].height);
     });
     it('should contain correct requestId', function () {
-      expect(result[0].requestId).to.equal(expectedResponse[0].requestId)
+      expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
     });
     it('should contain correct ttl', function () {
-      expect(result[0].ttl).to.equal(expectedResponse[0].ttl)
+      expect(result[0].ttl).to.equal(expectedResponse[0].ttl);
     });
     it('should contain correct netRevenue', function () {
-      expect(result[0].netRevenue).to.equal(expectedResponse[0].netRevenue)
+      expect(result[0].netRevenue).to.equal(expectedResponse[0].netRevenue);
     });
     it('should contain correct netRevenue', function () {
-      expect(result[0].currency).to.equal(expectedResponse[0].currency)
+      expect(result[0].currency).to.equal(expectedResponse[0].currency);
     });
     it('should contain correct ad content', function () {
-      expect(result[0].ad).to.equal(expectedResponse[0].ad)
+      expect(result[0].ad).to.equal(expectedResponse[0].ad);
     });
     it('should contain correct meta content', function () {
-      expect(result[0].meta).to.deep.equal(expectedResponse[0].meta)
+      expect(result[0].meta).to.deep.equal(expectedResponse[0].meta);
     });
   });
 });

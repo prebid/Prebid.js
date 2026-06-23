@@ -20,7 +20,7 @@ const DEFAULT_REQUEST_DATA = {
   params: {},
   src: 'client',
   transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
-}
+};
 
 const VALID_MEDIA_TYPES_REQUESTS = {
   [BANNER]: [{
@@ -61,7 +61,7 @@ const VALID_MEDIA_TYPES_REQUESTS = {
       ]
     },
   }]
-}
+};
 
 const DEFAULT_BIDDER_REQUEST = {
   refererInfo: { referer: 'https://example.com' },
@@ -81,7 +81,7 @@ const VALID_BIDDER_REQUEST = {
     domain: 'test-domain',
     ref: 'test-referer'
   },
-}
+};
 
 const DEFAULT_BID_RESPONSE_DATA = {
   'id': '29596384-e502-4d3c-a47d-4f16b16bd554',
@@ -123,7 +123,7 @@ const SERVER_RESPONSE_BANNER = {
     }
   ],
   'cur': 'USD'
-}
+};
 
 const SERVER_RESPONSE_VIDEO = {
   'id': '8cd85aed-25a6-4db0-ad98-4a3af1f7601c',
@@ -146,7 +146,7 @@ const SERVER_RESPONSE_VIDEO = {
     }
   ],
   'cur': 'USD'
-}
+};
 
 const SERVER_RESPONSE_NATIVE = {
   'id': '29667448-5659-42bb-abcf-dc973f98eae1',
@@ -169,7 +169,7 @@ const SERVER_RESPONSE_NATIVE = {
     }
   ],
   'cur': 'USD'
-}
+};
 
 describe('Prebid Adapter: Startio', function () {
   describe('code', function () {
@@ -353,16 +353,16 @@ describe('Prebid Adapter: Startio', function () {
 
   describe('interpretResponse', function () {
     it('should return a valid bid array with a banner bid', () => {
-      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST)
+      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
       const { data } = requests[0];
       const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data }).bids;
 
-      expect(bids).to.be.a('array').that.has.lengthOf(1)
+      expect(bids).to.be.a('array').that.has.lengthOf(1);
       bids.forEach(value => {
         expect(value).to.be.a('object').that.has.all.keys(
           'ad', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'seatBidId', 'creative_id'
-        )
-      })
+        );
+      });
     });
 
     it('should set meta.adomain from the bid response adomain field', () => {
@@ -381,13 +381,13 @@ describe('Prebid Adapter: Startio', function () {
       it('should return a valid bid array with a video bid', () => {
         const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[VIDEO], VALID_BIDDER_REQUEST);
         const { data } = requests[0];
-        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data }).bids
-        expect(bids).to.be.a('array').that.has.lengthOf(1)
+        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data }).bids;
+        expect(bids).to.be.a('array').that.has.lengthOf(1);
         bids.forEach(value => {
           expect(value).to.be.a('object').that.has.all.keys(
             'vastUrl', 'vastXml', 'playerHeight', 'playerWidth', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'seatBidId', 'creative_id'
-          )
-        })
+          );
+        });
       });
     }
 
@@ -395,13 +395,13 @@ describe('Prebid Adapter: Startio', function () {
       it('should return a valid bid array with a native bid', () => {
         const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[NATIVE], VALID_BIDDER_REQUEST);
         const { data } = requests[0];
-        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_NATIVE }, { data }).bids
-        expect(bids).to.be.a('array').that.has.lengthOf(1)
+        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_NATIVE }, { data }).bids;
+        expect(bids).to.be.a('array').that.has.lengthOf(1);
         bids.forEach(value => {
           expect(value).to.be.a('object').that.has.all.keys(
             'native', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'seatBidId', 'creative_id'
-          )
-        })
+          );
+        });
       });
     }
   });

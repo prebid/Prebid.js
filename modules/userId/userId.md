@@ -9,6 +9,16 @@ pbjs.setConfig({
             uid2: ['uid2', 'liveIntentId']
         }
         userIds: [{
+            name: "acxiomRealId",
+            params: {
+                partnerId: "YOUR_PARTNER_ID" // Example Partner ID
+            },
+            storage: {
+                type: "html5",
+                name: "acxiomRealId",
+                expires: 7
+            }
+        }, {
             name: "33acrossId",
             storage: {
                 type: "cookie",

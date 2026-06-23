@@ -23,7 +23,7 @@ const userId = {
   'haloId': {},
   'uid2': { 'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888' },
   'connectid': '4567'
-}
+};
 
 const validBannerBidReq = {
   bidder: BIDDER_CODE,
@@ -160,7 +160,7 @@ describe('ucfunnel Adapter', function () {
     let request;
     before(() => {
       request = spec.buildRequests([validBannerBidReq], bidderRequest);
-    })
+    });
     it('should create a POST request for every bid', function () {
       expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(spec.ENDPOINT);
@@ -203,7 +203,7 @@ describe('ucfunnel Adapter', function () {
         return {
           currency: 'USD',
           floor: 2.02
-        }
+        };
       };
       const requests = spec.buildRequests([bid], bidderRequest);
       const data = requests[0].data;
@@ -224,7 +224,7 @@ describe('ucfunnel Adapter', function () {
         return {
           currency: 'USD',
           floor: 2.02
-        }
+        };
       };
       bid.params.bidfloor = 2.01;
       const requests = spec.buildRequests([bid], bidderRequest);
@@ -262,7 +262,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validBannerBidReq], bidderRequest);
         result = spec.interpretResponse({ body: invalidBannerBidRes }, request[0]);
-      })
+      });
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -283,7 +283,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validBannerBidReq], bidderRequest);
         result = spec.interpretResponse({ body: invalidBannerBidRes }, request[0]);
-      })
+      });
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
       });
@@ -304,7 +304,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validVideoBidReq], bidderRequest);
         result = spec.interpretResponse({ body: validVideoBidRes }, request[0]);
-      })
+      });
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });
@@ -327,7 +327,7 @@ describe('ucfunnel Adapter', function () {
       before(() => {
         request = spec.buildRequests([validNativeBidReq], bidderRequest);
         result = spec.interpretResponse({ body: validNativeBidRes }, request[0]);
-      })
+      });
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
       });

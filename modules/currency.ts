@@ -200,7 +200,7 @@ declare module '../src/prebidGlobal' {
  * Convert `amount` in currency `fromCurrency` to `toCurrency`.
  */
 function convertCurrency(cpm, fromCurrency, toCurrency) {
-  return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)
+  return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
 }
 
 function initCurrency() {
@@ -294,7 +294,7 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
 function rejectOnAuctionTimeout({ auctionId }) {
   bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
     if (bid.auctionId === auctionId) {
-      reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
+      reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
       return false;
     } else {
       return true;
@@ -405,7 +405,7 @@ function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
     deepSetValue(ortb2, 'ext.prebid.adServerCurrency', adServerCurrency);
     return ortb2;
-  }))
+  }));
 }
 
 export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
@@ -413,7 +413,7 @@ export const requestBidsHook = timedAuctionHook('currency', function requestBids
 
   if (!currencyRatesLoaded && auctionDelay > 0) {
     delayedAuctions.submit(auctionDelay, continueAuction, () => {
-      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`);
       continueAuction();
     });
   } else {

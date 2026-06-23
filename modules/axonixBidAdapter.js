@@ -54,7 +54,7 @@ function getURL(params, path) {
   } else if (region) {
     url = `https://openrtb-${region}.axonix.com/supply/${path}/${supplyId}`;
   } else {
-    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/${path}/${supplyId}`
+    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/${path}/${supplyId}`;
   }
 
   return url;
@@ -96,7 +96,7 @@ export const spec = {
       } else {
         site = {
           page: getPageUrl(validBidRequest, bidderRequest)
-        }
+        };
       }
 
       const data = {
@@ -171,6 +171,6 @@ export const spec = {
       triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
     };
   }
-}
+};
 
 registerBidder(spec);

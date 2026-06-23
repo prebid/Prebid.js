@@ -38,23 +38,23 @@ const bidderRequest = {
 describe('lassoBidAdapter', function () {
   describe('All needed functions are available', function() {
     it(`isBidRequestValid is present and type function`, function () {
-      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
+      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function');
     });
 
     it(`buildRequests is present and type function`, function () {
-      expect(spec.buildRequests).to.exist.and.to.be.a('function')
+      expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
     it(`interpretResponse is present and type function`, function () {
-      expect(spec.interpretResponse).to.exist.and.to.be.a('function')
+      expect(spec.interpretResponse).to.exist.and.to.be.a('function');
     });
 
     it(`onTimeout is present and type function`, function () {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function')
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
 
     it(`onBidWon is present and type function`, function () {
-      expect(spec.onBidWon).to.exist.and.to.be.a('function')
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
     });
   });
 
@@ -69,7 +69,7 @@ describe('lassoBidAdapter', function () {
           zone: 1,
           publisher: 'test'
         }
-      })
+      });
       expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
     it('should return false when there are no params', function () {
@@ -85,7 +85,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([bid], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -100,7 +100,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to get uid and trc via get request', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(GET_IUD_URL + ENDPOINT_URL + '/request');
     });
@@ -118,7 +118,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -133,7 +133,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with dgid', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -151,7 +151,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -166,7 +166,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with aimOnly true', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -184,7 +184,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -199,8 +199,8 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with testDk and test param', () => {
-      expect(bidRequest.data.test).to.equal(true)
-      expect(bidRequest.data.testDk).to.equal('123')
+      expect(bidRequest.data.test).to.equal(true);
+      expect(bidRequest.data.testDk).to.equal('123');
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -218,7 +218,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -233,7 +233,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with npi', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -251,7 +251,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -266,7 +266,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with npi and test param', () => {
-      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.data.test).to.equal(true);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -284,7 +284,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -299,7 +299,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with dgid and test param', () => {
-      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.data.test).to.equal(true);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -317,7 +317,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -332,7 +332,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with npi', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });

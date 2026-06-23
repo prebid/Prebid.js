@@ -198,7 +198,7 @@ describe('Deepintent adapter', function () {
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
-    })
+    });
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {

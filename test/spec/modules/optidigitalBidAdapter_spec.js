@@ -196,7 +196,7 @@ describe('optidigitalAdapterTests', function () {
         'bidderRequestId': '418b37f85e772c',
         'auctionId': '18fd8b8b0bd757'
       }
-    ]
+    ];
 
     it('should return an empty array if there are no bid requests', () => {
       const emptyBidRequests = [];
@@ -239,7 +239,7 @@ describe('optidigitalAdapterTests', function () {
         }
       });
       const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data)
+      const payload = JSON.parse(request.data);
       expect(payload.schain).to.exist;
       expect(payload.schain).to.deep.equal({
         ver: '1.0',
@@ -273,11 +273,11 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
       const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
-      const payload = JSON.parse(request.data)
-      payload.imp[0].adContainerWidth = 1920
-      payload.imp[0].adContainerHeight = 1080
+      const payload = JSON.parse(request.data);
+      payload.imp[0].adContainerWidth = 1920;
+      payload.imp[0].adContainerHeight = 1080;
       expect(payload.imp[0].adContainerWidth).to.exist;
       expect(payload.imp[0].adContainerHeight).to.exist;
     });
@@ -346,17 +346,17 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
       const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
-      const payload = JSON.parse(request.data)
-      payload.imp[0].pageTemplate = 'home'
+      const payload = JSON.parse(request.data);
+      payload.imp[0].pageTemplate = 'home';
       expect(payload.imp[0].pageTemplate).to.exist;
     });
 
     it('should add referrer to payload if it exsists in bidderRequest', function () {
       bidderRequest.refererInfo.page = 'https://www.prebid.org';
       const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const payload = JSON.parse(request.data)
+      const payload = JSON.parse(request.data);
       expect(payload.referrer).to.equal('https://www.prebid.org');
     });
 
@@ -453,7 +453,7 @@ describe('optidigitalAdapterTests', function () {
         },
         'addtlConsent': '1~7.12.35.62.66.70.89.93.108',
         'apiVersion': 1
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr).to.exist;
@@ -471,7 +471,7 @@ describe('optidigitalAdapterTests', function () {
           'hasGlobalConsent': false
         },
         'apiVersion': 1
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr.consent).to.equal('');
@@ -486,7 +486,7 @@ describe('optidigitalAdapterTests', function () {
           'hasGlobalConsent': false
         },
         'apiVersion': 1
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr.consent).to.equal(consentString);
@@ -519,7 +519,7 @@ describe('optidigitalAdapterTests', function () {
           gpp: consentString,
           gpp_sid: [7]
         }
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gpp).to.exist;
@@ -584,7 +584,7 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
       let floorInfo;
       validBidRequestsWithCurrency[0].getFloor = () => floorInfo;
       floorInfo = { currency: 'USD', floor: 1.99 };

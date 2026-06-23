@@ -148,7 +148,7 @@ describe('RetailSpot Adapter', function () {
       'width': 300,
       'height': 600
     }
-  ]
+  ];
 
   const requestDataMultiPlacement = [
     {
@@ -163,7 +163,7 @@ describe('RetailSpot Adapter', function () {
       'width': 400,
       'height': 250
     }
-  ]
+  ];
 
   const testMetaObject = {
     'networkId': 123,
@@ -373,7 +373,7 @@ describe('RetailSpot Adapter', function () {
     beforeEach(function () {
       serverResponse = {
         body: {}
-      }
+      };
     });
 
     it('handles nobid responses', function () {

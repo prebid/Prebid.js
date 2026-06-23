@@ -101,8 +101,8 @@ describe('Reconciliation Real time data submodule', function () {
         return {
           top: topWin,
           parent: parentWin
-        }
-      }
+        };
+      };
 
       it('should return null if called with null', function() {
         expect(getTopIFrameWin(null)).to.be.null;
@@ -209,7 +209,7 @@ describe('Reconciliation Real time data submodule', function () {
           expect(trackPostStub.getCalls()[0].args[0]).to.eql('https://confirm.fiduciadlt.com/pimp');
           expect(trackPostStub.getCalls()[0].args[1].adUnitId).to.eql('/reconciliationAdunit');
           expect(trackPostStub.getCalls()[0].args[1].adDeliveryId).to.eql('12345');
-          expect(trackPostStub.getCalls()[0].args[1].tagOwnerMemberId).to.eql('test_member_id'); ;
+          expect(trackPostStub.getCalls()[0].args[1].tagOwnerMemberId).to.eql('test_member_id');
           expect(trackPostStub.getCalls()[0].args[1].dataSources.length).to.eql(1);
           expect(trackPostStub.getCalls()[0].args[1].dataRecipients.length).to.eql(2);
           expect(trackPostStub.getCalls()[0].args[1].publisherMemberId).to.eql('test_prebid_publisher');

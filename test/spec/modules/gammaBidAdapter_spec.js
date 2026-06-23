@@ -76,7 +76,7 @@ describe('gammaBidAdapter', function() {
           }]
         }
       };
-    })
+    });
 
     it('should get the correct bid response', () => {
       const expectedResponse = [{

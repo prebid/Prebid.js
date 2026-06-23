@@ -14,7 +14,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: bid => {
-    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone';
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
@@ -79,7 +79,7 @@ export const spec = {
             bid.meta.advertiserDomains = adponeBid.meta.adomain;
           }
 
-          return bid
+          return bid;
         })];
       }
     });

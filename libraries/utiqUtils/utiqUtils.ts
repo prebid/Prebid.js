@@ -40,7 +40,7 @@ export function findUtiqService(storage: any, refreshUserIds: () => void, logPre
               "connectId": {
                 "idGraph": [idGraphData],
               },
-            }))
+            }));
           } else {
             logInfo(`${logPrefix}: removing local storage pass`);
             storage.removeDataFromLocalStorage('utiqPass');

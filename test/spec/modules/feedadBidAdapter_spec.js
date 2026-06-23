@@ -26,7 +26,7 @@ describe('FeedAdAdapter', function () {
     });
     it('should export the TCF vendor ID', function () {
       expect(spec.gvlid).to.equal(781);
-    })
+    });
   });
 
   describe('isBidRequestValid', function () {
@@ -239,7 +239,7 @@ describe('FeedAdAdapter', function () {
       const result = spec.buildRequests([bid], bidderRequest);
       expect(result.options).to.deep.equal({
         contentType: 'application/json'
-      })
+      });
     });
     it('should include the bidder request', function () {
       const bid = {
@@ -395,7 +395,7 @@ describe('FeedAdAdapter', function () {
       }]
     };
     it('should pass through the syncs out of the extension fields of the server response', function () {
-      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response1])
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response1]);
       expect(result).to.deep.equal([
         pixelSync1,
         pixelSync2,
@@ -453,7 +453,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should handle empty responses', function () {
-      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
       expect(result).to.deep.equal([]);
     });
 
@@ -621,7 +621,7 @@ describe('FeedAdAdapter', function () {
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');
           expect(call.requestHeaders).to.include({ 'Content-Type': 'application/json' });
-        })
+        });
       });
     });
   });

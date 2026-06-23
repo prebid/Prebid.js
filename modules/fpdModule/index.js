@@ -40,7 +40,7 @@ export const startAuctionHook = timedAuctionHook('fpd', function startAuctionHoo
   processFpd(req.ortb2Fragments).then((ortb2Fragments) => {
     Object.assign(req.ortb2Fragments, ortb2Fragments);
     fn.call(this, req);
-  })
+  });
 });
 
 function setupHook() {

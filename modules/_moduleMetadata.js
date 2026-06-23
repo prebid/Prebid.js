@@ -24,10 +24,10 @@ Object.entries({
   hook.get(moduleName).before((next, modules) => {
     modules.flatMap(mod => mod).forEach((module) => {
       moduleRegistry[moduleType][module.name] = module;
-    })
+    });
     next(modules);
-  }, -100)
-})
+  }, -100);
+});
 
 function formatGvlid(gvlid) {
   return gvlid === VENDORLESS_GVLID ? null : gvlid;
@@ -44,9 +44,9 @@ function bidderMetadata() {
           gvlid: formatGvlid(GDPR_GVLIDS.get(bidder).modules?.[MODULE_TYPE_BIDDER] ?? null),
           disclosureURL: spec.disclosureURL ?? null
         }
-      ]
+      ];
     })
-  )
+  );
 }
 
 function rtdMetadata() {
@@ -59,9 +59,9 @@ function rtdMetadata() {
             gvlid: formatGvlid(GDPR_GVLIDS.get(provider).modules?.[MODULE_TYPE_RTD] ?? null),
             disclosureURL: module.disclosureURL ?? null,
           }
-        ]
+        ];
       })
-  )
+  );
 }
 
 function uidMetadata() {
@@ -77,9 +77,9 @@ function uidMetadata() {
               disclosureURL: module.disclosureURL ?? null,
               aliasOf: name !== provider ? provider : null
             }]
-          )
+          );
       })
-  )
+  );
 }
 
 function analyticsMetadata() {
@@ -92,9 +92,9 @@ function analyticsMetadata() {
             gvlid: formatGvlid(GDPR_GVLIDS.get(name).modules?.[MODULE_TYPE_ANALYTICS] ?? null),
             disclosureURL: adapter.disclosureURL
           }
-        ]
+        ];
       })
-  )
+  );
 }
 
 getGlobal()._getModuleMetadata = function () {
@@ -108,6 +108,6 @@ getGlobal()._getModuleMetadata = function () {
       componentType,
       componentName,
       ...moduleMeta,
-    }))
-  })
-}
+    }));
+  });
+};

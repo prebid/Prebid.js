@@ -88,13 +88,13 @@ export const FEATURE_TOGGLES = {
 
   featureToggles: {},
   isFeatureEnabled: function (ft) {
-    return deepAccess(this.featureToggles, `features.${ft}.activated`, false)
+    return deepAccess(this.featureToggles, `features.${ft}.activated`, false);
   },
   getFeatureToggles: function () {
     if (storage.localStorageIsEnabled()) {
       const parsedToggles = safeJSONParse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
       if (deepAccess(parsedToggles, 'expiry') && parsedToggles.expiry >= new Date().getTime()) {
-        this.featureToggles = parsedToggles
+        this.featureToggles = parsedToggles;
       } else {
         this.clearFeatureToggles();
       }
@@ -109,7 +109,7 @@ export const FEATURE_TOGGLES = {
       this.featureToggles = {
         expiry: expiryTime.setHours(expiryTime.getHours() + 1),
         features: toggles
-      }
+      };
       if (storage.localStorageIsEnabled()) {
         storage.setDataInLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY, JSON.stringify(this.featureToggles));
       }
@@ -177,7 +177,7 @@ function setDisplayManager(imp, bid) {
       if (renderer.url !== undefined) {
         let domain = '';
         try {
-          domain = new URL(renderer.url).hostname
+          domain = new URL(renderer.url).hostname;
         } catch {
           return;
         }
@@ -289,7 +289,7 @@ function verifyVideoPlcmt(imp) {
 export function bidToNativeImp(bid) {
   const imp = bidToImp(bid, NATIVE);
 
-  const request = bid.nativeOrtbRequest
+  const request = bid.nativeOrtbRequest;
   request.eventtrackers = [{
     event: 1,
     methods: [1, 2]
@@ -308,7 +308,7 @@ export function bidToNativeImp(bid) {
   }
 
   // AdUnit-Specific First Party Data
-  addAdUnitFPD(imp, bid)
+  addAdUnitFPD(imp, bid);
 
   _applyFloor(bid, imp, NATIVE);
 
@@ -490,12 +490,12 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.meta.advertiserDomains = rawBid.adomain;
   }
   if (rawBid.ext?.dsa) {
-    bid.meta.dsa = rawBid.ext.dsa
+    bid.meta.dsa = rawBid.ext.dsa;
   }
 
   if (rawBid.ext?.ibv) {
-    bid.ext = bid.ext || {}
-    bid.ext.ibv = rawBid.ext.ibv
+    bid.ext = bid.ext || {};
+    bid.ext.ibv = rawBid.ext.ibv;
   }
   return bid;
 }
@@ -599,10 +599,10 @@ function isValidBidFloorParams(bidFloor, bidFloorCur) {
 function nativeMediaTypeValid(bid) {
   const nativeMediaTypes = deepAccess(bid, 'mediaTypes.native');
   if (nativeMediaTypes === undefined) {
-    return true
+    return true;
   }
 
-  return bid.nativeOrtbRequest && Array.isArray(bid.nativeOrtbRequest.assets) && bid.nativeOrtbRequest.assets.length > 0
+  return bid.nativeOrtbRequest && Array.isArray(bid.nativeOrtbRequest.assets) && bid.nativeOrtbRequest.assets.length > 0;
 }
 
 /**
@@ -619,7 +619,7 @@ function getBidRequest(id, impressions, validBidRequests) {
   const bidRequest = {
     ...validBidRequests.find(bid => bid.bidId === id),
     ...impressions.find(imp => imp.id === id)
-  }
+  };
 
   return bidRequest;
 }
@@ -677,7 +677,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
-  if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
+  if (canIncludeRTI(bidderRequest) && window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
     addRTI(userEids, eidInfo);
   }
 
@@ -685,7 +685,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let r = createRequest(validBidRequests);
 
   // Add FTs to be requested from Exchange
-  r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
+  r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES);
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
   const ixdiag = buildIXDiag(validBidRequests);
@@ -766,6 +766,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   return requests;
 }
 
+function canIncludeRTI(bidderRequest) {
+  const gdpr = bidderRequest?.gdprConsent;
+  if (gdpr?.gdprApplies === true && !gdpr.consentString) {
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * addRTI adds RTI info of the partner to retrieved user IDs from prebid ID module.
  *
@@ -777,7 +786,7 @@ function addRTI(userEids, eidInfo) {
   if (identityInfo && typeof identityInfo === 'object') {
     for (const partnerName in identityInfo) {
       if (userEids.length >= MAX_EID_SOURCES) {
-        return
+        return;
       }
       if (identityInfo.hasOwnProperty(partnerName)) {
         const response = identityInfo[partnerName];
@@ -806,7 +815,7 @@ function createRequest(validBidRequests) {
   r.ext.ixdiag.ls = storage.localStorageIsEnabled();
   r.imp = [];
   r.at = 1;
-  return r
+  return r;
 }
 
 /**
@@ -853,7 +862,7 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   // set source.tid to auctionId for outgoing request to Exchange.
   r.source = {
     tid: bidderRequest?.ortb2?.source?.tid
-  }
+  };
 
   // if an schain is provided, send it along
   const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
@@ -872,7 +881,7 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
     r.site.ref = document.referrer;
   }
 
-  return r
+  return r;
 }
 
 /**
@@ -930,7 +939,7 @@ function applyRegulations(r, bidderRequest) {
     deepSetValue(r, 'regs.coppa', 1);
   }
 
-  return r
+  return r;
 }
 
 /**
@@ -961,7 +970,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
   if (bannerImpressions.length > 0) {
     const bannerImpsKeyed = bannerImpressions.reduce((acc, bannerImp) => {
       if (!acc[bannerImp.adunitCode]) {
-        acc[bannerImp.adunitCode] = []
+        acc[bannerImp.adunitCode] = [];
       }
       acc[bannerImp.adunitCode].push(bannerImp);
       return acc;
@@ -1023,7 +1032,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.bidfloorcur = bannerImps[0].bidfloorcur;
       }
 
-      const adUnitFPD = impressions[impKeys[adUnitIndex]].adUnitFPD
+      const adUnitFPD = impressions[impKeys[adUnitIndex]].adUnitFPD;
       if (adUnitFPD) {
         deepSetValue(_bannerImpression, 'ext.data', adUnitFPD);
       }
@@ -1107,7 +1116,7 @@ function getIxFirstPartyDataPageUrl (bidderRequest) {
     }
   }
 
-  return pageUrl
+  return pageUrl;
 }
 
 /**
@@ -1190,11 +1199,11 @@ function addFPD(bidderRequest, r, fpd, site, user) {
   // regulations from ortb2
   if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
     if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp === 'string') {
-      deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
+      deepSetValue(r, 'regs.gpp', fpd.regs.gpp);
     }
 
     if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
-      deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
+      deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid);
     }
 
     if (fpd.regs.ext?.dsa) {
@@ -1234,7 +1243,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 function addAdUnitFPD(imp, bid) {
   const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
   if (adUnitFPD) {
-    deepSetValue(imp, 'ext.data', adUnitFPD)
+    deepSetValue(imp, 'ext.data', adUnitFPD);
   }
 }
 
@@ -1273,7 +1282,7 @@ function buildIXDiag(validBidRequests) {
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
 
-  const allEids = deepAccess(validBidRequests, '0.userIdAsEids', [])
+  const allEids = deepAccess(validBidRequests, '0.userIdAsEids', []);
   const ixdiag = {
     mfu: 0,
     bu: 0,
@@ -1680,13 +1689,13 @@ export const spec = {
             createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidderRequest);
             break;
           case VIDEO:
-            createVideoImps(validBidRequest, videoImps)
+            createVideoImps(validBidRequest, videoImps);
             break;
           case NATIVE:
-            createNativeImps(validBidRequest, nativeImps)
+            createNativeImps(validBidRequest, nativeImps);
             break;
           default:
-            logWarn(`IX Bid Adapter: ad unit mediaTypes ${mediaType} is not supported`)
+            logWarn(`IX Bid Adapter: ad unit mediaTypes ${mediaType} is not supported`);
         }
       }
     });
@@ -1806,25 +1815,25 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: IFRAME_USER_SYNC_URL
-      })
+      });
     } else {
       let publisherSyncsPerBidder = null;
       if (config.getConfig('userSync')) {
-        publisherSyncsPerBidder = config.getConfig('userSync').syncsPerBidder
+        publisherSyncsPerBidder = config.getConfig('userSync').syncsPerBidder;
       }
       if (publisherSyncsPerBidder === 0) {
-        publisherSyncsPerBidder = publisherSyncsPerBidderOverride
+        publisherSyncsPerBidder = publisherSyncsPerBidderOverride;
       }
       if (publisherSyncsPerBidderOverride && (publisherSyncsPerBidder === 0 || publisherSyncsPerBidder)) {
-        publisherSyncsPerBidder = publisherSyncsPerBidderOverride > publisherSyncsPerBidder ? publisherSyncsPerBidder : publisherSyncsPerBidderOverride
+        publisherSyncsPerBidder = publisherSyncsPerBidderOverride > publisherSyncsPerBidder ? publisherSyncsPerBidder : publisherSyncsPerBidderOverride;
       } else {
-        publisherSyncsPerBidder = 1
+        publisherSyncsPerBidder = 1;
       }
       for (let i = 0; i < publisherSyncsPerBidder; i++) {
         syncs.push({
           type: 'image',
           url: buildImgSyncUrl(publisherSyncsPerBidder, i)
-        })
+        });
       }
     }
     return syncs;
@@ -1857,7 +1866,7 @@ function buildImgSyncUrl(syncsPerBidder, index) {
  * @returns object
  */
 export function combineImps(imps) {
-  const result = {}
+  const result = {};
   imps.forEach((imp) => {
     Object.keys(imp).forEach((key) => {
       if (result.hasOwnProperty(key)) {
@@ -1868,7 +1877,7 @@ export function combineImps(imps) {
         } else if (imp[key].hasOwnProperty('ixImps')) {
           result[key].ixImps = imp[key].ixImps;
         } else if (imp[key].hasOwnProperty('missingImps')) {
-          result[key].missingImps = imp[key].missingImps
+          result[key].missingImps = imp[key].missingImps;
         }
       } else {
         result[key] = imp[key];

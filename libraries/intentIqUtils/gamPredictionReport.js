@@ -6,14 +6,14 @@ export function gamPredictionReport (gamObjectReference, sendData) {
   try {
     if (!gamObjectReference || !sendData) {
       logError('Failed to get gamPredictionReport, required data is missed');
-      return
+      return;
     }
     const getSlotTargeting = (slot) => {
       try {
         return getSlotTargetingMap(slot);
       } catch (e) {
         logError('Failed to get slot targeting: ' + e);
-        return {}
+        return {};
       }
     };
 

@@ -213,7 +213,7 @@ function getResponses(gdpr, auctionIds) {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       const auction = cache.auctions[auctionId];
       const gdprPos = getGdprPos(gdpr, auction);
-      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
       const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSE_SENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSE_SENT;

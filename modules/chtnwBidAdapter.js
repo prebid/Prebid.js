@@ -71,7 +71,7 @@ export const spec = {
     };
   },
   interpretResponse: function(serverResponse) {
-    const bidResponses = []
+    const bidResponses = [];
     _each(serverResponse.body, function(response, i) {
       bidResponses.push({
         ...response
@@ -82,15 +82,15 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.pixelEnabled) {
-      const chtnwId = generateUUID()
-      const uuid = chtnwId
+      const chtnwId = generateUUID();
+      const uuid = chtnwId;
       const type = (_isMobile()) ? 'dot' : 'pixel';
       syncs.push({
         type: 'image',
         url: `https://t.ssp.hinet.net/${type}?bd=${uuid}&t=chtnw`
-      })
+      });
     }
-    return syncs
+    return syncs;
   },
   onTimeout: function(timeoutData) {
     if (timeoutData === null) {
@@ -108,5 +108,5 @@ export const spec = {
   },
   onSetTargeting: function(bid) {
   },
-}
+};
 registerBidder(spec);

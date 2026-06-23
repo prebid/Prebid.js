@@ -85,7 +85,7 @@ describe('adWMG Analytics', function () {
         ]
       }
     ]
-  }
+  };
 
   const adUnits = [{
     code: 'ad-slot-1',

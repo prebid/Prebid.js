@@ -122,7 +122,7 @@ export const AD_POSITION = {
   FOOTER: 5,
   SIDEBAR: 6,
   FULL_SCREEN: 7
-}
+};
 
 /**
  * ORTB 2.5 section 5.11 - Playback Cessation Modes
@@ -132,7 +132,7 @@ export const PLAYBACK_END = {
   VIDEO_COMPLETION: 1,
   VIEWPORT_LEAVE: 2,
   FLOATING: 3
-}
+};
 
 /**
  * ORTB 2.5 section 5.10 - Playback Methods

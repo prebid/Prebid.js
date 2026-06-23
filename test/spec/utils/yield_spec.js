@@ -51,7 +51,7 @@ describe('main thread yielding', () => {
       let cbs = [];
       const fn = (cb) => {
         cbs.push(cb);
-      }
+      };
       let done = false;
       serialize([fn, fn], () => {
         done = true;

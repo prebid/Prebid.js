@@ -39,7 +39,7 @@ function checkVideo(adUnits) {
 }
 
 function getConnectionSpeed() {
-  const connection = window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection || {}
+  const connection = window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection || {};
   const connectionType = connection.type || connection.effectiveType;
 
   switch (connectionType) {
@@ -80,7 +80,7 @@ function calculateTimeoutModifier(adUnits, rules) {
   if (rules.includesVideo) {
     const hasVideo = bidderTimeoutFunctions.checkVideo(adUnits);
     toAdd = rules.includesVideo[hasVideo] || 0;
-    logInfo(`Adding ${toAdd} to timeout for includesVideo ${hasVideo}`)
+    logInfo(`Adding ${toAdd} to timeout for includesVideo ${hasVideo}`);
     timeoutModifier += toAdd;
   }
 
@@ -92,7 +92,7 @@ function calculateTimeoutModifier(adUnits, rules) {
       for (const [rangeStr, timeoutVal] of entries(rules.numAdUnits)) {
         const [lowerBound, upperBound] = rangeStr.split('-');
         if (parseInt(lowerBound) <= numAdUnits && numAdUnits <= parseInt(upperBound)) {
-          logInfo(`Adding ${timeoutVal} to timeout for numAdUnits ${numAdUnits}`)
+          logInfo(`Adding ${timeoutVal} to timeout for numAdUnits ${numAdUnits}`);
           timeoutModifier += timeoutVal;
           break;
         }
@@ -103,14 +103,14 @@ function calculateTimeoutModifier(adUnits, rules) {
   if (rules.deviceType) {
     const deviceType = bidderTimeoutFunctions.getDeviceType();
     toAdd = rules.deviceType[deviceType] || 0;
-    logInfo(`Adding ${toAdd} to timeout for deviceType ${deviceType}`)
+    logInfo(`Adding ${toAdd} to timeout for deviceType ${deviceType}`);
     timeoutModifier += toAdd;
   }
 
   if (rules.connectionSpeed) {
     const connectionSpeed = bidderTimeoutFunctions.getConnectionSpeed();
     toAdd = rules.connectionSpeed[connectionSpeed] || 0;
-    logInfo(`Adding ${toAdd} to timeout for connectionSpeed ${connectionSpeed}`)
+    logInfo(`Adding ${toAdd} to timeout for connectionSpeed ${connectionSpeed}`);
     timeoutModifier += toAdd;
   }
 

@@ -368,7 +368,7 @@ describe('Adkernel adapter', function () {
 
     it('valid native requests should pass', () => {
       expect(spec.isBidRequestValid(bid_native)).to.be.equal(true);
-    })
+    });
   });
 
   describe('banner request building', function () {
@@ -477,7 +477,7 @@ describe('Adkernel adapter', function () {
         return {
           currency: 'USD',
           floor: 0.145
-        }
+        };
       };
       const [_, bidRequests] = buildRequest([bid]);
       expect(bidRequests[0].imp[0]).to.have.property('bidfloor', 0.145);

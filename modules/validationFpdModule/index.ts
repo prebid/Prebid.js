@@ -201,7 +201,7 @@ function runValidations(data) {
   return {
     global: validateFpd(data.global),
     bidder: Object.fromEntries(Object.entries(data.bidder).map(([bidder, conf]) => [bidder, validateFpd(conf)]))
-  }
+  };
 }
 
 declare module '../../src/fpd/enrichment' {
@@ -230,6 +230,6 @@ export const validationSubmodule = {
   name: 'validation',
   queue: 1,
   processFpd
-}
+};
 
 submodule('firstPartyData', validationSubmodule);

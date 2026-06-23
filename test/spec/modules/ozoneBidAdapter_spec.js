@@ -11,7 +11,7 @@ spec.getGetParametersAsObject = function() {
     page: 'https://www.ozoneproject.com/sometestPage/?qsParam1=123',
     location: 'https://www.ozoneproject.com/sometestPage/?qsParam1=123'
   };
-}
+};
 var validBidRequests = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -2264,7 +2264,7 @@ describe('ozone Adapter', function () {
         customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }]
       },
       siteId: 1234567890
-    }
+    };
     it('should return true when required params found and all optional params are valid', function () {
       expect(spec.isBidRequestValid(validBidReq2)).to.equal(true);
     });
@@ -2536,7 +2536,7 @@ describe('ozone Adapter', function () {
   });
   describe('buildRequests', function () {
     beforeEach(function () {
-      config.resetConfig()
+      config.resetConfig();
     });
     it('sends bid request to OZONEURI via POST', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
@@ -2618,7 +2618,7 @@ describe('ozone Adapter', function () {
           vendorConsents: { 524: true },
           purposeConsents: { 1: true, 2: true, 3: true, 4: true, 5: true }
         }
-      }
+      };
       const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.regs.ext.gdpr).to.equal(1);
@@ -2634,7 +2634,7 @@ describe('ozone Adapter', function () {
           metadata: consentString,
           gdprApplies: true
         }
-      }
+      };
       const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.regs.ext.gdpr).to.equal(1);
@@ -3024,7 +3024,7 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequestsNoCustomData, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.ozone.customData[0].targeting.name).to.equal('example_ortb2_name');
-      expect(payload.imp[0].ext.ozone.customData[0].targeting).to.not.have.property('gender')
+      expect(payload.imp[0].ext.ozone.customData[0].targeting).to.not.have.property('gender');
     });
     it('should add ortb2 user data to the user object ONLY if inside ext/', function () {
       const bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
@@ -3087,7 +3087,7 @@ describe('ozone Adapter', function () {
         }
       });
       const localBidRequest = JSON.parse(JSON.stringify(validBidRequestsWithBannerMediaType));
-      localBidRequest[0].getFloor = function(x) { return { 'currency': 'USD', 'floor': 0.8 } };
+      localBidRequest[0].getFloor = function(x) { return { 'currency': 'USD', 'floor': 0.8 }; };
       const request = spec.buildRequests(localBidRequest, validBidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'imp.0.floor.banner.currency')).to.equal('USD');
@@ -3197,8 +3197,8 @@ describe('ozone Adapter', function () {
   });
   describe('interpretResponse', function () {
     beforeEach(function () {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
     it('should build bid array', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
       const result = spec.interpretResponse(validResponse, request);
@@ -3553,8 +3553,8 @@ describe('ozone Adapter', function () {
   });
   describe('blockTheRequest', function() {
     beforeEach(function () {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
     it('should return true if oz_request is false', function() {
       config.setConfig({ 'ozone': { 'oz_request': false } });
       const result = spec.blockTheRequest();

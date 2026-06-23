@@ -63,12 +63,12 @@ export const VIDEO_UUID_PENDING = 9999;
 export const VIDEO_CONTEXT = {
   INSTREAM: 'instream',
   OUTSTREAM: 'outstream'
-}
+};
 
 export const VIDEO_PLACEMENT = {
   [VIDEO_CONTEXT.INSTREAM]: 1,
   [VIDEO_CONTEXT.OUTSTREAM]: 6
-}
+};
 
 // Log Types
 export const LOG_APPR = 'APPR';

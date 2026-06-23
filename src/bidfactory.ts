@@ -100,6 +100,8 @@ export interface BaseBidResponse {
    * Billing tracker URL.
    */
   burl?: string;
+
+  desirability: number;
 }
 
 // <format>BidResponesProperties - adapter interpretResponse properties specific to the format.
@@ -213,7 +215,7 @@ function Bid({ src = 'client', bidder = '', bidId, transactionId, adUnitId, auct
     auctionId,
     mediaType: 'banner',
     source: _bidSrc
-  })
+  });
 
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {

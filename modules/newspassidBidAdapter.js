@@ -24,7 +24,7 @@ const converter = ortbConverter({
     deepSetValue(imp, 'ext.newspassid', {
       publisher: resolveNewpassidPublisherId(bidRequest),
       placementId: bidRequest.params.placementId,
-    })
+    });
     return imp;
   },
   context: {

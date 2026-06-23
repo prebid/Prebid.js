@@ -288,7 +288,7 @@ describe('AdkernelAdn adapter', function () {
         return {
           currency: 'USD',
           floor: 0.145
-        }
+        };
       };
       const [, tagRequests] = buildRequest([bid]);
       expect(tagRequests[0].imp[0]).to.have.property('bidfloor', 0.145);

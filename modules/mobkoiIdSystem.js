@@ -30,7 +30,7 @@ const USER_SYNC_PARAMS = {
    * The name of the parameter that the publisher can use to specify the integration endpoint.
    */
   PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
-}
+};
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 

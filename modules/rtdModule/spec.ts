@@ -23,7 +23,7 @@ type BaseConfig<P extends RTDProvider> = {
    * If true, delay the auction up to `auctionDelay` milliseconds to wait for this module.
    */
   waitForIt?: boolean;
-}
+};
 
 export type RTDProviderConfig<P extends RTDProvider> = BaseConfig<P> & (
     P extends keyof ProviderConfig ? ProviderConfig[P] : Record<string, unknown>
@@ -55,7 +55,7 @@ export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> &
   getTargetingData?: (adUnitCodes: AdUnitCode[], config: RTDProviderConfig<P>, consent: AllConsentData, auction: EventPayload<typeof EVENTS.AUCTION_END>) => ByAdUnit<TargetingMap<any>>;
   getBidRequestData?: (request: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<P>, consent: AllConsentData, timeout: number) => void;
   onDataDeletionRequest?: (config: RTDProviderConfig<P>) => void;
-}
+};
 
 declare module '../../src/hook' {
   interface Submodules {

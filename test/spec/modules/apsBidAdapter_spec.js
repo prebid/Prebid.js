@@ -273,11 +273,15 @@ describe('apsBidAdapter', () => {
 
       expect(result.data.user.gender).to.be.undefined;
       expect(result.data.user.yob).to.be.undefined;
-      expect(result.data.user.keywords).to.be.undefined;
       expect(result.data.user.kwarry).to.be.undefined;
       expect(result.data.user.customdata).to.be.undefined;
       expect(result.data.user.geo).to.be.undefined;
-      expect(result.data.user.data).to.be.undefined;
+      expect(result.data.user.data).to.deep.equal([
+        {
+          id: 'segment1',
+        },
+      ]);
+      expect(result.data.user.keywords).to.equal('sports,tech');
       expect(result.data.user.id).to.equal('user123');
     });
 
@@ -465,8 +469,12 @@ describe('apsBidAdapter', () => {
                   w: 300,
                   h: 250,
                   exp: 3600,
+                  ext: {
+                    bidder: '911',
+                  },
                 },
               ],
+              seat: '10432',
             },
           ],
         },
@@ -492,6 +500,13 @@ describe('apsBidAdapter', () => {
 
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
+    });
+
+    it('should fill networkId and seat metadata from APS response fields', () => {
+      const result = spec.interpretResponse(response, request);
+
+      expect(result[0].meta.networkId).to.equal('911');
+      expect(result[0].meta.seat).to.equal('10432');
     });
 
     it('should include accountID in creative script', () => {
@@ -719,7 +734,7 @@ describe('apsBidAdapter', () => {
           ]);
         });
 
-        it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
+        it('when both iframe and pixel sync are disabled, should return empty array', () => {
           syncOptions = { iframeEnabled: false, pixelEnabled: false };
           const result = spec.getUserSyncs(
             syncOptions,
@@ -815,7 +830,7 @@ describe('apsBidAdapter', () => {
         ]);
       });
 
-      it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
+      it('when both iframe and pixel sync are disabled, should return empty array', () => {
         syncOptions = { iframeEnabled: false, pixelEnabled: false };
         const result = spec.getUserSyncs(
           syncOptions,

@@ -30,10 +30,10 @@ describe('adRendering', () => {
     sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'logWarn');
     sandbox.stub(utils, 'logError');
-  })
+  });
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   describe('getRenderingData', () => {
     let bidResponse;
@@ -67,7 +67,7 @@ describe('adRendering', () => {
         });
       });
     });
-  })
+  });
 
   describe('rendering logic', () => {
     let bidResponse, renderFn, resizeFn, adId;
@@ -78,7 +78,7 @@ describe('adRendering', () => {
       adId = 123;
       bidResponse = {
         adId
-      }
+      };
     });
 
     function expectAdRenderFailedEvent(reason) {
@@ -92,13 +92,13 @@ describe('adRendering', () => {
       }
       before(() => {
         getRenderingData.before(getRenderingDataHook, 999);
-      })
+      });
       after(() => {
         getRenderingData.getHooks({ hook: getRenderingDataHook }).remove();
       });
       beforeEach(() => {
         getRenderingDataStub = sinon.stub();
-      })
+      });
 
       describe('when the ad has a renderer', () => {
         let bidResponse;
@@ -109,7 +109,7 @@ describe('adRendering', () => {
               url: 'some-custom-renderer',
               render: sinon.stub()
             }
-          }
+          };
         });
 
         it('does not invoke renderFn, but the renderer instead', () => {
@@ -122,7 +122,7 @@ describe('adRendering', () => {
           doRender({ renderFn, bidResponse, isMainDocument: true });
           sinon.assert.notCalled(renderFn);
           sinon.assert.called(bidResponse.renderer.render);
-        })
+        });
 
         it('emits AD_RENDER_SUCCEDED', () => {
           doRender({ renderFn, bidResponse });
@@ -139,8 +139,8 @@ describe('adRendering', () => {
           let bidWithSafeRenderer = {
             adId: 'mock-ad-id',
             safeRenderer: { url: 'mock-url-safe-renderer' }
-          }
-          doRender({ renderFn, bidResponse: bidWithSafeRenderer })
+          };
+          doRender({ renderFn, bidResponse: bidWithSafeRenderer });
           sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
         });
 
@@ -172,7 +172,7 @@ describe('adRendering', () => {
         it('should emit AD_RENDER_FAILED on video bids', () => {
           bidResponse.mediaType = VIDEO;
           doRender({ renderFn, bidResponse });
-          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT)
+          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT);
         });
       }
 
@@ -188,7 +188,7 @@ describe('adRendering', () => {
         sinon.assert.calledWith(renderFn, sinon.match({
           adId: bidResponse.adId,
           ...data
-        }))
+        }));
       });
 
       it('invokes resizeFn with w/h from rendering data', () => {
@@ -201,7 +201,7 @@ describe('adRendering', () => {
         getRenderingDataStub.returns({});
         doRender({ renderFn, resizeFn, bidResponse });
         sinon.assert.notCalled(resizeFn);
-      })
+      });
     });
 
     describe('markWinningBid', () => {
@@ -213,7 +213,7 @@ describe('adRendering', () => {
       it('should fire BID_WON', () => {
         markWinningBid(bid);
         sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
-      })
+      });
       it('should fire win tracking pixels', () => {
         bid.eventtrackers = [{ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker' }];
         markWinningBid(bid);
@@ -227,7 +227,7 @@ describe('adRendering', () => {
         markWinningBid(bid);
         sinon.assert.notCalled(utils.triggerPixel);
       });
-    })
+    });
 
     describe('deferRendering', () => {
       let fn, markWin;
@@ -236,10 +236,10 @@ describe('adRendering', () => {
       }
       before(() => {
         markWinningBid.before(markWinHook);
-      })
+      });
       after(() => {
         markWinningBid.getHooks({ hook: markWinHook }).remove();
-      })
+      });
       beforeEach(() => {
         fn = sinon.stub();
         markWin = sinon.stub();
@@ -255,7 +255,7 @@ describe('adRendering', () => {
       [undefined, false].forEach(defer => {
         describe(`when bid has deferRendering = ${defer}`, () => {
           if (defer != null) {
-            beforeEach(() => { bidResponse.deferRendering = defer })
+            beforeEach(() => { bidResponse.deferRendering = defer; });
           }
           it('should run fn and mark bid as rendered', () => {
             deferRendering(bidResponse, fn);
@@ -305,30 +305,30 @@ describe('adRendering', () => {
           deferRendering(bidResponse, fn);
           deferRendering(bidResponse, fn);
           sinon.assert.calledOnce(markWin);
-        })
-      })
+        });
+      });
     });
     describe('renderIfDeferred', () => {
       it('should not choke on unmarked bids', () => {
         renderIfDeferred(bidResponse);
         expect(bidResponse.status).to.not.equal(BID_STATUS.RENDERED);
-      })
+      });
     });
     describe('handleRender', () => {
-      let doRenderStub
+      let doRenderStub;
       function doRenderHook(next, ...args) {
         next.bail(doRenderStub(...args));
       }
       before(() => {
         doRender.before(doRenderHook, 999);
-      })
+      });
       after(() => {
         doRender.getHooks({ hook: doRenderHook }).remove();
-      })
+      });
       beforeEach(() => {
         sandbox.stub(auctionManager, 'addWinningBid');
         doRenderStub = sinon.stub();
-      })
+      });
       describe('should emit AD_RENDER_FAILED', () => {
         it('when bidResponse is missing', () => {
           handleRender({ adId });
@@ -340,7 +340,7 @@ describe('adRendering', () => {
           handleRender({ adId, bidResponse });
           expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.EXCEPTION);
         });
-      })
+      });
 
       describe('when bid was already rendered', () => {
         beforeEach(() => {
@@ -348,7 +348,7 @@ describe('adRendering', () => {
         });
         afterEach(() => {
           config.resetConfig();
-        })
+        });
         it('should emit STALE_RENDER', () => {
           handleRender({ adId, bidResponse });
           sinon.assert.calledWith(events.emit, EVENTS.STALE_RENDER, bidResponse);
@@ -358,7 +358,7 @@ describe('adRendering', () => {
           config.setConfig({ auctionOptions: { suppressStaleRender: true } });
           handleRender({ adId, bidResponse });
           sinon.assert.notCalled(doRenderStub);
-        })
+        });
       });
 
       describe('when bid has already expired', () => {
@@ -368,7 +368,7 @@ describe('adRendering', () => {
         });
         afterEach(() => {
           isBidNotExpiredStub.restore();
-        })
+        });
         it('should emit EXPIRED_RENDER', () => {
           handleRender({ adId, bidResponse });
           sinon.assert.calledWith(events.emit, EVENTS.EXPIRED_RENDER, bidResponse);
@@ -378,10 +378,10 @@ describe('adRendering', () => {
           config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
           handleRender({ adId, bidResponse });
           sinon.assert.notCalled(doRenderStub);
-        })
+        });
       });
-    })
-  })
+    });
+  });
 
   describe('allowTopWindowRenderers', () => {
     /** Minimal index stub so `getPreparedBidForAuction` can resolve publisher renderers from the bid request. */
@@ -474,7 +474,7 @@ describe('adRendering', () => {
       sandbox.stub(events, 'emit');
       bid = {
         status: BID_STATUS.RENDERED
-      }
+      };
     });
     it('emits AD_RENDER_FAILED with given reason', () => {
       handleCreativeEvent({ event: EVENTS.AD_RENDER_FAILED, info: { reason: 'reason', message: 'message' } }, bid);
@@ -500,7 +500,7 @@ describe('adRendering', () => {
       bid = {
         adId: '123'
       };
-    })
+    });
 
     it('should resize', () => {
       const resizeFn = sinon.stub();
@@ -515,8 +515,8 @@ describe('adRendering', () => {
       const fireTrackers = sinon.stub();
       handleNativeMessage(data, bid, { fireTrackers });
       sinon.assert.calledWith(fireTrackers, data, bid);
-    })
-  })
+    });
+  });
 
   describe('onAdRenderSucceeded', () => {
     let mockAdapterSpec, bids;

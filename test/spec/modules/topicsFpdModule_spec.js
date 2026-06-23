@@ -18,10 +18,10 @@ import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 describe('topics', () => {
   let unregister, enrichUfpdRule;
   before(() => {
-    unregister = registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => enrichUfpdRule(params), 0)
+    unregister = registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => enrichUfpdRule(params), 0);
   });
   after(() => {
-    unregister()
+    unregister();
   });
 
   beforeEach(() => {
@@ -279,11 +279,11 @@ describe('topics', () => {
             }]
           }
         }
-      })
+      });
     });
     afterEach(() => {
       config.resetConfig();
-    })
+    });
 
     Object.entries({
       'support': {},
@@ -306,20 +306,20 @@ describe('topics', () => {
     it('does not load frames when accessDevice is not allowed', () => {
       enrichUfpdRule = ({ component }) => {
         if (component === 'bidder.mockBidder') {
-          return { allow: false }
+          return { allow: false };
         }
-      }
+      };
       const doc = {
         createElement: sinon.stub(),
         browsingTopics: true,
         featurePolicy: {
           allowsFeature: () => true
         }
-      }
+      };
       doc.createElement = sinon.stub();
       loadTopicsForBidders(doc);
       sinon.assert.notCalled(doc.createElement);
-    })
+    });
   });
 
   describe('getCachedTopics()', () => {
@@ -350,7 +350,7 @@ describe('topics', () => {
       let sandbox;
       beforeEach(() => {
         sandbox = sinon.createSandbox();
-      })
+      });
 
       afterEach(() => {
         sandbox.restore();
@@ -360,7 +360,7 @@ describe('topics', () => {
       it('should return no segments when not configured', () => {
         config.setConfig({ userSync: {} });
         expect(getCachedTopics()).to.eql([]);
-      })
+      });
 
       describe('when cached data is available and not expired', () => {
         beforeEach(() => {
@@ -385,7 +385,7 @@ describe('topics', () => {
                 }]
               }
             }
-          })
+          });
         });
 
         it('should return segments for bidder if transmitUfpd is allowed', () => {
@@ -393,7 +393,7 @@ describe('topics', () => {
         });
 
         it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
-          enrichUfpdRule = (params) => ({ allow: params.component !== 'bidder.pubmatic' })
+          enrichUfpdRule = (params) => ({ allow: params.component !== 'bidder.pubmatic' });
           expect(getCachedTopics()).to.eql([]);
         });
       });
@@ -427,7 +427,7 @@ describe('topics', () => {
         loadTopicsForBidders({
           browsingTopics: true,
           featurePolicy: {
-            allowsFeature() { return true }
+            allowsFeature() { return true; }
           },
           createElement: sinon.stub().callsFake(() => ({ style: {} })),
           documentElement: {
@@ -438,7 +438,7 @@ describe('topics', () => {
 
       after(() => {
         config.resetConfig();
-      })
+      });
 
       it('should store segments if receiveMessage event is triggered with segment data', () => {
         receiveMessage(evt);
@@ -490,7 +490,7 @@ describe('topics', () => {
       loadTopicsForBidders({
         browsingTopics: true,
         featurePolicy: {
-          allowsFeature() { return true }
+          allowsFeature() { return true; }
         }
       });
       sinon.assert.calledOnce(stubbedFetch);
@@ -514,7 +514,7 @@ describe('topics', () => {
       loadTopicsForBidders({
         browsingTopics: true,
         featurePolicy: {
-          allowsFeature() { return true }
+          allowsFeature() { return true; }
         }
       });
       sinon.assert.notCalled(stubbedFetch);
@@ -552,7 +552,7 @@ describe('topics', () => {
       loadTopicsForBidders({
         browsingTopics: true,
         featurePolicy: {
-          allowsFeature() { return true }
+          allowsFeature() { return true; }
         }
       });
       sinon.assert.notCalled(stubbedFetch);

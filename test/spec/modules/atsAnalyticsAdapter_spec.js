@@ -198,57 +198,57 @@ describe('ats analytics adapter', function () {
 
       // check that the publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
-    })
+    });
     it('check browser is safari', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       const browser = parseBrowser();
       expect(browser).to.equal('Safari');
-    })
+    });
     it('check browser is chrome', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
       sinon.stub(Math, 'random').returns(0.99);
       const browser = parseBrowser();
       expect(browser).to.equal('Chrome');
-    })
+    });
     it('check browser is edge', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
       sinon.stub(Math, 'random').returns(0.99);
       const browser = parseBrowser();
       expect(browser).to.equal('Microsoft Edge');
-    })
+    });
     it('check browser is firefox', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
       sinon.stub(Math, 'random').returns(0.99);
       const browser = parseBrowser();
       expect(browser).to.equal('Firefox');
-    })
+    });
     it('check browser is unknown', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns(undefined);
       sinon.stub(Math, 'random').returns(0.99);
       const browser = parseBrowser();
       expect(browser).to.equal('Unknown');
-    })
+    });
     it('should not fire analytics request if sampling rate is 0', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       const result = atsAnalyticsAdapter.shouldFireRequest(0);
       expect(result).to.equal(false);
-    })
+    });
     it('should fire analytics request', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);
       // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
       const result = atsAnalyticsAdapter.shouldFireRequest(8);
       expect(result).to.equal(true);
-    })
+    });
     it('should not fire analytics request if math random is something other then 0.99', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.98);
       // publisher can try to pass anything they want but we will set sampling rate to 100, which means we will have 1% of requests
       const result = atsAnalyticsAdapter.shouldFireRequest(10);
       expect(result).to.equal(false);
-    })
+    });
 
     it('should set cookie value to 10 for _lr_sampling_rate', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
@@ -256,7 +256,7 @@ describe('ats analytics adapter', function () {
       atsAnalyticsAdapter.setSamplingCookie(10);
       const samplingRate = storage.getCookie('_lr_sampling_rate');
       expect(samplingRate).to.equal('10');
-    })
+    });
 
     it('should set cookie value to 0 for _lr_sampling_rate', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
@@ -264,7 +264,7 @@ describe('ats analytics adapter', function () {
       atsAnalyticsAdapter.setSamplingCookie(0);
       const samplingRate = storage.getCookie('_lr_sampling_rate');
       expect(samplingRate).to.equal('0');
-    })
+    });
 
     it('enable analytics', function () {
       sandbox.stub(utils, 'logError');
@@ -274,7 +274,7 @@ describe('ats analytics adapter', function () {
         options: {}
       });
       expect(utils.logError.called).to.equal(true);
-    })
+    });
 
     describe('has_envelope logic for Prebid v10.0+ compatibility', function () {
       beforeEach(function () {
@@ -477,6 +477,6 @@ describe('ats analytics adapter', function () {
         const result = bidRequestedHandler(bidRequestArgs);
         expect(result[0].has_envelope).to.equal(true);
       });
-    })
-  })
-})
+    });
+  });
+});

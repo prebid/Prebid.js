@@ -106,11 +106,11 @@ export function consentHandler<T, M>(
   }
 
   function getHashData(consentData) {
-    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData
+    return consentData && hashFields ? hashFields.map((f) => consentData[f]) : consentData;
   }
 
   function hasConsentChanged(newConsentData) {
-    return !deepEqual(getHashData(consentData), getHashData(newConsentData))
+    return !deepEqual(getHashData(consentData), getHashData(newConsentData));
   }
 
   function notifyListeners() {
@@ -179,7 +179,7 @@ export function consentHandler<T, M>(
       if (dirty) {
         hash = cyrb53Hash(
           JSON.stringify(getHashData(consentData))
-        )
+        );
         dirty = false;
       }
       return hash;
@@ -187,7 +187,7 @@ export function consentHandler<T, M>(
     onChange(listener) {
       listeners.push(listener);
     }
-  }
+  };
 }
 
 export const uspDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_USP>, DefaultConsentMeta>();
@@ -202,7 +202,7 @@ export const gdprDataHandler = consentHandler({
           : 0,
         generatedAt,
         apiVersion: consentData.apiVersion,
-      }
+      };
     }
   },
   hashFields: ['gdprApplies', 'consentString']
@@ -244,7 +244,7 @@ type GVLIDResult = {
    * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
    */
   gvlid?: GVLID;
-}
+};
 
 export function gvlidRegistry() {
   const registry = {};
@@ -283,7 +283,7 @@ export function gvlidRegistry() {
       }
       return result;
     }
-  }
+  };
 }
 
 declare module './config' {
@@ -306,11 +306,11 @@ const ALL_HANDLERS = {
 
 export type AllConsentData = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
-}
+};
 
 export type AllConsentMeta = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>
-}
+};
 
 type MultiHandler = Pick<ConsentHandler<AllConsentData, AllConsentMeta>, 'promise' | 'hash' | 'getConsentData' | 'reset' | 'getConsentMeta' | 'onChange'>;
 
@@ -318,8 +318,8 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
   const entries = Object.entries(handlers);
   function collector(method): any {
     return function () {
-      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]))
-    }
+      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]));
+    };
   }
   const getConsentData = collector('getConsentData');
   const resetAll = collector('reset');
@@ -328,7 +328,7 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
     listeners = [];
     Object.values(handlers).forEach(handler => handler.onChange(() => {
       listeners.forEach((listener) => listener(getConsentData()));
-    }))
+    }));
   }
   reset();
 
@@ -353,3 +353,4 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
 }
 
 export const allConsent = multiHandler();
+export const GVL_PURPOSES = {}; // this is populated by plugins/gvlPurposes.js

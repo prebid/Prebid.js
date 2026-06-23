@@ -16,7 +16,7 @@ export function setBidResponseVideoCache(bidResponse, bid) {
       Object.assign(bidResponse, {
         videoCacheKey,
         vastUrl
-      })
+      });
     }
   }
 }

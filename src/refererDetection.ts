@@ -307,7 +307,7 @@ export function cacheWithLocation(fn, win = window) {
       value = fn();
     }
     return value;
-  }
+  };
 }
 
 export type RefererInfo = ReturnType<ReturnType<typeof detectReferer>>;

@@ -2,7 +2,7 @@ export function interpretResponse (serverResponse) {
   const response = serverResponse.body;
 
   if (!response || Object.keys(response).length === 0) {
-    return []
+    return [];
   }
 
   const bid = {

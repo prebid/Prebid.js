@@ -222,7 +222,7 @@ describe('ssmasBidAdapter', function () {
       'source': {
         'tid': '8cc2f4b0-084d-4f40-acfa-5bec2023b1ab'
       }
-    }
+    };
   });
 
   describe('test onBidWon function', function () {
@@ -237,7 +237,7 @@ describe('ssmasBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(false);
     });
   });

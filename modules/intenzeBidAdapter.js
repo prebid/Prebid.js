@@ -85,7 +85,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return Boolean(bid.params.accountId) && Boolean(bid.params.placementId)
+    return Boolean(bid.params.accountId) && Boolean(bid.params.placementId);
   },
 
   /**
@@ -98,7 +98,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    if (validBidRequests && validBidRequests.length === 0) return []
+    if (validBidRequests && validBidRequests.length === 0) return [];
     const accuontId = validBidRequests[0].params.accountId;
     const subdomain = getSubdomain();
     const endpointURL = URL_ENDPOINT
@@ -143,7 +143,7 @@ export const spec = {
         deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
       }
 
-      bids.push(data)
+      bids.push(data);
     }
     return {
       method: 'POST',
@@ -212,7 +212,7 @@ export const spec = {
  */
 const checkRequestType = (bidRequest, type) => {
   return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
-}
+};
 
 const parseNative = admObject => {
   const {
@@ -240,7 +240,7 @@ const parseNative = admObject => {
   });
 
   return result;
-}
+};
 
 const prepareImpObject = (bidRequest) => {
   const impObject = {
@@ -262,7 +262,7 @@ const prepareImpObject = (bidRequest) => {
       request: addNativeParameters(bidRequest)
     };
   }
-  return impObject
+  return impObject;
 };
 
 const addNativeParameters = bidRequest => {
@@ -306,8 +306,8 @@ const addNativeParameters = bidRequest => {
   }).filter(Boolean);
 
   impObject.assets = assets;
-  return impObject
-}
+  return impObject;
+};
 
 const addBannerParameters = (bidRequest) => {
   const bannerObject = {};
@@ -337,17 +337,17 @@ const parseSizes = (bid, mediaType) => {
   if (Array.isArray(mediaTypes.banner.sizes)) {
     sizes = mediaTypes.banner.sizes[0];
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = bid.sizes
+    sizes = bid.sizes;
   } else {
     logWarn('no sizes are setup or found');
   }
 
-  return sizes
-}
+  return sizes;
+};
 
 const addVideoParameters = (bidRequest) => {
   const videoObj = {};
-  const supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
+  const supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity'];
 
   for (const param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {
@@ -359,10 +359,10 @@ const addVideoParameters = (bidRequest) => {
   videoObj.w = size[0];
   videoObj.h = size[1];
   return videoObj;
-}
+};
 
 const flatten = arr => {
   return [].concat(...arr);
-}
+};
 
 registerBidder(spec);

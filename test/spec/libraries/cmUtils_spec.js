@@ -89,8 +89,8 @@ describe('consent management utils', () => {
             sandbox.resetHistory();
             cmHook(next, {});
             await loadResult;
-            sinon.assert.notCalled(utils.logWarn)
-          })
+            sinon.assert.notCalled(utils.logWarn);
+          });
         });
 
         describe('when consent data is not available', () => {
@@ -102,8 +102,8 @@ describe('consent management utils', () => {
             cmHook(next, {});
             await loadResult;
             checkLogs(utils.logWarn);
-          })
-        })
+          });
+        });
       });
     });
   });
@@ -122,8 +122,8 @@ describe('consent management utils', () => {
       actionTimeout = null;
       getNullConsent = sinon.stub().returns({
         consent: null
-      })
-    })
+      });
+    });
 
     function runLookup() {
       return lookupConsentData({
@@ -183,7 +183,7 @@ describe('consent management utils', () => {
         setupCmp.callsFake((setPC) => {
           setProvisionalConsent = setPC;
           return new Promise((resolve) => {
-            setTimeout(resolve, 300)
+            setTimeout(resolve, 300);
           });
         });
       });
@@ -194,8 +194,8 @@ describe('consent management utils', () => {
           clock.tick(timeout + 1);
           const { consentData, error } = await lookup;
           sinon.assert.calledWith(consentDataHandler.setConsentData, { consent: null });
-          expect(consentData).to.eql({ consent: null })
-          expect(error.message).to.match(/.*CMP to load.*/)
+          expect(consentData).to.eql({ consent: null });
+          expect(error.message).to.match(/.*CMP to load.*/);
         });
       });
       [0, 100].forEach(timeout => {
@@ -208,7 +208,7 @@ describe('consent management utils', () => {
           clock.tick(timeout + 1);
           const { consentData, error } = await lookup;
           expect(consentData).to.eql({ consent: 'provisional' });
-          expect(error.message).to.match(/.*action.*/)
+          expect(error.message).to.match(/.*action.*/);
         });
       });
 
@@ -224,7 +224,7 @@ describe('consent management utils', () => {
         clock.tick(80);
         await lookup;
         expect(consentData).to.eql({ consent: 2 });
-      })
+      });
     });
   });
 

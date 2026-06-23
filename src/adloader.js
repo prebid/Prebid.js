@@ -31,7 +31,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   function runCallback(cb, err) {
     if (err == null) {
       if (typeof cb === 'function') {
-        cb()
+        cb();
       } else {
         cb.success?.();
       }
@@ -101,7 +101,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
       cacheObject.error = e;
       exit();
     }
-    jptScript.addEventListener('error', errorListener)
+    jptScript.addEventListener('error', errorListener);
 
     function exit() {
       jptScript.removeEventListener('error', errorListener);

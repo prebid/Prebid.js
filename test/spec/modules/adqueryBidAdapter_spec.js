@@ -1,10 +1,10 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adqueryBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/adqueryBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from '../../../src/utils.js';
 
 describe('adqueryBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   const bidRequest = {
     bidder: 'adquery',
     params: {
@@ -16,7 +16,7 @@ describe('adqueryBidAdapter', function () {
         sizes: [[300, 250]],
       }
     }
-  }
+  };
 
   const expectedResponse = {
     'body': {
@@ -53,23 +53,23 @@ describe('adqueryBidAdapter', function () {
           }
         }
     }
-  }
+  };
   describe('codes', function () {
     it('should return a bidder code of adquery', function () {
-      expect(spec.code).to.equal('adquery')
-    })
-  })
+      expect(spec.code).to.equal('adquery');
+    });
+  });
 
   describe('isBidRequestValid', function () {
-    const inValidBid = Object.assign({}, bidRequest)
-    delete inValidBid.params
+    const inValidBid = Object.assign({}, bidRequest);
+    delete inValidBid.params;
     it('should return true if all params present', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true)
-    })
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
 
     it('should return false if any parameter missing', function () {
-      expect(spec.isBidRequestValid(inValidBid)).to.be.false
-    })
+      expect(spec.isBidRequestValid(inValidBid)).to.be.false;
+    });
 
     it('should return false when sizes for banner are not specified', () => {
       const bid = utils.deepClone(bidRequest);
@@ -449,55 +449,55 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(true);
     });
-  })
+  });
 
   describe('buildRequests', function () {
-    const req = spec.buildRequests([bidRequest], { refererInfo: { } })[0]
+    const req = spec.buildRequests([bidRequest], { refererInfo: { } })[0];
 
     it('should return request object', function () {
-      expect(req).to.not.be.null
-    })
+      expect(req).to.not.be.null;
+    });
 
     it('should build request data', function () {
-      expect(req.data).to.not.be.null
-    })
+      expect(req.data).to.not.be.null;
+    });
 
     it('should include one request', function () {
-      expect(req.data.data).to.not.be.null
-    })
+      expect(req.data.data).to.not.be.null;
+    });
 
     it('should include placementCode', function () {
-      expect(req.data.placementCode).not.be.null
-    })
+      expect(req.data.placementCode).not.be.null;
+    });
 
     it('should include qid', function () {
-      expect(req.data.qid).not.be.null
-    })
+      expect(req.data.qid).not.be.null;
+    });
 
     it('should include type', function () {
-      expect(req.data.type !== null).not.be.null
-    })
+      expect(req.data.type !== null).not.be.null;
+    });
 
     it('should include all publisher params', function () {
-      expect(req.data.type !== null && req.data.placementCode !== null).to.be.true
-    })
+      expect(req.data.type !== null && req.data.placementCode !== null).to.be.true;
+    });
 
     it('should include bidder', function () {
-      expect(req.data.bidder !== null).to.be.true
-    })
+      expect(req.data.bidder !== null).to.be.true;
+    });
 
     it('should include sizes', function () {
-      expect(req.data.sizes).not.be.null
-    })
+      expect(req.data.sizes).not.be.null;
+    });
 
     it('should include version', function () {
-      expect(req.data.v).not.be.null
-      expect(req.data.v).equal('$prebid.version$')
-    })
+      expect(req.data.v).not.be.null;
+      expect(req.data.v).equal('$prebid.version$');
+    });
 
     it('should include referrer', function () {
-      expect(req.data.bidPageUrl).not.be.null
-    })
+      expect(req.data.bidPageUrl).not.be.null;
+    });
 
     const req_video = spec.buildRequests([
       {
@@ -686,15 +686,15 @@ describe('adqueryBidAdapter', function () {
           }
         }
       }
-    ], { refererInfo: {} })[0]
+    ], { refererInfo: {} })[0];
 
     it('should include video', function () {
-      expect(req_video.data.bidPageUrl).not.be.null
-    })
+      expect(req_video.data.bidPageUrl).not.be.null;
+    });
 
     it('url must be auction2', function () {
-      expect(req_video.url).eq('https://bidder.adquery.io/openrtb2/auction2')
-    })
+      expect(req_video.url).eq('https://bidder.adquery.io/openrtb2/auction2');
+    });
 
     it('url must be auction2 for instream', function () {
       const req_video_instream = spec.buildRequests([
@@ -710,65 +710,65 @@ describe('adqueryBidAdapter', function () {
             placementId: 'd30f79cf7fef47bd7a5611719f936539bec0d2e9'
           }
         }
-      ], { refererInfo: {} })[0]
-      expect(req_video_instream.url).eq('https://bidder.adquery.io/openrtb2/auction2')
-    })
+      ], { refererInfo: {} })[0];
+      expect(req_video_instream.url).eq('https://bidder.adquery.io/openrtb2/auction2');
+    });
 
     it('data must have id key', function () {
       expect(req_video.data.id).not.be.null;
-    })
+    });
 
     it('data must have cur key', function () {
       expect(req_video.data.cur).not.be.null;
-    })
+    });
 
     it('data must have video key', function () {
       expect(req_video.data.imp[0].video).not.be.null;
-    })
+    });
 
     it('data must have video h property', function () {
       expect(req_video.data.imp[0].video.h).not.be.null;
-    })
+    });
 
     it('data must have video w property', function () {
       expect(req_video.data.imp[0].video.w).not.be.null;
-    })
+    });
 
     it('data must have video protocols property', function () {
       expect(req_video.data.imp[0].video.protocols).not.be.null;
-    })
+    });
 
     it('data must have video mimes property', function () {
       expect(req_video.data.imp[0].video.mimes).not.be.null;
-    })
+    });
 
     it('data must have video bidfloor property', function () {
       expect(req_video.data.imp[0].video.bidfloor).not.exist;
-    })
+    });
 
     it('data must have video bidfloorcur property', function () {
       expect(req_video.data.imp[0].video.bidfloorcur).not.exist;
-    })
+    });
 
     it('data must have bidder placementCode', function () {
       expect(req_video.data.site.ext.bidder.placementId).eq('d30f79cf7fef47bd7a5611719f936539bec0d2e9');
-    })
+    });
 
     it('data must have user key', function () {
       expect(req_video.data.user).not.be.null;
-    })
+    });
 
     it('data must have device.ua key', function () {
       expect(req_video.data.device.ua).not.be.null;
-    })
+    });
 
     it('data must have site.page key', function () {
       expect(req_video.data.site.page).not.be.null;
-    })
+    });
 
     it('data must have site.domain key', function () {
       expect(req_video.data.site.domain).not.be.null;
-    })
+    });
 
     const req_video_for_floor = spec.buildRequests([
       {
@@ -960,15 +960,15 @@ describe('adqueryBidAdapter', function () {
           }
         }
       }
-    ], { refererInfo: {} })[0]
+    ], { refererInfo: {} })[0];
 
     it('data with floor must have video bidfloor property', function () {
       expect(req_video_for_floor.data.imp[0].video.bidfloor).eq(1.13);
-    })
+    });
 
     it('data with floor must have video bidfloorcur property', function () {
       expect(req_video_for_floor.data.imp[0].video.bidfloorcur).eq("USD");
-    })
+    });
 
     describe('GDPR and USP consent in banner requests', function () {
       it('should set gdpr=1 and gdpr_consent when gdprApplies is true', function () {
@@ -1074,17 +1074,17 @@ describe('adqueryBidAdapter', function () {
         expect(req.data.bidQid).to.match(/^qd_/);
       });
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
-      const result = spec.interpretResponse(expectedResponse)
-      expect(result).to.be.an('array')
-    })
+      const result = spec.interpretResponse(expectedResponse);
+      expect(result).to.be.an('array');
+    });
 
     it('validate response params', function() {
       const newResponse = spec.interpretResponse(expectedResponse, bidRequest);
-      expect(newResponse[0].requestId).to.be.equal(1)
+      expect(newResponse[0].requestId).to.be.equal(1);
     });
     it('handles empty bid response', function () {
       const response = {
@@ -1092,7 +1092,7 @@ describe('adqueryBidAdapter', function () {
       };
       const result = spec.interpretResponse(response);
       expect(result.length).to.equal(0);
-    })
+    });
 
     it('validate video response params, seatbid', function () {
       const newResponse = spec.interpretResponse({
@@ -1122,7 +1122,7 @@ describe('adqueryBidAdapter', function () {
           }
         }
       }, bidRequest);
-      expect(newResponse[0].requestId).to.be.equal("48169c9f-f033-48fa-878d-a319273e5c15")
+      expect(newResponse[0].requestId).to.be.equal("48169c9f-f033-48fa-878d-a319273e5c15");
     });
 
     it('validate video response params, seatbid: nurl, vastXml', function () {
@@ -1153,8 +1153,8 @@ describe('adqueryBidAdapter', function () {
           }
         }
       }, bidRequest);
-      expect(newResponse[0].nurl).to.be.equal("https://bidder.adquery.io/openrtb2/uuid/nurl/d")
-      expect(newResponse[0].vastXml).to.be.equal("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VAST version=\"2.0\"><\/VAST>\n")
+      expect(newResponse[0].nurl).to.be.equal("https://bidder.adquery.io/openrtb2/uuid/nurl/d");
+      expect(newResponse[0].vastXml).to.be.equal("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VAST version=\"2.0\"><\/VAST>\n");
     });
 
     it('should not include referrer field in banner bid response', function () {
@@ -1162,7 +1162,7 @@ describe('adqueryBidAdapter', function () {
       const bannerBid = result[result.length - 1];
       expect(bannerBid.referrer).to.be.undefined;
     });
-  })
+  });
 
   describe('getUserSyncs', function () {
     it('should return iframe sync', function () {
@@ -1177,11 +1177,11 @@ describe('adqueryBidAdapter', function () {
           gdprApplies: true,
         },
         {}
-      )
-      expect(sync.length).to.equal(1)
-      expect(sync[0].type === 'iframe')
-      expect(typeof sync[0].url === 'string')
-    })
+      );
+      expect(sync.length).to.equal(1);
+      expect(sync[0].type === 'iframe');
+      expect(typeof sync[0].url === 'string');
+    });
     it('should return image sync', function () {
       const sync = spec.getUserSyncs(
         {
@@ -1194,11 +1194,11 @@ describe('adqueryBidAdapter', function () {
           gdprApplies: true,
         },
         {}
-      )
-      expect(sync.length).to.equal(1)
-      expect(sync[0].type === 'image')
-      expect(typeof sync[0].url === 'string')
-    })
+      );
+      expect(sync.length).to.equal(1);
+      expect(sync[0].type === 'image');
+      expect(typeof sync[0].url === 'string');
+    });
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
       const syncData = spec.getUserSyncs({}, {}, {
@@ -1206,9 +1206,9 @@ describe('adqueryBidAdapter', function () {
         gdprApplies: true,
       }, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
     });
 
     it('should not include qid in sync URL even when window.qid is set', function () {
@@ -1221,7 +1221,7 @@ describe('adqueryBidAdapter', function () {
         window.qid = originalQid;
       }
     });
-  })
+  });
 
   describe('test onBidWon function', function () {
     beforeEach(function() {
@@ -1235,12 +1235,12 @@ describe('adqueryBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
     it('should use nurl if exists', function () {
       var response = spec.onBidWon({ nurl: "https://example.com/test-nurl" });
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.calledWith("https://example.com/test-nurl")).to.equal(true);
     });
     it('should extract uuid from ad string and remove ad from payload', function () {
@@ -1275,7 +1275,7 @@ describe('adqueryBidAdapter', function () {
       expect(decodedBid.uuid).to.be.null;
       expect(decodedBid.ad).to.be.undefined;
     });
-  })
+  });
 
   describe('onTimeout', function () {
     const timeoutData = [{
@@ -1287,10 +1287,10 @@ describe('adqueryBidAdapter', function () {
     });
     it('should include timeoutData', function () {
       expect(spec.onTimeout(timeoutData)).to.be.undefined;
-    })
+    });
   });
 
   it(`onSetTargeting is present and type function`, function () {
-    expect(spec.onSetTargeting).to.exist.and.to.be.a('function')
+    expect(spec.onSetTargeting).to.exist.and.to.be.a('function');
   });
-})
+});

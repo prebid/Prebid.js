@@ -109,7 +109,7 @@ describe('SuimAdapter', function () {
         ],
         src_url: 'https://example.com',
       }]
-    }
+    };
 
     it('should interpret response', function () {
       const result = spec.interpretResponse({ body: bidResponse }, bidderRequests);

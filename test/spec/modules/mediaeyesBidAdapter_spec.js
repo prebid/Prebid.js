@@ -144,13 +144,13 @@ describe('mediaeyes adapter', function () {
             }
           ]
         }
-      }
+      };
       let bidderRequest;
 
       const result = spec.interpretResponse(response, { bidderRequest });
       expect(result.length).to.equal(0);
     });
-  })
+  });
 
   describe('setting imp.floor using floorModule', function () {
     let newRequest;

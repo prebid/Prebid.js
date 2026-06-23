@@ -179,4 +179,4 @@ export const ORTB_MAP = {
       }
     }
   }
-}
+};

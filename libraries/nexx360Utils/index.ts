@@ -18,7 +18,7 @@ const getSessionId = ():string => {
   const id:string = generateUUID();
   sessionId = id;
   return id;
-}
+};
 
 let lastPageUrl:string = '';
 let requestCounter:number = 0;
@@ -29,7 +29,7 @@ const getRequestCount = ():number => {
   }
   lastPageUrl = window.location.pathname;
   return 0;
-}
+};
 
 export const getLocalStorageFunctionGenerator = <
   T extends Record<string, string>
@@ -102,7 +102,7 @@ export type CreateRenderPayload = {
   divId: string,
   width: number,
   height: number
-}
+};
 
 export const createRenderer = (
   { requestId, vastXml, divId, width, height }: CreateRenderPayload
@@ -135,7 +135,7 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
-}
+};
 
 export const enrichRequest = (
   request: ORTBRequest,
@@ -207,7 +207,7 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
 
   if (bid.ext.mediaType === NATIVE) {
     try {
-      response.native = { ortb: JSON.parse(bid.adm) }
+      response.native = { ortb: JSON.parse(bid.adm) };
     } catch (e) {}
   }
   return response as BidResponse;
@@ -228,7 +228,7 @@ export const interpretResponse = (serverResponse: ServerResponse): AdapterRespon
     }
   }
   return responses;
-}
+};
 
 /**
  * Get the AMX ID
@@ -244,7 +244,7 @@ export const getAmxId = (
   }
   const amxId = storage.getDataFromLocalStorage('__amuidpb');
   return amxId || null;
-}
+};
 
 export const getGzipSetting = (
   bidderCode: string,

@@ -55,7 +55,7 @@ export function AuctionIndex(getAuctions) {
         if (requestId == null) {
           return bers[0];
         } else {
-          return bers.find(ber => ber.bids && ber.bids.find(br => br.bidId === requestId) != null)
+          return bers.find(ber => ber.bids && ber.bids.find(br => br.bidId === requestId) != null);
         }
       }
     },
@@ -68,7 +68,7 @@ export function AuctionIndex(getAuctions) {
       }
     },
     getOrtb2(bid) {
-      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2
+      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2;
     }
   });
 }

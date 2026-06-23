@@ -83,7 +83,7 @@ export const userData = {
     if (!cookieData) {
       return undefined;
     }
-    const [, value = ''] = cookieData.split(`${key}=`)
+    const [, value = ''] = cookieData.split(`${key}=`);
     return value;
   },
   getFromLocalStorage() {
@@ -97,7 +97,7 @@ export const userData = {
   getFromTRC() {
     return window.TRC ? window.TRC.user_id : 0;
   }
-}
+};
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
@@ -106,7 +106,7 @@ export const internal = {
   getReferrer: (refererInfo = {}) => {
     return refererInfo?.ref || getWindowSelf().document.referrer;
   }
-}
+};
 
 export function detectBot() {
   try {
@@ -209,7 +209,7 @@ const converter = ortbConverter({
     if (bid.ext && bid.ext.dchain) {
       deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
     }
-    return bidResponse
+    return bidResponse;
   }
 });
 
@@ -280,7 +280,7 @@ export const spec = {
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-    const syncs = []
+    const syncs = [];
     const queryParams = [];
     if (gdprConsent) {
       queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
@@ -354,7 +354,7 @@ function getSiteProperties({ publisherId }, refererInfo, ortb2) {
     content: {
       language: navigator.language
     }
-  }
+  };
 }
 
 function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
@@ -375,7 +375,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     data.user = {
       buyeruid: 0,
       ext: {}
-    }
+    };
   }
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
@@ -383,7 +383,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
   if (data.regs?.ext === undefined || data.regs?.ext === null) {
     data.regs = {
       ext: {}
-    }
+    };
   }
   deepSetValue(data, 'regs.coppa', 0);
   if (gdprConsent.gdprApplies) {

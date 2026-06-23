@@ -206,7 +206,7 @@ describe('orbidderBidAdapter', () => {
     before(() => {
       request = buildRequest(defaultBidRequestBanner);
       nativeRequest = buildRequest(defaultBidRequestNative);
-    })
+    });
 
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
@@ -331,7 +331,7 @@ describe('orbidderBidAdapter', () => {
         floor: bidRequest.floors.values['banner|640x480'],
         currency: floorObj.currency,
         mediaType: floorObj.mediaType
-      }
+      };
     };
 
     bidRequest.floors = {

@@ -100,7 +100,7 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
-    this.timeout(4000)
+    this.timeout(4000);
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -111,7 +111,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
-      prebidmanagerAnalytics.disableAnalytics()
+      prebidmanagerAnalytics.disableAnalytics();
     });
     it('should build utm data from local storage', function () {
       prebidmanagerAnalytics.enableAnalytics({
@@ -120,6 +120,8 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      prebidmanagerAnalytics.flush();
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 
@@ -133,7 +135,7 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   describe('build page info', function () {
     afterEach(function () {
-      prebidmanagerAnalytics.disableAnalytics()
+      prebidmanagerAnalytics.disableAnalytics();
     });
     it('should build page info', function () {
       prebidmanagerAnalytics.enableAnalytics({
@@ -142,6 +144,8 @@ describe('Prebid Manager Analytics Adapter', function () {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      prebidmanagerAnalytics.flush();
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
 

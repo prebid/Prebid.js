@@ -36,7 +36,7 @@ type GetUserSyncFn = (
   responses: ServerResponse[],
   gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
   uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
-  gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>) => ({ type: SyncType, url: string })[]
+  gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>) => ({ type: SyncType, url: string })[];
 
 const siteIds: Set<string> = new Set();
 let cntRequest = 0;
@@ -60,8 +60,8 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     cntRequest++;
     const placementEnv = getPlacementEnv();
-    const request = buildRequest(imps, bidderRequest, context)
-    const siteId = bidderRequest.bids[0].params.siteId
+    const request = buildRequest(imps, bidderRequest, context);
+    const siteId = bidderRequest.bids[0].params.siteId;
     siteIds.add(siteId);
     deepSetValue(request, 'site.publisher.id', siteId);
     deepSetValue(request, 'test', config.getConfig('debug') ? 1 : 0);

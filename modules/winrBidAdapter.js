@@ -38,7 +38,7 @@ function buildBid(bidData) {
   const position = {
     domParent: bid.meta.domParent ? `'${bid.meta.domParent}'` : null,
     child: bid.meta.child ? bid.meta.child : 4
-  }
+  };
   bid.ad = wrapAd(bid, position);
   return bid;
 }
@@ -455,7 +455,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {

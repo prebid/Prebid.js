@@ -72,7 +72,7 @@ describe('ttdBidAdapter', function () {
           ext: {
             gpid: '/1111/home#header'
           }
-        }
+        };
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
@@ -84,7 +84,7 @@ describe('ttdBidAdapter', function () {
 
       it('should return false if neither mediaTypes.banner nor mediaTypes.video is passed', function () {
         const bid = makeBid();
-        delete bid.mediaTypes
+        delete bid.mediaTypes;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
@@ -270,7 +270,7 @@ describe('ttdBidAdapter', function () {
       custom_kvp: {
         customKey: 'customValue'
       }
-    }
+    };
 
     function validateExtFirstPartyData(ext) {
       expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
@@ -417,7 +417,7 @@ describe('ttdBidAdapter', function () {
 
     it('sets the banner expansion direction correctly if sent', function () {
       const clonedBannerRequests = deepClone(baseBannerBidRequests);
-      const expdir = [1, 3]
+      const expdir = [1, 3];
       clonedBannerRequests[0].params.banner = {
         expdir: expdir
       };
@@ -440,7 +440,7 @@ describe('ttdBidAdapter', function () {
           ...baseBannerBidRequests.referer,
           domain: null
         }
-      }
+      };
       const requestBody = testBuildRequests(
         baseBannerBidRequests, { ...baseBidderRequestWithoutRefererDomain, ortb2 }
       ).data;
@@ -674,8 +674,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.site.ext)
-      expect(requestBody.site.search).to.equal('test search')
+      validateExtFirstPartyData(requestBody.site.ext);
+      expect(requestBody.site.search).to.equal('test search');
     });
 
     it('adds all of user first party data to request', function() {
@@ -689,8 +689,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.user.ext)
-      expect(requestBody.user.yob).to.equal(1998)
+      validateExtFirstPartyData(requestBody.user.ext);
+      expect(requestBody.user.yob).to.equal(1998);
     });
 
     it('adds all of imp first party data to request', function() {
@@ -704,10 +704,10 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.imp[0].ext)
+      validateExtFirstPartyData(requestBody.imp[0].ext);
       expect(requestBody.imp[0].tagid).to.equal('1gaa015');
       expect(requestBody.imp[0].metric[0]).to.deep.equal(metric);
-      expect(requestBody.imp[0].clickbrowser).to.equal(1)
+      expect(requestBody.imp[0].clickbrowser).to.equal(1);
     });
 
     it('adds all of app first party data to request', function() {
@@ -721,8 +721,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.app.ext)
-      expect(requestBody.app.ver).to.equal('v1.0')
+      validateExtFirstPartyData(requestBody.app.ext);
+      expect(requestBody.app.ver).to.equal('v1.0');
     });
 
     it('adds all of device first party data to request', function() {
@@ -736,8 +736,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.device.ext)
-      expect(requestBody.device.os).to.equal('iPhone')
+      validateExtFirstPartyData(requestBody.device.ext);
+      expect(requestBody.device.os).to.equal('iPhone');
     });
 
     it('adds all of pmp first party data to request', function() {
@@ -751,8 +751,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.imp[0].pmp.ext)
-      expect(requestBody.imp[0].pmp.private_auction).to.equal(1)
+      validateExtFirstPartyData(requestBody.imp[0].pmp.ext);
+      expect(requestBody.imp[0].pmp.private_auction).to.equal(1);
     });
   });
 
@@ -1017,7 +1017,7 @@ describe('ttdBidAdapter', function () {
 
     it('sets the minduration to 0 if missing', function () {
       const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      delete clonedVideoRequests[0].mediaTypes.video.minduration
+      delete clonedVideoRequests[0].mediaTypes.video.minduration;
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.minduration).to.equal(0);

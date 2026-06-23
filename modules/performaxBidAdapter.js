@@ -1,14 +1,14 @@
 import { logWarn, logError, deepSetValue, deepAccess, safeJSONEncode, debugTurnedOn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'performax';
 const BIDDER_SHORT_CODE = 'px';
-const GVLID = 732
-const ENDPOINT = 'https://dale.performax.cz/ortb'
+const GVLID = 732;
+const ENDPOINT = 'https://dale.performax.cz/ortb';
 const USER_SYNC_URL = 'https://cdn.performax.cz/px2/cookie_sync_bundle.html';
 const USER_SYNC_ORIGIN = 'https://cdn.performax.cz';
 const UIDS_STORAGE_KEY = BIDDER_SHORT_CODE + '_uids';
@@ -106,13 +106,13 @@ export const converter = ortbConverter({
     context.mediaType = deepAccess(bid, 'mediaType');
     context.currency = deepAccess(bid, 'currency');
 
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   },
 
   context: {
     ttl: 360,
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -125,7 +125,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidderRequest, bidRequests })
+    const data = converter.toORTB({ bidderRequest, bidRequests });
 
     const uids = readData(UIDS_STORAGE_KEY, {});
     if (Object.keys(uids).length > 0) {
@@ -148,12 +148,12 @@ export const spec = {
       url: ENDPOINT,
       options: { 'contentType': 'application/json' },
       data: data
-    }]
+    }];
   },
 
   interpretResponse: function (bidderResponse, request) {
     if (!bidderResponse.body) return [];
-    const response = bidderResponse.body
+    const response = bidderResponse.body;
     const data = {
 
       seatbid: response.seatbid.map(seatbid => ({
@@ -172,7 +172,7 @@ export const spec = {
         }))
       }))
     };
-    return converter.fromORTB({ response: data, request: request.data }).bids
+    return converter.fromORTB({ response: data, request: request.data }).bids;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
@@ -229,6 +229,6 @@ export const spec = {
   onIntervention: function({ bid }) {
     logEvent(LOG_EVENT_TYPE_INTERVENTION, bid);
   }
-}
+};
 
 registerBidder(spec);

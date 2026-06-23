@@ -97,7 +97,7 @@ describe('s2sTesting', function () {
         const s2sConfig = {
           bidders: ['rubicon'],
           bidderControl: { rubicon: { bidSource: { server: 4, client: 1 } } }
-        }
+        };
         s2sTestgingMod.calculateBidSources(s2sConfig);
         expect(s2sTestgingMod.getSourceBidderMap()).to.eql({
           server: ['rubicon'],
@@ -108,7 +108,7 @@ describe('s2sTesting', function () {
       it('defaults to server', function () {
         const s2sConfig = {
           bidders: ['rubicon'],
-        }
+        };
         s2sTestgingMod.calculateBidSources(s2sConfig);
         expect(s2sTestgingMod.getSourceBidderMap()).to.eql({
           server: ['rubicon'],
@@ -123,7 +123,7 @@ describe('s2sTesting', function () {
             rubicon: { bidSource: { server: 3, client: 1 } },
             appnexus: { bidSource: { server: 1, client: 1 } }
           }
-        }
+        };
         s2sTestgingMod.calculateBidSources(s2sConfig);
         var serverClientBidders = s2sTestgingMod.getSourceBidderMap();
         expect(serverClientBidders.server).to.eql(['rubicon']);
@@ -139,7 +139,7 @@ describe('s2sTesting', function () {
             rubicon: { bidSource: { server: 1, client: 99 } },
             appnexus: { bidSource: { server: 1, client: 99 } }
           }
-        }
+        };
         s2sTestgingMod.calculateBidSources(s2sConfig);
         expect(s2sTestgingMod.getSourceBidderMap()).to.eql({
           client: ['rubicon', 'appnexus'],
@@ -162,7 +162,7 @@ describe('s2sTesting', function () {
             rubicon: { bidSource: { server: 99, client: 1 } },
             appnexus: { bidSource: { server: 99, client: 1 } }
           }
-        }
+        };
         s2sTestgingMod.calculateBidSources(s2sConfig2);
         expect(s2sTestgingMod.getSourceBidderMap()).to.eql({
           server: ['rubicon', 'appnexus'],
@@ -338,7 +338,7 @@ describe('s2sTesting', function () {
             rubicon: { bidSource: { server: 2, client: 1 } },
             appnexus: { bidSource: { server: 1 } }
           }
-        }
+        };
         s2sTestgingMod.calculateBidSources(s2sConfig);
         var serverClientBidders = s2sTestgingMod.getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.have.members(['rubicon', 'appnexus']);

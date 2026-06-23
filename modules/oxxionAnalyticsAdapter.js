@@ -16,12 +16,12 @@ const {
   BID_TIMEOUT,
 } = EVENTS;
 
-const saveEvents = {}
-let allEvents = {}
-let auctionEnd = {}
-let initOptions = {}
+const saveEvents = {};
+let allEvents = {};
+let auctionEnd = {};
+let initOptions = {};
 let mode = {};
-let endpoint = 'https://default'
+let endpoint = 'https://default';
 const requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
@@ -105,21 +105,21 @@ function enhanceMediaType(arg) {
 
 function addBidResponse(args) {
   const eventType = BID_RESPONSE;
-  const argsCleaned = cleanCreatives(args); ;
-  if (allEvents[eventType] === undefined) { allEvents[eventType] = [] }
+  const argsCleaned = cleanCreatives(args);
+  if (allEvents[eventType] === undefined) { allEvents[eventType] = []; }
   allEvents[eventType].push(argsCleaned);
 }
 
 function addBidRequested(args) {
   const eventType = BID_REQUESTED;
   const argsCleaned = filterAttributes(args, true);
-  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = []; }
   saveEvents[eventType].push(argsCleaned);
 }
 
 function addTimeout(args) {
   const eventType = BID_TIMEOUT;
-  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = []; }
   saveEvents[eventType].push(args);
   const argsCleaned = [];
   let argsDereferenced = {};
@@ -128,7 +128,7 @@ function addTimeout(args) {
   argsDereferenced.forEach((attr) => {
     argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
-  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = [] }
+  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = []; }
   auctionEnd[eventType].push(argsCleaned);
 }
 
@@ -141,7 +141,7 @@ export const dereferenceWithoutRenderer = function(args) {
     return stringified;
   }
   if (args.bidsReceived) {
-    const tmp = {}
+    const tmp = {};
     for (const key in args.bidsReceived) {
       if (args.bidsReceived[key].renderer) {
         tmp[key] = args.bidsReceived[key].renderer;
@@ -155,14 +155,14 @@ export const dereferenceWithoutRenderer = function(args) {
     return stringified;
   }
   return JSON.stringify(args);
-}
+};
 
 function addAuctionEnd(args) {
   const eventType = AUCTION_END;
-  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = [] }
+  if (saveEvents[eventType] === undefined) { saveEvents[eventType] = []; }
   saveEvents[eventType].push(args);
   const argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
-  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = [] }
+  if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = []; }
   auctionEnd[eventType].push(argsCleaned);
 }
 

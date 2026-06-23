@@ -611,7 +611,7 @@ describe('TheMediaGrid Adapter', function () {
           ]
         }
       };
-      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } }
+      const bidRequestWithKW = { ...bidRequests[0], params: { ...bidRequests[0].params, keywords } };
       const [request] = spec.buildRequests([bidRequestWithKW], { ...bidderRequest, ortb2 });
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
@@ -949,7 +949,7 @@ describe('TheMediaGrid Adapter', function () {
       });
 
       getDataFromLocalStorageStub.restore();
-    })
+    });
 
     it('tmax should be set as integer', function() {
       let [request] = spec.buildRequests([bidRequests[0]], { ...bidderRequest, timeout: '10' });
@@ -958,7 +958,7 @@ describe('TheMediaGrid Adapter', function () {
       [request] = spec.buildRequests([bidRequests[0]], { ...bidderRequest, timeout: 'ddqwdwdq' });
       payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(null);
-    })
+    });
 
     it('should add ORTB2 device data to the request', function () {
       const bidderRequestWithDevice = {

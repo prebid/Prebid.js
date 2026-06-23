@@ -190,7 +190,7 @@ describe('adponeBidAdapter', function () {
 
       serverResponse.body.seatbid[0].bid[0].price = null;
       response = spec.interpretResponse(serverResponse, bidRequest);
-      expect(response).to.deep.equal([])
+      expect(response).to.deep.equal([]);
     });
     it('should add responses if the cpm is valid', function () {
       serverResponse.body.seatbid[0].bid[0].price = 0.5;
@@ -211,7 +211,7 @@ describe('adponeBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });

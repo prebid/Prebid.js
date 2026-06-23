@@ -7,7 +7,7 @@ import {
 } from '../../../modules/aduptechBidAdapter.js';
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js'
+import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 import { newBidder } from '../../../src/adapters/bidderFactory.js';
 
 describe('AduptechBidAdapter', () => {
@@ -206,7 +206,7 @@ describe('AduptechBidAdapter', () => {
         const options = {
           mediaType: BANNER,
           size: '*'
-        }
+        };
 
         bidRequest.getFloor.returns(result);
 
@@ -233,7 +233,7 @@ describe('AduptechBidAdapter', () => {
     describe('groupBidRequestsByPublisher', () => {
       it('should handle empty bidRequests', () => {
         expect(internal.groupBidRequestsByPublisher(null)).to.deep.equal({});
-        expect(internal.groupBidRequestsByPublisher([])).to.deep.equal({})
+        expect(internal.groupBidRequestsByPublisher([])).to.deep.equal({});
       });
 
       it('should group given bidRequests by params.publisher', () => {

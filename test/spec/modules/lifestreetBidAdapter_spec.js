@@ -61,7 +61,7 @@ describe('lifestreetBidAdapter', function() {
           }
         }
       }
-    ]
+    ];
 
     videoBidResponses = {
       body: {

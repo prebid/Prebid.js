@@ -66,7 +66,7 @@ describe('hadronRtdProvider', function () {
             id: '1955'
           }
         ]
-      }
+      };
 
       const bidConfig = {
         ortb2Fragments: {
@@ -166,7 +166,7 @@ describe('hadronRtdProvider', function () {
             id: '1955'
           }
         ]
-      }
+      };
 
       const bidConfig = {
         ortb2Fragments: {
@@ -696,7 +696,7 @@ describe('hadronRtdProvider', function () {
             id: 'pubseg2'
           }
         ]
-      }
+      };
 
       const rtdConfig = {
         params: {

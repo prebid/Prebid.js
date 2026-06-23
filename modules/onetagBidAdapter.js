@@ -88,7 +88,7 @@ const isValidEventTracker = function (et) {
     return false;
   }
   return true;
-}
+};
 
 const isValidAsset = function (asset) {
   if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
@@ -98,7 +98,7 @@ const isValidAsset = function (asset) {
   if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) return false;
   if (asset.video && (!asset.video.mimes || !asset.video.minduration || !asset.video.maxduration || !asset.video.protocols)) return false;
   return true;
-}
+};
 
 /**
  * Make a server request from the list of BidRequests.
@@ -123,7 +123,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     payload.gppConsent = {
       consentString: bidderRequest.gppConsent.gppString,
       applicableSections: bidderRequest.gppConsent.applicableSections
-    }
+    };
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
@@ -151,7 +151,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     method: 'POST',
     url: ENDPOINT,
     data: JSON.stringify(payload)
-  }
+  };
 }
 
 function interpretResponse(serverResponse, bidderRequest) {
@@ -404,7 +404,7 @@ function getTiming() {
 function parseVideoSize(bid) {
   const playerSize = bid.mediaTypes.video.playerSize;
   if (typeof playerSize !== 'undefined' && Array.isArray(playerSize) && playerSize.length > 0) {
-    return getSizes(playerSize)
+    return getSizes(playerSize);
   }
   return [];
 }
@@ -412,7 +412,7 @@ function parseVideoSize(bid) {
 function parseSizes(bid) {
   const ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
-    return getSizes(bid.mediaTypes.banner.sizes)
+    return getSizes(bid.mediaTypes.banner.sizes);
   }
   const isVideoBidRequest = hasTypeVideo(bid);
   if (!isVideoBidRequest && bid.sizes && Array.isArray(bid.sizes)) {
@@ -425,7 +425,7 @@ function getSizes(sizes) {
   const ret = [];
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i];
-    ret.push({ width: size[0], height: size[1] })
+    ret.push({ width: size[0], height: size[1] });
   }
   return ret;
 }

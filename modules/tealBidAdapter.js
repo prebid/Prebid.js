@@ -1,8 +1,8 @@
 import { deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 const BIDDER_CODE = 'teal';
 const GVLID = 1378;
 const DEFAULT_ENDPOINT = 'https://a.bids.ws/openrtb2/auction';
@@ -141,5 +141,5 @@ export const spec = {
     }
     logError(`${BIDDER_CODE} bidder error`, error);
   }
-}
+};
 registerBidder(spec);

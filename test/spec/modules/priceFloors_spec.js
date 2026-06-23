@@ -88,7 +88,7 @@ describe('the price floors module', function () {
       bidAdjustment: true
     },
     data: basicFloorData
-  }
+  };
   const minFloorConfigHigh = {
     enabled: true,
     auctionDelay: 0,
@@ -102,7 +102,7 @@ describe('the price floors module', function () {
       bidAdjustment: true
     },
     data: basicFloorDataHigh
-  }
+  };
   const minFloorConfigLow = {
     enabled: true,
     auctionDelay: 0,
@@ -116,7 +116,7 @@ describe('the price floors module', function () {
       bidAdjustment: true
     },
     data: basicFloorDataLow
-  }
+  };
   const basicBidRequest = {
     bidder: 'rubicon',
     adUnitCode: 'test_div_1',
@@ -167,20 +167,20 @@ describe('the price floors module', function () {
           values: {
             [rule]: i + 1
           }
-        }
-      })
+        };
+      });
     }
 
     beforeEach(() => {
       adUnits = ['au1', 'au2', 'au3'].map(getAdUnitMock);
-    })
+    });
 
     it('should use one schema for all adUnits', () => {
-      setFloorValues('*;*')
+      setFloorValues('*;*');
       adUnits[1].floors.schema = {
         fields: ['mediaType', 'gptSlot'],
         delimiter: ';'
-      }
+      };
       sinon.assert.match(getFloorDataFromAdUnits(adUnits), {
         schema: {
           fields: ['adUnitCode', 'mediaType', 'gptSlot'],
@@ -191,7 +191,7 @@ describe('the price floors module', function () {
           'au2;*;*': 2,
           'au3;*;*': 3
         }
-      })
+      });
     });
     it('should ignore adUnits that declare different schema', () => {
       setFloorValues('*|*');
@@ -204,7 +204,7 @@ describe('the price floors module', function () {
       expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
         'au1|*|*': 1,
         'au2|*|*': 2
-      })
+      });
     });
     it('should ignore adUnits that declare no values', () => {
       setFloorValues('*');
@@ -215,9 +215,9 @@ describe('the price floors module', function () {
       expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
         'au1|*': 1,
         'au2|*': 2,
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('getFloorsDataForAuction', function () {
     it('converts basic input floor data into a floorData map for the auction correctly', function () {
@@ -231,8 +231,8 @@ describe('the price floors module', function () {
       expect(getFloorsDataForAuction(inputFloorData)).to.deep.equal(basicFloorData);
 
       // should not use defaults if differing values
-      inputFloorData.currency = 'EUR'
-      inputFloorData.schema.delimiter = '^'
+      inputFloorData.currency = 'EUR';
+      inputFloorData.schema.delimiter = '^';
       const resultingData = getFloorsDataForAuction(inputFloorData);
       expect(resultingData.currency).to.equal('EUR');
       expect(resultingData.schema.delimiter).to.equal('^');
@@ -475,7 +475,7 @@ describe('the price floors module', function () {
           '600x300': 4.4,
           '*': 5.5,
         }
-      }
+      };
       // banner with 300x250 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, { mediaType: 'banner', size: [300, 250] })).to.deep.equal({
         floorMin: 0,
@@ -551,7 +551,7 @@ describe('the price floors module', function () {
         matchingRule: undefined
       });
       // update adUnitCode to test_div_2 with weird other params
-      const newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' }
+      const newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' };
       expect(getFirstMatchingFloor(inputFloorData, newBidRequest, { mediaType: 'badmediatype', size: [900, 900] })).to.deep.equal({
         floorMin: 0,
         floorRuleValue: 3.3,
@@ -598,7 +598,7 @@ describe('the price floors module', function () {
           divId: 'test_div_2'
         });
         indexStub = sinon.stub(auctionManager, 'index');
-        indexStub.get(() => stubAuctionIndex({ adUnits }))
+        indexStub.get(() => stubAuctionIndex({ adUnits }));
       });
       afterEach(function () {
         // reset it so no lingering stuff from other test specs
@@ -614,7 +614,7 @@ describe('the price floors module', function () {
           matchingRule: '/12345/sports/soccer'
         });
 
-        const newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' }
+        const newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' };
         expect(getFirstMatchingFloor(gptFloorData, newBidRequest)).to.deep.equal({
           floorMin: 0,
           floorRuleValue: 2.2,
@@ -629,7 +629,7 @@ describe('the price floors module', function () {
         utils.deepSetValue(adUnits[0], 'ortb2Imp.ext.data.adserver', {
           name: 'gam',
           adslot: '/12345/news/politics'
-        })
+        });
         expect(getFirstMatchingFloor(gptFloorData, newBidRequest1)).to.deep.equal({
           floorMin: 0,
           floorRuleValue: 3.3,
@@ -643,7 +643,7 @@ describe('the price floors module', function () {
         utils.deepSetValue(adUnits[0], 'ortb2Imp.ext.data.adserver', {
           name: 'gam',
           adslot: '/12345/news/weather'
-        })
+        });
         expect(getFirstMatchingFloor(gptFloorData, newBidRequest2)).to.deep.equal({
           floorMin: 0,
           floorRuleValue: 4.4,
@@ -743,7 +743,7 @@ describe('the price floors module', function () {
     });
 
     it('should have skippedReason set to "not_found" if there is no valid floor data', function() {
-      floorConfig.data = {}
+      floorConfig.data = {};
       handleSetFloorsConfig(floorConfig);
 
       const floorData = createFloorsDataForAuction(adUnits, 'id');
@@ -821,7 +821,7 @@ describe('the price floors module', function () {
         fetchStatus: undefined,
         floorProvider: undefined,
         noFloorSignaled: true
-      })
+      });
     });
     it('should not do floor stuff if floors.enforcement is defined by noFloorSignalBidders[]', function() {
       handleSetFloorsConfig({
@@ -844,7 +844,7 @@ describe('the price floors module', function () {
         fetchStatus: undefined,
         floorProvider: undefined,
         noFloorSignaled: true
-      })
+      });
     });
     it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function() {
       handleSetFloorsConfig({
@@ -870,7 +870,7 @@ describe('the price floors module', function () {
         fetchStatus: undefined,
         floorProvider: undefined,
         noFloorSignaled: true
-      })
+      });
     });
     it('it shouldn`t return floor stuff for bidder in the noFloorSignalBidders list', function() {
       handleSetFloorsConfig({
@@ -883,7 +883,7 @@ describe('the price floors module', function () {
           noFloorSignalBidders: ['someBidder']
         }
       });
-      runStandardAuction()
+      runStandardAuction();
       const bidRequestData = exposedAdUnits[0].bids.find(bid => bid.bidder === 'someBidder');
       expect(bidRequestData.hasOwnProperty('getFloor')).to.equal(false);
       sinon.assert.match(bidRequestData.floorData, {
@@ -898,7 +898,7 @@ describe('the price floors module', function () {
         floorProvider: undefined,
         noFloorSignaled: true
       });
-    })
+    });
     it('it should return floor stuff if we defined wrong bidder name in data.noFloorSignalBidders', function() {
       handleSetFloorsConfig({
         ...basicFloorConfig,
@@ -922,7 +922,7 @@ describe('the price floors module', function () {
         fetchStatus: undefined,
         floorProvider: undefined,
         noFloorSignaled: false
-      })
+      });
     });
     it('should use adUnit level data if not setConfig or fetch has occurred', function () {
       handleSetFloorsConfig({
@@ -1000,14 +1000,14 @@ describe('the price floors module', function () {
       let adUnits;
       beforeEach(() => {
         adUnits = ['au1', 'au2'].map(getAdUnitMock);
-      })
+      });
       function expectFloors(floors) {
         runStandardAuction(adUnits);
         adUnits.forEach((au, i) => {
           au.bids.forEach(bid => {
             expect(bid.getFloor().floor).to.eql(floors[i]);
-          })
-        })
+          });
+        });
       }
       describe('should be sufficient by itself', () => {
         it('globally', () => {
@@ -1017,7 +1017,7 @@ describe('the price floors module', function () {
               default: 1.23
             }
           });
-          expectFloors([1.23, 1.23])
+          expectFloors([1.23, 1.23]);
         });
         it('on adUnits', () => {
           handleSetFloorsConfig({
@@ -1026,7 +1026,7 @@ describe('the price floors module', function () {
           });
           adUnits[0].floors = { default: 1 };
           adUnits[1].floors = { default: 2 };
-          expectFloors([1, 2])
+          expectFloors([1, 2]);
         });
         it('on an adUnit with hidden schema', () => {
           handleSetFloorsConfig({
@@ -1038,12 +1038,12 @@ describe('the price floors module', function () {
               fields: ['mediaType', 'gptSlot'],
             },
             default: 1
-          }
+          };
           adUnits[1].floors = {
             default: 2
-          }
+          };
           expectFloors([1, 2]);
-        })
+        });
       });
       describe('should NOT be used when a star rule exists', () => {
         it('globally', () => {
@@ -1080,11 +1080,11 @@ describe('the price floors module', function () {
               '*|*': 2
             },
             default: 4
-          }
+          };
           expectFloors([1, 2]);
-        })
+        });
       });
-    })
+    });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
       handleSetFloorsConfig({ ...basicFloorConfig, floorProvider: 'floorprovider' });
       runStandardAuction();
@@ -1346,7 +1346,7 @@ describe('the price floors module', function () {
 
       // set deviceType to mobile;
       deviceSpoof = 'mobile';
-      exposedAdUnits[0].bids[0].auctionId = basicBidRequest.auctionId
+      exposedAdUnits[0].bids[0].auctionId = basicBidRequest.auctionId;
       expect(exposedAdUnits[0].bids[0].getFloor()).to.deep.equal({
         currency: 'USD',
         floor: 1.0 // 'mobile': 1.0,
@@ -1967,7 +1967,7 @@ describe('the price floors module', function () {
             banner: 0.5,
             native: 0.7,
             video: 0.9
-          }
+          };
           getGlobal().bidderSettings = {
             rubicon: {
               bidCpmAdjustment: function (bidCpm, bidResponse) {
@@ -2055,18 +2055,18 @@ describe('the price floors module', function () {
               standard: {
                 inverseBidAdjustment: sinon.stub()
               }
-            }
+            };
             bidRequest.mediaTypes = {
               video: {},
               native: {},
               banner: {
                 sizes: [[100, 200], [200, 300]]
               }
-            }
+            };
             bidRequest.getFloor(getFloorParams);
             sinon.assert.calledWith(getGlobal().bidderSettings.standard.inverseBidAdjustment, 1, bidRequest, inverseParams);
           });
-        })
+        });
       });
 
       it('should use standard cpmAdjustment if no bidder cpmAdjustment', function () {
@@ -2243,7 +2243,7 @@ describe('the price floors module', function () {
     const adUnit = {
       transactionId: 'au',
       code: 'test_div_1'
-    }
+    };
     const basicBidResponse = {
       bidderCode: 'appnexus',
       width: 300,
@@ -2458,13 +2458,13 @@ describe('the price floors module', function () {
 
     const req = {
       ...basicBidRequest,
-    }
+    };
 
     const resp = {
       adUnitId: req.adUnitId,
       size: [100, 100],
       mediaType: 'banner',
-    }
+    };
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
@@ -2481,7 +2481,7 @@ describe('the price floors module', function () {
 
     afterEach(() => {
       sandbox.restore();
-    })
+    });
 
     Object.entries({
       size: '100x100',
@@ -2492,10 +2492,10 @@ describe('the price floors module', function () {
     }).forEach(([test, expected]) => {
       describe(`${test}`, () => {
         it('should work with only bidResponse', () => {
-          expect(fieldMatchingFunctions[test](undefined, resp)).to.eql(expected)
-        })
+          expect(fieldMatchingFunctions[test](undefined, resp)).to.eql(expected);
+        });
       });
-    })
+    });
   });
 });
 
@@ -2541,12 +2541,12 @@ describe('setting null as rule value', () => {
         bidAdjustment: true
       },
       data: nullFloorData
-    }
+    };
     _floorDataForAuction[bidRequest.auctionId] = basicFloorConfig;
 
     const inputParams = { mediaType: 'banner', size: [600, 300] };
     expect(bidRequest.getFloor(inputParams)).to.deep.equal(null);
-  })
+  });
 
   it('getFloor should not return numeric value if null set as value - external floor provider', function () {
     const basicFloorConfig = {
@@ -2560,7 +2560,7 @@ describe('setting null as rule value', () => {
         bidAdjustment: true
       },
       data: nullFloorData
-    }
+    };
     server.respondWith(JSON.stringify(nullFloorData));
     let exposedAdUnits;
 
@@ -2581,7 +2581,7 @@ describe('setting null as rule value', () => {
 
     expect(exposedAdUnits[0].bids[0].getFloor(inputParams)).to.deep.equal(null);
   });
-})
+});
 
 describe('Price Floors User ID Tiers', function() {
   let sandbox;

@@ -20,13 +20,13 @@ describe('objectTransformer', () => {
     let rule, applies, run;
     beforeEach(() => {
       run = sinon.stub();
-      applies = sinon.stub().callsFake(() => true)
+      applies = sinon.stub().callsFake(() => true);
       rule = {
         name: 'mockRule',
         paths: ['foo', 'bar.baz'],
         applies,
         run,
-      }
+      };
     });
 
     it('runs rule for each path', () => {
@@ -59,7 +59,7 @@ describe('objectTransformer', () => {
       objectTransformer([rule])({ [rule.name]: false }, {});
       expect(applies.callCount).to.equal(0);
       expect(run.callCount).to.equal(0);
-    })
+    });
 
     it('passes arguments to applies', () => {
       run.callsFake((_1, _2, _3, _4, applies) => applies());
@@ -74,19 +74,19 @@ describe('objectTransformer', () => {
       run.callsFake(() => i++);
       const result = objectTransformer([rule])({}, {});
       expect(result).to.eql([0, 1]);
-    })
+    });
   });
 
   describe('using redact rules', () => {
     Object.entries({
       replacement: {
         get(path, val) {
-          return `repl${val}`
+          return `repl${val}`;
         },
         expectation(parent, prop, val) {
           sinon.assert.match(parent, {
             [prop]: val
-          })
+          });
         }
       },
       removal: {
@@ -104,7 +104,7 @@ describe('objectTransformer', () => {
               name: 'test',
               get,
               paths: ['foo'],
-              applies() { return true }
+              applies() { return true; }
             })
           ])({}, obj);
           sinon.assert.match(obj, {
@@ -127,8 +127,8 @@ describe('objectTransformer', () => {
               baz: 0
             }
           });
-          expectation(obj.outer.inner, 'foo', get('bar'))
-        })
+          expectation(obj.outer.inner, 'foo', get('bar'));
+        });
       });
     });
     describe('should not run rule if property is', () => {
@@ -141,7 +141,7 @@ describe('objectTransformer', () => {
       }).forEach(([t, obj]) => {
         it(t, () => {
           const get = sinon.stub();
-          const applies = sinon.stub()
+          const applies = sinon.stub();
           objectTransformer([redactRule({
             name: 'test',
             paths: ['foo'],
@@ -150,8 +150,8 @@ describe('objectTransformer', () => {
           })])({}, obj);
           expect(get.called).to.be.false;
           expect(applies.called).to.be.false;
-        })
-      })
+        });
+      });
     });
 
     describe('should run rule on falsy, but non-empty, value', () => {
@@ -164,12 +164,12 @@ describe('objectTransformer', () => {
           objectTransformer([redactRule({
             name: 'test',
             paths: ['foo'],
-            applies() { return true },
-            get(val) { return 'repl' },
+            applies() { return true; },
+            get(val) { return 'repl'; },
           })])({}, obj);
           expect(obj).to.eql({ foo: 'repl' });
-        })
-      })
+        });
+      });
     });
 
     it('should not run applies twice for the same name/session combination', () => {
@@ -193,7 +193,7 @@ describe('objectTransformer', () => {
           name: 'applies',
           paths: ['bar'],
           applies,
-          get(val) { return `repl_r2_${val}` }
+          get(val) { return `repl_r2_${val}`; }
         },
         {
           name: 'notApplies',
@@ -206,7 +206,7 @@ describe('objectTransformer', () => {
         notFoo: '2',
         bar: '3',
         notBar: '4'
-      }
+      };
       const session = {};
       t1(session, obj);
       t2(session, obj);
@@ -218,7 +218,7 @@ describe('objectTransformer', () => {
       });
       expect(applies.callCount).to.equal(1);
       expect(notApplies.callCount).to.equal(1);
-    })
+    });
   });
 });
 
@@ -232,9 +232,9 @@ describe('redactor', () => {
     isAllowed = sinon.stub();
     redactor = redactorFactory((activity, params) => {
       if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE && params[ACTIVITY_PARAM_COMPONENT_NAME] === MODULE_NAME) {
-        return isAllowed(activity)
+        return isAllowed(activity);
       } else {
-        throw new Error('wrong component')
+        throw new Error('wrong component');
       }
     })(activityParams(MODULE_TYPE, MODULE_NAME));
   });
@@ -266,8 +266,8 @@ describe('redactor', () => {
         deepSetValue(obj, prop, 'mockVal');
         method()(obj);
         expect(deepAccess(obj, prop)).to.eql(allowed ? 'mockVal' : undefined);
-      })
-    })
+      });
+    });
   }
 
   describe('.bidRequest', () => {
@@ -277,16 +277,16 @@ describe('redactor', () => {
 
     testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
       testPropertiesAreRemoved(() => redactor.bidRequest, ['ortb2Imp.ext.tid', 'ortb2Imp.ext.tidSource'], allowed);
-    })
+    });
   });
 
   describe('.ortb2', () => {
     testAllowDeny(ACTIVITY_TRANSMIT_EIDS, (allowed) => {
-      testPropertiesAreRemoved(() => redactor.ortb2, ORTB_EIDS_PATHS, allowed)
+      testPropertiesAreRemoved(() => redactor.ortb2, ORTB_EIDS_PATHS, allowed);
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_UFPD, (allowed) => {
-      testPropertiesAreRemoved(() => redactor.ortb2, ORTB_UFPD_PATHS, allowed)
+      testPropertiesAreRemoved(() => redactor.ortb2, ORTB_UFPD_PATHS, allowed);
     });
 
     testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
@@ -300,24 +300,24 @@ describe('redactor', () => {
           deepSetValue(ortb2, path, 1.2345);
           redactor.ortb2(ortb2);
           expect(deepAccess(ortb2, path)).to.eql(allowed ? 1.2345 : 1.23);
-        })
-      })
+        });
+      });
       ORTB_IPV4_PATHS.forEach(path => {
         it(`should ${allowed ? 'NOT ' : ''} round down ${path}`, () => {
           const ortb2 = {};
           deepSetValue(ortb2, path, '192.168.1.1');
           redactor.ortb2(ortb2);
           expect(deepAccess(ortb2, path)).to.eql(allowed ? '192.168.1.1' : '192.168.1.0');
-        })
-      })
+        });
+      });
       ORTB_IPV6_PATHS.forEach(path => {
         it(`should ${allowed ? 'NOT ' : ''} round down ${path}`, () => {
           const ortb2 = {};
           deepSetValue(ortb2, path, '2001:0000:130F:0000:0000:09C0:876A:130B');
           redactor.ortb2(ortb2);
           expect(deepAccess(ortb2, path)).to.eql(allowed ? '2001:0000:130F:0000:0000:09C0:876A:130B' : '2001:0:130f:0:0:0:0:0');
-        })
-      })
+        });
+      });
     });
   });
-})
+});

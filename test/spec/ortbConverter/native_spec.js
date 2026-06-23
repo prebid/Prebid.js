@@ -20,7 +20,7 @@ describe('pbjs -> ortb native requests', () => {
   });
 
   it('should do nothing if context.mediaType is set but is not NATIVE', () => {
-    expect(toNative({ nativeOrtbRequest: { ver: 'version' } }, { mediaType: BANNER })).to.eql({})
+    expect(toNative({ nativeOrtbRequest: { ver: 'version' } }, { mediaType: BANNER })).to.eql({});
   });
 
   it('should merge context.nativeRequest', () => {
@@ -41,9 +41,9 @@ describe('pbjs -> ortb native requests', () => {
       native: {
         something: 'orother'
       }
-    }
+    };
     fillNativeImp(imp, { nativeOrtbRequest: { ver: 'version' } }, {});
-    expect(imp.native.something).to.eql('orother')
+    expect(imp.native.something).to.eql('orother');
   });
 
   it('should keep ortb2Imp.native.battr', () => {
@@ -60,7 +60,7 @@ describe('pbjs -> ortb native requests', () => {
     const imp = {};
     fillNativeImp(imp, { nativeOrtbRequest: { assets: [] } }, {});
     expect(imp).to.eql({});
-  })
+  });
 });
 
 describe('ortb -> ortb native response', () => {
@@ -71,7 +71,7 @@ describe('ortb -> ortb native response', () => {
         id: 0
       }
     ]
-  }
+  };
   Object.entries({
     'serialized': JSON.stringify(MOCK_NATIVE_RESPONSE),
     'an object': MOCK_NATIVE_RESPONSE
@@ -80,7 +80,7 @@ describe('ortb -> ortb native response', () => {
       let bid;
       beforeEach(() => {
         bid = { adm };
-      })
+      });
       it('should set bidResponse.native', () => {
         const bidResponse = {
           mediaType: NATIVE
@@ -91,7 +91,7 @@ describe('ortb -> ortb native response', () => {
     });
     it('should throw if response has no assets', () => {
       expect(() => fillNativeResponse({ mediaType: NATIVE }, { adm: { ...MOCK_NATIVE_RESPONSE, assets: null } }, {})).to.throw;
-    })
+    });
     it('should do nothing if bidResponse.mediaType is not NATIVE', () => {
       const bidResponse = {
         mediaType: BANNER
@@ -99,7 +99,7 @@ describe('ortb -> ortb native response', () => {
       fillNativeResponse(bidResponse, { adm: MOCK_NATIVE_RESPONSE }, {});
       expect(bidResponse).to.eql({
         mediaType: BANNER
-      })
-    })
-  })
+      });
+    });
+  });
 });

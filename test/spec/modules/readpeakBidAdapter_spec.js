@@ -62,7 +62,7 @@ describe('ReadPeakAdapter', function() {
         }
       },
       sizes: [[640, 320], [300, 600]],
-    }
+    };
     nativeServerResponse = {
       id: baseBidRequest.bidderRequestId,
       cur: 'USD',
@@ -282,10 +282,10 @@ describe('ReadPeakAdapter', function() {
         const floorModuleData = {
           currency: 'USD',
           floor: 3.2,
-        }
+        };
         nativeBidRequest.getFloor = function () {
-          return floorModuleData
-        }
+          return floorModuleData;
+        };
         const request = spec.buildRequests([nativeBidRequest], bidderRequest);
 
         const data = JSON.parse(request.data);
@@ -302,7 +302,7 @@ describe('ReadPeakAdapter', function() {
             gdprApplies: false,
             consentString: undefined,
           }
-        }
+        };
         const request = spec.buildRequests([nativeBidRequest], { ...bidderRequest, ...gdprData });
 
         const data = JSON.parse(request.data);
@@ -326,7 +326,7 @@ describe('ReadPeakAdapter', function() {
             gdprApplies: true,
             consentString: tcString
           }
-        }
+        };
         const request = spec.buildRequests([nativeBidRequest], { ...bidderRequest, ...gdprData });
 
         const data = JSON.parse(request.data);
@@ -367,7 +367,7 @@ describe('ReadPeakAdapter', function() {
 
         expect(bidResponse.meta).to.deep.equal({
           advertiserDomains: ['readpeak.com'],
-        })
+        });
         expect(bidResponse.native.title).to.equal('Title');
         expect(bidResponse.native.body).to.equal('Description');
         expect(bidResponse.native.image).to.deep.equal({
@@ -444,10 +444,10 @@ describe('ReadPeakAdapter', function() {
         const floorModuleData = {
           currency: 'USD',
           floor: 3.2,
-        }
+        };
         bannerBidRequest.getFloor = function () {
-          return floorModuleData
-        }
+          return floorModuleData;
+        };
         const request = spec.buildRequests([bannerBidRequest], bidderRequest);
 
         const data = JSON.parse(request.data);
@@ -464,7 +464,7 @@ describe('ReadPeakAdapter', function() {
             gdprApplies: false,
             consentString: undefined,
           }
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], { ...bidderRequest, ...gdprData });
 
         const data = JSON.parse(request.data);
@@ -488,7 +488,7 @@ describe('ReadPeakAdapter', function() {
             gdprApplies: true,
             consentString: tcString
           }
-        }
+        };
         const request = spec.buildRequests([bannerBidRequest], { ...bidderRequest, ...gdprData });
 
         const data = JSON.parse(request.data);

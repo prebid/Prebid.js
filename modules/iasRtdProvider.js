@@ -59,7 +59,7 @@ export function init(config, userConsent) {
     const keyMappings = params.keyMappings;
     for (const prop in keyMappings) {
       if (IAS_KEY_MAPPINGS.hasOwnProperty(prop)) {
-        IAS_KEY_MAPPINGS[prop] = keyMappings[prop]
+        IAS_KEY_MAPPINGS[prop] = keyMappings[prop];
       }
     }
   }

@@ -27,7 +27,7 @@ describe('discovery:BidAdapterTests', function () {
       }
     });
     sandbox.stub(storage, 'cookiesAreEnabled');
-  })
+  });
 
   afterEach(() => {
     sandbox.restore();
@@ -261,7 +261,7 @@ describe('discovery:BidAdapterTests', function () {
         expect(storage.getCookie.called).to.be.true;
         expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
-    })
+    });
     describe('buildUTMTagData function', function() {
       it('should set UTM cookie', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
@@ -276,7 +276,7 @@ describe('discovery:BidAdapterTests', function () {
         buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
-    })
+    });
   });
 
   it('discovery:validate_response_params', function () {
@@ -332,7 +332,7 @@ describe('discovery:BidAdapterTests', function () {
     };
     const USP_CONSENT = {
       consentString: 'uspConsentString'
-    }
+    };
 
     let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
     syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
@@ -464,7 +464,7 @@ describe('discovery Bid Adapter Tests', function () {
       it('should return the current document description if top document is not accessible', function() {
         const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
         const fakeWindow = {
           get top() {
             throw new Error('Access denied');
@@ -657,5 +657,197 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).be.undefined;
       });
     });
+  });
+});
+
+describe('discovery: isBidRequestValid with bcat/badv', function() {
+  it('should handle bcat and badv params', function() {
+    const result = spec.isBidRequestValid({
+      bidder: 'discovery',
+      params: {
+        token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
+        publisher: '52',
+        bcat: ['IAB1', 'IAB2'],
+        badv: ['blocked.com'],
+      },
+    });
+    expect(result).to.equal(true);
+  });
+
+  it('should set bcat to empty array if not an array', function() {
+    const result = spec.isBidRequestValid({
+      bidder: 'discovery',
+      params: {
+        token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
+        bcat: 'not-array',
+        badv: 'not-array',
+      },
+    });
+    expect(result).to.equal(true);
+  });
+});
+
+describe('discovery: native response parsing', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({ search: {} });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should parse native response correctly', function() {
+    const bidRequestData = {
+      bidderCode: 'discovery',
+      auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+      bidderRequestId: '4fec04e87ad785',
+      bids: [
+        {
+          bidder: 'discovery',
+          params: { token: 'd0f4902b616cc5c38cbe0a08676d0ed9' },
+          mediaTypes: {
+            native: { title: { required: true } }
+          },
+          adUnitCode: 'native_ad',
+          sizes: [[300, 250]],
+          bidId: 'native_bid_1',
+          bidderRequestId: '4fec04e87ad785',
+          auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+          userIdAsEids: [],
+        }
+      ],
+    };
+
+    spec.isBidRequestValid(bidRequestData.bids[0]);
+    spec.buildRequests(bidRequestData.bids, bidRequestData);
+
+    const nativeAdm = JSON.stringify({
+      assets: [
+        { title: { text: 'Test Title' } },
+        { data: { value: 'Test Data' } },
+        { img: { type: 3, url: 'https://img.test.com/main.jpg', w: 300, h: 174 } },
+        { img: { type: 1, url: 'https://img.test.com/icon.jpg', w: 50, h: 50 } },
+      ],
+      link: { url: 'https://click.test.com' },
+      eventtrackers: [
+        { event: 1, method: 1, url: 'https://track.test.com/imp' },
+        { event: 2, method: 1, url: 'https://track.test.com/view' },
+      ],
+      purl: 'https://track.test.com/purl',
+    });
+
+    const serverResponse = {
+      body: {
+        id: 'test_response',
+        seatbid: [{
+          bid: [{
+            id: 'bid_1',
+            impid: '1',
+            price: 1.5,
+            adm: nativeAdm,
+            cid: '12345',
+            nurl: 'https://trace.test.com/win',
+          }]
+        }],
+        cur: 'USD',
+      }
+    };
+
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].mediaType).to.equal('native');
+    expect(bids[0].native.title).to.equal('Test Title');
+    expect(bids[0].native.data).to.equal('Test Data');
+    expect(bids[0].native.image.url).to.equal('https://img.test.com/main.jpg');
+    expect(bids[0].native.icon.url).to.equal('https://img.test.com/icon.jpg');
+    expect(bids[0].native.clickUrl).to.equal('https://click.test.com');
+    expect(bids[0].native.impressionTrackers).to.include('https://track.test.com/imp');
+    expect(bids[0].native.purl).to.equal('https://track.test.com/purl');
+  });
+});
+
+describe('discovery: onBidWon and onTimeout', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'triggerPixel');
+    sandbox.stub(utils, 'logError');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should call triggerPixel when nurl exists on bid win', function() {
+    spec.onBidWon({ nurl: 'https://trace.test.com/win?id=123' });
+    expect(utils.triggerPixel.calledOnce).to.be.true;
+    expect(utils.triggerPixel.calledWith('https://trace.test.com/win?id=123')).to.be.true;
+  });
+
+  it('should not call triggerPixel when nurl is missing', function() {
+    spec.onBidWon({});
+    expect(utils.triggerPixel.called).to.be.false;
+  });
+
+  it('should log error on timeout', function() {
+    spec.onTimeout({});
+    expect(utils.logError.calledOnce).to.be.true;
+  });
+});
+
+describe('discovery: buildRequests with non-standard size', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({ search: {} });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should use fallback size when no standard size matches', function() {
+    const bidRequestData = {
+      bidderCode: 'discovery',
+      auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+      bidderRequestId: '4fec04e87ad785',
+      bids: [
+        {
+          bidder: 'discovery',
+          params: { token: 'd0f4902b616cc5c38cbe0a08676d0ed9' },
+          mediaTypes: {
+            banner: { sizes: [[999, 777]] }
+          },
+          adUnitCode: 'test_ad',
+          sizes: [[999, 777]],
+          bidId: 'bid_fallback',
+          bidderRequestId: '4fec04e87ad785',
+          auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+          userIdAsEids: [],
+        }
+      ],
+    };
+
+    spec.isBidRequestValid(bidRequestData.bids[0]);
+    const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const reqData = JSON.parse(request.data);
+    expect(reqData.imp[0].banner.w).to.equal(999);
+    expect(reqData.imp[0].banner.h).to.equal(777);
+    expect(reqData.imp[0].banner.format).to.deep.equal([{ w: 999, h: 777 }]);
   });
 });

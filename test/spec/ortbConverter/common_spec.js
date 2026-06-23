@@ -9,8 +9,8 @@ describe('common processors', () => {
     beforeEach(() => {
       context = {
         ortbResponse: {}
-      }
-    })
+      };
+    });
 
     describe('meta.dsa', () => {
       const MOCK_DSA = { transparency: 'info' };
@@ -23,9 +23,9 @@ describe('common processors', () => {
         const resp = {};
         responseProps(resp, { ext: { dsa: MOCK_DSA } }, context);
         expect(resp.meta.dsa).to.eql(MOCK_DSA);
-      })
-    })
-  })
+      });
+    });
+  });
   describe('bid imp fpd', () => {
     const impFpd = DEFAULT_PROCESSORS[IMP].secure.fn;
 
@@ -40,5 +40,5 @@ describe('common processors', () => {
       impFpd(imp);
       expect(imp.secure).to.eql(0);
     });
-  })
-})
+  });
+});

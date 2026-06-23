@@ -20,27 +20,27 @@ describe('Adxcg adapter', function () {
             usersyncUrl: usersyncUrl,
           }
         }
-      )
-    })
+      );
+    });
     after(() => {
-      config.resetConfig()
-    })
+      config.resetConfig();
+    });
 
     it('should return user sync if pixel enabled with adxcg config', function () {
-      const ret = spec.getUserSyncs({ pixelEnabled: true })
-      expect(ret).to.deep.equal([{ type: 'image', url: usersyncUrl }])
-    })
+      const ret = spec.getUserSyncs({ pixelEnabled: true });
+      expect(ret).to.deep.equal([{ type: 'image', url: usersyncUrl }]);
+    });
 
     it('should not return user sync if pixel disabled', function () {
-      const ret = spec.getUserSyncs({ pixelEnabled: false })
-      expect(ret).to.be.an('array').that.is.empty
-    })
+      const ret = spec.getUserSyncs({ pixelEnabled: false });
+      expect(ret).to.be.an('array').that.is.empty;
+    });
 
     it('should not return user sync if url is not set', function () {
-      config.resetConfig()
-      const ret = spec.getUserSyncs({ pixelEnabled: true })
-      expect(ret).to.be.an('array').that.is.empty
-    })
+      config.resetConfig();
+      const ret = spec.getUserSyncs({ pixelEnabled: true });
+      expect(ret).to.be.an('array').that.is.empty;
+    });
 
     it('should pass GDPR consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
@@ -80,11 +80,11 @@ describe('Adxcg adapter', function () {
         nurl: 'http://example.com/win/${AUCTION_PRICE}',
         cpm: 2.1,
         originalCpm: 1.1,
-      }
+      };
       spec.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
 
   it('should return just to have at least 1 karma test ok', function () {
     assert(true);
@@ -233,8 +233,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         page: 'https://publisher.com/home',
         ref: 'https://referrer'
       }
-    }).then(br => { bidderRequest = br });
-  })
+    }).then(br => { bidderRequest = br; });
+  });
 
   it('Verify build request', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
@@ -294,7 +294,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
 
   it('Verify full passback', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
-    const bids = spec.interpretResponse({ body: null }, request)
+    const bids = spec.interpretResponse({ body: null }, request);
     expect(bids).to.have.lengthOf(0);
   });
 
@@ -568,9 +568,9 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
   it('Verify bid request timeouts', function () {
     const mkRequest = (bidderRequest) => spec.buildRequests(slotConfigs, bidderRequest).data;
     // assert default is used when no bidderRequest.timeout value is available
-    expect(mkRequest(bidderRequest).tmax).to.equal(500)
+    expect(mkRequest(bidderRequest).tmax).to.equal(500);
 
     // assert bidderRequest value is used when available
-    expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000)
+    expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000);
   });
 });

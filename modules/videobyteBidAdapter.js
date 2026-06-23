@@ -66,20 +66,20 @@ export const spec = {
       const nId = params.nid;
       if (bidRequest.params.video && bidRequest.params.video.e2etest) {
         logMessage('E2E test mode enabled');
-        pubId = 'e2etest'
+        pubId = 'e2etest';
       }
       let baseEndpoint = spec.ENDPOINT + '?pid=' + pubId;
       if (placementId) {
-        baseEndpoint += '&placementId=' + placementId
+        baseEndpoint += '&placementId=' + placementId;
       }
       if (nId) {
-        baseEndpoint += '&nid=' + nId
+        baseEndpoint += '&nid=' + nId;
       }
       return {
         method: 'POST',
         url: baseEndpoint,
         data: JSON.stringify(buildRequestData(bidRequest, bidderRequest)),
-      }
+      };
     });
   },
 
@@ -94,7 +94,7 @@ export const spec = {
     const response = (serverResponse || {}).body;
     // one seat  with (optional) bids for each impression
     if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length === 1) {
-      const bid = response.seatbid[0].bid[0]
+      const bid = response.seatbid[0].bid[0];
       if (bid.adm && bid.price) {
         const bidResponse = {
           requestId: response.id,
@@ -111,7 +111,7 @@ export const spec = {
             advertiserDomains: bid.adomain
           }
         };
-        bidResponses.push(bidResponse)
+        bidResponses.push(bidResponse);
       }
     }
     return bidResponses;
@@ -151,16 +151,16 @@ export const spec = {
         // if iframe is enabled return only iframe (videobyte)
         // if iframe is disabled, we can proceed to pixels if any
         if (syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type === 'iframe')
+          syncs = syncs.filter(s => s.type === 'iframe');
         } else if (syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type === 'image')
+          syncs = syncs.filter(s => s.type === 'image');
         }
       }
     });
     return syncs;
   }
 
-}
+};
 
 // BUILD REQUESTS: VIDEO
 function buildRequestData(bidRequest, bidderRequest) {
@@ -175,14 +175,14 @@ function buildRequestData(bidRequest, bidderRequest) {
   };
 
   if (bidRequest.params.video && bidRequest.params.video.e2etest) {
-    videoParams.playerSize = [[640, 480]]
-    videoParams.conext = 'instream'
+    videoParams.playerSize = [[640, 480]];
+    videoParams.conext = 'instream';
   }
 
   const video = {
     w: parseInt(videoParams.playerSize[0][0], 10),
     h: parseInt(videoParams.playerSize[0][1], 10),
-  }
+  };
 
   // Obtain all ORTB params related video from Ad Unit
   VIDEO_ORTB_PARAMS.forEach((param) => {
@@ -197,7 +197,7 @@ function buildRequestData(bidRequest, bidderRequest) {
     mediaType: 'video',
     size: '*'
   };
-  let floorData = bidRequest.params
+  let floorData = bidRequest.params;
   if (isFn(bidRequest.getFloor)) {
     floorData = bidRequest.getFloor(bidFloorRequest);
   } else {

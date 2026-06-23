@@ -358,7 +358,7 @@ describe('LotameId', function() {
     beforeEach(function() {
       getCookieStub.withArgs('panoramaId').returns(null);
       getLocalStorageStub.withArgs('panoramaId').returns(null);
-    })
+    });
     describe('and it is too early to try again', function () {
       let submoduleCallback;
 
@@ -845,5 +845,5 @@ describe('LotameId', function() {
         uids: [{ id: 'some-random-id-value', atype: 1 }],
       });
     });
-  })
+  });
 });

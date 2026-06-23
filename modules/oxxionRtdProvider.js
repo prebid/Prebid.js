@@ -1,5 +1,5 @@
-import { submodule } from '../src/hook.js'
-import { logInfo, logError } from '../src/utils.js'
+import { submodule } from '../src/hook.js';
+import { logInfo, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 
@@ -21,8 +21,8 @@ export const oxxionSubmodule = {
 };
 
 function init(config, userConsent) {
-  if (!config.params || !config.params.domain) { return false }
-  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') { return true }
+  if (!config.params || !config.params.domain) { return false; }
+  if (typeof config.params.threshold !== 'undefined' && typeof config.params.samplingRate === 'number') { return true; }
   return false;
 }
 
@@ -72,7 +72,7 @@ function getPromisifiedAjax (url, data = {}, options = {}) {
       }
     };
     ajax(url, callbacks, data, options);
-  })
+  });
 }
 
 function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSampling) {

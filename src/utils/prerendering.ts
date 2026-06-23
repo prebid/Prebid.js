@@ -11,12 +11,12 @@ export function delayIfPrerendering<F extends AnyFunction>(isDelayEnabled: () =>
     if ((document as any).prerendering && isDelayEnabled()) {
       return new Promise<UnwrapPromise<ReturnType<F>>>((resolve) => {
         document.addEventListener('prerenderingchange', () => {
-          logInfo(`Auctions were suspended while page was prerendering`)
-          resolve(fn.apply(this, args))
-        }, { once: true })
-      })
+          logInfo(`Auctions were suspended while page was prerendering`);
+          resolve(fn.apply(this, args));
+        }, { once: true });
+      });
     } else {
       return Promise.resolve<UnwrapPromise<ReturnType<F>>>(fn.apply(this, args));
     }
-  }
+  };
 }

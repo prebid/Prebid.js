@@ -204,7 +204,7 @@ describe('sevioBidAdapter', function () {
 
       let result = spec.interpretResponse(serverResponseNative);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponseNative));
-    })
+    });
 
     it('should use bidRequest.params.keywords when provided', function () {
       const singleBidRequest = [

@@ -29,7 +29,7 @@ export const spec = {
     if (!bid.params) {
       return false;
     }
-    const { pubId, tagId } = bid.params
+    const { pubId, tagId } = bid.params;
     const { mediaTypes } = bid;
     return !!(validateBrowsiIds(pubId, tagId) && mediaTypes?.[VIDEO]);
   },
@@ -69,7 +69,7 @@ export const spec = {
         }
       };
       requests.push(request);
-    })
+    });
     return requests;
   },
   /**
@@ -134,7 +134,7 @@ export const spec = {
           type,
           url
         });
-      })
+      });
     }
     return userSyncs;
   },
@@ -144,7 +144,7 @@ export const spec = {
   onBidderError: function ({ error }) {
     logError(`${BIDDER_CODE} bidder error`, error);
   }
-}
+};
 /**
  * Replaces GdprConsent and uspConsent params in url
  * @param url {String}
@@ -160,18 +160,18 @@ const getValidUrl = function (url, gdprConsent, uspConsent) {
     validUrl = 'http://' + validUrl;
   }
   return validUrl;
-}
+};
 
 const validateBrowsiIds = function (pubId, tagId) {
   return pubId && tagId && isStr(pubId) && isStr(tagId);
-}
+};
 const getData = function () {
   return window[DATA]?.[ADAPTER];
-}
+};
 const getTimeout = function (bidderRequest) {
   return bidderRequest.timeout || config.getConfig('bidderTimeout');
-}
+};
 const getVideoMediaType = function (bidRequest) {
   return bidRequest.mediaTypes?.[VIDEO];
-}
+};
 registerBidder(spec);

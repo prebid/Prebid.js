@@ -8,6 +8,7 @@ import {
   getCurrentTimeToUTCString
 } from 'modules/mediagoBidAdapter.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
+import { transformSizesOrtb } from '../../../libraries/sizeUtils/tranformSize.js';
 import * as utils from 'src/utils.js';
 
 describe('mediago:BidAdapterTests', function () {
@@ -139,6 +140,11 @@ describe('mediago:BidAdapterTests', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     const req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
+
+    const banner = req_data.imp[0].banner;
+    expect(banner.w).to.equal(300);
+    expect(banner.h).to.equal(250);
+    expect(banner.format).to.deep.equal([{ w: 300, h: 250 }]);
   });
 
   it('mediago:validate_transactionId_in_request', function () {
@@ -164,7 +170,7 @@ describe('mediago:BidAdapterTests', function () {
         sandbox.stub(storage, 'setCookie');
         sandbox.stub(utils, 'generateUUID').returns('new-uuid');
         sandbox.stub(storage, 'cookiesAreEnabled');
-      })
+      });
 
       afterEach(() => {
         sandbox.restore();
@@ -192,7 +198,7 @@ describe('mediago:BidAdapterTests', function () {
         getPmgUID();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
-    })
+    });
   });
 
   it('mediago:validate_response_params', function () {
@@ -259,7 +265,7 @@ describe('mediago: getUserSyncs', function() {
   };
   const USP_CONSENT = {
     consentString: 'uspConsentString'
-  }
+  };
 
   let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
   syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
@@ -390,7 +396,7 @@ describe('mediago Bid Adapter Tests', function () {
       it('should return the current document description if top document is not accessible', function() {
         const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
         const fakeWindow = {
           get top() {
             throw new Error('Access denied');
@@ -560,5 +566,83 @@ describe('mediago Bid Adapter Tests', function () {
         expect(storage.setCookie.notCalled).to.be.true;
       });
     });
+  });
+});
+
+describe('mediago: transformSizesOrtb', function() {
+  it('should transform a single size array [w, h] to [{w, h}]', function() {
+    const result = transformSizesOrtb([300, 250]);
+    expect(result).to.deep.equal([{ w: 300, h: 250 }]);
+  });
+
+  it('should transform multi-size array [[w,h],[w,h]] to [{w,h},{w,h}]', function() {
+    const result = transformSizesOrtb([[300, 250], [728, 90]]);
+    expect(result).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+  });
+
+  it('should return empty array for empty input', function() {
+    const result = transformSizesOrtb([]);
+    expect(result).to.deep.equal([]);
+  });
+});
+
+describe('mediago: buildRequests with non-standard size', function() {
+  it('should use fallback size when no standard size matches', function() {
+    const bidRequestData = {
+      bidderCode: 'mediago',
+      auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
+      bidderRequestId: '4fec04e87ad785',
+      bids: [
+        {
+          bidder: 'mediago',
+          params: {
+            token: '85a6b01e41ac36d49744fad726e3655d',
+            publisher: '52',
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[999, 888]],
+            }
+          },
+          adUnitCode: 'test_ad_unit',
+          sizes: [[999, 888]],
+          bidId: 'bid123',
+          bidderRequestId: '4fec04e87ad785',
+          auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
+          userIdAsEids: [],
+        }
+      ],
+    };
+
+    spec.isBidRequestValid(bidRequestData.bids[0]);
+    const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    const reqData = JSON.parse(request.data);
+    expect(reqData.imp[0].banner.w).to.equal(999);
+    expect(reqData.imp[0].banner.h).to.equal(888);
+    expect(reqData.imp[0].banner.format).to.deep.equal([{ w: 999, h: 888 }]);
+  });
+});
+
+describe('mediago: onBidWon', function() {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'triggerPixel');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it('should call triggerPixel when nurl exists', function() {
+    spec.onBidWon({ nurl: 'https://trace.mediago.io/win?id=123' });
+    expect(utils.triggerPixel.calledOnce).to.be.true;
+    expect(utils.triggerPixel.calledWith('https://trace.mediago.io/win?id=123')).to.be.true;
+  });
+
+  it('should not call triggerPixel when nurl is empty', function() {
+    spec.onBidWon({});
+    expect(utils.triggerPixel.called).to.be.false;
   });
 });

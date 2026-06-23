@@ -10,7 +10,7 @@ const HOST_NAME = document.location.protocol + '//' + window.location.host;
 
 export const dep = {
   ajax
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -23,7 +23,7 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return [];
     }
-    const payloadArr = []
+    const payloadArr = [];
     let ctr = 1;
     validBidRequests.forEach(bidRequest => {
       const params = bidRequest.params;
@@ -34,7 +34,7 @@ export const spec = {
       const cb = Math.floor(Math.random() * 99999999999);
       const bidId = bidRequest.bidId;
       const referrer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : '';
-      const mediaTypes = {}
+      const mediaTypes = {};
       const payload = {
         v: 'hb1',
         p: placementId,
@@ -67,7 +67,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadArr,
-    }]
+    }];
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
@@ -154,5 +154,5 @@ export const spec = {
       withCredentials: false
     });
   }
-}
+};
 registerBidder(spec);

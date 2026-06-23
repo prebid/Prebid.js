@@ -40,18 +40,18 @@ describe('Real time module', function () {
   beforeEach(() => {
     validSM = {
       name: 'validSM',
-      init: () => { return true },
+      init: () => { return true; },
       getTargetingData: (adUnitsCodes) => {
-        return { 'ad2': { 'key': 'validSM' } }
+        return { 'ad2': { 'key': 'validSM' } };
       },
       getBidRequestData: getBidRequestDataStub
     };
 
     validSMWait = {
       name: 'validSMWait',
-      init: () => { return true },
+      init: () => { return true; },
       getTargetingData: (adUnitsCodes) => {
-        return { 'ad1': { 'key': 'validSMWait' } }
+        return { 'ad1': { 'key': 'validSMWait' } };
       },
       getBidRequestData: getBidRequestDataStub
     };
@@ -62,12 +62,12 @@ describe('Real time module', function () {
 
     failureSM = {
       name: 'failureSM',
-      init: () => { return false }
+      init: () => { return false; }
     };
 
     nonConfSM = {
       name: 'nonConfSM',
-      init: () => { return true }
+      init: () => { return true; }
     };
 
     conf = {
@@ -90,7 +90,7 @@ describe('Real time module', function () {
           }]
       }
     };
-  })
+  });
 
   describe('GVL IDs', () => {
     beforeEach(() => {
@@ -111,8 +111,8 @@ describe('Real time module', function () {
           mod();
         }
       }
-    })
-  })
+    });
+  });
 
   describe('', () => {
     let PROVIDERS, _detachers, rules;
@@ -129,7 +129,7 @@ describe('Real time module', function () {
         registerActivityControl(ACTIVITY_ENRICH_UFPD, 'test', (params) => {
           return { allow: false };
         })
-      ]
+      ];
     });
 
     afterEach(function () {
@@ -152,7 +152,7 @@ describe('Real time module', function () {
         assert(getBidRequestDataStub.calledWith(sinon.match({ bidRequest: {} })));
         expect(request.foo).to.eql('bar');
         done();
-      }, request)
+      }, request);
     });
 
     it('should apply guard to modules, but not affect ortb2Fragments otherwise', (done) => {
@@ -217,7 +217,7 @@ describe('Real time module', function () {
       ];
 
       const adUnits = rtdModule.getAdUnitTargeting(auction);
-      assert.deepEqual(expectedAdUnits, adUnits)
+      assert.deepEqual(expectedAdUnits, adUnits);
       done();
     });
 
@@ -234,12 +234,12 @@ describe('Real time module', function () {
         ]
       };
       validSM.getTargetingData = (adUnits) => {
-        const targeting = { 'module1': 'targeting' }
+        const targeting = { 'module1': 'targeting' };
         return {
           ad1: targeting,
           ad2: targeting
-        }
-      }
+        };
+      };
 
       rtdModule.getAdUnitTargeting(auction);
       expect(auction.adUnits[0].adserverTargeting).to.eql({
@@ -248,8 +248,8 @@ describe('Real time module', function () {
       });
       expect(auction.adUnits[1].adserverTargeting).to.eql({
         module1: 'targeting'
-      })
-    })
+      });
+    });
 
     describe('setBidRequestData', () => {
       let withWait, withoutWait;
@@ -287,7 +287,7 @@ describe('Real time module', function () {
         return runSetBidRequestData().then(() => {
           expect(withWait.cbRan).to.be.true;
           expect(withoutWait.cbRan).to.be.true;
-        })
+        });
       });
 
       it('should not wait for non-priority submodules if priority ones complete first', () => {
@@ -307,7 +307,7 @@ describe('Real time module', function () {
       [EVENTS.AUCTION_END]: 'onAuctionEndEvent',
       [EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
       [EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
-    }
+    };
     const conf = {
       'realTimeData': {
         dataProviders: [
@@ -327,7 +327,7 @@ describe('Real time module', function () {
       const provider = {
         name: name,
         init: () => true,
-      }
+      };
       Object.values(TEST_EVENTS).forEach((ev) => provider[ev] = sinon.spy());
       return provider;
     }
@@ -340,7 +340,7 @@ describe('Real time module', function () {
     });
 
     afterEach(() => {
-      _detachers.forEach((d) => d())
+      _detachers.forEach((d) => d());
       config.resetConfig();
     });
 
@@ -364,12 +364,12 @@ describe('Real time module', function () {
           const providerConf = conf.realTimeData.dataProviders.find((cfg) => cfg.name === provider.name);
           expect(provider[hook].called).to.be.true;
           expect(provider[hook].args).to.have.length(1);
-          expect(provider[hook].args[0]).to.include.members([eventArg, providerConf])
-        })
+          expect(provider[hook].args[0]).to.include.members([eventArg, providerConf]);
+        });
       });
 
       it(`${event} should not fail to propagate elsewhere if a provider throws in its event handler`, () => {
-        providers[0][hook] = function () { throw new Error() };
+        providers[0][hook] = function () { throw new Error(); };
         mockEmitEvent(event);
         expect(providers[1][hook].called).to.be.true;
       });
@@ -390,7 +390,7 @@ describe('Real time module', function () {
         return function () {
           orig();
           smDetach();
-        }
+        };
       })(detach);
       return mod;
     }
@@ -428,15 +428,15 @@ describe('Real time module', function () {
 
     describe('does not choke if onDataDeletionRequest', () => {
       Object.entries({
-        'is missing': () => { delete sm1.onDataDeletionRequest },
-        'throws': () => { sm1.onDataDeletionRequest.throws(new Error()) }
+        'is missing': () => { delete sm1.onDataDeletionRequest; },
+        'throws': () => { sm1.onDataDeletionRequest.throws(new Error()); }
       }).forEach(([t, setup]) => {
         it(t, () => {
           setup();
           onDataDeletionRequest(sinon.stub());
           sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
-        })
-      })
-    })
+        });
+      });
+    });
   });
 });

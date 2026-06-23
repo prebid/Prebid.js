@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 import { getDeviceType } from '../libraries/userAgentUtils/index.js';
 import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid, getBidFloor, getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -276,12 +276,12 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     test = 1;
   }
 
-  let yob = parseInt(bid.params.yob)
+  let yob = parseInt(bid.params.yob);
   if (!isNumber(yob)) {
-    yob = null
+    yob = null;
   }
-  let gender = bid.params.gender || ''
-  let keywords = bid.params.keywords || ''
+  let gender = bid.params.gender || '';
+  let keywords = bid.params.keywords || '';
 
   let osInfo = getOsInfo();
 

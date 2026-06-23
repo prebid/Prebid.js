@@ -29,7 +29,7 @@ const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => (
   userSync: { auctionDelay: auctionDelayMs, userIds: [{ name: 'euid', params: { storage: useLocalStorage ? 'localStorage' : 'cookie', ...params }, ...extraSettings }] }, debug
 });
 
-const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
+const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' };
 const clientSideGeneratedToken = 'client-side-generated-advertising-token';
 const optoutToken = 'optout-token';
 
@@ -109,7 +109,7 @@ describe('EUID module', function() {
     config.setConfig({ userSync: { auctionDelay: auctionDelayMs, userIds: [{ name: 'euid' }] } });
     const bid = await runAuction();
     expectToken(bid, legacyToken);
-  })
+  });
 
   it('When a valid response body is provided in config, it is available to the auction', async function() {
     setGdprApplies(true);
@@ -117,7 +117,7 @@ describe('EUID module', function() {
     config.setConfig(makePrebidConfig({ euidToken }));
     const bid = await runAuction();
     expectToken(bid, initialToken);
-  })
+  });
 
   it('When a valid response body is provided via cookie, it is available to the auction', async function() {
     setGdprApplies(true);
@@ -126,7 +126,7 @@ describe('EUID module', function() {
     config.setConfig(makePrebidConfig({ euidCookie: publisherCookieName }));
     const bid = await runAuction();
     expectToken(bid, initialToken);
-  })
+  });
 
   it('When an expired token is provided in config, it calls the API.', async function () {
     setGdprApplies(true);
@@ -187,5 +187,5 @@ describe('EUID module', function() {
         }]
       });
     });
-  })
+  });
 });

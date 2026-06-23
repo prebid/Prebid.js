@@ -620,7 +620,7 @@ describe('ssp_genieeBidAdapter', function () {
             adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d'
           }
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'image',
@@ -636,7 +636,7 @@ describe('ssp_genieeBidAdapter', function () {
             adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a%20none%3b%20visibility%3a%20hidden%3b%5c%22%20%5c%2f%3e%3cimg%20src%3d%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3drtbhouse%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a'
           }
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'image',
@@ -652,7 +652,7 @@ describe('ssp_genieeBidAdapter', function () {
         body: {
           [ZONE_ID]: responseBase
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([]);
     });

@@ -33,7 +33,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         done = true;
         return cb.apply(this, arguments);
       }
-    }
+    };
   })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
@@ -161,23 +161,23 @@ export function convertKeywordsToString(keywords) {
     // if 'text' or ''
     if (isStr(keywords[key])) {
       if (keywords[key] !== '') {
-        result += `${key}=${keywords[key]},`
+        result += `${key}=${keywords[key]},`;
       } else {
         result += `${key},`;
       }
     } else if (isArray(keywords[key])) {
-      let isValSet = false
+      let isValSet = false;
       keywords[key].forEach(val => {
         if (isStr(val) && val) {
-          result += `${key}=${val},`
-          isValSet = true
+          result += `${key}=${val},`;
+          isValSet = true;
         }
       });
       if (!isValSet) {
-        result += `${key},`
+        result += `${key},`;
       }
     } else {
-      result += `${key},`
+      result += `${key},`;
     }
   });
 

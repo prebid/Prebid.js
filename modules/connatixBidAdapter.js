@@ -143,7 +143,7 @@ export function detectViewability(bid) {
 
       if (element) {
         bidParamSizes = [element.offsetWidth, element.offsetHeight];
-        minSize = _getMinSize(bidParamSizes)
+        minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
       logError(`Error while trying to find viewability container element: ${viewabilityContainerIdentifier}`);
@@ -155,7 +155,7 @@ export function detectViewability(bid) {
     bidParamSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
-    minSize = _getMinSize(bidParamSizes ?? [])
+    minSize = _getMinSize(bidParamSizes ?? []);
     element = getAdUnitElement(bid);
   }
 
@@ -163,8 +163,8 @@ export function detectViewability(bid) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
-    }
-    return Math.round(getViewability(element, getWindowTop(), minSizeObj))
+    };
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj));
   }
 
   return null;
@@ -387,7 +387,7 @@ export const spec = {
           saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
         }
       }
-    }, true)
+    }, true);
 
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';

@@ -41,7 +41,7 @@ function getUtiqFromStorage() {
     );
     return {
       utiq: netIdAdtechpass,
-    }
+    };
   }
 
   if (

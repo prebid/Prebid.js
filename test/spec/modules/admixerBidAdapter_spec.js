@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const RTB_BIDDER_CODE = 'rtbstack'
+const RTB_BIDDER_CODE = 'rtbstack';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
@@ -153,7 +153,7 @@ describe('AdmixerAdapter', function () {
           page: 'https://example.com',
         },
       }
-    })
+    });
 
     it('build request for admixer', function () {
       const requestParams = requestParamsFor('admixer');

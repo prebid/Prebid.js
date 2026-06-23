@@ -10,6 +10,8 @@ const _ = require('lodash');
 const fs = require('fs');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
+const { toModulePath }  = require('./plugins/utils.js');
+
 
 function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) {
   if (dev && distUrlBase == null) {
@@ -55,6 +57,7 @@ function generateMetadataModules() {
   function cleanMetadata(file) {
     const data = JSON.parse(file.contents.toString())
     delete data.NOTICE;
+    delete data.purposes; // directly included in adapter source
     data.components.forEach(component => {
       delete component.gvlid;
       if (component.aliasOf == null) {
@@ -127,7 +130,7 @@ const generatePublicModules = _.memoize(
           .pipe(filter(publicVersionDoesNotExist))
           .pipe(tap((file) => {
             const {modulePath, publicPath} = getNames(file);
-            file.contents = Buffer.from(template({modulePath}));
+            file.contents = Buffer.from(template({modulePath: toModulePath(modulePath)}));
             file.path = publicPath;
           }))
           .pipe(gulp.dest(publicDir))
@@ -147,7 +150,7 @@ function generateTypeSummary(folder, dest, ignore = dest) {
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, {recursive: true});
       }
-      fs.writeFile(dest, template({files}), done);
+      fs.writeFile(dest, template({files: files.map(toModulePath)}), done);
     })
   }
 }

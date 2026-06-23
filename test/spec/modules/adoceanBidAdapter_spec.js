@@ -85,6 +85,31 @@ describe('AdoceanAdapter', function () {
     it('should return false for outstream video', function () {
       expect(spec.isBidRequestValid(videoOutstreamBid)).to.equal(false);
     });
+
+    it('should return true when emitterRequestParams is a plain object', function () {
+      const bid = Object.assign({}, bannerBid, {
+        params: Object.assign({}, bannerBid.params, { emitterRequestParams: { foo: 'bar' } })
+      });
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when emitterRequestParams is not provided', function () {
+      expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
+    });
+
+    it('should return false when emitterRequestParams is an array', function () {
+      const bid = Object.assign({}, bannerBid, {
+        params: Object.assign({}, bannerBid.params, { emitterRequestParams: ['foo', 'bar'] })
+      });
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when emitterRequestParams is a string', function () {
+      const bid = Object.assign({}, bannerBid, {
+        params: Object.assign({}, bannerBid.params, { emitterRequestParams: 'foo=bar' })
+      });
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -210,6 +235,21 @@ describe('AdoceanAdapter', function () {
       expect(request.url).to.include('dur=60');
       expect(request.url).to.include('maxdur=60');
       expect(request.url).to.include('mindur=10');
+    });
+
+    it('should attach emitterRequestParams to url', function () {
+      const bidWithParams = deepClone(bidRequests[0]);
+      bidWithParams.params.emitterRequestParams = { myParam: 'myValue', another: 'test' };
+      const request = spec.buildRequests([bidWithParams], bidderRequest)[0];
+      expect(request.url).to.include('myParam=myValue');
+      expect(request.url).to.include('another=test');
+    });
+
+    it('should encode emitterRequestParams keys and values', function () {
+      const bidWithParams = deepClone(bidRequests[0]);
+      bidWithParams.params.emitterRequestParams = { 'special key': 'special value' };
+      const request = spec.buildRequests([bidWithParams], bidderRequest)[0];
+      expect(request.url).to.include('special%20key=special%20value');
     });
   });
 

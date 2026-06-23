@@ -399,7 +399,7 @@ function createBannerRequestData(bids, bidderRequest) {
   }
 
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
-    const id = deepAccess(bids, `0.userId.${key}`)
+    const id = deepAccess(bids, `0.userId.${key}`);
     if (id) {
       payload[queryParam] = id;
     }

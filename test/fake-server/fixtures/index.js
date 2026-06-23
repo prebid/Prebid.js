@@ -22,7 +22,7 @@ function getReqResPairs (dirname) {
             REQ_RES_PAIRS[parentDir] = {
               request: {},
               response: {}
-            }
+            };
           }
           if (filename.name === 'request.json') {
             REQ_RES_PAIRS[parentDir]['request'] = JSON.parse(fs.readFileSync(`${dirname}/${filename.name}`, { encoding: 'utf-8' }));

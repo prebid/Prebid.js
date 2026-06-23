@@ -91,7 +91,7 @@ export const spec = {
       payload.imps.push(imp);
     });
 
-    const urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
+    const urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode);
     return {
       method: 'POST',
       url: urlForRequest,

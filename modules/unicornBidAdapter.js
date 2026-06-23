@@ -117,13 +117,13 @@ const initializeEids = (bidRequest) => {
   }
 
   return eids;
-}
+};
 
 const interpretResponse = (serverResponse, request) => {
   logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);
   logInfo('[UNICORN] interpretResponse.request:', request);
   const res = serverResponse.body;
-  var bids = []
+  var bids = [];
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
@@ -137,14 +137,14 @@ const interpretResponse = (serverResponse, request) => {
           creativeId: b.crid,
           netRevenue: true,
           currency: res.cur
-        }
+        };
 
         if (b.adomain) {
           bid.meta = { advertiserDomains: b.adomain };
         }
 
-        bids.push(bid)
-      })
+        bids.push(bid);
+      });
     });
   }
   logInfo('[UNICORN] interpretResponse bids:', bids);

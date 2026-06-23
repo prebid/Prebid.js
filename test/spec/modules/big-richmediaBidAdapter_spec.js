@@ -125,7 +125,7 @@ describe('bigRichMediaAdapterTests', function () {
           skippable: true,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
     }
   });
@@ -247,7 +247,7 @@ describe('bigRichMediaAdapterTests', function () {
               }
             }
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).not.to.have.property('vastXml');

@@ -208,7 +208,7 @@ describe('NativeryAdapter', function () {
       const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = { bidder: 'nativery', adUnitCode: 'div-1' };
       spec.onBidWon(validData);
-      assertTrackEvent(ajaxStub, 'NAT_BID_WON', validData)
+      assertTrackEvent(ajaxStub, 'NAT_BID_WON', validData);
     });
   });
 
@@ -227,7 +227,7 @@ describe('NativeryAdapter', function () {
       const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = { bidder: 'nativery', adUnitCode: 'div-1' };
       spec.onAdRenderSucceeded(validData);
-      assertTrackEvent(ajaxStub, 'NAT_AD_RENDERED', validData)
+      assertTrackEvent(ajaxStub, 'NAT_AD_RENDERED', validData);
     });
   });
 
@@ -247,7 +247,7 @@ describe('NativeryAdapter', function () {
       const ajaxStub = sandBox.stub(dep, 'ajax');
       const validData = [{ bidder: 'nativery', adUnitCode: 'div-1' }];
       spec.onTimeout(validData);
-      assertTrackEvent(ajaxStub, 'NAT_TIMEOUT', validData)
+      assertTrackEvent(ajaxStub, 'NAT_TIMEOUT', validData);
     });
   });
 
@@ -271,7 +271,7 @@ describe('NativeryAdapter', function () {
         }
       };
       spec.onBidderError(validData);
-      assertTrackEvent(ajaxStub, 'NAT_BIDDER_ERROR', validData)
+      assertTrackEvent(ajaxStub, 'NAT_BIDDER_ERROR', validData);
     });
   });
 });
@@ -288,6 +288,6 @@ const assertTrackEvent = (ajaxStub, event, data) => {
 
   const payload = JSON.parse(body);
   expect(payload.event).to.equal(event);
-  expect(payload.prebidVersion).to.exist.and.to.be.a('string')
+  expect(payload.prebidVersion).to.exist.and.to.be.a('string');
   expect(payload.data).to.deep.equal(data);
-}
+};

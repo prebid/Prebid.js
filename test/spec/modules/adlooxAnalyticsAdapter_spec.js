@@ -36,7 +36,7 @@ describe('Adloox Analytics Adapter', function () {
     params: {
       dummy1: '%%client%%',
       dummy2: '%%pbadslot%%',
-      dummy3: function(bid) { throw new Error(esplode) }
+      dummy3: function(bid) { throw new Error(esplode); }
     }
   };
 

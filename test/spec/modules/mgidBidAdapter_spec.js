@@ -29,7 +29,7 @@ describe('Mgid bid adapter', function () {
   }
   const secure = window.location.protocol === 'https:' ? 1 : 0;
   it('should expose gvlid', function() {
-    expect(spec.gvlid).to.equal(358)
+    expect(spec.gvlid).to.equal(358);
   });
 
   describe('isBidRequestValid', function () {
@@ -358,8 +358,8 @@ describe('Mgid bid adapter', function () {
       },
     };
     afterEach(function () {
-      config.setConfig({ coppa: undefined })
-    })
+      config.setConfig({ coppa: undefined });
+    });
 
     it('should return undefined if no validBidRequests passed', function () {
       expect(spec.buildRequests([])).to.be.undefined;
@@ -421,9 +421,9 @@ describe('Mgid bid adapter', function () {
         }
       };
       const bidRequests = [bid];
-      const domain = 'site.com'
-      const page = `http://${domain}/site.html`
-      const ref = 'http://ref.com/ref.html'
+      const domain = 'site.com';
+      const page = `http://${domain}/site.html`;
+      const ref = 'http://ref.com/ref.html';
       const bidderRequest = {
         ortb2: {
           site: { domain, page, ref }
@@ -977,7 +977,7 @@ describe('Mgid bid adapter', function () {
           body: { 'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{ 'bid': [{ 'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': { 'place': 0, 'crtype': 'native' }, 'adomain': ['test.com'] }], 'seat': '44082' }] }
         };
         const bids = spec.interpretResponse(resp, buildMockRequest());
-        expect(bids).to.deep.equal([])
+        expect(bids).to.deep.equal([]);
       });
       it('should not push proper native bid response if assets is empty', function () {
         const resp = {
@@ -1117,65 +1117,65 @@ describe('Mgid bid adapter', function () {
       config.setConfig({ userSync: { syncsPerBidder: USERSYNC_DEFAULT_CONFIG.syncsPerBidder } });
     });
     it('should do nothing on getUserSyncs without inputs', function () {
-      expect(spec.getUserSyncs()).to.deep.equal([])
+      expect(spec.getUserSyncs()).to.deep.equal([]);
     });
     it('should return frame object with empty consents', function () {
-      const sync = spec.getUserSyncs({ iframeEnabled: true })
-      expect(sync).to.have.length(1)
-      expect(sync[0]).to.have.property('type', 'iframe')
-      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=&gdpr=0/)
+      const sync = spec.getUserSyncs({ iframeEnabled: true });
+      expect(sync).to.have.length(1);
+      expect(sync[0]).to.have.property('type', 'iframe');
+      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=&gdpr=0/);
     });
     it('should return frame object with gdpr consent', function () {
-      const sync = spec.getUserSyncs({ iframeEnabled: true }, undefined, { consentString: 'consent', gdprApplies: true })
-      expect(sync).to.have.length(1)
-      expect(sync[0]).to.have.property('type', 'iframe')
-      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent&gdpr=1/)
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, undefined, { consentString: 'consent', gdprApplies: true });
+      expect(sync).to.have.length(1);
+      expect(sync[0]).to.have.property('type', 'iframe');
+      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent&gdpr=1/);
     });
     it('should return frame object with gdpr + usp', function () {
-      const sync = spec.getUserSyncs({ iframeEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
-      expect(sync).to.have.length(1)
-      expect(sync[0]).to.have.property('type', 'iframe')
-      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' });
+      expect(sync).to.have.length(1);
+      expect(sync[0]).to.have.property('type', 'iframe');
+      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/);
     });
     it('should return img object with gdpr + usp', function () {
       config.setConfig({ userSync: { syncsPerBidder: undefined } });
-      const sync = spec.getUserSyncs({ pixelEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
-      expect(sync).to.have.length(USERSYNC_DEFAULT_CONFIG.syncsPerBidder)
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' });
+      expect(sync).to.have.length(USERSYNC_DEFAULT_CONFIG.syncsPerBidder);
       for (let i = 0; i < USERSYNC_DEFAULT_CONFIG.syncsPerBidder; i++) {
-        expect(sync[i]).to.have.property('type', 'image')
-        expect(sync[i]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.gif\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
+        expect(sync[i]).to.have.property('type', 'image');
+        expect(sync[i]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.gif\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/);
       }
     });
     it('should return frame object with gdpr + usp', function () {
-      const sync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
-      expect(sync).to.have.length(1)
-      expect(sync[0]).to.have.property('type', 'iframe')
-      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
+      const sync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, undefined, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' });
+      expect(sync).to.have.length(1);
+      expect(sync[0]).to.have.property('type', 'iframe');
+      expect(sync[0]).to.have.property('url').match(/https:\/\/cm\.mgid\.com\/i\.html\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/);
     });
     it('should return img (pixels) objects with gdpr + usp', function () {
-      const response = [{ body: { ext: { cm: ['http://cm.mgid.com/i.gif?cdsp=1111', 'http://cm.mgid.com/i.gif'] } } }]
-      const sync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, response, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' })
-      expect(sync).to.have.length(2)
-      expect(sync[0]).to.have.property('type', 'image')
-      expect(sync[0]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cdsp=1111&cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
-      expect(sync[1]).to.have.property('type', 'image')
-      expect(sync[1]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/)
+      const response = [{ body: { ext: { cm: ['http://cm.mgid.com/i.gif?cdsp=1111', 'http://cm.mgid.com/i.gif'] } } }];
+      const sync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, response, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' });
+      expect(sync).to.have.length(2);
+      expect(sync[0]).to.have.property('type', 'image');
+      expect(sync[0]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cdsp=1111&cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/);
+      expect(sync[1]).to.have.property('type', 'image');
+      expect(sync[1]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2/);
     });
   });
 
   describe('getUserSyncs with img from ext.cm and gdpr + usp + coppa + gpp', function () {
     afterEach(function() {
-      config.setConfig({ coppa: undefined })
+      config.setConfig({ coppa: undefined });
     });
     it('should return img (pixels) objects with gdpr + usp + coppa + gpp', function () {
       config.setConfig({ coppa: 1 });
-      const response = [{ body: { ext: { cm: ['http://cm.mgid.com/i.gif?cdsp=1111', 'http://cm.mgid.com/i.gif'] } } }]
-      const sync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, response, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' }, { gppString: 'gpp' })
-      expect(sync).to.have.length(2)
-      expect(sync[0]).to.have.property('type', 'image')
-      expect(sync[0]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cdsp=1111&cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2&gppString=gpp&coppa=1/)
-      expect(sync[1]).to.have.property('type', 'image')
-      expect(sync[1]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2&gppString=gpp&coppa=1/)
+      const response = [{ body: { ext: { cm: ['http://cm.mgid.com/i.gif?cdsp=1111', 'http://cm.mgid.com/i.gif'] } } }];
+      const sync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, response, { consentString: 'consent1', gdprApplies: true }, { 'consentString': 'consent2' }, { gppString: 'gpp' });
+      expect(sync).to.have.length(2);
+      expect(sync[0]).to.have.property('type', 'image');
+      expect(sync[0]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cdsp=1111&cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2&gppString=gpp&coppa=1/);
+      expect(sync[1]).to.have.property('type', 'image');
+      expect(sync[1]).to.have.property('url').match(/http:\/\/cm\.mgid\.com\/i\.gif\?cbuster=\d+&gdpr_consent=consent1&gdpr=1&us_privacy=consent2&gppString=gpp&coppa=1/);
     });
   });
 
@@ -1219,7 +1219,7 @@ describe('Mgid bid adapter', function () {
         }
       },
       sizes: [[300, 250]],
-    }
+    };
     beforeEach(function() {
       bidRequest = [utils.deepClone(bidRequests0)];
     });
@@ -1251,7 +1251,7 @@ describe('Mgid bid adapter', function () {
     });
 
     it('undefined currency -> USD', function() {
-      bidRequest[0].params.currency = 'EUR'
+      bidRequest[0].params.currency = 'EUR';
       bidRequest[0].getFloor = () => {
         return {
           floor: 1.23
@@ -1275,7 +1275,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.have.property('bidfloorcur', 'EUR');
     });
     it('altered currency, same as in request', function() {
-      bidRequest[0].params.cur = 'EUR'
+      bidRequest[0].params.cur = 'EUR';
       bidRequest[0].getFloor = () => {
         return {
           currency: 'EUR',

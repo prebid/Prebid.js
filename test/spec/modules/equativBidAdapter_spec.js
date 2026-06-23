@@ -1,7 +1,7 @@
 import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
 import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
-import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js';
 
 describe('Equativ bid adapter tests', () => {
   let sandBox;
@@ -713,7 +713,7 @@ describe('Equativ bid adapter tests', () => {
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // this value comes from native.js, part of the ortbConverter library
-        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.'
+        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.';
 
         // ACT
         spec.buildRequests(bidRequests, bidderRequest);
@@ -949,7 +949,7 @@ describe('Equativ bid adapter tests', () => {
         { type: 'iframe', url: 'https://sync.example.com' },
       ];
 
-      handleCookieSyncStub.returns(expectedResult)
+      handleCookieSyncStub.returns(expectedResult);
 
       const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,

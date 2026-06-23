@@ -144,7 +144,7 @@ export const spec = {
         .replace('{gdpr_cs}', gdprConsent.consentString)
         .replace('{usp}', uspApplies)
         .replace('{usp_cs}', uspString);
-    }
+    };
 
     serverResponses.forEach(serverResponse => {
       const userSyncUrls = serverResponse.body.usersync || [];
@@ -161,12 +161,12 @@ export const spec = {
             url: userSyncUrlProcess(sync.url),
           });
         }
-      })
+      });
     });
 
     return syncs;
   },
-}
+};
 
 function getContext(elem) {
   try {
@@ -225,7 +225,7 @@ function getDocumentDimensions() {
     const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
     return [width, height];
   } catch (t) {
-    return [-1, -1]
+    return [-1, -1];
   }
 }
 
@@ -244,13 +244,13 @@ function getFramePos() {
     m = m + 1;
     try {
       if (m > 1) {
-        t = t.parent
+        t = t.parent;
       }
       frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
       frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
     } catch (o) { /* keep looping */
     }
-  } while ((m < 100) && (t.parent !== t.self))
+  } while ((m < 100) && (t.parent !== t.self));
 
   return [frmLeft, frmTop];
 }

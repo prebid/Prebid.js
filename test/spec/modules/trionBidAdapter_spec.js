@@ -64,7 +64,7 @@ const getPublisherUrl = function () {
     }
   } catch (e) {
   }
-  return url
+  return url;
 };
 
 describe('Trion adapter tests', function () {

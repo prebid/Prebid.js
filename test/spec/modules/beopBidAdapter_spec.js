@@ -23,7 +23,7 @@ const validBid = {
     return {
       currency: 'USD',
       floor: 10,
-    }
+    };
   },
   'bidId': '30b31c1838de1e',
   'bidderRequestId': '22edbae2733bf6',
@@ -99,7 +99,7 @@ describe('BeOp Bid Adapter tests', () => {
           page: 'https://example.com'
         }
       };
-      setCurrencyConfig({ adServerCurrency: 'USD' })
+      setCurrencyConfig({ adServerCurrency: 'USD' });
 
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const request = spec.buildRequests(bidRequests, res);
@@ -212,7 +212,7 @@ describe('BeOp Bid Adapter tests', () => {
           }
         ]
       }
-    }
+    };
     it('should interpret the response by pushing it in the bids elem', function () {
       const response = spec.interpretResponse(serverResponse, validBid);
 
@@ -357,8 +357,8 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.kwds).to.include('list');
       expect(payload.kwds).to.include('of');
       expect(payload.kwds).to.include('keywords');
-    })
-  })
+    });
+  });
 
   describe('Ensure eids are get', function() {
     let bidRequests = [];
@@ -376,7 +376,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.eids).to.exist;
       expect(payload.eids[0].source).to.equal('provider.com');
     });
-  })
+  });
 
   describe('Ensure first party cookie is well managed', function () {
     const bidRequests = [];

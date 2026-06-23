@@ -404,7 +404,7 @@ describe('Media.net Analytics Adapter', function () {
     options: {
       cid: CUSTOMER_ID
     }
-  }
+  };
 
   before(() => {
     clearEvents();
@@ -534,7 +534,7 @@ describe('Media.net Analytics Adapter', function () {
   describe('Events', function () {
     beforeEach(function () {
       sandbox.stub(mnUtils, 'onHidden').callsFake(() => {
-      })
+      });
       medianetAnalytics.enableAnalytics({
         options: {
           cid: 'test123'
