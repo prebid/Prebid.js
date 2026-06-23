@@ -410,8 +410,7 @@ class NodalsAiRtdProvider {
   }
 
   #loadAdLibraries(deps) {
-    // eslint-disable-next-line no-unused-vars
-    for (const [key, value] of Object.entries(deps)) {
+    for (const value of Object.values(deps)) {
       if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
           // noop

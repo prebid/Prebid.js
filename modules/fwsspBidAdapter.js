@@ -357,7 +357,7 @@ export const spec = {
       };
 
       bidResponse.vastXml = serverResponse;
-      bidResponse.ad = formatAdHTML(bidrequest, playerSize, serverResponse);
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
 
@@ -541,10 +541,6 @@ function getSdkVersionFromBidRequest(bidRequest) {
  * @returns {number} Returns 1 if versionA is greater, -1 if versionB is greater, 0 if equal
  */
 function compareVersions(versionA, versionB) {
-  if (!versionA || !versionB) {
-    return 0;
-  }
-
   const normalize = (v) => v.split('.').map(Number);
 
   const partsA = normalize(versionA);

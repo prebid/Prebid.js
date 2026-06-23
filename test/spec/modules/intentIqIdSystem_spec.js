@@ -734,7 +734,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true, spd: spdValue })
     );
 
-    const storedLs = readData(FIRST_PARTY_KEY + '_' + partner, ['html5', 'cookie'], storage);
+    const storedLs = readData(FIRST_PARTY_KEY + '_' + partner, ['html5', 'cookie']);
     const parsedLs = JSON.parse(storedLs);
 
     expect(storedLs).to.not.be.null;
@@ -808,7 +808,7 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, FPD);
       const callBackSpy = sinon.spy();
       const submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } }).callback;
       submoduleCallback(callBackSpy);
@@ -830,7 +830,7 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, FPD);
       const returnedObject = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } });
       await waitForClientHints();
       expect(returnedObject.callback).to.be.undefined;
@@ -1218,7 +1218,7 @@ describe('IntentIQ tests', function () {
     intentIqIdSubmodule.getId(defaultConfigParams);
     await waitForClientHints();
 
-    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
     const expectedClientHints = handleClientHints(testClientHints);
     expect(savedClientHints).to.equal(expectedClientHints);
   });
@@ -1315,7 +1315,7 @@ describe('IntentIQ tests', function () {
 
     // LS must be updated; no extra network calls
     const expectedFresh = handleClientHints(testClientHints);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedFresh);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedFresh);
     expect(server.requests.length).to.equal(1);
 
     stub.restore();
@@ -1337,7 +1337,7 @@ describe('IntentIQ tests', function () {
 
     await waitForClientHints();
 
-    const saved = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const saved = readData(CLIENT_HINTS_KEY, ['html5']);
     expect(saved === '' || saved === null).to.be.true;
     expect(server.requests.length).to.equal(1);
 
@@ -1354,7 +1354,7 @@ describe('IntentIQ tests', function () {
     await waitForClientHints();
 
     const req = server.requests[0];
-    const saved = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const saved = readData(CLIENT_HINTS_KEY, ['html5']);
 
     expect(req).to.exist;
     expect(req.url).to.not.include('&uh=');
@@ -1383,7 +1383,7 @@ describe('IntentIQ tests', function () {
 
     // LS updated, network not re-fired
     const expectedFresh = handleClientHints(testClientHints);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedFresh);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedFresh);
     expect(server.requests.length).to.equal(1);
 
     stub.restore();
@@ -1413,7 +1413,7 @@ describe('IntentIQ tests', function () {
     expect(req).to.exist;
     expect(req.url).to.include('at=20');
     expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedCH);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
 
     uadStub.restore();
   });
@@ -1440,7 +1440,7 @@ describe('IntentIQ tests', function () {
     expect(req).to.exist;
     expect(req.url).to.include('at=20');
     expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
-    expect(readData(CLIENT_HINTS_KEY, ['html5'], storage)).to.equal(expectedCH);
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
   });
 
   it('should return true if CMP strings are the same', function () {

@@ -8,6 +8,7 @@ import { setRequestExtPrebid, setRequestExtPrebidChannel } from './requestExtPre
 import { setBidResponseVideoCache } from './video.js';
 import { addEventTrackers } from './eventTrackers.js';
 import { setRequestExtPrebidPageViewIds } from './pageViewIds.js';
+import { setBidResponseSafeRenderer, setRequestExtPrebidSafeRenderer } from './safeRenderer.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -27,6 +28,10 @@ export const PBS_PROCESSORS = {
       // sets ext.prebid.page_view_ids
       fn: setRequestExtPrebidPageViewIds
     },
+    extPrebidSafeRenderer: {
+      // sets ext.prebid.safeRenderer support flag
+      fn: setRequestExtPrebidSafeRenderer
+    }
   },
   [IMP]: {
     params: {
@@ -79,6 +84,10 @@ export const PBS_PROCESSORS = {
       // converts "legacy" burl and ext.prebid.events.win into eventtrackers
       fn: addEventTrackers
     },
+    safeRenderer: {
+      // sets bidResponse.safeRenderer from ext.prebid.meta.rendererUrl
+      fn: setBidResponseSafeRenderer
+    }
   },
   [RESPONSE]: {
     serverSideStats: {
