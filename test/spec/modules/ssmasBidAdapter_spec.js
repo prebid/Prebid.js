@@ -89,7 +89,90 @@ describe('ssmasBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
+    const bidOrtbResponse = {
+      'id': 'aa02e2fe-56d9-4713-88f9-d8672ceae8ab',
+      'seatbid': [
+        {
+          'bid': [
+            {
+              'id': '0001',
+              'impid': '3919400af0b73e8',
+              'price': 7.01,
+              'adid': null,
+              'nurl': null,
+              'adm': '<a href=\"https://ssmas.com/es\" target=\"blank\"><img src=\"https://source.unsplash.com/featured/300x202\"/></a><style>body{overflow:hidden;}</style>',
+              'adomain': [
+                'ssmas.com'
+              ],
+              'iurl': null,
+              'cid': null,
+              'crid': '3547894',
+              'attr': [],
+              'api': 0,
+              'protocol': 0,
+              'dealid': null,
+              'h': 600,
+              'w': 300,
+              'cat': null,
+              'ext': null,
+              'builder': {
+                'id': '0001',
+                'adid': null,
+                'impid': '3919400af0b73e8',
+                'adomainList': [
+                  'ssmas.com'
+                ],
+                'attrList': []
+              },
+              'adomainList': [
+                'ssmas.com'
+              ],
+              'attrList': []
+            }
+          ],
+          'seat': null,
+          'group': 0
+        }
+      ],
+      'bidid': '408731cc-c018-4976-bfc6-89f9c61e97a0',
+      'cur': 'EUR',
+      'nbr': -1
+    };
+    const bidResponse = {
+      'mediaType': 'banner',
+      'ad': '<a href=\"https://ssmas.com/es\" target=\"blank\"><img src=\"https://source.unsplash.com/featured/300x202\"/></a><style>body{overflow:hidden;}</style>',
+      'requestId': '37c658fe8ba57b',
+      'seatBidId': '0001',
+      'cpm': 10,
+      'currency': 'EUR',
+      'width': 300,
+      'height': 250,
+      'dealId': null,
+      'creative_id': '3547894',
+      'creativeId': '3547894',
+      'ttl': 300,
+      'netRevenue': true,
+      'meta': {
+        'advertiserDomains': [
+          'ssmas.com'
+        ]
+      }
+    };
+    it('converts OpenRTB bids and filters non-positive CPM bids', function () {
+      const request = spec.buildRequests([bid], bidderRequest)[0];
+      bidOrtbResponse.seatbid[0].bid[0].impid = request.data.imp[0].id;
+      const result = spec.interpretResponse({ body: bidOrtbResponse }, request);
 
+      expect(result).to.have.length(1);
+      expect(result[0]).to.deep.include({
+        ...bidResponse,
+        meta: result[0].meta,
+        cpm: 7.01,
+        height: 600,
+        requestId: request.data.imp[0].id
+      });
+      expect(result[0].meta.advertiserDomains).to.deep.equal(bidResponse.meta.advertiserDomains);
+    });
   });
 
   describe('test onBidWon function', function () {
