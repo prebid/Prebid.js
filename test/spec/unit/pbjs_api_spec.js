@@ -42,7 +42,7 @@ require('modules/appnexusBidAdapter');
 var config = require('test/fixtures/config.json');
 
 var adUnits = getAdUnits();
-getAdUnits().map(unit => unit.code);
+var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
 const timeout = 2000;
 const auctionId = generateUUID();
@@ -635,6 +635,7 @@ describe('Unit: Prebid Module', function () {
           }
         }]
       }];
+      const adUnitCodes = ['div-gpt-ad-1460505748561-0'];
       auction = auctionManagerInstance.createAuction({ adUnits, adUnitCodes });
       indexStub = sinon.stub(auctionManager, 'index');
       indexStub.get(() => auctionManagerInstance.index);
@@ -3100,6 +3101,7 @@ describe('Unit: Prebid Module', function () {
 
     describe('part-3', function () {
       const auctionManagerInstance = newAuctionManager();
+      let auctionManagerStub;
       const adUnits1 = getAdUnits().filter((adUnit) => {
         return adUnit.code === '/19968336/header-bid-tag1';
       });
@@ -3149,7 +3151,7 @@ describe('Unit: Prebid Module', function () {
 
       beforeEach(function() {
         spyCallBids = sinon.spy(adapterManager, 'callBids');
-        sinon.stub(auctionManager, 'createAuction');
+        auctionManagerStub = sinon.stub(auctionManager, 'createAuction');
         auctionsStarted = Promise.all(
           [auction1, auction2].map((au, i) => new Promise((resolve) => {
             auctionManagerStub.onCall(i).callsFake(() => {
@@ -4068,9 +4070,10 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getAllPrebidWinningBids', function () {
+    let auctionManagerStub;
     let logWarnSpy;
     beforeEach(function () {
-      sinon.stub(auctionManager, 'getBidsReceived');
+      auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
       logWarnSpy = sandbox.spy(utils, 'logWarn');
     });
 

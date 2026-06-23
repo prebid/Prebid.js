@@ -308,6 +308,9 @@ describe('targeting tests', function () {
   });
 
   describe('getAllTargeting', function () {
+    let amBidsReceivedStub;
+    let amGetAdUnitsStub;
+    let bidExpiryStub;
     let logWarnStub;
     let logErrorStub;
     let bidsReceived;
@@ -315,13 +318,13 @@ describe('targeting tests', function () {
     beforeEach(function () {
       bidsReceived = [bid1, bid2, bid3].map(deepClone);
 
-      sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return bidsReceived;
       });
-      sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
       logWarnStub = sinon.stub(utils, 'logWarn');
       logErrorStub = sinon.stub(utils, 'logError');
     });
