@@ -117,6 +117,7 @@ module.exports = [
       'no-constant-binary-expression': 'error',
       'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
+      'prebid/no-extra-function-args': 'error',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
       'import/no-unresolved': 'error',
@@ -283,6 +284,7 @@ module.exports = [
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
+      'prebid/no-extra-function-args': 'off',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-unused-vars': 'off',
