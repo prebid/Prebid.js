@@ -698,7 +698,7 @@ function getLocalAssert() {
   function isValidAnalyticsReport(report) {
     assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
     if ('usPrivacy' in report) {
-      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
+      assert.match(report.usPrivacy, /[01][YN-]{3}/);
     }
     if ('gdpr' in report) {
       assert.oneOf(report.gdpr, [0, 1]);
