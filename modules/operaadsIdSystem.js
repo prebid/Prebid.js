@@ -21,12 +21,12 @@ const SYNC_URL = 'https://t.adx.opera.com/identity/';
 const AJAX_TIMEOUT = 300;
 const AJAX_OPTIONS = { method: 'GET', withCredentials: true, contentType: 'application/json' };
 
-function constructUrl(pairs) {
+function constructUrl(baseUrl, pairs) {
   const queries = [];
   for (const key in pairs) {
     queries.push(`${key}=${encodeURIComponent(pairs[key])}`);
   }
-  return `${SYNC_URL}?${queries.join('&')}`;
+  return `${baseUrl}?${queries.join('&')}`;
 }
 
 function asyncRequest(url, cb) {
