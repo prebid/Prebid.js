@@ -339,13 +339,13 @@ describe('Prebid Adapter: Startio', function () {
       expect(request.imp[0].tagid).to.equal('placement-abc');
     });
 
-    it('should set request.test only when params.test is truthy', function () {
+    it('should set request.test to 1 only when params.testAdsEnabled is truthy', function () {
       let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
 
       let request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
-      expect(request.test).to.equal(0);
+      expect(request.test).to.not.equal(1);
 
-      bidRequest.params.test = true;
+      bidRequest.params.testAdsEnabled = true;
       request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
       expect(request.test).to.equal(1);
     });

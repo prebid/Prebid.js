@@ -48,7 +48,7 @@ const converter = ortbConverter({
     request.ext.prebid = request.ext.prebid || {};
     request.ext.prebid.channel = { name: 'pbjs', version: '$prebid.version$' };
 
-    if (bidParams?.test) {
+    if (bidParams?.testAdsEnabled) {
       request.test = 1;
     }
 
