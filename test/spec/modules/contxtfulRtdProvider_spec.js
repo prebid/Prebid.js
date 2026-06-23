@@ -314,7 +314,7 @@ describe('contxtfulRtdProvider', function () {
     ];
 
     theories.forEach(([adUnits, expected, description]) => {
-      it('honours "adServerTargeting" and the RX API is not called', function (done) {
+      it('honours adServerTargeting and the RX API is not called', function (done) {
         const config = buildInitConfig(VERSION, CUSTOMER);
         config.params.adServerTargeting = false;
         contxtfulSubmodule.init(config);

@@ -167,6 +167,7 @@ describe('ehealthcaresolutions adapter', function () {
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
+      spec.buildRequests(bannerRequest);
 
       expect(bannerRequest).to.deep.equal(_Request);
     });
@@ -234,6 +235,7 @@ describe('ehealthcaresolutions adapter', function () {
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
+      spec.buildRequests(nativeRequest);
 
       expect(nativeRequest).to.deep.equal(_Request);
     });

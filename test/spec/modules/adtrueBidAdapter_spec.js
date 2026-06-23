@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adtrueBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as utils from '../../../src/utils.js';
 import { config } from 'src/config.js';
 
 describe('AdTrueBidAdapter', function () {
@@ -259,7 +258,7 @@ describe('AdTrueBidAdapter', function () {
     });
     describe('Request formation', function () {
       it('buildRequests function should not modify original bidRequests object', function () {
-        const originalBidRequests = utils.deepClone(bidRequests);
+        const originalBidRequests = structuredClone(bidRequests);
 
         spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'

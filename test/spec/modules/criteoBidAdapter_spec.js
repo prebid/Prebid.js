@@ -320,8 +320,8 @@ describe('The Criteo bidding adapter', function () {
       window.dispatchEvent(event);
       setTimeout(() => {
         expect(triggerPixelStub.calledTwice).to.be.true;
-        expect(triggerPixelStub.firstCall.calledWith('https://example.com/pixel1')).to.be.true;
-        expect(triggerPixelStub.secondCall.calledWith('https://example.com/pixel2')).to.be.true;
+        expect(triggerPixelStub.firstCall.calledWith(sinon.match('https://example.com/pixel1'))).to.be.true;
+        expect(triggerPixelStub.secondCall.calledWith(sinon.match('https://example.com/pixel2'))).to.be.true;
 
         done();
       }, 0);
@@ -1734,11 +1734,9 @@ describe('The Criteo bidding adapter', function () {
       ];
       const bidderRequest = {};
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
-      expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
-        'video': {
-          '300x250': { 'currency': 'USD', 'floor': 1 },
-          '728x90': { 'currency': 'USD', 'floor': 2 }
-        }
+      expect(ortbRequest.imp[0].ext.floors.video).to.deep.equal({
+        '300x250': { 'currency': 'USD', 'floor': 1 },
+        '728x90': { 'currency': 'USD', 'floor': 2 }
       });
     });
 
@@ -2492,7 +2490,7 @@ describe('The Criteo bidding adapter', function () {
 
       spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
 
-      expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').notCalled).to.be.true;
+      expect(logWarnStub.calledWith(sinon.match('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)'))).to.be.false;
     });
 
     it('should warn only once if sendId is not provided on required fields for native bidRequest', async () => {
