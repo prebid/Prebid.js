@@ -636,8 +636,12 @@ describe('PubMatic adapter', () => {
 
           it('should log a warning if playerSize is missing', () => {
             delete videoBidderRequest.bids[0].mediaTypes.video.playerSize;
+            const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+            const { imp } = request?.data;
 
+            expect(imp).to.be.an('array');
             sinon.assert.called(utils.logWarn);
+            expect(imp[0].video).to.be.undefined;
           });
 
           it('should log a warning if plcmt is missing', () => {
