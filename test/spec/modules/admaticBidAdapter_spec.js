@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/admaticBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';
 
@@ -180,7 +181,7 @@ describe('admaticBidAdapter', () => {
         },
         'floors': {
           'video': {
-            '338x280': { 'currency': 'USD', 'floor': 1 }
+            '336x280': { 'currency': 'USD', 'floor': 1 }
           }
         },
         'id': '45e86fc7ce7fc93'
@@ -486,7 +487,7 @@ describe('admaticBidAdapter', () => {
         },
         'floors': {
           'video': {
-            '338x280': { 'currency': 'USD', 'floor': 1 }
+            '336x280': { 'currency': 'USD', 'floor': 1 }
           }
         },
         'id': '45e86fc7ce7fc93'
@@ -703,20 +704,28 @@ describe('admaticBidAdapter', () => {
 
     it('should properly build a banner request with floors', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
-      request.data.imp[0].floors = {
-        'banner': {
-          '300x250': { 'currency': 'USD', 'floor': 1 },
-          '728x90': { 'currency': 'USD', 'floor': 2 }
-        }
-      };
+      expect(request.data.imp[0].floors.banner).to.deep.equal({
+        '300x250': { 'currency': 'USD', 'floor': 1 },
+        '728x90': { 'currency': 'USD', 'floor': 2 }
+      });
     });
 
     it('should properly build a video request with several player sizes with floors', function () {
-      spec.buildRequests(validRequest, bidderRequest);
+      const [{ getFloor, ...requestWithoutFloor }] = validRequest;
+      const videoRequest = [{ ...structuredClone(requestWithoutFloor), getFloor }];
+      videoRequest[0].mediaTypes.video.playerSize = [[300, 250], [728, 90]];
+      const request = spec.buildRequests(videoRequest, bidderRequest);
+      expect(request.data.imp[0].floors.video).to.deep.equal({
+        '300x250': { 'currency': 'USD', 'floor': 1 },
+        '728x90': { 'currency': 'USD', 'floor': 1 }
+      });
     });
 
     it('should properly build a native request with floors', function () {
-      spec.buildRequests(validRequest, bidderRequest);
+      const request = spec.buildRequests(validRequest, bidderRequest);
+      expect(request.data.imp[0].floors.native).to.deep.equal({
+        '*': { 'currency': 'USD', 'floor': 1 }
+      });
     });
   });
 

@@ -3782,6 +3782,7 @@ describe('IndexexchangeAdapter', function () {
     it('should set creativeId to default value if not provided', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
       delete bidResponse.seatbid[0].bid[0].crid;
+      expect(spec.interpretResponse({ body: bidResponse }, bannerBidderRequest)[0].creativeId).to.equal('-');
     });
 
     it('should set Japanese price correctly', function () {
