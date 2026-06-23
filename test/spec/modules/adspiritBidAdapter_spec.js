@@ -73,12 +73,49 @@ describe('Adspirit Bidder Spec', function () {
     });
 
     it('should correctly capture window and document dimensions in payload', function () {
+      const bidRequest = [
+        {
+          bidId: '26c1ee0038ac11',
+          bidder: 'adspirit',
+          params: { placementId: '99', host: 'test.adspirit.de' },
+          adUnitCode: 'banner-div',
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] }
+          }
+        }
+      ];
+      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
+      const [request] = spec.buildRequests(bidRequest, mockBidderRequest);
+      const requestData = JSON.parse(request.data);
 
+      expect(request.url).to.include('&wcx=1024');
+      expect(request.url).to.include('&wcy=768');
+      expect(requestData.device.w).to.equal(1024);
+      expect(requestData.device.h).to.equal(768);
     });
 
     it('should correctly fall back to document dimensions if window dimensions are not available', function () {
       delete global.window.innerWidth;
       delete global.window.innerHeight;
+      const bidRequest = [
+        {
+          bidId: '26c1ee0038ac11',
+          bidder: 'adspirit',
+          params: { placementId: '99', host: 'test.adspirit.de' },
+          adUnitCode: 'banner-div',
+          mediaTypes: {
+            banner: { sizes: [[300, 250]] }
+          }
+        }
+      ];
+      const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
+      const [request] = spec.buildRequests(bidRequest, mockBidderRequest);
+      const requestData = JSON.parse(request.data);
+
+      expect(request.url).to.include('&wcx=800');
+      expect(request.url).to.include('&wcy=600');
+      expect(requestData.device.w).to.equal(800);
+      expect(requestData.device.h).to.equal(600);
     });
     it('should correctly add GDPR consent parameters to the request', function () {
       const bidRequest = [
