@@ -65,9 +65,7 @@ export const tripleliftAdapterSpec = {
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
-    logMessage('url: ' + tlCall);
-    logMessage('data: ' + JSON.stringify(data));
-    logMessage('bidderRequest: ' + JSON.stringify(bidderRequest));
+    logMessage('tlCall request built: ' + tlCall);
 
     return {
       method: 'POST',
@@ -78,9 +76,8 @@ export const tripleliftAdapterSpec = {
   },
 
   interpretResponse: function(serverResponse, { bidderRequest }) {
-    logMessage('serverResponse: ' + JSON.stringify(serverResponse));
-
     let bids = serverResponse.body.bids || [];
+
     return bids.map(bid => _buildResponseObject(bidderRequest, bid));
   },
 
