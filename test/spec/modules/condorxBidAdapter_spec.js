@@ -388,11 +388,15 @@ describe('CondorX Bid Adapter Tests', function () {
     it('should not mutate the original bid object', function () {
       const originalBidRequests = utils.deepClone(basicBidRequests);
 
+      adapterSpec.buildRequests(basicBidRequests);
+
       expect(basicBidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('should maintain the integrity of the native bid object', function () {
       const originalBidRequests = utils.deepClone(nativeBidData);
+
+      adapterSpec.buildRequests(nativeBidData);
 
       expect(nativeBidData).to.deep.equal(originalBidRequests);
     });
