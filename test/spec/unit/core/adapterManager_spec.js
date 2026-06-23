@@ -2485,6 +2485,8 @@ describe('adapterManager tests', function () {
       it('setting to `random` uses shuffled order of adUnits', function () {
         config.setConfig({ bidderSequence: 'random' });
 
+        makeBidRequests();
+
         sinon.assert.calledOnce(utils.shuffle);
       });
     });
