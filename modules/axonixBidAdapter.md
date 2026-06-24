@@ -1,140 +1,237 @@
 # Overview
 
 ```
-Module Name : Axonix Bidder Adapter
-Module Type : Bidder Adapter
-Maintainer  : support.axonix@emodoinc.com
+Module Name: Axonix Bidder Adapter
+Module Type: Bidder Adapter
+Maintainer: engineering@emodo.com
 ```
 
 # Description
 
-Module that connects to Axonix's exchange for bids.
+Module that connects to Axonix OpenRTB demand to fetch bids for **Banner** and **Video** inventory.
 
-# Parameters
+The adapter sends one POST request per ad unit bid to the Axonix Prebid.js v2 endpoint. Bid requests include device, site/app, consent, supply chain, first-party data (`ortb2`), and user ID signals when available.
 
-| Name          | Scope    | Description                                     | Example                                |
-| :------------ | :------- | :---------------------------------------------- | :------------------------------------- |
-| `supplyId`    | required | Supply UUID                                     | `"2c426f78-bb18-4a16-abf4-62c6cd0ee8de"` |
-| `region`      | optional | Cloud region                                    | `"us-east-1"`                            |
-| `endpoint`    | optional | Supply custom endpoint                          | `"https://open-rtb.axonix.com/custom"`   |
-| `instl`       | optional | Set to 1 if using interstitial (default: 0)     | `1`   |
+Integration requires a valid Axonix `supplyId`. Contact Axonix for account setup and regional endpoint details.
 
-# Test Parameters
+**Supported media types:** banner, video  
+**GVL ID:** 141
 
-## Banner
+# Bid Parameters
+
+| Name | Scope | Type | Description | Example |
+| ---- | ----- | ---- | ----------- | ------- |
+| `supplyId` | required | String | Axonix supply identifier | `"your-supply-id"` |
+| `region` | optional | String | Axonix regional endpoint prefix. Defaults to `us-east-1` | `"us-east-1"` |
+| `endpoint` | optional | String | Override the default bid URL | `"https://custom.example.com/bid"` |
+| `referrer` | optional | String | Page URL override for the bid request | `"https://example.com/page"` |
+| `secure` | optional | Boolean | When `true`, upgrades `http:` page URLs to `https:` | `true` |
+
+**Default bid endpoint:**
+
+```
+https://openrtb-{region}.axonix.com/supply/prebid-js/v2/prebid/{supplyId}
+```
+
+If `region` is omitted, `us-east-1` is used.
+
+# Banner Test Parameters
 
 ```javascript
-var bannerAdUnit = {
-  code: 'test-banner',
+var adUnits = [{
+  code: 'banner-ad-unit',
   mediaTypes: {
     banner: {
-      sizes: [[120, 600], [300, 250], [320, 50], [468, 60], [728, 90]]
+      sizes: [[300, 250], [728, 90]]
     }
   },
   bids: [{
     bidder: 'axonix',
     params: {
-      supplyId: 'abc',
-      region: 'def',
-      endpoint: 'url'
+      supplyId: 'your-supply-id',   // required
+      region: 'us-east-1'           // optional
     }
   }]
-};
+}];
 ```
 
-## Video
+# Video Test Parameters
+
+Video ad units must include a non-empty `mimes` array.
 
 ```javascript
-var videoAdUnit = {
-  code: 'test-video',
+var adUnits = [{
+  code: 'video-ad-unit',
   mediaTypes: {
     video: {
-      protocols: [1, 2, 3, 4, 5, 6, 7, 8]
+      context: 'instream',                    // recommended
+      playerSize: [640, 480],                 // recommended
+      mimes: ['video/mp4', 'video/webm'],     // required
+      protocols: [2, 3, 5, 6],                // optional
+      playbackmethod: [1, 2],                 // optional
+      placement: 1,                           // optional
+      minduration: 5,                         // optional
+      maxduration: 30                         // optional
     }
   },
   bids: [{
     bidder: 'axonix',
     params: {
-      supplyId: 'abc',
-      region: 'def',
-      endpoint: 'url'
+      supplyId: 'your-supply-id'              // required
     }
   }]
-};
+}];
 ```
 
-## Native
+# Multi-format Test Parameters
 
 ```javascript
-var nativeAdUnit = {
-  code: 'test-native',
-  mediaTypes: {
-    native: {
-
-    }
-  },
-  bids: [{
-    bidder: 'axonix',
-    params: {
-      supplyId: 'abc',
-      region: 'def',
-      endpoint: 'url'
-    }
-  }]
-};
-```
-
-## Multiformat
-
-```javascript
-var adUnits = [
-{
-  code: 'test-banner',
+var adUnits = [{
+  code: 'multi-format-ad-unit',
   mediaTypes: {
     banner: {
-      sizes: [[120, 600], [300, 250], [320, 50], [468, 60], [728, 90]]
-    }
-  },
-  bids: [{
-    bidder: 'axonix',
-    params: {
-      supplyId: 'abc',
-      region: 'def',
-      endpoint: 'url'
-    }
-  }]
-},
-{
-  code: 'test-video',
-  mediaTypes: {
+      sizes: [[300, 250]]
+    },
     video: {
-      protocols: [1, 2, 3, 4, 5, 6, 7, 8]
+      context: 'outstream',
+      playerSize: [640, 480],
+      mimes: ['video/mp4']                    // required when video is present
     }
   },
   bids: [{
     bidder: 'axonix',
     params: {
-      supplyId: 'abc',
-      region: 'def',
-      endpoint: 'url'
+      supplyId: 'your-supply-id'
     }
   }]
-},
-{
-  code: 'test-native',
-  mediaTypes: {
-    native: {
+}];
+```
 
+# Floor Pricing
+
+The adapter reads floors from the Prebid.js [Price Floors](https://docs.prebid.org/dev-docs/modules/floors.html) module via `bidRequest.getFloor()`.
+
+```javascript
+pbjs.setConfig({
+  floors: {
+    data: {
+      currency: 'USD',
+      schema: {
+        fields: ['mediaType', 'size']
+      },
+      values: {
+        'banner|300x250': 1.50,
+        'video|640x480': 3.50,
+        '*|*': 1.00
+      }
     }
-  },
-  bids: [{
-    bidder: 'axonix',
-    params: {
-      supplyId: 'abc',
-      region: 'def',
-      endpoint: 'url'
+  }
+});
+```
+
+# First-Party Data (ortb2)
+
+Site, app, device, user, and regulatory data from global `ortb2` configuration are forwarded with each request.
+
+```javascript
+pbjs.setConfig({
+  ortb2: {
+    site: {
+      name: 'Publisher Site',
+      domain: 'publisher.com',
+      cat: ['IAB1-1']
+    },
+    device: {
+      ifa: 'advertising-id',
+      make: 'Apple',
+      model: 'iPhone'
+    },
+    user: {
+      ext: {
+        data: [{
+          name: 'publisher_segments',
+          segment: [{ id: 'sports_fan' }]
+        }]
+      }
     }
-  }]
-}
-];
+  }
+});
+```
+
+# Privacy and Compliance
+
+GDPR, US Privacy (CCPA), and GPP consent objects are included automatically when configured through Prebid consent management.
+
+```javascript
+pbjs.setConfig({
+  consentManagement: {
+    gdpr: {
+      cmpApi: 'iab',
+      timeout: 10000
+    },
+    usp: {
+      cmpApi: 'iab',
+      timeout: 1000
+    },
+    gpp: {
+      cmpApi: 'iab',
+      timeout: 10000
+    }
+  }
+});
+```
+
+# Supply Chain (schain)
+
+Supply chain objects from `ortb2.source` or bidder-specific schain configuration are forwarded with bid requests.
+
+```javascript
+pbjs.setBidderConfig({
+  bidders: ['axonix'],
+  config: {
+    schain: {
+      validation: 'strict',
+      config: {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'publisher.com',
+          sid: 'pub-123',
+          hp: 1
+        }]
+      }
+    }
+  }
+});
+```
+
+# App Inventory
+
+For in-app traffic, set the global Prebid `app` object or provide `ortb2.app`.
+
+```javascript
+pbjs.setConfig({
+  app: {
+    bundle: 'com.publisher.app',
+    storeurl: 'https://play.google.com/store/apps/details?id=com.publisher.app',
+    domain: 'publisher.com'
+  }
+});
+```
+
+# User ID Modules
+
+User ID modules are supported through Prebid's standard user ID pipeline. Encoded IDs are forwarded as `userIdAsEids` in the bid request payload.
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    userIds: [{
+      name: 'unifiedId',
+      params: {
+        partner: 'abc'
+      }
+    }]
+  }
+});
 ```
