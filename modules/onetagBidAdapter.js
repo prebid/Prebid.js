@@ -84,7 +84,7 @@ export function isValid(type, bid) {
 }
 
 const isValidEventTracker = function (et) {
-  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
+  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length <= 0) {
     return false;
   }
   return true;

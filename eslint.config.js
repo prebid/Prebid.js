@@ -127,6 +127,7 @@ module.exports = [
       'import/no-named-as-default': 'warn',
       'import/no-named-as-default-member': 'warn',
       'import/no-duplicates': 'warn',
+      'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',
         {
