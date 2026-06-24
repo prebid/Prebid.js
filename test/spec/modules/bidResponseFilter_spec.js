@@ -254,21 +254,24 @@ describe('bidResponseFilter', () => {
       reject = sinon.stub();
       call = sinon.stub();
     });
+
+    it(`should reject the bid when its attr is banned`, () => {
+      addBidResponseHook(call, 'adcode', makeBid(['BANNED_ATTR', 'OTHER_ATTR']), reject, mockAuctionIndex);
+      sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+      sinon.assert.notCalled(call);
+    });
+
     Object.entries({
-      'banned': ['BANNED_ATTR', 'OTHER_ATTR'],
+      'missing': null,
+      'empty': [],
       'invalid': 'attr',
-      'unknown': []
     }).forEach(([t, attr]) => {
-      it(`should reject the bid when its attr is ${t}`, () => {
+      it(`should reject when attr is ${t}, and blockUnknown is set`, () => {
+        config.setConfig({ [MODULE_NAME]: { attr: { enforce: true, blockUnknown: true } } });
         addBidResponseHook(call, 'adcode', makeBid(attr), reject, mockAuctionIndex);
         sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
         sinon.assert.notCalled(call);
       });
-    });
-    Object.entries({
-      'missing': null,
-      'empty': []
-    }).forEach(([t, attr]) => {
       it(`it should not reject when its attr is ${t}, but blockUnknown is false`, () => {
         config.setConfig({ [MODULE_NAME]: { attr: { enforce: true, blockUnknown: false } } });
         addBidResponseHook(call, 'adcode', makeBid(attr), reject, mockAuctionIndex);

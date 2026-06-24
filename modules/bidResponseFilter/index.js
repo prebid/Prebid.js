@@ -42,7 +42,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
 
   const catConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {}) };
   const advConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {}) };
-  const attrConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.attr || {}) };
+  const attrConfig = { enforce: true, blockUnknown: false, ...(moduleConfig?.attr || {}) };
   const mediaTypesConfig = {
     enforce: true,
     blockUnknown: true,
