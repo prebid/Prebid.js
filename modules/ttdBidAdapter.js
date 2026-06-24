@@ -21,6 +21,7 @@ const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
 const TTL = 360;
+const DEFAULT_GZIP_ENABLED = false;
 
 const MEDIA_TYPE = {
   BANNER: 1,
@@ -36,6 +37,28 @@ function getExt(firstPartyData) {
   return {
     ttdprebid: ext
   };
+}
+
+function getGzipSetting() {
+  try {
+    const gzipSetting = utils.deepAccess(config.getBidderConfig(), `${BIDDER_CODE}.gzipEnabled`);
+
+    if (gzipSetting !== undefined) {
+      const gzipValue = String(gzipSetting).toLowerCase().trim();
+      if (gzipValue === 'true' || gzipValue === 'false') {
+        const parsedValue = gzipValue === 'true';
+        utils.logInfo('TTD: Using bidder-specific gzipEnabled setting:', parsedValue);
+        return parsedValue;
+      }
+
+      utils.logWarn('TTD: Invalid gzipEnabled value in bidder config:', gzipSetting);
+    }
+  } catch (e) {
+    utils.logWarn('TTD: Error accessing bidder config:', e);
+  }
+
+  utils.logInfo('TTD: Using default gzipEnabled setting:', DEFAULT_GZIP_ENABLED);
+  return DEFAULT_GZIP_ENABLED;
 }
 
 function getRegs(bidderRequest) {
@@ -428,6 +451,7 @@ export const spec = {
       data: topLevel,
       options: {
         withCredentials: true,
+        endpointCompression: getGzipSetting()
       }
     };
 

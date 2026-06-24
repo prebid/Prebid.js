@@ -756,6 +756,91 @@ describe('ttdBidAdapter', function () {
     });
   });
 
+  describe('buildRequests-endpointCompression', function () {
+    const baseBannerBidRequests = [{
+      'bidder': 'ttd',
+      'params': {
+        'supplySourceId': 'supplier',
+        'publisherId': '13144370',
+        'placementId': '1gaa015'
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250]]
+        }
+      },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+        }
+      },
+      'sizes': [[300, 250]],
+      'bidId': '243310435309b5',
+      'bidderRequestId': '18084284054531',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'src': 'client',
+      'bidRequestsCount': 1
+    }];
+
+    const baseBidderRequest = {
+      'bidderCode': 'ttd',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
+      'bidderRequestId': '18084284054531',
+      'auctionStart': 1540945362095,
+      'timeout': 3000,
+      'refererInfo': {
+        'page': 'https://www.example.com/test',
+        'ref': 'https://referer.com'
+      },
+    };
+
+    let sandbox;
+    let bidderConfigStub;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      bidderConfigStub = sandbox.stub(config, 'getBidderConfig');
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should default endpointCompression to false when no bidder config is set', function () {
+      bidderConfigStub.returns({});
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should interpret correctly gzip configuration given as a boolean', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: false } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should interpret correctly gzip configuration given as a string', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: 'false' } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should enable endpointCompression when gzipEnabled is true', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: true } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should default to false when it receives an invalid configuration', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: 'randomString' } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+  });
+
   describe('buildRequests-banner-multiple', function () {
     const baseBannerMultipleBidRequests = [{
       'bidder': 'ttd',
