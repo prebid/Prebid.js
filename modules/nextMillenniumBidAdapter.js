@@ -617,7 +617,7 @@ function getSua() {
   return {
     browsers: brands,
     mobile: Number(!!mobile),
-    platform: (platform && { brand: platform }) || undefined,
+    platform: { brand: platform },
   };
 }
 

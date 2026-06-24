@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
 const { checkDeclarationFilename } = require('./filename.js');
+const noRedundantValidatedCondition = require('./noRedundantValidatedCondition.js');
 const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
 
 module.exports = {
@@ -19,6 +20,7 @@ module.exports = {
         };
       }
     },
+    'no-redundant-validated-condition': noRedundantValidatedCondition,
     'no-extra-function-args': noExtraFunctionArgs,
     'validate-imports': {
       meta: {
