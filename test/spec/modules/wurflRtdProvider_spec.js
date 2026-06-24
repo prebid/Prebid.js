@@ -2355,8 +2355,6 @@ describe('wurflRtdProvider', function () {
           getHighestCpmBids: () => []
         });
 
-        // Import the WurflLCEDevice to stub it
-
         const callback = () => {
           const device = reqBidsConfigObj.ortb2Fragments.global.device;
 
