@@ -16,15 +16,17 @@ const matchResponse = function (requestBody) {
   const reqResMap = generateFixtures(fixturesPath);
   const requestResponsePairs = Object.keys(reqResMap).map(testName => reqResMap[testName]);
 
-  // delete 'uuid' property
-  requestBody.tags.forEach(body => {
-    // store the 'uuid' before deleting it.
-    actualUuids.push(body.uuid);
+  // delete 'uuid' property (only when tags are present)
+  if (requestBody.tags) {
+    requestBody.tags.forEach(body => {
+      // store the 'uuid' before deleting it.
+      actualUuids.push(body.uuid);
 
-    // delete the 'uuid'
-    delete body.uuid;
-    delete body.tid;
-  });
+      // delete the 'uuid'
+      delete body.uuid;
+      delete body.tid;
+    });
+  }
 
   ['sdk', 'referrer_detection', 'gdpr_consent'].forEach(prop => {
     if (requestBody && requestBody[prop]) {
@@ -36,13 +38,23 @@ const matchResponse = function (requestBody) {
   requestResponsePairs
     .forEach(reqRes => {
       if (reqRes.request.httpRequest) {
-        reqRes.request.httpRequest.body.tags.forEach(body => {
-          if (body.uuid) delete body.uuid;
-        });
+        const fixtureTags = reqRes.request.httpRequest.body.tags;
+        if (fixtureTags) {
+          fixtureTags.forEach(body => {
+            if (body.uuid) delete body.uuid;
+          });
+        }
       }
     });
 
-  const match = requestResponsePairs.filter(reqRes => reqRes.request.httpRequest && deepEqual(reqRes.request.httpRequest.body.tags, requestBody.tags));
+  const match = requestResponsePairs.filter(reqRes => {
+    if (!reqRes.request.httpRequest) return false;
+    const fixtureBody = reqRes.request.httpRequest.body;
+    if (requestBody.tags) {
+      return deepEqual(fixtureBody.tags, requestBody.tags);
+    }
+    return deepEqual(fixtureBody, requestBody);
+  });
 
   try {
     if (match.length === 0) {
@@ -65,11 +77,13 @@ const matchResponse = function (requestBody) {
   //   console.log('value found for responseBody.tag[', index, ']:ads', tag.ads);
   // });
 
-  // copy the actual uuids to the responseBody
+  // copy the actual uuids back to the responseBody (only when tags are present)
   // TODO:: what if responseBody is 'undefined'
-  responseBody.tags.forEach(body => {
-    body.uuid = actualUuids.shift();
-  });
+  if (responseBody.tags) {
+    responseBody.tags.forEach(body => {
+      body.uuid = actualUuids.shift();
+    });
+  }
 
   return responseBody;
 };
