@@ -113,6 +113,7 @@ describe('Reconciliation Real time data submodule', function () {
         const iframe1Win = mockFrameWin(topWin, null); // break chain
         const iframe2Win = mockFrameWin(topWin, iframe1Win);
 
+        expect(getTopIFrameWin(iframe1Win, topWin)).to.be.null;
         expect(getTopIFrameWin(iframe2Win, topWin)).to.be.null;
       });
 
