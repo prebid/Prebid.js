@@ -39,9 +39,13 @@ function getExt(firstPartyData) {
   };
 }
 
-function getGzipSetting() {
+function getGzipSetting(bidderCode) {
   try {
-    const gzipSetting = utils.deepAccess(config.getBidderConfig(), `${BIDDER_CODE}.gzipEnabled`);
+    const bidderConfig = config.getBidderConfig();
+    // Honor config set against the active bidder code (e.g. the `thetradedesk`
+    // alias), falling back to the canonical `ttd` code.
+    const gzipSetting = utils.deepAccess(bidderConfig, `${bidderCode}.gzipEnabled`) ??
+      utils.deepAccess(bidderConfig, `${BIDDER_CODE}.gzipEnabled`);
 
     if (gzipSetting !== undefined) {
       const gzipValue = String(gzipSetting).toLowerCase().trim();
@@ -451,7 +455,7 @@ export const spec = {
       data: topLevel,
       options: {
         withCredentials: true,
-        endpointCompression: getGzipSetting()
+        endpointCompression: getGzipSetting(bidderRequest.bidderCode)
       }
     };
 

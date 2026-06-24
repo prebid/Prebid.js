@@ -839,6 +839,22 @@ describe('ttdBidAdapter', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
       expect(request.options.endpointCompression).to.be.false;
     });
+
+    it('should honor config set against the active alias bidder code', function () {
+      bidderConfigStub.returns({ thetradedesk: { gzipEnabled: true } });
+      const aliasBidRequests = baseBannerBidRequests.map(bid => ({ ...bid, bidder: 'thetradedesk' }));
+      const aliasBidderRequest = { ...baseBidderRequest, bidderCode: 'thetradedesk' };
+      const request = testBuildRequests(aliasBidRequests, aliasBidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should fall back to the canonical ttd config when on an alias without its own config', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: true } });
+      const aliasBidRequests = baseBannerBidRequests.map(bid => ({ ...bid, bidder: 'thetradedesk' }));
+      const aliasBidderRequest = { ...baseBidderRequest, bidderCode: 'thetradedesk' };
+      const request = testBuildRequests(aliasBidRequests, aliasBidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
   });
 
   describe('buildRequests-banner-multiple', function () {
