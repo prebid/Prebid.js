@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adspiritBidAdapter.js';
-import 'src/utils.js';
+import { internal, resetWinDimensions } from 'src/utils.js';
 
 describe('Adspirit Bidder Spec', function () {
   // isBidRequestValid ---case
@@ -48,28 +48,42 @@ describe('Adspirit Bidder Spec', function () {
   });
   // Test cases for buildRequests
   describe('Adspirit Bidder Spec', function () {
-    let originalInnerWidth;
-    let originalInnerHeight;
-    let originalClientWidth;
-    let originalClientHeight;
+    let sandbox;
+
+    function mockWindow({ innerWidth, innerHeight, clientWidth, clientHeight }) {
+      return {
+        innerWidth,
+        innerHeight,
+        screen: {
+          width: 1920,
+          height: 1080
+        },
+        document: {
+          documentElement: {
+            clientWidth,
+            clientHeight
+          },
+          body: {}
+        }
+      };
+    }
 
     beforeEach(() => {
-      originalInnerWidth = window.innerWidth;
-      originalInnerHeight = window.innerHeight;
-      originalClientWidth = document.documentElement.clientWidth;
-      originalClientHeight = document.documentElement.clientHeight;
-
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
-      Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 768 });
-      Object.defineProperty(document.documentElement, 'clientWidth', { writable: true, configurable: true, value: 800 });
-      Object.defineProperty(document.documentElement, 'clientHeight', { writable: true, configurable: true, value: 600 });
+      sandbox = sinon.createSandbox();
+      const win = mockWindow({
+        innerWidth: 1024,
+        innerHeight: 768,
+        clientWidth: 800,
+        clientHeight: 600
+      });
+      sandbox.stub(internal, 'getWindowTop').returns(win);
+      sandbox.stub(internal, 'getWindowSelf').returns(win);
+      resetWinDimensions();
     });
 
     afterEach(() => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
-      Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: originalInnerHeight });
-      Object.defineProperty(document.documentElement, 'clientWidth', { writable: true, configurable: true, value: originalClientWidth });
-      Object.defineProperty(document.documentElement, 'clientHeight', { writable: true, configurable: true, value: originalClientHeight });
+      sandbox.restore();
+      resetWinDimensions();
     });
 
     it('should correctly capture window and document dimensions in payload', function () {
@@ -95,8 +109,13 @@ describe('Adspirit Bidder Spec', function () {
     });
 
     it('should correctly fall back to document dimensions if window dimensions are not available', function () {
-      delete global.window.innerWidth;
-      delete global.window.innerHeight;
+      const win = mockWindow({
+        clientWidth: 800,
+        clientHeight: 600
+      });
+      internal.getWindowTop.returns(win);
+      internal.getWindowSelf.returns(win);
+      resetWinDimensions();
       const bidRequest = [
         {
           bidId: '26c1ee0038ac11',
