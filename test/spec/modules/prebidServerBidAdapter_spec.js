@@ -2971,7 +2971,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(await addFpdEnrichmentsToS2SRequest({
         ...s2sBidRequest,
         ortb2Fragments
-      }, bidRequests, cfg), bidRequests, addBidResponse, done, ajax);
+      }, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       // eslint-disable-next-line no-console
       console.log(parsedRequestBody);

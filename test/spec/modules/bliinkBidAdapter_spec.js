@@ -579,7 +579,7 @@ const testsBuildBid = [
   {
     title: 'input data respect the output model for video',
     args: {
-      fn: buildBid(getConfigVideoBid('video'), getConfigCreativeVideo()),
+      fn: buildBid(getConfigVideoBid(), getConfigCreativeVideo()),
     },
     want: {
       requestId: getConfigBid('video').bidId,
@@ -602,7 +602,7 @@ const testsBuildBid = [
     args: {
       fn: buildBid(
         {
-          ...getConfigVideoBid('video'),
+          ...getConfigVideoBid(),
           creative: {
             video: {
               content: '<VAST></VAST>',
