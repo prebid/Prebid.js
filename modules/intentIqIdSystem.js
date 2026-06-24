@@ -174,7 +174,7 @@ export function initializeGlobalIIQ(partnerId) {
 export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
   const browser = detectBrowser();
 
-  let url = iiqPixelServerAddress(configParams, cmpData.gdprString);
+  let url = iiqPixelServerAddress(configParams);
   url += '/profiles_engine/ProfilesEngineServlet?at=20&mi=10&secure=1';
   url += '&dpi=' + configParams.partner;
   url = appendFirstPartyData(url, firstPartyData, partnerData);
