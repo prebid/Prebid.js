@@ -57,7 +57,19 @@ describe('UniquestAdapter', function () {
       expect(requests[0].data).to.equal('bid=259d7a594535852&sid=sid_0001&widths=300%2C300%2C320&heights=300%2C250%2C100&timeout=1500&');
     });
 
-    it('includes im_uid in query string when imuid EID is present', function () {
+    it('includes im_uid in query string when imuid EID is present via userIdAsEids', function () {
+      const bidsWithEid = [{
+        ...bids[0],
+        userIdAsEids: [{
+          source: 'intimatemerger.com',
+          uids: [{ id: 'test_imuid_123' }],
+        }],
+      }];
+      const requests = spec.buildRequests(bidsWithEid, bidderRequest);
+      expect(requests[0].data).to.include('im_uid=test_imuid_123');
+    });
+
+    it('includes im_uid in query string when imuid EID is present via ortb2 fallback', function () {
       const bidsWithEid = [{
         ...bids[0],
         ortb2: {

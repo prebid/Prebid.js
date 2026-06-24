@@ -1,3 +1,11 @@
+import { deepAccess } from '../../src/utils.js';
+
+export function getImuid(request) {
+  const eids = request.userIdAsEids || deepAccess(request, 'ortb2.user.ext.eids') || [];
+  const imuidEid = eids.find(eid => eid.source === 'intimatemerger.com');
+  return deepAccess(imuidEid, 'uids.0.id');
+}
+
 export function interpretResponse (serverResponse) {
   const response = serverResponse.body;
 

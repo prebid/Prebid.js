@@ -1,8 +1,8 @@
-import { getBidIdParameter, deepAccess } from '../src/utils.js';
+import { getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import { interpretResponse } from '../libraries/uniquestUtils/uniquestUtils.js';
+import { interpretResponse, getImuid } from '../libraries/uniquestUtils/uniquestUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -46,9 +46,7 @@ export const spec = {
       const widths = request.sizes.map(size => size[0]).join(',');
       const heights = request.sizes.map(size => size[1]).join(',');
       const timeout = bidderRequest.timeout;
-      const eids = deepAccess(request, 'ortb2.user.ext.eids') || [];
-      const imuidEid = eids.find(eid => eid.source === 'intimatemerger.com');
-      const imuid = deepAccess(imuidEid, 'uids.0.id');
+      const imuid = getImuid(request);
 
       queryString = tryAppendQueryString(queryString, 'bid', bid);
       queryString = tryAppendQueryString(queryString, 'sid', sid);
