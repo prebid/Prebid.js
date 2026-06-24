@@ -1293,6 +1293,7 @@ describe('Utils', function () {
             if (typeof window.CompressionStream === 'undefined') {
               cachedResult = false;
             } else {
+              (() => new window.CompressionStream('gzip'))();
               cachedResult = true;
             }
           } catch (error) {
