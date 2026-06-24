@@ -215,6 +215,52 @@ describe('billow_rtb25BidAdapter', function () {
       expect(out.data.regs.ext.us_privacy).to.equal('1YNN');
       expect(out.data.user.ext.consent).to.equal('CONSENTSTRING');
     });
+
+    it('should set OpenRTB user.buyeruid from pubcid.org eid', function () {
+      const ortb2 = {
+        user: {
+          ext: {
+            eids: [
+              {
+                source: 'pubcid.org',
+                uids: [{ id: 'pubcid-buyer-123', atype: 1 }],
+              },
+            ],
+          },
+        },
+      };
+
+      const out = spec.buildRequests([makeBannerBid()], makeBidderRequest(ortb2));
+      expect(out.data.user.buyeruid).to.equal('pubcid-buyer-123');
+    });
+
+    it('should set OpenRTB user.buyeruid from sharedid.org eid', function () {
+      const ortb2 = {
+        user: {
+          ext: {
+            eids: [
+              {
+                source: 'sharedid.org',
+                uids: [{ id: 'sharedid-buyer-456', atype: 1 }],
+              },
+            ],
+          },
+        },
+      };
+
+      const out = spec.buildRequests([makeBannerBid()], makeBidderRequest(ortb2));
+      expect(out.data.user.buyeruid).to.equal('sharedid-buyer-456');
+    });
+
+    it('should set OpenRTB user.buyeruid from crumbs.pubcid when EIDs are missing', function () {
+      const legacyBid = makeBannerBid({
+        crumbs: { pubcid: 'legacy-pubcid-789' },
+      });
+
+      // No ortb2.user.ext.eids, so the adapter must rely on crumbs.pubcid fallback
+      const out = spec.buildRequests([legacyBid], makeBidderRequest());
+      expect(out.data.user.buyeruid).to.equal('legacy-pubcid-789');
+    });
   });
 
   describe('interpretResponse', function () {
