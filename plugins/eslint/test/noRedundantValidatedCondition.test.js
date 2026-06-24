@@ -35,6 +35,15 @@ ruleTester.run('no-redundant-validated-condition', rule, {
           if (foo && bar) bar();
         }
       }
+    `,
+    `
+      function example(foo, bar, maybeNull, cond) {
+        if (!foo) return;
+        if (cond) {
+          foo = maybeNull();
+        }
+        if (foo && bar) bar();
+      }
     `
   ],
   invalid: [
