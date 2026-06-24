@@ -5,41 +5,6 @@ const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
 
 const COMPARISON_OPERATORS = new Set(['<', '<=', '>', '>=']);
 
-function isFunctionLike(node) {
-  return node && (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression');
-}
-
-function getVariable(context, node) {
-  let scope = context.sourceCode.getScope(node);
-  while (scope) {
-    const variable = scope.set.get(node.name);
-    if (variable) {
-      return variable;
-    }
-    scope = scope.upper;
-  }
-}
-
-function isUndefinedIdentifier(node) {
-  return node?.type === 'Identifier' && node.name === 'undefined';
-}
-
-function isImplicitTemplateConversionReference(context, node) {
-  if (node.type !== 'Identifier') {
-    return false;
-  }
-  if (isUndefinedIdentifier(node)) {
-    return true;
-  }
-  const variable = getVariable(context, node);
-  return variable?.defs.some(def => {
-    if (def.type === 'FunctionName') {
-      return true;
-    }
-    return def.node?.type === 'VariableDeclarator' && (!def.node.init || isFunctionLike(def.node.init) || isUndefinedIdentifier(def.node.init));
-  });
-}
-
 module.exports = {
   rules: {
     'declaration-filename': {
@@ -59,7 +24,7 @@ module.exports = {
     'no-implicit-operand-conversion': {
       meta: {
         docs: {
-          description: 'disallows operands that are implicitly converted before comparisons or string interpolation'
+          description: 'disallows operands that are implicitly converted before comparisons'
         },
         schema: []
       },
@@ -81,16 +46,6 @@ module.exports = {
                 message: 'Do not compare a negated value; compare the original operand explicitly instead.'
               });
             }
-          },
-          TemplateLiteral(node) {
-            node.expressions.forEach(expression => {
-              if (isImplicitTemplateConversionReference(context, expression)) {
-                context.report({
-                  node: expression,
-                  message: 'Avoid interpolating values that require implicit string conversion.'
-                });
-              }
-            });
           }
         };
       }
