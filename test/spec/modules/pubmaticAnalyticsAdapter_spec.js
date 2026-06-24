@@ -1603,7 +1603,7 @@ describe('pubmatic analytics adapter', function () {
       // Verify display manager
       expect(data.rd.dm).to.equal(DISPLAY_MANAGER);
       // Verify display manager version using global Prebid version
-      expect(data.rd.dmv).to.equal('$prebid.version$' || '-1');
+      expect(data.rd.dmv).to.equal('$prebid.version$');
     });
   });
 });

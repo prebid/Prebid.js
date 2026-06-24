@@ -114,6 +114,8 @@ module.exports = [
       '@stylistic/comma-dangle': 'off',
       '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
+      'no-constant-binary-expression': 'error',
+      'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
       'prebid/no-extra-function-args': 'error',
       'space-before-function-paren': 'off',
