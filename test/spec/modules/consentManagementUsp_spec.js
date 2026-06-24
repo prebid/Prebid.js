@@ -348,7 +348,7 @@ describe('consentManagement', function () {
                   success: true
                 }
               };
-              event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
+              event.source.postMessage(response, '*');
               replySent.resolve();
             }
           }

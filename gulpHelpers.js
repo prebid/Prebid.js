@@ -1,9 +1,8 @@
-// this will have all of a copy of the normal fs methods as well
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
 const { parseArgs } = require('node:util');
 const MANIFEST = 'package.json';
-const through = require('through2');
+const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
@@ -154,7 +153,7 @@ module.exports = {
     }, internalModules));
   }),
   getMetadataEntry(moduleName) {
-    if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
+    if (fs.existsSync(`./metadata/modules/${moduleName}.json`)) {
       return `${moduleName}.metadata`;
     } else {
       return null;
@@ -199,10 +198,13 @@ module.exports = {
 
   nameModules: function(externalModules) {
     var modules = this.getModules(externalModules);
-    return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid';
-      this.push(file);
-      done();
+    return new Transform({
+      objectMode: true,
+      transform(file, enc, done) {
+        file.named = modules[file.path] ? modules[file.path] : 'prebid';
+        this.push(file);
+        done();
+      }
     })
   },
 

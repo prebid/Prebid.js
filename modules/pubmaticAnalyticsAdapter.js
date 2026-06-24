@@ -270,7 +270,7 @@ function getRootLevelDetails(auctionCache, auctionId) {
     tgid: getTgId(),
     s2sls: s2sBidders,
     dm: DISPLAY_MANAGER,
-    dmv: '$prebid.version$' || '-1'
+    dmv: '$prebid.version$'
   };
 }
 

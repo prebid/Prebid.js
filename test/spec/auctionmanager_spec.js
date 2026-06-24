@@ -1413,8 +1413,9 @@ describe('auctionmanager.js', function () {
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy, auctionDone, bidsBackCallback;
 
-      function respondToRequest(requestIndex) {
-        server.requests[requestIndex].respond(200, {}, 'response body');
+      function respondToRequest(discriminator) {
+        const request = typeof discriminator === 'function' ? server.requests.find(discriminator) : server.requests[discriminator];
+        request.respond(200, {}, 'response body');
       }
 
       function runAuction() {
@@ -1599,7 +1600,7 @@ describe('auctionmanager.js', function () {
             BIDDER_CODE1,
           ]);
         });
-        respondToRequest(1);
+        respondToRequest(request => request.url.includes('ib.adnxs.com/openrtb2/prebid'));
         return pm;
       });
 
