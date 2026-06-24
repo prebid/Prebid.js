@@ -161,6 +161,7 @@ describe('adlane Module', () => {
           })
       };
 
+      sandbox.stub(utils, 'cleanObj').callsFake((o) => o);
       const logInfoStub = sandbox.stub(utils, 'logInfo');
       const result = getAgeVerification(win, storage);
 
@@ -211,6 +212,7 @@ describe('adlane Module', () => {
         getDataFromLocalStorage: () => JSON.stringify({ status: 'accepted' })
       };
       sandbox.stub(storageManager, 'getStorageManager').returns(storage);
+      sandbox.stub(utils, 'getWindowTop').returns({});
 
       expect(adlaneSubmodule.init()).to.be.true;
     });
@@ -221,6 +223,7 @@ describe('adlane Module', () => {
         getDataFromLocalStorage: () => null
       };
       sandbox.stub(storageManager, 'getStorageManager').returns(storage);
+      sandbox.stub(utils, 'getWindowTop').returns({});
       const logStub = sandbox.stub(utils, 'logWarn');
 
       expect(adlaneSubmodule.init()).to.be.false;
@@ -235,6 +238,7 @@ describe('adlane Module', () => {
           getAgeVerification: () => ageVerification
         }
       });
+      sandbox.stub(utils, 'cleanObj').callsFake((o) => o);
       const setStub = sandbox.stub(utils, 'mergeDeep');
       const reqBidsConfigObj = { ortb2Fragments: { global: {} } };
 

@@ -1227,10 +1227,6 @@ describe('smaatoBidAdapterTest', () => {
       });
     });
 
-    describe('ad pod', () => {
-
-    });
-
     it('uses correct TTL when expire header exists', () => {
       const clock = sinon.useFakeTimers();
       clock.tick(2000);
