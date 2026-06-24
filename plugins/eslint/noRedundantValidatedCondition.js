@@ -1,5 +1,4 @@
 const SCOPE_NODES = new Set([
-  'BlockStatement',
   'CatchClause',
   'FunctionDeclaration',
   'FunctionExpression',
@@ -56,22 +55,49 @@ function collectPatternIdentifiers(node, names) {
   }
 }
 
-function collectInvalidatedIdentifiers(node, names = new Set()) {
+function collectBlockScopedIdentifiers(statements) {
+  const names = new Set();
+  statements.forEach((statement) => {
+    if (statement.type === 'VariableDeclaration' && statement.kind !== 'var') {
+      statement.declarations.forEach(declarator => collectPatternIdentifiers(declarator.id, names));
+    } else if (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') {
+      if (statement.id) names.add(statement.id.name);
+    }
+  });
+  return names;
+}
+
+function collectInvalidatedIdentifiers(node, names = new Set(), shadowed = new Set()) {
   node = unwrap(node);
   if (!node || typeof node.type !== 'string' || SCOPE_NODES.has(node.type)) return names;
 
+  if (node.type === 'BlockStatement') {
+    const blockShadowed = new Set([...shadowed, ...collectBlockScopedIdentifiers(node.body)]);
+    node.body.forEach(statement => collectInvalidatedIdentifiers(statement, names, blockShadowed));
+    return names;
+  }
+
   if (node.type === 'AssignmentExpression') {
-    collectPatternIdentifiers(node.left, names);
+    const assigned = new Set();
+    collectPatternIdentifiers(node.left, assigned);
+    assigned.forEach((name) => {
+      if (!shadowed.has(name)) names.add(name);
+    });
   } else if (node.type === 'UpdateExpression') {
-    collectPatternIdentifiers(node.argument, names);
+    const assigned = new Set();
+    collectPatternIdentifiers(node.argument, assigned);
+    assigned.forEach((name) => {
+      if (!shadowed.has(name)) names.add(name);
+    });
   } else if (node.type === 'VariableDeclarator') {
-    collectPatternIdentifiers(node.id, names);
+    if (node.init) collectInvalidatedIdentifiers(node.init, names, shadowed);
+    return names;
   }
 
   for (const key of collectInvalidatedIdentifiers.visitorKeys[node.type] || []) {
     const child = node[key];
-    if (Array.isArray(child)) child.forEach(child => collectInvalidatedIdentifiers(child, names));
-    else collectInvalidatedIdentifiers(child, names);
+    if (Array.isArray(child)) child.forEach(child => collectInvalidatedIdentifiers(child, names, shadowed));
+    else collectInvalidatedIdentifiers(child, names, shadowed);
   }
   return names;
 }
@@ -88,10 +114,15 @@ module.exports = {
     const sourceCode = context.sourceCode || context.getSourceCode();
     collectInvalidatedIdentifiers.visitorKeys = sourceCode.visitorKeys;
 
-    function inspect(node, knownTruthy) {
+    function inspect(node, knownTruthy, shadowed = new Set()) {
       node = unwrap(node);
       if (!node || typeof node.type !== 'string' || SCOPE_NODES.has(node.type)) return;
-      if (node.type === 'LogicalExpression' && node.left.type === 'Identifier' && knownTruthy.has(node.left.name)) {
+      if (node.type === 'BlockStatement') {
+        const blockShadowed = new Set([...shadowed, ...collectBlockScopedIdentifiers(node.body)]);
+        node.body.forEach(statement => inspect(statement, knownTruthy, blockShadowed));
+        return;
+      }
+      if (node.type === 'LogicalExpression' && node.left.type === 'Identifier' && knownTruthy.has(node.left.name) && !shadowed.has(node.left.name)) {
         context.report({
           node: node.left,
           message: `Redundant conditional: '${node.left.name}' is already known to be truthy.`
@@ -99,8 +130,8 @@ module.exports = {
       }
       for (const key of sourceCode.visitorKeys[node.type] || []) {
         const child = node[key];
-        if (Array.isArray(child)) child.forEach(child => inspect(child, knownTruthy));
-        else inspect(child, knownTruthy);
+        if (Array.isArray(child)) child.forEach(child => inspect(child, knownTruthy, shadowed));
+        else inspect(child, knownTruthy, shadowed);
       }
     }
 
