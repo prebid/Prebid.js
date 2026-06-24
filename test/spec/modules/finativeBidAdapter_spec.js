@@ -141,7 +141,8 @@ describe('Finative adapter', function () {
 
       delete badResponse.body;
 
-      assert.equal(result.length, 0);
+      const resultWithoutBody = spec.interpretResponse(badResponse, bidRequest);
+      assert.equal(resultWithoutBody.length, 0);
     });
 
     it('should return the correct params', function () {

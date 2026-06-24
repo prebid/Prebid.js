@@ -890,6 +890,7 @@ describe('IntentIQ tests', function () {
       localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(FPD));
       localStorage.setItem(partnerDataKey, JSON.stringify(strippedPartnerData));
 
+      intentIqIdSubmodule.getId(defaultConfigParams);
       await waitForClientHints();
 
       expect(server.requests.length).to.equal(0);
