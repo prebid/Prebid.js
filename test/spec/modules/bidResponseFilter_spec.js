@@ -68,7 +68,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'EXAMPLE-CAT-ID',
-        attr: 'attr',
+        attr: ['attr'],
         mediaType: 'banner',
         cattax: 1
       }
@@ -86,7 +86,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'BANNED_CAT1',
-        attr: 'attr',
+        attr: ['attr'],
         cattax: 1
       }
     };
@@ -106,7 +106,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'BANNED_CAT1',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 1
         }
@@ -131,7 +131,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'ALLOWED_CAT',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 1
         }
@@ -156,7 +156,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'ALLOWED_CAT',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 2
         }
@@ -181,7 +181,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'BANNED_CAT1',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 2
         }
@@ -208,7 +208,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 'attr',
+        attr: ['attr'],
         cattax: 1
       }
     };
@@ -227,7 +227,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 'BANNED_ATTR',
+        attr: ['BANNED_ATTR', 'OTHER_ATTR'],
         cattax: 1
       },
       mediaType: 'video'
@@ -239,7 +239,7 @@ describe('bidResponseFilter', () => {
     mockAuctionIndex.getBidRequest = () => ({
       ortb2Imp: {
         video: {
-          battr: 'BANNED_ATTR'
+          battr: ['BANNED_ATTR']
         }
       }
     });
@@ -254,7 +254,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'BANNED_CAT1',
-        attr: 'valid_attr',
+        attr: ['valid_attr'],
         mediaType: 'banner',
         cattax: 1
       }
@@ -284,7 +284,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: undefined,
-        attr: 'valid_attr',
+        attr: ['valid_attr'],
         mediaType: 'banner',
         cattax: 1
       }
@@ -315,7 +315,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 6,
+        attr: [6],
         mediaType: 'audio',
         cattax: 1
       },
@@ -343,7 +343,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 6,
+        attr: [6],
         mediaType: 'banner',
         cattax: 1
       },
@@ -376,7 +376,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 6,
+        attr: [6],
         mediaType: 'banner',
         cattax: 1
       },
