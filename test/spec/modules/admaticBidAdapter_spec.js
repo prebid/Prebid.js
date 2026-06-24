@@ -26,6 +26,10 @@ describe('admaticBidAdapter', () => {
       'native': {
       },
       'video': {
+        'playerSize': [
+          336,
+          280
+        ]
       }
     },
     getFloor: inputParams => {
@@ -141,7 +145,7 @@ describe('admaticBidAdapter', () => {
       {
         'size': [
           {
-            'w': 338,
+            'w': 336,
             'h': 280
           }
         ],
@@ -712,16 +716,12 @@ describe('admaticBidAdapter', () => {
 
     it('should properly build a video request with floors', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
-      expect(request.data.imp[0].floors.video).to.deep.equal({
-        '336x280': { 'currency': 'USD', 'floor': 1 }
-      });
+      expect(request.data.imp[0].floors.video).to.deep.equal(validRequest[0].imp[1].floors.video);
     });
 
     it('should properly build a native request with floors', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
-      expect(request.data.imp[0].floors.native).to.deep.equal({
-        '*': { 'currency': 'USD', 'floor': 1 }
-      });
+      expect(request.data.imp[0].floors.native).to.deep.equal(validRequest[0].imp[2].floors.native);
     });
   });
 
