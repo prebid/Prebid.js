@@ -204,6 +204,8 @@ describe('Deepintent adapter', function () {
     it('unmutaable bid request check', function () {
       const oRequest = utils.deepClone(request);
 
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {

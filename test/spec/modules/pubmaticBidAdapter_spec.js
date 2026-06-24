@@ -1897,6 +1897,7 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
+    sandbox.stub(utils, 'inIframe').returns(true);
     addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');

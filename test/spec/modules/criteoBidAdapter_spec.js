@@ -346,6 +346,8 @@ describe('The Criteo bidding adapter', function () {
         origin: 'https://gum.criteo.com'
       });
 
+      spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
       window.dispatchEvent(event);
       setTimeout(() => {
         expect(setCookieStub.calledWith('cto_bundle', 'bundle', sinon.match.string, null, '.com')).to.be.true;
