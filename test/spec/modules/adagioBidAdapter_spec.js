@@ -70,8 +70,6 @@ describe('Adagio bid adapter', () => {
   let utilsMock;
   let sandbox;
 
-  // safeFrame implementation
-
   beforeEach(() => {
     window.ADAGIO = {};
     window.ADAGIO.adUnits = {};
