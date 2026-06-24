@@ -329,7 +329,8 @@ describe('SeedingAlliance adapter', function () {
 
       delete badResponse.body;
 
-      assert.equal(result.length, 0);
+      const result1 = spec.interpretResponse(badResponse, bidNativeRequest);
+      assert.equal(result1.length, 0);
     });
 
     it('should return the correct params', function () {
