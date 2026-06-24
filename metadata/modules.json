@@ -2392,7 +2392,7 @@
       "componentType": "bidder",
       "componentName": "floxis",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1609,
       "disclosureURL": null
     },
     {
@@ -3149,6 +3149,13 @@
       "componentName": "luponmedia",
       "aliasOf": null,
       "gvlid": 1132,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "m152",
+      "aliasOf": null,
+      "gvlid": 1111,
       "disclosureURL": null
     },
     {

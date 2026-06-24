@@ -117,7 +117,7 @@ describe('secureCreatives', () => {
         stubEmit
       ].forEach(s => s.resetHistory());
 
-      if (others && others.length > 0) { others.forEach(s => s.resetHistory()); }
+      if (others.length > 0) { others.forEach(s => s.resetHistory()); }
     }
 
     before(function() {

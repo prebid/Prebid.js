@@ -153,12 +153,9 @@ function getSlotByCode(code) {
   if (!slots || !slots.length) {
     return null;
   }
-  return (
-    ((
-      slots) || []).find(
-      (s) => s.getSlotElementId() === code || s.getAdUnitPath() === code
-    ) || null
-  );
+  return slots.find(
+    (s) => s.getSlotElementId() === code || s.getAdUnitPath() === code
+  ) || null;
 }
 
 /**
@@ -174,7 +171,7 @@ export function getSlotByWin(win) {
   }
 
   return (
-    ((slots) || []).find((s) => {
+    slots.find((s) => {
       const slotElement = document.getElementById(s.getSlotElementId());
 
       if (slotElement) {

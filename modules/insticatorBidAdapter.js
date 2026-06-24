@@ -368,7 +368,7 @@ function extractSchain(bids, requestId) {
 
   const schain = bids[0]?.ortb2?.source?.ext?.schain;
   if (!schain) return;
-  if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
+  if (schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }
 

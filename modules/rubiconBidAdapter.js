@@ -298,7 +298,7 @@ export const spec = {
     let filteredRequests;
 
     filteredRequests = bidRequests.filter(req => {
-      const mediaTypes = bidType(req) || [];
+      const mediaTypes = bidType(req);
       const { length } = mediaTypes;
       const { bidonmultiformat, video } = req.params || {};
 
@@ -327,7 +327,7 @@ export const spec = {
     }
 
     const bannerBidRequests = bidRequests.filter((req) => {
-      const mediaTypes = bidType(req) || [];
+      const mediaTypes = bidType(req);
       const { bidonmultiformat, video } = req.params || {};
       return (
         // Send to fastlane if: it must include BANNER and...
@@ -336,10 +336,8 @@ export const spec = {
           (mediaTypes.length === 1) ||
           // if bidonmultiformat is true
           bidonmultiformat ||
-          // if bidonmultiformat is false and there's no video parameter
-          (!bidonmultiformat && !video) ||
-          // if there's video parameter, but there's no video mediatype
-          (!bidonmultiformat && video && !mediaTypes.includes(VIDEO))
+          // if there's no video parameter, or there's video parameter but no video mediaType
+          !video || !mediaTypes.includes(VIDEO)
         )
       );
     });

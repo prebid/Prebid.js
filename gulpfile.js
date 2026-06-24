@@ -5,7 +5,8 @@ var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
-var fancyLog = require('fancy-log');
+// gulplog available transitively via gulp-cli
+var log = require('gulplog');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -16,7 +17,7 @@ var helpers = require('./gulpHelpers.js');
 const { execaTask, execaCmd } = helpers;
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
-var through = require('through2');
+const { Transform, PassThrough } = require('node:stream');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
@@ -178,11 +179,14 @@ function nodeBundle(modules, dev = false) {
       .on('error', (err) => {
         reject(err);
       })
-      .pipe(through.obj(function (file, enc, done) {
-        if (file.path.endsWith('.js')) {
-          resolve(file.contents.toString(enc));
+      .pipe(new Transform({
+        objectMode: true,
+        transform(file, enc, done) {
+          if (file.path.endsWith('.js')) {
+            resolve(file.contents.toString(enc));
+          }
+          done();
         }
-        done();
       }));
   });
 }
@@ -210,7 +214,7 @@ function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
   // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
   // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
   return function wrap(stream) {
-    const wrapped = through.obj();
+    const wrapped = new PassThrough({ objectMode: true });
     const placeholder = '$$PREBID_SOURCE$$';
     const tpl = _.template(fs.readFileSync('./bundle-template.txt'))({
       prebid,
@@ -240,7 +244,7 @@ function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
 }
 
 function disclosureSummary(modules, summaryFileName) {
-  const stream = through.obj();
+  const stream = new PassThrough({ objectMode: true });
   import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
     const summary = getStorageDisclosureSummary(modules, (moduleName) => {
       const metadataPath = `./metadata/modules/${moduleName}.json`;
@@ -294,10 +298,10 @@ function bundle(dev, moduleArr) {
   }
   const disclosureFile = path.parse(outputFileName).name + '_disclosures.json';
 
-  fancyLog('Concatenating files:\n', entries);
-  fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
-  fancyLog('Generating bundle:', outputFileName);
-  fancyLog('Generating storage use disclosure summary:', disclosureFile);
+  log.info('Concatenating files:\n', entries);
+  log.info('Appending ' + prebid.globalVarName + '.processQueue();');
+  log.info('Generating bundle:', outputFileName);
+  log.info('Generating storage use disclosure summary:', disclosureFile);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules, sm);
   const source = wrap(gulp.src(entries, {sourcemaps: sm}))

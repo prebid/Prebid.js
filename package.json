@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "11.20.0-pre",
+  "version": "11.21.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -36,9 +36,7 @@
   ],
   "browserslist": [
     "> 0.25%",
-    "not IE 11",
-    "not dead",
-    "not op_mini all"
+    "not ios_saf 11"
   ],
   "keywords": [
     "advertising",
@@ -75,8 +73,6 @@
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsdoc": "^50.6.6",
     "faker": "^5.5.3",
-    "fancy-log": "^2.0.0",
-    "fs-extra": "^11.3.1",
     "globals": "^16.3.0",
     "gulp": "^5.0.1",
     "gulp-clean": "^0.4.0",
@@ -88,6 +84,7 @@
     "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.0.0",
     "gulp-tap": "^2.0.0",
+    "gulplog": "^2.2.0",
     "is-docker": "^2.2.1",
     "istanbul": "^0.4.5",
     "karma": "^6.4.4",
@@ -119,7 +116,6 @@
     "puppeteer": "^24.10.0",
     "resolve-from": "^5.0.0",
     "sinon": "^22.0.0",
-    "through2": "^4.0.2",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
     "url": "^0.11.0",
