@@ -853,6 +853,60 @@ describe('onetag', function () {
       const bannerBid = interpretedResponse.find(bid => bid.requestId === 'banner');
       expect(bannerBid.dealId).to.be.undefined;
     });
+    it('Returns meta category and attr fields when present in server response', function () {
+      const interpretedResponse = spec.interpretResponse(response, request);
+      const bannerBid = interpretedResponse.find(bid => bid.meta.mediaType === BANNER);
+      expect(bannerBid.meta.primaryCatId).to.equal('IAB-1');
+      expect(bannerBid.meta.secondaryCatIds).to.deep.equal(['IAB-2', 'IAB-3']);
+      expect(bannerBid.meta.attr).to.equal(1);
+      expect(bannerBid.meta.cattax).to.equal(1);
+    });
+    it('Returns meta category and attr fields as undefined when absent from server response', function () {
+      const responseWithoutMeta = getBannerVideoNativeResponse();
+      delete responseWithoutMeta.body.bids[0].primaryCatId;
+      delete responseWithoutMeta.body.bids[0].secondaryCatIds;
+      delete responseWithoutMeta.body.bids[0].attr;
+      delete responseWithoutMeta.body.bids[0].cattax;
+      const interpretedResponse = spec.interpretResponse(responseWithoutMeta, request);
+      const bannerBid = interpretedResponse.find(bid => bid.meta.mediaType === BANNER);
+      expect(bannerBid.meta.primaryCatId).to.be.undefined;
+      expect(bannerBid.meta.secondaryCatIds).to.be.undefined;
+      expect(bannerBid.meta.attr).to.be.undefined;
+      expect(bannerBid.meta.cattax).to.be.undefined;
+    });
+    it('Returns meta fields independently when only some are present in server response', function () {
+      const partialResponse = getBannerVideoNativeResponse();
+      delete partialResponse.body.bids[0].secondaryCatIds;
+      delete partialResponse.body.bids[0].attr;
+      const interpretedResponse = spec.interpretResponse(partialResponse, request);
+      const bannerBid = interpretedResponse.find(bid => bid.meta.mediaType === BANNER);
+      expect(bannerBid.meta.primaryCatId).to.equal('IAB-1');
+      expect(bannerBid.meta.cattax).to.equal(1);
+      expect(bannerBid.meta.secondaryCatIds).to.be.undefined;
+      expect(bannerBid.meta.attr).to.be.undefined;
+    });
+    it('Returns meta.secondaryCatIds as empty array when server response has empty array', function () {
+      const responseWithEmptySecondary = getBannerVideoNativeResponse();
+      responseWithEmptySecondary.body.bids[0].secondaryCatIds = [];
+      const interpretedResponse = spec.interpretResponse(responseWithEmptySecondary, request);
+      const bannerBid = interpretedResponse.find(bid => bid.meta.mediaType === BANNER);
+      expect(bannerBid.meta.secondaryCatIds).to.deep.equal([]);
+    });
+    it('Returns meta category and attr fields as undefined for video and native bids when absent from server response', function () {
+      const interpretedResponse = spec.interpretResponse(response, request);
+      const videoBids = interpretedResponse.filter(bid => bid.meta.mediaType === VIDEO);
+      const nativeBid = interpretedResponse.find(bid => bid.meta.mediaType === NATIVE || bid.meta.mediaType === NATIVE + NATIVE_SUFFIX);
+      videoBids.forEach(bid => {
+        expect(bid.meta.primaryCatId).to.be.undefined;
+        expect(bid.meta.secondaryCatIds).to.be.undefined;
+        expect(bid.meta.attr).to.be.undefined;
+        expect(bid.meta.cattax).to.be.undefined;
+      });
+      expect(nativeBid.meta.primaryCatId).to.be.undefined;
+      expect(nativeBid.meta.secondaryCatIds).to.be.undefined;
+      expect(nativeBid.meta.attr).to.be.undefined;
+      expect(nativeBid.meta.cattax).to.be.undefined;
+    });
   });
   describe('getUserSyncs', function () {
     const sync_endpoint = 'https://onetag-sys.com/usync/';
@@ -982,7 +1036,11 @@ function getBannerVideoNativeResponse() {
           currency: 'USD',
           requestId: 'banner',
           mediaType: BANNER,
-          adomain: []
+          adomain: [],
+          primaryCatId: 'IAB-1',
+          secondaryCatIds: ['IAB-2', 'IAB-3'],
+          attr: 1,
+          cattax: 1
         },
         {
           cpm: 13,
