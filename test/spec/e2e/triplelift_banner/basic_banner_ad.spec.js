@@ -7,7 +7,7 @@ const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="' + CREATIVE_IFRAME_ID + '"]';
 
 setupTest({
   url: TEST_PAGE_URL,
-  waitFor: CREATIVE_IFRAME_CSS_SELECTOR
+  waitFor: CREATIVE_IFRAME_CSS_SELECTOR,
 }, `Prebid.js Banner Ad Unit Test (loading ${TEST_PAGE_URL})`, function () {
   it('should load the TripleLift bidder and installed modules', async function () {
     const { bidder, installedModules } = await browser.execute(function () {
@@ -20,9 +20,9 @@ setupTest({
     expect(bidder).to.equal('triplelift');
     expect(installedModules).to.include('tripleliftBidAdapter');
   });
-});
-it('should render the TripleLift banner ad on the page', async function() {
-  await switchFrame(CREATIVE_IFRAME_CSS_SELECTOR);
-  const existingImage = await $('img[src*="images.3lift.com/3303913.jpg"]').isExisting();
-  expect(existingImage).to.be.true;
+  it('should render the TripleLift banner ad on the page', async function() {
+    await switchFrame(CREATIVE_IFRAME_CSS_SELECTOR);
+    const existingImage = await $('img[src*="images.3lift.com/3303913.jpg"]').isExisting();
+    expect(existingImage).to.be.true;
+  });
 });
