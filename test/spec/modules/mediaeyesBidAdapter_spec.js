@@ -109,6 +109,8 @@ describe('mediaeyes adapter', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(request);
 
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(_Request);
     });
   });
