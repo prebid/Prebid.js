@@ -12,14 +12,17 @@ const fixturesPath = path.join(__dirname, 'fixtures');
  * @returns {object} responseBody
  */
 const matchResponse = function (requestBody) {
-  console.log('requestBody', JSON.stringify(requestBody));
-
-  requestBody = removeTid(requestBody);
+  const normalizedRequestBody = removeTid(requestBody);
 
   const reqResMap = generateFixtures(fixturesPath);
   const requestResponsePairs = Object.keys(reqResMap).map(testName => reqResMap[testName]);
 
-  const match = requestResponsePairs.filter(reqRes => reqRes.request.httpRequest && deepEqual(reqRes.request.httpRequest.body, requestBody));
+  const match = requestResponsePairs.filter(reqRes => {
+    if (!reqRes.request.httpRequest) return false;
+    const expectedBody = removeTid(reqRes.request.httpRequest.body);
+    // Match on `imp` only to avoid brittle comparisons against dynamic ortb2 device/user-agent fields.
+    return deepEqual(expectedBody.imp, normalizedRequestBody.imp);
+  });
 
   try {
     if (match.length === 0) {
@@ -29,7 +32,7 @@ const matchResponse = function (requestBody) {
     }
   } catch (e) {
     console.error(e);
-    console.error('Tags:', JSON.stringify(requestBody.tags, null, 2));
+    console.error('imp:', JSON.stringify(normalizedRequestBody.imp, null, 2));
     throw e;
   }
 
