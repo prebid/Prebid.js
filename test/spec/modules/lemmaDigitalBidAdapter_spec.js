@@ -205,6 +205,8 @@ describe('lemmaDigitalBidAdapter', function () {
       it('buildRequests function should not modify original bidRequests object', function () {
         const originalBidRequests = utils.deepClone(bidRequests);
 
+        spec.buildRequests(bidRequests);
+
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
       it('bidRequest imp array check empty', function () {

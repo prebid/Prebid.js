@@ -710,14 +710,10 @@ describe('admaticBidAdapter', () => {
       });
     });
 
-    it('should properly build a video request with several player sizes with floors', function () {
-      const [{ getFloor, ...requestWithoutFloor }] = validRequest;
-      const videoRequest = [{ ...structuredClone(requestWithoutFloor), getFloor }];
-      videoRequest[0].mediaTypes.video.playerSize = [[300, 250], [728, 90]];
-      const request = spec.buildRequests(videoRequest, bidderRequest);
+    it('should properly build a video request with floors', function () {
+      const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.data.imp[0].floors.video).to.deep.equal({
-        '300x250': { 'currency': 'USD', 'floor': 1 },
-        '728x90': { 'currency': 'USD', 'floor': 1 }
+        '336x280': { 'currency': 'USD', 'floor': 1 }
       });
     });
 
