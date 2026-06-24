@@ -1,5 +1,5 @@
 Test Page - 'test/pages/triplelift_banner.html'
-Test Spec File - 'test/spec/e2e/banner/basic_banner_ad.spec.js'
+Test Spec File - 'test/spec/e2e/triplelift_banner/basic_banner_ad.spec.js'
 
 Ad Unit that generates given 'Request' - 'Response' pairs.
 
