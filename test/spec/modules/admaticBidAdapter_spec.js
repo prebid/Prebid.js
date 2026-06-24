@@ -26,10 +26,6 @@ describe('admaticBidAdapter', () => {
       'native': {
       },
       'video': {
-        'playerSize': [
-          336,
-          280
-        ]
       }
     },
     getFloor: inputParams => {
@@ -145,7 +141,7 @@ describe('admaticBidAdapter', () => {
       {
         'size': [
           {
-            'w': 336,
+            'w': 338,
             'h': 280
           }
         ],
@@ -265,10 +261,6 @@ describe('admaticBidAdapter', () => {
       'native': {
       },
       'video': {
-        'playerSize': [
-          336,
-          280
-        ]
       }
     },
     'userId': {
@@ -714,14 +706,91 @@ describe('admaticBidAdapter', () => {
       });
     });
 
-    it('should properly build a video request with floors', function () {
-      const request = spec.buildRequests(validRequest, bidderRequest);
-      expect(request.data.imp[0].floors.video).to.deep.equal(validRequest[0].imp[1].floors.video);
+    it('should properly build a video request with several player sizes with floors', function () {
+      const bidRequests = [
+        {
+          'bidder': 'admatic',
+          'adUnitCode': 'bid-123',
+          'transactionId': 'transaction-123',
+          'mediaTypes': {
+            'video': {
+              'playerSize': [[300, 250], [728, 90]]
+            }
+          },
+          'ortb2Imp': { 'ext': { 'instl': 1 } },
+          'ortb2': { 'badv': ['admatic.com.tr'] },
+          'params': {
+            'networkId': 10433394,
+            'host': 'layer.rtb.admatic.com.tr'
+          },
+          getFloor: inputParams => {
+            if (inputParams.mediaType === VIDEO && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
+              return {
+                currency: 'USD',
+                floor: 1.0
+              };
+            } else if (inputParams.mediaType === VIDEO && inputParams.size[0] === 728 && inputParams.size[1] === 90) {
+              return {
+                currency: 'USD',
+                floor: 2.0
+              };
+            } else {
+              return {};
+            }
+          }
+        },
+      ];
+      const bidderRequest = {
+        'refererInfo': {
+          'page': 'https://www.admatic.com.tr',
+          'domain': 'https://www.admatic.com.tr',
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].floors.video).to.deep.equal({
+        '300x250': { 'currency': 'USD', 'floor': 1 },
+        '728x90': { 'currency': 'USD', 'floor': 2 }
+      });
     });
 
     it('should properly build a native request with floors', function () {
-      const request = spec.buildRequests(validRequest, bidderRequest);
-      expect(request.data.imp[0].floors.native).to.deep.equal(validRequest[0].imp[2].floors.native);
+      const bidRequests = [
+        {
+          'bidder': 'admatic',
+          'adUnitCode': 'bid-123',
+          'transactionId': 'transaction-123',
+          'mediaTypes': {
+            'native': {
+            }
+          },
+          'ortb2Imp': { 'ext': { 'instl': 1 } },
+          'ortb2': { 'badv': ['admatic.com.tr'] },
+          'params': {
+            'networkId': 10433394,
+            'host': 'layer.rtb.admatic.com.tr'
+          },
+          getFloor: inputParams => {
+            if (inputParams.mediaType === NATIVE) {
+              return {
+                currency: 'USD',
+                floor: 1.0
+              };
+            } else {
+              return {};
+            }
+          }
+        },
+      ];
+      const bidderRequest = {
+        'refererInfo': {
+          'page': 'https://www.admatic.com.tr',
+          'domain': 'https://www.admatic.com.tr',
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].floors.native).to.deep.equal({
+        '*': { 'currency': 'USD', 'floor': 1 }
+      });
     });
   });
 
