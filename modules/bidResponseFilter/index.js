@@ -71,7 +71,7 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } else if ((advConfig.enforce && badv.some(domain => advertiserDomains.includes(domain))) ||
     (advConfig.blockUnknown && !advertiserDomains.length)) {
     reject(BID_ADV_DOMAINS_REJECTION_REASON);
-  } else if ((attrConfig.enforce && (attrConfig.blockUnknown && !Array.isArray(metaAttr)) || metaAttr.find(attr => battr.includes(attr)))) {
+  } else if ((attrConfig.enforce && ((attrConfig.blockUnknown && !Array.isArray(metaAttr) || metaAttr.length === 0) || metaAttr.find(attr => battr.includes(attr))))) {
     reject(BID_ATTR_REJECTION_REASON);
   } else if ((mediaTypesConfig.enforce && (!allowedMediaTypes.includes(metaMediaType) || rejectIbvBannerOnMultiFormat)) ||
     (mediaTypesConfig.blockUnknown && !metaMediaType)) {

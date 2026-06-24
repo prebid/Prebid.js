@@ -220,32 +220,38 @@ describe('bidResponseFilter', () => {
     sinon.assert.calledWith(rejection, BID_ADV_DOMAINS_REJECTION_REASON);
   });
 
-  it('should reject the bid after failed ortb2 attr rule validation', () => {
-    const reject = sinon.stub();
-    const call = sinon.stub();
-    const bid = {
-      meta: {
-        advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
-        primaryCatId: 'VALID_CAT',
-        attr: ['BANNED_ATTR', 'OTHER_ATTR'],
-        cattax: 1
-      },
-      mediaType: 'video'
-    };
-    mockAuctionIndex.getOrtb2 = () => ({
-      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
-    });
+  Object.entries({
+    'banned': ['BANNED_ATTR', 'OTHER_ATTR'],
+    'invalid': 'attr',
+    'unknown': []
+  }).forEach(([t, attr]) => {
+    it('should reject the bid after failed ortb2 attr rule validation', () => {
+      const reject = sinon.stub();
+      const call = sinon.stub();
+      const bid = {
+        meta: {
+          advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
+          primaryCatId: 'VALID_CAT',
+          attr,
+          cattax: 1
+        },
+        mediaType: 'video'
+      };
+      mockAuctionIndex.getOrtb2 = () => ({
+        badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+      });
 
-    mockAuctionIndex.getBidRequest = () => ({
-      ortb2Imp: {
-        video: {
-          battr: ['BANNED_ATTR']
+      mockAuctionIndex.getBidRequest = () => ({
+        ortb2Imp: {
+          video: {
+            battr: ['BANNED_ATTR']
+          }
         }
-      }
-    });
+      });
 
-    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
-    sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+      addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
+      sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+    });
   });
 
   it('should omit the validation if the flag is set to false', () => {
