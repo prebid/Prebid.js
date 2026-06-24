@@ -220,38 +220,63 @@ describe('bidResponseFilter', () => {
     sinon.assert.calledWith(rejection, BID_ADV_DOMAINS_REJECTION_REASON);
   });
 
-  Object.entries({
-    'banned': ['BANNED_ATTR', 'OTHER_ATTR'],
-    'invalid': 'attr',
-    'unknown': []
-  }).forEach(([t, attr]) => {
-    it('should reject the bid after failed ortb2 attr rule validation', () => {
-      const reject = sinon.stub();
-      const call = sinon.stub();
-      const bid = {
+  describe('attr validation', () => {
+    let reject, call;
+
+    function makeBid(attr) {
+      return {
         meta: {
           advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
           primaryCatId: 'VALID_CAT',
           attr,
-          cattax: 1
+          cattax: 1,
+          mediaType: 'video',
         },
         mediaType: 'video'
       };
+    }
+
+    beforeEach(() => {
       mockAuctionIndex.getOrtb2 = () => ({
         badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
       });
 
       mockAuctionIndex.getBidRequest = () => ({
+        mediaTypes: {
+          video: {}
+        },
         ortb2Imp: {
           video: {
             battr: ['BANNED_ATTR']
           }
         }
       });
-
-      addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
-      sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+      reject = sinon.stub();
+      call = sinon.stub();
     });
+    Object.entries({
+      'banned': ['BANNED_ATTR', 'OTHER_ATTR'],
+      'invalid': 'attr',
+      'unknown': []
+    }).forEach(([t, attr]) => {
+      it(`should reject the bid when its attr is ${t}`, () => {
+        addBidResponseHook(call, 'adcode', makeBid(attr), reject, mockAuctionIndex);
+        sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+        sinon.assert.notCalled(call);
+      });
+    });
+    Object.entries({
+      'missing': null,
+      'empty': []
+    }).forEach(([t, attr]) => {
+      it(`it should not reject when its attr is ${t}, but blockUnknown is false`, () => {
+        config.setConfig({ [MODULE_NAME]: { attr: { enforce: true, blockUnknown: false } } });
+        addBidResponseHook(call, 'adcode', makeBid(attr), reject, mockAuctionIndex);
+        sinon.assert.notCalled(reject);
+        sinon.assert.called(call);
+      });
+    });
+
   });
 
   it('should omit the validation if the flag is set to false', () => {
