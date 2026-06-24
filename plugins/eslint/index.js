@@ -35,18 +35,14 @@ module.exports = {
             if (!COMPARISON_OPERATORS.has(node.operator)) {
               return;
             }
-            if (node.left.type === 'UnaryExpression' && node.left.operator === '!') {
-              context.report({
-                node: node.left,
-                message: 'Do not compare a negated value; compare the original operand explicitly instead.'
-              });
-            }
-            if (node.right.type === 'UnaryExpression' && node.right.operator === '!') {
-              context.report({
-                node: node.right,
-                message: 'Do not compare a negated value; compare the original operand explicitly instead.'
-              });
-            }
+            [node.left, node.right].forEach(operand => {
+              if (operand.type === 'UnaryExpression' && operand.operator === '!') {
+                context.report({
+                  node: operand,
+                  message: 'Do not compare a negated value; compare the original operand explicitly instead.'
+                });
+              }
+            })
           }
         };
       }
