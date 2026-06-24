@@ -36,13 +36,18 @@ export function reset() {
 }
 
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
-  const { bcat = [], badv = [], cattax = 1 } = index.getOrtb2(bid) || {};
-  const bidRequest = index.getBidRequest(bid);
-  const battr = bidRequest?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
-
   const catConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {}) };
   const advConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {}) };
   const attrConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.attr || {}) };
+  const ortb2 = index.getOrtb2(bid) || {};
+  const bidRequest = index.getBidRequest(bid);
+  const bcat = catConfig.bcat ?? ortb2.bcat ?? [];
+  const cattax = catConfig.cattax ?? ortb2.cattax ?? 1;
+  const badv = advConfig.badv ?? ortb2.badv ?? [];
+  const battr = attrConfig.battr ??
+    bidRequest?.ortb2Imp?.[bid.mediaType]?.battr ??
+    index.getAdUnit(bid)?.ortb2Imp?.[bid.mediaType]?.battr ??
+    [];
   const mediaTypesConfig = {
     enforce: true,
     blockUnknown: true,
