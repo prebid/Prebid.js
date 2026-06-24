@@ -6,14 +6,6 @@ const { getWinDimensions } = utils;
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 
-function getViewportWidth(win) {
-  return win.innerWidth || win.document?.documentElement?.clientWidth || win.document?.body?.clientWidth || 0;
-}
-
-function getViewportHeight(win) {
-  return win.innerHeight || win.document?.documentElement?.clientHeight || win.document?.body?.clientHeight || 0;
-}
-
 export const spec = {
 
   code: 'adspirit',
@@ -34,8 +26,6 @@ export const spec = {
     const requests = [];
     const prebidVersion = getGlobal().version;
     const win = getWinDimensions();
-    const viewportWidth = getViewportWidth(win);
-    const viewportHeight = getViewportHeight(win);
 
     for (let i = 0; i < validBidRequests.length; i++) {
       const bidRequest = validBidRequests[i];
@@ -49,8 +39,8 @@ export const spec = {
         '&ref=' + encodeURIComponent(bidderRequest.refererInfo.topmostLocation) +
         '&scx=' + (win.screen?.width || 0) +
         '&scy=' + (win.screen?.height || 0) +
-        '&wcx=' + viewportWidth +
-        '&wcy=' + viewportHeight +
+        '&wcx=' + win.innerWidth +
+        '&wcy=' + win.innerHeight +
         '&async=' + bidRequest.adspiritConId +
         '&t=' + Math.round(Math.random() * 100000);
 
@@ -116,8 +106,8 @@ export const spec = {
         device: {
           ua: navigator.userAgent,
           language: (navigator.language || '').split('-')[0],
-          w: viewportWidth,
-          h: viewportHeight,
+          w: win.innerWidth,
+          h: win.innerHeight,
           geo: {
             lat: bidderRequest?.geo?.lat || 0,
             lon: bidderRequest?.geo?.lon || 0,
