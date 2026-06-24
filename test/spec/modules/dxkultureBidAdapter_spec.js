@@ -270,14 +270,21 @@ describe('dxkultureBidAdapter', function() {
   });
 
   context('banner validation', function () {
-    let bidderRequest;
-
-    beforeEach(function() {
-      bidderRequest = getBannerRequest();
-    });
-
     it('returns true when banner sizes are defined', function () {
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
+      const bid = {
+        bidder: 'dxkulture',
+        mediaTypes: {
+          banner: {
+            sizes: [[250, 300]]
+          }
+        },
+        params: {
+          placementId: 'placementId',
+          publisherId: 'publisherId',
+        }
+      };
+
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('returns false when banner sizes are invalid', function () {
