@@ -333,33 +333,32 @@ describe('Nobid Adapter', function () {
   describe('isVideoBidRequestValid', function () {
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
-    const bidRequests = [
-      {
-        bidder: 'nobid',
-        params: {
-          siteId: SITE_ID,
-          video: {
-            skippable: true,
-            playback_methods: ['auto_play_sound_off'],
-            position: 'atf',
-            mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
-            minduration: 1,
-            maxduration: 30,
-            frameworks: [1, 2, 3, 4, 5, 6]
-          }
-        },
-        adUnitCode: 'adunit-code',
-        bidId: '30b31c1838de1e',
-        bidderRequestId: '22edbae2733bf6',
-        auctionId: '1d1a030790a475',
-        mediaTypes: {
-          video: {
-            playerSize: [640, 480],
-            context: 'instream'
-          }
+    const bid = {
+      bidder: 'nobid',
+      params: {
+        siteId: SITE_ID,
+        video: {
+          skippable: true,
+          playback_methods: ['auto_play_sound_off'],
+          position: 'atf',
+          mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
+          minduration: 1,
+          maxduration: 30,
+          frameworks: [1, 2, 3, 4, 5, 6]
+        }
+      },
+      adUnitCode: 'adunit-code',
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+          context: 'instream'
         }
       }
-    ];
+    };
+    const bidRequests = [bid];
 
     const bidderRequest = {
       refererInfo: { page: REFERER }
@@ -793,12 +792,42 @@ describe('Nobid Adapter', function () {
   });
 
   describe('interpretResponseWithRefreshLimit', function () {
+    const CREATIVE_ID_300x250 = 'CREATIVE-100';
+    const ADUNIT_300x250 = 'ADUNIT-1';
+    const ADMARKUP_300x250 = 'ADMARKUP-300x250';
+    const PRICE_300x250 = 0.51;
+    const REQUEST_ID = '3db3773286ee59';
+    const DEAL_ID = 'deal123';
     const REFRESH_LIMIT = 3;
+    const response = {
+      country: 'US',
+      ip: '68.83.15.75',
+      device: 'COMPUTER',
+      site: 2,
+      rlimit: REFRESH_LIMIT,
+      bids: [
+        {
+          id: 1,
+          bdrid: 101,
+          divid: ADUNIT_300x250,
+          dealid: DEAL_ID,
+          creativeid: CREATIVE_ID_300x250,
+          size: { 'w': 300, 'h': 250 },
+          adm: ADMARKUP_300x250,
+          price: '' + PRICE_300x250
+        }
+      ]
+    };
 
     it('should refreshLimit be respected', function () {
-      const response = { rlimit: REFRESH_LIMIT };
+      const bidderRequest = {
+        bids: [{
+          bidId: REQUEST_ID,
+          adUnitCode: ADUNIT_300x250
+        }]
+      };
 
-      spec.interpretResponse({ body: response }, { bidderRequest: { bids: [] } });
+      spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
 
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
     });
