@@ -5,10 +5,11 @@
  * @module modules/anonymisedRtdProvider
  * @requires module:modules/realTimeData
  */
-import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { submodule } from '../src/hook.js';
+import { isPlainObject, mergeDeep, logMessage, logWarn, logError } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
@@ -16,6 +17,7 @@ export function createRtdProvider(moduleName) {
   const MODULE_NAME = 'realTimeData';
   const SUBMODULE_NAME = moduleName;
   const GVLID = 1116;
+  const MARKETING_TAG_URL = 'https://static.anonymised.io/light/loader.js';
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
   /**
@@ -43,19 +45,50 @@ export function createRtdProvider(moduleName) {
     }
   }
   /**
+   * Load the Anonymised Marketing Tag script
+   * @param {Object} config
+   */
+  function tryLoadMarketingTag(config) {
+    const clientId = config?.params?.tagConfig?.clientId;
+    if (typeof clientId !== 'string' || !clientId.trim()) {
+      logWarn(`${SUBMODULE_NAME}RtdProvider: clientId missing or invalid; Marketing Tag not loaded.`);
+      return;
+    }
+    logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`);
+    let tagBaseUrl = MARKETING_TAG_URL;
+    if (config.params?.tagUrl) {
+      logWarn(`${SUBMODULE_NAME}RtdProvider: params.tagUrl is deprecated and will be removed in a future release.`);
+      tagBaseUrl = config.params.tagUrl;
+    }
+    // Check if the script is already loaded (match on host/path only to handle http://, https://, and protocol-relative URLs)
+    if (document.querySelector(`script[src*="${tagBaseUrl.replace(/^https?:\/\//, '')}"]`)) {
+      logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
+      return;
+    }
+    const tagConfig = config.params?.tagConfig ? { ...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId } : {};
+    delete tagConfig.clientId;
+
+    const tagUrl = `${tagBaseUrl}?ref=prebid&d=${window.location.hostname}`;
+
+    loadExternalScript(tagUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
+      logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`);
+    }, document, tagConfig);
+  }
+
+  /**
    * Real-time data retrieval from Anonymised
    * @param {Object} reqBidsConfigObj
    * @param {function} onDone
-   * @param {Object} rtdConfig
+   * @param {Object} config
    * @param {Object} userConsent
    */
-  function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
-    if (rtdConfig && isPlainObject(rtdConfig.params)) {
-      const cohortStorageKey = rtdConfig.params.cohortStorageKey;
-      const bidders = rtdConfig.params.bidders;
+  function getRealTimeData(reqBidsConfigObj, onDone, config, userConsent) {
+    if (config && isPlainObject(config.params)) {
+      const cohortStorageKey = config.params.cohortStorageKey;
+      const bidders = config.params.bidders;
 
       if (cohortStorageKey !== 'cohort_ids') {
-        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`)
+        logError(`${SUBMODULE_NAME}RtdProvider: 'cohortStorageKey' should be 'cohort_ids'`);
         return;
       }
 
@@ -70,10 +103,10 @@ export function createRtdProvider(moduleName) {
         const udSegment = {
           name: 'anonymised.io',
           ext: {
-            segtax: rtdConfig.params.segtax
+            segtax: config.params.segtax
           },
-          segment: segments.map(x => ({id: x}))
-        }
+          segment: segments.map(x => ({ id: x }))
+        };
 
         logMessage(`${SUBMODULE_NAME}RtdProvider: user.data.segment: `, udSegment);
         const data = {
@@ -93,17 +126,17 @@ export function createRtdProvider(moduleName) {
         }
 
         addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
-        onDone();
       }
     }
   }
   /**
    * Module init
-   * @param {Object} provider
+   * @param {Object} config
    * @param {Object} userConsent
    * @return {boolean}
    */
-  function init(provider, userConsent) {
+  function init(config, userConsent) {
+    tryLoadMarketingTag(config);
     return true;
   }
   /** @type {RtdSubmodule} */

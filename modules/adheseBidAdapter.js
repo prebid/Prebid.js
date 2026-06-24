@@ -30,7 +30,7 @@ export const spec = {
     const refererParams = (refererInfo && refererInfo.page) ? { xf: [base64urlEncode(refererInfo.page)] } : {};
     const globalCustomParams = (adheseConfig && adheseConfig.globalTargets) ? cleanTargets(adheseConfig.globalTargets) : {};
     const commonParams = { ...globalCustomParams, ...gdprParams, ...refererParams };
-    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl == false);
+    const vastContentAsUrl = !(adheseConfig && adheseConfig.vastContentAsUrl === false);
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
@@ -88,7 +88,7 @@ export const spec = {
           syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
           syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
         }
-        return [{type: 'iframe', url: syncurl}];
+        return [{ type: 'iframe', url: syncurl }];
       }
     }
     return [];
@@ -121,7 +121,7 @@ function adResponse(bid, ad) {
 
   if (bidResponse.mediaType === VIDEO) {
     if (ad.cachedBodyUrl) {
-      bidResponse.vastUrl = ad.cachedBodyUrl
+      bidResponse.vastUrl = ad.cachedBodyUrl;
     } else {
       bidResponse.vastXml = markup;
     }
@@ -188,7 +188,7 @@ function isAdheseAd(ad) {
 
 function getAdMarkup(ad) {
   if (!isAdheseAd(ad) || (ad.ext === 'js' && ad.body !== undefined && ad.body !== '' && ad.body.match(/<script|<SCRIPT|<html|<HTML|<\?xml/))) {
-    return ad.body
+    return ad.body;
   } else {
     return ad.tag;
   }

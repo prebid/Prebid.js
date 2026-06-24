@@ -16,14 +16,14 @@ import {
   SETUP_FAILED,
   VOLUME
 } from 'libraries/video/constants/events.js';
-import adPlayerProSubmoduleFactory, {callbackStorageFactory} from '../../../../../modules/adplayerproVideoProvider.js';
-import {PLACEMENT} from '../../../../../libraries/video/constants/ortb';
+import adPlayerProSubmoduleFactory, { callbackStorageFactory } from '../../../../../modules/adplayerproVideoProvider.js';
+import { PLACEMENT } from '../../../../../libraries/video/constants/ortb.js';
 import sinon from 'sinon';
 
-const {AdPlayerProProvider, utils} = require('modules/adplayerproVideoProvider.js');
+const { AdPlayerProProvider, utils } = require('modules/adplayerproVideoProvider.js');
 
 const {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE, PLCMT
 } = require('libraries/video/constants/ortb.js');
 
 function getPlayerMock() {
@@ -44,7 +44,7 @@ function getPlayerMock() {
       return this;
     },
     getAdWidth: function () {
-      return 600
+      return 600;
     },
     getAdHeight: function () {
       return 400;
@@ -66,6 +66,8 @@ function getUtilsMock() {
     getPlacement: function () {
     },
     getPlaybackMethod: function () {
+    },
+    getPlcmt: function () {
     }
   };
 }
@@ -91,7 +93,7 @@ describe('AdPlayerProProvider', function () {
 
   beforeEach(() => {
     addDiv();
-    config = {divId: 'test', playerConfig: {placementId: 'testId'}};
+    config = { divId: 'test', playerConfig: { placementId: 'testId' } };
     callbackStorage = callbackStorageFactory();
     utilsMock = getUtilsMock();
     player = getPlayerMock();
@@ -113,7 +115,7 @@ describe('AdPlayerProProvider', function () {
     });
 
     it('should trigger failure when the div is not found', function () {
-      config.divId = 'fake-div'
+      config.divId = 'fake-div';
       const provider = AdPlayerProProvider(config, makePlayerFactoryMock(player), callbackStorage, utilsMock);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});
@@ -218,14 +220,16 @@ describe('AdPlayerProProvider', function () {
       const test_media_type = VIDEO_MIME_TYPE.MP4;
       const test_placement = PLACEMENT.ARTICLE;
       const test_playback_method = PLAYBACK_METHODS.CLICK_TO_PLAY;
+      const test_plcmt = PLCMT.OUTSTREAM;
 
       utilsMock.getSupportedMediaTypes = () => [test_media_type];
       utilsMock.getPlacement = () => test_placement;
       utilsMock.getPlaybackMethod = () => test_playback_method;
+      utilsMock.getPlcmt = () => test_plcmt;
 
       const provider = AdPlayerProProvider(config, null, null, utilsMock);
       provider.init();
-      let video = provider.getOrtbVideo();
+      const video = provider.getOrtbVideo();
 
       expect(video.mimes).to.include(VIDEO_MIME_TYPE.MP4);
       expect(video.protocols).to.include.members([
@@ -242,7 +246,8 @@ describe('AdPlayerProProvider', function () {
       expect(video.playbackmethod).to.include(test_playback_method);
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.have.length(2);
-      expect(video.api).to.include.members([API_FRAMEWORKS.VPAID_2_0, API_FRAMEWORKS.OMID_1_0]); //
+      expect(video.api).to.include.members([API_FRAMEWORKS.VPAID_2_0, API_FRAMEWORKS.OMID_1_0]);
+      expect(video.plcmt).to.equal(test_plcmt);
     });
   });
 
@@ -259,7 +264,7 @@ describe('AdPlayerProProvider', function () {
       const setupSpy = player.setup = sinon.spy(player.setup);
       const provider = AdPlayerProProvider(config, makePlayerFactoryMock(player), callbackStorage, utils);
       provider.init();
-      provider.setAdTagUrl('', {adXml: 'https://test.com'});
+      provider.setAdTagUrl('', { adXml: 'https://test.com' });
       expect(setupSpy.calledOnce).to.be.true;
     });
 
@@ -393,21 +398,37 @@ describe('AdPlayerProProvider utils', function () {
 
     test(false, PLACEMENT.BANNER);
     test({}, PLACEMENT.BANNER);
-    test({type: 'test'}, PLACEMENT.BANNER);
-    test({type: 'inPage'}, PLACEMENT.ARTICLE);
-    test({type: 'rewarded'}, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
-    test({type: 'inView'}, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
+    test({ type: 'test' }, PLACEMENT.BANNER);
+    test({ type: 'inPage' }, PLACEMENT.ARTICLE);
+    test({ type: 'rewarded' }, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
+    test({ type: 'inView' }, PLACEMENT.INTERSTITIAL_SLIDER_FLOATING);
   });
 
   it('getPlaybackMethod', function () {
     function test(autoplay, mute, expected) {
-      expect(utils.getPlaybackMethod({autoplay, mute})).to.be.equal(expected);
+      expect(utils.getPlaybackMethod({ autoplay, mute })).to.be.equal(expected);
     }
 
     test(false, false, PLAYBACK_METHODS.CLICK_TO_PLAY);
     test(false, true, PLAYBACK_METHODS.CLICK_TO_PLAY);
     test(true, false, PLAYBACK_METHODS.AUTOPLAY);
     test(true, true, PLAYBACK_METHODS.AUTOPLAY_MUTED);
+  });
+
+  it('getPlcmt', function () {
+    function test(type, autoplay, muted, file, expected) {
+      expect(utils.getPlcmt({ type, autoplay, muted, file })).to.be.equal(expected);
+    }
+
+    test('inStream', false, false, 'f', PLCMT.INSTREAM);
+    test(undefined, false, false, 'f', PLCMT.INSTREAM);
+    test('inStream', false, true, 'f', PLCMT.INSTREAM);
+    test('inStream', true, false, 'f', PLCMT.INSTREAM);
+    test('inStream', true, true, 'f', PLCMT.ACCOMPANYING_CONTENT);
+
+    test('rewarded', true, false, undefined, PLCMT.INTERSTITIAL);
+    test('inView', true, false, undefined, PLCMT.INTERSTITIAL);
+    test('InPage', true, false, undefined, PLCMT.OUTSTREAM);
   });
 });
 

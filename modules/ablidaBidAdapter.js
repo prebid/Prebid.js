@@ -1,7 +1,8 @@
-import {triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -41,11 +42,11 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      let sizes = []
+      let sizes = [];
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       } else if (bidRequest.mediaTypes[VIDEO] && bidRequest.mediaTypes[VIDEO].playerSize) {
-        sizes = bidRequest.mediaTypes[VIDEO].playerSize
+        sizes = bidRequest.mediaTypes[VIDEO].playerSize;
       }
       const jaySupported = 'atob' in window && 'currentScript' in document;
       const device = getDevice();
@@ -82,7 +83,7 @@ export const spec = {
     const response = serverResponse.body;
 
     response.forEach(function(bid) {
-      bid.ttl = 60
+      bid.ttl = 60;
       bidResponses.push(bid);
     });
     return bidResponses;
@@ -95,7 +96,6 @@ export const spec = {
 
 function getDevice() {
   const ua = navigator.userAgent;
-  const topWindow = window.top;
   if ((/(ipad|xoom|sch-i800|playbook|silk|tablet|kindle)|(android(?!.*mobi))/i).test(ua)) {
     return 'tablet';
   }
@@ -105,7 +105,7 @@ function getDevice() {
   if ((/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Windows\sCE|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/i).test(ua)) {
     return 'smartphone';
   }
-  const width = topWindow.innerWidth || topWindow.document.documentElement.clientWidth || topWindow.document.body.clientWidth;
+  const { width } = getViewportSize();
   if (width > 320) {
     return 'desktop';
   }

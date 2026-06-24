@@ -11,13 +11,13 @@ const analyticsType = 'endpoint';
 
 let _initOptions = {};
 
-let _logBidResponseData = {
+const _logBidResponseData = {
   auctionId: '',
   auctionTimeout: 0,
   responseTime: 0,
 };
 
-let _bidResponseDataLogged = [];
+const _bidResponseDataLogged = [];
 
 var kargoAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }), {
@@ -40,7 +40,7 @@ var kargoAnalyticsAdapter = Object.assign(
 function handleBidResponseData (bidResponse) {
   // Verify this is Kargo and we haven't seen this auction data yet
   if (bidResponse.bidder !== KARGO_BIDDER_CODE || _bidResponseDataLogged.includes(bidResponse.auctionId) !== false) {
-    return
+    return;
   }
 
   _logBidResponseData.auctionId = bidResponse.auctionId;

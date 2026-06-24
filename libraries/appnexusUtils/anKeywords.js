@@ -1,6 +1,6 @@
-import {_each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn} from '../../src/utils.js';
-import {getAllOrtbKeywords} from '../keywords/keywords.js';
-import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
+import { _each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn } from '../../src/utils.js';
+import { getAllOrtbKeywords } from '../keywords/keywords.js';
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
 
 const ORTB_SEGTAX_KEY_MAP = {
   526: '1plusX',
@@ -39,7 +39,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
 
   _each(keywords, (v, k) => {
     if (isArray(v)) {
-      let values = [];
+      const values = [];
       _each(v, (val) => {
         val = getValueString(paramName + '.' + k, val);
         if (val || val === '') {
@@ -55,8 +55,8 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
         return;
       } // unsuported types - don't send a key
     }
-    v = v.filter(kw => kw !== '')
-    const entry = {key: k}
+    v = v.filter(kw => kw !== '');
+    const entry = { key: k };
     if (v.length > 0) {
       entry.value = v;
     }
@@ -73,7 +73,7 @@ export function convertKeywordStringToANMap(keyStr) {
     // will split based on commas and will eat white space before/after the comma
     return convertKeywordsToANMap(keyStr.split(/\s*(?:,)\s*/));
   } else {
-    return {}
+    return {};
   }
 }
 
@@ -86,9 +86,9 @@ function convertKeywordsToANMap(kwarray) {
   kwarray.forEach(kw => {
     // if = exists, then split
     if (kw.indexOf('=') !== -1) {
-      let kwPair = kw.split('=');
-      let key = kwPair[0];
-      let val = kwPair[1];
+      const kwPair = kw.split('=');
+      const key = kwPair[0];
+      const val = kwPair[1];
 
       // then check for existing key in result > if so add value to the array > if not, add new key and create value array
       if (result.hasOwnProperty(key)) {
@@ -101,7 +101,7 @@ function convertKeywordsToANMap(kwarray) {
         result[kw] = [];
       }
     }
-  })
+  });
   return result;
 }
 
@@ -119,21 +119,32 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
       Object.entries(kwMap || {})
         .map(([k, v]) => [k, (isNumber(v) || isStr(v)) ? [v] : v])
     )))
-  )
+  );
+}
+
+export function getANMapFromOrtbIASKeywords(ortb2) {
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  if (iasBrandSafety && typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length > 0) {
+    // Convert IAS object to array of key=value strings
+    const iasArray = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`);
+    return convertKeywordsToANMap(iasArray);
+  }
+  return {};
 }
 
 export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
   return getANKewyordParamFromMaps(
     getANMapFromOrtbKeywords(ortb2),
+    getANMapFromOrtbIASKeywords(ortb2), // <-- include IAS
     getANMapFromOrtbSegments(ortb2),
     ...anKeywordsMaps
-  )
+  );
 }
 
 export function getANMapFromOrtbSegments(ortb2) {
-  let ortbSegData = {};
+  const ortbSegData = {};
   ORTB_SEG_PATHS.forEach(path => {
-    let ortbSegsArrObj = deepAccess(ortb2, path) || [];
+    const ortbSegsArrObj = deepAccess(ortb2, path) || [];
     ortbSegsArrObj.forEach(segObj => {
       // only read segment data from known sources
       const segtax = ORTB_SEGTAX_KEY_MAP[segObj?.ext?.segtax];
@@ -143,7 +154,7 @@ export function getANMapFromOrtbSegments(ortb2) {
           if (ortbSegData[segtax]) {
             ortbSegData[segtax].push(seg.id);
           } else {
-            ortbSegData[segtax] = [seg.id]
+            ortbSegData[segtax] = [seg.id];
           }
         });
       }

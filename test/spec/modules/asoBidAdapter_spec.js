@@ -1,9 +1,9 @@
-import {expect} from 'chai';
-import {spec} from 'modules/asoBidAdapter.js';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes.js';
-import {OUTSTREAM} from 'src/video.js';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
-import {parseUrl} from '../../../src/utils';
+import { expect } from 'chai';
+import { spec } from 'modules/asoBidAdapter.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { OUTSTREAM } from 'src/video.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { parseUrl } from '../../../src/utils.js';
 
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
@@ -89,19 +89,6 @@ describe('Adserver.Online bidding adapter', function () {
     nativeOrtbRequest
   };
 
-  const bidderRequest = {
-    refererInfo: {
-      page: 'https://example.com/page.html',
-      topmostLocation: 'https://example.com/page.html',
-      reachedTop: true,
-      numIframes: 1,
-      stack: [
-        'https://example.com/page.html',
-        'https://example.com/iframe1.html'
-      ]
-    }
-  };
-
   const gdprConsent = {
     gdprApplies: true,
     consentString: 'consentString',
@@ -124,15 +111,32 @@ describe('Adserver.Online bidding adapter', function () {
     }
   };
 
+  let bidderRequest;
+
+  beforeEach(() => {
+    return addFPDToBidderRequest({
+      refererInfo: {
+        page: 'https://example.com/page.html',
+        topmostLocation: 'https://example.com/page.html',
+        reachedTop: true,
+        numIframes: 1,
+        stack: [
+          'https://example.com/page.html',
+          'https://example.com/iframe1.html'
+        ]
+      }
+    }).then(br => { bidderRequest = br; });
+  });
+
   const uspConsent = 'usp_consent';
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found in bidVideo', function () {
-      expect(spec.isBidRequestValid(videoRequest)).to.be.true
+      expect(spec.isBidRequestValid(videoRequest)).to.be.true;
     });
 
     it('should return true when required params found in bidBanner', function () {
-      expect(spec.isBidRequestValid(bannerRequest)).to.be.true
+      expect(spec.isBidRequestValid(bannerRequest)).to.be.true;
     });
 
     it('should return false when required params not found', function () {
@@ -143,7 +147,7 @@ describe('Adserver.Online bidding adapter', function () {
       const bid = Object.assign({}, bannerRequest);
       delete bid.params;
       bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
     it('should return false when required zone param not found', function () {
@@ -161,7 +165,7 @@ describe('Adserver.Online bidding adapter', function () {
         return {
           currency: 'USD',
           floor: 0.5
-        }
+        };
       };
 
       const payload = spec.buildRequests([bidRequest], bidderRequest)[0].data;
@@ -187,7 +191,7 @@ describe('Adserver.Online bidding adapter', function () {
     });
 
     it('creates a valid banner request', function () {
-      const requests = spec.buildRequests([bannerRequest], syncAddFPDToBidderRequest(bidderRequest));
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
       expect(requests).to.have.lengthOf(1);
       const request = requests[0];
 
@@ -216,7 +220,7 @@ describe('Adserver.Online bidding adapter', function () {
 
     if (FEATURES.VIDEO) {
       it('creates a valid video request', function () {
-        const requests = spec.buildRequests([videoRequest], syncAddFPDToBidderRequest(bidderRequest));
+        const requests = spec.buildRequests([videoRequest], bidderRequest);
         expect(requests).to.have.lengthOf(1);
         const request = requests[0];
 
@@ -245,7 +249,7 @@ describe('Adserver.Online bidding adapter', function () {
 
     if (FEATURES.NATIVE) {
       it('creates a valid native request', function () {
-        const requests = spec.buildRequests([nativeRequest], syncAddFPDToBidderRequest(bidderRequest));
+        const requests = spec.buildRequests([nativeRequest], bidderRequest);
         expect(requests).to.have.lengthOf(1);
         const request = requests[0];
 
@@ -275,34 +279,38 @@ describe('Adserver.Online bidding adapter', function () {
       bidderRequest.gdprConsent = gdprConsent;
       bidderRequest.uspConsent = uspConsent;
 
-      const requests = spec.buildRequests([bannerRequest], syncAddFPDToBidderRequest(bidderRequest));
-      expect(requests).to.have.lengthOf(1);
-      const request = requests[0];
+      return addFPDToBidderRequest(bidderRequest).then(bidderRequest => {
+        const requests = spec.buildRequests([bannerRequest], bidderRequest);
+        expect(requests).to.have.lengthOf(1);
+        const request = requests[0];
 
-      expect(request.data).to.not.be.empty;
+        expect(request.data).to.not.be.empty;
 
-      const payload = request.data;
+        const payload = request.data;
 
-      expect(payload.user.ext.consent).to.equal('consentString');
-      expect(payload.regs.ext.us_privacy).to.equal(uspConsent);
-      expect(payload.regs.ext.gdpr).to.equal(1);
+        expect(payload.user.ext.consent).to.equal('consentString');
+        expect(payload.regs.ext.us_privacy).to.equal(uspConsent);
+        expect(payload.regs.ext.gdpr).to.equal(1);
+      });
     });
 
     it('should not send GDPR/USP consent data if it does not apply', function () {
       bidderRequest.gdprConsent = null;
       bidderRequest.uspConsent = null;
 
-      const requests = spec.buildRequests([bannerRequest], syncAddFPDToBidderRequest(bidderRequest));
-      expect(requests).to.have.lengthOf(1);
-      const request = requests[0];
+      return addFPDToBidderRequest(bidderRequest).then(bidderRequest => {
+        const requests = spec.buildRequests([bannerRequest], bidderRequest);
+        expect(requests).to.have.lengthOf(1);
+        const request = requests[0];
 
-      expect(request.data).to.not.be.empty;
+        expect(request.data).to.not.be.empty;
 
-      const payload = request.data;
+        const payload = request.data;
 
-      expect(payload).to.not.have.nested.property('regs.ext.gdpr');
-      expect(payload).to.not.have.nested.property('user.ext.consent');
-      expect(payload).to.not.have.nested.property('regs.ext.us_privacy');
+        expect(payload).to.not.have.nested.property('regs.ext.gdpr');
+        expect(payload).to.not.have.nested.property('user.ext.consent');
+        expect(payload).to.not.have.nested.property('regs.ext.us_privacy');
+      });
     });
   });
 
@@ -373,8 +381,8 @@ describe('Adserver.Online bidding adapter', function () {
               crid: 123,
               adm: JSON.stringify({
                 assets: [
-                  {id: 0, title: {text: 'Title'}},
-                  {id: 1, img: {type: 3, url: 'https://img'}},
+                  { id: 0, title: { text: 'Title' } },
+                  { id: 1, img: { type: 3, url: 'https://img' } },
                 ],
               }),
               adomain: ['example.com'],

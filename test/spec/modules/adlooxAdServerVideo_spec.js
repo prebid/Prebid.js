@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -17,7 +17,7 @@ describe('Adloox Ad Server Video', function () {
     mediaTypes: {
       video: {
         context: 'instream',
-        playerSize: [ 640, 480 ]
+        playerSize: [640, 480]
       }
     },
     bids: [
@@ -34,7 +34,6 @@ describe('Adloox Ad Server Video', function () {
   };
 
   const analyticsOptions = {
-    js: 'https://j.adlooxtracking.com/ads/js/tfav_adl_%%clientid%%.js',
     client: 'adlooxtest',
     clientid: 127,
     platformid: 0,
@@ -80,7 +79,7 @@ describe('Adloox Ad Server Video', function () {
       </Creatives>
     </InLine>
   </Ad>
-</VAST>`
+</VAST>`;
 
   const wrapperUrl = 'http://example.invalid/w';
   const wrapperContent =
@@ -99,7 +98,7 @@ describe('Adloox Ad Server Video', function () {
   });
 
   before(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]);
 
     adapterManager.enableAnalytics({
@@ -124,8 +123,8 @@ describe('Adloox Ad Server Video', function () {
     });
 
     afterEach(() => {
-      URL.createObjectURL.restore()
-      URL.revokeObjectURL.restore()
+      URL.createObjectURL.restore();
+      URL.revokeObjectURL.restore();
     });
 
     describe('invalid arguments', function () {
@@ -154,15 +153,15 @@ describe('Adloox Ad Server Video', function () {
       });
 
       it('should require options.adUnit or options.bid', function (done) {
-        let BID = utils.deepClone(bid);
+        const BID = utils.deepClone(bid);
 
-        let getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
-        getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
+        const getWinningBidsStub = sinon.stub(targeting, 'getWinningBids');
+        getWinningBidsStub.withArgs(adUnit.code).returns([BID]);
 
         const ret = buildVideoUrl({ url: vastUrl }, function () {});
         expect(ret).is.false;
 
-        const retAdUnit = buildVideoUrl({ url: vastUrl, adUnit: utils.deepClone(adUnit) }, function () {})
+        const retAdUnit = buildVideoUrl({ url: vastUrl, adUnit: utils.deepClone(adUnit) }, function () {});
         expect(retAdUnit).is.true;
 
         const retBid = buildVideoUrl({ url: vastUrl, bid: BID }, function () {});
@@ -203,8 +202,8 @@ describe('Adloox Ad Server Video', function () {
       let getWinningBidsStub;
       beforeEach(function () {
         BID = utils.deepClone(bid);
-        getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
-        getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
+        getWinningBidsStub = sinon.stub(targeting, 'getWinningBids');
+        getWinningBidsStub.withArgs(adUnit.code).returns([BID]);
       });
       afterEach(function () {
         getWinningBidsStub.restore();

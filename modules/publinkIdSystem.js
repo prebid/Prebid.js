@@ -5,20 +5,25 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 import { parseUrl, buildUrl, logError } from '../src/utils.js';
-import {uspDataHandler} from '../src/adapterManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./publinkIdSystem.d.ts').PublinkIdSystemModuleName} PublinkIdSystemModuleName
+ * @typedef {import('./publinkIdSystem.d.ts').PublinkIdSystemParams} PublinkIdSystemParams
  */
 
+/**
+ * @type {PublinkIdSystemModuleName}
+ */
 const MODULE_NAME = 'publinkId';
 const GVLID = 24;
 const PUBLINK_COOKIE = '_publink';
@@ -26,22 +31,25 @@ const PUBLINK_S2S_COOKIE = '_publink_srv';
 const PUBLINK_REQUEST_PATH = '/cvx/client/sync/publink';
 const PUBLINK_REFRESH_PATH = '/cvx/client/sync/publink/refresh';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
 }
-
+/**
+ *
+ * @param {PublinkIdSystemParams} params
+ */
 function publinkIdUrl(params, consentData, storedId) {
-  let url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
+  const url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
     mpn: 'Prebid.js',
     mpv: '$prebid.version$',
   };
 
-  if (consentData) {
-    url.search.gdpr = (consentData.gdprApplies) ? 1 : 0;
-    url.search.gdpr_consent = consentData.consentString;
+  if (consentData?.gdpr) {
+    url.search.gdpr = (consentData.gdpr.gdprApplies) ? 1 : 0;
+    url.search.gdpr_consent = consentData.gdpr.consentString;
   }
 
   if (params) {
@@ -60,7 +68,7 @@ function publinkIdUrl(params, consentData, storedId) {
     url.search.publink = storedId;
   }
 
-  const usPrivacyString = uspDataHandler.getConsentData();
+  const usPrivacyString = consentData?.usp;
   if (usPrivacyString && typeof usPrivacyString === 'string') {
     url.search.us_privacy = usPrivacyString;
   }
@@ -70,10 +78,10 @@ function publinkIdUrl(params, consentData, storedId) {
 
 function makeCallback(config = {}, consentData, storedId) {
   return function(prebidCallback) {
-    const options = {method: 'GET', withCredentials: true};
-    let handleResponse = function(responseText, xhr) {
+    const options = { method: 'GET', withCredentials: true };
+    const handleResponse = function(responseText, xhr) {
       if (xhr.status === 200) {
-        let response = JSON.parse(responseText);
+        const response = JSON.parse(responseText);
         if (response) {
           prebidCallback(response.publink);
         }
@@ -84,7 +92,7 @@ function makeCallback(config = {}, consentData, storedId) {
     } else if (config.params.e) {
       logError('params.e must be a hex string');
     }
-  }
+  };
 }
 
 function getlocalValue() {
@@ -121,11 +129,11 @@ function getlocalValue() {
   return result;
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<PublinkIdSystemModuleName>} */
 export const publinkIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {PublinkIdSystemModuleName}
    */
   name: MODULE_NAME,
   gvlid: GVLID,
@@ -137,7 +145,7 @@ export const publinkIdSubmodule = {
    * @returns {{publinkId: string} | undefined}
    */
   decode(publinkId) {
-    return {publinkId: publinkId};
+    return { publinkId: publinkId };
   },
 
   /**
@@ -152,9 +160,9 @@ export const publinkIdSubmodule = {
   getId: function(config, consentData, storedId) {
     const localValue = getlocalValue();
     if (localValue) {
-      return {id: localValue};
+      return { id: localValue };
     }
-    return {callback: makeCallback(config, consentData, storedId)};
+    return { callback: makeCallback(config, consentData, storedId) };
   },
   eids: {
     'publinkId': {

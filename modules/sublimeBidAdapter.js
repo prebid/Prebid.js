@@ -211,7 +211,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         contentType: 'text/plain',
         withCredentials: false
       },
-    }
+    };
   });
 }
 
@@ -284,7 +284,7 @@ function onBidWon(bid) {
 
 /**
  * Send debug when we timeout
- * @param {Array[{}]} timeoutData
+ * @param {Array<Object>} timeoutData
  */
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);

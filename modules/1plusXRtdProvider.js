@@ -11,10 +11,10 @@ import {
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = '1plusX';
-const ORTB2_NAME = '1plusX.com'
+const ORTB2_NAME = '1plusX.com';
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
-const OPE_FPID = 'ope_fpid'
+const OPE_FPID = 'ope_fpid';
 
 export const fpidStorage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
@@ -59,7 +59,7 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   }
 
   const fpidStorageType = deepAccess(moduleConfig, 'params.fpidStorageType',
-    STORAGE_TYPE_LOCALSTORAGE)
+    STORAGE_TYPE_LOCALSTORAGE);
 
   if (
     fpidStorageType !== STORAGE_TYPE_COOKIES &&
@@ -67,35 +67,40 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   ) {
     throw new Error(
       `fpidStorageType must be ${STORAGE_TYPE_LOCALSTORAGE} or ${STORAGE_TYPE_COOKIES}`
-    )
+    );
   }
 
   return { customerId, timeout, bidders, fpidStorageType };
-}
+};
 
 /**
- * Extracts consent from the prebid consent object and translates it
- * into a 1plusX profile api query parameter parameter dict
- * @param {object} prebid gdpr object
- * @returns dictionary of papi gdpr query parameters
+ * Extracts consent from the Prebid consent object and translates it
+ * into a 1plusX profile api query parameter dict
+ * @param {object} prebid
+ * @param {object} prebid.gdpr gdpr object
+ * @returns {Object|null} dictionary of papi gdpr query parameters
  */
 export const extractConsent = ({ gdpr }) => {
   if (!gdpr) {
-    return null
+    return null;
   }
-  const { gdprApplies, consentString } = gdpr
-  if (!(gdprApplies == '0' || gdprApplies == '1')) {
-    throw 'TCF Consent: gdprApplies has wrong format'
+  const { gdprApplies, consentString } = gdpr;
+  if (!['0', '1'].includes(String(gdprApplies))) {
+    const msg = 'TCF Consent: gdprApplies has wrong format';
+    logError(msg);
+    return null;
   }
-  if (consentString && typeof consentString != 'string') {
-    throw 'TCF Consent: consentString must be string if defined'
+  if (consentString && typeof consentString !== 'string') {
+    const msg = 'TCF Consent: consentString must be string if defined';
+    logError(msg);
+    return null;
   }
   const result = {
     'gdpr_applies': gdprApplies,
     'consent_string': consentString
-  }
-  return result
-}
+  };
+  return result;
+};
 
 /**
  * Extracts the OPE first party id field
@@ -105,22 +110,22 @@ export const extractConsent = ({ gdpr }) => {
 export const extractFpid = (fpidStorageType) => {
   try {
     switch (fpidStorageType) {
-      case STORAGE_TYPE_COOKIES: return fpidStorage.getCookie(OPE_FPID)
-      case STORAGE_TYPE_LOCALSTORAGE: return fpidStorage.getDataFromLocalStorage(OPE_FPID)
+      case STORAGE_TYPE_COOKIES: return fpidStorage.getCookie(OPE_FPID);
+      case STORAGE_TYPE_LOCALSTORAGE: return fpidStorage.getDataFromLocalStorage(OPE_FPID);
       default: {
-        logError(`Got unknown fpidStorageType ${fpidStorageType}. Aborting...`)
-        return null
+        logError(`Got unknown fpidStorageType ${fpidStorageType}. Aborting...`);
+        return null;
       }
     }
   } catch (error) {
     return null;
   }
-}
+};
 /**
  * Gets the URL of Profile Api from which targeting data will be fetched
- * @param {string} config.customerId
+ * @param {string} customerId
  * @param {object} consent query params as dict
- * @param {string} oneplusx first party id (nullable)
+ * @param {string} [fpid] first party id
  * @returns {string} URL to access 1plusX Profile API
  */
 export const getPapiUrl = (customerId, consent, fpid) => {
@@ -129,15 +134,15 @@ export const getPapiUrl = (customerId, consent, fpid) => {
   var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
   if (consent) {
     Object.entries(consent).forEach(([key, value]) => {
-      papiUrl += `&${key}=${value}`
-    })
+      papiUrl += `&${key}=${value}`;
+    });
   }
   if (fpid) {
-    papiUrl += `&fpid=${fpid}`
+    papiUrl += `&fpid=${fpid}`;
   }
 
   return papiUrl;
-}
+};
 
 /**
  * Fetches targeting data. It contains the audience segments & the contextual topics
@@ -150,7 +155,7 @@ const getTargetingDataFromPapi = (papiUrl) => {
       customHeaders: {
         'Accept': 'application/json'
       }
-    }
+    };
     const callbacks = {
       success(responseText, response) {
         resolve(JSON.parse(response.response));
@@ -159,15 +164,15 @@ const getTargetingDataFromPapi = (papiUrl) => {
         reject(error);
       }
     };
-    ajax(papiUrl, callbacks, null, requestOptions)
-  })
-}
+    ajax(papiUrl, callbacks, null, requestOptions);
+  });
+};
 
 /**
  * Prepares the update for the ORTB2 object
  * @param {Object} targetingData Targeting data fetched from Profile API
- * @param {string[]} segments Represents the audience segments of the user
- * @param {string[]} topics Represents the topics of the page
+ * @param {string[]} targetingData.segments Represents the audience segments of the user
+ * @param {string[]} targetingData.topics Represents the topics of the page
  * @returns {Object} Object describing the updates to make on bidder configs
  */
 export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
@@ -180,9 +185,9 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
     name: ORTB2_NAME,
     segment: topics.map((topicId) => ({ id: topicId })),
     ext: { segtax: segtaxes.CONTENT }
-  }
+  };
   return { userData, siteContentData };
-}
+};
 
 /**
  * Merges the targeting data with the existing config for bidder and updates
@@ -199,7 +204,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
     const siteDataPath = 'site.content.data';
     const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || [];
     const updatedSiteContentData = [
-      ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
+      ...currentSiteContentData.filter(({ name }) => name !== siteContentData.name),
       siteContentData
     ];
     deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData);
@@ -209,7 +214,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
     const userDataPath = 'user.data';
     const currentUserData = deepAccess(bidderConfig, userDataPath) || [];
     const updatedUserData = [
-      ...currentUserData.filter(({ name }) => name != userData.name),
+      ...currentUserData.filter(({ name }) => name !== userData.name),
       userData
     ];
     deepSetValue(bidderConfig, userDataPath, updatedUserData);
@@ -217,7 +222,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
 };
 
 /**
- * Updates bidder configs with the targeting data retreived from Profile API
+ * Updates bidder configs with the targeting data retrieved from Profile API
  * @param {Object} papiResponse Response from Profile API
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration
@@ -229,7 +234,7 @@ export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }
   for (const bidder of bidders) {
     updateBidderConfig(bidder, ortb2Updates, biddersOrtb2);
   }
-}
+};
 
 // Functions exported in submodule object
 /**
@@ -240,7 +245,7 @@ export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }
  */
 const init = (config, userConsent) => {
   return true;
-}
+};
 
 /**
  *
@@ -255,26 +260,26 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
     const { customerId, bidders, fpidStorageType } = extractConfig(moduleConfig, reqBidsConfigObj);
     const { ortb2Fragments: { bidder: biddersOrtb2 } } = reqBidsConfigObj;
     // Get PAPI URL
-    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid(fpidStorageType))
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid(fpidStorageType));
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
         logMessage(LOG_PREFIX, 'Get targeting data request successful');
         setTargetingDataToConfig(papiResponse, { bidders, biddersOrtb2 });
         callback();
-      })
+      });
   } catch (error) {
     logError(LOG_PREFIX, error);
     callback();
   }
-}
+};
 
 // The RTD submodule object to be exported
 export const onePlusXSubmodule = {
   name: MODULE_NAME,
   init,
   getBidRequestData
-}
+};
 
 // Register the onePlusXSubmodule as submodule of realTimeData
 submodule(REAL_TIME_MODULE, onePlusXSubmodule);

@@ -22,7 +22,7 @@ const BASE_URL = 'https://' + CUSTOM_DOMAIN + '/track' +
 const LURL = `${BASE_URL}&e=AV_M40&rcd=\${AUCTION_LOSS}`;
 const NURL = `${BASE_URL}&e=AV_M4`;
 
-const VIDEO_VAST = `<VAST version="3.0"><Tracking><![CDATA[${NURL}]]></Tracking></VAST>`
+const VIDEO_VAST = `<VAST version="3.0"><Tracking><![CDATA[${NURL}]]></Tracking></VAST>`;
 const BANNER_VAST = VIDEO_VAST;
 const BANNER_HTML = '<h1>HTML BANNER</h1>';
 
@@ -36,6 +36,8 @@ const BANNER_SIZE = { width: 250, height: 250 };
 
 const CUSTOM_RENDERER_URL = `https://${CUSTOM_DOMAIN}/script/6.1/prebidRenderer.js`;
 const DEFAULT_RENDERER_URL = `https://player.aniview.com/script/6.1/prebidRenderer.js`;
+
+const REPLACEMENT_1 = '12345';
 
 const MOCK = {
   bidRequest: () => ({
@@ -67,6 +69,9 @@ const MOCK = {
           AV_PUBLISHERID: PUBLISHER_ID_2,
           AV_CHANNELID: CHANNEL_ID_2,
           playerDomain: CUSTOM_DOMAIN,
+          replacements: {
+            AV_CDIM1: REPLACEMENT_1,
+          },
         },
         mediaTypes: {
           video: {
@@ -141,7 +146,7 @@ const MOCK = {
       ]
     },
   })
-}
+};
 
 describe('Aniview Bid Adapter', function () {
   const adapter = newBidder(spec);
@@ -200,6 +205,13 @@ describe('Aniview Bid Adapter', function () {
       expect(imp.bidfloorcur).equal(CURRENCY);
     });
 
+    it('should have replacements in request', function () {
+      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      const { replacements } = bidRequest[1].data.ext.aniview;
+
+      expect(replacements.AV_CDIM1).equal(REPLACEMENT_1);
+    });
+
     it('should not have floor data in imp if getFloor returns empty object', function () {
       videoBidRequest.bids[1].getFloor = () => ({});
 
@@ -208,6 +220,20 @@ describe('Aniview Bid Adapter', function () {
 
       expect(imp.bidfloor).not.exist;
       expect(imp.bidfloorcur).not.exist;
+    });
+
+    it('should have vastUrl if adm is not provided but nurl is', function () {
+      const bidRequests = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      const bidderResponse = MOCK.bidderResponse();
+
+      delete bidderResponse.body.seatbid[0].bid[0].adm;
+
+      const bids = spec.interpretResponse(bidderResponse, bidRequests[0]);
+      const bid = bids[0];
+
+      expect(bid.vastXml).to.not.exist;
+      expect(bid.vastUrl).to.exist.and.to.not.have.string('${AUCTION_PRICE}');
+      expect(bid.vastUrl).to.have.string('cpm=' + PRICE);
     });
 
     it('should use dev environment', function () {
@@ -245,8 +271,7 @@ describe('Aniview Bid Adapter', function () {
         expect(bids.length).to.greaterThan(0);
         expect(bid.vastXml).to.exist.and.to.not.have.string('${AUCTION_PRICE}');
         expect(bid.vastXml).to.have.string('cpm=' + PRICE);
-        expect(bid.vastUrl).to.exist.and.to.not.have.string('${AUCTION_PRICE}');
-        expect(bid.vastUrl).to.have.string('cpm=' + PRICE);
+        expect(bid.vastUrl).to.not.exist;
         expect(bid.requestId).to.equal(bidRequests[0].data.imp[0].id);
         expect(bid.cpm).to.equal(PRICE);
         expect(bid.ttl).to.equal(TTL);
@@ -265,9 +290,8 @@ describe('Aniview Bid Adapter', function () {
         const bids = spec.interpretResponse(bidderResponse, bidRequests[0]);
         const bid = bids[0];
 
-        expect(bid.width).to.not.exist;
-        expect(bid.height).to.not.exist;
-        expect(bid.creativeId).to.not.exist;
+        expect(bid.renderer).to.not.exist;
+        expect(bid.ad).to.not.exist;
       });
 
       it('should return empty bids array if no bids in response', function () {
@@ -384,7 +408,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should return empty array of syncs if no syncs in response', function () {
-      delete bidderResponse.body.ext.aniview.sync
+      delete bidderResponse.body.ext.aniview.sync;
 
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
 
@@ -392,7 +416,7 @@ describe('Aniview Bid Adapter', function () {
     });
 
     it('should return empty array of syncs if no body in response', function () {
-      delete bidderResponse.body
+      delete bidderResponse.body;
 
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
 

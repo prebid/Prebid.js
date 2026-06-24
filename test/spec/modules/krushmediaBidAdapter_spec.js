@@ -22,7 +22,8 @@ describe('KrushmediabBidAdapter', function () {
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          battr: [1, 3]
         }
       },
       params: {
@@ -37,7 +38,8 @@ describe('KrushmediabBidAdapter', function () {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
-          maxduration: 60
+          maxduration: 60,
+          battr: [1, 3]
         }
       },
       params: {
@@ -82,7 +84,7 @@ describe('KrushmediabBidAdapter', function () {
     params: {
 
     }
-  }
+  };
 
   const bidderRequest = {
     uspConsent: '1---',
@@ -132,7 +134,7 @@ describe('KrushmediabBidAdapter', function () {
     });
 
     it('Returns general data valid', function () {
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
@@ -145,7 +147,10 @@ describe('KrushmediabBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -172,18 +177,17 @@ describe('KrushmediabBidAdapter', function () {
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.traffic === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.traffic) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case VIDEO:
             expect(placement.wPlayer).to.be.an('number');
             expect(placement.hPlayer).to.be.an('number');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.battr).to.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -209,7 +213,7 @@ describe('KrushmediabBidAdapter', function () {
         }
       ];
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
@@ -222,9 +226,6 @@ describe('KrushmediabBidAdapter', function () {
         expect(placement.type).to.exist.and.to.equal('network');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.traffic === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
         switch (placement.traffic) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
@@ -245,7 +246,7 @@ describe('KrushmediabBidAdapter', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('object');
       expect(data.gdpr).to.have.property('consentString');
@@ -259,7 +260,7 @@ describe('KrushmediabBidAdapter', function () {
       bidderRequest.uspConsent = '1---';
       delete bidderRequest.gdprConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -274,14 +275,14 @@ describe('KrushmediabBidAdapter', function () {
         applicableSections: [8]
       };
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
 
       delete bidderRequest.gppConsent;
-    })
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
       bidderRequest.ortb2 = bidderRequest.ortb2 || {};
@@ -289,14 +290,12 @@ describe('KrushmediabBidAdapter', function () {
       bidderRequest.ortb2.regs.gpp = 'abc123';
       bidderRequest.ortb2.regs.gpp_sid = [8];
 
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
+      const serverRequest = spec.buildRequests(bids, bidderRequest);
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-
-      bidderRequest.ortb2;
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -320,9 +319,9 @@ describe('KrushmediabBidAdapter', function () {
           }
         }]
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal(banner.body[0].requestId);
@@ -354,10 +353,10 @@ describe('KrushmediabBidAdapter', function () {
           }
         }]
       };
-      let videoResponses = spec.interpretResponse(video);
+      const videoResponses = spec.interpretResponse(video);
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = videoResponses[0];
+      const dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
@@ -391,12 +390,12 @@ describe('KrushmediabBidAdapter', function () {
           }
         }]
       };
-      let nativeResponses = spec.interpretResponse(native);
+      const nativeResponses = spec.interpretResponse(native);
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      let dataItem = nativeResponses[0];
+      const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');
@@ -425,7 +424,7 @@ describe('KrushmediabBidAdapter', function () {
         }]
       };
 
-      let serverResponses = spec.interpretResponse(invBanner);
+      const serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid video response is passed', function () {
@@ -441,7 +440,7 @@ describe('KrushmediabBidAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invVideo);
+      const serverResponses = spec.interpretResponse(invVideo);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid native response is passed', function () {
@@ -458,7 +457,7 @@ describe('KrushmediabBidAdapter', function () {
           currency: 'USD',
         }]
       };
-      let serverResponses = spec.interpretResponse(invNative);
+      const serverResponses = spec.interpretResponse(invNative);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -471,46 +470,44 @@ describe('KrushmediabBidAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invalid);
+      const serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
 
   describe('getUserSyncs', function() {
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         consentString: 'ALL',
         gdprApplies: true,
-      }, {});
+      }, undefined);
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0');
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
-        consentString: '1---'
-      });
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/image?pbjs=1&ccpa_consent=1---&coppa=0');
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, {
         gppString: 'abc123',
         applicableSections: [8]
       });
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0');
     });
   });
 });

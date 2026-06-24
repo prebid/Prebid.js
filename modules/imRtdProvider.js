@@ -4,21 +4,14 @@
  * @module modules/imRtdProvider
  * @requires module:modules/realTimeData
  */
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js'
-import {getStorageManager} from '../src/storageManager.js';
-import {
-  deepSetValue,
-  deepAccess,
-  timestamp,
-  mergeDeep,
-  logError,
-  logInfo,
-  isFn
-} from '../src/utils.js'
-import {submodule} from '../src/hook.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { deepAccess, deepSetValue, isFn, logError, logInfo, mergeDeep, timestamp } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -32,7 +25,7 @@ const segmentsMaxAge = 3600000; // 1 hour (30 * 60 * 1000)
 const uidMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const vidMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: submoduleName});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: submoduleName });
 
 function setImDataInCookie(value) {
   storage.setCookie(
@@ -68,7 +61,7 @@ export function getBidderFunction(bidderName) {
           `${dctr ? dctr + '|' : ''}im_segments=${segments.join(',')}`
         );
       }
-      return bid
+      return bid;
     },
     fluct: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
@@ -79,19 +72,19 @@ export function getBidderFunction(bidderName) {
           segments
         );
       }
-      return bid
+      return bid;
     }
-  }
+  };
   return biddersFunction[bidderName] || null;
 }
 
 export function getCustomBidderFunction(config, bidder) {
-  const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`)
+  const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`);
 
   if (overwriteFn && isFn(overwriteFn)) {
-    return overwriteFn
+    return overwriteFn;
   } else {
-    return null
+    return null;
   }
 }
 
@@ -103,19 +96,16 @@ export function getCustomBidderFunction(config, bidder) {
  */
 export function setRealTimeData(bidConfig, moduleConfig, data) {
   const adUnits = bidConfig.adUnits || getGlobal().adUnits;
-  const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
+  const utils = { deepSetValue, deepAccess, logInfo, logError, mergeDeep };
 
   if (data.im_segments) {
     const segments = getSegments(data.im_segments, moduleConfig);
     const ortb2 = bidConfig.ortb2Fragments?.global || {};
     deepSetValue(ortb2, 'user.ext.data.im_segments', segments);
+    deepSetValue(ortb2, 'user.ext.data.im_uid', data.im_uid);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
-      window.googletag = window.googletag || {cmd: []};
-      window.googletag.cmd = window.googletag.cmd || [];
-      window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', segments);
-      });
+      setKeyValue('im_segments', segments);
     }
   }
 
@@ -128,7 +118,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
       } else if (bidderFunction) {
         bidderFunction(bid, data, moduleConfig);
       }
-    })
+    });
   });
 }
 
@@ -145,6 +135,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
     onDone();
     return;
   }
+  const uid = storage.getDataFromLocalStorage(imUidLocalName);
   const sids = storage.getDataFromLocalStorage(imRtdLocalName);
   const parsedSids = sids ? sids.split(',') : [];
   const mt = storage.getDataFromLocalStorage(`${imRtdLocalName}_mt`);
@@ -163,7 +154,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
   }
 
   if (sids !== null) {
-    setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedSids});
+    setRealTimeData(reqBidsConfigObj, moduleConfig, { im_uid: uid, im_segments: parsedSids });
     onDone();
     alreadyDone = true;
   }
@@ -173,7 +164,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
       apiUrl,
       getApiCallback(reqBidsConfigObj, alreadyDone ? undefined : onDone, moduleConfig),
       undefined,
-      {method: 'GET', withCredentials: true}
+      { method: 'GET', withCredentials: true }
     );
   }
 }
@@ -210,7 +201,7 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
         }
 
         if (parsedResponse.segments) {
-          setRealTimeData(reqBidsConfigObj, moduleConfig, {im_segments: parsedResponse.segments});
+          setRealTimeData(reqBidsConfigObj, moduleConfig, { im_uid: parsedResponse.uid, im_segments: parsedResponse.segments });
           storage.setDataInLocalStorage(imRtdLocalName, parsedResponse.segments);
           storage.setDataInLocalStorage(`${imRtdLocalName}_mt`, new Date(timestamp()).toUTCString());
         }
@@ -225,7 +216,7 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
       }
       logError('unable to get Intimate Merger segment data');
     }
-  }
+  };
 }
 
 /**

@@ -1,18 +1,19 @@
 import {
   generateUUID,
-  getDNT,
   _each,
+  getWinDimensions,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 const ENDPOINT_URL = 'https://prebid.cht.hinet.net/api/v1';
 const BIDDER_CODE = 'chtnw';
 const COOKIE_NAME = '__htid';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const { getConfig } = config;
 
@@ -28,13 +29,14 @@ export const spec = {
   },
   buildRequests: function(validBidRequests = [], bidderRequest = {}) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const chtnwId = (storage.getCookie(COOKIE_NAME) != undefined) ? storage.getCookie(COOKIE_NAME) : generateUUID();
+    const chtnwId = storage.getCookie(COOKIE_NAME) ?? generateUUID();
     if (storage.cookiesAreEnabled()) {
       storage.setCookie(COOKIE_NAME, chtnwId);
     }
     const device = getConfig('device') || {};
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    device.w = device.w || innerWidth;
+    device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
     device.dnt = getDNT() ? 1 : 0;
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
@@ -69,7 +71,7 @@ export const spec = {
     };
   },
   interpretResponse: function(serverResponse) {
-    const bidResponses = []
+    const bidResponses = [];
     _each(serverResponse.body, function(response, i) {
       bidResponses.push({
         ...response
@@ -80,15 +82,15 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.pixelEnabled) {
-      const chtnwId = generateUUID()
-      const uuid = chtnwId
+      const chtnwId = generateUUID();
+      const uuid = chtnwId;
       const type = (_isMobile()) ? 'dot' : 'pixel';
       syncs.push({
         type: 'image',
         url: `https://t.ssp.hinet.net/${type}?bd=${uuid}&t=chtnw`
-      })
+      });
     }
-    return syncs
+    return syncs;
   },
   onTimeout: function(timeoutData) {
     if (timeoutData === null) {
@@ -106,5 +108,5 @@ export const spec = {
   },
   onSetTargeting: function(bid) {
   },
-}
+};
 registerBidder(spec);

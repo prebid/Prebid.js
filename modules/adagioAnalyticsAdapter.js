@@ -10,7 +10,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { subscribeToGamSlotRenderEndedEvent, SlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
+import { subscribeToGamSlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -60,12 +60,12 @@ const cache = {
   auctionByAdunit: {},
   getAuctionIdByAdunit(adUnitPath, adSlotElementId) {
     if (cache.auctionByAdunit[adUnitPath]) {
-      return { auctionId: cache.auctionByAdunit[adUnitPath], adUnitCode: adUnitPath }
+      return { auctionId: cache.auctionByAdunit[adUnitPath], adUnitCode: adUnitPath };
     }
     if (cache.auctionByAdunit[adSlotElementId]) {
-      return { auctionId: cache.auctionByAdunit[adSlotElementId], adUnitCode: adSlotElementId }
+      return { auctionId: cache.auctionByAdunit[adSlotElementId], adUnitCode: adSlotElementId };
     }
-    return { auctionId: null, adUnitCode: null }
+    return { auctionId: null, adUnitCode: null };
   }
 };
 
@@ -91,7 +91,7 @@ function removeDuplicates(arr, getKey) {
 
 function isAdagio(alias) {
   if (!alias) {
-    return false
+    return false;
   }
   return (alias + adapterManager.aliasRegistry[alias]).toLowerCase().includes(ADAGIO_CODE);
 };
@@ -101,7 +101,6 @@ function getMediaTypeAlias(mediaType) {
     banner: 'ban',
     outstream: 'vidout',
     instream: 'vidin',
-    adpod: 'vidadpod',
     native: 'nat'
   };
   return mediaTypesMap[mediaType] || mediaType;
@@ -121,23 +120,23 @@ function addKeyPrefix(obj, prefix) {
 }
 
 function getUsdCpm(cpm, currency) {
-  let netCpm = cpm
+  let netCpm = cpm;
 
   if (typeof currency === 'string' && currency.toUpperCase() !== CURRENCY_USD) {
     if (typeof getGlobal().convertCurrency === 'function') {
       netCpm = parseFloat(Number(getGlobal().convertCurrency(cpm, currency, CURRENCY_USD))).toFixed(3);
     } else {
-      netCpm = null
+      netCpm = null;
     }
   }
-  return netCpm
+  return netCpm;
 }
 
 function getCurrencyData(bid) {
   return {
     netCpm: getUsdCpm(bid.cpm, bid.currency),
     orginalCpm: getUsdCpm(bid.originalCpm, bid.originalCurrency)
-  }
+  };
 }
 
 /**
@@ -158,7 +157,7 @@ function sendRequest(qp) {
   }, {});
 
   const url = `${ENDPOINT}?${Object.keys(qp).map(key => `${key}=${enc(qp[key])}`).join('&')}`;
-  ajax(url, null, null, {method: 'GET'});
+  ajax(url, null, null, { method: 'GET' });
 };
 
 /**
@@ -220,7 +219,7 @@ function handlerAuctionInit(event) {
 
     // Get all bidders configured for the ad unit.
     // AdUnits with the same code can have a different bidder list, aggregate all of them.
-    const biddersAggregate = adUnits.reduce((bidders, adUnit) => bidders.concat(adUnit.bids.map(bid => bid.bidder)), [])
+    const biddersAggregate = adUnits.reduce((bidders, adUnit) => bidders.concat(adUnit.bids.map(bid => bid.bidder)), []);
     // remove duplicates
     const bidders = [...new Set(biddersAggregate)];
 
@@ -242,9 +241,9 @@ function handlerAuctionInit(event) {
     const bidSrcMapper = (bidder) => {
       // bidderCode in the context of the bidderRequest is the name given to the bidder in the adunit.
       // It is not always the "true" bidder code, it can also be its alias
-      const request = event.bidderRequests.find(br => br.bidderCode === bidder)
-      return request ? request.bids[0].src : null
-    }
+      const request = event.bidderRequests.find(br => br.bidderCode === bidder);
+      return request ? request.bids[0].src : null;
+    };
 
     const biddersSrc = sortedBidderNames.map(bidSrcMapper).join(',');
     const biddersCode = sortedBidderNames.map(bidder => adapterManager.resolveAlias(bidder)).join(',');
@@ -267,7 +266,7 @@ function handlerAuctionInit(event) {
       ban_szs: bannerSizes.join(','),
       bdrs: sortedBidderNames.join(','),
       pgtyp: deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.pagetype', null),
-      plcmt: deepAccess(adUnits[0], 'ortb2Imp.ext.data.placement', null),
+      plcmt: deepAccess(adUnits[0], 'ortb2Imp.ext.data.adg_rtd.placement', null), // adg_rtd.placement is set by AdagioRtdProvider.
       t_n: adgRtdSession.testName || null,
       t_v: adgRtdSession.testVersion || null,
       s_id: adgRtdSession.id || null,
@@ -289,6 +288,11 @@ function handlerAuctionInit(event) {
         // for backward compatibility: if we didn't find organizationId & site but we have a bid from adagio we might still find it in params
         qp.org_id = qp.org_id || adagioAdUnitBids[0].params.organizationId;
         qp.site = qp.site || adagioAdUnitBids[0].params.site;
+
+        // `qp.plcmt` uses the value set by the AdagioRtdProvider. If not present, we fallback on the value set at the adUnit.params level.
+        if (!qp.plcmt) {
+          qp.plcmt = deepAccess(adagioAdUnitBids[0], 'params.placement', null);
+        }
       }
     }
 
@@ -331,13 +335,13 @@ function handlerAuctionEnd(event) {
   const adUnitCodes = cache.getAllAdUnitCodes(auctionId);
   adUnitCodes.forEach(adUnitCode => {
     const bidResponseMapper = (bidder) => {
-      const bid = event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder)
-      return bid ? '1' : '0'
-    }
+      const bid = event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder);
+      return bid ? '1' : '0';
+    };
     const bidCpmMapper = (bidder) => {
-      const bid = event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder)
-      return bid ? getCurrencyData(bid).netCpm : null
-    }
+      const bid = event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder);
+      return bid ? getCurrencyData(bid).netCpm : null;
+    };
 
     const perfNavigation = performance.getEntriesByType('navigation')[0];
 
@@ -360,13 +364,13 @@ function handlerAuctionEnd(event) {
 }
 
 function handlerBidWon(event) {
-  let auctionId = getTargetedAuctionId(event);
+  const auctionId = getTargetedAuctionId(event);
 
   if (!guard.bidTracked(auctionId, event.adUnitCode)) {
     return;
   }
 
-  const currencyData = getCurrencyData(event)
+  const currencyData = getCurrencyData(event);
 
   const adagioAuctionCacheId = (
     (event.latestTargetedAuctionId && event.latestTargetedAuctionId !== event.auctionId)
@@ -396,7 +400,7 @@ function handlerBidWon(event) {
 
 function handlerAdRender(event, isSuccess) {
   const { adUnitCode } = event.bid;
-  let auctionId = getTargetedAuctionId(event.bid);
+  const auctionId = getTargetedAuctionId(event.bid);
 
   if (!guard.bidTracked(auctionId, adUnitCode)) {
     return;
@@ -432,7 +436,7 @@ function handlerBidTimeout(args) {
  */
 function handlerPbsAnalytics(event) {
   const pbaByAdUnit = event.atag.find(e => {
-    return e.module === 'adg-pba'
+    return e.module === 'adg-pba';
   })?.pba;
 
   if (!pbaByAdUnit) {
@@ -442,14 +446,14 @@ function handlerPbsAnalytics(event) {
   const adUnitCodes = cache.getAllAdUnitCodes(event.auctionId);
 
   adUnitCodes.forEach(adUnitCode => {
-    const pba = pbaByAdUnit[adUnitCode]
+    const pba = pbaByAdUnit[adUnitCode];
 
     if (isPlainObject(pba)) {
       cache.updateAuction(event.auctionId, adUnitCode, {
         ...addKeyPrefix(pba, 'e_')
       });
     }
-  })
+  });
 }
 
 /**
@@ -457,7 +461,7 @@ function handlerPbsAnalytics(event) {
  */
 
 /**
- * @param {SlotRenderEndedEvent} event
+ * @param {*} event
  * @returns {void}
  */
 function gamSlotCallback(event) {
@@ -475,7 +479,7 @@ function gamSlotCallback(event) {
 
   // This event can be triggered after AUCTION_END
   // To make sure the data is sent, we must send a new beacon version.
-  const auction = cache.getAuction(auctionId, adUnitCode)
+  const auction = cache.getAuction(auctionId, adUnitCode);
   if (auction?.loa_e !== undefined) {
     // loa_e = loadEventEnd
     // It means the AUCTION_END has already been sent.
@@ -483,7 +487,7 @@ function gamSlotCallback(event) {
   }
 }
 
-let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
+const adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
   track: function(event) {
     const { eventType, args } = event;
     try {
@@ -535,7 +539,7 @@ adagioAdapter.originEnableAnalytics = adagioAdapter.enableAnalytics;
 adagioAdapter.enableAnalytics = config => {
   _internal.getAdagioNs().versions.adagioAnalyticsAdapter = VERSION;
 
-  let modules = getGlobal().installedModules;
+  const modules = getGlobal().installedModules;
   if (modules && (!modules.length || modules.indexOf('adagioRtdProvider') === -1 || modules.indexOf('rtdModule') === -1)) {
     logError('Adagio Analytics Adapter requires rtdModule & adagioRtdProvider modules which are not installed. No beacon will be sent');
     return;
@@ -555,8 +559,8 @@ adagioAdapter.enableAnalytics = config => {
   }
   adagioAdapter.originEnableAnalytics(config);
 
-  subscribeToGamSlotRenderEndedEvent(gamSlotCallback)
-}
+  subscribeToGamSlotRenderEndedEvent(gamSlotCallback);
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adagioAdapter,

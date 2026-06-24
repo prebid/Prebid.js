@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
 import { hook } from 'src/hook.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 describe('ConcertAdapter', function () {
   let bidRequests;
@@ -33,7 +35,7 @@ describe('ConcertAdapter', function () {
       }
     };
 
-    $$PREBID_GLOBAL$$.bidderSettings = {
+    getGlobal().bidderSettings = {
       concert: {
         storageAllowed: true
       }
@@ -82,14 +84,14 @@ describe('ConcertAdapter', function () {
           }
         ]
       }
-    }
+    };
 
-    sandbox = sinon.sandbox.create();
-    sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
+    sandbox = sinon.createSandbox();
+    sandbox.stub(adUnits, 'getAdUnitElement').returns(element);
   });
 
   afterEach(function () {
-    $$PREBID_GLOBAL$$.bidderSettings = {};
+    getGlobal().bidderSettings = {};
     sandbox.restore();
   });
 
@@ -103,7 +105,7 @@ describe('ConcertAdapter', function () {
       const bid = {
         bidder: 'concert',
         params: {}
-      }
+      };
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -166,12 +168,18 @@ describe('ConcertAdapter', function () {
 
     it('should use sharedid if it exists', function() {
       storage.removeDataFromLocalStorage('c_nap');
-      const bidRequestsWithSharedId = [{ ...bidRequests[0], userId: { sharedid: { id: '123abc' } } }]
+      const bidRequestsWithSharedId = [{
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'sharedid.org',
+          uids: [{ id: '123abc' }]
+        }]
+      }];
       const request = spec.buildRequests(bidRequestsWithSharedId, bidRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.meta.uid).to.equal('123abc');
-    })
+    });
 
     it('should grab uid from local storage if it exists and sharedid does not', function() {
       storage.setDataInLocalStorage('vmconcert_uid', 'foo');
@@ -183,35 +191,37 @@ describe('ConcertAdapter', function () {
     });
 
     it('should add uid2 to eids list if available', function() {
-      bidRequests[0].userId = { uid2: { id: 'uid123' } }
+      bidRequests[0].userIdAsEids = [{
+        source: 'uidapi.com',
+        uids: [{ id: 'uid123', atype: 3 }]
+      }];
 
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
-      const meta = payload.meta
+      const meta = payload.meta;
 
       expect(meta.eids.length).to.equal(1);
-      expect(meta.eids[0].uids[0].id).to.equal('uid123')
-      expect(meta.eids[0].uids[0].atype).to.equal(3)
-    })
+      expect(meta.eids[0].uids[0].id).to.equal('uid123');
+      expect(meta.eids[0].uids[0].atype).to.equal(3);
+    });
 
     it('should return empty eids list if none are available', function() {
-      bidRequests[0].userId = { testId: { id: 'uid123' } }
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
-      const meta = payload.meta
+      const meta = payload.meta;
 
       expect(meta.eids.length).to.equal(0);
     });
 
     it('should return x/y offset coordiantes when element is present', function() {
-      Object.assign(element, { x: 100, y: 0, width: 400, height: 400 })
+      Object.assign(element, { x: 100, y: 0, width: 400, height: 400 });
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
       const slot = payload.slots[0];
 
-      expect(slot.offsetCoordinates.x).to.equal(100)
-      expect(slot.offsetCoordinates.y).to.equal(0)
-    })
+      expect(slot.offsetCoordinates.x).to.equal(100);
+      expect(slot.offsetCoordinates.y).to.equal(0);
+    });
 
     it('should not pass along tdid if the user has opted out', function() {
       storage.setDataInLocalStorage('c_nap', 'true');
@@ -232,10 +242,31 @@ describe('ConcertAdapter', function () {
     it('should pass along tdid if the user has not opted out', function() {
       storage.removeDataFromLocalStorage('c_nap', 'true');
       const tdid = '123abc';
-      const bidRequestsWithTdid = [{ ...bidRequests[0], userId: { tdid } }]
+      const bidRequestsWithTdid = [{
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [{ id: tdid }]
+        }]
+      }];
       const request = spec.buildRequests(bidRequestsWithTdid, bidRequest);
       const payload = JSON.parse(request.data);
       expect(payload.meta.tdid).to.equal(tdid);
+    });
+
+    it('should use pubcId if it exists and sharedId does not', function() {
+      storage.removeDataFromLocalStorage('c_nap');
+      const bidRequestsWithPubcId = [{
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'pubcid.org',
+          uids: [{ id: 'pubcid123' }]
+        }]
+      }];
+      const request = spec.buildRequests(bidRequestsWithPubcId, bidRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.meta.uid).to.equal('pubcid123');
     });
   });
 
@@ -271,7 +302,7 @@ describe('ConcertAdapter', function () {
     });
 
     it('should return empty bids if there are no bids from the server', function() {
-      const bids = spec.interpretResponse({ body: {bids: []} }, bidRequest);
+      const bids = spec.interpretResponse({ body: { bids: [] } }, bidRequest);
       expect(bids).to.have.lengthOf(0);
     });
   });

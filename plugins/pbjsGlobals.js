@@ -1,40 +1,19 @@
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
 const path = require('path');
-const allFeatures = new Set(require('../features.json'));
-
+const {buildOptions} = require('./buildOptions.js');
 const FEATURES_GLOBAL = 'FEATURES';
-
-function featureMap(disable = []) {
-  disable = disable.map((s) => s.toUpperCase());
-  disable.forEach((f) => {
-    if (!allFeatures.has(f)) {
-      throw new Error(`Unrecognized feature: ${f}`)
-    }
-  });
-  disable = new Set(disable);
-  return Object.fromEntries([...allFeatures.keys()].map((f) => [f, !disable.has(f)]));
-}
-
-function getNpmVersion(version) {
-  try {
-    // only use "real" versions (that is, not the -pre ones, they won't be on jsDelivr)
-    return /^([\d.]+)$/.exec(version)[1];
-  } catch (e) {
-    return 'latest';
-  }
-}
+const {getModuleName, relPath, getFreeName} = require('./utils.js');
 
 module.exports = function(api, options) {
-  const pbGlobal = options.globalVarName || prebid.globalVarName;
-  const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
-  const features = featureMap(options.disableFeatures);
+  const {features, distUrlBase, skipCalls} = buildOptions(options);
+
   let replace = {
     '$prebid.version$': prebid.version,
-    '$$PREBID_GLOBAL$$': pbGlobal,
-    '$$DEFINE_PREBID_GLOBAL$$': defineGlobal,
+    '$$PREBID_GLOBAL$$': false,
+    '$$DEFINE_PREBID_GLOBAL$$': false,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
-    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`,
+    '$$PREBID_DIST_URL_BASE$$': false,
     '$$LIVE_INTENT_MODULE_MODE$$': (process && process.env && process.env.LiveConnectMode) || 'standard'
   };
 
@@ -42,28 +21,22 @@ module.exports = function(api, options) {
     '$$REPO_AND_VERSION$$'
   ];
 
-  const PREBID_ROOT = path.resolve(__dirname, '..');
-  // on Windows, require paths are not filesystem paths
-  const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
-
-  function relPath(from, toRelToProjectRoot) {
-    return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
+  function translateToJs(path, state) {
+    const source = path.node.source?.value;
+    if (source) {
+      if (source.endsWith('.d.ts')) {
+        // assuming .d.ts files are just definitions, they are not relevant at runtime
+        path.remove();
+      } else if (source.endsWith('.ts')) {
+        path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+      }
+    }
   }
 
-  function getModuleName(filename) {
-    const modPath = path.parse(path.relative(PREBID_ROOT, filename));
-    if (modPath.ext.toLowerCase() !== '.js') {
-      return null;
+  function checkMacroAllowed(name) {
+    if (replace[name] === false) {
+      throw new Error(`The macro ${name} should no longer be used; look for a replacement in src/buildOptions.ts`)
     }
-    if (modPath.dir === 'modules') {
-      // modules/moduleName.js -> moduleName
-      return modPath.name;
-    }
-    if (modPath.name.toLowerCase() === 'index' && path.dirname(modPath.dir) === 'modules') {
-      // modules/moduleName/index.js -> moduleName
-      return path.basename(modPath.dir);
-    }
-    return null;
   }
 
   return {
@@ -72,18 +45,17 @@ module.exports = function(api, options) {
         const modName = getModuleName(state.filename);
         if (modName != null) {
           // append "registration" of module file to getGlobal().installedModules
-          let i = 0;
-          let registerName;
-          do {
-            registerName = `__r${i++}`
-          } while (path.scope.hasBinding(registerName))
+          const registerName = getFreeName(path, '__r');
           path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
-      StringLiteral(path) {
+      ImportDeclaration: translateToJs,
+      ExportDeclaration: translateToJs,
+      StringLiteral(path, state) {
         Object.keys(replace).forEach(name => {
           if (path.node.value.includes(name)) {
+            checkMacroAllowed(name);
             path.node.value = path.node.value.replace(
               new RegExp(escapeRegExp(name), 'g'),
               replace[name].toString()
@@ -91,12 +63,13 @@ module.exports = function(api, options) {
           }
         });
       },
-      TemplateLiteral(path) {
+      TemplateLiteral(path, state) {
         path.traverse({
           TemplateElement(path) {
             Object.keys(replace).forEach(name => {
               ['raw', 'cooked'].forEach(type => {
                 if (path.node.value[type].includes(name)) {
+                  checkMacroAllowed(name);
                   path.node.value[type] = path.node.value[type].replace(
                     new RegExp(escapeRegExp(name), 'g'),
                     replace[name]
@@ -107,9 +80,10 @@ module.exports = function(api, options) {
           }
         });
       },
-      Identifier(path) {
+      Identifier(path, state) {
         Object.keys(replace).forEach(name => {
           if (path.node.name === name) {
+            checkMacroAllowed(name);
             if (identifierToStringLiteral.includes(name)) {
               path.replaceWith(
                 t.StringLiteral(replace[name])
@@ -128,9 +102,29 @@ module.exports = function(api, options) {
           path.node.object.name === FEATURES_GLOBAL &&
           !path.scope.hasBinding(FEATURES_GLOBAL) &&
           t.isIdentifier(path.node.property) &&
-          features.hasOwnProperty(path.node.property.name)
+          Object.prototype.hasOwnProperty.call(features, path.node.property.name)
         ) {
           path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
+        }
+      },
+      CallExpression(path) {
+        if (
+              // direct calls, e.g. logMessage()
+              t.isIdentifier(path.node.callee) &&
+              skipCalls.has(path.node.callee.name) ||
+
+              // Member expression calls, e.g. utils.logMessage()
+              t.isMemberExpression(path.node.callee) &&
+              t.isIdentifier(path.node.callee.property) &&
+              skipCalls.has(path.node.callee.property.name)
+        ) {
+          if (t.isExpressionStatement(path.parent)) {
+            path.parentPath.remove();
+          } else {
+            // Fallback to undefined if it's used as part of a larger expression
+            path.replaceWith(t.identifier('undefined'));
+          }
+          path.skip(); // Prevent further traversal
         }
       }
     }

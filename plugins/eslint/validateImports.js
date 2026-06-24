@@ -1,23 +1,32 @@
 
 const path = require('path');
 const _ = require('lodash');
-const resolveFrom = require('resolve-from');
+const { CODE_EXT } = require('./resolver.js');
+const { isInDirectory } = require('../utils.js');
+
+
 const MODULES_PATH = path.resolve(__dirname, '../../modules');
 const CREATIVE_PATH = path.resolve(__dirname, '../../creative');
 
-function isInDirectory(filename, dir) {
-  const rel = path.relative(dir, filename);
-  return rel && !rel.startsWith('..') && !path.isAbsolute(rel);
-}
+
 
 function flagErrors(context, node, importPath) {
   let absFileDir = path.dirname(context.getFilename());
-  let absImportPath = importPath.startsWith('.') ? path.resolve(absFileDir, importPath) : require.resolve(importPath);
-
+  let absImportPath;
   try {
-    resolveFrom(absFileDir, importPath);
+    absImportPath = importPath.startsWith('.') ? path.resolve(absFileDir, importPath) : require.resolve(importPath);
   } catch (e) {
-    return context.report(node, `import "${importPath}" cannot be resolved`);
+    context.report(node, e.message)
+    return;
+  }
+  const parsedImportPath = path.parse(importPath);
+
+  // don't allow extension-less local imports
+  if (
+    !importPath.match(/^\w+/) &&
+    !CODE_EXT.includes(parsedImportPath.ext)
+  ) {
+    context.report(node, `import "${importPath}" should include extension, one of ${CODE_EXT.join(', ')}`);
   }
 
   if (
@@ -26,6 +35,11 @@ function flagErrors(context, node, importPath) {
     !context.options[0].some(name => importPath.startsWith(name))
   ) {
     context.report(node, `import "${importPath}" not in import whitelist`);
+  } else if (
+    context?.options?.[0].some(val => val === false) &&
+    path.relative(absFileDir, absImportPath).startsWith('..')
+  ) {
+    context.report(node, `non-local imports are not allowed`)
   } else {
     // do not allow cross-module imports
     if (isInDirectory(absImportPath, MODULES_PATH) && (!isInDirectory(absImportPath, absFileDir) || absFileDir === MODULES_PATH)) {
@@ -38,16 +52,8 @@ function flagErrors(context, node, importPath) {
     }
 
     // do not allow imports outside `creative`
-    if (isInDirectory(absFileDir, CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
+    if ((isInDirectory(absFileDir, CREATIVE_PATH) || absFileDir === CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
       context.report(node, `import "${importPath}": importing from outside creative is not allowed`);
-    }
-
-    // don't allow extension-less local imports
-    if (
-      !importPath.match(/^\w+/) &&
-      !['.js', '.json'].includes(path.extname(absImportPath))
-    ) {
-      context.report(node, `import "${importPath}" should include extension as .js or .json`);
     }
   }
 }

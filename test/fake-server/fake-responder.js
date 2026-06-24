@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 const deepEqual = require('deep-equal');
-const generateFixtures = require('./fixtures');
+const generateFixtures = require('./fixtures/index.js');
 const path = require('path');
 
 // path to the fixture directory
@@ -12,8 +12,8 @@ const fixturesPath = path.join(__dirname, 'fixtures');
  * @returns {object} responseBody
  */
 const matchResponse = function (requestBody) {
-  let actualUuids = [];
-  let reqResMap = generateFixtures(fixturesPath);
+  const actualUuids = [];
+  const reqResMap = generateFixtures(fixturesPath);
   const requestResponsePairs = Object.keys(reqResMap).map(testName => reqResMap[testName]);
 
   // delete 'uuid' property
@@ -23,6 +23,7 @@ const matchResponse = function (requestBody) {
 
     // delete the 'uuid'
     delete body.uuid;
+    delete body.tid;
   });
 
   ['sdk', 'referrer_detection', 'gdpr_consent'].forEach(prop => {
@@ -33,7 +34,13 @@ const matchResponse = function (requestBody) {
 
   // delete 'uuid' from `expected request body`
   requestResponsePairs
-    .forEach(reqRes => { reqRes.request.httpRequest && reqRes.request.httpRequest.body.tags.forEach(body => body.uuid && delete body.uuid) });
+    .forEach(reqRes => {
+      if (reqRes.request.httpRequest) {
+        reqRes.request.httpRequest.body.tags.forEach(body => {
+          if (body.uuid) delete body.uuid;
+        });
+      }
+    });
 
   const match = requestResponsePairs.filter(reqRes => reqRes.request.httpRequest && deepEqual(reqRes.request.httpRequest.body.tags, requestBody.tags));
 
@@ -41,7 +48,7 @@ const matchResponse = function (requestBody) {
     if (match.length === 0) {
       throw new Error('No mock response found');
     } else if (match.length > 1) {
-      throw new Error('More than one mock response found')
+      throw new Error('More than one mock response found');
     }
   } catch (e) {
     console.error(e);
@@ -65,7 +72,7 @@ const matchResponse = function (requestBody) {
   });
 
   return responseBody;
-}
+};
 
 /**
  * An ExpressJs middleware function that checks the incoming Request Body
@@ -81,6 +88,6 @@ const fakeResponder = function (req, res, next) {
   res.write(JSON.stringify(response));
 
   next();
-}
+};
 
 module.exports = fakeResponder;

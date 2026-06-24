@@ -3,12 +3,12 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
 describe('novatiqIdSystem', function () {
-  let urlParams = {
+  const urlParams = {
     novatiqId: 'snowflake',
     useStandardUuid: false,
     useSspId: true,
     useSspHost: true
-  }
+  };
 
   describe('getSrcId', function() {
     it('getSrcId should set srcId value to 000 due to undefined parameter in config section', function() {
@@ -62,7 +62,7 @@ describe('novatiqIdSystem', function () {
     it('should set sharedStatus if sharedID is configured and is valid', function() {
       const config = { params: { sourceid: '123', useSharedId: true } };
 
-      let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
+      const stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
 
       const response = novatiqIdSubmodule.getId(config);
 
@@ -74,7 +74,7 @@ describe('novatiqIdSystem', function () {
     it('should set sharedStatus if sharedID is configured and is valid when making an async call', function() {
       const config = { params: { sourceid: '123', useSharedId: true, useCallbacks: true } };
 
-      let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
+      const stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
 
       const response = novatiqIdSubmodule.getId(config);
 
@@ -91,7 +91,7 @@ describe('novatiqIdSystem', function () {
         useStandardUuid: false,
         useSspId: true,
         useSspHost: true
-      }
+      };
 
       const config = { params: { sourceid: '123' } };
       const response = novatiqIdSubmodule.getUrlParams(config);
@@ -100,12 +100,12 @@ describe('novatiqIdSystem', function () {
     });
 
     it('should return custom url parameters when set', function() {
-      let customUrlParams = {
+      const customUrlParams = {
         novatiqId: 'hyperid',
         useStandardUuid: true,
         useSspId: false,
         useSspHost: false
-      }
+      };
 
       const config = {
         sourceid: '123',
@@ -129,7 +129,7 @@ describe('novatiqIdSystem', function () {
         useStandardUuid: false,
         useSspId: true,
         useSspHost: true
-      }
+      };
 
       const url = novatiqIdSubmodule.getSyncUrl(false, '', defaultUrlParams);
       const response = novatiqIdSubmodule.sendAsyncSyncRequest('testuuid', url);
@@ -145,7 +145,7 @@ describe('novatiqIdSystem', function () {
     });
 
     it('should change the result format if async', function() {
-      let novatiqId = {};
+      const novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
       const response = novatiqIdSubmodule.decode(novatiqId);
@@ -155,14 +155,14 @@ describe('novatiqIdSystem', function () {
     });
 
     it('should remove syncResponse if removeAdditionalInfo true', function() {
-      let novatiqId = {};
+      const novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
-      var config = {params: {removeAdditionalInfo: true}};
+      var config = { params: { removeAdditionalInfo: true } };
       const response = novatiqIdSubmodule.decode(novatiqId, config);
       expect(response.novatiq.ext.syncResponse).should.be.not.empty;
       expect(response.novatiq.snowflake.id).should.be.not.empty;
       should.equal(response.novatiq.snowflake.syncResponse, undefined);
     });
   });
-})
+});

@@ -1,9 +1,13 @@
-import {_map, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {find} from '../src/polyfill.js';
-import {chunk} from '../libraries/chunk/chunk.js';
+import { _map, deepAccess, flatten, isArray, logError, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { chunk } from '../libraries/chunk/chunk.js';
+import {
+  createTag, getUserSyncsFn,
+  isBidRequestValid,
+  supportedMediaTypes
+} from '../libraries/adtelligentUtils/adtelligentUtils.js';
 
 const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/';
 const BIDDER_CODE = 'adtarget';
@@ -13,54 +17,14 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 779,
-  supportedMediaTypes: [VIDEO, BANNER],
-  isBidRequestValid: function (bid) {
-    return !!deepAccess(bid, 'params.aid');
-  },
+  supportedMediaTypes,
+  isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = [];
-
-    function addSyncs(bid) {
-      const uris = bid.cookieURLs;
-      const types = bid.cookieURLSTypes || [];
-
-      if (Array.isArray(uris)) {
-        uris.forEach((uri, i) => {
-          const type = types[i] || 'image';
-
-          if ((!syncOptions.pixelEnabled && type === 'image') ||
-            (!syncOptions.iframeEnabled && type === 'iframe') ||
-            syncsCache[uri]) {
-            return;
-          }
-
-          syncsCache[uri] = true;
-          syncs.push({
-            type: type,
-            url: uri
-          })
-        })
-      }
-    }
-
-    if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
-      isArray(serverResponses) && serverResponses.forEach((response) => {
-        if (response.body) {
-          if (isArray(response.body)) {
-            response.body.forEach(b => {
-              addSyncs(b);
-            })
-          } else {
-            addSyncs(response.body)
-          }
-        }
-      })
-    }
-    return syncs;
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache);
   },
 
   buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
+    const adapterSettings = config.getConfig(adapterRequest.bidderCode);
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
@@ -71,7 +35,7 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT
       };
-    })
+    });
   },
   interpretResponse: function (serverResponse, { adapterRequest }) {
     serverResponse = serverResponse.body;
@@ -103,7 +67,7 @@ function parseResponse(serverResponse, adapterRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const request = find(adapterRequest.bids, (bidRequest) => {
+    const request = ((adapterRequest.bids) || []).find((bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 
@@ -118,26 +82,7 @@ function parseResponse(serverResponse, adapterRequest) {
 }
 
 function bidToTag(bidRequests, adapterRequest) {
-  const tag = {
-    // TODO: is 'page' the right value here?
-    Domain: deepAccess(adapterRequest, 'refererInfo.page')
-  };
-  if (config.getConfig('coppa') === true) {
-    tag.Coppa = 1;
-  }
-  if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
-    tag.GDPR = 1;
-    tag.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
-  }
-  if (deepAccess(adapterRequest, 'uspConsent')) {
-    tag.USP = deepAccess(adapterRequest, 'uspConsent');
-  }
-  if (deepAccess(bidRequests[0], 'schain')) {
-    tag.Schain = deepAccess(bidRequests[0], 'schain');
-  }
-  if (deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = deepAccess(bidRequests[0], 'userId');
-  }
+  const tag = createTag(bidRequests, adapterRequest);
 
   const bids = [];
 
@@ -166,7 +111,7 @@ function getMediaType(bidderRequest) {
 }
 
 function createBid(bidResponse, bidRequest) {
-  const mediaType = getMediaType(bidRequest)
+  const mediaType = getMediaType(bidRequest);
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,

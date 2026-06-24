@@ -1,13 +1,15 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
-import { replaceAuctionPrice, deepAccess } from '../../src/utils.js';
-import { ajax } from '../../src/ajax.js';
+import { replaceAuctionPrice, deepAccess, logInfo } from '../../src/utils.js';
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
+import { getTimeZone } from '../timezone/timezone.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-  var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
+  const city = getTimeZone();
   let req = {
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
@@ -27,7 +29,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
     wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang,
   };
-  if (req.device && req.device != 'undefined') {
+  if (req.device && req.device !== 'undefined') {
     req.device.geo = {
       country: req.user.geo.country,
       region: req.user.geo.region,
@@ -45,11 +47,11 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     data: req,
 
   };
-}
+};
 
 export function interpretResponse(serverResponse) {
-  const bidsValue = []
-  const bidResponse = serverResponse.body
+  const bidsValue = [];
+  const bidResponse = serverResponse.body;
   bidResponse.seatbid.forEach(seat => {
     seat.bid.forEach(bid => {
       bidsValue.push({
@@ -65,10 +67,10 @@ export function interpretResponse(serverResponse) {
         meta: {
           advertiserDomains: bid.adomain || '',
         },
-      })
-    })
-  })
-  return bidsValue
+      });
+    });
+  });
+  return bidsValue;
 }
 
 export function onBidWon(bid) {
@@ -80,6 +82,7 @@ export function onBidWon(bid) {
 
 export function macroReplace(adm, cpm) {
   let replacedadm = replaceAuctionPrice(adm, cpm);
+
   return replacedadm;
 }
 
@@ -90,11 +93,11 @@ function mapImpression(slot, bidderRequest) {
   };
 
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
-    imp.native = mapNative(slot)
+    imp.native = mapNative(slot);
   } else {
-    imp.banner = mapBanner(slot)
+    imp.banner = mapBanner(slot);
   }
-  return imp
+  return imp;
 }
 
 function mapNative(slot) {
@@ -105,24 +108,25 @@ function mapNative(slot) {
     };
     return {
       request: JSON.stringify(request)
-    }
+    };
   }
 }
 
 function mapBanner(slot) {
   if (slot.mediaTypes.banner) {
     let format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
-      return { w: size[0], h: size[1] }
+      return { w: size[0], h: size[1] };
     });
 
     return {
       format
-    }
+    };
   }
 }
 
 export function buildBidResponse(serverResponse) {
   const responseBody = serverResponse.body;
+
   const bids = [];
   responseBody.seatbid.forEach(seat => {
     seat.bid.forEach(serverBid => {
@@ -131,6 +135,7 @@ export function buildBidResponse(serverResponse) {
       }
       if (serverBid.adm.indexOf('{') === 0) {
         let interpretedBid = interpretNativeBid(serverBid);
+
         bids.push(interpretedBid
         );
       } else {
@@ -149,101 +154,7 @@ export function buildBidResponse(serverResponse) {
           },
         });
       }
-    })
+    });
   });
   return bids;
 }
-
-// export function interpretNativeAd(adm) {
-//   try {
-//     // logInfo('adm::' + adm);
-//     const native = JSON.parse(adm).native;
-//     if (native) {
-//       const result = {
-//         clickUrl: encodeURI(native.link.url),
-//         impressionTrackers: native.eventtrackers[0].url,
-//       };
-//       if (native.link.clicktrackers[0]) {
-//         result.clickTrackers = native.link.clicktrackers[0];
-//       }
-
-//       native.assets.forEach(asset => {
-//         switch (asset.id) {
-//           case OPENRTB.NATIVE.ASSET_ID.TITLE:
-//             result.title = deepAccess(asset, 'title.text');
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.IMAGE:
-//             result.image = {
-//               url: encodeURI(asset.img.url),
-//               width: deepAccess(asset, 'img.w'),
-//               height: deepAccess(asset, 'img.h')
-//             };
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.ICON:
-//             result.icon = {
-//               url: encodeURI(asset.img.url),
-//               width: deepAccess(asset, 'img.w'),
-//               height: deepAccess(asset, 'img.h')
-//             };
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.DATA:
-//             result.body = deepAccess(asset, 'data.value');
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-//             result.sponsoredBy = deepAccess(asset, 'data.value');
-//             break;
-//           case OPENRTB.NATIVE.ASSET_ID.CTA:
-//             result.cta = deepAccess(asset, 'data.value');
-//             break;
-//         }
-//       });
-//       return result;
-//     }
-//   } catch (error) {
-//     logInfo('Error in bidUtils interpretNativeAd' + error);
-//   }
-// }
-
-// export const OPENRTB = {
-//   NATIVE: {
-//     IMAGE_TYPE: {
-//       ICON: 1,
-//       MAIN: 3,
-//     },
-//     ASSET_ID: {
-//       TITLE: 1,
-//       IMAGE: 2,
-//       ICON: 3,
-//       BODY: 4,
-//       SPONSORED: 5,
-//       CTA: 6
-//     },
-//     DATA_ASSET_TYPE: {
-//       SPONSORED: 1,
-//       DESC: 2,
-//       CTA_TEXT: 12,
-//     },
-//   }
-// };
-
-// /**
-//  * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
-//  * @returns {object} Prebid native bidObject
-//  */
-// export function interpretNativeBid(serverBid) {
-//   return {
-//     requestId: serverBid.impid,
-//     mediaType: NATIVE,
-//     cpm: serverBid.price,
-//     creativeId: serverBid.adid || serverBid.crid,
-//     width: 1,
-//     height: 1,
-//     ttl: 56,
-//     meta: {
-//       advertiserDomains: serverBid.adomain
-//     },
-//     netRevenue: true,
-//     currency: 'USD',
-//     native: interpretNativeAd(macroReplace(serverBid.adm, serverBid.price))
-//   }
-// }

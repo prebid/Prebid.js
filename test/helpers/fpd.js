@@ -1,21 +1,21 @@
-import {dep, enrichFPD} from 'src/fpd/enrichment.js';
-import {GreedyPromise} from '../../src/utils/promise.js';
-import {deepClone} from '../../src/utils.js';
-import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import { dep, enrichFPD } from 'src/fpd/enrichment.js';
+import { PbPromise } from '../../src/utils/promise.js';
+import { deepClone } from '../../src/utils.js';
+import { gdprDataHandler, uspDataHandler } from '../../src/adapterManager.js';
 
 export function mockFpdEnrichments(sandbox, overrides = {}) {
   overrides = Object.assign({}, {
     // override window getters, required for ChromeHeadless, apparently it sees window.self !== window
     getWindowTop() {
-      return window
+      return window;
     },
     getWindowSelf() {
-      return window
+      return window;
     },
     getHighEntropySUA() {
-      return GreedyPromise.resolve()
+      return PbPromise.resolve();
     }
-  }, overrides)
+  }, overrides);
   Object.entries(overrides)
     .filter(([k]) => dep[k])
     .forEach(([k, v]) => {
@@ -29,16 +29,14 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
     if (v) {
       sandbox.stub(handler, 'getConsentData').callsFake(v);
     }
-  })
+  });
 }
 
 export function addFPDEnrichments(ortb2 = {}, overrides) {
-  const sandbox = sinon.sandbox.create();
-  mockFpdEnrichments(sandbox, overrides)
-  return enrichFPD(GreedyPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
+  const sandbox = sinon.createSandbox();
+  mockFpdEnrichments(sandbox, overrides);
+  return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
-
-export const syncAddFPDEnrichments = synchronize(addFPDEnrichments);
 
 export function addFPDToBidderRequest(bidderRequest, overrides) {
   overrides = Object.assign({}, {
@@ -56,16 +54,6 @@ export function addFPDToBidderRequest(bidderRequest, overrides) {
     return {
       ...bidderRequest,
       ortb2
-    }
+    };
   });
-}
-
-export const syncAddFPDToBidderRequest = synchronize(addFPDToBidderRequest);
-
-function synchronize(fn) {
-  return function () {
-    let result;
-    fn.apply(this, arguments).then(res => { result = res });
-    return result;
-  }
 }

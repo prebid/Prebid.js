@@ -2,7 +2,6 @@ import { config } from '../../src/config.js';
 import {
   isFn,
   isStr,
-  deepAccess,
   getWindowTop,
   triggerPixel
 } from '../../src/utils.js';
@@ -28,7 +27,7 @@ function isBidResponseValid(bid) {
 
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
+    return bid?.params?.bidFloor ?? 0;
   }
 
   try {
@@ -39,7 +38,7 @@ export function getBidFloor(bid) {
     });
     return bidFloor?.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }
 
@@ -67,7 +66,7 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     const placement = {
       placementId: bid.params.placementId,
       bidId: bid.bidId,
-      schain: bid.schain || {},
+      schain: bid?.ortb2?.source?.ext?.schain || {},
       bidfloor: getBidFloor(bid)
     };
 
@@ -90,12 +89,12 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     url: adurl,
     data: request
   };
-}
+};
 
 export function interpretResponse(serverResponse) {
-  let response = [];
+  const response = [];
   for (let i = 0; i < serverResponse.body.length; i++) {
-    let resItem = serverResponse.body[i];
+    const resItem = serverResponse.body[i];
     if (isBidResponseValid(resItem)) {
       const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
       resItem.meta = { ...resItem.meta, advertiserDomains };
@@ -112,7 +111,7 @@ export function consentCheck(bidderRequest, req) {
       req.ccpa = bidderRequest.uspConsent;
     }
     if (bidderRequest.gdprConsent) {
-      req.gdpr = bidderRequest.gdprConsent
+      req.gdpr = bidderRequest.gdprConsent;
     }
     if (bidderRequest.gppConsent) {
       req.gpp = bidderRequest.gppConsent;
@@ -121,7 +120,7 @@ export function consentCheck(bidderRequest, req) {
 }
 
 export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint) => {
-  let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
   const isCk2trk = syncEndpoint.includes('ck.2trk.info');
 
   let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
@@ -138,7 +137,7 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
 
   if (isCk2trk) {
     syncUrl += uspConsent ? `&us_privacy=${uspConsent}` : `&us_privacy=`;
-    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`
+    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`;
   } else {
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
@@ -151,10 +150,10 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
     type: syncType,
     url: syncUrl
   }];
-}
+};
 
 export function bidWinReport (bid) {
-  const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+  const cpm = bid?.adserverTargeting?.hb_pb || '';
   if (isStr(bid.nurl) && bid.nurl !== '') {
     bid.nurl = bid.nurl.replace(/\${AUCTION_PRICE}/, cpm);
     triggerPixel(bid.nurl);

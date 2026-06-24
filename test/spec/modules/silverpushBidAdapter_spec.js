@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { Renderer } from 'src/Renderer.js';
 import { REQUEST_URL, SP_OUTSTREAM_PLAYER_URL, CONVERTER, spec } from '../../../modules/silverpushBidAdapter.js';
 
 const bannerBid = {
@@ -85,7 +86,7 @@ const bannerReponse = {
   ],
   'bidid': 'ARUYoUZx',
   'cur': 'USD'
-}
+};
 
 const videoResponse = {
   'id': 'brid00000000',
@@ -112,7 +113,7 @@ const videoResponse = {
   ],
   'bidid': 'soCWeklh',
   'cur': 'USD'
-}
+};
 
 describe('Silverpush Adapter', function () {
   describe('isBidRequestValid()', () => {
@@ -158,7 +159,7 @@ describe('Silverpush Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should reutrn false if player size is not set', () => {
+    it('should return false if player size is not set', () => {
       const bid = utils.deepClone(videoBid);
       delete bid.mediaTypes.video.playerSize;
 
@@ -253,36 +254,36 @@ describe('Silverpush Adapter', function () {
 
   describe('getOS()', () => {
     it('shold return correct os name for Windows', () => {
-      let userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246';
-      let osName = spec.getOS(userAgent);
+      const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246';
+      const osName = spec.getOS(userAgent);
 
       expect(osName).to.equal('Windows');
     });
 
     it('shold return correct os name for Mac OS', () => {
-      let userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9';
-      let osName = spec.getOS(userAgent);
+      const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9';
+      const osName = spec.getOS(userAgent);
 
       expect(osName).to.equal('macOS');
     });
 
     it('shold return correct os name for Android', () => {
-      let userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-G996U Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36';
-      let osName = spec.getOS(userAgent);
+      const userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-G996U Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36';
+      const osName = spec.getOS(userAgent);
 
       expect(osName).to.equal('Android');
     });
 
     it('shold return correct os name for ios', () => {
-      let userAgent = 'Mozilla/5.0 (iPhone14,3; U; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/19A346 Safari/602.1';
-      let osName = spec.getOS(userAgent);
+      const userAgent = 'Mozilla/5.0 (iPhone14,3; U; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/19A346 Safari/602.1';
+      const osName = spec.getOS(userAgent);
 
       expect(osName).to.equal('iOS');
     });
 
     it('shold return correct os name for Linux', () => {
-      let userAgent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1';
-      let osName = spec.getOS(userAgent);
+      const userAgent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1';
+      const osName = spec.getOS(userAgent);
 
       expect(osName).to.equal('Linux');
     });
@@ -358,6 +359,31 @@ describe('Silverpush Adapter', function () {
         expect(bids[0].width).to.equal(1024);
         expect(bids[0].height).to.equal(768);
       });
+
+      it('should defer outstream rendering until the renderer is executed', () => {
+        const response = utils.deepClone(videoResponse);
+        const outstreamBid = utils.deepClone(videoBid);
+        outstreamBid.mediaTypes.video.context = 'outstream';
+
+        const fakeRenderer = {
+          url: SP_OUTSTREAM_PLAYER_URL,
+          setRender: sinon.spy(),
+          render: sinon.spy()
+        };
+        const installStub = sinon.stub(Renderer, 'install').returns(fakeRenderer);
+
+        try {
+          const requests = spec.buildRequests([outstreamBid], bidderRequest);
+          const bids = spec.interpretResponse({ body: response }, requests[0]);
+
+          expect(installStub.calledOnce).to.equal(true);
+          expect(fakeRenderer.setRender.calledOnce).to.equal(true);
+          expect(fakeRenderer.render.called).to.equal(false);
+          expect(bids[0].renderer).to.equal(fakeRenderer);
+        } finally {
+          installStub.restore();
+        }
+      });
     }
   });
 
@@ -365,18 +391,18 @@ describe('Silverpush Adapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'getRequest')
-    })
+      ajaxStub = sinon.stub(spec, 'getRequest');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('Should not trigger pixel if bid does not contain burl', function() {
       const result = spec.onBidWon({});
 
       expect(ajaxStub.calledOnce).to.equal(false);
-    })
+    });
 
     it('Should trigger pixel with correct macros if bid burl is present', function() {
       const result = spec.onBidWon({
@@ -389,6 +415,6 @@ describe('Silverpush Adapter', function () {
       });
 
       expect(ajaxStub.calledOnceWith('http://won.foo.bar/trk?ap=1.5&aid=auc123&imp=req123&adid=ad1234&sid=sea123')).to.equal(true);
-    })
-  })
+    });
+  });
 });

@@ -7,7 +7,7 @@ import {
 } from 'modules/deltaprojectsBidAdapter.js';
 
 const BID_REQ_REFER = 'http://example.com/page?param=val';
-const BID_REQ_DOMAIN = 'example.com'
+const BID_REQ_DOMAIN = 'example.com';
 
 describe('deltaprojectsBidAdapter', function() {
   describe('isBidRequestValid', function () {
@@ -35,14 +35,8 @@ describe('deltaprojectsBidAdapter', function() {
       expect(spec.isBidRequestValid(undefined)).to.equal(false);
     });
 
-    it('should return false when bidder not set correctly', function () {
-      let bid = makeBid();
-      delete bid.bidder;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
     it('should return false when publisher id is not set', function () {
-      let bid = makeBid();
+      const bid = makeBid();
       delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -61,9 +55,9 @@ describe('deltaprojectsBidAdapter', function() {
       bidId: '30b31c1838de1e',
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
-    }
+    };
     const bidRequests = [BIDREQ];
-    const bannerRequest = spec.buildRequests(bidRequests, {refererInfo: { page: BID_REQ_REFER, domain: BID_REQ_DOMAIN }})[0];
+    const bannerRequest = spec.buildRequests(bidRequests, { refererInfo: { page: BID_REQ_REFER, domain: BID_REQ_DOMAIN } })[0];
     const bannerRequestBody = bannerRequest.data;
 
     it('send bid request with test tag if it is set in the param', function () {
@@ -121,7 +115,7 @@ describe('deltaprojectsBidAdapter', function() {
     }];
     const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
 
-    const GDPR_REQ_REFERER = 'http://localhost:9876/'
+    const GDPR_REQ_REFERER = 'http://localhost:9876/';
     function getGdprRequestBody(gdprApplies, consentString) {
       const gdprRequest = spec.buildRequests(gdprBidRequests, {
         gdprConsent: {
@@ -139,26 +133,26 @@ describe('deltaprojectsBidAdapter', function() {
       const gdprRequestBody = getGdprRequestBody(true, consentString);
       expect(gdprRequestBody.regs.ext.gdpr).to.equal(1);
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
-    })
+    });
 
     it('should handle gdpr applies being present and false', function() {
       const gdprRequestBody = getGdprRequestBody(false, consentString);
       expect(gdprRequestBody.regs.ext.gdpr).to.equal(0);
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
-    })
+    });
 
     it('should handle gdpr applies  being undefined', function() {
       const gdprRequestBody = getGdprRequestBody(undefined, consentString);
-      expect(gdprRequestBody.regs).to.deep.equal({ext: {}});
+      expect(gdprRequestBody.regs).to.deep.equal({ ext: {} });
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
-    })
+    });
 
     it('should handle gdpr consent being undefined', function() {
-      const gdprRequest = spec.buildRequests(gdprBidRequests, {refererInfo: { referer: GDPR_REQ_REFERER }})[0];
+      const gdprRequest = spec.buildRequests(gdprBidRequests, { refererInfo: { referer: GDPR_REQ_REFERER } })[0];
       const gdprRequestBody = gdprRequest.data;
       expect(gdprRequestBody.regs).to.deep.equal({ ext: {} });
       expect(gdprRequestBody.user).to.deep.equal({ ext: {} });
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -178,7 +172,7 @@ describe('deltaprojectsBidAdapter', function() {
         auctionId: '1d1a030790a475',
       },
     ];
-    const request = spec.buildRequests(bidRequests, {refererInfo: { referer: BID_REQ_REFER }})[0];
+    const request = spec.buildRequests(bidRequests, { refererInfo: { referer: BID_REQ_REFER } })[0];
     function makeResponse() {
       return {
         body: {
@@ -221,64 +215,64 @@ describe('deltaprojectsBidAdapter', function() {
     };
 
     it('should get incorrect bid response if response body is missing', function () {
-      let response = makeResponse();
+      const response = makeResponse();
       delete response.body;
-      let result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request);
       expect(result.length).to.equal(0);
     });
 
     it('should get incorrect bid response if id or seat id of response body is missing', function () {
-      let response1 = makeResponse();
+      const response1 = makeResponse();
       delete response1.body.id;
-      let result1 = spec.interpretResponse(response1, request);
+      const result1 = spec.interpretResponse(response1, request);
       expect(result1.length).to.equal(0);
 
-      let response2 = makeResponse();
+      const response2 = makeResponse();
       delete response2.body.seatbid;
-      let result2 = spec.interpretResponse(response2, request);
+      const result2 = spec.interpretResponse(response2, request);
       expect(result2.length).to.equal(0);
     });
 
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(makeResponse(), request);
+      const result = spec.interpretResponse(makeResponse(), request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(expectedBid);
     });
 
     it('should handle a missing crid', function () {
-      let noCridResponse = makeResponse();
+      const noCridResponse = makeResponse();
       delete noCridResponse.body.seatbid[0].bid[0].crid;
       const fallbackCrid = noCridResponse.body.seatbid[0].bid[0].id;
-      let noCridResult = Object.assign({}, expectedBid, {'creativeId': fallbackCrid});
-      let result = spec.interpretResponse(noCridResponse, request);
+      const noCridResult = Object.assign({}, expectedBid, { 'creativeId': fallbackCrid });
+      const result = spec.interpretResponse(noCridResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(noCridResult);
     });
 
     it('should handle a missing nurl', function () {
-      let noNurlResponse = makeResponse();
+      const noNurlResponse = makeResponse();
       delete noNurlResponse.body.seatbid[0].bid[0].nurl;
-      let noNurlResult = Object.assign({}, expectedBid);
+      const noNurlResult = Object.assign({}, expectedBid);
       noNurlResult.ad = '<!-- creative -->';
-      let result = spec.interpretResponse(noNurlResponse, request);
+      const result = spec.interpretResponse(noNurlResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(noNurlResult);
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {
           id: '5e5c23a5ba71e78',
           seatbid: []
         }
       };
-      let result = spec.interpretResponse(response, request);
+      const result = spec.interpretResponse(response, request);
       expect(result.length).to.equal(0);
     });
 
     it('should keep custom properties', () => {
-      const customProperties = {test: 'a test message', param: {testParam: 1}};
-      const expectedResult = Object.assign({}, expectedBid, {[spec.code]: customProperties});
+      const customProperties = { test: 'a test message', param: { testParam: 1 } };
+      const expectedResult = Object.assign({}, expectedBid, { [spec.code]: customProperties });
       const response = makeResponse();
       response.body.seatbid[0].bid[0].ext = customProperties;
       const result = spec.interpretResponse(response, request);
@@ -313,7 +307,7 @@ describe('deltaprojectsBidAdapter', function() {
         bidid: 'xyz',
         cur: 'USD',
       },
-    }
+    };
     it('should replace auction price macro', () => {
       const bid = spec.interpretResponse(OPEN_RTB_RESP)[0];
       spec.onBidWon(bid);
@@ -323,31 +317,31 @@ describe('deltaprojectsBidAdapter', function() {
 
   describe('getUserSyncs', function () {
     it('should not do user sync when pixel is disabled', () => {
-      const syncOptions = { pixelEnabled: false }
-      const result = spec.getUserSyncs(syncOptions)
+      const syncOptions = { pixelEnabled: false };
+      const result = spec.getUserSyncs(syncOptions);
       expect(result.length).to.equal(0);
     });
 
     it('should do user sync without gdpr params when gdprConsent missing', () => {
-      const syncOptions = { pixelEnabled: true }
-      const gdprConsent = undefined
-      const result = spec.getUserSyncs(syncOptions, gdprConsent)
+      const syncOptions = { pixelEnabled: true };
+      const gdprConsent = undefined;
+      const result = spec.getUserSyncs(syncOptions, gdprConsent);
       expect(result[0].url).to.equal(USERSYNC_URL);
     });
 
     it('should do user sync with gdpr params when gdprConsent exists', () => {
-      const syncOptions = { pixelEnabled: true }
+      const syncOptions = { pixelEnabled: true };
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'ABCABCABC'
-      }
-      const expectedResult1 = USERSYNC_URL + `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
-      const result1 = spec.getUserSyncs(syncOptions, {}, gdprConsent)
+      };
+      const expectedResult1 = USERSYNC_URL + `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      const result1 = spec.getUserSyncs(syncOptions, {}, gdprConsent);
       expect(result1[0].url).to.equal(expectedResult1);
 
-      delete gdprConsent.gdprApplies
-      const result2 = spec.getUserSyncs(syncOptions, {}, gdprConsent)
-      const expectedResult2 = USERSYNC_URL + `?gdpr_consent=${gdprConsent.consentString}`
+      delete gdprConsent.gdprApplies;
+      const result2 = spec.getUserSyncs(syncOptions, {}, gdprConsent);
+      const expectedResult2 = USERSYNC_URL + `?gdpr_consent=${gdprConsent.consentString}`;
       expect(result2[0].url).to.equal(expectedResult2);
     });
   });

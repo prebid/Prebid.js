@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/talkadsBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from '../../../src/config';
-import {server} from '../../mocks/xhr';
+import { expect } from 'chai';
+import { spec } from 'modules/talkadsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('TalkAds adapter', function () {
   const commonBidderRequest = {
@@ -10,7 +10,7 @@ describe('TalkAds adapter', function () {
       referer: 'https://example.com/'
     },
     timeout: 3000,
-  }
+  };
   const commonBidRequest = {
     bidder: 'talkads',
     params: {
@@ -85,7 +85,7 @@ describe('TalkAds adapter', function () {
    * buildRequests
    */
   describe('buildRequests1', function() {
-    let bidRequest = {
+    const bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
     };
@@ -98,14 +98,14 @@ describe('TalkAds adapter', function () {
       gdpr: { applies: false, consent: false },
     };
     it('should generate a valid banner bid request', function () {
-      let laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
+      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(laResponse.method).to.equal('POST');
       expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
     });
   }); // buildRequests1
   describe('buildRequests2', function() {
-    let bidRequest = {
+    const bidRequest = {
       ...commonBidRequest,
       ...nativeBidRequestParams,
     };
@@ -118,7 +118,7 @@ describe('TalkAds adapter', function () {
       gdpr: { applies: false, consent: false },
     };
     it('should generate a valid native bid request', function () {
-      let laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
+      const laResponse = spec.buildRequests([bidRequest], commonBidderRequest);
       expect(laResponse.method).to.equal('POST');
       expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
@@ -132,7 +132,7 @@ describe('TalkAds adapter', function () {
       gdpr: { applies: true, consent: 'yes' },
     };
     it('should generate a valid native bid request', function () {
-      let laResponse = spec.buildRequests([bidRequest], bidderRequest);
+      const laResponse = spec.buildRequests([bidRequest], bidderRequest);
       expect(laResponse.method).to.equal('POST');
       expect(laResponse.url).to.equal('https://test.natexo-programmatic.com/tad/tag/prebid/999999');
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest2));
@@ -144,14 +144,14 @@ describe('TalkAds adapter', function () {
    */
   describe('interpretResponse1', function() {
     it('should return empty array if no valid bids', function () {
-      const laResult = spec.interpretResponse({}, [])
+      const laResult = spec.interpretResponse({}, []);
       expect(laResult).to.be.an('array').that.is.empty;
     });
     const loServerResult = {
       body: { status: 'error', error: 'aie' }
     };
     it('should return empty array if there is an error', function () {
-      const laResult = spec.interpretResponse(loServerResult, [])
+      const laResult = spec.interpretResponse(loServerResult, []);
       expect(laResult).to.be.an('array').that.is.empty;
     });
   }); // interpretResponse1
@@ -187,7 +187,7 @@ describe('TalkAds adapter', function () {
       pbid: '6147833a65749742875ace47'
     }];
     it('should return a correct bid response', function () {
-      const laResult = spec.interpretResponse(loServerResult, [])
+      const laResult = spec.interpretResponse(loServerResult, []);
       expect(JSON.stringify(laResult)).to.equal(JSON.stringify(loExpected));
     });
   }); // interpretResponse2
@@ -208,8 +208,8 @@ describe('TalkAds adapter', function () {
         creativeId: 'c123a456',
         netRevenue: false,
         params: [Object.assign({}, commonBidRequest.params)],
-      }
-      spec.onBidWon(loBid)
+      };
+      spec.onBidWon(loBid);
       expect(server.requests.length).to.equals(0);
     });
     it('should make an ajax call', function () {
@@ -225,8 +225,8 @@ describe('TalkAds adapter', function () {
         netRevenue: false,
         pbid: '6147833a65749742875ace47',
         params: [Object.assign({}, commonBidRequest.params)],
-      }
-      spec.onBidWon(loBid)
+      };
+      spec.onBidWon(loBid);
       expect(server.requests[0].url).to.equals('https://test.natexo-programmatic.com/tad/tag/prebidwon/6147833a65749742875ace47');
     });
   }); // onBidWon

@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Individual Ad Unit Refresh Example</title>
-    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script async src="http://localhost:9999/build/dev/prebid.js"></script>
     <script>
       var sizes = [[300, 250]];
@@ -83,7 +83,7 @@
         googletag.enableServices();
       });
 
-      function refreshBid() {
+function refreshBid() {
         pbjs.que.push(function () {
           pbjs.requestBids({
             timeout: PREBID_TIMEOUT,

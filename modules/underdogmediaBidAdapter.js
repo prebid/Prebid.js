@@ -1,7 +1,6 @@
 import {
   deepAccess,
   flatten,
-  getWindowSelf,
   getWindowTop,
   isGptPubadsDefined,
   logInfo,
@@ -9,9 +8,12 @@ import {
   logWarn,
   parseSizesInput
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { isIframe } from '../libraries/omsUtils/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -21,7 +23,7 @@ const NON_MEASURABLE = -1;
 const PRODUCT = {
   standard: 1,
   sticky: 2
-}
+};
 
 let USER_SYNCED = false;
 
@@ -35,29 +37,30 @@ export function resetUserSync() {
 export const spec = {
   NON_MEASURABLE,
   code: BIDDER_CODE,
+  gvlid: UDM_VENDOR_ID,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
     if (!bid.params) {
-      logWarn('[Underdog Media] bid params are missing')
+      logWarn('[Underdog Media] bid params are missing');
       return false;
     }
 
     if (!bid.params.siteId) {
-      logWarn('[Underdog Media] siteId is missing')
+      logWarn('[Underdog Media] siteId is missing');
       return false;
     }
 
     if (bid.params.productId) {
       if (!PRODUCT[bid.params.productId]) {
-        logWarn('[Underdog Media] invalid productId')
+        logWarn('[Underdog Media] invalid productId');
         return false;
       }
     }
 
     const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
     if (!bidSizes || bidSizes.length < 1) {
-      logWarn('[Underdog Media] bid sizes are missing')
+      logWarn('[Underdog Media] bid sizes are missing');
       return false;
     }
 
@@ -68,7 +71,24 @@ export const spec = {
     var sizes = [];
     var siteId = 0;
 
-    let data = {
+    let userIds = [];
+    let thirtyThreeAcrossId;
+    let unifiedId;
+    let pubcid;
+    if (validBidRequests[0].userIdAsEids?.length > 0) {
+      userIds = validBidRequests[0].userIdAsEids;
+    }
+    userIds.forEach(idObj => {
+      if (idObj.source === '33across.com') {
+        thirtyThreeAcrossId = idObj.uids[0].id;
+      } else if (idObj.source === 'adserver.org') {
+        unifiedId = idObj.uids[0].id;
+      } else if (idObj.source === 'pubcid.org') {
+        pubcid = idObj.uids[0].id;
+      }
+    });
+
+    const data = {
       dt: 10,
       gdpr: {},
       pbTimeout: +config.getConfig('bidderTimeout') || 3001, // KP: convert to number and if NaN we default to 3001. Particular value to let us know that there was a problem in converting pbTimeout
@@ -77,51 +97,51 @@ export const spec = {
       ref: deepAccess(bidderRequest, 'refererInfo.page') ? bidderRequest.refererInfo.page : undefined,
       usp: {},
       userIds: {
-        '33acrossId': deepAccess(validBidRequests[0], 'userId.33acrossId.envelope') ? validBidRequests[0].userId['33acrossId'].envelope : undefined,
-        pubcid: deepAccess(validBidRequests[0], 'crumbs.pubcid') ? validBidRequests[0].crumbs.pubcid : undefined,
-        unifiedId: deepAccess(validBidRequests[0], 'userId.tdid') ? validBidRequests[0].userId.tdid : undefined
+        '33acrossId': thirtyThreeAcrossId,
+        pubcid,
+        unifiedId
       },
       version: UDM_ADAPTER_VERSION
-    }
+    };
 
     validBidRequests.forEach(bidParam => {
-      let placementObject = {}
-      let bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
+      const placementObject = {};
+      const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
       sizes = flatten(sizes, parseSizesInput(bidParamSizes));
       siteId = +bidParam.params.siteId;
-      let adUnitCode = bidParam.adUnitCode
-      let element = _getAdSlotHTMLElement(adUnitCode)
-      let minSize = _getMinSize(bidParamSizes)
+      const adUnitCode = bidParam.adUnitCode;
+      const element = _getAdSlotHTMLElement(bidParam);
+      const minSize = _getMinSize(bidParamSizes);
 
-      placementObject.sizes = parseSizesInput(bidParamSizes)
-      placementObject.adUnitCode = adUnitCode
-      placementObject.productId = PRODUCT[bidParam.params.productId] || PRODUCT.standard
+      placementObject.sizes = parseSizesInput(bidParamSizes);
+      placementObject.adUnitCode = adUnitCode;
+      placementObject.productId = PRODUCT[bidParam.params.productId] || PRODUCT.standard;
       if (deepAccess(bidParam, 'params.productId')) {
         if (bidParam.params.productId === 'standard') {
-          placementObject.productId = 1
+          placementObject.productId = 1;
         } else if (bidParam.params.productId === 'adhesion') {
-          placementObject.productId = 2
+          placementObject.productId = 2;
         }
       } else {
-        placementObject.productId = 1
+        placementObject.productId = 1;
       }
-      placementObject.gpid = deepAccess(bidParam, 'ortb2Imp.ext.gpid') ? bidParam.ortb2Imp.ext.gpid : undefined
+      placementObject.gpid = deepAccess(bidParam, 'ortb2Imp.ext.gpid') ? bidParam.ortb2Imp.ext.gpid : undefined;
 
       if (_isViewabilityMeasurable(element)) {
         const minSizeObj = {
           w: minSize[0],
           h: minSize[1]
-        }
-        let viewPercentage = Math.round(_getViewability(element, getWindowTop(), minSizeObj))
-        placementObject.viewability = viewPercentage
+        };
+        const viewPercentage = Math.round(_getViewability(element, getWindowTop(), minSizeObj));
+        placementObject.viewability = viewPercentage;
       } else {
-        placementObject.viewability = NON_MEASURABLE
+        placementObject.viewability = NON_MEASURABLE;
       }
 
-      data.placements.push(placementObject)
+      data.placements.push(placementObject);
     });
 
-    data.sid = siteId
+    data.sid = siteId;
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
@@ -155,32 +175,29 @@ export const spec = {
       USER_SYNCED = true;
       const userSyncs = serverResponses[0].body.userSyncs;
       const syncs = userSyncs.filter(sync => {
-        const {
-          type
-        } = sync;
+        const { type } = sync;
         if (syncOptions.iframeEnabled && type === 'iframe') {
-          return true
+          return true;
         }
         if (syncOptions.pixelEnabled && type === 'image') {
-          return true
+          return true;
         }
-      })
+        return false;
+      });
       return syncs;
     }
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    const mids = serverResponse.body.mids
+    const mids = serverResponse.body.mids;
     mids.forEach(mid => {
       const bidParam = bidRequest.bidParams.find((bidParam) => {
-        if (mid.ad_unit_code === bidParam.adUnitCode) {
-          return true
-        }
-      })
+        return mid.ad_unit_code === bidParam.adUnitCode;
+      });
 
       if (!bidParam) {
-        return
+        return;
       }
 
       const bidResponse = {
@@ -215,12 +232,12 @@ export const spec = {
 };
 
 function _getMinSize(bidParamSizes) {
-  return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
+  return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
-  return document.getElementById(adUnitCode) ||
-    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
+function _getAdSlotHTMLElement(bidRequest) {
+  return getAdUnitElement(bidRequest) ||
+    document.getElementById(_mapAdUnitPathToElementId(bidRequest.adUnitCode));
 }
 
 function _mapAdUnitPathToElementId(adUnitCode) {
@@ -246,15 +263,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 }
 
 function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null
-}
-
-function _isIframe() {
-  try {
-    return getWindowSelf() !== getWindowTop();
-  } catch (e) {
-    return true;
-  }
+  return !isIframe() && element !== null;
 }
 
 function _getViewability(element, topWin, {
@@ -262,112 +271,19 @@ function _getViewability(element, topWin, {
   h
 } = {}) {
   return topWin.document.visibilityState === 'visible'
-    ? _getPercentInView(element, topWin, {
+    ? percentInView(element, {
       w,
       h
     })
-    : 0
-}
-
-function _getPercentInView(element, topWin, {
-  w,
-  h
-} = {}) {
-  const elementBoundingBox = _getBoundingBox(element, {
-    w,
-    h
-  });
-
-  // Obtain the intersection of the element and the viewport
-  const elementInViewBoundingBox = _getIntersectionOfRects([{
-    left: 0,
-    top: 0,
-    right: topWin.innerWidth,
-    bottom: topWin.innerHeight
-  }, elementBoundingBox]);
-
-  let elementInViewArea,
-    elementTotalArea;
-
-  if (elementInViewBoundingBox !== null) {
-    // Some or all of the element is in view
-    elementInViewArea = elementInViewBoundingBox.width * elementInViewBoundingBox.height;
-    elementTotalArea = elementBoundingBox.width * elementBoundingBox.height;
-
-    return ((elementInViewArea / elementTotalArea) * 100);
-  }
-
-  // No overlap between element and the viewport; therefore, the element
-  // lies completely out of view
-  return 0;
-}
-
-function _getBoundingBox(element, {
-  w,
-  h
-} = {}) {
-  let {
-    width,
-    height,
-    left,
-    top,
-    right,
-    bottom
-  } = element.getBoundingClientRect();
-
-  if ((width === 0 || height === 0) && w && h) {
-    width = w;
-    height = h;
-    right = left + w;
-    bottom = top + h;
-  }
-
-  return {
-    width,
-    height,
-    left,
-    top,
-    right,
-    bottom
-  };
-}
-
-function _getIntersectionOfRects(rects) {
-  const bbox = {
-    left: rects[0].left,
-    right: rects[0].right,
-    top: rects[0].top,
-    bottom: rects[0].bottom
-  };
-
-  for (let i = 1; i < rects.length; ++i) {
-    bbox.left = Math.max(bbox.left, rects[i].left);
-    bbox.right = Math.min(bbox.right, rects[i].right);
-
-    if (bbox.left >= bbox.right) {
-      return null;
-    }
-
-    bbox.top = Math.max(bbox.top, rects[i].top);
-    bbox.bottom = Math.min(bbox.bottom, rects[i].bottom);
-
-    if (bbox.top >= bbox.bottom) {
-      return null;
-    }
-  }
-
-  bbox.width = bbox.right - bbox.left;
-  bbox.height = bbox.bottom - bbox.top;
-
-  return bbox;
+    : 0;
 }
 
 function makeNotification(bid, mid, bidParam) {
   let url = mid.notification_url;
 
-  const versionIndex = url.indexOf(';version=')
+  const versionIndex = url.indexOf(';version=');
   if (versionIndex + 1) {
-    url = url.substring(0, versionIndex)
+    url = url.substring(0, versionIndex);
   }
 
   url += `;version=${UDM_ADAPTER_VERSION}`;

@@ -25,20 +25,20 @@ function isBidResponseValid(bidResponse) {
       break;
     case NATIVE:
       if (!bidResponse.native.hasOwnProperty('impressionTrackers')) {
-        return false
+        return false;
       }
       break;
     default:
-      return false
+      return false;
   }
 
   for (const key of requiredKeys) {
     if (!bidResponse.hasOwnProperty(key)) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 export const spec = {
@@ -98,7 +98,7 @@ export const spec = {
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
-      let httpReq = {
+      const httpReq = {
         url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
@@ -134,7 +134,7 @@ export const spec = {
           if (Array.isArray(bidResponse.advertiserDomains)) {
             bidResponse.meta = {
               advertiserDomains: bidResponse.advertiserDomains
-            }
+            };
           }
           bidResponses.push(bidResponse);
         }
@@ -147,7 +147,7 @@ export const spec = {
 /**
  * Get bid floor from Price Floors Module
  * @param {Object} bid
- * @returns {float||undefined}
+ * @returns {(number|undefined)}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

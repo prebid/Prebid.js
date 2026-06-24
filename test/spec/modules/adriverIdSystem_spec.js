@@ -51,7 +51,7 @@ describe('AdriverIdSystem', function () {
     const responses = [
       { adrcid: 'adrcidValue' },
       { adrcid: undefined }
-    ]
+    ];
 
     responses.forEach(response => describe('test user sync response behavior', function () {
       const config = {
@@ -63,15 +63,15 @@ describe('AdriverIdSystem', function () {
           expect(id).to.be.deep.equal(response.adrcid ? response.adrcid : undefined);
         });
 
-        let request = server.requests[0];
+        const request = server.requests[0];
         request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ adrcid: response.adrcid }));
 
-        let expectedExpiration = new Date();
+        const expectedExpiration = new Date();
         expectedExpiration.setTime(expectedExpiration.getTime() + 86400 * 1825 * 1000);
         const minimalDate = new Date(0).toString();
 
         function dateStringFor(date, maxDeltaMs = 2000) {
-          return sinon.match((val) => Math.abs(date.getTime() - new Date(val).getTime()) <= maxDeltaMs)
+          return sinon.match((val) => Math.abs(date.getTime() - new Date(val).getTime()) <= maxDeltaMs);
         }
 
         if (response.adrcid) {

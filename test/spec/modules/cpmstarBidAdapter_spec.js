@@ -44,12 +44,12 @@ describe('Cpmstar Bid Adapter', function () {
       function () {
         var bid = { params: { placementId: 123456 } };
         expect(spec.isBidRequestValid(bid)).to.equal(true);
-      })
+      });
 
     it('should return false since the bid is invalid', function () {
       var bid = { params: { placementId: '' } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
-    })
+    });
 
     it('should return a valid player size', function () {
       var bid = {
@@ -58,10 +58,10 @@ describe('Cpmstar Bid Adapter', function () {
             playerSize: [[960, 540]]
           }
         }
-      }
+      };
       expect(spec.getPlayerSize(bid)[0]).to.equal(960);
       expect(spec.getPlayerSize(bid)[1]).to.equal(540);
-    })
+    });
 
     it('should return a default player size', function () {
       var bid = {
@@ -70,10 +70,10 @@ describe('Cpmstar Bid Adapter', function () {
             playerSize: null
           }
         }
-      }
+      };
       expect(spec.getPlayerSize(bid)[0]).to.equal(640);
       expect(spec.getPlayerSize(bid)[1]).to.equal(440);
-    })
+    });
   });
 
   describe('buildRequests', function () {
@@ -131,21 +131,27 @@ describe('Cpmstar Bid Adapter', function () {
 
   it('should produce a request with support for OpenRTB SupplyChain', function () {
     var reqs = deepClone(valid_bid_requests);
-    reqs[0].schain = {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [
-        {
-          'asi': 'exchange1.com',
-          'sid': '1234',
-          'hp': 1
-        },
-        {
-          'asi': 'exchange2.com',
-          'sid': 'abcd',
-          'hp': 1
+    reqs[0].ortb2 = {
+      source: {
+        ext: {
+          schain: {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'exchange1.com',
+                'sid': '1234',
+                'hp': 1
+              },
+              {
+                'asi': 'exchange2.com',
+                'sid': 'abcd',
+                'hp': 1
+              }
+            ]
+          }
         }
-      ]
+      }
     };
     var requests = spec.buildRequests(reqs, bidderRequest);
     expect(requests[0]).to.have.property('url');
@@ -160,7 +166,7 @@ describe('Cpmstar Bid Adapter', function () {
     };
 
     it('should return a valid bidresponse array', function () {
-      var r = spec.interpretResponse(serverResponse, request)
+      var r = spec.interpretResponse(serverResponse, request);
       var c = serverResponse.body[0].creatives[0];
       expect(r[0].length).to.not.equal(0);
       expect(r[0].requestId).equal(c.requestid);
@@ -175,7 +181,7 @@ describe('Cpmstar Bid Adapter', function () {
     });
 
     it('should return a valid bidresponse array from a non-array-body', function () {
-      var r = spec.interpretResponse({ body: serverResponse.body[0] }, request)
+      var r = spec.interpretResponse({ body: serverResponse.body[0] }, request);
       var c = serverResponse.body[0].creatives[0];
       expect(r[0].length).to.not.equal(0);
       expect(r[0].requestId).equal(c.requestid);

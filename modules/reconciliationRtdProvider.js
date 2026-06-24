@@ -16,10 +16,10 @@
  * @property {?boolean} allowAccess
  */
 
-import {submodule} from '../src/hook.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
+import { submodule } from '../src/hook.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js';
+import { getSlotTargeting } from '../src/utils/gptTargeting.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -28,7 +28,7 @@ import {find} from '../src/polyfill.js';
 /** @type {Object} */
 const MessageType = {
   IMPRESSION_REQUEST: 'rsdk:impression:req',
-  IMPRESSION_RESPONSE: 'rsdk:impression:res',
+  IMPRESSION_RESPONSE: 'rsdk:impression:res'
 };
 /** @type {ModuleParams} */
 const DEFAULT_PARAMS = {
@@ -66,7 +66,7 @@ function handleAdMessage(e) {
         // 3. Get AdUnit IDs for the selected slot
         if (adSlot) {
           adUnitId = adSlot.getAdUnitPath();
-          adDeliveryId = adSlot.getTargeting('RSDK_ADID');
+          adDeliveryId = getSlotTargeting(adSlot, 'RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
             : `${timestamp()}-${generateUUID()}`;
@@ -85,7 +85,7 @@ function handleAdMessage(e) {
     track.trackPost(_moduleParams.impressionUrl, args);
 
     // Send response back to the Advertiser tag
-    let response = {
+    const response = {
       type: MessageType.IMPRESSION_RESPONSE,
       id: data.id,
       args: Object.assign(
@@ -154,8 +154,8 @@ function getSlotByCode(code) {
     return null;
   }
   return (
-    find(
-      slots,
+    ((
+      slots) || []).find(
       (s) => s.getSlotElementId() === code || s.getAdUnitPath() === code
     ) || null
   );
@@ -174,11 +174,11 @@ export function getSlotByWin(win) {
   }
 
   return (
-    find(slots, (s) => {
-      let slotElement = document.getElementById(s.getSlotElementId());
+    ((slots) || []).find((s) => {
+      const slotElement = document.getElementById(s.getSlotElementId());
 
       if (slotElement) {
-        let slotIframe = slotElement.querySelector('iframe');
+        const slotIframe = slotElement.querySelector('iframe');
 
         if (slotIframe && slotIframe.contentWindow === win) {
           return true;
@@ -232,7 +232,7 @@ export const track = {
       }
     );
   }
-}
+};
 
 /**
  * Set custom targetings for provided adUnits
