@@ -276,7 +276,6 @@ describe('bidResponseFilter', () => {
         sinon.assert.called(call);
       });
     });
-
   });
 
   it('should omit the validation if the flag is set to false', () => {
