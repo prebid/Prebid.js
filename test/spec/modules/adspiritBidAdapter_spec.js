@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adspiritBidAdapter.js';
-import 'src/utils.js';
+import { getWinDimensions, resetWinDimensions } from 'src/utils.js';
 
 describe('Adspirit Bidder Spec', function () {
   // isBidRequestValid ---case
@@ -63,6 +63,7 @@ describe('Adspirit Bidder Spec', function () {
       Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 768 });
       Object.defineProperty(document.documentElement, 'clientWidth', { writable: true, configurable: true, value: 800 });
       Object.defineProperty(document.documentElement, 'clientHeight', { writable: true, configurable: true, value: 600 });
+      resetWinDimensions();
     });
 
     afterEach(() => {
@@ -70,6 +71,7 @@ describe('Adspirit Bidder Spec', function () {
       Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: originalInnerHeight });
       Object.defineProperty(document.documentElement, 'clientWidth', { writable: true, configurable: true, value: originalClientWidth });
       Object.defineProperty(document.documentElement, 'clientHeight', { writable: true, configurable: true, value: originalClientHeight });
+      resetWinDimensions();
     });
 
     it('should correctly capture window and document dimensions in payload', function () {
@@ -85,18 +87,20 @@ describe('Adspirit Bidder Spec', function () {
         }
       ];
       const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
+      const expectedDimensions = getWinDimensions();
       const [request] = spec.buildRequests(bidRequest, mockBidderRequest);
       const requestData = JSON.parse(request.data);
 
-      expect(request.url).to.include('&wcx=1024');
-      expect(request.url).to.include('&wcy=768');
-      expect(requestData.device.w).to.equal(1024);
-      expect(requestData.device.h).to.equal(768);
+      expect(request.url).to.include(`&wcx=${expectedDimensions.innerWidth}`);
+      expect(request.url).to.include(`&wcy=${expectedDimensions.innerHeight}`);
+      expect(requestData.device.w).to.equal(expectedDimensions.innerWidth);
+      expect(requestData.device.h).to.equal(expectedDimensions.innerHeight);
     });
 
-    it('should correctly fall back to document dimensions if window dimensions are not available', function () {
+    it('should correctly pass through window dimensions when properties are unavailable', function () {
       delete global.window.innerWidth;
       delete global.window.innerHeight;
+      resetWinDimensions();
       const bidRequest = [
         {
           bidId: '26c1ee0038ac11',
@@ -109,13 +113,14 @@ describe('Adspirit Bidder Spec', function () {
         }
       ];
       const mockBidderRequest = { refererInfo: { topmostLocation: 'https://test.adspirit.com' } };
+      const expectedDimensions = getWinDimensions();
       const [request] = spec.buildRequests(bidRequest, mockBidderRequest);
       const requestData = JSON.parse(request.data);
 
-      expect(request.url).to.include('&wcx=800');
-      expect(request.url).to.include('&wcy=600');
-      expect(requestData.device.w).to.equal(800);
-      expect(requestData.device.h).to.equal(600);
+      expect(request.url).to.include(`&wcx=${expectedDimensions.innerWidth}`);
+      expect(request.url).to.include(`&wcy=${expectedDimensions.innerHeight}`);
+      expect(requestData.device.w).to.equal(expectedDimensions.innerWidth);
+      expect(requestData.device.h).to.equal(expectedDimensions.innerHeight);
     });
     it('should correctly add GDPR consent parameters to the request', function () {
       const bidRequest = [
