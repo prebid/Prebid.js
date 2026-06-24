@@ -1,4 +1,4 @@
-import { getBidIdParameter } from '../src/utils.js';
+import { getBidIdParameter, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
@@ -46,12 +46,16 @@ export const spec = {
       const widths = request.sizes.map(size => size[0]).join(',');
       const heights = request.sizes.map(size => size[1]).join(',');
       const timeout = bidderRequest.timeout;
+      const eids = deepAccess(request, 'ortb2.user.ext.eids') || [];
+      const imuidEid = eids.find(eid => eid.source === 'intimatemerger.com');
+      const imuid = deepAccess(imuidEid, 'uids.0.id');
 
       queryString = tryAppendQueryString(queryString, 'bid', bid);
       queryString = tryAppendQueryString(queryString, 'wid', wid);
       queryString = tryAppendQueryString(queryString, 'widths', widths);
       queryString = tryAppendQueryString(queryString, 'heights', heights);
       queryString = tryAppendQueryString(queryString, 'timeout', timeout);
+      queryString = tryAppendQueryString(queryString, 'im_uid', imuid);
 
       bidRequests.push({
         method: 'GET',
