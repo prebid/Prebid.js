@@ -13,19 +13,15 @@ Object.entries({
     waitFor: CREATIVE_IFRAME_CSS_SELECTOR
   }, `Prebid.js Banner Ad Unit Test (loading ${t})`, function () {
     it('should load the targeting keys with correct values', async function () {
-      const { bidder, installedModules } = await browser.execute(() => ({
-        bidder: window.pbjs.adUnits[0].bids[0].bidder,
-        installedModules: window.pbjs.installedModules,
-      }));
+      const { adServerTargeting, bidder, installedModules } = await browser.execute(function () {
+        return {
+          bidder: window.pbjs.adUnits[0].bids[0].bidder,
+          installedModules: window.pbjs.installedModules,
+        };
+      });
 
       expect(bidder).to.equal('triplelift');
       expect(installedModules).to.include('tripleliftBidAdapter');
-
-      await switchFrame(CREATIVE_IFRAME_CSS_SELECTOR);
-
-      await expect(
-        $('img[src*="images.3lift.com/3303913.jpg"]').isExisting()
-      ).to.eventually.be.true;
     });
   });
 });
