@@ -3,6 +3,17 @@ import 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
+function deepFreeze(obj) {
+  Object.freeze(obj);
+  Object.keys(obj).forEach((key) => {
+    const value = obj[key];
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      deepFreeze(value);
+    }
+  });
+  return obj;
+}
+
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
 
@@ -333,32 +344,33 @@ describe('Nobid Adapter', function () {
   describe('isVideoBidRequestValid', function () {
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
-    const bid = {
-      bidder: 'nobid',
-      params: {
-        siteId: SITE_ID,
-        video: {
-          skippable: true,
-          playback_methods: ['auto_play_sound_off'],
-          position: 'atf',
-          mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
-          minduration: 1,
-          maxduration: 30,
-          frameworks: [1, 2, 3, 4, 5, 6]
-        }
-      },
-      adUnitCode: 'adunit-code',
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      mediaTypes: {
-        video: {
-          playerSize: [640, 480],
-          context: 'instream'
+    const bidRequests = [
+      {
+        bidder: 'nobid',
+        params: {
+          siteId: SITE_ID,
+          video: {
+            skippable: true,
+            playback_methods: ['auto_play_sound_off'],
+            position: 'atf',
+            mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
+            minduration: 1,
+            maxduration: 30,
+            frameworks: [1, 2, 3, 4, 5, 6]
+          }
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[640, 480]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        mediaTypes: {
+          video: {
+            context: 'instream'
+          }
         }
       }
-    };
-    const bidRequests = [bid];
+    ];
 
     const bidderRequest = {
       refererInfo: { page: REFERER }
@@ -391,6 +403,10 @@ describe('Nobid Adapter', function () {
       expect(payload.a[0].params.video.frameworks[3]).to.exist.and.to.equal(4);
       expect(payload.a[0].params.video.frameworks[4]).to.exist.and.to.equal(5);
       expect(payload.a[0].params.video.frameworks[5]).to.exist.and.to.equal(6);
+    });
+
+    it('should build requests from immutable instream video bid requests', function () {
+      expect(() => spec.buildRequests(deepFreeze(bidRequests), deepFreeze(bidderRequest))).to.not.throw();
     });
   });
 
@@ -456,6 +472,10 @@ describe('Nobid Adapter', function () {
       expect(payload.a[0].params.video.frameworks[3]).to.exist.and.to.equal(4);
       expect(payload.a[0].params.video.frameworks[4]).to.exist.and.to.equal(5);
       expect(payload.a[0].params.video.frameworks[5]).to.exist.and.to.equal(6);
+    });
+
+    it('should build requests from immutable outstream video bid requests', function () {
+      expect(() => spec.buildRequests(deepFreeze(bidRequests), deepFreeze(bidderRequest))).to.not.throw();
     });
   });
 
