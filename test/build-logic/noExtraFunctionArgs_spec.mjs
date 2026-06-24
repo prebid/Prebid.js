@@ -1,5 +1,5 @@
-const { RuleTester } = require('eslint');
-const rule = require('./noExtraFunctionArgs.js');
+import { RuleTester } from 'eslint';
+import rule from '../../plugins/eslint/noExtraFunctionArgs.js';
 
 const ruleTester = new RuleTester({
   languageOptions: {
