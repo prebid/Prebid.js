@@ -1,23 +1,10 @@
----
-layout: page_v2
-page_type: module
-title: AdChoices Signal Module
-description: Reads the DAA AdChoices Signal and conveys it in the OpenRTB bid stream as regs.ext.adchoices.
-module_code: adChoices
-display_name: AdChoices Signal Module
-enable_download: true
-recommended: false
-min_js_version: 11.20.0
-sidebarType: 1
----
+# Overview
 
-# AdChoices Signal Module
-{:.no_toc}
+Module Name: AdChoices Signal Module
+Module Type: Consent Module
+Maintainer: prebid@aboutads.info
 
-* TOC
-{:toc}
-
-## Overview
+# Description
 
 This module reads the [DAA (Digital Advertising Alliance) AdChoices Signal](https://github.com/Digital-Advertising-Alliance/DAA-Choice-Tools/blob/main/AdChoices%20Signal/AdChoices%20Signal%20Specification.md)
 and conveys it in the OpenRTB bid stream as the community extension
@@ -32,10 +19,9 @@ added to the bid stream.
 
 Publishers who obtain the signal by other means (for example, reading the
 `X-AdChoices` request header on their server) can supply it directly through the
-module's `signal` configuration option instead of, or in addition to, the
-extension read.
+module's `signal` configuration option.
 
-## Integration
+# Integration
 
 Build the module into your Prebid.js package:
 
@@ -43,7 +29,7 @@ Build the module into your Prebid.js package:
 gulp build --modules=adChoices
 ```
 
-## Configuration
+# Configuration
 
 The module works with no configuration. To supply a static signal or to opt into
 delaying auctions while the signal is read, use the `adChoices` config namespace:
@@ -62,13 +48,12 @@ pbjs.setConfig({
 });
 ```
 
-{: .table .table-bordered .table-striped }
 | Param | Scope | Type | Description |
 |---|---|---|---|
 | `signal` | optional | string | A statically supplied AdChoices Signal. When set, it is used as-is and takes precedence over any value read from the Protect My Choices extension. |
 | `timeout` | optional | integer | Max milliseconds to delay auctions while waiting for the signal from the extension. Defaults to `0` (non-blocking) so that users without the extension are not delayed. When set to a positive value, the first auction is delayed up to this many ms; the delay window starts when an auction begins waiting and applies once, so later auctions are not re-delayed. |
 
-## What changes in the bid request
+# What changes in the bid request
 
 When a signal is available it is added to every outgoing bid request at
 `regs.ext.adchoices`:
@@ -83,7 +68,7 @@ When a signal is available it is added to every outgoing bid request at
 }
 ```
 
-## How the signal is read
+# How the signal is read
 
 When included, the module automatically begins listening for the signal from the
 Protect My Choices extension using the documented message protocol:
@@ -96,13 +81,7 @@ Protect My Choices extension using the documented message protocol:
 The module also proactively sends a `GetAdPreferences` request on startup in case
 the `ExtensionLoaded` message fired before the listener was attached.
 
-> Note: page JavaScript cannot read the `X-AdChoices` (Chrome) / `Cookie2`
-> (Safari) headers that the extension injects into outbound requests — those are
-> intended for server-side consumption. In the browser, the postMessage protocol
-> (or the `signal` config option) is the supported way to obtain the value.
-
-## Related reading
-
-- [AdChoices Signal Specification](https://github.com/Digital-Advertising-Alliance/DAA-Choice-Tools/blob/main/AdChoices%20Signal/AdChoices%20Signal%20Specification.md)
-- [Protect My Choices Overview](https://github.com/Digital-Advertising-Alliance/DAA-Choice-Tools/blob/main/Protect%20My%20Choices/PMC2%20Overview.md)
-- [Protect My Choices Vendor Implementation](https://github.com/Digital-Advertising-Alliance/DAA-Choice-Tools/blob/main/Protect%20My%20Choices/PMC2%20Vendor%20Implementation.md)
+Note: page JavaScript cannot read the `X-AdChoices` (Chrome) / `Cookie2` (Safari)
+headers that the extension injects into outbound requests — those are intended for
+server-side consumption. In the browser, the postMessage protocol (or the `signal`
+config option) is the supported way to obtain the value.

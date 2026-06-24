@@ -9,6 +9,7 @@ import {
   PMC_AD_PREFERENCES,
 } from 'modules/adChoices.js';
 import * as utils from 'src/utils.js';
+import { getHook } from 'src/hook.js';
 
 const expect = require('chai').expect;
 
@@ -201,6 +202,19 @@ describe('adChoices', function () {
         expect(second).to.equal(true);
         done();
       }, 60);
+    });
+
+    it('removes the requestBids hook on reset so it does not leak globally', function () {
+      function installedCount() {
+        return getHook('requestBids').getHooks({ hook: requestBidsHook }).length;
+      }
+      setAdChoicesConfig({ timeout: 100 });
+      expect(installedCount()).to.equal(1);
+      resetAdChoicesData();
+      expect(installedCount()).to.equal(0);
+      // It can be reinstalled cleanly after a reset.
+      setAdChoicesConfig({ timeout: 100 });
+      expect(installedCount()).to.equal(1);
     });
   });
 });

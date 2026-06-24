@@ -229,6 +229,10 @@ export function resetAdChoicesData() {
     window.removeEventListener('message', handleMessage);
     listenerAttached = false;
   }
+  if (requestBidsHookInstalled) {
+    getHook('requestBids').getHooks({ hook: requestBidsHook }).remove();
+    requestBidsHookInstalled = false;
+  }
 }
 
 config.getConfig(MODULE_NAME, (cfg) => setAdChoicesConfig(cfg?.[MODULE_NAME]));
