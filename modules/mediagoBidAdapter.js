@@ -184,7 +184,7 @@ function getItems(validBidRequests, bidderRequest) {
           adUnitCode: req.adUnitCode,
           referrer: getReferrer(req, bidderRequest),
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'),
-          gpid: gpid,
+          gpid: gpid + '',
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
           publisher: req.params.publisher || '',
           transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
