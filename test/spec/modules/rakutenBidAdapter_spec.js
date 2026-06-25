@@ -6,7 +6,6 @@ import { config } from '../../../src/config.js';
 describe('rakutenBidAdapter', function() {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://s-bid.rmp.rakuten.com/h';
-  let sandbox;
 
   beforeEach(function() {
     config.resetConfig();
@@ -149,12 +148,7 @@ describe('rakutenBidAdapter', function() {
         sync_urls: ['https://rdn1.test/sync?uid=9876543210', 'https://rdn2.test/sync?uid=9876543210']
       }
     }];
-    const nosyncResponse = [{
-      body: {
-        request_id: 'biequa9oaph4we',
-        sync_urls: []
-      }
-    }];
+
     let syncOptions;
     beforeEach(function () {
       syncOptions = {

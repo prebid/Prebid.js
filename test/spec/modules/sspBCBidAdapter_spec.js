@@ -672,7 +672,7 @@ describe('SSPBC adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
+    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
     const request = spec.buildRequests(bids, bidRequest);
     const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
     const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);

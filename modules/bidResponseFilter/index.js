@@ -38,7 +38,7 @@ export function reset() {
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
   const catConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {}) };
   const advConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {}) };
-  const attrConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.attr || {}) };
+  const attrConfig = { enforce: true, blockUnknown: false, ...(moduleConfig?.attr || {}) };
   const ortb2 = index.getOrtb2(bid) || {};
   const bidRequest = index.getBidRequest(bid);
   const bcat = catConfig.bcat ?? ortb2.bcat ?? [];
@@ -76,8 +76,12 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   } else if ((advConfig.enforce && badv.some(domain => advertiserDomains.includes(domain))) ||
     (advConfig.blockUnknown && !advertiserDomains.length)) {
     reject(BID_ADV_DOMAINS_REJECTION_REASON);
-  } else if ((attrConfig.enforce && battr.includes(metaAttr)) ||
-    (attrConfig.blockUnknown && !metaAttr)) {
+  } else if (
+    attrConfig.enforce && (
+      (attrConfig.blockUnknown && (!Array.isArray(metaAttr) || metaAttr.length === 0)) ||
+      (Array.isArray(metaAttr) && metaAttr.find(attr => battr.includes(attr)))
+    )
+  ) {
     reject(BID_ATTR_REJECTION_REASON);
   } else if ((mediaTypesConfig.enforce && (!allowedMediaTypes.includes(metaMediaType) || rejectIbvBannerOnMultiFormat)) ||
     (mediaTypesConfig.blockUnknown && !metaMediaType)) {

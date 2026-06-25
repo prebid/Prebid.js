@@ -510,6 +510,9 @@ describe('Richaudience adapter tests', function () {
           numIframes: 0
         }
       });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('supplyType').and.to.equal('app');
+      expect(requestContent).to.have.property('ifa').and.to.equal('AAAAAAAAA-BBBB-CCCC-1111-222222220000');
     });
 
     it('Verify build request with GDPR without gdprApplies', function () {

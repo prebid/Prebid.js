@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
 import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
-import * as bidViewability from '../../../modules/bidViewability.js';
+import '../../../modules/bidViewability.js';
 import adapterManager from '../../../src/adapterManager.js';
 
 describe('#bidViewabilityIO', function() {

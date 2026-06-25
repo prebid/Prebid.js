@@ -8,7 +8,7 @@ const RTB_BIDDER_CODE = 'rtbstack';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
-const CLIENT_ID = 5124;
+
 const ENDPOINT_ID = 81264;
 
 describe('AdmixerAdapter', function () {
