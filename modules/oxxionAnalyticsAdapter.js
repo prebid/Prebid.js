@@ -122,12 +122,10 @@ function addTimeout(args) {
   if (saveEvents[eventType] === undefined) { saveEvents[eventType] = []; }
   saveEvents[eventType].push(args);
   const argsCleaned = [];
-  let argsDereferenced = {};
-  const stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
-  argsDereferenced = stringArgs;
-  argsDereferenced.forEach((attr) => {
-    argsCleaned.push(filterAttributes(deepClone(attr), false));
-  });
+  JSON.parse(dereferenceWithoutRenderer(args))
+    .forEach((attr) => {
+      argsCleaned.push(filterAttributes(deepClone(attr), false));
+    });
   if (auctionEnd[eventType] === undefined) { auctionEnd[eventType] = []; }
   auctionEnd[eventType].push(argsCleaned);
 }

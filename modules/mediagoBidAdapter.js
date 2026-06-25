@@ -130,7 +130,7 @@ const mediagoAdSize = normalAdSize;
  * @return {Object}
  */
 function getItems(validBidRequests, bidderRequest) {
-  let items = [];
+  let items;
   items = validBidRequests.map((req, i) => {
     let ret = {};
     const mediaTypes = getProperty(req, 'mediaTypes');

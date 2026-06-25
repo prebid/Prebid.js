@@ -206,7 +206,7 @@ export const spec = {
 };
 
 function buildImp(bidRequest, ortb2) {
-  let imp = {};
+  let imp;
   imp = {
     sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
     bidId: deepAccess(bidRequest, 'bidId'),

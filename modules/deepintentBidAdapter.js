@@ -152,7 +152,7 @@ function clean(obj) {
 }
 
 function buildImpression(bid) {
-  let impression = {};
+  let impression;
   const floor = getFloor(bid);
   impression = {
     id: bid.bidId,

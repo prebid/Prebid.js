@@ -1969,7 +1969,7 @@ describe('the price floors module', function () {
               },
               inverseBidAdjustment: function (bidCpm, bidRequest) {
                 // For the inverse we add up each mediaType in the request and divide by number of Mt's to get the inverse number
-                let factor = Object.keys(bidRequest.mediaTypes).reduce((sum, mediaType) => sum += mediaTypeFactors[mediaType], 0);
+                let factor = Object.keys(bidRequest.mediaTypes).reduce((sum, mediaType) => sum + mediaTypeFactors[mediaType], 0);
                 factor = factor / Object.keys(bidRequest.mediaTypes).length;
                 return bidCpm / factor;
               },
