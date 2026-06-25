@@ -161,7 +161,7 @@ function cookImpVideo({ mediaTypes }) {
     h,
     mimes: video.mimes || ['video/mp4'],
     protocols: video.protocols || [2, 3, 5, 6],
-    placement: video.placement || placement;
+    placement: video.placement || placement,
   };
 }
 
