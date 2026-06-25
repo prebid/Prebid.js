@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn, onBidWon, onBidBillable
+  isBidRequestValid, createUserSyncGetter, createInterpretResponseFn, createBuildRequestsFn, onBidWon, onBidBillable, onAdRenderSucceeded, onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
@@ -38,6 +38,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

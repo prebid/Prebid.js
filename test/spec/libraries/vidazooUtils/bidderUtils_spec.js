@@ -570,6 +570,126 @@ describe('Vidazoo Bidder Utils Tests', function () {
     });
   });
 
+  describe('onBidViewable', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should append ? when veiwableUrl has no existing query string', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        veiwableUrl: 'https://test.com/onBidViewable',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onBidViewable(bid);
+      expect(utils.triggerPixel.called).to.be.true;
+      const url = utils.triggerPixel.args[0][0];
+      expect(url).to.match(/^https:\/\/test\.com\/onBidViewable\?adId=/);
+    });
+
+    it('should not call triggerPixel when veiwableUrl not passed in bid', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onBidViewable(bid);
+      expect(utils.triggerPixel.called).to.be.false;
+    });
+  });
+
+  describe('onAdRenderSucceeded', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should append ? when veiwableUrl has no existing query string', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        renderSuccessUrl: 'https://test.com/renderSuccessUrl',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onAdRenderSucceeded(bid);
+      expect(utils.triggerPixel.called).to.be.true;
+      const url = utils.triggerPixel.args[0][0];
+      expect(url).to.match(/^https:\/\/test\.com\/renderSuccessUrl\?adId=/);
+    });
+
+    it('should not call triggerPixel when veiwableUrl not passed in bid', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      utilities.onAdRenderSucceeded(bid);
+      expect(utils.triggerPixel.called).to.be.false;
+    });
+  });
+
   describe('createUserSyncGetter', function () {
     let sandbox;
     const iframeSyncUrl = 'https://sync.example.com/api/sync/iframe';

@@ -188,6 +188,54 @@ export function onBidBillable(bid) {
   triggerPixel(url);
 }
 
+export function onBidViewable(bid) {
+  if (!bid.veiwableUrl) {
+    return;
+  }
+  const viewablePayload = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(viewablePayload);
+  const url = bid.veiwableUrl + "?" + qs;
+  triggerPixel(url);
+}
+
+export function onAdRenderSucceeded(bid) {
+  if (!bid.renderSuccessUrl) {
+    return;
+  }
+  const renderSuccessPayload = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(renderSuccessPayload);
+  const url = bid.renderSuccessUrl + "?" + qs;
+  triggerPixel(url);
+}
+
 /**
  * Create the spec function for getting user syncs
  *
