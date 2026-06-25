@@ -1,4 +1,5 @@
 import { novatiqIdSubmodule, novatiqStorage } from 'modules/novatiqIdSystem.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('novatiqIdSystem', function () {
   const urlParams = {
@@ -133,6 +134,36 @@ describe('novatiqIdSystem', function () {
       const response = novatiqIdSubmodule.sendAsyncSyncRequest('testuuid', sync.url);
       expect(response.callback).should.not.be.empty;
     });
+
+    it('persists nvq_hid only after async sync accepts the id (200)', function (done) {
+      const persistStub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
+      const config = { params: { sourceid: '123', useCallbacks: true } };
+      const response = novatiqIdSubmodule.getId(config);
+
+      expect(persistStub.called).to.equal(false);
+      response.callback(function (idObj) {
+        expect(idObj.id).to.have.length(40);
+        expect(persistStub.calledOnce).to.equal(true);
+        expect(persistStub.firstCall.args[0]).to.equal(idObj.id);
+        persistStub.restore();
+        done();
+      });
+      server.requests[0].respond(200);
+    });
+
+    it('does not persist nvq_hid when async sync does not accept the id', function (done) {
+      const persistStub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
+      const config = { params: { sourceid: '123', useCallbacks: true } };
+      const response = novatiqIdSubmodule.getId(config);
+
+      response.callback(function (idObj) {
+        expect(idObj.id).to.be.undefined;
+        expect(persistStub.called).to.equal(false);
+        persistStub.restore();
+        done();
+      });
+      server.requests[0].respond(201);
+    });
   });
 
   describe('persistEphemeralHyperId', function () {
@@ -170,7 +201,7 @@ describe('novatiqIdSystem', function () {
   });
 
   describe('getId nvq_hid', function () {
-    it('persists ephemeral hyper id when sync runs', function () {
+    it('persists ephemeral hyper id when simple sync runs', function () {
       const stub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
       const config = { params: { sourceid: '123' } };
       novatiqIdSubmodule.getId(config);

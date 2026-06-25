@@ -87,8 +87,6 @@ export const novatiqIdSubmodule = {
     const url = syncUrl.url;
     const novatiqId = syncUrl.novatiqId;
 
-    this.persistEphemeralHyperId(novatiqId);
-
     // for testing
     const sharedStatus = (sharedId !== null && sharedId !== undefined && sharedId !== false) ? 'Found' : 'Not Found';
 
@@ -97,18 +95,20 @@ export const novatiqIdSubmodule = {
       res.sharedStatus = sharedStatus;
 
       return res;
-    } else {
-      this.sendSimpleSyncRequest(novatiqId, url);
-
-      return {
-        'id': novatiqId,
-        'sharedStatus': sharedStatus
-      };
     }
+
+    this.persistEphemeralHyperId(novatiqId);
+    this.sendSimpleSyncRequest(novatiqId, url);
+
+    return {
+      'id': novatiqId,
+      'sharedStatus': sharedStatus
+    };
   },
 
   sendAsyncSyncRequest(novatiqId, url) {
     logInfo('NOVATIQ Setting up ASYNC sync request');
+    const persistEphemeralHyperId = this.persistEphemeralHyperId.bind(this);
 
     const resp = function (callback) {
       logInfo('NOVATIQ *** Calling ASYNC sync request');
@@ -121,9 +121,11 @@ export const novatiqIdSubmodule = {
         logInfo('NOVATIQ *** ASYNC request returned ' + syncrc);
         if (syncrc === 200) {
           novatiqIdJson = { 'id': novatiqId, syncResponse: 1 };
+          persistEphemeralHyperId(novatiqId);
         } else {
           if (syncrc === 204) {
             novatiqIdJson = { 'id': novatiqId, syncResponse: 2 };
+            persistEphemeralHyperId(novatiqId);
           }
         }
         callback(novatiqIdJson);
@@ -150,9 +152,11 @@ export const novatiqIdSubmodule = {
    * @param {string} hyperId
    */
   persistEphemeralHyperId(hyperId) {
+    logInfo("Novatiq persistEphemeralHyperId")
     const ttlMs = NVQ_HID_TTL_MS;
     if (!novatiqStorage.cookiesAreEnabled()) {
       if (novatiqStorage.hasLocalStorage()) {
+        logInfo("Novatiq Writing HyperID in short lived local storage")
         novatiqStorage.setDataInLocalStorage(NVQ_HID_KEY, JSON.stringify({
           hyperId: hyperId,
           expiresAt: Date.now() + ttlMs
@@ -164,6 +168,7 @@ export const novatiqIdSubmodule = {
     if (novatiqStorage.hasLocalStorage()) {
       novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
     }
+    logInfo("Novatiq Writing HyperID in short lived cookie")
     const expiry = new Date(Date.now() + ttlMs).toUTCString();
     novatiqStorage.setCookie(NVQ_HID_KEY, hyperId, expiry, 'Lax');
     logInfo('NOVATIQ ephemeral hyperId stored in cookie (' + (ttlMs / 1000) + 's TTL)');
