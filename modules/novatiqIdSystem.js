@@ -22,6 +22,9 @@ const MODULE_NAME = 'novatiq';
 const NVQ_HID_KEY = 'nvq_hid';
 const NVQ_HID_TTL_MS = 60 * 1000;
 
+/** @type {ReturnType<typeof setTimeout>|null} */
+let nvqHidLocalStorageExpiryTimer = null;
+
 export const novatiqStorage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /** @type {Submodule} */
@@ -152,15 +155,15 @@ export const novatiqIdSubmodule = {
    * @param {string} hyperId
    */
   persistEphemeralHyperId(hyperId) {
-    logInfo("Novatiq persistEphemeralHyperId")
     const ttlMs = NVQ_HID_TTL_MS;
     if (!novatiqStorage.cookiesAreEnabled()) {
       if (novatiqStorage.hasLocalStorage()) {
-        logInfo("Novatiq Writing HyperID in short lived local storage")
+        this.removeExpiredEphemeralHyperIdFromLocalStorage();
         novatiqStorage.setDataInLocalStorage(NVQ_HID_KEY, JSON.stringify({
           hyperId: hyperId,
           expiresAt: Date.now() + ttlMs
         }));
+        this.scheduleEphemeralHyperIdLocalStorageExpiry();
         logInfo('NOVATIQ ephemeral hyperId stored in localStorage (' + (ttlMs / 1000) + 's TTL, cookies unavailable)');
       }
       return;
@@ -168,10 +171,39 @@ export const novatiqIdSubmodule = {
     if (novatiqStorage.hasLocalStorage()) {
       novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
     }
-    logInfo("Novatiq Writing HyperID in short lived cookie")
     const expiry = new Date(Date.now() + ttlMs).toUTCString();
     novatiqStorage.setCookie(NVQ_HID_KEY, hyperId, expiry, 'Lax');
     logInfo('NOVATIQ ephemeral hyperId stored in cookie (' + (ttlMs / 1000) + 's TTL)');
+  },
+
+  removeExpiredEphemeralHyperIdFromLocalStorage() {
+    if (!novatiqStorage.hasLocalStorage()) {
+      return;
+    }
+    const raw = novatiqStorage.getDataFromLocalStorage(NVQ_HID_KEY);
+    if (raw === null || raw === undefined || raw === '') {
+      return;
+    }
+    const payload = JSON.parse(raw);
+    if (typeof payload.expiresAt !== 'number' || payload.expiresAt <= Date.now()) {
+      novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
+    }
+  },
+
+  scheduleEphemeralHyperIdLocalStorageExpiry() {
+    if (typeof window === 'undefined' || typeof window.setTimeout !== 'function') {
+      return;
+    }
+    if (nvqHidLocalStorageExpiryTimer !== null) {
+      window.clearTimeout(nvqHidLocalStorageExpiryTimer);
+    }
+    nvqHidLocalStorageExpiryTimer = window.setTimeout(function () {
+      if (novatiqStorage.hasLocalStorage()) {
+        novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
+        logInfo('NOVATIQ ephemeral hyperId removed from localStorage after TTL');
+      }
+      nvqHidLocalStorageExpiryTimer = null;
+    }, NVQ_HID_TTL_MS);
   },
 
   getNovatiqId(urlParams) {
