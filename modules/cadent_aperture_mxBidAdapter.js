@@ -43,7 +43,7 @@ export const cadentAdapter = {
     return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
   },
   buildBanner: (bid) => {
-    let sizes = [];
+    let sizes;
     bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? sizes = bid.mediaTypes.banner.sizes : sizes = bid.sizes;
     if (!cadentAdapter.validateSizes(sizes)) {
       logWarn(BIDDER_CODE + ': could not detect mediaType banner sizes. Assigning to bid sizes instead');
