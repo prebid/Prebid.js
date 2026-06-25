@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { Renderer } from 'src/Renderer.js';
-import { REQUEST_URL, SP_OUTSTREAM_PLAYER_URL, CONVERTER, spec } from '../../../modules/silverpushBidAdapter.js';
+import { SP_OUTSTREAM_PLAYER_URL, spec } from '../../../modules/silverpushBidAdapter.js';
 
 const bannerBid = {
   bidder: 'silverpush',
@@ -399,21 +399,19 @@ describe('Silverpush Adapter', function () {
     });
 
     it('Should not trigger pixel if bid does not contain burl', function() {
-      const result = spec.onBidWon({});
-
+      spec.onBidWon({});
       expect(ajaxStub.calledOnce).to.equal(false);
     });
 
     it('Should trigger pixel with correct macros if bid burl is present', function() {
-      const result = spec.onBidWon({
+      spec.onBidWon({
+        burl: 'http://won.foo.bar/trk?ap=${AUCTION_PRICE}&aid=${AUCTION_ID}&imp=${AUCTION_IMP_ID}&adid=${AUCTION_AD_ID}&sid=${AUCTION_SEAT_ID}',
         cpm: 1.5,
         auctionId: 'auc123',
         requestId: 'req123',
         adId: 'ad1234',
-        seatBidId: 'sea123',
-        burl: 'http://won.foo.bar/trk?ap=${AUCTION_PRICE}&aid=${AUCTION_ID}&imp=${AUCTION_IMP_ID}&adid=${AUCTION_AD_ID}&sid=${AUCTION_SEAT_ID}'
+        seatBidId: 'sea123'
       });
-
       expect(ajaxStub.calledOnceWith('http://won.foo.bar/trk?ap=1.5&aid=auc123&imp=req123&adid=ad1234&sid=sea123')).to.equal(true);
     });
   });

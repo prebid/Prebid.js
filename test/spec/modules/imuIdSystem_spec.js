@@ -16,10 +16,6 @@ import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import { expect } from 'chai/index.mjs';
 
-// TODO: this symbol was imported, but not exported, from imuIdSystem.js
-// setting it as undefined achieves the same result but clearly something's wrong here
-const apiUrl = undefined;
-
 describe('imuId module', function () {
   // let setLocalStorageStub;
   let getLocalStorageStub;
@@ -166,7 +162,7 @@ describe('imuId module', function () {
 
   describe('callImuidApi()', function () {
     it('should return function when set url', function () {
-      const res = callImuidApi(`${apiUrl}?cid=5126`);
+      const res = callImuidApi(getApiUrl(5126));
       expect(res).to.exist.and.to.be.a('function');
     });
   });

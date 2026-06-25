@@ -68,7 +68,7 @@ function buildIdCallUrl(params, gdprConsent) {
   const url = parseUrl(params.idendpoint || TRACKER_EP_FROM_IDMODULE);
 
   if (gdprConsent) {
-    url.search.gdpr_consent = gdprConsent && gdprConsent.gdprApplies ? gdprConsent.consentString : '';
+    url.search.gdpr_consent = gdprConsent.gdprApplies ? gdprConsent.consentString : '';
   }
   if (params) {
     if (params.accountid) { url.search.accountid = params.accountid; }
@@ -110,7 +110,7 @@ function shouldCallSrv(logstr) {
   if (!(tsStr.length === 13 && ts && ts >= (now - ONE_YEAR_IN_MS) && ts <= (now + ONE_YEAR_IN_MS))) {
     ts = undefined;
   }
-  return (ts === undefined || (ts && now > ts));
+  return (ts === undefined || now > ts);
 }
 
 /** @type {Submodule} */

@@ -72,7 +72,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest });
-    return formatRequest(data, bidderRequest);
+    return formatRequest(data);
   },
 
   /**

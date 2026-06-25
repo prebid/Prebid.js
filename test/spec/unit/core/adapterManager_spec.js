@@ -2484,13 +2484,9 @@ describe('adapterManager tests', function () {
 
       it('setting to `random` uses shuffled order of adUnits', function () {
         config.setConfig({ bidderSequence: 'random' });
-        const bidRequests = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
+
+        makeBidRequests();
+
         sinon.assert.calledOnce(utils.shuffle);
       });
     });

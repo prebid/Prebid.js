@@ -21,12 +21,9 @@ describe('Improve Digital Adapter Tests', function () {
   const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
   const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
   const PB_ENDPOINT = 'pb';
-  const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
-  const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
+
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
   const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
-  const INSTREAM_TYPE = 1;
-  const OUTSTREAM_TYPE = 3;
 
   const simpleBidRequest = {
     bidder: 'improvedigital',
@@ -115,10 +112,6 @@ describe('Improve Digital Adapter Tests', function () {
       }
     },
     bids: [simpleBidRequest],
-  };
-
-  const extendBidderRequest = {
-    bids: [extendBidRequest],
   };
 
   const instreamBidderRequest = {
@@ -998,49 +991,6 @@ describe('Improve Digital Adapter Tests', function () {
           'seat': 'improvedigital'
         }
       ],
-    }
-  };
-
-  const serverResponseRazr = {
-    body: {
-      'id': '2adac6a5fe04df',
-      'cur': 'EUR',
-      'ext': {
-        'improvedigital': {
-          'sync': [
-            'https://d5p.de17a.com/getuid/improve_digital?publisher_user_id=ce26f11e-567a-4eb7-bf94-51752e293ca5&publisher_dsp_id=61&publisher_call_type=redirect&gdpr=1&gdpr_consent=CPU22FrPU22FrAcABBENCDCsAP_AAH_AAChQIltf_X__b3_j-_5_f_t0eY1P9_7_v-0zjhfdt-8N3f_X_L8X42M7vF36pq4KuR4Eu3LBIQdlHOHcTUmw6okVrzPsbk2cr7NKJ7PEmnMbO2dYGH9_n93TuZKY7______z_v-v_v____f_7-3_3__5_3---_e_V_99zLv9____39nP___9v-_9_____4IhgEmGpeQBdmWODJtGlUKIEYVhIdAKACigGFoisIHVwU7K4CfUELABCagJwIgQYgowYBAAIJAEhEQEgB4IBEARAIAAQAqwEIACNgEFgBYGAQACgGhYgRQBCBIQZHBUcpgQFSLRQT2ViCUHexphCGWeBFAo_oqEBGs0QLAyEhYOY4AkBLxZIHmKF8gAAAAA.f_gAD_gAAAAA&publisher_redirecturl=https://euw-ice.360yield.com/match'
-          ]
-        }
-      },
-      'seatbid': [
-        {
-          'bid': [
-            {
-              'ext': {
-                'improvedigital': {
-                  'line_item_id': 410573,
-                  'bidder_id': 0,
-                  'brand_name': '',
-                  'buying_type': 'classic',
-                  'agency_id': '0'
-                }
-              },
-              'crid': '544063',
-              'price': 1.9199364935359489,
-              'id': '1fcf4dd8-a783-48ed-b59c-8fc8eeccb024',
-              'adomain': [
-                'improvedigital.com'
-              ],
-              'w': 970,
-              'impid': '33e9500b21129f',
-              'h': 250,
-              'adm': '<html><body style="margin:0%"><!-- Integration Test Camapigns -->\n<!-- Pageskin Plus Desktop -->\n<!-- Desktop -->\n<!-- Size: 970x250 -->\n<!-- DSP: Other -->\n\n<script async src="https://cdn.inskinad.com/isfe/tags/dsp.js"></script>\n<script type="text/javascript">\n      (function() {\n        var ns = window.inskin = window.inskin || {};\n        ns.dsp = ns.dsp || [];\n        ns.dsp.push({\n          uri: "razr://inskin/pageskinplus?eyJwbHJfTWFuaWZlc3RQYXRoIjoicHNfY3JlYXRvcngvZGlzdC82MDQwYjg3NWQ5ZmZkNTAwMWExZjQxNzAvbWFuaWZlc3QuanNvbiIsImkiOiJodHRwczovL2Nkbi5pbnNraW5hZC5jb20vQ3JlYXRpdmVTdG9yZS9wc19jcmVhdG9yeC9maWxlcy82MDQwYWI1NGQ5ZmZkNTAwMWExZjQxNjdfMTYzNjcxNDEzNTU4MS85NzB4MjUwLmpwZyIsImwiOiJodHRwczovL3d3dy5pbnNraW5tZWRpYS5jb20vIiwic2l6ZSI6Ijk3MHgyNTAiLCJkc3AiOiJPdGhlciIsImNyZWF0aXZlX2lkIjoiNTAwMDAwMDA2NSIsIm1hc3MiOnsiZW5kcG9pbnQiOiJodHRwczovL2Nkbi5pbnNraW5hZC5jb20vaXNmZS90YWdzL2lwdC5qcyJ9fQ==&gdpr=1&gdpr_consent=CPU22FrPU22FrAcABBENCDCsAP_AAH_AAChQIltf_X__b3_j-_5_f_t0eY1P9_7_v-0zjhfdt-8N3f_X_L8X42M7vF36pq4KuR4Eu3LBIQdlHOHcTUmw6okVrzPsbk2cr7NKJ7PEmnMbO2dYGH9_n93TuZKY7______z_v-v_v____f_7-3_3__5_3---_e_V_99zLv9____39nP___9v-_9_____4IhgEmGpeQBdmWODJtGlUKIEYVhIdAKACigGFoisIHVwU7K4CfUELABCagJwIgQYgowYBAAIJAEhEQEgB4IBEARAIAAQAqwEIACNgEFgBYGAQACgGhYgRQBCBIQZHBUcpgQFSLRQT2ViCUHexphCGWeBFAo_oqEBGs0QLAyEhYOY4AkBLxZIHmKF8gAAAAA.f_gAD_gAAAAA&c=https%3A%2F%2Feuw-ice.360yield.com%2Fclick%2FicS49rk9QboLEcCd2ow-WFM9F-uuu.xuH-D.JKa4FBO3Vxze.r6Uf644oAHkoUAxfF-CS-TZMM5vuXryUCtFZY.0iu4Uva6MWyjId5sB-BkTdMYZonq6EFX7D--DhmqReLb-AXr9GCFaLePzLe3jG0QYG.-ZsKp9nMiVsUXOoeCZvH.DTvtGo1gvOi3rVoeBw7XaRuwtcfhfr7VPrrWzovbtyMrMZsWzMIbU-WQZ0qYJSXHRn0PECOMxw.kHptceQ8-.TPHiSdW2O-Mk97IgJ5GNdnPwqO3pc8TXzaWvxtuKywsYQ-8Fk5o4FaUSFh1wa2fQEvUnh1A5sOgB.F.D8PaDrLofK3FfWxAa0hLcsi3nO2DYX-oppQZ1r2qYsaUlrSp-yVVSw.PoAQdSFCgrZnY-j7fpezyE.DBSsabWkCdSuMFnmaGUbToYca5PgblpDAxTk.fn13QijCoq3sVMQ.lgbUEdaruATWGbviYrO8tOYThvOTO.U1XqP0lE-kMNQOM6912RGYH9wEavr-xI4QRwG6Qa.ms5EJG-gPq8%2F%2F"\n        });\n      })();\n</script><noscript class="MOAT-improvedigitaldisplay945272226933?moatClientLevel1=5279&amp;moatClientLevel2=187354&amp;moatClientLevel3=410573&amp;moatClientLevel4=544063&amp;moatClientSlicer1=291098&amp;moatClientSlicer2=22655158&amp;zMoatRTBADV=improvedigital.com&amp;zMoatRTBCR=&amp;zMoatReferrer=localhost&amp;zMoatSZ=970x250&amp;zMoatBundle="></noscript>\n<script src="https://z.moatads.com/improvedigitaldisplay945272226933/moatad.js#moatClientLevel1=5279&moatClientLevel2=187354&moatClientLevel3=410573&moatClientLevel4=544063&moatClientSlicer1=291098&moatClientSlicer2=22655158&zMoatRTBADV=improvedigital.com&zMoatRTBCR=&zMoatReferrer=localhost&zMoatSZ=970x250&zMoatBundle=" type="text/javascript"></script><img src="https://euw-ice.360yield.com/imp_pixel?ic=icS49pIfpuQmwz1qwTyow94dtPYFJ1jd5AmVkPxrq5AiMd6kj6SEjlT305kiOHKmTXMmbZXHwoVeXjv3RYo.3Y2aERPh6YXuUAUpd9q4kwk81vxha7.45yIGHQewfVQasIsWALCaw..GbNmjZcezJcWCYCyOVobUgm2IQCRNqm8eTb5YZIPQtYU5SB6P.f3kf7J64jQuqILOmuizstXUQQeJM.S0F12arPFAPswnbIm-mZHGqMEG4ShDG5LqIAwBwWTAp71MHD9ztPR34GkXnVd8Ub-OErWFbH5z6g-150kngZ90er.RUXOiFCQNK-69nU0NrzWNsZYCSg.c5xZ39RsTUOOROb52aTRuHn4nd--2FnI5EMnjBV..-KZVX6b33J0qHaqyO8Xfp7JwtSQ2pmk.yHziRMTAl2K0rm0Afn5O.SXV5GT.b7Aua8soa.YGd.h9R.FC34NwClsGgD9OalhEhyqnWZoHyLFUdeYnw9EljptBDIMkFQ9FXP0mJsqZCMWZXE20zGW24QmsWqNelt0Hqs0r7V-ca.WvrYxJ" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="187354" line_item_id="410573" creative_id="544063" crid="0" placement_id="22655158"></improvedigital_ad_output_information></body></html>',
-              'cid': '187354'
-            }
-          ],
-          'seat': 'improvedigital'
-        }
-      ]
     }
   };
 

@@ -4,7 +4,7 @@ import { hook } from '../../../../src/hook.js';
 import { config } from 'src/config.js';
 
 describe('metricsFactory', () => {
-  let metrics, now, enabled, newMetrics;
+  let metrics, now, newMetrics;
 
   beforeEach(() => {
     now = 0;

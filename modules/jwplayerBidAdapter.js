@@ -169,7 +169,7 @@ function getBidAdapter() {
   function buildRequest(bidRequest, bidderRequest) {
     const openrtbRequest = {
       id: bidRequest.bidId,
-      imp: getRequestImpressions(bidRequest, bidderRequest),
+      imp: getRequestImpressions(bidRequest),
       site: getRequestSite(bidRequest, bidderRequest),
       device: getRequestDevice(bidderRequest.ortb2),
       user: getRequestUser(bidderRequest.ortb2),

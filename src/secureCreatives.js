@@ -64,7 +64,7 @@ function ensureAdId(adId, reply) {
 
 export function receiveMessage(ev, cb) {
   var key = ev.message ? 'message' : 'data';
-  var data = {};
+  var data;
   try {
     data = JSON.parse(ev[key]);
   } catch (e) {
