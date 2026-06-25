@@ -159,7 +159,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('maps adomain, advertiser id and product id onto bid.meta from proto-json extension key', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
       const bidderRequest = buildBidderRequest(bidRequests);
       const built = spec.buildRequests(bidRequests, bidderRequest);
@@ -188,7 +188,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('maps advertiser id and product id from bid.ext extension key', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
       const bidderRequest = buildBidderRequest(bidRequests);
       const built = spec.buildRequests(bidRequests, bidderRequest);
