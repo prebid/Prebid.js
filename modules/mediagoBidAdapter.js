@@ -8,7 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
-import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/transformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
