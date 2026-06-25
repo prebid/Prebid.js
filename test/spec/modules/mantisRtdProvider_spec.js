@@ -144,6 +144,34 @@ describe('mantisDataModule', function () {
       // No response has been sent, so ortb2 must be unpopulated
       expect(reqBidsConfigObj.ortb2Fragments.global.site).to.not.exist;
     });
+
+    it('should not modify ortb2 when API response arrives after timeout has already fired', function () {
+      const apiResponse = {
+        sentiment: 'positive',
+        emotion: { happy: { level: 'high' } },
+        ratings: [{ customer: 'amazon', rating: 'GREEN' }],
+        categories: {
+          mantis: [{ label: 'sports', score: 0.9 }],
+          iab: [{ id: 'IAB1', score: 0.9 }],
+        },
+      };
+
+      mantisDataModule.getBidRequestData(reqBidsConfigObj, onDoneSpy, makeConfig({ timeout: 100 }));
+
+      // Fire the timeout — auction proceeds without Mantis data
+      clock.tick(110);
+      expect(onDoneSpy.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global.site).to.not.exist;
+
+      // Simulate the late API response arriving after timeout
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(apiResponse));
+
+      // ortb2 must remain unpopulated — the late response must be discarded
+      expect(reqBidsConfigObj.ortb2Fragments.global.site).to.not.exist;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user).to.not.exist;
+      // onDone must not have been called a second time
+      expect(onDoneSpy.calledOnce).to.equal(true);
+    });
   });
 
   describe('mantisModule.setOrtb2FromResponse', function () {
