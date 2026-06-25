@@ -34,6 +34,7 @@ import type { Identifier, BidderCode } from '../../src/types/common.d.ts';
 import type { Metrics } from "../../src/utils/perfMetrics.ts";
 import type { ORTBResponse } from "../../src/types/ortb/response.d.ts";
 import type { NativeRequest } from '../../src/types/ortb/native.d.ts';
+import { browserSupportsUserSyncCookies } from "../../src/userSync.ts";
 import type { SyncType } from "../../src/userSync.ts";
 
 const getConfig = config.getConfig;
@@ -260,6 +261,10 @@ export function resetSyncedStatus() {
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
 function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig: S2SConfig) {
+  if (!browserSupportsUserSyncCookies()) {
+    return;
+  }
+
   if (_s2sConfigs.length === _syncCount) {
     return;
   }

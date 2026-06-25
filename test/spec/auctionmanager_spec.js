@@ -1245,6 +1245,29 @@ describe('auctionmanager.js', function () {
             expect(getBid().renderer.renderNow).to.be.true;
           });
         });
+
+        // Regression: a bid can be accepted when its ad unit is no longer
+        // resolvable (e.g. the originating auction has expired out of the
+        // auctionManager TTL collection, or the bid carries an adUnitId that
+        // matches no held ad unit). getPreparedBidForAuction must not throw
+        // while reading the publisher-defined renderer off the (missing) ad unit.
+        it('does not throw when the bid has no matching ad unit', () => {
+          const index = {
+            getAdUnit: () => undefined,
+            getBidRequest: () => undefined,
+            getMediaTypes: () => undefined,
+          };
+          const bid = {
+            cpm: 1.0,
+            bidderCode: BIDDER_CODE,
+            mediaType: 'banner',
+          };
+          let prepared;
+          expect(() => {
+            prepared = auctionModule.getPreparedBidForAuction(bid, { index });
+          }).to.not.throw();
+          expect(prepared.renderer).to.not.exist;
+        });
       });
 
       it('installs publisher-defined backup renderers on bids', function () {
@@ -1413,8 +1436,9 @@ describe('auctionmanager.js', function () {
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy, auctionDone, bidsBackCallback;
 
-      function respondToRequest(requestIndex) {
-        server.requests[requestIndex].respond(200, {}, 'response body');
+      function respondToRequest(discriminator) {
+        const request = typeof discriminator === 'function' ? server.requests.find(discriminator) : server.requests[discriminator];
+        request.respond(200, {}, 'response body');
       }
 
       function runAuction() {
@@ -1599,7 +1623,7 @@ describe('auctionmanager.js', function () {
             BIDDER_CODE1,
           ]);
         });
-        respondToRequest(1);
+        respondToRequest(request => request.url.includes('ib.adnxs.com/openrtb2/prebid'));
         return pm;
       });
 
