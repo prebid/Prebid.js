@@ -715,7 +715,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
-        expect(data.user[param]).to.be.a('array');
+        expect(data.user[param]).to.be.an('array');
         expect(data.user[param]).to.be.equal(ortb2.user[param]);
       });
     });
