@@ -27,9 +27,6 @@ const USER_SYNCS = [
     macro: '%USERID%',
   },
 ];
-const COOKIE_NAME = '__tadexid';
-const COOKIE_TTL_DAYS = 365;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const VIDEO_PARAMS = [
   'mimes',
@@ -49,7 +46,172 @@ const VIDEO_PARAMS = [
   'linearity',
 ];
 
+const UNOMI_URL = 'https://revamp-unomi.techgadgetforus.com/context.json';
+const BIMAX_URL = 'https://bimax.telkomsel.com/oc/';
+const TMA_SCOPE = 'Digiads';
+const LOCAL_STORAGE_KEY = 'u_profile_id';
+const SESSION_STORAGE_KEY = 'u_session_id';
+
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+let _tmaLock = false;
+let _cachedUserId;
+
+function tmaDetectPublisherDomain() {
+  try {
+    const host = window.location?.hostname || '';
+    const valid =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      /^[a-zA-Z0-9][a-zA-Z0-9-]*(\.[a-zA-Z0-9][a-zA-Z0-9-]*)+$/.test(host);
+    return valid ? host : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function tmaGenUUID() {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID)
+      return crypto.randomUUID();
+  } catch {
+    /* empty */
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+function lsGet(key) {
+  try {
+    return storage.localStorageIsEnabled()
+      ? storage.getDataFromLocalStorage(key)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function lsSet(key, val) {
+  try {
+    if (storage.localStorageIsEnabled())
+      storage.setDataInLocalStorage(key, val);
+  } catch { /* empty */ }
+}
+function ssGet(key) {
+  try {
+    return window.sessionStorage?.getItem(key) || undefined;
+  } catch {
+    return undefined;
+  }
+}
+function ssSet(key, val) {
+  try {
+    window.sessionStorage?.setItem(key, val);
+  } catch { /* empty */ }
+}
+
+async function tmaSyncIdentity({
+  timeoutMs = 10000,
+  gdprConsent,
+  uspConsent,
+} = {}) {
+  // Optional gating consent (sederhana)
+  const gdprApplies =
+    typeof gdprConsent?.gdprApplies === 'boolean'
+      ? gdprConsent.gdprApplies
+      : undefined;
+  const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
+  const ccpaOptOut = typeof uspConsent === 'string' && /^1Y/.test(uspConsent);
+
+  if (
+    !storage.localStorageIsEnabled() ||
+    (gdprApplies && !hasGdprConsent) ||
+    ccpaOptOut
+  ) {
+    return null;
+  }
+
+  if (_tmaLock) return null;
+  _tmaLock = true;
+
+  // session id
+  let sid = ssGet(SESSION_STORAGE_KEY);
+  if (!sid) {
+    sid = tmaGenUUID();
+    ssSet(SESSION_STORAGE_KEY, sid);
+  }
+
+  const current = lsGet(LOCAL_STORAGE_KEY);
+  const domain = tmaDetectPublisherDomain();
+  const payload = {
+    profileId: current || null,
+    events: [
+      {
+        eventType: 'view',
+        scope: TMA_SCOPE,
+        attributes: { publisherDomain: domain },
+      },
+    ],
+    source: { itemId: domain, itemType: 'publisher-site', scope: TMA_SCOPE },
+  };
+
+  let got = null;
+  try {
+    const ctrl =
+      typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const t = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+    const url = `${UNOMI_URL}?sessionId=${encodeURIComponent(sid)}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctrl ? ctrl.signal : undefined,
+    });
+
+    if (t) clearTimeout(t);
+    if (!res.ok) throw new Error('Unomi Context Error');
+
+    const json = await res.json();
+    const pid =
+      json && typeof json.profileId === 'string' ? json.profileId : null;
+    if (!pid) throw new Error('Invalid profile ID from Unomi');
+
+    // store & cache
+    lsSet(LOCAL_STORAGE_KEY, pid);
+    _cachedUserId = pid;
+    got = pid;
+
+    try {
+      const u = new URL(BIMAX_URL);
+      u.searchParams.append('source_name', 'tma_ads_tech');
+      u.searchParams.append('cookies_id', pid);
+      fetch(u.toString(), {
+        method: 'GET',
+        mode: 'no-cors',
+        keepalive: true,
+      }).catch(() => {});
+    } catch { /* empty */ }
+  } catch {
+    // swallow errors
+  } finally {
+    _tmaLock = false;
+  }
+  return got;
+}
+
+function tmaGetIdCached() {
+  if (_cachedUserId) return _cachedUserId;
+  const v = lsGet(LOCAL_STORAGE_KEY);
+  if (v) _cachedUserId = v;
+  return _cachedUserId || undefined;
+}
+
+(function tmaPrimeEarly() {
+  _cachedUserId = lsGet(LOCAL_STORAGE_KEY) || _cachedUserId;
+  tmaSyncIdentity({ timeoutMs: 800 }).catch(() => {});
+})();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -61,26 +223,29 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // TMA: kick background sync (honor consent) – non-blocking
+    tmaSyncIdentity({
+      timeoutMs: 800,
+      gdprConsent: bidderRequest?.gdprConsent,
+      uspConsent: bidderRequest?.uspConsent,
+    }).catch(() => {});
+
     return validBidRequests.map((bid) => ({
       method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(buildRequestData(bid, bidderRequest)),
-      options: {
-        contentType: 'application/json',
-        withCredentials: true,
-      },
+      options: { contentType: 'application/json', withCredentials: true },
     }));
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-
     if (!serverResponse.body.bids) return [];
     const { id } = JSON.parse(bidRequest.data);
 
-    serverResponse.body.bids.forEach((bid) => {
+    serverResponse.body.bids.map((bid) => {
       const { cpm, width, height, currency, ad, meta } = bid;
-      const bidResponse = {
+      let bidResponse = {
         requestId: id,
         cpm,
         width,
@@ -89,11 +254,8 @@ export const spec = {
         currency,
         netRevenue: bid.net_revenue,
         ttl: TIME_TO_LIVE,
-        meta: {
-          advertiserDomains: meta.advertiser_domains,
-        },
+        meta: { advertiserDomains: meta.advertiser_domains },
       };
-
       if (bid.vast_url || bid.vast_xml) {
         bidResponse.vastUrl = bid.vast_url;
         bidResponse.vastXml = bid.vast_xml;
@@ -101,28 +263,38 @@ export const spec = {
       } else {
         bidResponse.ad = ad;
       }
-
       bidResponses.push(bidResponse);
     });
-
     return bidResponses;
   },
 
-  getUserSyncs(_optionsType, _serverResponse, _gdprConsent, _uspConsent) {
+  // TMA: non-blocking, consent-aware, encode macro
+  getUserSyncs(syncOptions, _serverResponse, gdprConsent, uspConsent) {
     const syncs = [];
+    if (!syncOptions) return syncs;
 
-    let userId = readUserIdFromCookie(COOKIE_NAME);
+    const gdprApplies =
+      typeof gdprConsent?.gdprApplies === 'boolean'
+        ? gdprConsent.gdprApplies
+        : undefined;
+    const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
+    const ccpaOptOut = typeof uspConsent === 'string' && /^1Y/.test(uspConsent);
 
-    if (!userId) {
-      userId = generateId();
-      writeIdToCookie(COOKIE_NAME, userId);
+    if ((gdprApplies && !hasGdprConsent) || ccpaOptOut) {
+      return syncs;
     }
 
-    USER_SYNCS.forEach((userSync) => {
-      if (userSync.type === 'img') {
+    const userId = tmaGetIdCached();
+    USER_SYNCS.forEach((us) => {
+      if (us.type === 'img' && syncOptions.pixelEnabled) {
         syncs.push({
           type: 'image',
-          url: userSync.url.replace(userSync.macro, userId),
+          url: us.url.replace(us.macro, encodeURIComponent(userId || '')),
+        });
+      } else if (us.type === 'iframe' && syncOptions.iframeEnabled) {
+        syncs.push({
+          type: 'iframe',
+          url: us.url.replace(us.macro, encodeURIComponent(userId || '')),
         });
       }
     });
@@ -132,8 +304,7 @@ export const spec = {
 };
 
 function buildRequestData(bid, bidderRequest) {
-  const payloadObject = buildBaseObject(bid, bidderRequest);
-
+  let payloadObject = buildBaseObject(bid, bidderRequest);
   if (bid.mediaTypes.banner) {
     return buildBannerObject(bid, payloadObject);
   } else if (bid.mediaTypes.video) {
@@ -144,9 +315,9 @@ function buildRequestData(bid, bidderRequest) {
 function buildBaseObject(bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
   const { pubid, adtagid, bcat, badv, bapp } = bid.params;
+
   const { userId } = bid;
   const uid2Token = userId?.uid2?.id;
-
   if (uid2Token) {
     if (firstPartyData.user) {
       firstPartyData.user.uid2_token = uid2Token;
@@ -154,12 +325,13 @@ function buildBaseObject(bid, bidderRequest) {
       firstPartyData.user = { uid2_token: uid2Token };
     }
   }
-  const userCookieId = readUserIdFromCookie(COOKIE_NAME);
-  if (userCookieId) {
+
+  const userProfileId = tmaGetIdCached();
+  if (userProfileId) {
     if (firstPartyData.user) {
-      firstPartyData.user.id = userCookieId;
+      firstPartyData.user.id = userProfileId;
     } else {
-      firstPartyData.user = { id: userCookieId };
+      firstPartyData.user = { id: userProfileId };
     }
   }
 
@@ -176,78 +348,44 @@ function buildBaseObject(bid, bidderRequest) {
 
 function buildBannerObject(bid, payloadObject) {
   const { sizes, pos, name } = bid.mediaTypes.banner;
-
-  payloadObject.banner_properties = {
-    name,
-    sizes,
-    pos,
-  };
-
+  payloadObject.banner_properties = { name, sizes, pos };
   return payloadObject;
 }
 
 function buildVideoObject(bid, payloadObject) {
   const { context, playerSize, w, h } = bid.mediaTypes.video;
-
   payloadObject.video_properties = {
     context,
     w: w || playerSize[0][0],
     h: h || playerSize[0][1],
   };
-
   for (const param of VIDEO_PARAMS) {
     const paramValue = deepAccess(bid, `mediaTypes.video.${param}`);
-
-    if (paramValue) {
-      payloadObject.video_properties[param] = paramValue;
-    }
+    if (paramValue) payloadObject.video_properties[param] = paramValue;
   }
-
   return payloadObject;
 }
 
-function readUserIdFromCookie(key) {
-  try {
-    const storedValue = storage.getCookie(key);
 
-    if (storedValue !== null) {
-      return storedValue;
+function _readUserIdFromLocalStorage(key) {
+  try {
+    if (storage.localStorageIsEnabled()) {
+      const storedValue = storage.getDataFromLocalStorage(key);
+      if (storedValue !== null && storedValue !== undefined) {
+        return storedValue;
+      }
     }
   } catch (error) {
-  }
-}
-
-function generateId() {
-  return generateUUID();
-}
-
-function daysToMs(days) {
-  return days * DAY_IN_MS;
-}
-
-function writeIdToCookie(key, value) {
-  if (storage.cookiesAreEnabled()) {
-    const expires = new Date(
-      Date.now() + daysToMs(parseInt(COOKIE_TTL_DAYS))
-    ).toUTCString();
-    storage.setCookie(key, value, expires, '/');
+    return undefined;
   }
 }
 
 function prepareFirstPartyData({ user, device, site, app, regs }) {
-  let userData;
-  let deviceData;
-  let siteData;
-  let appData;
-  let regsData;
+  let userData, deviceData, siteData, appData, regsData;
 
   if (user) {
-    userData = {
-      yob: user.yob,
-      gender: user.gender,
-    };
+    userData = { yob: user.yob, gender: user.gender };
   }
-
   if (device) {
     deviceData = {
       ua: device.ua,
@@ -278,14 +416,9 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
           type: device.geo.type,
         },
       }),
-      ...(device.ext && {
-        ext: {
-          ifatype: device.ext.ifatype,
-        },
-      }),
+      ...(device.ext && { ext: { ifatype: device.ext.ifatype } }),
     };
   }
-
   if (site) {
     siteData = {
       id: site.id,
@@ -319,7 +452,6 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
       mobile: site.mobile,
     };
   }
-
   if (app) {
     appData = {
       id: app.id,
@@ -356,7 +488,6 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
       }),
     };
   }
-
   if (regs) {
     regsData = { coppa: regs.coppa };
   }
@@ -371,16 +502,13 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
 }
 
 function cleanObject(data) {
-  for (const key in data) {
-    if (typeof data[key] === 'object') {
+  for (let key in data) {
+    if (typeof data[key] == 'object') {
       cleanObject(data[key]);
-
       if (isEmpty(data[key])) delete data[key];
     }
-
     if (data[key] === undefined) delete data[key];
   }
-
   return data;
 }
 
@@ -391,16 +519,13 @@ function isVideoRequestValid(bidRequest) {
       'mediaTypes.video',
       {}
     );
-
     const areSizesValid =
       (isNumber(w) && isNumber(h)) || validateSizes(playerSize);
     const areMimesValid = isArray(mimes) && mimes.length > 0;
     const areProtocolsValid =
       isArray(protocols) && protocols.length > 0 && protocols.every(isNumber);
-
     return areSizesValid && areMimesValid && areProtocolsValid;
   }
-
   return true;
 }
 
