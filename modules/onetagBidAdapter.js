@@ -84,7 +84,7 @@ export function isValid(type, bid) {
 }
 
 const isValidEventTracker = function (et) {
-  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
+  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length <= 0) {
     return false;
   }
   return true;
@@ -177,7 +177,11 @@ function interpretResponse(serverResponse, bidderRequest) {
       mediaType: (bid.mediaType === NATIVE + NATIVE_SUFFIX) ? NATIVE : bid.mediaType,
       meta: {
         mediaType: bid.mediaType,
-        advertiserDomains: bid.adomain
+        advertiserDomains: bid.adomain,
+        primaryCatId: bid.primaryCatId,
+        secondaryCatIds: bid.secondaryCatIds,
+        attr: bid.attr,
+        cattax: bid.cattax
       },
       ttl: bid.ttl || 300
     };
@@ -291,7 +295,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.7'
+      adapter: '1.1.8'
     }
   };
 }

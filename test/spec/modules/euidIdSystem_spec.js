@@ -165,7 +165,7 @@ describe('EUID module', function() {
       apiHelpers.respondAfterDelay(1, server);
 
       const bid = await runAuction();
-      expectOptout(bid, optoutToken);
+      expectOptout(bid);
     });
   }
 

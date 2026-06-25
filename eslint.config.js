@@ -114,7 +114,10 @@ module.exports = [
       '@stylistic/comma-dangle': 'off',
       '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
+      'no-constant-binary-expression': 'error',
+      'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
+      'prebid/no-extra-function-args': 'error',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
       'import/no-unresolved': 'error',
@@ -124,6 +127,7 @@ module.exports = [
       'import/no-named-as-default': 'warn',
       'import/no-named-as-default-member': 'warn',
       'import/no-duplicates': 'warn',
+      'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',
         {
