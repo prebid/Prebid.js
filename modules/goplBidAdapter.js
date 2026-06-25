@@ -20,7 +20,9 @@ const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
 const bidderRequestsMap = {};
-const pageView = {};
+const pageView = {
+  publisher: '',
+};
 
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -143,9 +145,10 @@ const converter = ortbConverter({
     const { seat } = seatbid;
     const { mediaTypes } = bidRequest
     const { adm, admNative, ext } = bidResponse;
-    const { pricepl, platform, vurls = [] } = ext;
+    const { cache, pricepl, platform, publisherid = '', vurls = [] } = ext;
 
     context.mediaType = Object.keys(mediaTypes)[0];
+    pageView.publisher = publisherid;
 
     // for native ads, copy bid.admNative to bid.adm
     if (admNative && !adm) {
@@ -158,6 +161,11 @@ const converter = ortbConverter({
     bid.meta.pricepl = pricepl;
     bid.meta.platform = platform;
     bid.vurls = vurls;
+
+    // for video bids return creative cache as vastUrl
+    if (bid.mediaType === 'video' && !bid.vastUrl && cache) {
+      bid.vastUrl = cache;
+    }
 
     return bid;
   },
@@ -211,6 +219,7 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
+        publisherId: pageView.publisher,
       }
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
@@ -300,9 +309,6 @@ const interpretResponse = (serverResponse, request) => {
   const { body } = serverResponse;
   const { ext: responseExt = {} } = body;
   const { paapi: fledgeAuctionConfigs = [] } = responseExt;
-
-  // ustawianie potencjalnego odczytywania ID z backendu (po ustaleniu miejsca)
-
   const interpretedResponse = converter.fromORTB({ response: body, request: data });
 
   const bids = interpretedResponse.bids || [];
@@ -410,31 +416,10 @@ const onAdRenderSucceeded = (bid) => {
   }
 };
 
-const onAdRenderFailed = (errorData) => {
-  logWarn('Render failed', errorData);
-
-  // errorData has reason and message
-  const payload = getNotificationPayload(errorData);
-  if (payload) {
-    payload.event = 'adRenderFailed';
-    sendNotification(payload);
-    return payload;
-  }
-};
-
 const onSetTargeting = (bid) => {
   const payload = getNotificationPayload(bid);
   if (payload) {
     payload.event = 'setTargeting';
-    sendNotification(payload);
-    return payload;
-  }
-};
-
-const onBidRejected = (bid) => {
-  const payload = getNotificationPayload(bid);
-  if (payload) {
-    payload.event = 'bidRejected';
     sendNotification(payload);
     return payload;
   }
@@ -462,8 +447,6 @@ const spec = {
   onBidWon,
   onAdRenderSucceeded,
   onSetTargeting,
-  onBidRejected,
-  onAdRenderFailed,
 };
 
 registerBidder(spec);
