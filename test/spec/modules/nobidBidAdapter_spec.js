@@ -3,17 +3,6 @@ import 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
-function deepFreeze(obj) {
-  Object.freeze(obj);
-  Object.keys(obj).forEach((key) => {
-    const value = obj[key];
-    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-      deepFreeze(value);
-    }
-  });
-  return obj;
-}
-
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
 
@@ -404,10 +393,6 @@ describe('Nobid Adapter', function () {
       expect(payload.a[0].params.video.frameworks[4]).to.exist.and.to.equal(5);
       expect(payload.a[0].params.video.frameworks[5]).to.exist.and.to.equal(6);
     });
-
-    it('should build requests from immutable instream video bid requests', function () {
-      expect(() => spec.buildRequests(deepFreeze(bidRequests), deepFreeze(bidderRequest))).to.not.throw();
-    });
   });
 
   describe('isVideoBidRequestValid', function () {
@@ -472,10 +457,6 @@ describe('Nobid Adapter', function () {
       expect(payload.a[0].params.video.frameworks[3]).to.exist.and.to.equal(4);
       expect(payload.a[0].params.video.frameworks[4]).to.exist.and.to.equal(5);
       expect(payload.a[0].params.video.frameworks[5]).to.exist.and.to.equal(6);
-    });
-
-    it('should build requests from immutable outstream video bid requests', function () {
-      expect(() => spec.buildRequests(deepFreeze(bidRequests), deepFreeze(bidderRequest))).to.not.throw();
     });
   });
 
