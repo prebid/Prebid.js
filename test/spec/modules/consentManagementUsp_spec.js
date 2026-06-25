@@ -223,11 +223,13 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
-      it('should throw proper errors when USP config is not found', function () {
+      it('should continue auction after timeout when USP config is not found', async function () {
         setConsentConfig(noConfig);
-        requestBidsHook(() => { didHookReturn = true; }, {});
+        await new Promise(resolve => {
+          requestBidsHook(() => { didHookReturn = true; resolve(); }, {});
+        });
         const consent = uspDataHandler.getConsentData();
-        // throw 2 warnings; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
+        // throw 2 warnings; one for missing config and one for CMP not being found after timeout
         sinon.assert.calledTwice(utils.logWarn);
         expect(didHookReturn).to.be.true;
         expect(consent).to.be.null;
@@ -532,6 +534,52 @@ describe('consentManagement', function () {
         });
         setConsentConfig(goodConfig);
         sinon.assert.notCalled(adapterManager.callDataDeletionRequest);
+      });
+    });
+
+    describe('polling behavior:', function () {
+      afterEach(function () {
+        delete window.__uspapi;
+        config.resetConfig();
+        requestBids.removeAll();
+        resetConsentData();
+      });
+
+      it('should find USP CMP and load consent when it appears during the polling window', async function () {
+        config.setConfig({ consentManagement: { usp: { cmpApi: 'iab', timeout: 1000 } } });
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 1000 } });
+        setTimeout(() => {
+          window.__uspapi = (...args) => {
+            if (args[0] === 'getUSPData') args[2]({ uspString: '1YNY' }, true);
+          };
+        }, 50);
+        await new Promise(resolve => {
+          requestBidsHook(() => { resolve(); }, {});
+        });
+        expect(uspDataHandler.getConsentData()).to.eql('1YNY');
+      });
+    });
+
+    describe('polling behavior:', function () {
+      afterEach(function () {
+        delete window.__uspapi;
+        config.resetConfig();
+        requestBids.removeAll();
+        resetConsentData();
+      });
+
+      it('should find USP CMP and load consent when it appears during the polling window', async function () {
+        config.setConfig({ consentManagement: { usp: { cmpApi: 'iab', timeout: 1000 } } });
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 1000 } });
+        setTimeout(() => {
+          window.__uspapi = (...args) => {
+            if (args[0] === 'getUSPData') args[2]({ uspString: '1YNY' }, true);
+          };
+        }, 50);
+        await new Promise(resolve => {
+          requestBidsHook(() => { resolve(); }, {});
+        });
+        expect(uspDataHandler.getConsentData()).to.eql('1YNY');
       });
     });
   });

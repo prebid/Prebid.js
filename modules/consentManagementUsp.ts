@@ -10,7 +10,7 @@ import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import { timedAuctionHook } from '../src/utils/perfMetrics.js';
 import { getHook } from '../src/hook.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import type { IABCMConfig, StaticCMConfig } from "../libraries/consentManagement/cmUtils.ts";
 import type { CONSENT_USP } from "../src/consentHandler.ts";
 
@@ -90,7 +90,21 @@ function lookupUspConsent({ onSuccess, onError }) {
     };
   }
 
-  const callbackHandler = handleUspApiResponseCallbacks();
+  function subscribe(cmp) {
+    if (cmp.isDirect) {
+      logInfo('Detected USP CMP is directly accessible, calling it now...');
+    } else {
+      logInfo('Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...');
+    }
+    const callbackHandler = handleUspApiResponseCallbacks();
+    cmp({ command: 'getUSPData', callback: callbackHandler.consentDataCallback });
+    cmp({
+      command: 'registerDeletion',
+      callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
+    }).catch(e => {
+      logError('Error invoking CMP `registerDeletion`:', e);
+    });
+  }
 
   const cmp = cmpClient({
     apiName: '__uspapi',
@@ -99,28 +113,17 @@ function lookupUspConsent({ onSuccess, onError }) {
   }) as any;
 
   if (!cmp) {
-    return onError('USP CMP not found.');
+    pollForCmp(
+      { apiName: '__uspapi', apiVersion: USPAPI_VERSION, apiArgs: ['command', 'version', 'callback'] },
+      Date.now() + consentTimeout
+    ).then((found: any) => {
+      if (found) { subscribe(found); }
+      // if null (deadline reached): USP's own timeout fires onError
+    });
+    return;
   }
 
-  if (cmp.isDirect) {
-    logInfo('Detected USP CMP is directly accessible, calling it now...');
-  } else {
-    logInfo(
-      'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
-    );
-  }
-
-  cmp({
-    command: 'getUSPData',
-    callback: callbackHandler.consentDataCallback
-  });
-
-  cmp({
-    command: 'registerDeletion',
-    callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
-  }).catch(e => {
-    logError('Error invoking CMP `registerDeletion`:', e);
-  });
+  subscribe(cmp);
 }
 
 /**
