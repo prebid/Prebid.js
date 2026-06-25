@@ -382,7 +382,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('should mark bid ad VALID if pubId exists instead of dcn & pos', () => {
+    it('should mark bid as VALID if pubId exists instead of dcn & pos', () => {
       const validBid = {
         params: {
           pubId: DEFAULT_PUBID
