@@ -1,35 +1,33 @@
-import {expect} from 'chai';
-import {spec} from 'modules/viqeoBidAdapter';
+import { expect } from 'chai';
+import { spec } from 'modules/viqeoBidAdapter';
 
 describe('viqeoBidAdapter', function () {
   it('minimal params', function () {
     expect(spec.isBidRequestValid({
       bidder: 'viqeo',
       params: {
-        user: {
-          buyeruid: '1',
-        },
+        tagId: '2',
         playerOptions: {
           videoId: 'ed584da454c7205ca7e4',
           profileId: 1382,
         },
-      }})).to.equal(true);
+      }
+    })).to.equal(true);
   });
   it('minimal params no playerOptions', function () {
     expect(spec.isBidRequestValid({
       bidder: 'viqeo',
       params: {
         currency: 'EUR',
-      }})).to.equal(false);
+      }
+    })).to.equal(false);
   });
   it('build request check data', function () {
     const bidRequestData = [{
       bidId: 'id1',
       bidder: 'viqeo',
       params: {
-        user: {
-          buyeruid: '1',
-        },
+        tagId: '2',
         currency: 'EUR',
         floor: 0.5,
         playerOptions: {
@@ -43,12 +41,12 @@ describe('viqeoBidAdapter', function () {
     }];
     const request = spec.buildRequests(bidRequestData);
     const requestData = request[0].data;
-    expect(requestData.id).to.equal('id1')
+    expect(requestData.id).to.equal('id1');
     expect(requestData.imp[0].bidfloorcur).to.equal('EUR');
     expect(requestData.imp[0].bidfloor).to.equal(0.5);
     expect(requestData.imp[0].video.w).to.equal(240);
     expect(requestData.imp[0].video.h).to.equal(400);
-    expect(requestData.user.buyeruid).to.equal('1');
+    expect(requestData.imp[0].tagid).to.equal('2');
   });
   it('build request check url', function () {
     const bidRequestData = [{
@@ -58,14 +56,13 @@ describe('viqeoBidAdapter', function () {
           videoId: 'ed584da454c7205ca7e4',
           profileId: 1382,
         },
-        sspId: 42,
       },
       mediaTypes: {
         video: { playerSize: [[240, 400]] }
       },
     }];
     const request = spec.buildRequests(bidRequestData);
-    expect(request[0].url).to.equal('https://ads.betweendigital.com/openrtb_bid/?sspId=42')
+    expect(request[0].url).to.equal('https://ad.vqserve.com/ads/prebid');
   });
   it('response_params common case', function () {
     const bidRequestData = {
@@ -114,11 +111,11 @@ describe('viqeoBidAdapter', function () {
         return {
           currency: 'EUR',
           floor: 3.32
-        }
+        };
       },
     }];
     const request = spec.buildRequests(bidRequestData);
     const requestData = request[0].data;
-    expect(requestData.imp[0].bidfloor).to.equal(3.32)
+    expect(requestData.imp[0].bidfloor).to.equal(3.32);
   });
 });

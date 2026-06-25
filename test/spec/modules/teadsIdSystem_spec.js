@@ -8,7 +8,7 @@ import {
   getGdprConsentString,
   getCookieExpirationDate, getTimestampFromDays, getCcpaConsentString
 } from 'modules/teadsIdSystem.js';
-import {server} from 'test/mocks/xhr.js';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from '../../../src/utils.js';
 
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
@@ -25,14 +25,16 @@ describe('TeadsIdSystem', function () {
       };
 
       const consentData = {
-        gdprApplies: true,
-        consentString: 'abc123=='
-      }
+        gdpr: {
+          gdprApplies: true,
+          consentString: 'abc123=='
+        }
+      };
 
       const result = buildAnalyticsTagUrl(submoduleConfig, consentData);
-      const expected = 'https://at.teads.tv/fpc?analytics_tag_id=PUB_1234&tfpvi=&gdpr_consent=abc123%3D%3D&gdpr_status=12&gdpr_reason=120&ccpa_consent=&sv=prebid-v1'
+      const expected = 'https://at.teads.tv/fpc?analytics_tag_id=PUB_1234&tfpvi=&gdpr_consent=abc123%3D%3D&gdpr_status=12&gdpr_reason=120&ccpa_consent=&sv=prebid-v1';
       expect(result).to.be.equal(expected);
-    })
+    });
   });
 
   describe('getPublisherId', function () {
@@ -159,7 +161,7 @@ describe('TeadsIdSystem', function () {
       const result = getGdprStatus(consentData);
       const expected = gdprStatus.GDPR_APPLIES_PUBLISHER;
       expect(result).to.be.equal(expected);
-    })
+    });
   });
 
   describe('getExpirationDate', function () {
@@ -232,7 +234,7 @@ describe('TeadsIdSystem', function () {
       callback(callbackSpy);
       const request = server.requests[0];
       expect(request.url).to.include(teadsUrl);
-      request.respond(200, {'Content-Type': 'application/json'}, teadsCookieIdSent);
+      request.respond(200, { 'Content-Type': 'application/json' }, teadsCookieIdSent);
       expect(callbackSpy.lastCall.lastArg).to.deep.equal(teadsCookieIdSent);
     });
 
@@ -245,8 +247,8 @@ describe('TeadsIdSystem', function () {
         expect(id).to.be.deep.equal(teadsCookieIdSent);
       });
 
-      let request = server.requests[0];
-      request.respond(200, {'Content-Type': 'application/json'}, teadsCookieIdSent);
+      const request = server.requests[0];
+      request.respond(200, { 'Content-Type': 'application/json' }, teadsCookieIdSent);
 
       const cookiesMaxAge = getTimestampFromDays(365); // 1 year
       const expirationCookieDate = getCookieExpirationDate(cookiesMaxAge);
@@ -259,11 +261,11 @@ describe('TeadsIdSystem', function () {
       };
       const result = teadsIdSubmodule.getId(config, {});
       result.callback((id) => {
-        expect(id).to.be.undefined
+        expect(id).to.be.undefined;
       });
 
-      let request = server.requests[0];
-      request.respond(200, {'Content-Type': 'application/json'}, '');
+      const request = server.requests[0];
+      request.respond(200, { 'Content-Type': 'application/json' }, '');
 
       expect(setCookieStub.calledWith(FP_TEADS_ID_COOKIE_NAME, '', EXPIRED_COOKIE_DATE)).to.be.true;
     });

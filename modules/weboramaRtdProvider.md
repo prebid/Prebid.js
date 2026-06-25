@@ -67,7 +67,7 @@ pbjs.setConfig({
                     enabled: true,
                 },
                 sfbxLiteDataConf: { // sfbx-lite site-centric configuration, *omit if not needed*
-                    enabled: true, 
+                    enabled: true,
                 },
             }
         },
@@ -136,12 +136,8 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 
 ##### User Consent
 
-The WAM User-Centric configuration will check for user consent if gdpr applies. It will check for consent:
-
-* Vendor ID 284 (Weborama)
-* Purpose IDs: 1, 3, 4, 5 and 6
-
-If the user consent does not match such conditions, this module will not load, means we will not check for any data in local storage and the default profile will be ignored.
+In a user-centric configuration, the WAM module will verify user consent when GDPR is applicable. It specifically checks for consent related to the purposes declared by Weborama in the Global Vendor List (Vendor ID 284). 
+If the required consent is not provided, the module will not activate, and it will neither access local storage nor apply any default user profile.
 
 #### Sfbx LiTE Site-Centric Configuration
 
@@ -215,7 +211,7 @@ A better look on the `Object` type
 ```javascript
 sendToBidders: {
     appnexus: true,           // send profile to appnexus on all ad units
-    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units 
+    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units
 }
 ```
 
@@ -253,7 +249,7 @@ To be possible customize the way we send data to bidders via this callback:
 sendToBidders: function(bid, adUnitCode, data, metadata){
     if (bid.bidder == 'other'){
         /* use bid object to store data based on this specific logic, like in the example below */
-       
+
         bid.params = bid.params || {};
         bid.params['some_specific_key'] = data;
 
@@ -374,7 +370,7 @@ pbjs.que.push(function () {
                         sendToBidders: true,      // override param.sendToBidders. default is true
                         defaultProfile: {            // optional, used if nothing is found
                             webo_cs: [...],        // wam custom segments
-                            webo_audiences: [...], // wam audiences 
+                            webo_audiences: [...], // wam audiences
                         },
                         enabled: true,
                     },
@@ -485,18 +481,18 @@ pbjs.que.push(function () {
                 params: {
                     weboCtxConf: {
                         token: "to-be-defined", // mandatory
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits
                         sendToBidders: ['appnexus',...], // overide, send to only some bidders
                         enabled: true,
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits
                         sendToBidders: ['rubicon',...], // overide, send to only some bidders
                         enabled: true,
                     },
                     sfbxLiteDataConf: {
-                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits
                         sendToBidders: ['smartadserver',...], // overide, send to only some bidders
                         enabled: true,
                     }
@@ -546,15 +542,15 @@ pbjs.que.push(function () {
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits
                         sendToBidders: { // send to only some bidders and adunits
-                            'appnexus': true,               // all adunits for appnexus 
+                            'appnexus': true,               // all adunits for appnexus
                             'pubmatic': ['adUnitCode1',...] // some adunits for pubmatic
                             // other bidders will be ignored
                         },
                         defaultProfile: {           // optional
-                            webo_cs: ['Red'],
-                            webo_audiences: ['bam']
+                            webo_cs: ['Red'],       // using label
+                            webo_audiences: [12345] // using id
                         },
                         localStorageProfileKey: 'webo_wam2gam_entry', // default
                         enabled: true,

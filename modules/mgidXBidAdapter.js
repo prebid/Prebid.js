@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequestsBase, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.js';
-import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
+import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js';
 
 const BIDDER_CODE = 'mgidX';
 const GVLID = 358;
@@ -12,7 +12,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const region = validBidRequests[0].params?.region;
 
   if (region === 'eu') {
-    request.url = AD_URL.replace('#{REGION}#', 'eu');
+    request.url = AD_URL.replace('#{REGION}#', 'eu-x');
   } else {
     request.url = AD_URL.replace('#{REGION}#', 'us-east-x');
   }

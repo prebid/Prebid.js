@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adstir';
-const ENDPOINT = 'https://ad.ad-stir.com/prebid'
+const ENDPOINT = 'https://ad.ad-stir.com/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -40,10 +40,10 @@ export const spec = {
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           usp: (bidderRequest.uspConsent || '1---') !== '1---',
           eids: utils.deepAccess(r, 'userIdAsEids', []),
-          schain: serializeSchain(utils.deepAccess(r, 'schain', null)),
+          schain: serializeSchain(utils.deepAccess(r, 'ortb2.source.ext.schain', null)),
           pbVersion: '$prebid.version$',
         }),
-      }
+      };
     });
 
     return requests;
@@ -64,7 +64,7 @@ export const spec = {
     });
     return bids;
   },
-}
+};
 
 function serializeSchain(schain) {
   if (!schain) {
@@ -73,7 +73,7 @@ function serializeSchain(schain) {
 
   let serializedSchain = `${schain.ver},${schain.complete}`;
 
-  schain.nodes.map(node => {
+  schain.nodes.forEach(node => {
     serializedSchain += `!${encodeURIComponentForRFC3986(node.asi || '')},`;
     serializedSchain += `${encodeURIComponentForRFC3986(node.sid || '')},`;
     serializedSchain += `${encodeURIComponentForRFC3986(node.hp || '')},`;

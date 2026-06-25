@@ -33,7 +33,7 @@ export const c1xAdapter = {
    */
   // check the bids sent to c1x bidder
   isBidRequestValid: function (bid) {
-    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    if (typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.placementId === 'undefined') {
@@ -51,7 +51,7 @@ export const c1xAdapter = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let payload = {};
     let tagObj = {};
-    let bidRequest = [];
+    const bidRequest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
     const c1xTags = validBidRequests.map(bidToTag);
@@ -70,12 +70,11 @@ export const c1xAdapter = {
     // for GDPR support
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload['consent_string'] = bidderRequest.gdprConsent.consentString;
-      payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true'
-      ;
+      payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true';
     }
 
     Object.assign(payload, tagObj);
-    let payloadString = stringifyPayload(payload);
+    const payloadString = stringifyPayload(payload);
     // ServerRequest object
     bidRequest.push({
       method: 'GET',
@@ -94,12 +93,12 @@ export const c1xAdapter = {
     let netRevenue = false;
 
     if (!serverResponse || serverResponse.error) {
-      let errorMessage = serverResponse.error;
+      const errorMessage = serverResponse.error;
       logError(LOG_MSG.invalidBid + errorMessage);
       return bidResponses;
     } else {
       serverResponse.forEach(bid => {
-        logInfo(bid)
+        logInfo(bid);
         if (bid.bid) {
           if (bid.bidType === 'NET_BID') {
             netRevenue = !netRevenue;
@@ -117,7 +116,7 @@ export const c1xAdapter = {
           };
 
           if (bid.dealId) {
-            curBid['dealId'] = bid.dealId
+            curBid['dealId'] = bid.dealId;
           }
 
           for (let i = 0; i < requests.length; i++) {
@@ -137,7 +136,7 @@ export const c1xAdapter = {
     return bidResponses;
   }
 
-}
+};
 
 function bidToTag(bid, index) {
   const tag = {};
@@ -184,8 +183,8 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  let floor =
-    floorInfo.floor ||
+  const floor =
+    floorInfo?.floor ||
     bidRequest.params.bidfloor ||
     bidRequest.params.floorPriceMap ||
     0;
@@ -201,7 +200,7 @@ function bidToShortTag(bid) {
 }
 
 function stringifyPayload(payload) {
-  let payloadString = [];
+  const payloadString = [];
   for (var key in payload) {
     if (payload.hasOwnProperty(key)) {
       payloadString.push(key + '=' + payload[key]);

@@ -3,6 +3,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepAccess, deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -71,7 +72,7 @@ export const spec = {
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || // gdpr
             USPConsent(bidderRequest.uspConsent) || // usp
             config.getConfig('coppa') || // coppa
-            invalidCurrency(config.getConfig('currency.adServerCurrency')) // currency validation
+            invalidCurrency(getCurrencyFromBidderRequest(bidderRequest)) // currency validation
     ) {
       return {
         method: 'GET',
@@ -98,7 +99,7 @@ export const spec = {
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @param {BidRequest} bidRequest - the master bidRequest object
-   * @return {bids} - An array of bids which were nested inside the server.
+   * @return {Array} - An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) { // empty response (no bids)

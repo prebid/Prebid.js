@@ -43,6 +43,7 @@ var adUnits = [
         bidder: 'targetVideo',
         params: {
             placementId: 12345,
+            floor: 2,
             reserve: 0,
         }
     }]

@@ -1,22 +1,26 @@
-
 'use strict';
-import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { deepAccess, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
   this.aliases = ['mars'];
   this.supportedMediaTypes = [VIDEO, BANNER];
 
-  let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
-  let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
-  let SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
-  let SUPPORTED_VIDEO_DELIVERY = [1];
-  let SUPPORTED_VIDEO_API = [1, 2, 5];
-  let slotsToBids = {};
-  let version = '2.5';
+  this.gvlid = 776;
+  const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
+  const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
+  const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
+  const SUPPORTED_VIDEO_DELIVERY = [1];
+  const SUPPORTED_VIDEO_API = [1, 2, 5];
+  const slotsToBids = {};
+  const version = '2.5';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -34,7 +38,7 @@ function MarsmediaAdapter() {
       // TODO: this should probably use parseUrl
       var el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol == 'https:') ? 1 : 0;
+      isSecure = (el.protocol === 'https:') ? 1 : 0;
     }
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
@@ -43,7 +47,7 @@ function MarsmediaAdapter() {
       impObj.secure = isSecure;
 
       if (deepAccess(BRs[i], 'mediaTypes.banner') || deepAccess(BRs[i], 'mediaType') === 'banner') {
-        let banner = frameBanner(BRs[i]);
+        const banner = frameBanner(BRs[i]);
         if (banner) {
           impObj.banner = banner;
         }
@@ -66,7 +70,7 @@ function MarsmediaAdapter() {
       domain: '',
       page: '',
       ref: ''
-    }
+    };
     if (bidderRequest && bidderRequest.refererInfo) {
       var ri = bidderRequest.refererInfo;
       // TODO: is 'ref' the right value here?
@@ -91,14 +95,13 @@ function MarsmediaAdapter() {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
       dnt: getDNT() ? 1 : 0,
-    }
+    };
   }
 
   function getValidSizeSet(dimensionList) {
-    let w = parseInt(dimensionList[0]);
-    let h = parseInt(dimensionList[1]);
-    // clever check for NaN
-    if (! (w !== w || h !== h)) {  // eslint-disable-line
+    const w = parseInt(dimensionList[0]);
+    const h = parseInt(dimensionList[1]);
+    if (!Number.isNaN(w) && !Number.isNaN(h)) {
       return [w, h];
     }
     return false;
@@ -139,7 +142,7 @@ function MarsmediaAdapter() {
       if (isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
-      var validSize = getValidSizeSet(dimensionSet)
+      var validSize = getValidSizeSet(dimensionSet);
       if (validSize) {
         size = validSize;
       }
@@ -154,7 +157,7 @@ function MarsmediaAdapter() {
       playbackmethod: deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
       delivery: deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
       api: deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
-    }
+    };
   }
 
   function frameExt(bid) {
@@ -162,10 +165,10 @@ function MarsmediaAdapter() {
       let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => isArray(size));
-      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+      const processedSizes = bidSizes.map(size => ({ w: parseInt(size[0], 10), h: parseInt(size[1], 10) }));
 
-      const element = document.getElementById(bid.adUnitCode);
-      const minSize = _getMinSize(processedSizes);
+      const element = getAdUnitElement(bid);
+      const minSize = getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
         ? _getViewability(element, getWindowTop(), minSize)
         : 'na';
@@ -176,19 +179,19 @@ function MarsmediaAdapter() {
           zoneId: bid.params['zoneId']
         },
         viewability: viewabilityAmountRounded
-      }
+      };
     } else {
       return {
         bidder: {
           zoneId: bid.params['zoneId']
         },
         viewability: 'na'
-      }
+      };
     }
   }
 
   function frameBid(BRs, bidderRequest) {
-    let bid = {
+    const bid = {
       id: BRs[0].bidderRequestId,
       imp: frameImp(BRs, bidderRequest),
       site: frameSite(bidderRequest),
@@ -206,14 +209,15 @@ function MarsmediaAdapter() {
         }
       }
     };
-    if (BRs[0].schain) {
-      deepSetValue(bid, 'source.ext.schain', BRs[0].schain);
+    const schain = BRs[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(bid, 'source.ext.schain', schain);
     }
     if (bidderRequest.uspConsent) {
-      deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     if (config.getConfig('coppa') === true) {
-      deepSetValue(bid, 'regs.coppa', config.getConfig('coppa') & 1)
+      deepSetValue(bid, 'regs.coppa', config.getConfig('coppa') & 1);
     }
 
     return bid;
@@ -228,7 +232,7 @@ function MarsmediaAdapter() {
   }
 
   this.buildRequests = function (BRs, bidderRequest) {
-    let fallbackZoneId = getFirstParam('zoneId', BRs);
+    const fallbackZoneId = getFirstParam('zoneId', BRs);
     if (fallbackZoneId === undefined || BRs.length < 1) {
       return [];
     }
@@ -260,24 +264,24 @@ function MarsmediaAdapter() {
       );
       triggerPixel(bid.nurl, null);
     };
-    sendbeacon(bid, 17)
+    sendbeacon(bid, 17);
   };
 
   this.onTimeout = function (bid) {
-    sendbeacon(bid, 19)
+    sendbeacon(bid, 19);
   };
 
   this.onSetTargeting = function (bid) {
-    sendbeacon(bid, 20)
+    sendbeacon(bid, 20);
   };
 
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
-    let bids = [];
+    const bids = [];
     let i = 0;
 
     if (responses.seatbid) {
-      let temp = [];
+      const temp = [];
       for (i = 0; i < responses.seatbid.length; i++) {
         for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
           temp.push(responses.seatbid[i].bid[j]);
@@ -287,9 +291,9 @@ function MarsmediaAdapter() {
     }
 
     for (i = 0; i < responses.length; i++) {
-      let bid = responses[i];
-      let bidRequest = slotsToBids[bid.impid];
-      let bidResponse = {
+      const bid = responses[i];
+      const bidRequest = slotsToBids[bid.impid];
+      const bidResponse = {
         requestId: bidRequest.bidId,
         cpm: parseFloat(bid.price),
         width: bid.w,
@@ -341,7 +345,7 @@ function MarsmediaAdapter() {
         size: '*'
       });
 
-      if (typeof floorInfo === 'object' &&
+      if (isPlainObject(floorInfo) &&
         floorInfo.currency === 'USD' &&
         !isNaN(parseFloat(floorInfo.floor))) {
         floor = floorInfo.floor;
@@ -349,10 +353,6 @@ function MarsmediaAdapter() {
     }
 
     return floor;
-  }
-
-  function _getMinSize(sizes) {
-    return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
   }
 
   function _isViewabilityMeasurable(element) {
@@ -369,74 +369,8 @@ function MarsmediaAdapter() {
 
   function _getViewability(element, topWin, { w, h } = {}) {
     return topWin.document.visibilityState === 'visible'
-      ? _getPercentInView(element, topWin, { w, h })
+      ? percentInView(element, { w, h })
       : 0;
-  }
-
-  function _getPercentInView(element, topWin, { w, h } = {}) {
-    const elementBoundingBox = _getBoundingBox(element, { w, h });
-
-    const elementInViewBoundingBox = _getIntersectionOfRects([ {
-      left: 0,
-      top: 0,
-      right: topWin.innerWidth,
-      bottom: topWin.innerHeight
-    }, elementBoundingBox ]);
-
-    let elementInViewArea, elementTotalArea;
-
-    if (elementInViewBoundingBox !== null) {
-      // Some or all of the element is in view
-      elementInViewArea = elementInViewBoundingBox.width * elementInViewBoundingBox.height;
-      elementTotalArea = elementBoundingBox.width * elementBoundingBox.height;
-
-      return ((elementInViewArea / elementTotalArea) * 100);
-    }
-
-    return 0;
-  }
-
-  function _getBoundingBox(element, { w, h } = {}) {
-    let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
-
-    if ((width === 0 || height === 0) && w && h) {
-      width = w;
-      height = h;
-      right = left + w;
-      bottom = top + h;
-    }
-
-    return { width, height, left, top, right, bottom };
-  }
-
-  function _getIntersectionOfRects(rects) {
-    const bbox = {
-      left: rects[0].left,
-      right: rects[0].right,
-      top: rects[0].top,
-      bottom: rects[0].bottom
-    };
-
-    for (let i = 1; i < rects.length; ++i) {
-      bbox.left = Math.max(bbox.left, rects[i].left);
-      bbox.right = Math.min(bbox.right, rects[i].right);
-
-      if (bbox.left >= bbox.right) {
-        return null;
-      }
-
-      bbox.top = Math.max(bbox.top, rects[i].top);
-      bbox.bottom = Math.min(bbox.bottom, rects[i].bottom);
-
-      if (bbox.top >= bbox.bottom) {
-        return null;
-      }
-    }
-
-    bbox.width = bbox.right - bbox.left;
-    bbox.height = bbox.bottom - bbox.top;
-
-    return bbox;
   }
 }
 

@@ -26,6 +26,11 @@ const converter = ortbConverter({
 });
 export const spec = {
   code: BIDDER_CODE,
+  // Register "algorix" as an alias, also with gvlid if needed
+  aliases: [{
+    code: 'algorix',
+    gvlid: 1176
+  }],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
@@ -43,7 +48,7 @@ export const spec = {
   },
 
   buildRequests(bidRequests, bidderRequest) {
-    let data = converter.toORTB({ bidRequests, bidderRequest });
+    const data = converter.toORTB({ bidRequests, bidderRequest });
 
     return [
       {

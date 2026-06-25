@@ -4,7 +4,7 @@ let suspendedTimeouts = [];
 
 function trackTimeOutOfFocus() {
   if (document.hidden) {
-    outOfFocusStart = Date.now()
+    outOfFocusStart = Date.now();
   } else {
     timeOutOfFocus += Date.now() - (outOfFocusStart ?? 0); // when the page is loaded in hidden state outOfFocusStart is undefined, which results in timeoutOffset being NaN
     outOfFocusStart = null;
@@ -26,9 +26,9 @@ export function reset() {
 /**
  * Wraps native setTimeout function in order to count time only when page is focused
  *
- * @param {function(*): ()} [callback] - A function that will be invoked after passed time
+ * @param {function(void): void} [callback] - A function that will be invoked after passed time
  * @param {number} [milliseconds] - Minimum duration (in milliseconds) that the callback will be executed after
- * @returns {function(*): (number)} - Getter function for current timer id
+ * @returns {function(): number} - Getter function for current timer id
  */
 export function setFocusTimeout(callback, milliseconds) {
   const startTime = timeOutOfFocus;
@@ -43,7 +43,7 @@ export function setFocusTimeout(callback, milliseconds) {
         setTimerId(newId) {
           timerId = newId;
         }
-      })
+      });
     } else {
       timerId = setFocusTimeout(callback, timeOutOfFocus - startTime)();
     }

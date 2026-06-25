@@ -1,37 +1,40 @@
-import { deepClone, logInfo, logError } from '../src/utils.js';
+import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
 import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
 import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
-const versionCode = '4.4.1'
-const secretKey = 'bydata@123456'
-const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS
-const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
-const analyticsType = 'endpoint'
-const isBydata = isKeyInUrl('bydata_debug')
-const adunitsMap = {}
+const versionCode = '4.4.1';
+const secretKey = 'bydata@123456';
+const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS;
+const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid';
+const analyticsType = 'endpoint';
+const isBydata = isKeyInUrl('bydata_debug');
+const adunitsMap = {};
 const MODULE_CODE = 'bydata';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
-let initOptions = {}
-var payload = {}
-var winPayload = {}
-var isDataSend = window.asc_data || false
-var bdNbTo = { 'to': [], 'nb': [] }
+let initOptions = {};
+var payload = {};
+var winPayload = {};
+var isDataSend = window.asc_data || false;
+var bdNbTo = { 'to': [], 'nb': [] };
 
 /* method used for testing parameters */
 function isKeyInUrl(name) {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const param = urlParams.get(name)
-  return param
+  const param = urlParams.get(name);
+  return param;
 }
 
 /* return ad unit full path wrt custom ad unit code */
@@ -47,31 +50,31 @@ function getAdunitName(code) {
 function onAuctionStart(t) {
   /* map of ad unit code - ad unit full path */
   t.adUnits && t.adUnits.length && t.adUnits.forEach((adu) => {
-    const { code, adunit } = adu
-    adunitsMap[code] = adunit
+    const { code, adunit } = adu;
+    adunitsMap[code] = adunit;
   });
 }
 
 /* EVENT: bid timeout */
 function onBidTimeout(t) {
   if (payload['visitor_data'] && t && t.length > 0) {
-    bdNbTo['to'] = t
+    bdNbTo['to'] = t;
   }
 }
 
 /* EVENT: no bid */
 function onNoBidData(t) {
   if (payload['visitor_data'] && t) {
-    bdNbTo['nb'].push(t)
+    bdNbTo['nb'].push(t);
   }
 }
 
 /* EVENT: bid won */
 function onBidWon(t) {
-  const { isCorrectOption } = initOptions
+  const { isCorrectOption } = initOptions;
   if (isCorrectOption && (isDataSend || isBydata)) {
-    ascAdapter.getBidWonData(t)
-    ascAdapter.sendPayload(winPayload)
+    ascAdapter.getBidWonData(t);
+    ascAdapter.sendPayload(winPayload);
   }
 }
 
@@ -138,91 +141,35 @@ ascAdapter.initConfig = function (config) {
 };
 
 ascAdapter.getBidWonData = function(t) {
-  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t
-  const aun = getAdunitName(adUnitCode)
-  winPayload['aid'] = auctionId
+  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t;
+  const aun = getAdunitName(adUnitCode);
+  winPayload['aid'] = auctionId;
   winPayload['as'] = '';
   winPayload['auctionData'] = [];
-  var data = {}
-  data['au'] = aun
-  data['auc'] = adUnitCode
-  data['aus'] = size
-  data['bid'] = requestId
-  data['bidadv'] = bidder
-  data['br_pb_mg'] = cpm
-  data['br_tr'] = timeToRespond
-  data['bradv'] = bidder
-  data['brid'] = requestId
-  data['brs'] = size
-  data['cur'] = currency
-  data['inb'] = 0
-  data['ito'] = 0
-  data['ipwb'] = 1
-  data['iwb'] = 1
-  data['mt'] = mediaType
-  winPayload['auctionData'].push(data)
-  return winPayload
-}
+  var data = {};
+  data['au'] = aun;
+  data['auc'] = adUnitCode;
+  data['aus'] = size;
+  data['bid'] = requestId;
+  data['bidadv'] = bidder;
+  data['br_pb_mg'] = cpm;
+  data['br_tr'] = timeToRespond;
+  data['bradv'] = bidder;
+  data['brid'] = requestId;
+  data['brs'] = size;
+  data['cur'] = currency;
+  data['inb'] = 0;
+  data['ito'] = 0;
+  data['ipwb'] = 1;
+  data['iwb'] = 1;
+  data['mt'] = mediaType;
+  winPayload['auctionData'].push(data);
+  return winPayload;
+};
 
 ascAdapter.getVisitorData = function (data = {}) {
   var ua = data.uid ? data : {};
-  var module = {
-    options: [],
-    header: [window.navigator.platform, window.navigator.userAgent, window.navigator.appVersion, window.navigator.vendor, window.opera],
-    dataos: [
-      { name: 'Windows Phone', value: 'Windows Phone', version: 'OS' },
-      { name: 'Windows', value: 'Win', version: 'NT' },
-      { name: 'iPhone', value: 'iPhone', version: 'OS' },
-      { name: 'iPad', value: 'iPad', version: 'OS' },
-      { name: 'Kindle', value: 'Silk', version: 'Silk' },
-      { name: 'Android', value: 'Android', version: 'Android' },
-      { name: 'PlayBook', value: 'PlayBook', version: 'OS' },
-      { name: 'BlackBerry', value: 'BlackBerry', version: '/' },
-      { name: 'Macintosh', value: 'Mac', version: 'OS X' },
-      { name: 'Linux', value: 'Linux', version: 'rv' },
-      { name: 'Palm', value: 'Palm', version: 'PalmOS' }
-    ],
-    databrowser: [
-      { name: 'Chrome', value: 'Chrome', version: 'Chrome' },
-      { name: 'Firefox', value: 'Firefox', version: 'Firefox' },
-      { name: 'Safari', value: 'Safari', version: 'Version' },
-      { name: 'Internet Explorer', value: 'MSIE', version: 'MSIE' },
-      { name: 'Opera', value: 'Opera', version: 'Opera' },
-      { name: 'BlackBerry', value: 'CLDC', version: 'CLDC' },
-      { name: 'Mozilla', value: 'Mozilla', version: 'Mozilla' }
-    ],
-    init: function () { var agent = this.header.join(' '); var os = this.matchItem(agent, this.dataos); var browser = this.matchItem(agent, this.databrowser); return { os: os, browser: browser }; },
-    matchItem: function (string, data) {
-      var i = 0; var j = 0; var regex; var regexv; var match; var matches; var version;
-      for (i = 0; i < data.length; i += 1) {
-        regex = new RegExp(data[i].value, 'i');
-        match = regex.test(string);
-        if (match) {
-          regexv = new RegExp(data[i].version + '[- /:;]([\\d._]+)', 'i');
-          matches = string.match(regexv);
-          version = '';
-          if (matches) { if (matches[1]) { matches = matches[1]; } }
-          if (matches) {
-            matches = matches.split(/[._]+/);
-            for (j = 0; j < matches.length; j += 1) {
-              if (j === 0) {
-                version += matches[j] + '.';
-              } else {
-                version += matches[j];
-              }
-            }
-          } else {
-            version = '0';
-          }
-          return {
-            name: data[i].name,
-            version: parseFloat(version)
-          };
-        }
-      }
-      return { name: 'unknown', version: 0 };
-    }
-  };
+  const info = getOsBrowserInfo();
 
   function generateUid() {
     try {
@@ -261,7 +208,9 @@ ascAdapter.getVisitorData = function (data = {}) {
     return signedToken;
   }
   function detectWidth() {
-    return window.screen.width || (window.innerWidth && document.documentElement.clientWidth) ? Math.min(window.innerWidth, document.documentElement.clientWidth) : window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth;
+    const { width: viewportWidth } = getViewportSize();
+    const windowDimensions = getWinDimensions();
+    return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
   function giveDeviceTypeOnScreenSize() {
     var _dWidth = detectWidth();
@@ -276,24 +225,23 @@ ascAdapter.getVisitorData = function (data = {}) {
   }
   var screenSize = { width: window.screen.width, height: window.screen.height };
   var deviceType = giveDeviceTypeOnScreenSize();
-  var e = module.init();
   if (!ua['uid']) {
     ua['uid'] = userId;
     ua['cid'] = clientId;
     ua['pid'] = window.location.hostname;
-    ua['os'] = e.os.name;
-    ua['osv'] = e.os.version;
-    ua['br'] = e.browser.name;
-    ua['brv'] = e.browser.version;
+    ua["os"] = info.os.name;
+    ua["osv"] = info.os.version;
+    ua["br"] = info.browser.name;
+    ua["brv"] = info.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
-    ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
+    ua['tz'] = getTimeZone();
   }
   var signedToken = getJWToken(ua);
   payload['visitor_data'] = signedToken;
   winPayload['visitor_data'] = signedToken;
   return signedToken;
-}
+};
 
 ascAdapter.dataProcess = function (t) {
   if (isBydata) { payload['bydata_debug'] = 'true'; }
@@ -314,7 +262,7 @@ ascAdapter.dataProcess = function (t) {
       var mt = bid.mediaTypes.banner ? 'display' : 'video';
       data['mediaTypes'].push(mt);
       pObj['bids'].push(data);
-    })
+    });
     bidderRequestsData.push(pObj);
   });
   t.bidsReceived && t.bidsReceived.forEach(bid => {
@@ -326,7 +274,7 @@ ascAdapter.dataProcess = function (t) {
     bdsArray.forEach(bid => {
       const { adUnitCode, sizes, bidder, bidId, mediaTypes } = bid;
       sizes.forEach(size => {
-        var sstr = size[0] + 'x' + size[1]
+        var sstr = size[0] + 'x' + size[1];
         payload['auctionData'].push({ au: getAdunitName(adUnitCode), auc: adUnitCode, aus: sstr, mt: mediaTypes[0], bidadv: bidder, bid: bidId, inb: 0, ito: 0, ipwb: 0, iwb: 0 });
       });
     });
@@ -334,12 +282,12 @@ ascAdapter.dataProcess = function (t) {
 
   bidsReceivedData.length > 0 && bidsReceivedData.forEach(bdRecived => {
     const { requestId, bidder, width, height, cpm, currency, timeToRespond } = bdRecived;
-    payload['auctionData'].forEach(rwData => {
-      if (rwData['bid'] === requestId && rwData['aus'] === width + 'x' + height) {
-        rwData['brid'] = requestId; rwData['bradv'] = bidder; rwData['br_pb_mg'] = cpm;
-        rwData['cur'] = currency; rwData['br_tr'] = timeToRespond; rwData['brs'] = width + 'x' + height;
+    payload["auctionData"].forEach(rwData => {
+      if (rwData["bid"] === requestId && rwData["aus"] === width + "x" + height) {
+        rwData["brid"] = requestId; rwData["bradv"] = bidder; rwData["br_pb_mg"] = cpm;
+        rwData["cur"] = currency; rwData["br_tr"] = timeToRespond; rwData["brs"] = width + "x" + height;
       }
-    })
+    });
   });
 
   var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
@@ -349,7 +297,7 @@ ascAdapter.dataProcess = function (t) {
         rwData['ipwb'] = 1;
       }
     });
-  })
+  });
 
   var winningBids = auctionManager.getAllWinningBids();
   winningBids && winningBids.length > 0 && winningBids.forEach(wBid => {
@@ -358,7 +306,7 @@ ascAdapter.dataProcess = function (t) {
         rwData['iwb'] = 1;
       }
     });
-  })
+  });
 
   payload['auctionData'] && payload['auctionData'].length > 0 && payload['auctionData'].forEach(u => {
     bdNbTo['to'].forEach(i => {
@@ -366,16 +314,16 @@ ascAdapter.dataProcess = function (t) {
     });
     bdNbTo['nb'].forEach(i => {
       if (u.bidadv === i.bidder && u.bid === i.bidId) { u.inb = 1; }
-    })
+    });
   });
   return payload;
-}
+};
 
 ascAdapter.sendPayload = function (data) {
   var obj = { 'records': [{ 'value': data }] };
-  let strJSON = JSON.stringify(obj);
+  const strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
-}
+};
 
 function sendDataOnKf(dataObj) {
   ajax(DEFAULT_EVENT_URL, {

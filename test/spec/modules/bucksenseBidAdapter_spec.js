@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/bucksenseBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/bucksenseBidAdapter.js';
 
 describe('Bucksense Adapter', function() {
   const BIDDER_CODE = 'bucksense';
@@ -12,7 +12,7 @@ describe('Bucksense Adapter', function() {
       params: {
         placementId: PLACE_ID,
       }
-    }
+    };
   };
 
   describe('isBidRequestValid', function() {
@@ -29,11 +29,6 @@ describe('Bucksense Adapter', function() {
     it('returns true when valid test bid request is sent', function() {
       bid.params['test'] = 1;
       expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-
-    it('returns false when bidder not set to "bucksense"', function() {
-      bid.bidder = 'dummy';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
     it('returns false when params not set', function() {
@@ -59,12 +54,12 @@ describe('Bucksense Adapter', function() {
             },
             'mediaTypes': {
               'banner': {
-                'sizes': [ [ 300, 250 ], [ 300, 600 ] ]
+                'sizes': [[300, 250], [300, 600]]
               }
             },
             'adUnitCode': 'test-div',
             'transactionId': '52b3ed07-2a09-4f58-a426-75acc7602c96',
-            'sizes': [ [ 300, 250 ], [ 300, 600 ] ],
+            'sizes': [[300, 250], [300, 600]],
             'bidId': '22aecdacdcd773',
             'bidderRequestId': '1feebcb5938c7e',
             'auctionId': '73540558-86cb-4eef-895f-bf99c5353bd7',
@@ -114,7 +109,7 @@ describe('Bucksense Adapter', function() {
           'params': {
             'placementId': '1000'
           },
-          'sizes': [ [ 300, 250 ], [ 300, 600 ] ]
+          'sizes': [[300, 250], [300, 600]]
         }
       };
 

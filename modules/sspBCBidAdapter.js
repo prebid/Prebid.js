@@ -1,18 +1,21 @@
-import { deepAccess, getWindowTop, isArray, logWarn } from '../src/utils.js';
+import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { includes as strIncludes } from '../src/polyfill.js';
+
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
-const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.93';
+const BIDDER_VERSION = '6.11';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -21,7 +24,6 @@ const adUnitsCalled = {};
 const adSizesCalled = {};
 const bidderRequestsMap = {};
 const pageView = {};
-var consentApiVersion;
 
 /**
  * Native asset mapping - we use constant id per type
@@ -37,6 +39,11 @@ var nativeAssetMap = {
 };
 
 /**
+ * currency used in bidRequest - updated on request
+ */
+var requestCurrency = DEFAULT_CURRENCY;
+
+/**
  * return native asset type, based on asset id
  * @param {number} id - native asset id
  * @returns {string} asset type
@@ -48,13 +55,13 @@ const getNativeAssetType = id => {
   }
 
   // ...others should be decoded from nativeAssetMap
-  for (let assetName in nativeAssetMap) {
+  for (const assetName in nativeAssetMap) {
     const assetId = nativeAssetMap[assetName];
     if (assetId === id) {
       return assetName;
     }
   }
-}
+};
 
 /**
  * Get preferred language of browser (i.e. user)
@@ -71,7 +78,20 @@ const getContentLanguage = () => {
     const topWindow = getWindowTop();
     return topWindow.document.body.parentNode.lang;
   } catch (err) {
-    logWarn('Could not read language form top-level html', err);
+    logWarn('Could not read language from top-level html', err);
+  }
+};
+
+/**
+ * Get host name of the top level html object
+ * @returns {string} host name
+ */
+const getTopHost = () => {
+  try {
+    const topWindow = getWindowTop();
+    return topWindow.location.host;
+  } catch (err) {
+    logWarn('Could not read host from top-level window', err);
   }
 };
 
@@ -83,7 +103,7 @@ const getContentLanguage = () => {
 const unpackParams = (bidParams) => {
   const result = isArray(bidParams) ? bidParams[0] : bidParams;
   return result || {};
-}
+};
 
 /**
  * Get bid parameters for notification
@@ -97,9 +117,10 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
-      }
+      };
       bids.forEach(bid => {
-        const { adUnitCode, cpm, creativeId, meta, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
+        const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
+        const { platform = 'wpartner' } = meta;
         const params = unpackParams(bidParams);
 
         // basic notification data
@@ -107,8 +128,9 @@ const getNotificationPayload = bidData => {
           requestId: bidderRequestId || bidderRequestsMap[requestId],
           timeout: timeout || result.timeout,
           pvid: pageView.id,
-        }
-        result = { ...result, ...bidBasicData }
+          platform
+        };
+        result = { ...result, ...bidBasicData };
 
         result.tagid.push(adUnitCode);
 
@@ -134,27 +156,27 @@ const getNotificationPayload = bidData => {
             adomain: advertiserDomains[0],
             adtype: mediaType,
             networkName,
-          }
-          result = { ...result, ...bidNonEmptyData }
+          };
+          result = { ...result, ...bidNonEmptyData };
         }
-      })
+      });
       return result;
     }
   }
-}
+};
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
-  const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
-  const viewport = W.visualViewport || false;
+  const { connection = {}, userAgentData = {} } = navigator;
+  const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
     'CH-Ect': connection.effectiveType,
     'CH-Rtt': connection.rtt,
     'CH-SaveData': connection.saveData,
     'CH-Downlink': connection.downlink,
-    'CH-DeviceMemory': deviceMemory,
-    'CH-Dpr': W.devicePixelRatio,
+    'CH-DeviceMemory': null,
+    'CH-Dpr': getDevicePixelRatio(W),
     'CH-ViewportWidth': viewport.width,
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,
@@ -233,12 +255,11 @@ const applyUserIds = (validBidRequest, ortbRequest) => {
 const applyGdpr = (bidderRequest, ortbRequest) => {
   const { gdprConsent } = bidderRequest;
   if (gdprConsent) {
-    const { apiVersion, gdprApplies, consentString } = gdprConsent;
-    consentApiVersion = apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { 'gdpr': gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
+    const { gdprApplies, consentString } = gdprConsent;
+    ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
-}
+};
 
 /**
  * Get highest floorprice for a given adslot
@@ -249,8 +270,8 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
-  const currency = getCurrency();
-  let result = { floor: 0, currency };
+  const currency = requestCurrency;
+  const result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
     let bannerFloor = 0;
@@ -260,19 +281,19 @@ const getHighestFloor = (slot) => {
         const { floor: currentFloor = 0 } = slot.getFloor({
           mediaType: 'banner',
           size: next,
-          currency
-        });
+          currency,
+        }) || {};
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
     }
 
     const { floor: nativeFloor = 0 } = slot.getFloor({
       mediaType: 'native', currency
-    });
+    }) || {};
 
     const { floor: videoFloor = 0 } = slot.getFloor({
       mediaType: 'video', currency
-    });
+    }) || {};
 
     result.floor = Math.max(bannerFloor, nativeFloor, videoFloor);
   }
@@ -284,10 +305,10 @@ const getHighestFloor = (slot) => {
  * Get currency (either default or adserver)
  * @returns {string} currency name
  */
-const getCurrency = () => config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+const getCurrency = (bidderRequest) => getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
 /**
- * Get value for first occurence of key within the collection
+ * Get value for first occurrence of key within the collection
  */
 const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || deepAccess(next, key), false);
 
@@ -301,7 +322,7 @@ const sendNotification = payload => {
     method: 'POST',
     crossOrigin: true
   });
-}
+};
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
@@ -321,7 +342,7 @@ const mapBanner = slot => {
       id: slot.bidId,
     };
   }
-}
+};
 
 /**
  * @param {string} paramName Native parameter name
@@ -340,7 +361,7 @@ var mapAsset = function mapAsset(paramName, paramValue) {
           id: id,
           required: required,
           title: {
-            len: len
+            len: len || 140
           }
         });
         break;
@@ -433,7 +454,7 @@ const mapNative = (slot) => {
       })
     };
   }
-}
+};
 
 var mapVideo = (slot, videoFromBid) => {
   var videoFromSlot = deepAccess(slot, 'mediaTypes.video');
@@ -469,7 +490,7 @@ var mapVideo = (slot, videoFromBid) => {
 const mapImpression = slot => {
   const { adUnitCode, bidderRequestId, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId, video } = params;
-  const { ext = {} } = ortb2Imp;
+  const { instl, ext = {} } = ortb2Imp;
 
   /*
     store bidId <-> bidderRequestId mapping for bidWon notification
@@ -493,10 +514,11 @@ const mapImpression = slot => {
   const imp = {
     id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
-    native: mapNative(slot, bidId),
+    native: mapNative(slot),
     video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
+    instl,
   };
 
   // Check floorprices for this imp
@@ -506,18 +528,23 @@ const mapImpression = slot => {
   imp.bidfloorcur = currency;
 
   return imp;
-}
+};
 
 const isVideoAd = bid => {
   const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
-}
+};
 
 const isNativeAd = bid => {
   const xmlTester = new RegExp(/^{['"]native['"]/);
 
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
-}
+};
+
+const isHTML = bid => {
+  const xmlTester = new RegExp(/^<html|<iframe/, 'i');
+  return bid.adm && bid.adm.match(xmlTester);
+};
 
 const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
@@ -570,83 +597,7 @@ const parseNative = (nativeData, adUnitCode) => {
   });
 
   return result;
-}
-
-const renderCreative = (site, auctionId, bid, seat, request) => {
-  const { adLabel, id, slot, sn, page, publisherId, ref } = site;
-  let gam;
-
-  const mcad = {
-    id: auctionId,
-    seat,
-    seatbid: [{
-      bid: [bid],
-    }],
-  };
-
-  const mcbase = btoa(encodeURI(JSON.stringify(mcad)));
-
-  if (bid.adm) {
-    // parse adm for gam config
-    try {
-      gam = JSON.parse(bid.adm).gam;
-
-      if (!gam || !Object.keys(gam).length) {
-        gam = undefined;
-      } else {
-        gam.namedSizes = ['fluid'];
-        gam.div = 'div-gpt-ad-x01';
-        gam.targeting = Object.assign(gam.targeting || {}, {
-          OAS_retarg: '0',
-          PREBID_ON: '1',
-          emptygaf: '0',
-        });
-      }
-
-      if (gam && !gam.targeting) {
-        gam.targeting = {};
-      }
-    } catch (err) {
-      logWarn('Could not parse adm data', bid.adm);
-    }
-  }
-
-  let adcode = `<head>
-  <title></title>
-  <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-    body {
-    background-color: transparent;
-    margin: 0;
-    padding: 0;
-  }
-</style>
-  <script>
-  window.rekid = ${id};
-  window.slot = ${parseInt(slot, 10)};
-  window.responseTimestamp = ${Date.now()};
-  window.wp_sn = "${sn}";
-  window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
-  window.tcString = "${request.gdprConsent?.consentString || ''}";
-  window.page = "${page}";
-  window.ref = "${ref}";
-  window.adlabel = "${adLabel || ''}";
-  window.pubid = "${publisherId || ''}";
-  window.requestPVID = "${pageView.id}";
-  `;
-
-  adcode += `</script>
-    </head>
-    <body>
-    <div id="c"></div>
-    <script async crossorigin nomodule src="https://std.wpcdn.pl/wpjslib/wpjslib-inline.js" id="wpjslib"></script>
-    <script async crossorigin type="module" src="https://std.wpcdn.pl/wpjslib6/wpjslib-inline.js" id="wpjslib6"></script>
-  </body>
-  </html>`;
-
-  return adcode;
-}
+};
 
 const spec = {
   code: BIDDER_CODE,
@@ -661,6 +612,9 @@ const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
+    // update auction currency
+    requestCurrency = getCurrency(bidderRequest);
+
     if ((!validBidRequests) || (validBidRequests.length < 1)) {
       return false;
     }
@@ -674,7 +628,9 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
-    const { regs = {} } = ortb2 || {};
+    const { source = {}, regs = {} } = ortb2 || {};
+
+    source.schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     const payload = {
       id: bidderRequest.bidderRequestId,
@@ -687,10 +643,11 @@ const spec = {
         content: { language: getContentLanguage() },
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      cur: [getCurrency()],
+      cur: [requestCurrency],
       tmax,
       user: {},
       regs,
+      source,
       device: {
         language: getBrowserLanguage(),
         w: screen.width,
@@ -714,21 +671,21 @@ const spec = {
 
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
-    const response = serverResponse.body;
+    const { body: response = {} } = serverResponse;
+    const { seatbid: responseSeat } = response;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
     pageView.sn = site.sn; // store site_name (for syncing and notifications)
-    let seat;
 
-    if (response.seatbid !== undefined) {
+    if (responseSeat !== undefined) {
       /*
         Match response to request, by comparing bid id's
         'bidid-' prefix indicates oneCode (parameterless) request and response
       */
-      response.seatbid.forEach(seatbid => {
-        seat = seatbid.seat;
-        seatbid.bid.forEach(serverBid => {
+      responseSeat.forEach(seatbid => {
+        const { seat, bid } = seatbid;
+        bid.forEach(serverBid => {
           // get data from bid response
           const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext = {}, price, w, h } = serverBid;
 
@@ -744,7 +701,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl } = ext;
 
           // update site data
           site = {
@@ -757,7 +714,7 @@ const spec = {
             }
           };
 
-          if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
+          if (bidRequest && site.id && !site.id.includes('bidid')) {
             // found a matching request; add this bid
             const { adUnitCode } = bidRequest;
 
@@ -775,11 +732,13 @@ const spec = {
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
-                pricepl: ext && ext.pricepl,
+                pricepl,
                 dsa,
+                platform,
               },
               netRevenue: true,
               vurls,
+              eventtrackers: vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
@@ -790,6 +749,8 @@ const spec = {
               bid.vastXml = serverBid.adm;
               bid.vastContent = serverBid.adm;
               bid.vastUrl = creativeCache;
+
+              logInfo(`Bid ${bid.creativeId} is a video ad`);
             } else if (isNativeAd(serverBid)) {
               // native
               bid.mediaType = 'native';
@@ -803,10 +764,18 @@ const spec = {
                 logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
               }
-            } else {
-              // banner ad (default)
+              logInfo(`Bid ${bid.creativeId} as a native ad`);
+            } else if (isHTML(serverBid)) {
+              // banner ad (preformatted)
               bid.mediaType = 'banner';
-              bid.ad = renderCreative(site, response.id, serverBid, seat, bidderRequest);
+              logInfo(`Bid ${bid.creativeId} as a preformatted banner`);
+              bid.ad = serverBid.adm;
+            } else {
+              // unsupported bid format - send notification and set CPM to zero
+              const payload = getNotificationPayload(bid);
+              payload.event = 'parseError';
+              sendNotification(payload);
+              bid.cpm = 0;
             }
 
             if (bid.cpm > 0) {
@@ -822,15 +791,22 @@ const spec = {
 
     return bids;
   },
-  getUserSyncs(syncOptions, serverResponses, gdprConsent) {
-    let mySyncs = [];
-    // TODO: the check on CMP api version does not seem to make sense here. It means "always run the usersync unless an old (v1) CMP was detected". No attention is paid to the consent choices.
-    if (syncOptions.iframeEnabled && consentApiVersion != 1) {
+
+  getUserSyncs(syncOptions, _, gdprConsent = {}) {
+    const { iframeEnabled, pixelEnabled } = syncOptions;
+    const { gdprApplies, consentString = '' } = gdprConsent;
+    const mySyncs = [];
+    if (iframeEnabled) {
       mySyncs.push({
         type: 'iframe',
-        url: `${SYNC_URL}?tcf=${consentApiVersion}&pvid=${pageView.id}&sn=${pageView.sn}`,
+        url: `${SYNC_URL_IFRAME}?tcf=2&pvid=${pageView.id}&sn=${pageView.sn}`,
       });
-    };
+    } else if (pixelEnabled) {
+      mySyncs.push({
+        type: 'image',
+        url: `${SYNC_URL_IMAGE}?inver=0&platform=wpartner&host=${getTopHost() || ''}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`,
+      });
+    }
     return mySyncs;
   },
 
@@ -838,6 +814,15 @@ const spec = {
     const payload = getNotificationPayload(timeoutData);
     if (payload) {
       payload.event = 'timeout';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidderError(errorData) {
+    const payload = getNotificationPayload(errorData);
+    if (payload) {
+      payload.event = 'parseError';
       sendNotification(payload);
       return payload;
     }
@@ -852,6 +837,15 @@ const spec = {
     }
   },
 
+  onBidBillable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidBillable';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
   onBidWon(bid) {
     const payload = getNotificationPayload(bid);
     if (payload) {
@@ -860,6 +854,7 @@ const spec = {
       return payload;
     }
   },
+
 };
 
 registerBidder(spec);

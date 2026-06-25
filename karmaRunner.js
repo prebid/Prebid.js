@@ -40,8 +40,8 @@ process.on('message', function (options) {
 
   process.on('SIGINT', () => quit());
 
-  function runKarma(file) {
-    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, file, options.disableFeatures);
+  function runKarma(file, chunkNo) {
+    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, file, options.disableFeatures, chunkNo);
     if (options.browsers && options.browsers.length) {
       cfg.browsers = options.browsers;
     }
@@ -62,7 +62,7 @@ process.on('message', function (options) {
       chunks.push([options.file]);
     } else {
       const chunkNum = process.env['TEST_CHUNKS'] ?? 1;
-      const pat = process.env['TEST_PAT'] ?? '*_spec.js'
+      const pat = process.env['TEST_PAT'] ?? '*_spec.js';
       const tests = glob.sync('test/**/' + pat).sort();
       const chunkLen = chunkNum === 'MAX' ? 0 : Math.floor(tests.length / Number(chunkNum));
       chunks.push([]);
@@ -80,7 +80,7 @@ process.on('message', function (options) {
       if (process.env['TEST_CHUNK'] && Number(process.env['TEST_CHUNK']) !== i + 1) return;
       pm = pm.then(() => {
         info(`Starting chunk ${i + 1} of ${chunks.length}: ${chunkDesc(chunk)}`);
-        return runKarma(chunk);
+        return runKarma(chunk, i + 1);
       }).catch(() => {
         failures.push([i, chunks.length, chunk]);
         if (!process.env['TEST_ALL']) quit();

@@ -1,12 +1,20 @@
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName} from '../src/utils.js';
+import { deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName } from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
+/**
+ * @typedef {object} Message Payload message sent to the Greenbids API
+ */
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.3.1';
+export const ANALYTICS_VERSION = '2.3.2';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -42,9 +50,9 @@ export const isSampled = function(greenbidsId, samplingRate, exploratorySampling
   if (isPrimarySampled) return true;
   const isExtraSampled = hashInt >= (1 - throttledSamplingRate) * (0xFFFF + 1);
   return isExtraSampled;
-}
+};
 
-export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
+export const greenbidsAnalyticsAdapter = Object.assign(adapter({ ANALYTICS_SERVER, analyticsType }), {
 
   cachedAuctions: {},
   exploratorySamplingSplit: 0.9,
@@ -85,7 +93,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       this.exploratorySamplingSplit = analyticsOptions.options.exploratorySamplingSplit;
     }
 
-    analyticsOptions.pbuid = config.options.pbuid
+    analyticsOptions.pbuid = config.options.pbuid;
     analyticsOptions.server = ANALYTICS_SERVER;
 
     return true;
@@ -97,6 +105,11 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       contentType: 'application/json'
     });
   },
+  /**
+   *
+   * @param {string} auctionId
+   * @returns {Message}
+   */
   createCommonMessage(auctionId) {
     const cachedAuction = this.getCachedAuction(auctionId);
     return {
@@ -111,14 +124,27 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       adUnits: [],
     };
   },
+  /**
+   * @param {Bid} bid
+   * @param {BIDDER_STATUS} status
+   */
   serializeBidResponse(bid, status) {
     return {
       bidder: bid.bidder,
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
       hasBid: (status === BIDDER_STATUS.BID),
       params: (bid.params && Object.keys(bid.params).length > 0) ? bid.params : {},
+      ...(status === BIDDER_STATUS.BID ? {
+        cpm: bid.cpm,
+        currency: bid.currency
+      } : {}),
     };
   },
+  /**
+   * @param {*} message Greenbids API payload
+   * @param {Bid} bid Bid to add to the payload
+   * @param {BIDDER_STATUS} status Bidding status
+   */
   addBidResponseToMessage(message, bid, status) {
     const adUnitCode = bid.adUnitCode.toLowerCase();
     const adUnitIndex = message.adUnits.findIndex((adUnit) => {
@@ -145,7 +171,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     }
   },
   createBidMessage(auctionEndArgs) {
-    const {auctionId, timestamp, auctionEnd, adUnits, bidsReceived, noBids} = auctionEndArgs;
+    const { auctionId, timestamp, auctionEnd, adUnits, bidsReceived, noBids } = auctionEndArgs;
     const cachedAuction = this.getCachedAuction(auctionId);
     const message = this.createCommonMessage(auctionId);
     const timeoutBids = cachedAuction.timeoutBids || [];
@@ -157,9 +183,9 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       message.adUnits.push({
         code: adUnitCode,
         mediaTypes: {
-          ...(adUnit.mediaTypes?.banner !== undefined) && {banner: adUnit.mediaTypes.banner},
-          ...(adUnit.mediaTypes?.video !== undefined) && {video: adUnit.mediaTypes.video},
-          ...(adUnit.mediaTypes?.native !== undefined) && {native: adUnit.mediaTypes.native}
+          ...(adUnit.mediaTypes?.banner !== undefined) && { banner: adUnit.mediaTypes.banner },
+          ...(adUnit.mediaTypes?.video !== undefined) && { video: adUnit.mediaTypes.video },
+          ...(adUnit.mediaTypes?.native !== undefined) && { native: adUnit.mediaTypes.native }
         },
         ortb2Imp: adUnit.ortb2Imp || {},
         bidders: [],
@@ -201,7 +227,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (!isFilteringForced) {
       this.sendEventMessage('/',
         this.createBidMessage(auctionEndArgs, cachedAuction)
-      )
+      );
     };
   },
   handleBidTimeout(timeoutBids) {
@@ -217,7 +243,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       cachedAuction.billingId = billableArgs.billingId || 'unknown_billing_id';
     }
   },
-  track({eventType, args}) {
+  track({ eventType, args }) {
     try {
       if (eventType === AUCTION_INIT) {
         this.handleAuctionInit(args);

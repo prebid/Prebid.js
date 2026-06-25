@@ -1,4 +1,4 @@
-import { deepClone } from '../../src/utils';
+import { deepClone } from '../../src/utils.js';
 
 var AllowedAdUnits = [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]];
 var UnsupportedAdUnits = [[700, 100], [100, 600], [300, 200], [100, 600], [300, 200], [200, 60], [900, 200], [300, 1000], [900, 90], [100, 100]];
@@ -79,11 +79,11 @@ exports.createBidSlots = function(numSlot, numSize) {
   if (typeof numSlot === 'undefined') numSlot = 1;
   if (typeof numSize === 'undefined') numSize = 1;
 
-  var bids = new Array(numSlot);
+  var bids = Array(numSlot);
 
   var mkPlacementCode = function(i, j) { return DefaultPlacementCodePrefix + i + '_' + j; };
   for (var i = 0; i < bids.length; i++) {
-    var requestSizes = new Array(numSize);
+    var requestSizes = Array(numSize);
     for (var j = 0; j < requestSizes.length; j++) requestSizes[j] = AllowedAdUnits[(i + j) % AllowedAdUnits.length];
 
     bids[i] = _createBidSlot(mkPlacementCode(i, j), 'slot-' + i, requestSizes, {
@@ -91,7 +91,7 @@ exports.createBidSlots = function(numSlot, numSize) {
     });
   }
   return bids;
-}
+};
 
 exports.parseIndexRequest = function(url) {
   if (typeof url === 'undefined') return {};
@@ -108,7 +108,7 @@ exports.parseIndexRequest = function(url) {
     }
   }
   return requestJSON;
-}
+};
 
 exports.getExpectedIndexSlots = function(bids) {
   var size = 0;
@@ -116,7 +116,7 @@ exports.getExpectedIndexSlots = function(bids) {
     size += bids[i].sizes.length;
   }
   return size;
-}
+};
 
 function clone(x) {
   return deepClone(x);
@@ -128,7 +128,7 @@ function compareOnKeys(lhs, rhs) {
   var ronly = [];
   var both = [];
 
-  for (var key in lhs) {
+  for (let key in lhs) {
     if (key in rhs) {
       both.push({ left: lhs[key], right: rhs[key], name: key });
     } else {
@@ -136,9 +136,8 @@ function compareOnKeys(lhs, rhs) {
     }
   }
 
-  for (var key in rhs) {
-    if (key in lhs) {
-    } else {
+  for (let key in rhs) {
+    if (!(key in lhs)) {
       ronly.push(rhs[key]);
     }
   }
@@ -171,7 +170,7 @@ exports.expandSizes = function(bid) {
   }
 
   return result;
-}
+};
 
 exports.matchOnPlacementCode = function(expected, prebid) {
   var compared = compareOnKeys(expected, prebid);
@@ -203,10 +202,10 @@ exports.matchBidsOnSID = function(lhs, rhs) {
   var rstore = createObjectFromArray(rhs.map(bid => [bid.ext.sid, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name }; });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
-}
+};
 
 exports.matchBidsOnSize = function(lhs, rhs) {
   var lonly = [];
@@ -222,13 +221,13 @@ exports.matchBidsOnSize = function(lhs, rhs) {
   }
 
   var lstore = createObjectFromArray(configured);
-  var rstore = createObjectFromArray(rhs.map(bid => [ bid.banner.w + 'x' + bid.banner.h, bid ]));
+  var rstore = createObjectFromArray(rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name }; });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
-}
+};
 
 exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, optionalResponseIdentifier, optionalPassOnBid, optionalResponseParam) {
   if (typeof configuredBids === 'undefined' || typeof urlJSON === 'undefined') return {};
@@ -254,7 +253,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
       if (typeof optionalPassOnBid[i] !== 'undefined' && typeof optionalPassOnBid[i][j] !== 'undefined' && optionalPassOnBid[i][j]) continue;
 
       var bid = {};
-      bid.adomain = [ (DefaultAdDoman + adCount).toString() ];
+      bid.adomain = [(DefaultAdDoman + adCount).toString()];
       bid.adid = (DefaultCreativeID + adCount).toString();
       bid.impid = adCount.toString();
       bid.id = adCount.toString();
@@ -286,7 +285,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
     response.seatbid.push(bidObj);
   }
   return response;
-}
+};
 
 exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
   var asAllBids = asResponse.seatbid;
@@ -315,7 +314,7 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
         }
 
         if (typeof expectedResponse[placementCode] === 'undefined') {
-          expectedResponse[placementCode] = [ result ];
+          expectedResponse[placementCode] = [result];
         } else {
           expectedResponse[placementCode].push(result);
         }
@@ -323,4 +322,4 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
     }
   }
   return expectedResponse;
-}
+};

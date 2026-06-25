@@ -1,9 +1,9 @@
 import { submodule } from '../src/hook.js';
-import {ajax} from '../src/ajax.js';
-import {deepAccess, logError, logInfo, mergeDeep} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js';
+import { deepAccess, logError, logInfo, mergeDeep } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -13,7 +13,7 @@ const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'mgid';
 const MGID_RTD_API_URL = 'https://servicer.mgid.com/sda';
 const MGUID_LOCAL_STORAGE_KEY = 'mguid';
-const ORTB2_NAME = 'www.mgid.com'
+const ORTB2_NAME = 'www.mgid.com';
 
 const GVLID = 358;
 /** @type {?Object} */
@@ -142,10 +142,10 @@ function getContextUrl() {
 }
 
 function getDataForMerge(responseData) {
-  let siteData = {
+  const siteData = {
     name: ORTB2_NAME
   };
-  let userData = {
+  const userData = {
     name: ORTB2_NAME
   };
 
@@ -155,7 +155,7 @@ function getDataForMerge(responseData) {
   if (responseData.siteSegtax) {
     siteData.ext = {
       segtax: responseData.siteSegtax
-    }
+    };
   }
 
   if (responseData.userSegments) {
@@ -164,22 +164,22 @@ function getDataForMerge(responseData) {
   if (responseData.userSegtax) {
     userData.ext = {
       segtax: responseData.userSegtax
-    }
+    };
   }
 
-  let result = {};
+  const result = {};
   if (siteData.segment || siteData.ext) {
     result.site = {
       content: {
         data: [siteData],
       }
-    }
+    };
   }
 
   if (userData.segment || userData.ext) {
     result.user = {
       data: [userData],
-    }
+    };
   }
 
   return result;

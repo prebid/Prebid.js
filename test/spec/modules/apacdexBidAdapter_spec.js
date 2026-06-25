@@ -1,24 +1,24 @@
-import { expect } from 'chai'
-import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec, validateGeoObject } from '../../../modules/apacdexBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 
 describe('ApacdexBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
 
   describe('.code', function () {
     it('should return a bidder code of apacdex', function () {
-      expect(spec.code).to.equal('apacdex')
-    })
-  })
+      expect(spec.code).to.equal('apacdex');
+    });
+  });
 
   describe('inherited functions', function () {
     it('should exist and be a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('.isBidRequestValid', function () {
     it('should return false if there are no params', () => {
@@ -182,22 +182,28 @@ describe('ApacdexBidAdapter', function () {
     afterEach(function () {
       userSync.canBidderRegisterSync.restore();
     });
-    let bidRequest = [{
-      'schain': {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'indirectseller.com',
-            'sid': '00001',
-            'hp': 1
-          },
-          {
-            'asi': 'indirectseller-2.com',
-            'sid': '00002',
-            'hp': 0
-          },
-        ]
+    const bidRequest = [{
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'indirectseller.com',
+                  'sid': '00001',
+                  'hp': 1
+                },
+                {
+                  'asi': 'indirectseller-2.com',
+                  'sid': '00002',
+                  'hp': 0
+                },
+              ]
+            }
+          }
+        }
       },
       'bidder': 'apacdex',
       'params': {
@@ -234,7 +240,7 @@ describe('ApacdexBidAdapter', function () {
       'bidId': '30b31c1838de1e',
     }];
 
-    let bidderRequests = {
+    const bidderRequests = {
       'gdprConsent': {
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
         'vendorData': {},
@@ -250,30 +256,30 @@ describe('ApacdexBidAdapter', function () {
     };
 
     it('should return a properly formatted request', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
-      expect(bidRequests.method).to.equal('POST')
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs');
+      expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
-    })
+    });
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
-      expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
-      expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
-    })
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs');
+      expect(bidRequests.method).to.equal('POST');
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true);
+      expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
 
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
-      expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
-      expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
-    })
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs');
+      expect(bidRequests.method).to.equal('POST');
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false);
+      expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
     it('should return a properly formatted request with GDPR applies set to false with no consent_string param', function () {
-      let bidderRequests = {
+      const bidderRequests = {
         'gdprConsent': {
           'consentString': undefined,
           'vendorData': {},
@@ -286,14 +292,14 @@ describe('ApacdexBidAdapter', function () {
           'stack': ['https://example.com']
         }
       };
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
-      expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
-      expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
-    })
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs');
+      expect(bidRequests.method).to.equal('POST');
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false);
+      expect(bidRequests.data.gdpr).to.not.include.keys('consentString');
+    });
     it('should return a properly formatted request with GDPR applies set to true with no consentString param', function () {
-      let bidderRequests = {
+      const bidderRequests = {
         'gdprConsent': {
           'consentString': undefined,
           'vendorData': {},
@@ -306,27 +312,27 @@ describe('ApacdexBidAdapter', function () {
           'stack': ['https://example.com']
         }
       };
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
-      expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
-      expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
-    })
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs');
+      expect(bidRequests.method).to.equal('POST');
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true);
+      expect(bidRequests.data.gdpr).to.not.include.keys('consentString');
+    });
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
+      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].ortb2.source.ext.schain);
     });
     it('should return a properly formatted request with eids defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
+      expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids);
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
     it('should attach bidFloor param when either bid param floorPrice or getFloor function exists', function () {
-      let getFloorResponse = { currency: 'USD', floor: 3 };
-      let singleBidRequest, request, payload = null;
+      const getFloorResponse = { currency: 'USD', floor: 3 };
+      let singleBidRequest; let request; let payload = null;
 
       // 1 -> floorPrice not defined, getFloor not defined > empty
       singleBidRequest = deepClone(bidRequest[0]);
@@ -341,7 +347,7 @@ describe('ApacdexBidAdapter', function () {
         'floorPrice': 0.5
       };
       request = spec.buildRequests([singleBidRequest], bidderRequests);
-      payload = request.data
+      payload = request.data;
       expect(payload.bids[0].bidFloor).to.exist.and.to.equal(0.5);
 
       // 3 -> floorPrice is defined, getFloor is defined > getFloor is used
@@ -352,14 +358,14 @@ describe('ApacdexBidAdapter', function () {
       };
       singleBidRequest.getFloor = () => getFloorResponse;
       request = spec.buildRequests([singleBidRequest], bidderRequests);
-      payload = request.data
+      payload = request.data;
       expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
 
       // 4 -> floorPrice not defined, getFloor is defined > getFloor is used
       singleBidRequest = deepClone(bidRequest[0]);
       singleBidRequest.getFloor = () => getFloorResponse;
       request = spec.buildRequests([singleBidRequest], bidderRequests);
-      payload = request.data
+      payload = request.data;
       expect(payload.bids[0].bidFloor).to.exist.and.to.equal(3);
     });
     describe('debug test', function () {
@@ -526,7 +532,7 @@ describe('ApacdexBidAdapter', function () {
       ]
     };
 
-    let serverResponse = {
+    const serverResponse = {
       'body': {
         'bids': [
           {
@@ -585,7 +591,7 @@ describe('ApacdexBidAdapter', function () {
       }
     };
 
-    let prebidResponse = [
+    const prebidResponse = [
       {
         'requestId': '3000aa31c41a29c21',
         'cpm': 1.07,
@@ -651,7 +657,7 @@ describe('ApacdexBidAdapter', function () {
   });
 
   describe('.getUserSyncs', function () {
-    let bidResponse = [{
+    const bidResponse = [{
       'body': {
         'pixel': [{
           'url': 'https://pixel-test',
@@ -684,7 +690,7 @@ describe('ApacdexBidAdapter', function () {
 
   describe('validateGeoObject', function () {
     it('should return true if the geo object is valid', () => {
-      let geoObject = {
+      const geoObject = {
         lat: 123.5624234,
         lon: 23.6712341,
         accuracy: 20
@@ -693,7 +699,7 @@ describe('ApacdexBidAdapter', function () {
     });
 
     it('should return false if the geo object is not plain object', () => {
-      let geoObject = [{
+      const geoObject = [{
         lat: 123.5624234,
         lon: 23.6712341,
         accuracy: 20
@@ -702,7 +708,7 @@ describe('ApacdexBidAdapter', function () {
     });
 
     it('should return false if the geo object is missing lat attribute', () => {
-      let geoObject = {
+      const geoObject = {
         lon: 23.6712341,
         accuracy: 20
       };
@@ -710,7 +716,7 @@ describe('ApacdexBidAdapter', function () {
     });
 
     it('should return false if the geo object is missing lon attribute', () => {
-      let geoObject = {
+      const geoObject = {
         lat: 123.5624234,
         accuracy: 20
       };
@@ -718,7 +724,7 @@ describe('ApacdexBidAdapter', function () {
     });
 
     it('should return false if the geo object is missing accuracy attribute', () => {
-      let geoObject = {
+      const geoObject = {
         lat: 123.5624234,
         lon: 23.6712341
       };

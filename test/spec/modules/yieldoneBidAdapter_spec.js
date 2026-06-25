@@ -1,18 +1,20 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { getBrowser, getOS } from '../../../libraries/userAgentUtils/index.js';
+import { browserTypes, osTypes } from '../../../libraries/userAgentUtils/userAgentTypes.enums.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
-const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
+const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 
-describe('yieldoneBidAdapter', function() {
+describe('yieldoneBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'yieldone',
       'params': {
         placementId: '36891'
@@ -34,7 +36,7 @@ describe('yieldoneBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -54,7 +56,7 @@ describe('yieldoneBidAdapter', function() {
       const bidRequests = [
         {
           'bidder': 'yieldone',
-          'params': {placementId: '36891'},
+          'params': { placementId: '36891' },
           'adUnitCode': 'adunit-code1',
           'bidId': '23beaa6af6cdde',
           'bidderRequestId': '19c0c1efdf37e7',
@@ -62,7 +64,7 @@ describe('yieldoneBidAdapter', function() {
         },
         {
           'bidder': 'yieldone',
-          'params': {placementId: '47919'},
+          'params': { placementId: '47919' },
           'adUnitCode': 'adunit-code2',
           'bidId': '382091349b149f"',
           'bidderRequestId': '"1f9c98192de251"',
@@ -88,31 +90,31 @@ describe('yieldoneBidAdapter', function() {
     describe('Old Format', function () {
       const bidRequests = [
         {
-          params: {placementId: '0'},
+          params: { placementId: '0' },
           mediaType: 'banner',
           sizes: [[300, 250], [336, 280]],
         },
         {
-          params: {placementId: '1'},
+          params: { placementId: '1' },
           mediaType: 'banner',
           sizes: [[336, 280]],
         },
         {
           // It doesn't actually exist.
-          params: {placementId: '2'},
+          params: { placementId: '2' },
         },
         {
-          params: {placementId: '3'},
+          params: { placementId: '3' },
           mediaType: 'video',
           sizes: [[1280, 720], [1920, 1080]],
         },
         {
-          params: {placementId: '4'},
+          params: { placementId: '4' },
           mediaType: 'video',
           sizes: [[1920, 1080]],
         },
         {
-          params: {placementId: '5'},
+          params: { placementId: '5' },
           mediaType: 'video',
         },
       ];
@@ -143,7 +145,7 @@ describe('yieldoneBidAdapter', function() {
     describe('Single Format', function () {
       const bidRequests = [
         {
-          params: {placementId: '0'},
+          params: { placementId: '0' },
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [336, 280]],
@@ -151,7 +153,7 @@ describe('yieldoneBidAdapter', function() {
           },
         },
         {
-          params: {placementId: '1'},
+          params: { placementId: '1' },
           mediaTypes: {
             banner: {
               sizes: [[336, 280]],
@@ -160,14 +162,14 @@ describe('yieldoneBidAdapter', function() {
         },
         {
           // It doesn't actually exist.
-          params: {placementId: '2'},
+          params: { placementId: '2' },
           mediaTypes: {
             banner: {
             },
           },
         },
         {
-          params: {placementId: '3'},
+          params: { placementId: '3' },
           mediaTypes: {
             video: {
               context: 'outstream',
@@ -176,7 +178,7 @@ describe('yieldoneBidAdapter', function() {
           },
         },
         {
-          params: {placementId: '4'},
+          params: { placementId: '4' },
           mediaTypes: {
             video: {
               context: 'outstream',
@@ -185,7 +187,7 @@ describe('yieldoneBidAdapter', function() {
           },
         },
         {
-          params: {placementId: '5'},
+          params: { placementId: '5' },
           mediaTypes: {
             video: {
               context: 'outstream',
@@ -342,14 +344,14 @@ describe('yieldoneBidAdapter', function() {
       it('dont send LiveRampID if undefined', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
+            params: { placementId: '0' },
           },
           {
-            params: {placementId: '1'},
+            params: { placementId: '1' },
             userId: {},
           },
           {
-            params: {placementId: '2'},
+            params: { placementId: '2' },
             userId: undefined,
           },
         ];
@@ -362,8 +364,8 @@ describe('yieldoneBidAdapter', function() {
       it('should send LiveRampID if available', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
-            userId: {idl_env: 'idl_env_sample'},
+            params: { placementId: '0' },
+            userId: { idl_env: 'idl_env_sample' },
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -375,14 +377,14 @@ describe('yieldoneBidAdapter', function() {
       it('dont send IMID if undefined', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
+            params: { placementId: '0' },
           },
           {
-            params: {placementId: '1'},
+            params: { placementId: '1' },
             userId: {},
           },
           {
-            params: {placementId: '2'},
+            params: { placementId: '2' },
             userId: undefined,
           },
         ];
@@ -395,8 +397,8 @@ describe('yieldoneBidAdapter', function() {
       it('should send IMID if available', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
-            userId: {imuid: 'imuid_sample'},
+            params: { placementId: '0' },
+            userId: { imuid: 'imuid_sample' },
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -408,14 +410,14 @@ describe('yieldoneBidAdapter', function() {
       it('dont send DAC ID if undefined', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
+            params: { placementId: '0' },
           },
           {
-            params: {placementId: '1'},
+            params: { placementId: '1' },
             userId: {},
           },
           {
-            params: {placementId: '2'},
+            params: { placementId: '2' },
             userId: undefined,
           },
         ];
@@ -431,8 +433,8 @@ describe('yieldoneBidAdapter', function() {
       it('should send DAC ID if available', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
-            userId: {dacId: {fuuid: 'fuuid_sample', id: 'dacId_sample'}},
+            params: { placementId: '0' },
+            userId: { dacId: { fuuid: 'fuuid_sample', id: 'dacId_sample' } },
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -445,14 +447,14 @@ describe('yieldoneBidAdapter', function() {
       it('dont send ID5 if undefined', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
+            params: { placementId: '0' },
           },
           {
-            params: {placementId: '1'},
+            params: { placementId: '1' },
             userId: {},
           },
           {
-            params: {placementId: '2'},
+            params: { placementId: '2' },
             userId: undefined,
           },
         ];
@@ -465,18 +467,137 @@ describe('yieldoneBidAdapter', function() {
       it('should send ID5 if available', function () {
         const bidRequests = [
           {
-            params: {placementId: '0'},
-            userId: {id5id: {uid: 'id5id_sample'}},
+            params: { placementId: '0' },
+            userId: { id5id: { uid: 'id5id_sample' } },
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request[0].data.id5Id).to.equal('id5id_sample');
       });
     });
+
+    describe('UID2.0', function () {
+      it('dont send UID2.0 if undefined', function () {
+        const bidRequests = [
+          {
+            params: { placementId: '0' },
+          },
+          {
+            params: { placementId: '1' },
+            userId: {},
+          },
+          {
+            params: { placementId: '2' },
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('uid2id');
+        expect(request[1].data).to.not.have.property('uid2id');
+        expect(request[2].data).to.not.have.property('uid2id');
+      });
+
+      it('should send UID2.0 if available', function () {
+        const bidRequests = [
+          {
+            params: { placementId: '0' },
+            userId: { uid2: { id: 'uid2_sample' } },
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.uid2id).to.equal('uid2_sample');
+      });
+    });
+
+    describe('GPID', function () {
+      it('dont send GPID if undefined', function () {
+        const bidRequests = [
+          {
+            params: { placementId: '0' },
+          },
+          {
+            params: { placementId: '1' },
+            ortb2Imp: {},
+          },
+          {
+            params: { placementId: '2' },
+            ortb2Imp: undefined,
+          },
+          {
+            params: { placementId: '3' },
+            ortb2Imp: { ext: { gpid: undefined, data: { pubadslot: 'aaa' } } },
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('gpid');
+        expect(request[1].data).to.not.have.property('gpid');
+        expect(request[2].data).to.not.have.property('gpid');
+        expect(request[3].data).to.not.have.property('gpid');
+      });
+
+      it('should send GPID if available', function () {
+        const bidRequests = [
+          {
+            params: { placementId: '0' },
+            ortb2Imp: { ext: { gpid: 'gpid_sample' } },
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.ext).to.be.not.null;
+        expect(request[0].data).to.have.property('gpid');
+        expect(request[0].data.gpid).to.equal('gpid_sample');
+      });
+    });
+
+    describe('instl', function () {
+      it('dont send instl if undefined', function () {
+        const bidRequests = [
+          {
+            params: { placementId: '0' },
+          },
+          {
+            params: { placementId: '1' },
+            ortb2Imp: {},
+          },
+          {
+            params: { placementId: '2' },
+            ortb2Imp: undefined,
+          },
+          {
+            params: { placementId: '3' },
+            ortb2Imp: { instl: undefined },
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        bidRequests.forEach((bidRequest, ind) => {
+          expect(request[ind].data).to.not.have.property('instl');
+        });
+      });
+
+      it('should send instl if available', function () {
+        const bidRequests = [
+          {
+            params: { placementId: '0' },
+            ortb2Imp: { instl: '1' },
+          },
+          {
+            params: { placementId: '1' },
+            ortb2Imp: { instl: 1 },
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        bidRequests.forEach((bidRequest, ind) => {
+          expect(request[ind].data).to.have.property('instl');
+          expect(request[ind].data.instl).to.equal(1);
+        });
+      });
+    });
   });
 
   describe('interpretResponse', function () {
-    let bidRequestBanner = [
+    const bidRequestBanner = [
       {
         'method': 'GET',
         'url': 'https://y.one.impact-ad.jp/h_bid',
@@ -494,7 +615,7 @@ describe('yieldoneBidAdapter', function() {
       }
     ];
 
-    let serverResponseBanner = {
+    const serverResponseBanner = {
       body: {
         'adTag': '<!-- adtag -->',
         'uid': '23beaa6af6cdde',
@@ -503,7 +624,6 @@ describe('yieldoneBidAdapter', function() {
         'cpm': 0.0536616,
         'crid': '2494768',
         'currency': 'JPY',
-        'statusMessage': 'Bid available',
         'dealId': 'P1-FIX-7800-DSP-MON',
         'adomain': [
           'www.example.com'
@@ -512,7 +632,7 @@ describe('yieldoneBidAdapter', function() {
     };
 
     it('should get the correct bid response for banner', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 300,
@@ -531,7 +651,7 @@ describe('yieldoneBidAdapter', function() {
         'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
-      let result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
@@ -545,7 +665,7 @@ describe('yieldoneBidAdapter', function() {
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
-    let serverResponseVideo = {
+    const serverResponseVideo = {
       body: {
         'uid': '23beaa6af6cdde',
         'height': 360,
@@ -554,12 +674,11 @@ describe('yieldoneBidAdapter', function() {
         'dealId': 'P1-FIX-7800-DSP-MON',
         'crid': '2494768',
         'currency': 'JPY',
-        'statusMessage': 'Bid available',
         'adm': '<!-- vast -->'
       }
     };
 
-    let bidRequestVideo = [
+    const bidRequestVideo = [
       {
         'method': 'GET',
         'url': 'https://y.one.impact-ad.jp/h_bid',
@@ -579,7 +698,7 @@ describe('yieldoneBidAdapter', function() {
     ];
 
     it('should get the correct bid response for video', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 53.6616,
         'width': 640,
@@ -600,7 +719,7 @@ describe('yieldoneBidAdapter', function() {
           url: VIDEO_PLAYER_URL
         }
       }];
-      let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
+      const result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
@@ -618,17 +737,16 @@ describe('yieldoneBidAdapter', function() {
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {
           'uid': '2c0b634db95a01',
           'height': 0,
           'crid': '',
-          'statusMessage': 'Bid returned empty or error response',
           'width': 0,
           'cpm': 0
         }
       };
-      let result = spec.interpretResponse(response, bidRequestBanner[0]);
+      const result = spec.interpretResponse(response, bidRequestBanner[0]);
       expect(result.length).to.equal(0);
     });
   });
@@ -638,12 +756,39 @@ describe('yieldoneBidAdapter', function() {
       expect(spec.getUserSyncs({})).to.be.undefined;
     });
 
-    it('should return a sync url if iframe syncs are enabled', function () {
-      expect(spec.getUserSyncs({
+    it('should return a sync url if iframe syncs are enabled and UserAgent is not Safari or iOS', function () {
+      const result = spec.getUserSyncs({
         'iframeEnabled': true
-      })).to.deep.equal([{
-        type: 'iframe', url: USER_SYNC_URL
-      }]);
+      });
+
+      if (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) {
+        expect(result).to.be.undefined;
+      } else {
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: USER_SYNC_URL
+        }]);
+      }
+    });
+
+    it('should skip sync request in case GDPR applies', function () {
+      expect(spec.getUserSyncs({ 'iframeEnabled': true }, [], {
+        consentString: 'GDPR_CONSENT_STRING',
+        gdprApplies: true,
+      })).to.be.undefined;
+    });
+
+    it('should skip sync request for bot-like user agents', function () {
+      const originalUA = navigator.userAgent;
+      try {
+        Object.defineProperty(navigator, 'userAgent', {
+          value: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+          configurable: true
+        });
+
+        expect(spec.getUserSyncs({ 'iframeEnabled': true })).to.be.undefined;
+      } finally {
+        Object.defineProperty(navigator, 'userAgent', { value: originalUA, configurable: true });
+      }
     });
   });
 });

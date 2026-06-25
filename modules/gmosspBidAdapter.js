@@ -1,16 +1,15 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue, getBidIdParameter,
-  getDNT,
   getWindowTop,
   isEmpty,
   logError
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -50,8 +49,7 @@ export const spec = {
     const bidRequests = [];
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
-    const cur = getCurrencyType();
-    const dnt = getDNT() ? '1' : '0';
+    const cur = getCurrencyType(bidderRequest);
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -76,7 +74,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'meta_url', urlInfo.canonicalLink);
       queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = tryAppendQueryString(queryString, 'cur', cur);
-      queryString = tryAppendQueryString(queryString, 'dnt', dnt);
 
       bidRequests.push({
         method: 'GET',
@@ -90,8 +87,9 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {*} bidderResponse A successful response from the server.
+   * @param {Array} requests
+   * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
@@ -147,29 +145,26 @@ export const spec = {
           syncs.push({
             type: 'image',
             url: sync
-          })
-        })
+          });
+        });
       }
-    })
+    });
     return syncs;
   },
 
 };
 
-function getCurrencyType() {
-  if (config.getConfig('currency.adServerCurrency')) {
-    return config.getConfig('currency.adServerCurrency');
-  }
-  return 'JPY';
+function getCurrencyType(bidderRequest) {
+  return getCurrencyFromBidderRequest(bidderRequest) || 'JPY';
 }
 
 function getUrlInfo(refererInfo) {
   let canonicalLink = refererInfo.canonicalUrl;
 
   if (!canonicalLink) {
-    let metaElements = getMetaElements();
+    const metaElements = getMetaElements();
     for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
-      if (metaElements[i].getAttribute('property') == 'og:url') {
+      if (metaElements[i].getAttribute('property') === 'og:url') {
         canonicalLink = metaElements[i].content;
       }
     }

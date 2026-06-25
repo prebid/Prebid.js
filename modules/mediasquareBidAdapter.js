@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
@@ -16,8 +16,8 @@ import { getRefererInfo } from '../src/refererDetection.js';
  */
 
 const BIDDER_CODE = 'mediasquare';
-const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
-const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
+const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/';
+const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/';
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
 const BIDDER_ENDPOINT_WINNING = 'winning';
 
@@ -40,42 +40,40 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let codes = [];
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let floor = {};
+    const codes = [];
+    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
-      floor = {};
       adunitValue = validBidRequests[key];
-      if (typeof adunitValue.getFloor === 'function') {
-        if (Array.isArray(adunitValue.sizes)) {
-          adunitValue.sizes.forEach(value => {
-            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
-          });
-        }
-        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
-        if (tmpFloor != {}) { floor['*'] = tmpFloor; }
-      }
-      codes.push({
+      const code = {
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
-        floor: floor
-      });
+        floor: {}
+      };
+      if (typeof adunitValue.getFloor === 'function') {
+        if (Array.isArray(adunitValue.sizes)) {
+          adunitValue.sizes.forEach(value => {
+            const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: value });
+            if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor[value.join('x')] = tmpFloor; }
+          });
+        }
+        const tmpFloor = adunitValue.getFloor({ currency: 'USD', mediaType: '*', size: '*' });
+        if (tmpFloor !== null && tmpFloor !== undefined && Object.keys(tmpFloor).length !== 0) { code.floor['*'] = tmpFloor; }
+      }
+      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp; }
+      codes.push(code);
     });
     const payload = {
       codes: codes,
@@ -91,13 +89,10 @@ export const spec = {
         };
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
-      if (bidderRequest.userId) {
-        payload.userId = bidderRequest.userId;
-      } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
-        payload.userId = bidderRequest.bids[0].userId;
-      }
-      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
+      if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
+      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids; };
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa; }
+      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2; }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -138,18 +133,21 @@ export const spec = {
           }
         };
         if ('dsa' in value) { bidResponse.meta.dsa = value['dsa']; }
-        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+        const paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
         paramsToSearchFor.forEach(param => {
           if (param in value) {
             bidResponse['mediasquare'][param] = value[param];
           }
         });
+        if ('burls' in value) {
+          bidResponse['mediasquare']['burls'] = value['burls'];
+        }
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
         } else if ('video' in value) {
-          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url'] }
-          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml'] }
+          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url']; }
+          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml']; }
           bidResponse['mediaType'] = 'video';
           bidResponse['renderer'] = createRenderer(value, OUTSTREAM_RENDERER_URL);
         }
@@ -168,8 +166,13 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
-        serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
+    if (Array.isArray(serverResponses) &&
+        serverResponses.length > 0 &&
+        serverResponses[0] &&
+        serverResponses[0].body &&
+        typeof serverResponses[0].body === 'object' &&
+        serverResponses[0].body.hasOwnProperty('cookies') &&
+        typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
       return [];
@@ -178,40 +181,54 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType === 'video') {
       return;
     }
-    let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+    const params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
+    const endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+
     if (bid.hasOwnProperty('mediasquare')) {
-      paramsToSearchFor.forEach(param => {
+      // if burls then fire tracking pixels and exit
+      if (bid.mediasquare.hasOwnProperty('burls') && Array.isArray(bid.mediasquare.burls) && bid.mediasquare.burls.length > 0) {
+        bid.mediasquare.burls.forEach(burl => {
+          const url = burl && burl.url;
+          if (!url) return;
+          const method = (burl.method ?? "GET").toUpperCase();
+          const data = (method === "POST" && burl.data ? burl.data : null);
+          ajax(url, null, data ? JSON.stringify(data) : null, { method: method, withCredentials: true });
+        });
+        return true;
+      }
+      // no burl so checking for other mediasquare params
+      let msqParamsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+      msqParamsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
-          if (typeof params[param] == 'number') {
+          if (typeof params[param] === 'number') {
             params[param] = params[param].toString();
           }
         }
       });
     };
-    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
     paramsToSearchFor.forEach(param => {
       if (bid.hasOwnProperty(param)) {
         params[param] = bid[param];
-        if (typeof params[param] == 'number') {
+        if (typeof params[param] === 'number') {
           params[param] = params[param].toString();
         }
       }
     });
-    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
+    ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), { method: 'POST', withCredentials: true });
     return true;
   }
 
-}
+};
 
 function outstreamRender(bid) {
   bid.renderer.push(() => {

@@ -19,7 +19,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
     emptyUrl,
     analyticsType
   }), {
-  track ({eventType, args}) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case EVENTS.AUCTION_INIT:
         adxcgAnalyticsAdapter.context.events.auctionInit = mapAuctionInit(args);
@@ -40,7 +40,7 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
         adxcgAnalyticsAdapter.context.events.bidResponses.push(mapBidResponse(args, eventType));
         break;
       case EVENTS.BID_WON:
-        let outData2 = {bidWons: mapBidWon(args)};
+        const outData2 = { bidWons: mapBidWon(args) };
         send(outData2);
         break;
       case EVENTS.AUCTION_END:
@@ -79,7 +79,6 @@ function mapBidResponse (bidResponse, eventType) {
     bidderCode: bidResponse.bidder,
     transactionId: bidResponse.transactionId,
     adUnitCode: bidResponse.adUnitCode,
-    statusMessage: bidResponse.statusMessage,
     mediaType: bidResponse.mediaType,
     renderedSize: bidResponse.size,
     cpm: bidResponse.cpm,
@@ -97,7 +96,6 @@ function mapBidWon (bidResponse) {
   return [{
     bidderCode: bidResponse.bidder,
     adUnitCode: bidResponse.adUnitCode,
-    statusMessage: bidResponse.statusMessage,
     mediaType: bidResponse.mediaType,
     renderedSize: bidResponse.size,
     cpm: bidResponse.cpm,
@@ -112,7 +110,7 @@ function mapBidWon (bidResponse) {
 }
 
 function send (data) {
-  let adxcgAnalyticsRequestUrl = buildUrl({
+  const adxcgAnalyticsRequestUrl = buildUrl({
     protocol: 'https',
     hostname: adxcgAnalyticsAdapter.context.host,
     pathname: '/pbrx/v2',

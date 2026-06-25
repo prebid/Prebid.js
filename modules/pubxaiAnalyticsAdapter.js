@@ -5,24 +5,25 @@ import {
 import { getDeviceType, getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
-import { sendBeacon } from '../src/ajax.js'
+import { sendBeacon } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash
 } from '../src/utils.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 let initOptions;
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const adapterCode = 'pubxai';
-const pubxaiAnalyticsVersion = 'v2.0.0';
+const pubxaiAnalyticsVersion = 'v2.1.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode });
 
 /**
  * The sendCache is a global cache object which tracks the pending sends
@@ -77,6 +78,7 @@ export const auctionCache = new Proxy(
             consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
           },
           pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
+          extraData: JSON.parse(storage.getDataFromLocalStorage('pubx:extraData')) || {},
           initOptions: {
             ...initOptions,
             auctionId: name, // back-compat
@@ -98,14 +100,13 @@ const getAdServerDataForBid = (bid) => {
   const gptSlot = getGptSlotForAdUnitCode(bid);
   if (gptSlot) {
     return Object.fromEntries(
-      gptSlot
-        .getTargetingKeys()
+      getSlotTargetingKeys(gptSlot)
         .filter(
           (key) =>
             key.startsWith('pubx-') ||
             (key.startsWith('hb_') && (key.match(/_/g) || []).length === 1)
         )
-        .map((key) => [key, gptSlot.getTargeting(key)])
+        .map((key) => [key, getSlotTargeting(gptSlot, key)])
     );
   }
   return {}; // TODO: support more ad servers
@@ -135,7 +136,6 @@ const extractBid = (bidResponse) => {
     responseTimestamp: bidResponse.responseTimestamp,
     status: bidResponse.status,
     sizes: parseSizesInput(bidResponse.size).toString(),
-    statusMessage: bidResponse.statusMessage,
     timeToRespond: bidResponse.timeToRespond,
     transactionId: bidResponse.transactionId,
     bidId: bidResponse.bidId || bidResponse.requestId,
@@ -179,15 +179,12 @@ const track = ({ eventType, args }) => {
           .map((i) => i?.bids.length && i.bids[0]?.floorData)
           .find((i) => i) || {}
       );
-      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
-        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
-        .find((i) => i);
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,
       });
       if (
-        auctionCache[args.auctionId].bids.every((bid) => bid.bidType === 3)
+        auctionCache[args.auctionId].bids.every((bid) => [1, 3].includes(bid.bidType))
       ) {
         prepareSend(args.auctionId);
       }
@@ -248,6 +245,7 @@ const prepareSend = (auctionId) => {
         'userDetail',
         'consentDetail',
         'pmacDetail',
+        'extraData',
         'initOptions',
       ],
       eventType: 'win',
@@ -263,6 +261,7 @@ const prepareSend = (auctionId) => {
         'userDetail',
         'consentDetail',
         'pmacDetail',
+        'extraData',
         'initOptions',
       ],
       eventType: 'auction',

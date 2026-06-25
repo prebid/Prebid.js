@@ -16,7 +16,7 @@ Connects to AdUp Technology demand sources to fetch bids.
 - Bidder code: `aduptech`
 - Supported media types: `banner`, `native`
 
-## Paramters
+## Parameters
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `publisher` | required | Unique publisher identifier | `'prebid'` |

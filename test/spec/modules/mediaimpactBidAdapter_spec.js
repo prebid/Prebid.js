@@ -1,6 +1,7 @@
-import {expect} from 'chai';
-import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/mediaimpactBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH } from 'modules/mediaimpactBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as miUtils from 'libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'mediaimpact';
 
@@ -15,7 +16,7 @@ describe('MediaimpactAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unitId': 123
         }
@@ -24,7 +25,7 @@ describe('MediaimpactAdapter', function () {
     });
 
     it('should return true when required params is srting', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unitId': '456'
         }
@@ -33,7 +34,7 @@ describe('MediaimpactAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unknownId': 123
         }
@@ -42,7 +43,7 @@ describe('MediaimpactAdapter', function () {
     });
 
     it('should return false when required params is 0', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unitId': 0
         }
@@ -52,9 +53,9 @@ describe('MediaimpactAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let validEndpoint = ENDPOINT_PROTOCOL + '://' + ENDPOINT_DOMAIN + ENDPOINT_PATH + '?tag=123,456&partner=777&sizes=300x250|300x600,728x90,300x250&referer=https%3A%2F%2Ftest.domain';
+    const validEndpoint = ENDPOINT_PROTOCOL + '://' + ENDPOINT_DOMAIN + ENDPOINT_PATH + '?tag=123,456&partner=777&sizes=300x250|300x600,728x90,300x250&referer=https%3A%2F%2Ftest.domain';
 
-    let validRequest = [
+    const validRequest = [
       {
         'bidder': BIDDER_CODE,
         'params': {
@@ -84,7 +85,7 @@ describe('MediaimpactAdapter', function () {
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         page: 'https://test.domain'
       }
@@ -117,7 +118,7 @@ describe('MediaimpactAdapter', function () {
 
   describe('joinSizesToString', function () {
     it('success convert sizes list to string', function () {
-      const sizesStr = spec.joinSizesToString([[300, 250], [300, 600]]);
+      const sizesStr = miUtils.joinSizesToString([[300, 250], [300, 600]]);
       expect(sizesStr).to.equal('300x250|300x600');
     });
   });
@@ -143,9 +144,9 @@ describe('MediaimpactAdapter', function () {
               'advertiserDomains': ['test.domain']
             },
             'syncs': [
-              {'type': 'image', 'url': 'https://test.domain/tracker_1.gif'},
-              {'type': 'image', 'url': 'https://test.domain/tracker_2.gif'},
-              {'type': 'image', 'url': 'https://test.domain/tracker_3.gif'}
+              { 'type': 'image', 'url': 'https://test.domain/tracker_1.gif' },
+              { 'type': 'image', 'url': 'https://test.domain/tracker_2.gif' },
+              { 'type': 'image', 'url': 'https://test.domain/tracker_3.gif' }
             ],
             'winNotification': [
               {
@@ -153,7 +154,7 @@ describe('MediaimpactAdapter', function () {
                 'path': '/hb/bid_won?test=1',
                 'data': {
                   'ad': [
-                    {'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/'}
+                    { 'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/' }
                   ],
                   'unit_id': 1234,
                   'site_id': 123
@@ -178,7 +179,7 @@ describe('MediaimpactAdapter', function () {
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(60);
       expect(result[0].meta.advertiserDomains).to.deep.equal(['test.domain']);
-      expect(result[0].winNotification[0]).to.deep.equal({'method': 'POST', 'path': '/hb/bid_won?test=1', 'data': {'ad': [{'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/'}], 'unit_id': 1234, 'site_id': 123}});
+      expect(result[0].winNotification[0]).to.deep.equal({ 'method': 'POST', 'path': '/hb/bid_won?test=1', 'data': { 'ad': [{ 'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/' }], 'unit_id': 1234, 'site_id': 123 } });
     });
   });
 
@@ -226,7 +227,7 @@ describe('MediaimpactAdapter', function () {
           'path': '/hb/bid_won?test=1',
           'data': {
             'ad': [
-              {'dsp': 8, 'id': 800008, 'cost': 0.01, 'nurl': 'http://test.domain/'}
+              { 'dsp': 8, 'id': 800008, 'cost': 0.01, 'nurl': 'http://test.domain/' }
             ],
             'unit_id': 1234,
             'site_id': 123
@@ -238,12 +239,12 @@ describe('MediaimpactAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'postRequest')
-    })
+      ajaxStub = sinon.stub(miUtils, 'postRequest');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('calls mediaimpact callback endpoint', () => {
       const result = spec.onBidWon(bid);
@@ -267,9 +268,9 @@ describe('MediaimpactAdapter', function () {
               'advertiserDomains': ['test.domain']
             },
             'syncs': [
-              {'type': 'image', 'link': 'https://test.domain/tracker_1.gif'},
-              {'type': 'image', 'link': 'https://test.domain/tracker_2.gif'},
-              {'type': 'image', 'link': 'https://test.domain/tracker_3.gif'}
+              { 'type': 'image', 'link': 'https://test.domain/tracker_1.gif' },
+              { 'type': 'image', 'link': 'https://test.domain/tracker_2.gif' },
+              { 'type': 'image', 'link': 'https://test.domain/tracker_3.gif' }
             ],
             'winNotification': [
               {
@@ -277,7 +278,7 @@ describe('MediaimpactAdapter', function () {
                 'path': '/hb/bid_won?test=1',
                 'data': {
                   'ad': [
-                    {'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/'}
+                    { 'dsp': 8, 'id': 800008, 'cost': 1.0e-5, 'nurl': 'https://test.domain/' }
                   ],
                   'unit_id': 1234,
                   'site_id': 123
@@ -298,7 +299,7 @@ describe('MediaimpactAdapter', function () {
         'pixelEnabled': false
       };
 
-      let syncs = spec.getUserSyncs(syncOptions);
+      const syncs = spec.getUserSyncs(syncOptions);
       expect(syncs).to.deep.equal([]);
     });
 
@@ -309,7 +310,7 @@ describe('MediaimpactAdapter', function () {
       };
 
       const gdprConsent = undefined;
-      let syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
       expect(syncs.length).to.equal(3);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://test.domain/tracker_1.gif');
@@ -327,7 +328,7 @@ describe('MediaimpactAdapter', function () {
         apiVersion: 2
       };
 
-      let syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
       expect(syncs.length).to.equal(3);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://test.domain/tracker_1.gif?gdpr=1&gdpr_consent=someString');

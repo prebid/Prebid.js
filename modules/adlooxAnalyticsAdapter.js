@@ -6,12 +6,11 @@
 
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {AUCTION_COMPLETED} from '../src/auction.js';
-import {EVENTS} from '../src/constants.js';
-import {find} from '../src/polyfill.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { AUCTION_COMPLETED } from '../src/auction.js';
+import { EVENTS } from '../src/constants.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import {
   deepAccess,
   getUniqueIdentifierStr,
@@ -27,7 +26,8 @@ import {
   mergeDeep,
   parseUrl
 } from '../src/utils.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
 
@@ -57,32 +57,30 @@ MACRO['targetelt'] = function(b, c) {
   return c.toselector(b);
 };
 MACRO['creatype'] = function(b, c) {
-  return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
+  return b.mediaType === 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
 };
 MACRO['pageurl'] = function(b, c) {
   const refererInfo = getRefererInfo();
   return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
 MACRO['gpid'] = function(b, c) {
-  const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
-  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
+  const adUnit = ((auctionManager.getAdUnits()) || []).find(a => b.adUnitCode === a.code);
+  return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
 const PARAMS_DEFAULT = {
-  'id1': function(b) { return b.adUnitCode },
+  'id1': function(b) { return b.adUnitCode; },
   'id2': '%%gpid%%',
-  'id3': function(b) { return b.bidder },
-  'id4': function(b) { return b.adId },
-  'id5': function(b) { return b.dealId },
-  'id6': function(b) { return b.creativeId },
-  'id7': function(b) { return b.size },
+  'id3': function(b) { return b.bidder; },
+  'id4': function(b) { return b.adId; },
+  'id5': function(b) { return b.dealId; },
+  'id6': function(b) { return b.creativeId; },
+  'id7': function(b) { return b.size; },
   'id11': '$ADLOOX_WEBSITE'
 };
 
-const NOOP = function() {};
-
-let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+const analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
     if (!analyticsAdapter[`handle_${eventType}`]) return;
 
@@ -106,6 +104,10 @@ analyticsAdapter.enableAnalytics = function(config) {
   }
   if (!(config.options.js === undefined || isStr(config.options.js))) {
     logError(MODULE, 'invalid js options value');
+    return;
+  }
+  if (isStr(config.options.js) && !/\.adlooxtracking\.(com|ru)$/.test(parseUrl(config.options.js, { 'noDecodeWholeURL': true }).host)) {
+    logError(MODULE, "invalid js options value, must be a sub-domain of 'adlooxtracking.com'");
     return;
   }
   if (!(config.options.toselector === undefined || isFn(config.options.toselector))) {
@@ -143,7 +145,7 @@ analyticsAdapter.enableAnalytics = function(config) {
       } catch (_) {
         code = code.replace(/^\d/, '\\3$& ');
       }
-      return `#${code}`
+      return `#${code}`;
     },
     client: config.options.client,
     clientid: config.options.clientid,
@@ -157,22 +159,23 @@ analyticsAdapter.enableAnalytics = function(config) {
     .keys(config.options.params)
     .forEach(k => {
       if (!Array.isArray(config.options.params[k])) {
-        config.options.params[k] = [ config.options.params[k] ];
+        config.options.params[k] = [config.options.params[k]];
       }
-      config.options.params[k].forEach(v => analyticsAdapter.context.params.push([ k, v ]));
+      config.options.params[k].forEach(v => analyticsAdapter.context.params.push([k, v]));
     });
 
   Object.keys(COMMAND_QUEUE).forEach(commandProcess);
 
   analyticsAdapter.originEnableAnalytics(config);
-}
+};
 
 analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics;
 analyticsAdapter.disableAnalytics = function() {
   analyticsAdapter.context = null;
-
-  analyticsAdapter.originDisableAnalytics();
-}
+  if (this.enabled) {
+    analyticsAdapter.originDisableAnalytics();
+  }
+};
 
 analyticsAdapter.url = function(url, args, bid) {
   // utils.formatQS outputs PHP encoded querystrings... (╯°□°)╯ ┻━┻
@@ -218,23 +221,27 @@ analyticsAdapter.url = function(url, args, bid) {
   }
 
   return url + a2qs(args);
-}
+};
 
+const preloaded = {};
 analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
-  if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
-  analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = NOOP;
+  if (!(auctionDetails.auctionStatus === AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
+
+  const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
+  const href = `${uri.protocol}://${uri.host}${uri.pathname}`;
+  if (preloaded[href]) return;
 
   logMessage(MODULE, 'preloading verification JS');
 
-  const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
-
   const link = document.createElement('link');
-  link.setAttribute('href', `${uri.protocol}://${uri.host}${uri.pathname}`);
+  link.setAttribute('href', href);
   link.setAttribute('rel', 'preload');
   link.setAttribute('as', 'script');
   // TODO fix rules violation
   insertElement(link);
-}
+
+  preloaded[href] = true;
+};
 
 analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   if (deepAccess(bid, 'ext.adloox.video.adserver')) {
@@ -255,15 +262,15 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   logMessage(MODULE, `measuring '${bid.mediaType}' unit at '${bid.adUnitCode}'`);
 
   const params = analyticsAdapter.context.params.concat([
-    [ 'tagid', '%%tagid%%' ],
-    [ 'platform', '%%platformid%%' ],
-    [ 'fwtype', 4 ],
-    [ 'targetelt', '%%targetelt%%' ],
-    [ 'creatype', '%%creatype%%' ]
+    ['tagid', '%%tagid%%'],
+    ['platform', '%%platformid%%'],
+    ['fwtype', 4],
+    ['targetelt', '%%targetelt%%'],
+    ['creatype', '%%creatype%%']
   ]);
 
-  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), 'adloox');
-}
+  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,

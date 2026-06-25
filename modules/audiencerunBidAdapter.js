@@ -1,3 +1,7 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
@@ -8,9 +12,6 @@ import {
   logError,
   triggerPixel,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -47,7 +48,7 @@ function getBidFloor(bid) {
       mediaType: BANNER,
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (_) {
     return 0;
   }
@@ -78,7 +79,7 @@ function getPageReferer() {
  * @return {string}
  */
 function getPageUrl(bidderRequest) {
-  return bidderRequest?.refererInfo?.page
+  return bidderRequest?.refererInfo?.page;
 }
 
 export const spec = {
@@ -136,14 +137,14 @@ export const spec = {
       referer: deepAccess(bidderRequest, 'refererInfo.topmostLocation'),
       // TODO: please do not send internal data structures over the network
       refererInfo: deepAccess(bidderRequest, 'refererInfo.legacy'),
-      currencyCode: config.getConfig('currency.adServerCurrency'),
+      currencyCode: getCurrencyFromBidderRequest(bidderRequest),
       timeout: config.getConfig('bidderTimeout'),
       bids,
     };
 
     payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
-    payload.schain = deepAccess(bidRequests, '0.schain');
-    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
+    payload.schain = deepAccess(bidRequests, '0.ortb2.source.ext.schain');
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || [];
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

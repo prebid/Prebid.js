@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -38,8 +38,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const adUnits = [];
@@ -60,7 +61,7 @@ export const spec = {
         bidfloor: 0,
         bidfloorCurrency: 'USD',
         keywords: getANKeywordParam(bidderRequest.ortb2, adunitValue.params.keywords)
-      }
+      };
       adUnits.push(foo);
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
     });
@@ -78,7 +79,8 @@ export const spec = {
         payload.gdprConsent = '';
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+      if (schain) { payload.schain = schain; }
       if (userEids !== null) payload.userEids = userEids;
     };
     payload.connectionType = getConnectionType();
@@ -137,7 +139,9 @@ export const spec = {
           bidResponse.cpm = value.cpm;
           bidResponse.mediaType = 'video';
           bidResponse.vastUrl = url;
-          bidResponse.vastImpUrl = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`;
+          bidResponse.vastTrackers = {
+            impression: [`${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`]
+          };
         }
         bidResponses.push(bidResponse);
       });
@@ -175,9 +179,9 @@ export const spec = {
     };
     params.price = bid.cpm;
     const url = `${METRICS_TRACKER_URL}?${new URLSearchParams(params).toString()}`;
-    ajax(url, null, undefined, {method: 'GET', withCredentials: true});
+    ajax(url, null, undefined, { method: 'GET', withCredentials: true });
     return true;
   }
 
-}
+};
 registerBidder(spec);

@@ -1,4 +1,3 @@
-
 import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
@@ -11,11 +10,14 @@ import {
   currencySupportEnabled,
   currencyRates,
   responseReady
+  , requestBidsHook
 } from 'modules/currency.js';
-import {createBid} from '../../../src/bidfactory.js';
-import { EVENTS, STATUS, REJECTION_REASON } from '../../../src/constants.js';
-import {server} from '../../mocks/xhr.js';
+import { createBid } from '../../../src/bidfactory.js';
+import * as utils from 'src/utils.js';
+import { EVENTS, REJECTION_REASON } from '../../../src/constants.js';
+import { server } from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
+import { enrichFPD } from '../../../src/fpd/enrichment.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -25,10 +27,10 @@ describe('currency', function () {
   let sandbox;
   let clock;
 
-  let fn = sinon.spy();
+  const fn = sinon.spy();
 
   function makeBid(bidProps) {
-    return Object.assign(createBid(STATUS.GOOD), bidProps);
+    return Object.assign(createBid(), bidProps);
   }
 
   beforeEach(function () {
@@ -41,7 +43,7 @@ describe('currency', function () {
 
   describe('setConfig', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
 
@@ -67,6 +69,36 @@ describe('currency', function () {
       expect(currencySupportEnabled).to.equal(true);
     });
 
+    it('does not lose loaded rates when reconfigured', () => {
+      const config = {
+        adServerCurrency: 'USD',
+        defaultRates: {
+          'USD': { 'JPY': 1 }
+        }
+      };
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig(config);
+      fakeCurrencyFileServer.respond();
+      setConfig(config);
+      expect(currencyRates.conversions).to.eql(getCurrencyRates().conversions);
+    });
+
+    it('uses latest defaultRates when no other rates are available', () => {
+      setConfig({
+        defaultRates: {
+          'USD': { 'JPY': 1 }
+        }
+      });
+      setConfig({
+        defaultRates: {
+          'USD': { 'JPY': 2 }
+        }
+      });
+      expect(currencyRates.conversions).to.eql({
+        'USD': { 'JPY': 2 }
+      });
+    });
+
     it('currency file is called even when default rates are specified', function() {
       // RESET to request currency file (specifically url value for this test)
       setConfig({ 'adServerCurrency': undefined });
@@ -88,7 +120,8 @@ describe('currency', function () {
         'defaultRates': {
           'GBP': { 'CNY': 66, 'JPY': 132, 'USD': 264 },
           'USD': { 'CNY': 60, 'GBP': 120, 'JPY': 240 }
-        } });
+        }
+      });
       fakeCurrencyFileServer.respond();
       expect(fakeCurrencyFileServer.requests.length).to.equal(2);
       expect(fakeCurrencyFileServer.requests[1].url).to.equal('https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=20030306');
@@ -270,7 +303,7 @@ describe('currency', function () {
         }
       });
       sinon.assert.called(responseReady.resolve);
-    })
+    });
 
     it('uses rates specified in json when provided and consider boosted bid', function () {
       setConfig({
@@ -303,10 +336,10 @@ describe('currency', function () {
     describe('when rates fail to load', () => {
       let bid, addBidResponse, reject;
       beforeEach(() => {
-        bid = makeBid({cpm: 100, currency: 'JPY', bidder: 'rubicoin'});
+        bid = makeBid({ cpm: 100, currency: 'JPY', bidder: 'rubicoin' });
         addBidResponse = sinon.spy();
         reject = sinon.spy();
-      })
+      });
       it('uses default rates if specified', function () {
         setConfig({
           adServerCurrency: 'USD',
@@ -348,8 +381,8 @@ describe('currency', function () {
         addBidResponseHook(addBidResponse, 'au', bid, reject);
         fakeCurrencyFileServer.respond();
         sinon.assert.calledWith(addBidResponse, 'au', bid, reject);
-      })
-    })
+      });
+    });
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', function () {
@@ -364,7 +397,7 @@ describe('currency', function () {
 
       let responseAdded = false;
       let isReady = false;
-      responseReady.promise.then(() => { isReady = true });
+      responseReady.promise.then(() => { isReady = true; });
 
       addBidResponseHook(Object.assign(function() {
         responseAdded = true;
@@ -387,7 +420,7 @@ describe('currency', function () {
   describe('currency.addBidResponseDecorator', function () {
     let reject;
     beforeEach(() => {
-      reject = sinon.stub().returns({status: 'rejected'});
+      reject = sinon.stub().returns({ status: 'rejected' });
     });
 
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
@@ -455,9 +488,9 @@ describe('currency', function () {
 
     it('should reject bid when rates have not loaded when the auction times out', () => {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
-      setConfig({'adServerCurrency': 'JPY'});
-      const bid = makeBid({cpm: 1, currency: 'USD', auctionId: 'aid'});
-      const noConversionBid = makeBid({cpm: 1, currency: 'JPY', auctionId: 'aid'});
+      setConfig({ 'adServerCurrency': 'JPY' });
+      const bid = makeBid({ cpm: 1, currency: 'USD', auctionId: 'aid' });
+      const noConversionBid = makeBid({ cpm: 1, currency: 'JPY', auctionId: 'aid' });
       const reject = sinon.spy();
       const addBidResponse = sinon.spy();
       addBidResponseHook(addBidResponse, 'au', bid, reject);
@@ -468,7 +501,7 @@ describe('currency', function () {
       sinon.assert.calledWith(addBidResponse, 'au', noConversionBid, reject);
       sinon.assert.calledOnce(reject);
       sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
-    })
+    });
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
@@ -520,6 +553,69 @@ describe('currency', function () {
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
+    });
+  });
+
+  describe('enrichFpd', function() {
+    function fpd(ortb2 = {}) {
+      return enrichFPD(Promise.resolve(ortb2));
+    }
+    it('should set adServerCurrency on ortb', function () {
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig({ adServerCurrency: 'EUR' });
+      return fpd({}).then((ortb) => {
+        expect(ortb.ext.prebid.adServerCurrency).to.eql('EUR');
+      });
+    });
+  });
+
+  describe('auctionDelay param', () => {
+    const continueAuction = sinon.stub();
+    let logWarnSpy;
+
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      clock.runAll();
+      sandbox.restore();
+      clock.restore();
+      utils.logWarn.restore();
+      continueAuction.resetHistory();
+    });
+
+    it('should delay auction start when auctionDelay set in module config', () => {
+      setConfig({ auctionDelay: 2000, adServerCurrency: 'USD' });
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      clock.tick(1000);
+      expect(continueAuction.notCalled).to.be.true;
+    });
+
+    it('should start auction when auctionDelay time passed', () => {
+      setConfig({ auctionDelay: 2000, adServerCurrency: 'USD' });
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      clock.tick(3000);
+      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(continueAuction.calledOnce).to.be.true;
+    });
+
+    it('should run auction if rates were fetched before auctionDelay time', () => {
+      setConfig({ auctionDelay: 3000, adServerCurrency: 'USD' });
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      fakeCurrencyFileServer.respond();
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      expect(continueAuction.calledOnce).to.be.true;
     });
   });
 });

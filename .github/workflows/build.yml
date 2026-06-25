@@ -1,0 +1,91 @@
+name: Run unit tests
+on:
+  workflow_call:
+    inputs:
+      source-key:
+        description: Artifact name for source code
+        type: string
+        required: false
+        default: source
+      build-cmd:
+        description: Build command
+        required: true
+        type: string
+      linux:
+        description: Build on Linux
+        required: false
+        type: boolean
+        default: true
+      macos:
+        description: Build on Mac OS
+        required: false
+        type: boolean
+        default: false
+      windows:
+        description: Build on Windows
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      linux:
+        description: Artifact name for Linux build result
+        value: ${{ jobs.build.outputs.linux }}
+      windows:
+        description: Artifact name for Windows build result
+        value: ${{ jobs.build.outputs.windows }}
+      macos:
+        description: Artifact name for Macos build result
+        value: ${{ jobs.build.outputs.macos }}
+
+jobs:
+  setup:
+    name: Setup environment
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.setup.outputs.result }}
+    steps:
+      - name: "setup"
+        id: setup
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const os = [];
+            if (${{inputs.linux}}) os.push({name: 'linux', image: 'ubuntu-latest'});
+            if (${{inputs.macos}}) os.push({name: 'macos', image: 'macos-latest'});
+            if (${{inputs.windows}}) os.push({name: 'windows', image: 'windows-latest'});
+            return os;
+
+  build:
+    needs: setup
+    name: Build (${{matrix.os.name}})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.setup.outputs.os) }}
+    runs-on: ${{ matrix.os.image }}
+    timeout-minutes: 5
+    outputs:
+      linux: ${{ steps.out.outputs.linux }}
+      windows: ${{ steps.out.outputs.windows }}
+      macos: ${{ steps.out.outputs.macos }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Restore source
+        uses: ./.github/actions/load
+        with:
+          name: ${{ inputs.source-key }}
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Build
+        run: ${{ inputs.build-cmd }}
+      - name: 'Save working directory'
+        id: save
+        uses: ./.github/actions/save
+        with:
+          prefix: 'build-'
+      - name: 'Set output'
+        id: out
+        shell: bash
+        run: |
+          echo '${{ matrix.os.name }}=${{ steps.save.outputs.name }}' >> $GITHUB_OUTPUT

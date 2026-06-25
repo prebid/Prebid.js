@@ -125,7 +125,7 @@ describe('bigRichMediaAdapterTests', function () {
           skippable: true,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
     }
   });
@@ -215,7 +215,7 @@ describe('bigRichMediaAdapterTests', function () {
           adUnitCode: 'code'
         }]
       };
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -247,9 +247,9 @@ describe('bigRichMediaAdapterTests', function () {
               }
             }
           }]
-        }
+        };
 
-        const result = spec.interpretResponse({ body: response }, {bidderRequest});
+        const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).not.to.have.property('vastXml');
         expect(result[0]).not.to.have.property('vastUrl');
         expect(result[0]).to.have.property('width', 1);
@@ -268,13 +268,6 @@ describe('bigRichMediaAdapterTests', function () {
       const serverResponse = [{ body: '' }];
       const result = spec.getUserSyncs(syncOptions, serverResponse);
       expect(result).to.be.undefined;
-    });
-  });
-
-  describe('onBidWon', function() {
-    it('Should not have any error', function() {
-      const result = spec.onBidWon({});
-      expect(true).to.be.true;
     });
   });
 });

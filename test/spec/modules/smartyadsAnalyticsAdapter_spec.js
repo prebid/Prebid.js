@@ -1,10 +1,10 @@
 import smartyadsAnalytics from 'modules/smartyadsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { EVENTS } from '../../../src/constants';
+import { EVENTS } from '../../../src/constants.js';
 
-let adapterManager = require('src/adapterManager').default;
-let events = require('src/events');
+const adapterManager = require('src/adapterManager').default;
+const events = require('src/events');
 
 describe('SmartyAds Analytics', function () {
   const auctionEnd = {
@@ -139,7 +139,6 @@ describe('SmartyAds Analytics', function () {
         'bidderCode': 'smartyads',
         'width': 970,
         'height': 250,
-        'statusMessage': 'Bid available',
         'adId': '65d16ef039a97a',
         'requestId': '2bd3e8ff8a113f',
         'transactionId': '8b2a8629-d1ea-4bb1-aff0-e335b96dd002',
@@ -190,11 +189,10 @@ describe('SmartyAds Analytics', function () {
     'timeout': 1000
   };
 
-  let bidWon = {
+  const bidWon = {
     'bidderCode': 'smartyads',
     'width': 970,
     'height': 250,
-    'statusMessage': 'Bid available',
     'adId': '65d16ef039a97a',
     'requestId': '2bd3e8ff8a113f',
     'transactionId': '8b2a8629-d1ea-4bb1-aff0-e335b96dd002',
@@ -245,7 +243,7 @@ describe('SmartyAds Analytics', function () {
     ]
   };
 
-  let renderData = {
+  const renderData = {
     'doc': {
       'location': {
         'ancestorOrigins': {
@@ -267,7 +265,6 @@ describe('SmartyAds Analytics', function () {
       'bidderCode': 'smartyads',
       'width': 300,
       'height': 250,
-      'statusMessage': 'Bid available',
       'adId': '3c81d46b03abb',
       'requestId': '2be8997209a61c',
       'transactionId': 'b3091239-660a-4b13-94a1-1737e11743c5',
@@ -391,7 +388,7 @@ describe('SmartyAds Analytics', function () {
 
       events.emit(EVENTS.AUCTION_END, auctionEnd);
       expect(server.requests.length).to.equal(1);
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionData');
       expect(message).to.have.property('eventType').and.to.equal(EVENTS.AUCTION_END);
       expect(message.auctionData).to.have.property('auctionId');
@@ -410,7 +407,7 @@ describe('SmartyAds Analytics', function () {
 
       events.emit(EVENTS.BID_WON, bidWon);
       expect(server.requests.length).to.equal(1);
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('eventType').and.to.equal(EVENTS.BID_WON);
       expect(message).to.have.property('bid');
       expect(message.bid).to.have.property('bidder').and.to.equal('smartyads');
@@ -429,7 +426,7 @@ describe('SmartyAds Analytics', function () {
 
       events.emit(EVENTS.AD_RENDER_SUCCEEDED, renderData);
       expect(server.requests.length).to.equal(1);
-      let message = JSON.parse(server.requests[0].requestBody);
+      const message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('eventType').and.to.equal(EVENTS.AD_RENDER_SUCCEEDED);
       expect(message).to.have.property('renderData');
       expect(message.renderData).to.have.property('doc');

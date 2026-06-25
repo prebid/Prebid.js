@@ -1,0 +1,89 @@
+import { auctionManager } from '../../src/auctionManager.js';
+import { config } from '../../src/config.js';
+import { getHook } from '../../src/hook.js';
+
+export const MODULE_NAME = 'bidResponseFilter';
+export const BID_CATEGORY_REJECTION_REASON = 'Category is not allowed';
+export const BID_ADV_DOMAINS_REJECTION_REASON = 'Adv domain is not allowed';
+export const BID_ATTR_REJECTION_REASON = 'Attr is not allowed';
+export const BID_MEDIA_TYPE_REJECTION_REASON = `Media type is not allowed`;
+
+let moduleConfig;
+let enabled = false;
+
+function isIbvBannerOnMultiFormatAdUnit(metaMediaType, bidRequest) {
+  const mediaTypes = Object.keys(bidRequest?.mediaTypes || {});
+  return metaMediaType === 'banner' &&
+    mediaTypes.length > 1 &&
+    bidRequest?.mediaTypes?.video?.context === 'inbanner';
+}
+
+function init() {
+  config.getConfig(MODULE_NAME, (cfg) => {
+    moduleConfig = cfg[MODULE_NAME];
+    if (enabled && !moduleConfig) {
+      reset();
+    } else if (!enabled && moduleConfig) {
+      enabled = true;
+      getHook('addBidResponse').before(addBidResponseHook);
+    }
+  });
+}
+
+export function reset() {
+  enabled = false;
+  getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
+}
+
+export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
+  const { bcat = [], badv = [], cattax = 1 } = index.getOrtb2(bid) || {};
+  const bidRequest = index.getBidRequest(bid);
+  const battr = bidRequest?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
+
+  const catConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {}) };
+  const advConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {}) };
+  const attrConfig = { enforce: true, blockUnknown: false, ...(moduleConfig?.attr || {}) };
+  const mediaTypesConfig = {
+    enforce: true,
+    blockUnknown: true,
+    rejectIbvBannerOnMultiFormat: false,
+    ...(moduleConfig?.mediaTypes || {})
+  };
+
+  const {
+    primaryCatId, secondaryCatIds = [],
+    advertiserDomains = [],
+    attr: metaAttr,
+    mediaType: metaMediaType,
+    cattax: metaCattax = 1,
+  } = bid.meta || {};
+
+  // checking if bid fulfills ortb2 fields rules
+  const normalizedMetaCattax = Number(metaCattax);
+  const normalizedRequestCattax = Number(cattax);
+  const isCattaxMatch = normalizedMetaCattax === normalizedRequestCattax;
+  const allowedMediaTypes = Object.keys(bidRequest?.mediaTypes || {});
+  const rejectIbvBannerOnMultiFormat = mediaTypesConfig.rejectIbvBannerOnMultiFormat &&
+    isIbvBannerOnMultiFormatAdUnit(metaMediaType, bidRequest);
+  if ((catConfig.enforce && isCattaxMatch && bcat.some(category => [primaryCatId, ...secondaryCatIds].includes(category))) ||
+    (catConfig.blockUnknown && (!isCattaxMatch || !primaryCatId))) {
+    reject(BID_CATEGORY_REJECTION_REASON);
+  } else if ((advConfig.enforce && badv.some(domain => advertiserDomains.includes(domain))) ||
+    (advConfig.blockUnknown && !advertiserDomains.length)) {
+    reject(BID_ADV_DOMAINS_REJECTION_REASON);
+  } else if (
+    attrConfig.enforce && (
+      (attrConfig.blockUnknown && (!Array.isArray(metaAttr) || metaAttr.length === 0)) ||
+      (Array.isArray(metaAttr) && metaAttr.find(attr => battr.includes(attr)))
+    )
+  ) {
+    reject(BID_ATTR_REJECTION_REASON);
+  } else if ((mediaTypesConfig.enforce && (!allowedMediaTypes.includes(metaMediaType) || rejectIbvBannerOnMultiFormat)) ||
+    (mediaTypesConfig.blockUnknown && !metaMediaType)) {
+    reject(BID_MEDIA_TYPE_REJECTION_REASON);
+  } else {
+    return next(adUnitCode, bid, reject);
+  }
+}
+
+init();

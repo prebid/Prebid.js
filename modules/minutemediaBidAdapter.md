@@ -13,7 +13,7 @@ Module that connects to MinuteMedia's demand sources.
 
 The MinuteMedia adapter requires setup and approval from the MinuteMedia. Please reach out to hb@minutemedia.com to create an MinuteMedia account.
 
-The adapter supports Video(instream) & Banner.
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video

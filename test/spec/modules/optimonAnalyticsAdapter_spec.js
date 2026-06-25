@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
 import * as events from 'src/events';
-import {expectEvents} from '../../helpers/analytics.js';
+import { expectEvents } from '../../helpers/analytics.js';
 
 const AD_UNIT_CODE = 'demo-adunit-1';
 const PUBLISHER_CONFIG = {
@@ -16,7 +16,7 @@ describe('Optimon Analytics Adapter', () => {
   const optmn_currentWindow = utils.getWindowSelf();
 
   beforeEach(() => {
-    optmn_currentWindow.OptimonAnalyticsAdapter = sinon.stub()
+    optmn_currentWindow.OptimonAnalyticsAdapter = sinon.stub();
     adapterManager.enableAnalytics({
       provider: 'optimon'
     });

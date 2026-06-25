@@ -9,6 +9,16 @@ pbjs.setConfig({
             uid2: ['uid2', 'liveIntentId']
         }
         userIds: [{
+            name: "acxiomRealId",
+            params: {
+                partnerId: "YOUR_PARTNER_ID" // Example Partner ID
+            },
+            storage: {
+                type: "html5",
+                name: "acxiomRealId",
+                expires: 7
+            }
+        }, {
             name: "33acrossId",
             storage: {
                 type: "cookie",
@@ -20,21 +30,22 @@ pbjs.setConfig({
                 pid: "0010b00002GYU4eBAH" // Example ID
             }
         }, {
+            name: "abtshieldId",
+            params: {
+                sid: "pb.your-service-id"
+            },
+            storage: {
+                type: "cookie",
+                name: "abtshieldId",
+                expires: 1,
+                refreshInSeconds: 86400
+            }
+        }, {
             name: "pubCommonId",
             storage: {
                 type: "cookie",
                 name: "_pubcid",
                 expires: 60
-            }
-        }, {
-            name: 'dmdId',
-            storage: {
-                name: 'dmd-dgid',
-                type: 'cookie',
-                expires: 30
-            },
-            params: {
-                api_key: '3fdbe297-3690-4f5c-9e11-ee9186a6d77c', // provided by DMD
             }
         }, {
             name: "unifiedId",
@@ -92,6 +103,16 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
+            name: 'locId',
+            params: {
+                endpoint: 'https://id.example.com/locid'
+            },
+            storage: {
+                type: 'html5',
+                name: '_locid',
+                expires: 7
+            }
+        }, {
              name: 'criteo',
              storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'cookie',
@@ -137,7 +158,9 @@ pbjs.setConfig({
                   name: '__adm__admixer',
                   expires: 30
               }
-        },{
+        }, {
+            name: "gemiusId"
+        }, {
              name: "kpuid",
              params:{
                     accountid: 124 // example of account id
@@ -155,6 +178,21 @@ pbjs.setConfig({
         },
         {
             name: "mygaruId"
+        },
+        {
+            name: "rediadsId",
+            params: {
+                source: "rediads.com"
+            },
+            storage: {
+                type: "html5",
+                name: "rediads_id",
+                expires: 30,
+                refreshInSeconds: 3600
+            }
+        },
+        {
+            name: "startioId"
         }
         ],
         syncDelay: 5000,
@@ -220,9 +258,7 @@ pbjs.setConfig({
             }
         }, {
             name: 'sharedId',
-            params: {
-                  syncTime: 60 // in seconds, default is 24 hours
-               },
+            params: {},
              storage: {
                 type: 'html5',
                 name: 'sharedid',
@@ -366,16 +402,15 @@ pbjs.setConfig({
 Example showing how to configure a `params` object to pass directly to bid adapters
 
 ```
-
 pbjs.setConfig({
-userSync: {
-userIds: [{
-name: 'tncId',
-params: {
-providerId: "c8549079-f149-4529-a34b-3fa91ef257d1"
-}
-}],
-syncDelay: 5000
-}
+    userSync: {
+        userIds: [{
+            name: 'tncId',
+            params: {
+              url: 'https://js.tncid.app/remote.min.js' //Optional
+            }
+        }],
+        syncDelay: 5000
+    }
 });
 ```

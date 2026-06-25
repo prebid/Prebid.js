@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/stnBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
+import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
 
 const ENDPOINT = 'https://hb.stngo.com/hb-multi';
 const TEST_ENDPOINT = 'https://hb.stngo.com/hb-multi-test';
@@ -63,7 +64,6 @@ describe('stnAdapter', function () {
             'plcmt': 1
           }
         },
-        'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
       },
       {
         'bidder': spec.code,
@@ -79,6 +79,59 @@ describe('stnAdapter', function () {
         'mediaTypes': {
           'banner': {
           }
+        },
+      },
+      {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        },
+        'bidId': '299ffc8cca0b87',
+        'loop': 1,
+        'bidderRequestId': '1144f487e563f9',
+        'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [300, 250]
+            ]
+          },
+          'video': {
+            'playerSize': [[640, 480]],
+            'context': 'instream',
+            'plcmt': 1
+          },
+          'native': {
+            'ortb': {
+              'assets': [
+                {
+                  'id': 1,
+                  'required': 1,
+                  'img': {
+                    'type': 3,
+                    'w': 300,
+                    'h': 200,
+                  }
+                },
+                {
+                  'id': 2,
+                  'required': 1,
+                  'title': {
+                    'len': 80
+                  }
+                },
+                {
+                  'id': 3,
+                  'required': 1,
+                  'data': {
+                    'type': 1
+                  }
+                }
+              ]
+            }
+          },
         },
         'ad': '"<img src=\"https://...\"/>"'
       }
@@ -102,7 +155,7 @@ describe('stnAdapter', function () {
 
     const bidderRequest = {
       bidderCode: 'stn',
-    }
+    };
     const placementId = '12345678';
     const api = [1, 2];
     const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
@@ -151,10 +204,10 @@ describe('stnAdapter', function () {
     });
 
     it('should send the correct mimes array', function () {
-      bidRequests[1].mediaTypes.banner.mimes = mimes;
+      bidRequests[0].mediaTypes.video.mimes = mimes;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[1].mimes).to.be.an('array');
-      expect(request.data.bids[1].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
+      expect(request.data.bids[0].mimes).to.be.an('array');
+      expect(request.data.bids[0].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
     });
 
     it('should send the correct protocols array', function () {
@@ -167,15 +220,24 @@ describe('stnAdapter', function () {
     it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].sizes).to.be.an('array');
-      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes);
       expect(request.data.bids[1].sizes).to.be.an('array');
-      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes);
+      expect(request.data.bids[2].sizes).to.be.an('array');
+      expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes);
+    });
+
+    it('should send nativeOrtbRequest in native bid request', function () {
+      decorateAdUnitsWithNativeParams(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      assert.deepEqual(request.data.bids[2].nativeOrtbRequest, bidRequests[2].mediaTypes.native.ortb);
     });
 
     it('should send the correct media type', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].mediaType).to.equal(VIDEO)
-      expect(request.data.bids[1].mediaType).to.equal(BANNER)
+      expect(request.data.bids[0].mediaType).to.equal(VIDEO);
+      expect(request.data.bids[1].mediaType).to.equal(BANNER);
+      expect(request.data.bids[2].mediaType.split(',')).to.include.members([VIDEO, NATIVE, BANNER]);
     });
 
     it('should respect syncEnabled option', function() {
@@ -263,7 +325,7 @@ describe('stnAdapter', function () {
     });
 
     it('should have us_privacy param if usPrivacy is available in the bidRequest', function () {
-      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const bidderRequestWithUSP = Object.assign({ uspConsent: '1YNN' }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('us_privacy', '1YNN');
@@ -276,7 +338,7 @@ describe('stnAdapter', function () {
     });
 
     it('should not send the gdpr param if gdprApplies is false in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: false}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: false } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gdpr');
@@ -284,7 +346,7 @@ describe('stnAdapter', function () {
     });
 
     it('should send the gdpr param if gdprApplies is true in the bidRequest', function () {
-      const bidderRequestWithGDPR = Object.assign({gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}}, bidderRequest);
+      const bidderRequestWithGDPR = Object.assign({ gdprConsent: { gdprApplies: true, consentString: 'test-consent-string' } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gdpr', true);
@@ -292,7 +354,7 @@ describe('stnAdapter', function () {
     });
 
     it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({ gppConsent: false }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gpp');
@@ -300,7 +362,7 @@ describe('stnAdapter', function () {
     });
 
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({ gppConsent: { gppString: 'test-consent-string', applicableSections: [7] } }, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gpp', 'test-consent-string');
@@ -308,12 +370,17 @@ describe('stnAdapter', function () {
     });
 
     it('should have schain param if it is available in the bidRequest', () => {
-      const schain = {
-        ver: '1.0',
-        complete: 1,
-        nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+      bidderRequest.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
+            }
+          }
+        }
       };
-      bidRequests[0].schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
@@ -325,8 +392,8 @@ describe('stnAdapter', function () {
         return {
           currency: 'USD',
           floor: 3.32
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -339,8 +406,8 @@ describe('stnAdapter', function () {
         return {
           currency: 'USD',
           floor: 0.8
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 1.5;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -356,42 +423,42 @@ describe('stnAdapter', function () {
         'browsers': [
           {
             'brand': 'Chromium',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Google Chrome',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Not;A=Brand',
-            'version': [ '99', '0', '0', '0' ]
+            'version': ['99', '0', '0', '0']
           }
         ],
         'mobile': 0,
         'model': '',
         'bitness': '64',
         'architecture': 'x86'
-      }
+      };
       const bid = utils.deepClone(bidRequests[0]);
       bid.ortb2 = {
         'device': {
           'sua': {
             'platform': {
               'brand': 'macOS',
-              'version': [ '12', '4', '0' ]
+              'version': ['12', '4', '0']
             },
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Not;A=Brand',
-                'version': [ '99', '0', '0', '0' ]
+                'version': ['99', '0', '0', '0']
               }
             ],
             'mobile': 0,
@@ -400,7 +467,7 @@ describe('stnAdapter', function () {
             'architecture': 'x86'
           }
         }
-      }
+      };
       const requestWithSua = spec.buildRequests([bid], bidderRequest);
       const data = requestWithSua.data;
       expect(data.bids[0].sua).to.exist;
@@ -455,6 +522,28 @@ describe('stnAdapter', function () {
         adomain: ['abc.com'],
         mediaType: BANNER,
         nurl: 'http://example.com/win/1234',
+      },
+      {
+        cpm: 12.5,
+        width: 300,
+        height: 200,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        creativeId: 'creative-id-3',
+        nurl: 'http://example.com/win/1234',
+        mediaType: NATIVE,
+        native: {
+          body: 'Advertise with Rise',
+          clickUrl: 'https://risecodes.com',
+          cta: 'Start now',
+          image: {
+            width: 300,
+            height: 200,
+            url: 'https://sdk.streamrail.com/media/rise-image.jpg'
+          },
+          sponsoredBy: 'Rise',
+          title: 'Rise Ad Tech Solutions'
+        }
       }]
     };
 
@@ -494,22 +583,59 @@ describe('stnAdapter', function () {
       ad: '"<img src=\"https://...\"/>"'
     };
 
+    const expectedNativeResponse = {
+      requestId: '21e12606d47ba7',
+      cpm: 12.5,
+      currency: 'USD',
+      width: 300,
+      height: 200,
+      ttl: TTL,
+      creativeId: 'creative-id-3',
+      netRevenue: true,
+      nurl: 'http://example.com/win/1234',
+      mediaType: NATIVE,
+      meta: {
+        mediaType: NATIVE,
+        advertiserDomains: ['abc.com']
+      },
+      native: {
+        ortb: {
+          body: 'Advertise with Rise',
+          clickUrl: 'https://risecodes.com',
+          cta: 'Start now',
+          image: {
+            width: 300,
+            height: 200,
+            url: 'https://sdk.streamrail.com/media/rise-image.jpg',
+          },
+          sponsoredBy: 'Rise',
+          title: 'Rise Ad Tech Solutions'
+        }
+      },
+    };
+
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
       expect(result[0]).to.deep.equal(expectedVideoResponse);
       expect(result[1]).to.deep.equal(expectedBannerResponse);
+      expect(result[2]).to.deep.equal(expectedNativeResponse);
     });
 
     it('video type should have vastXml key', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[0].vastXml).to.equal(expectedVideoResponse.vastXml)
+      expect(result[0].vastXml).to.equal(expectedVideoResponse.vastXml);
     });
 
     it('banner type should have ad key', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[1].ad).to.equal(expectedBannerResponse.ad)
+      expect(result[1].ad).to.equal(expectedBannerResponse.ad);
     });
-  })
+
+    it('native type should have native key', function () {
+      const result = spec.interpretResponse({ body: response });
+      expect(result[2].native).to.eql(expectedNativeResponse.native);
+    });
+  });
 
   describe('getUserSyncs', function() {
     const imageSyncResponse = {
@@ -591,7 +717,7 @@ describe('stnAdapter', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
-  })
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
@@ -613,7 +739,7 @@ describe('stnAdapter', function () {
       };
 
       spec.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
 });

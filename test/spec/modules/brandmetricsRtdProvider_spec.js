@@ -1,6 +1,6 @@
 import * as brandmetricsRTD from '../../../modules/brandmetricsRtdProvider.js';
-import {config} from 'src/config.js';
-import * as events from '../../../src/events';
+import { config } from 'src/config.js';
+import * as events from '../../../src/events.js';
 import * as sinon from 'sinon';
 
 const VALID_CONFIG = {
@@ -90,7 +90,7 @@ function mockCreativeInView(creativeInViewConf) {
         conf.handler(creativeInViewConf);
       }
     }
-  })
+  });
 }
 
 describe('BrandmetricsRTD module', () => {
@@ -130,17 +130,17 @@ describe('BrandmetricsRTD module', () => {
 
 describe('getBidRequestData', () => {
   beforeEach(function () {
-    config.resetConfig()
-  })
+    config.resetConfig();
+  });
 
   it('should set targeting keys for specified bidders', () => {
     const bidderOrtb2 = {};
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {
-      const expected = VALID_CONFIG.params.bidders
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments: { bidder: bidderOrtb2 } }, () => {
+      const expected = VALID_CONFIG.params.bidders;
 
       expected.forEach(exp => {
-        expect(bidderOrtb2[exp].user.ext.data.mockTargetKey).to.equal('mockMeasurementId')
-      })
+        expect(bidderOrtb2[exp].user.ext.data.mockTargetKey).to.equal('mockMeasurementId');
+      });
     }, VALID_CONFIG);
 
     mockSurveyLoaded({
@@ -172,8 +172,8 @@ describe('getBidRequestData', () => {
     });
 
     const bidderOrtb2 = {};
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
-    expect(Object.keys(bidderOrtb2).length).to.equal(0)
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments: { bidder: bidderOrtb2 } }, () => {}, VALID_CONFIG);
+    expect(Object.keys(bidderOrtb2).length).to.equal(0);
   });
 
   it('should use a default targeting key name if the brandmetrics- configuration does not include one', () => {
@@ -190,13 +190,13 @@ describe('getBidRequestData', () => {
     });
 
     const bidderOrtb2 = {};
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ ortb2Fragments: { bidder: bidderOrtb2 } }, () => {}, VALID_CONFIG);
 
-    const expected = VALID_CONFIG.params.bidders
+    const expected = VALID_CONFIG.params.bidders;
 
     expected.forEach(exp => {
-      expect(bidderOrtb2[exp].user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId')
-    })
+      expect(bidderOrtb2[exp].user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId');
+    });
   });
 
   describe('billable events', () => {
@@ -204,13 +204,13 @@ describe('getBidRequestData', () => {
     let eventsEmitSpy;
 
     before(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       eventsEmitSpy = sandbox.spy(events, ['emit']);
     });
 
     beforeEach(() => {
       eventsEmitSpy.resetHistory();
-    })
+    });
 
     afterEach(() => {
       sandbox.restore();

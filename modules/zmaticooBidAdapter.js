@@ -1,6 +1,6 @@
-import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -36,7 +36,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -117,7 +117,7 @@ export const spec = {
       }
       return impData;
     });
-    let payload = {
+    const payload = {
       id: bidderRequest.bidderRequestId,
       imp: imps,
       site: params.site ? params.site : {},
@@ -138,8 +138,8 @@ export const spec = {
       regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
-    payload.regs.ext = {}
-    payload.user.ext = {}
+    payload.regs.ext = {};
+    payload.user.ext = {};
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
@@ -149,10 +149,10 @@ export const spec = {
       payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: bidderRequest.gdprConsent.gdprApplies == true ? 1 : 0});
+      payload.regs.ext = Object.assign(payload.regs.ext, { gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0 });
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      payload.user.ext = Object.assign(payload.user.ext, {consent: bidderRequest.gdprConsent.consentString});
+      payload.user.ext = Object.assign(payload.user.ext, { consent: bidderRequest.gdprConsent.consentString });
     }
     const postUrl = ENDPOINT_URL;
     return {
@@ -168,12 +168,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     const response = (serverResponse || {}).body;
     if (response && response.seatbid && response.seatbid.length && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zmSeatbid => {
         zmSeatbid.bid.forEach(zmBid => {
-          let bid = {
+          const bid = {
             requestId: zmBid.impid,
             cpm: zmBid.price,
             currency: response.cur,
@@ -192,22 +192,22 @@ export const spec = {
             bid.vastXml = zmBid.ext.vast_url;
           }
           if (zmBid.ext && zmBid.ext.prebid) {
-            bid.mediaType = zmBid.ext.prebid.type
+            bid.mediaType = zmBid.ext.prebid.type;
           } else {
-            bid.mediaType = BANNER
+            bid.mediaType = BANNER;
           }
           bidResponses.push(bid);
-        })
-      })
+        });
+      });
     }
     return bidResponses;
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) {
-      return false
+      return false;
     }
-    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
-    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm;
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency;
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       winCpm
@@ -223,11 +223,11 @@ export const spec = {
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId
-    )
+    );
     triggerPixel(winUrl);
-    return true
+    return true;
   }
-}
+};
 
 function buildBanner(request) {
   let sizes = request.sizes;
@@ -240,7 +240,7 @@ function buildBanner(request) {
 }
 
 function buildVideo(request) {
-  let video = {};
+  const video = {};
   const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
@@ -294,7 +294,7 @@ function hasVideoMediaType(bidRequest) {
 }
 
 export function _getDomainFromURL(url) {
-  let anchor = document.createElement('a');
+  const anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
