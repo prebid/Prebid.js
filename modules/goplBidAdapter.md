@@ -16,7 +16,6 @@ Required parameters:
 Optional parameters:
 - site id 
 - adslot id
-- publisher id
 
 # Test Parameters
 ```
