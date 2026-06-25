@@ -13,7 +13,7 @@ const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 const DEFAULT_VIDEO_CONTEXT = 'instream';
-const ADAPTER_VERSION = '2.1.0';
+const ADAPTER_VERSION = '2.2.0';
 const DEFAULT_BIDDER_CODE = 'yahooAds';
 const VALID_BIDDER_CODES = [DEFAULT_BIDDER_CODE, 'yahoossp', 'yahooAdvertising'];
 const PREBID_VERSION = '$prebid.version$';
@@ -1043,16 +1043,13 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   });
 
   describe('Request Headers validation:', () => {
-    it('should return request objects with the relevant custom headers and content type declaration', () => {
+    it('should return request objects with the relevant content type declaration', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       bidderRequest.gdprConsent.gdprApplies = false;
       const options = spec.buildRequests(validBidRequests, bidderRequest)[0].options;
       expect(options).to.deep.equal(
         {
-          contentType: 'application/json',
-          customHeaders: {
-            'x-openrtb-version': '2.6'
-          },
+          contentType: 'text/plain',
           withCredentials: true
         });
     });
@@ -1850,11 +1847,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   });
 
   describe('OpenRTB 2.6 compliance:', () => {
-    it('should use application/json content type and send x-openrtb-version header', () => {
+    it('should use text/plain content type and not send custom headers', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const request = spec.buildRequests(validBidRequests, bidderRequest)[0];
-      expect(request.options.contentType).to.equal('application/json');
-      expect(request.options.customHeaders['x-openrtb-version']).to.equal('2.6');
+      expect(request.options.contentType).to.equal('text/plain');
+      expect(request.options.customHeaders).to.be.undefined;
     });
 
     it('should place us_privacy at regs top-level AND keep in regs.ext for backward compat', () => {
