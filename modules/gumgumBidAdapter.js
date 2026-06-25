@@ -51,7 +51,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   }
 
   function getOgURL () {
-    let ogURL = '';
+    let ogURL;
     const ogURLSelector = "meta[property='og:url']";
     const head = document && document.getElementsByTagName('head')[0];
     const ogURLElement = head.querySelector(ogURLSelector);

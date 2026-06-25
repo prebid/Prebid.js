@@ -492,7 +492,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('should return a single request object for single request mode', () => {
-      const { bidRequest, bidderRequest } = createRequestMock({});
+      let { bidRequest, bidderRequest } = createRequestMock({});
       const { bidRequest: mock } = createRequestMock({ bidId: '6heos7ks8z0j', zid: '98876543210', adUnitCode: 'bidder-code' });
       const validBR = [bidRequest, mock];
       bidderRequest.bids = validBR;

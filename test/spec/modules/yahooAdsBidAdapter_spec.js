@@ -995,7 +995,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it('should return a single request object for single request mode', () => {
-      const { bidRequest, bidderRequest } = generateBuildRequestMock({});
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({});
       const BID_ID_2 = '84ab50xxxxx';
       const BID_POS_2 = 'footer';
       const AD_UNIT_CODE_2 = 'test-ad-unit-code-123';
@@ -1398,7 +1398,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const BID_POS_3 = 'hero';
       const AD_UNIT_CODE_3 = 'video-ad-unit';
 
-      const { bidRequest, bidderRequest } = generateBuildRequestMock({}); // banner
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({}); // banner
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2 }); // banner
       const { bidRequest: bidRequest3 } = generateBuildRequestMock({ bidId: BID_ID_3, pos: BID_POS_3, adUnitCode: AD_UNIT_CODE_3, adUnitType: 'video' }); // video (should be filtered)
       const validBidRequests = [bidRequest, bidRequest2, bidRequest3];
@@ -1430,7 +1430,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const BID_POS_3 = 'hero';
       const AD_UNIT_CODE_3 = 'video-ad-unit';
 
-      const { bidRequest, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' }); // video
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' }); // video
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2, adUnitType: 'video' }); // video
       const { bidRequest: bidRequest3 } = generateBuildRequestMock({ bidId: BID_ID_3, pos: BID_POS_3, adUnitCode: AD_UNIT_CODE_3 }); // banner (should be filtered)
       const validBidRequests = [bidRequest, bidRequest2, bidRequest3];
@@ -1473,7 +1473,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       const BID_POS_3 = 'hero';
       const AD_UNIT_CODE_3 = 'native-ad-unit';
 
-      const { bidRequest, bidderRequest } = generateBuildRequestMock({ adUnitType: 'banner' }); // banner
+      let { bidRequest, bidderRequest } = generateBuildRequestMock({ adUnitType: 'banner' }); // banner
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: BID_ID_2, pos: BID_POS_2, adUnitCode: AD_UNIT_CODE_2, adUnitType: 'video' }); // video
       const { bidRequest: bidRequest3 } = generateBuildRequestMock({ bidId: BID_ID_3, pos: BID_POS_3, adUnitCode: AD_UNIT_CODE_3, adUnitType: 'native' }); // native (should be filtered)
       const validBidRequests = [bidRequest, bidRequest2, bidRequest3];

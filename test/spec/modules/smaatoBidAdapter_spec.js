@@ -1064,7 +1064,7 @@ describe('smaatoBidAdapterTest', () => {
     };
 
     const buildOpenRtbBidResponse = (adType) => {
-      let adm = '';
+      let adm;
 
       switch (adType) {
         case ADTYPE_IMG:

@@ -594,7 +594,7 @@ describe('AppNexusAdapter', function () {
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
       const getFloorResponse = { currency: 'USD', floor: 3 };
-      let request; let payload = null;
+      let request; let payload;
       const bidRequest = deepClone(bidRequests[0]);
 
       // 1 -> reserve not defined, getFloor not defined > empty
