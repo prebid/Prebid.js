@@ -1756,7 +1756,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           });
         });
 
-        it('should give presedence to Gloabl ttl over params.ttl ', () => {
+        it('should give precedence to Global ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
             yahooAds: { ttl: 500 }
