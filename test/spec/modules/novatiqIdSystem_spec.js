@@ -1,4 +1,5 @@
 import { novatiqIdSubmodule, novatiqStorage } from 'modules/novatiqIdSystem.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('novatiqIdSystem', function () {
   const urlParams = {
@@ -133,6 +134,36 @@ describe('novatiqIdSystem', function () {
       const response = novatiqIdSubmodule.sendAsyncSyncRequest('testuuid', sync.url);
       expect(response.callback).should.not.be.empty;
     });
+
+    it('persists nvq_hid only after async sync accepts the id (200)', function (done) {
+      const persistStub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
+      const config = { params: { sourceid: '123', useCallbacks: true } };
+      const response = novatiqIdSubmodule.getId(config);
+
+      expect(persistStub.called).to.equal(false);
+      response.callback(function (idObj) {
+        expect(idObj.id).to.have.length(40);
+        expect(persistStub.calledOnce).to.equal(true);
+        expect(persistStub.firstCall.args[0]).to.equal(idObj.id);
+        persistStub.restore();
+        done();
+      });
+      server.requests[0].respond(200);
+    });
+
+    it('does not persist nvq_hid when async sync does not accept the id', function (done) {
+      const persistStub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
+      const config = { params: { sourceid: '123', useCallbacks: true } };
+      const response = novatiqIdSubmodule.getId(config);
+
+      response.callback(function (idObj) {
+        expect(idObj.id).to.be.undefined;
+        expect(persistStub.called).to.equal(false);
+        persistStub.restore();
+        done();
+      });
+      server.requests[0].respond(201);
+    });
   });
 
   describe('persistEphemeralHyperId', function () {
@@ -157,20 +188,66 @@ describe('novatiqIdSystem', function () {
     it('stores nvq_hid in localStorage when cookies are not enabled', function () {
       const cookiesEnabled = sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(false);
       const hasLocalStorage = sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
+      const getLs = sinon.stub(novatiqStorage, 'getDataFromLocalStorage').returns(null);
       const setLs = sinon.stub(novatiqStorage, 'setDataInLocalStorage');
+      const scheduleExpiry = sinon.stub(novatiqIdSubmodule, 'scheduleEphemeralHyperIdLocalStorageExpiry');
       novatiqIdSubmodule.persistEphemeralHyperId('hid-local');
+      expect(getLs.calledWith('nvq_hid')).to.equal(true);
       expect(setLs.firstCall.args[0]).to.equal('nvq_hid');
       const payload = JSON.parse(setLs.firstCall.args[1]);
       expect(payload.hyperId).to.equal('hid-local');
       expect(payload.expiresAt).to.be.closeTo(Date.now() + 60000, 3000);
+      expect(scheduleExpiry.calledOnce).to.equal(true);
       cookiesEnabled.restore();
       hasLocalStorage.restore();
+      getLs.restore();
       setLs.restore();
+      scheduleExpiry.restore();
+    });
+
+    it('removes expired nvq_hid from localStorage before writing a new value', function () {
+      const cookiesEnabled = sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(false);
+      const hasLocalStorage = sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
+      const getLs = sinon.stub(novatiqStorage, 'getDataFromLocalStorage').returns(JSON.stringify({
+        hyperId: 'stale-id',
+        expiresAt: Date.now() - 1000
+      }));
+      const removeLs = sinon.stub(novatiqStorage, 'removeDataFromLocalStorage');
+      const setLs = sinon.stub(novatiqStorage, 'setDataInLocalStorage');
+      const scheduleExpiry = sinon.stub(novatiqIdSubmodule, 'scheduleEphemeralHyperIdLocalStorageExpiry');
+      novatiqIdSubmodule.persistEphemeralHyperId('hid-local');
+      expect(removeLs.calledWith('nvq_hid')).to.equal(true);
+      expect(setLs.calledOnce).to.equal(true);
+      scheduleExpiry.restore();
+      cookiesEnabled.restore();
+      hasLocalStorage.restore();
+      getLs.restore();
+      removeLs.restore();
+      setLs.restore();
+    });
+
+    it('schedules localStorage removal after TTL', function () {
+      const clock = sinon.useFakeTimers();
+      const cookiesEnabled = sinon.stub(novatiqStorage, 'cookiesAreEnabled').returns(false);
+      const hasLocalStorage = sinon.stub(novatiqStorage, 'hasLocalStorage').returns(true);
+      const getLs = sinon.stub(novatiqStorage, 'getDataFromLocalStorage').returns(null);
+      const setLs = sinon.stub(novatiqStorage, 'setDataInLocalStorage');
+      const removeLs = sinon.stub(novatiqStorage, 'removeDataFromLocalStorage');
+      novatiqIdSubmodule.persistEphemeralHyperId('hid-local');
+      expect(removeLs.called).to.equal(false);
+      clock.tick(60000);
+      expect(removeLs.calledWith('nvq_hid')).to.equal(true);
+      clock.restore();
+      cookiesEnabled.restore();
+      hasLocalStorage.restore();
+      getLs.restore();
+      setLs.restore();
+      removeLs.restore();
     });
   });
 
   describe('getId nvq_hid', function () {
-    it('persists ephemeral hyper id when sync runs', function () {
+    it('persists ephemeral hyper id when simple sync runs', function () {
       const stub = sinon.stub(novatiqIdSubmodule, 'persistEphemeralHyperId');
       const config = { params: { sourceid: '123' } };
       novatiqIdSubmodule.getId(config);
