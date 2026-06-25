@@ -3,11 +3,11 @@ import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
-import { expect, spy } from 'chai';
+import { expect } from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.js';
-import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
-import parse from 'url-parse';
+import adapterManager from 'src/adapterManager.js';
+import 'url-parse';
 import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 
 const GPT_SLOT = {
@@ -50,11 +50,10 @@ const PBJS_WINNING_BID = {
 
 describe('#bidViewability', function() {
   let gptSlot;
-  let pbjsWinningBid;
 
   beforeEach(function() {
     gptSlot = Object.assign({}, GPT_SLOT);
-    pbjsWinningBid = Object.assign({}, PBJS_WINNING_BID);
+    Object.assign({}, PBJS_WINNING_BID);
   });
 
   describe('getMatchingWinningBidForGPTSlot', function() {
@@ -117,7 +116,7 @@ describe('#bidViewability', function() {
     let sandbox;
     let triggerPixelSpy;
     let eventsEmitSpy;
-    let logWinningBidNotFoundSpy;
+
     let callBidViewableBidderSpy;
     let winningBidsArray;
     let triggerBillingSpy;

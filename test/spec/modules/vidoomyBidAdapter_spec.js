@@ -1,14 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vidoomyBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { INSTREAM } from '../../../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'];
 
 describe('vidoomyBidAdapter', function() {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     let bid;
     beforeEach(() => {

@@ -1002,7 +1002,6 @@ describe('Seedtag Adapter', function () {
 
     describe('with nurl', function () {
       const nurl = 'http://seedtag_domain/won';
-      const bid = { nurl };
 
       it('creates nurl pixel if bid nurl', function () {
         spec.onBidWon({ nurl });

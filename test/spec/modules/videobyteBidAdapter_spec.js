@@ -18,7 +18,6 @@ describe('VideoByteBidAdapter', function () {
       'referer': 'test.com'
     }
   };
-  let mockConfig;
 
   beforeEach(function () {
     bidRequest = {
@@ -160,7 +159,7 @@ describe('VideoByteBidAdapter', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(requests[0].data);
       const [width, height] = bidRequest.sizes;
-      const VERSION = '1.0.0';
+
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -521,21 +520,6 @@ describe('VideoByteBidAdapter', function () {
           'numIframes': 1,
           'reachedTop': true,
           'referer': 'test.com'
-        }
-      };
-
-      mockConfig = {
-        consentManagement: {
-          gdpr: {
-            cmpApi: 'iab',
-            timeout: 3000,
-            allowAuctionWithoutConsent: 'cancel'
-          },
-          usp: {
-            cmpApi: 'iab',
-            timeout: 1000,
-            allowAuctionWithoutConsent: 'cancel'
-          }
         }
       };
     });
