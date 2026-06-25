@@ -382,7 +382,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('should mark bid ad VALID if pubId exists instead of dcn & pos', () => {
+    it('should mark bid as VALID if pubId exists instead of dcn & pos', () => {
       const validBid = {
         params: {
           pubId: DEFAULT_PUBID
@@ -535,7 +535,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.exist;
-        expect(data.site[param]).to.be.a('array');
+        expect(data.site[param]).to.be.an('array');
         expect(data.site[param]).to.be.equal(ortb2.site[param]);
       });
     });
@@ -635,7 +635,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.site.content[param]).to.be.a('array');
+        expect(data.site.content[param]).to.be.an('array');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
       });
     });
@@ -715,7 +715,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
-        expect(data.user[param]).to.be.a('array');
+        expect(data.user[param]).to.be.an('array');
         expect(data.user[param]).to.be.equal(ortb2.user[param]);
       });
     });
@@ -1756,7 +1756,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           });
         });
 
-        it('should give presedence to Gloabl ttl over params.ttl ', () => {
+        it('should give precedence to Global ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
             yahooAds: { ttl: 500 }
