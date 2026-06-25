@@ -45,7 +45,7 @@ function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function getURL(params, path) {
+function getBidderURL(params, path) {
   const { supplyId, region, endpoint } = params;
   let url;
 
@@ -55,6 +55,19 @@ function getURL(params, path) {
     url = `https://openrtb-${region}.axonix.com/supply/prebid-js/v2/${supplyId}`;
   } else {
     url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/prebid-js/v2/${supplyId}`;
+  }
+
+  return url;
+}
+
+function getSignalURL(params, path) {
+  const { supplyId, region } = params;
+  let url;
+
+  if (region) {
+    url = `https://openrtb-${region}.axonix.com/supply/prebid-js/${path}/${supplyId}`;
+  } else {
+    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/prebid-js/${path}/${supplyId}`;
   }
 
   return url;
@@ -189,7 +202,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: getURL(validBidRequest.params, 'prebid'),
+        url: getBidderURL(validBidRequest.params, 'prebid'),
         options: {
           withCredentials: false,
           contentType: 'application/json'
@@ -217,17 +230,16 @@ export const spec = {
   },
 
   onTimeout: function(timeoutData) {
-    timeoutData.forEach((timedOutBid) => {
-      const params = timedOutBid?.params;
-      if (!params?.supplyId) return;
-      ajax(getURL(params, 'prebid/timeout'), null, timedOutBid, {
+    const params = deepAccess(timeoutData, '0.params.0');
+    if (params && Object.keys(params).length > 0) {
+      ajax(getSignalURL(params, 'timeout/v2'), null, timeoutData[0], {
         method: 'POST',
         options: {
           withCredentials: false,
-          contentType: 'application/json',
-        },
+          contentType: 'application/json'
+        }
       });
-    });
+    }
   },
 
   onBidWon: function(bid) {
@@ -247,7 +259,7 @@ export const spec = {
       return;
     }
 
-    ajax(getURL(params, 'prebid/data-deletion'), null, { bidderRequests }, {
+    ajax(getSignalURL(params, 'data-deletion/v2'), null, { bidderRequests }, {
       method: 'POST',
       options: {
         withCredentials: false,

@@ -10,7 +10,9 @@ import * as utils from 'src/utils.js';
 const SUPPLY_ID = 'test-supply-123';
 const REGION = 'us-east-1';
 const BIDDER = 'axonix';
-const BASE_URL = `https://openrtb-${REGION}.axonix.com/supply/prebid-js/v2/${SUPPLY_ID}`;
+const BIDDER_URL = `https://openrtb-${REGION}.axonix.com/supply/prebid-js/v2/${SUPPLY_ID}`;
+const TIMEOUT_URL = `https://openrtb-${REGION}.axonix.com/supply/prebid-js/timeout/v2/${SUPPLY_ID}`;
+const DATA_DELETION_URL = `https://openrtb-${REGION}.axonix.com/supply/prebid-js/data-deletion/v2/${SUPPLY_ID}`;
 
 function buildBidRequest(overrides = {}) {
   return {
@@ -132,7 +134,7 @@ describe('Axonix Bid Adapter', function () {
 
       expect(requests).to.be.an('array').with.lengthOf(1);
       expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(BASE_URL);
+      expect(requests[0].url).to.equal(BIDDER_URL);
       expect(requests[0].options).to.deep.include({
         withCredentials: false,
         contentType: 'application/json',
@@ -156,7 +158,7 @@ describe('Axonix Bid Adapter', function () {
       const bid = buildBidRequest({ params: { supplyId: SUPPLY_ID } });
       const requests = spec.buildRequests([bid], buildBidderRequest());
 
-      expect(requests[0].url).to.equal(BASE_URL);
+      expect(requests[0].url).to.equal(BIDDER_URL);
     });
 
     it('should use custom endpoint when provided', function () {
@@ -358,30 +360,22 @@ describe('Axonix Bid Adapter', function () {
   });
 
   describe('onTimeout', function () {
-    it('should send timeout notification for each timed out bid', function () {
-      const timeoutData = [
-        {
-          bidId: 'test-bid-1',
-          params: { supplyId: SUPPLY_ID, region: REGION },
-        },
-        {
-          bidId: 'test-bid-2',
-          params: { supplyId: SUPPLY_ID, region: REGION },
-        },
-      ];
+    it('should send timeout notification to the signal endpoint', function () {
+      const timeoutData = [{
+        bidId: 'test-bid-1',
+        params: [{ supplyId: SUPPLY_ID, region: REGION }],
+      }];
 
       spec.onTimeout(timeoutData);
 
-      expect(server.requests).to.have.lengthOf(2);
+      expect(server.requests).to.have.lengthOf(1);
       expect(server.requests[0].method).to.equal('POST');
-      expect(server.requests[0].url).to.equal(BASE_URL);
-      expect(server.requests[1].url).to.equal(BASE_URL);
+      expect(server.requests[0].url).to.equal(TIMEOUT_URL);
       expect(server.requests[0].requestBody).to.deep.equal(timeoutData[0]);
-      expect(server.requests[1].requestBody).to.deep.equal(timeoutData[1]);
     });
 
-    it('should not send timeout notification when supplyId is missing', function () {
-      spec.onTimeout([{ bidId: 'test-bid-1', params: {} }]);
+    it('should not send timeout notification when params are missing', function () {
+      spec.onTimeout([{ bidId: 'test-bid-1', params: [{}] }]);
       expect(server.requests).to.be.empty;
     });
   });
@@ -436,7 +430,7 @@ describe('Axonix Bid Adapter', function () {
 
       expect(server.requests).to.have.lengthOf(1);
       expect(server.requests[0].method).to.equal('POST');
-      expect(server.requests[0].url).to.equal(BASE_URL);
+      expect(server.requests[0].url).to.equal(DATA_DELETION_URL);
       expect(server.requests[0].requestBody).to.deep.equal({ bidderRequests });
     });
 
