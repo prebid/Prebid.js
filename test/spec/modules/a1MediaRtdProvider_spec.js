@@ -59,8 +59,6 @@ describe('a1MediaRtdProvider', function() {
       });
 
       it('successfully initialize but script is already exist', function() {
-        const linkback = { l: true };
-
         expect(subModuleObj.init(configWithParams)).to.be.true;
         expect(loadExternalScriptStub.called).to.be.false;
       });

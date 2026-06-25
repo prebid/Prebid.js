@@ -1100,63 +1100,7 @@ var validBidderRequest = {
   start: 1536838908987,
   timeout: 3000
 };
-var validBidderRequestWithCookieDeprecation = {
-  auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
-  auctionStart: 1536838908986,
-  bidderCode: 'ozone',
-  bidderRequestId: '1c1586b27a1b5c8',
-  bids: [{
-    adUnitCode: 'div-gpt-ad-1460505748561-0',
-    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
-    bidId: '2899ec066a91ff8',
-    bidRequestsCount: 1,
-    bidder: 'ozone',
-    bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: { pubcid: '203a0692-f728-4856-87f6-9a25a6b63715' },
-    params: { publisherId: '9876abcd12-3', customData: [{ 'settings': {}, 'targeting': { 'gender': 'bart', 'age': 'low' } }], placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [{ banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' }] },
-    sizes: [[300, 250], [300, 600]],
-    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
-  }],
-  doneCbCallCount: 1,
-  start: 1536838908987,
-  timeout: 3000,
-  ortb2: {
-    'device': {
-      'w': 1617,
-      'h': 317,
-      'dnt': 0,
-      'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-      'language': 'en',
-      'sua': {
-        'source': 1,
-        'platform': {
-          'brand': 'macOS'
-        },
-        'browsers': [
-          {
-            'brand': 'Google Chrome',
-            'version': [
-              '125'
-            ]
-          },
-          {
-            'brand': 'Chromium',
-            'version': [
-              '125'
-            ]
-          },
-          {
-            'brand': 'Not.A/Brand',
-            'version': [
-              '24'
-            ]
-          }
-        ],
-        'mobile': 0
-      }
-    }
-  }
-};
+
 var bidderRequestWithFullGdpr = {
   auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
   auctionStart: 1536838908986,
