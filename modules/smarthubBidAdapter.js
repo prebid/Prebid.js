@@ -34,7 +34,7 @@ const ALIASES = {
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
   'stackup': { area: '13', pid: '469' },
-  'adnex': {area: '2', pid: '359'}
+  'adnex': { area: '2', pid: '359' }
 };
 
 const BASE_URL_TEMPLATES = {
