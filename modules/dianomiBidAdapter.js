@@ -64,6 +64,7 @@ const NATIVE_PARAMS = {
   },
 };
 let endpoint = 'www-prebid.dianomi.com';
+let bidderURL = "https://dianomi-bidder-proxy.dianomi.com/traffic_proxy";
 
 const OUTSTREAM_RENDERER_URL = (hostname) => `https://${hostname}/prebid/outstream/renderer.js`;
 
@@ -111,6 +112,12 @@ export const spec = {
 
     if (paramsEndpoint) {
       endpoint = paramsEndpoint;
+    }
+
+    const paramsBidderURL = setOnAny(validBidRequests, "params.bidderURL");
+
+    if (paramsBidderURL) {
+      bidderURL = paramsBidderURL;
     }
 
     const pt =
@@ -243,7 +250,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: 'https://' + endpoint + '/cgi-bin/smartads_prebid.pl',
+      url: bidderURL,
       data: JSON.stringify(request),
       bids: validBidRequests,
     };
