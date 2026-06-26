@@ -343,7 +343,7 @@ function getBids(bids) {
   const bidArr = bids.map(bid => {
     const bidId = bid.bidId;
 
-    let mediaType = '';
+    let mediaType;
     const mediaTypes = Object.keys(bid.mediaTypes);
     switch (mediaTypes[0]) {
       case 'video':

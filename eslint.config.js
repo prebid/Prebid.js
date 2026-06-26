@@ -115,6 +115,7 @@ module.exports = [
       '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
       'no-constant-binary-expression': 'error',
+      'no-useless-assignment': 'error',
       'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
       'prebid/no-extra-function-args': 'error',
