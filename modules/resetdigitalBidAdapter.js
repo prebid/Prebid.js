@@ -139,7 +139,7 @@ export const spec = {
         }
       }
 
-      let paramsKeywords = req.params.keywords;
+      let paramsKeywords;
       if (typeof req.params.keywords === 'string') {
         paramsKeywords = req.params.keywords.split(',');
       } else if (Array.isArray(req.params.keywords)) {

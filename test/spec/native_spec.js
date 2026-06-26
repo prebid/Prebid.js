@@ -16,7 +16,7 @@ import {
   setNativeResponseProperties, getNativeRenderingData,
   convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest
 } from 'src/native.js';
-import { NATIVE_KEYS } from 'src/constants.js';
+
 import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { getRenderingData } from '../../src/adRendering.js';
@@ -186,10 +186,6 @@ describe('native.js', function () {
   let sandbox;
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
-
-  function deps(adUnit) {
-    return { index: stubAuctionIndex({ adUnits: [adUnit] }) };
-  }
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();

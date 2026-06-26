@@ -41,13 +41,7 @@ describe('qortexRtdProvider', () => {
       bidders: validBidderArray
     }
   };
-  const invalidApiUrlModuleConfig = {
-    params: {
-      groupId: defaultGroupId,
-      apiUrl: 'test123',
-      bidders: validBidderArray
-    }
-  };
+
   const emptyModuleConfig = {
     params: {}
   };
@@ -83,10 +77,7 @@ describe('qortexRtdProvider', () => {
       type: 'invalid-type'
     }
   };
-  const responseHeaders = {
-    'content-type': 'application/json',
-    'access-control-allow-origin': '*'
-  };
+
   const contextResponseObj = {
     site: {
       content: {
@@ -99,7 +90,7 @@ describe('qortexRtdProvider', () => {
       }
     }
   };
-  const contextResponse = JSON.stringify(contextResponseObj);
+
   const validGroupConfigResponseObj = {
     groupId: defaultGroupId,
     active: true,
@@ -107,21 +98,7 @@ describe('qortexRtdProvider', () => {
     prebidBidEnrichmentPercentage: 100,
     prebidReportingPercentage: 100
   };
-  const validGroupConfigResponse = JSON.stringify(validGroupConfigResponseObj);
-  const inactiveGroupConfigResponseObj = {
-    groupId: defaultGroupId,
-    active: false,
-    PrebidBidEnrichment: true,
-    PrebidReportingPercentage: 100
-  };
-  const inactiveGroupConfigResponse = JSON.stringify(inactiveGroupConfigResponseObj);
-  const noEnrichmentGroupConfigResponseObj = {
-    groupId: defaultGroupId,
-    active: true,
-    prebidBidEnrichment: true,
-    prebidBidEnrichmentPercentage: 0,
-    prebidReportingPercentage: 100
-  };
+
   const reqBidsConfig = {
     auctionId: '1234',
     adUnits: [{
@@ -312,21 +289,8 @@ describe('qortexRtdProvider', () => {
   });
 
   describe('addContextToRequests', () => {
-    let testReqBids;
     beforeEach(() => {
       setGroupConfigData(validGroupConfigResponseObj);
-      testReqBids = {
-        auctionId: '1234',
-        adUnits: [{
-          bids: [
-            { bidder: 'qortex' }
-          ]
-        }],
-        ortb2Fragments: {
-          bidder: {},
-          global: {}
-        }
-      };
     });
 
     afterEach(() => {
