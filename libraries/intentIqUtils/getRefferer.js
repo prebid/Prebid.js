@@ -6,7 +6,7 @@ import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../
  */
 
 export function getCurrentUrl() {
-  let url = '';
+  let url;
   try {
     if (getWindowSelf() === getWindowTop()) {
       // top page
@@ -39,7 +39,7 @@ export function getCurrentUrl() {
 export function appendVrrefAndFui(url, domainName) {
   const fullUrl = getCurrentUrl();
   if (fullUrl) {
-    return (url += '&vrref=' + getRelevantRefferer(domainName, fullUrl));
+    return (url + '&vrref=' + getRelevantRefferer(domainName, fullUrl));
   }
   url += '&fui=1'; // Full Url Issue
   if (domainName) url += '&vrref=' + encodeURIComponent(domainName);

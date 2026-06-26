@@ -31,7 +31,6 @@ export const spec = {
       let gdprConsent = '';
       let ccpa = '';
       let coppa = 0;
-      let tmax = 0;
       let eids = [];
 
       if (bidRequests[0].userIdAsEids && bidRequests[0].userIdAsEids.length > 0) {
@@ -51,7 +50,7 @@ export const spec = {
         coppa = 1;
       }
 
-      tmax = bid.timeout;
+      const tmax = bid.timeout;
 
       const params = {
         prebidJS: 1,
@@ -159,16 +158,15 @@ export const spec = {
     const usPrivacy = `&us_privacy=${encodeURIComponent(uspConsent)}`;
     const gpp = gppConsent.gppString ? gppConsent.gppString : '';
     const gppSid = Array.isArray(gppConsent.applicableSections) ? gppConsent.applicableSections.join(',') : '';
-    let vrtcalSyncURL = '';
 
     if (syncOptions.iframeEnabled) {
-      vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_IFRAME}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
+      const vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_IFRAME}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
       syncs.push({
         type: 'iframe',
         url: vrtcalSyncURL
       });
     } else {
-      vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_REDIRECT}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
+      const vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_REDIRECT}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
       syncs.push({
         type: 'image',
         url: vrtcalSyncURL
