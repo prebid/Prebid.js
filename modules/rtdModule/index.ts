@@ -268,5 +268,5 @@ export function onDataDeletionRequest(next, ...args) {
   next.apply(this, args);
 }
 
-module('realTimeData', attachRealTimeDataProvider);
+module('realTimeData', attachRealTimeDataProvider, { postInstallAllowed: true });
 init(config);
