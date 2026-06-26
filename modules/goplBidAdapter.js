@@ -1,10 +1,10 @@
-import { deepSetValue, getWinDimensions, getWindowTop, isArray, logWarn } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { deepSetValue, getWinDimensions, getWindowTop, isArray, triggerPixel, logWarn } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gopl';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -144,7 +144,7 @@ const converter = ortbConverter({
     const { bidRequest, seatbid } = context;
     const { seat } = seatbid;
     const { mediaTypes } = bidRequest
-    const { adm, admNative, ext } = bidResponse;
+    const { adm, admNative, ext, burl } = bidResponse;
     const { cache, pricepl, platform, publisherid = '', vurls = [] } = ext;
 
     context.mediaType = Object.keys(mediaTypes)[0];
@@ -160,6 +160,7 @@ const converter = ortbConverter({
     bid.meta.networkName = seat;
     bid.meta.pricepl = pricepl;
     bid.meta.platform = platform;
+    bid.burl = burl;
     bid.vurls = vurls;
 
     // for video bids return creative cache as vastUrl
@@ -390,6 +391,13 @@ const onBidViewable = (bid) => {
 };
 
 const onBidBillable = (bid) => {
+  // handle burl
+  const { burl } = bid;
+  if (burl) {
+    triggerPixel(burl);
+  }
+
+  // prepare bidBillable notification
   const payload = getNotificationPayload(bid);
   if (payload) {
     payload.event = 'bidBillable';
@@ -399,6 +407,7 @@ const onBidBillable = (bid) => {
 };
 
 const onBidWon = (bid) => {
+  // prepare bidWon notification
   const payload = getNotificationPayload(bid);
   if (payload) {
     payload.event = 'bidWon';
