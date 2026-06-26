@@ -5,7 +5,7 @@ const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-var argv = require('yargs').argv;
+var argv = require('./gulpHelpers.js').argv;
 const fs = require('fs');
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
