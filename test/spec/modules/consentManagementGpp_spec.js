@@ -402,14 +402,11 @@ describe('consentManagementGpp', function () {
       }
     };
 
-    let didHookReturn;
-
     beforeEach(resetConsentData);
     after(resetConsentData);
 
     describe('error checks:', function () {
       beforeEach(function () {
-        didHookReturn = false;
         sinon.stub(utils, 'logWarn');
         sinon.stub(utils, 'logError');
       });

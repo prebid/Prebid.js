@@ -6,8 +6,6 @@ const DEFAULT_SID = '1220291391';
 const DEFAULT_ZID = '1836455615';
 const DEFAULT_PIXEL_URL = 'https://cdn.adtarget.me/libs/1x1.gif';
 const DEFAULT_BANNER_URL = 'https://cdn.adtarget.me/libs/banner/300x250.jpg';
-const BIDDER_VERSION = '1.0.7';
-const PREBIDJS_VERSION = '$prebid.version$';
 
 const createBidRequest = ({ bidId, adUnitCode, bidOverride, zid, ortb2 }) => {
   const bR = {
@@ -494,9 +492,9 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     it('should return a single request object for single request mode', () => {
-      let { bidRequest, validBR, bidderRequest } = createRequestMock({});
+      let { bidRequest, bidderRequest } = createRequestMock({});
       const { bidRequest: mock } = createRequestMock({ bidId: '6heos7ks8z0j', zid: '98876543210', adUnitCode: 'bidder-code' });
-      validBR = [bidRequest, mock];
+      const validBR = [bidRequest, mock];
       bidderRequest.bids = validBR;
 
       config.setConfig({

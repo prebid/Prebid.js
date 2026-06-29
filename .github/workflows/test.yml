@@ -98,19 +98,28 @@ jobs:
       - name: lint
         run: |
           npx eslint
-      
+
+  build-no-features:
+    name: "Build (all features disabled)"
+    needs: checkout
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp precompile-all-features-disabled
+      source-key: 'source'
+
   test-no-features:
     name: "Unit tests (all features disabled)"
-    needs: checkout
+    needs: [checkout, build-no-features]
     uses: ./.github/workflows/run-tests.yml
     with:
       chunks: 8
-      build-cmd: npx gulp precompile-all-features-disabled
+      built-key: ${{ needs.build-no-features.outputs.linux }}
       test-cmd: npx gulp test-all-features-disabled-nobuild
       browserstack: false
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
   test:
     name: "Browser tests"
     needs: checkout
@@ -128,7 +137,7 @@ jobs:
     steps:
       - name: Restore from cache
         id: restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ${{ runner.temp }}/coverage.info
           key: coverage-${{ needs.checkout.outputs.base-commit }}

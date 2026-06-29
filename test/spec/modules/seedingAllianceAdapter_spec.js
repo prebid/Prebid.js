@@ -6,7 +6,6 @@ import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('SeedingAlliance adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
   const bid = {
     'bidder': 'seedingAlliance',
     'params': {
@@ -331,7 +330,7 @@ describe('SeedingAlliance adapter', function () {
       delete badResponse.body;
 
       const result1 = spec.interpretResponse(badResponse, bidNativeRequest);
-      assert.equal(result.length, 0);
+      assert.equal(result1.length, 0);
     });
 
     it('should return the correct params', function () {

@@ -77,7 +77,6 @@ describe('wurflRtdProvider', function () {
 
     // expected analytics values
     const expectedStatsURL = 'https://stats.prebid.wurflcloud.com/v2/prebid/stats';
-    const expectedData = JSON.stringify({ bidders: ['bidder1', 'bidder2'] });
 
     let sandbox;
 
@@ -2355,9 +2354,6 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
         });
-
-        // Import the WurflLCEDevice to stub it
-        const wurflRtdProvider = require('modules/wurflRtdProvider.js');
 
         const callback = () => {
           const device = reqBidsConfigObj.ortb2Fragments.global.device;

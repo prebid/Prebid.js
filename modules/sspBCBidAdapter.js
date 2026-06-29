@@ -514,7 +514,7 @@ const mapImpression = slot => {
   const imp = {
     id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
-    native: mapNative(slot, bidId),
+    native: mapNative(slot),
     video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
