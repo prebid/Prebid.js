@@ -254,10 +254,7 @@ export const spec = {
       method: 'POST',
       url: bidderURL,
       data: JSON.stringify(request),
-      bids: validBidRequests,
-      options: {
-        contentType: 'application/json'
-      }
+      bids: validBidRequests
     };
   },
   interpretResponse: function (serverResponse, { bids }) {
