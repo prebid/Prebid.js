@@ -1,16 +1,16 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, AUDIO  } from '../src/mediaTypes.js';
 import {
   createConverter,
   isBidRequestValid as validateBidRequest,
   createBuildRequests,
   interpretResponse as interpretResponseUtil,
   createGetUserSyncs,
-} from '../libraries/adsmartxUtils/bidderUtils.js';
+} from '../libraries/agenticxUtils/bidderUtils.js';
 
-const BIDDER_CODE = 'adsmartx';
-const ENDPOINT_URL = 'https://ads.adsmartx.com/ads/rtb/prebid/js';
-const SYNC_URL = 'https://sync.adsmartx.com/sync';
+const BIDDER_CODE = 'agenticx';
+const ENDPOINT_URL = 'https://ads.theagenticx.ai/ads/rtb/prebid/js';
+const SYNC_URL = 'https://sync.theagenticx.ai/sync';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 60;
 
@@ -33,7 +33,7 @@ export const spec = {
   code: BIDDER_CODE,
   // TODO: set gvlid once confirmed with AI Digital / AdSmartX team
   gvlid: undefined,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, AUDIO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
