@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/winrBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -228,7 +227,7 @@ describe('WinrAdapter', function () {
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
       const getFloorResponse = { currency: 'USD', floor: 3 };
-      let request; let payload = null;
+      let request; let payload;
       const bidRequest = deepClone(bidRequests[0]);
 
       // 1 -> reserve not defined, getFloor not defined > empty
