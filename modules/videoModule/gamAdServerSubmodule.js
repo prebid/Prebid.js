@@ -19,7 +19,7 @@ function GamAdServerProvider(gamModule_) {
   return {
     getAdTagUrl,
     getVastXml
-  }
+  };
 }
 
 export function gamSubmoduleFactory() {

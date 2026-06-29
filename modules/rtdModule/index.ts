@@ -12,6 +12,9 @@ import { activityParamsBuilder } from '../../src/activities/params.js';
 import type { StartAuctionOptions } from "../../src/prebid.ts";
 import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts";
 
+// export so that consumers can `import {type RTDProviderConfig} from 'prebid.js/modules/rtdModule'`
+export { type RTDProviderConfig } from './spec.ts';
+
 const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
@@ -32,14 +35,14 @@ let _userConsent;
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
-  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
   return function detach() {
-    const idx = registeredSubModules.indexOf(submodule)
+    const idx = registeredSubModules.indexOf(submodule);
     if (idx >= 0) {
       registeredSubModules.splice(idx, 1);
       initSubModules();
     }
-  }
+  };
 }
 
 /**
@@ -53,22 +56,23 @@ const setEventsListeners = (function () {
         [EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
         [EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
         [EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
-        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent']
+        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent'],
+        [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent'],
       }).forEach(([ev, [handler, preprocess]]) => {
         events.on(ev as any, (args) => {
           preprocess && (preprocess as any)(args);
           subModules.forEach(sm => {
             try {
-              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent)
+              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent);
             } catch (e) {
               logError(`RTD provider '${sm.name}': error in '${handler}':`, e);
             }
           });
-        })
+        });
       });
       registered = true;
     }
-  }
+  };
 })();
 
 type RealTimeDataConfig = {
@@ -77,7 +81,7 @@ type RealTimeDataConfig = {
    * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
    */
   auctionDelay?: number;
-}
+};
 
 declare module '../../src/config' {
   interface Config {
@@ -107,7 +111,7 @@ function getConsentData() {
     usp: uspDataHandler.getConsentData(),
     gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
-  }
+  };
 }
 
 /**
@@ -183,9 +187,9 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
       },
       deleteProperty(target, prop) {
         if (prop === fpdKey) return true;
-        return Reflect.deleteProperty(target, prop)
+        return Reflect.deleteProperty(target, prop);
       }
-    })
+    });
     sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
@@ -243,7 +247,7 @@ export function getAdUnitTargeting(auction) {
   auction.adUnits.forEach(adUnit => {
     const kv = adUnit.code && mergedTargeting[adUnit.code];
     if (!kv) {
-      return
+      return;
     }
     logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
     adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
@@ -257,7 +261,7 @@ export function onDataDeletionRequest(next, ...args) {
       try {
         sm.onDataDeletionRequest(sm.config);
       } catch (e) {
-        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e)
+        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e);
       }
     }
   });

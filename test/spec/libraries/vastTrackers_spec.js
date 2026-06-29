@@ -2,7 +2,7 @@ import {
   getVastTrackers,
   insertVastTrackers,
   registerVastTrackers,
-  reset, cacheVideoBidHook,
+  reset, updateVastHook,
   disable,
   getTrackersFromBidResponse
 } from 'libraries/vastTrackers/vastTrackers.js';
@@ -51,11 +51,11 @@ describe('vast trackers', () => {
       cpm: 1.0,
       auctionId: 'aid',
       mediaType: 'video',
-    }
+    };
     bidRequest = {
       auctionId: 'aid',
       bidId: 'bid',
-    }
+    };
     auction = {
       getAuctionId() {
         return 'aid';
@@ -64,7 +64,7 @@ describe('vast trackers', () => {
         return { auction: 'props' };
       },
       getBidRequests() {
-        return [{ bids: [bidRequest] }]
+        return [{ bids: [bidRequest] }];
       }
     };
     sandbox = sinon.createSandbox();
@@ -77,7 +77,7 @@ describe('vast trackers', () => {
       };
     });
     registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', tracker);
-  })
+  });
   afterEach(() => {
     reset();
     sandbox.restore();
@@ -102,12 +102,12 @@ describe('vast trackers', () => {
   it('should pass request and auction properties to trackerFn', () => {
     const bid = { requestId: 'bid', auctionId: 'aid' };
     getVastTrackers(bid, { index });
-    sinon.assert.calledWith(tracker, bid, sinon.match({ auction: auction.getProperties(), bidRequest }))
-  })
+    sinon.assert.calledWith(tracker, bid, sinon.match({ auction: auction.getProperties(), bidRequest }));
+  });
 
   if (FEATURES.VIDEO) {
     it('should add trackers to bid response', () => {
-      cacheVideoBidHook({ index })(sinon.stub(), 'au', bid);
+      updateVastHook({ index })(sinon.stub(), bid);
       expect(bid.vastTrackers).to.be.an('object');
       expect(bid.vastTrackers.impression).to.eql([
         'https://vasttracking.mydomain.com/vast?cpm=1'
@@ -393,4 +393,4 @@ describe('vast trackers', () => {
       expect(trackers.trackingEvents).to.be.an('array').that.is.empty;
     });
   });
-})
+});

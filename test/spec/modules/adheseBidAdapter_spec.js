@@ -15,7 +15,7 @@ const minimalBid = function() {
       location: '_main_page_',
       format: 'leaderboard'
     }
-  }
+  };
 };
 
 const bidWithParams = function(data) {

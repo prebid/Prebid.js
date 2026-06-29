@@ -30,7 +30,7 @@ const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
-const DEFAULT_MAXBID_VALUE = 5000
+const DEFAULT_MAXBID_VALUE = 5000;
 
 const DEFAULT_IFRAMES_CONFIG = {};
 
@@ -61,31 +61,31 @@ function attachProperties(config, useDefaultValues = true) {
     mediaTypePriceGranularity: {},
     bidderSequence: DEFAULT_BIDDER_SEQUENCE,
     auctionOptions: {}
-  } : {}
+  } : {};
 
   const validateauctionOptions = (() => {
     const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
-    const arrKeys = ['secondaryBidders']
+    const arrKeys = ['secondaryBidders'];
     const allKeys = [].concat(boolKeys).concat(arrKeys);
 
     return function validateauctionOptions(val) {
       if (!isPlainObject(val)) {
-        logWarn('Auction Options must be an object')
-        return false
+        logWarn('Auction Options must be an object');
+        return false;
       }
 
       for (const k of Object.keys(val)) {
         if (!allKeys.includes(k)) {
-          logWarn(`Auction Options given an incorrect param: ${k}`)
-          return false
+          logWarn(`Auction Options given an incorrect param: ${k}`);
+          return false;
         }
         if (arrKeys.includes(k)) {
           if (!isArray(val[k])) {
             logWarn(`Auction Options ${k} must be of type Array`);
-            return false
+            return false;
           } else if (!val[k].every(isStr)) {
             logWarn(`Auction Options ${k} must be only string`);
-            return false
+            return false;
           }
         } else if (boolKeys.includes(k)) {
           if (!isBoolean(val[k])) {
@@ -95,7 +95,7 @@ function attachProperties(config, useDefaultValues = true) {
         }
       }
       return true;
-    }
+    };
   })();
   function getProp(name) {
     return values[name];
@@ -112,7 +112,7 @@ function attachProperties(config, useDefaultValues = true) {
     publisherDomain: {
       set(val) {
         if (val != null) {
-          logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
+          logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead');
         }
         setProp('publisherDomain', val);
       }
@@ -124,7 +124,7 @@ function attachProperties(config, useDefaultValues = true) {
             setProp('priceGranularity', (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM);
           } else if (isPlainObject(val)) {
             setProp('customPriceBucket', val);
-            setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM)
+            setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM);
             logMessage('Using custom price granularity');
           }
         }
@@ -135,9 +135,9 @@ function attachProperties(config, useDefaultValues = true) {
       set(val) {
         val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
           if (validatePriceGranularity(val[item])) {
-            if (typeof val === 'string') {
+            if (typeof val[item] === 'string') {
               aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
-            } else if (isPlainObject(val)) {
+            } else if (isPlainObject(val[item])) {
               aggregate[item] = val[item];
               logMessage(`Using custom price granularity for ${item}`);
             }
@@ -164,7 +164,7 @@ function attachProperties(config, useDefaultValues = true) {
         }
       }
     }
-  }
+  };
 
   Object.defineProperties(config, Object.fromEntries(
     Object.entries(props)
@@ -221,6 +221,21 @@ export interface Config {
    */
   useBidCache?: boolean;
   /**
+   * When Bid Caching is turned on, a custom Filter Function can be defined to gain more granular control over which “cached” bids can be used.
+   * This function will only be called for “cached” bids from previous auctions, not “current” bids from the most recent auction.
+   * The function should take a single bid object argument, and return true to use the cached bid, or false to not use the cached bid.
+   *
+   * For Example, to turn on Bid Caching, but exclude cached video bids, you could do this:
+   *
+   * ```
+   * pbjs.setConfig({
+   *   useBidCache: true,
+   *   bidCacheFilterFunction: bid => bid.mediaType !== 'video'
+   * });
+   * ```
+   */
+  bidCacheFilterFunction?: (bid: Bid) => boolean;
+  /**
    * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
    */
   deviceAccess?: boolean;
@@ -262,6 +277,10 @@ export interface Config {
    */
   bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
   /**
+   * Customize how a GPT slot is matched to an ad unit code during targeting.
+   */
+  customGptSlotMatching?: (slot: googletag.Slot) => ((adUnitCode: string) => boolean) | undefined;
+  /**
    * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
    * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
    */
@@ -272,7 +291,7 @@ type PartialConfig = Partial<Config> & { [setting: string]: unknown };
 type BidderConfig = {
   bidders: BidderCode[];
   config: PartialConfig;
-}
+};
 
 type TopicalConfig<S extends string> = { [K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown };
 type UnregistrationFn = () => void;
@@ -282,13 +301,13 @@ type GetConfigOptions = {
    * If true, the listener will be called immediately (instead of only on the next configuration change).
    */
   init?: boolean;
-}
+};
 
 interface GetConfig {
   (): Config;
     <S extends DeepProperty<Config> | string>(setting: S): S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown;
     (topic: typeof ALL_TOPICS, listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
-    <S extends DeepProperty<Config> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
+    <S extends NonNullable<DeepProperty<Config>> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
     (listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
 }
 
@@ -396,7 +415,7 @@ export function newConfig() {
       }
 
       return subscribe(...args);
-    }
+    };
   }) as any;
 
   const [readConfig, readAnyConfig]: [GetConfig, GetConfig] = [getConfig, getAnyConfig].map(wrapee => {
@@ -409,7 +428,7 @@ export function newConfig() {
         res = deepClone(res);
       }
       return res;
-    }
+    };
   }) as any;
 
   /**
@@ -441,7 +460,7 @@ export function newConfig() {
       try {
         topicalConfig[topic] = config[topic] = option;
       } catch (e) {
-        logWarn(`Cannot set config for property ${topic} : `, e)
+        logWarn(`Cannot set config for property ${topic} : `, e);
       }
     });
 
@@ -582,8 +601,14 @@ export function newConfig() {
     }
 
     const mergedConfig = mergeDeep(_getConfig(), config);
+    const updatedConfig = Object.keys(config).reduce((accumulator, topic) => {
+      if (Object.prototype.hasOwnProperty.call(mergedConfig, topic)) {
+        accumulator[topic] = mergedConfig[topic];
+      }
+      return accumulator;
+    }, {});
 
-    setConfig({ ...mergedConfig });
+    setConfig(updatedConfig);
     return mergedConfig;
   }
 
@@ -606,12 +631,12 @@ export function newConfig() {
     return function(cb) {
       return function(...args) {
         if (typeof cb === 'function') {
-          return runWithBidder(bidder, cb.bind(this, ...args))
+          return runWithBidder(bidder, cb.bind(this, ...args));
         } else {
           logWarn('config.callbackWithBidder callback is not a function');
         }
-      }
-    }
+      };
+    };
   }
 
   function getCurrentBidder() {

@@ -13,7 +13,7 @@ describe('adLoader', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     scriptEl = null;
-    utilsinsertElementStub = sandbox.stub(utils, 'insertElement').callsFake((el) => { scriptEl = el });
+    utilsinsertElementStub = sandbox.stub(utils, 'insertElement').callsFake((el) => { scriptEl = el; });
     utilsLogErrorStub = sandbox.stub(utils, 'logError');
   });
 
@@ -53,10 +53,17 @@ describe('adLoader', function () {
       sinon.assert.called(callback);
     });
 
+    it('cleans up script listeners once loaded', () => {
+      adLoader.loadExternalScript('test-cleanup', MODULE_TYPE_PREBID, 'debugging', sinon.stub());
+      scriptEl.onload();
+      expect(scriptEl.onload).to.equal(null);
+      expect(scriptEl.onreadystatechange).to.equal(null);
+    });
+
     it('should run callback as an object', () => {
       const callback = {
         success: sinon.stub()
-      }
+      };
       adLoader.loadExternalScript('test-2', MODULE_TYPE_PREBID, 'debugging', callback);
       scriptEl.onload();
       sinon.assert.called(callback.success);
@@ -65,7 +72,7 @@ describe('adLoader', function () {
     it('should run error callback once', () => {
       const callback = {
         error: sinon.stub()
-      }
+      };
       adLoader.loadExternalScript('test-3', MODULE_TYPE_PREBID, 'debugging', callback);
       const ev = new Event('error');
       scriptEl.dispatchEvent(ev);
@@ -80,17 +87,17 @@ describe('adLoader', function () {
           createElement: function() {
             return {
               addEventListener() {}
-            }
+            };
           },
           getElementsByTagName: function() {
             return {
               firstChild: {
                 insertBefore: function() {}
               }
-            }
+            };
           }
 
-        }
+        };
       }
       const doc1 = getDocSpec();
       const doc2 = getDocSpec();
@@ -111,14 +118,14 @@ describe('adLoader', function () {
             this[key] = value;
           },
           addEventListener() {}
-        }
+        };
       },
       getElementsByTagName: function() {
         return {
           firstChild: {
             insertBefore: function() {}
           }
-        }
+        };
       }
     };
     const attrs = { 'z': 'A', 'y': 2 };
@@ -136,5 +143,5 @@ describe('adLoader', function () {
     } finally {
       unregisterRule?.();
     }
-  })
+  });
 });

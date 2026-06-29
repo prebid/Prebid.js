@@ -223,6 +223,6 @@ export const spec = {
 
     return bidResponses;
   }
-}
+};
 
 registerBidder(spec);

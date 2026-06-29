@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,8 +11,12 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  */
 
 const BIDDER_CODE = 'intenze';
-const ACCOUNTID_MACROS = '[account_id]';
-const URL_ENDPOINT = `https://lb-east.intenze.co/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
+const ACCOUNTID_MACROS = '{account_id}';
+const SUBDOMAIN_MACRO = '{subdomain}';
+const DEFAULT_CURRENCY = 'USD';
+
+const URL_ENDPOINT = `https://${SUBDOMAIN_MACRO}.intenze.co/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
+
 const NATIVE_ASSET_IDS = {
   0: 'title',
   2: 'icon',
@@ -52,6 +57,22 @@ const NATIVE_PARAMS = {
   }
 };
 const NATIVE_VERSION = '1.2';
+const US_EAST_SUBDOMAIN = 'lb-east';
+const EU_SUBDOMAIN = 'n2';
+
+function getSubdomain() {
+  const regionMap = {
+    'Europe': EU_SUBDOMAIN,
+    'America': US_EAST_SUBDOMAIN,
+  };
+
+  try {
+    const region = getTimeZone().split('/')[0];
+    return regionMap[region] || US_EAST_SUBDOMAIN;
+  } catch (err) {
+    return US_EAST_SUBDOMAIN;
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,7 +85,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return Boolean(bid.params.accountId) && Boolean(bid.params.placementId)
+    return Boolean(bid.params.accountId) && Boolean(bid.params.placementId);
   },
 
   /**
@@ -77,9 +98,12 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    if (validBidRequests && validBidRequests.length === 0) return []
+    if (validBidRequests && validBidRequests.length === 0) return [];
     const accuontId = validBidRequests[0].params.accountId;
-    const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
+    const subdomain = getSubdomain();
+    const endpointURL = URL_ENDPOINT
+      .replace(SUBDOMAIN_MACRO, subdomain || US_EAST_SUBDOMAIN)
+      .replace(ACCOUNTID_MACROS, accuontId);
     const winTop = window;
     let location;
     location = bidderRequest?.refererInfo ?? null;
@@ -89,7 +113,7 @@ export const spec = {
       const data = {
         id: bidRequest.bidId,
         test: config.getConfig('debug') ? 1 : 0,
-        cur: ['USD'],
+        cur: [DEFAULT_CURRENCY],
         device: {
           w: winTop.screen.width,
           h: winTop.screen.height,
@@ -119,7 +143,7 @@ export const spec = {
         deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
       }
 
-      bids.push(data)
+      bids.push(data);
     }
     return {
       method: 'POST',
@@ -148,7 +172,7 @@ export const spec = {
         width: response.seatbid[0].bid[0].w,
         height: response.seatbid[0].bid[0].h,
         ttl: response.ttl || 1200,
-        currency: response.cur || 'USD',
+        currency: response.cur || DEFAULT_CURRENCY,
         netRevenue: true,
         creativeId: response.seatbid[0].bid[0].crid,
         dealId: response.seatbid[0].bid[0].dealid,
@@ -188,7 +212,7 @@ export const spec = {
  */
 const checkRequestType = (bidRequest, type) => {
   return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
-}
+};
 
 const parseNative = admObject => {
   const {
@@ -216,7 +240,7 @@ const parseNative = admObject => {
   });
 
   return result;
-}
+};
 
 const prepareImpObject = (bidRequest) => {
   const impObject = {
@@ -238,7 +262,7 @@ const prepareImpObject = (bidRequest) => {
       request: addNativeParameters(bidRequest)
     };
   }
-  return impObject
+  return impObject;
 };
 
 const addNativeParameters = bidRequest => {
@@ -282,8 +306,8 @@ const addNativeParameters = bidRequest => {
   }).filter(Boolean);
 
   impObject.assets = assets;
-  return impObject
-}
+  return impObject;
+};
 
 const addBannerParameters = (bidRequest) => {
   const bannerObject = {};
@@ -313,17 +337,17 @@ const parseSizes = (bid, mediaType) => {
   if (Array.isArray(mediaTypes.banner.sizes)) {
     sizes = mediaTypes.banner.sizes[0];
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = bid.sizes
+    sizes = bid.sizes;
   } else {
     logWarn('no sizes are setup or found');
   }
 
-  return sizes
-}
+  return sizes;
+};
 
 const addVideoParameters = (bidRequest) => {
   const videoObj = {};
-  const supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
+  const supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity'];
 
   for (const param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {
@@ -335,10 +359,10 @@ const addVideoParameters = (bidRequest) => {
   videoObj.w = size[0];
   videoObj.h = size[1];
   return videoObj;
-}
+};
 
 const flatten = arr => {
   return [].concat(...arr);
-}
+};
 
 registerBidder(spec);

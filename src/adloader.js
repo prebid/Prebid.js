@@ -31,7 +31,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   function runCallback(cb, err) {
     if (err == null) {
       if (typeof cb === 'function') {
-        cb()
+        cb();
       } else {
         cb.success?.();
       }
@@ -78,6 +78,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
       for (let i = 0; i < cacheObject.callbacks.length; i++) {
         runCallback(cacheObject.callbacks[i], cacheObject.error);
       }
+      cacheObject.callbacks.length = 0;
     } catch (e) {
       logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
@@ -100,10 +101,12 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
       cacheObject.error = e;
       exit();
     }
-    jptScript.addEventListener('error', errorListener)
+    jptScript.addEventListener('error', errorListener);
 
     function exit() {
       jptScript.removeEventListener('error', errorListener);
+      jptScript.onload = null;
+      jptScript.onreadystatechange = null;
       callback();
     }
 

@@ -72,7 +72,7 @@ describe('ttdBidAdapter', function () {
           ext: {
             gpid: '/1111/home#header'
           }
-        }
+        };
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
@@ -84,7 +84,7 @@ describe('ttdBidAdapter', function () {
 
       it('should return false if neither mediaTypes.banner nor mediaTypes.video is passed', function () {
         const bid = makeBid();
-        delete bid.mediaTypes
+        delete bid.mediaTypes;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
@@ -270,7 +270,7 @@ describe('ttdBidAdapter', function () {
       custom_kvp: {
         customKey: 'customValue'
       }
-    }
+    };
 
     function validateExtFirstPartyData(ext) {
       expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
@@ -417,7 +417,7 @@ describe('ttdBidAdapter', function () {
 
     it('sets the banner expansion direction correctly if sent', function () {
       const clonedBannerRequests = deepClone(baseBannerBidRequests);
-      const expdir = [1, 3]
+      const expdir = [1, 3];
       clonedBannerRequests[0].params.banner = {
         expdir: expdir
       };
@@ -440,7 +440,7 @@ describe('ttdBidAdapter', function () {
           ...baseBannerBidRequests.referer,
           domain: null
         }
-      }
+      };
       const requestBody = testBuildRequests(
         baseBannerBidRequests, { ...baseBidderRequestWithoutRefererDomain, ortb2 }
       ).data;
@@ -674,8 +674,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.site.ext)
-      expect(requestBody.site.search).to.equal('test search')
+      validateExtFirstPartyData(requestBody.site.ext);
+      expect(requestBody.site.search).to.equal('test search');
     });
 
     it('adds all of user first party data to request', function() {
@@ -689,8 +689,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.user.ext)
-      expect(requestBody.user.yob).to.equal(1998)
+      validateExtFirstPartyData(requestBody.user.ext);
+      expect(requestBody.user.yob).to.equal(1998);
     });
 
     it('adds all of imp first party data to request', function() {
@@ -704,10 +704,10 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.imp[0].ext)
+      validateExtFirstPartyData(requestBody.imp[0].ext);
       expect(requestBody.imp[0].tagid).to.equal('1gaa015');
       expect(requestBody.imp[0].metric[0]).to.deep.equal(metric);
-      expect(requestBody.imp[0].clickbrowser).to.equal(1)
+      expect(requestBody.imp[0].clickbrowser).to.equal(1);
     });
 
     it('adds all of app first party data to request', function() {
@@ -721,8 +721,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.app.ext)
-      expect(requestBody.app.ver).to.equal('v1.0')
+      validateExtFirstPartyData(requestBody.app.ext);
+      expect(requestBody.app.ver).to.equal('v1.0');
     });
 
     it('adds all of device first party data to request', function() {
@@ -736,8 +736,8 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.device.ext)
-      expect(requestBody.device.os).to.equal('iPhone')
+      validateExtFirstPartyData(requestBody.device.ext);
+      expect(requestBody.device.os).to.equal('iPhone');
     });
 
     it('adds all of pmp first party data to request', function() {
@@ -751,8 +751,109 @@ describe('ttdBidAdapter', function () {
       const clonedBidderRequest = { ...deepClone(baseBidderRequest), ortb2 };
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.imp[0].pmp.ext)
-      expect(requestBody.imp[0].pmp.private_auction).to.equal(1)
+      validateExtFirstPartyData(requestBody.imp[0].pmp.ext);
+      expect(requestBody.imp[0].pmp.private_auction).to.equal(1);
+    });
+  });
+
+  describe('buildRequests-endpointCompression', function () {
+    const baseBannerBidRequests = [{
+      'bidder': 'ttd',
+      'params': {
+        'supplySourceId': 'supplier',
+        'publisherId': '13144370',
+        'placementId': '1gaa015'
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250]]
+        }
+      },
+      'ortb2Imp': {
+        'ext': {
+          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+        }
+      },
+      'sizes': [[300, 250]],
+      'bidId': '243310435309b5',
+      'bidderRequestId': '18084284054531',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'src': 'client',
+      'bidRequestsCount': 1
+    }];
+
+    const baseBidderRequest = {
+      'bidderCode': 'ttd',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
+      'bidderRequestId': '18084284054531',
+      'auctionStart': 1540945362095,
+      'timeout': 3000,
+      'refererInfo': {
+        'page': 'https://www.example.com/test',
+        'ref': 'https://referer.com'
+      },
+    };
+
+    let sandbox;
+    let bidderConfigStub;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      bidderConfigStub = sandbox.stub(config, 'getBidderConfig');
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should default endpointCompression to false when no bidder config is set', function () {
+      bidderConfigStub.returns({});
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should interpret correctly gzip configuration given as a boolean', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: false } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should interpret correctly gzip configuration given as a string', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: 'false' } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should enable endpointCompression when gzipEnabled is true', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: true } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should default to false when it receives an invalid configuration', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: 'randomString' } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should honor config set against the active alias bidder code', function () {
+      bidderConfigStub.returns({ thetradedesk: { gzipEnabled: true } });
+      const aliasBidRequests = baseBannerBidRequests.map(bid => ({ ...bid, bidder: 'thetradedesk' }));
+      const aliasBidderRequest = { ...baseBidderRequest, bidderCode: 'thetradedesk' };
+      const request = testBuildRequests(aliasBidRequests, aliasBidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
+    });
+
+    it('should fall back to the canonical ttd config when on an alias without its own config', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: true } });
+      const aliasBidRequests = baseBannerBidRequests.map(bid => ({ ...bid, bidder: 'thetradedesk' }));
+      const aliasBidderRequest = { ...baseBidderRequest, bidderCode: 'thetradedesk' };
+      const request = testBuildRequests(aliasBidRequests, aliasBidderRequest);
+      expect(request.options.endpointCompression).to.be.true;
     });
   });
 
@@ -1017,7 +1118,7 @@ describe('ttdBidAdapter', function () {
 
     it('sets the minduration to 0 if missing', function () {
       const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      delete clonedVideoRequests[0].mediaTypes.video.minduration
+      delete clonedVideoRequests[0].mediaTypes.video.minduration;
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.minduration).to.equal(0);

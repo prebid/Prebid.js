@@ -7,6 +7,7 @@ import {
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { expect } from 'chai';
+import { getGlobalVarName } from '../../../src/buildOptions.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Adagio Rtd Provider', function () {
@@ -104,13 +105,13 @@ describe('Adagio Rtd Provider', function () {
     });
 
     it('load an external script if localStorageIsEnabled is enabled', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true)
+      sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true);
       adagioRtdSubmodule.init(config);
       expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('do not load an external script if localStorageIsEnabled is disabled', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false)
+      sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false);
       adagioRtdSubmodule.init(config);
       expect(loadExternalScriptStub.called).to.be.false;
     });
@@ -129,11 +130,11 @@ describe('Adagio Rtd Provider', function () {
       it('store new session data for further usage', function () {
         const storageValue = JSON.stringify({ abTest: {} });
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
-        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
         adagioRtdSubmodule.init(config);
 
@@ -145,7 +146,7 @@ describe('Adagio Rtd Provider', function () {
             rnd: Math.random(),
             pages: 1,
           }
-        }
+        };
 
         expect(spy.withArgs({
           action: 'session',
@@ -157,10 +158,10 @@ describe('Adagio Rtd Provider', function () {
       it('store existing session data for further usage', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
 
-        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
         adagioRtdSubmodule.init(config);
 
@@ -169,7 +170,7 @@ describe('Adagio Rtd Provider', function () {
             ...session,
             new: false,
           }
-        }
+        };
 
         expect(spy.withArgs({
           action: 'session',
@@ -180,12 +181,12 @@ describe('Adagio Rtd Provider', function () {
 
       it('store new session if old session has expired data for further usage', function () {
         const storageValue = JSON.stringify({ session: session, abTest: {} });
-        sandbox.stub(Date, 'now').returns(1715679344351);
+        clock.setSystemTime(1715679344351);
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-5678');
 
-        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
         adagioRtdSubmodule.init(config);
 
@@ -196,7 +197,7 @@ describe('Adagio Rtd Provider', function () {
             id: utils.generateUUID(),
             rnd: Math.random(),
           }
-        }
+        };
         expect(spy.withArgs({
           action: 'session',
           ts: Date.now(),
@@ -209,11 +210,11 @@ describe('Adagio Rtd Provider', function () {
       it('store new session data for further usage', function () {
         const storageValue = null;
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
-        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
         adagioRtdSubmodule.init(config);
 
@@ -224,7 +225,7 @@ describe('Adagio Rtd Provider', function () {
             rnd: Math.random(),
             pages: 1
           }
-        }
+        };
 
         expect(spy.withArgs({
           action: 'session',
@@ -246,11 +247,11 @@ describe('Adagio Rtd Provider', function () {
           }
         });
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
-        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
         adagioRtdSubmodule.init(config);
 
@@ -264,7 +265,7 @@ describe('Adagio Rtd Provider', function () {
             testName: 't',
             testVersion: 'clt'
           }
-        }
+        };
 
         expect(spy.withArgs({
           action: 'session',
@@ -293,11 +294,11 @@ describe('Adagio Rtd Provider', function () {
           }
         });
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
-        sandbox.stub(Date, 'now').returns(1714116520710);
+        clock.setSystemTime(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
         sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
-        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
 
         adagioRtdSubmodule.init(config);
 
@@ -312,7 +313,7 @@ describe('Adagio Rtd Provider', function () {
             testVersion: 'srv',
             v: 2
           }
-        }
+        };
 
         expect(spy.withArgs({
           action: 'session',
@@ -424,7 +425,7 @@ describe('Adagio Rtd Provider', function () {
               return {
                 win: { t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177 },
                 self: { t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250 },
-              }
+              };
             }
           }
         };
@@ -545,8 +546,8 @@ describe('Adagio Rtd Provider', function () {
         configCopy.params.placementSource = PLACEMENT_SOURCES.GPID;
 
         const bidRequest = utils.deepClone(bidReqConfig);
-        const gpid = '/19968336/header-bid-tag-0'
-        utils.deepSetValue(bidRequest.adUnits[0], 'ortb2Imp.ext.gpid', gpid)
+        const gpid = '/19968336/header-bid-tag-0';
+        utils.deepSetValue(bidRequest.adUnits[0], 'ortb2Imp.ext.gpid', gpid);
 
         adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
         expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
@@ -680,11 +681,11 @@ describe('Adagio Rtd Provider', function () {
         }
       },
       'start': 1715613832796
-    }
+    };
 
     it('store a copy of computed property', function() {
-      const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
-      sandbox.stub(Date, 'now').returns(12345);
+      const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
+      clock.setSystemTime(12345);
 
       _internal.getGuard().clear();
 
@@ -719,9 +720,9 @@ describe('Adagio Rtd Provider', function () {
         bidderRequestsCount,
         organizationId: config.params.organizationId,
         site: config.params.site,
-        localPbjs: 'pbjs',
+        localPbjs: getGlobalVarName(),
         localPbjsRef: getGlobal()
-      }
+      };
 
       expect(spy.withArgs({
         action: 'store',

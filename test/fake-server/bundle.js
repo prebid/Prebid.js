@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const makeBundle = require('../../gulpfile.js');
 const argv = require('yargs').argv;
 const host = argv.host || 'localhost';
@@ -16,7 +14,7 @@ const replaceStrings = (() => {
   });
   return function(text) {
     return rules.reduce((text, [pat, repl]) => text.replace(pat, repl), text);
-  }
+  };
 })();
 
 const getBundle = (() => {
@@ -29,7 +27,7 @@ const getBundle = (() => {
       cache[key] = makeBundle(modules, dev).then(replaceStrings);
     }
     return cache[key];
-  }
+  };
 })();
 
 module.exports = function (req, res, next) {
@@ -38,4 +36,4 @@ module.exports = function (req, res, next) {
     res.write(bundle);
     next();
   }).catch(next);
-}
+};

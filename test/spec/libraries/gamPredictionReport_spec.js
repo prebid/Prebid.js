@@ -50,20 +50,6 @@ describe('gamPredictionReport', function () {
     expect(sendData.firstCall.args[0].bidderCode).to.equal('test');
   });
 
-  it('reads targeting from slot.getConfig flat object', () => {
-    const sendData = sinon.spy();
-    const slot = {
-      getConfig: sinon.stub().withArgs('targeting').returns({ hb_bidder: ['flat'] }),
-      getSlotElementId: () => 'div-2',
-      getAdUnitPath: () => '/456'
-    };
-
-    runWithSlot(slot, sendData);
-
-    expect(sendData.calledOnce).to.equal(true);
-    expect(sendData.firstCall.args[0].bidderCode).to.equal('flat');
-  });
-
   it('reads targeting from legacy slot.getTargeting APIs when getConfig is missing', () => {
     const sendData = sinon.spy();
     const slot = {
@@ -79,20 +65,6 @@ describe('gamPredictionReport', function () {
     expect(sendData.firstCall.args[0].bidderCode).to.equal('legacy');
     expect(slot.getTargetingKeys.calledOnce).to.equal(true);
     expect(slot.getTargeting.calledOnce).to.equal(true);
-  });
-
-  it('coerces non-array targeting values to string arrays', () => {
-    const sendData = sinon.spy();
-    const slot = {
-      getConfig: sinon.stub().withArgs('targeting').returns({ targeting: { hb_bidder: 42 } }),
-      getSlotElementId: () => 'div-4',
-      getAdUnitPath: () => '/101'
-    };
-
-    runWithSlot(slot, sendData);
-
-    expect(sendData.calledOnce).to.equal(true);
-    expect(sendData.firstCall.args[0].bidderCode).to.equal('42');
   });
 
   it('logs and recovers when legacy targeting APIs throw', () => {

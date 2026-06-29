@@ -18,7 +18,7 @@ describe('cachedApiWrapper', () => {
           prop3: true
         }
       }
-    })
+    });
   });
 
   it('should delegate to target', () => {
@@ -53,5 +53,5 @@ describe('cachedApiWrapper', () => {
     wrapper.reset();
     child.prop2 = 'newValue';
     expect(wrapper.obj.child.prop2).to.eql('newValue');
-  })
-})
+  });
+});
