@@ -76,7 +76,7 @@ export const abtshieldIdSubmodule = {
       logError(`${MODULE_NAME}: storage.refreshInSeconds must be >= ${MIN_REFRESH_SECONDS} seconds.`);
       return undefined;
     }
-    const params = (config && config.params) || {};
+    const params = config.params || {};
     const sid = typeof params.sid === 'string' ? params.sid.trim() : '';
     if (!sid) {
       logError(`${MODULE_NAME}: params.sid is required. Obtain a service ID at abtshield.com and set params: { sid: '<your-sid>' }.`);

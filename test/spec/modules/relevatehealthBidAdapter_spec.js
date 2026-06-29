@@ -108,7 +108,9 @@ describe('relevatehealth adapter', function() {
   describe('Validate Request', function() {
     it('Immutable bid request validate', function() {
       const _Request = utils.deepClone(request);
-      const bidRequest = spec.buildRequests(request);
+
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function() {

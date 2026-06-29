@@ -87,19 +87,10 @@ const bidHandler = (eventType, bid) => {
   const bids = bid.length ? bid : [bid];
 
   for (const bidObj of bids) {
-    let bidToSend;
-
-    if (bidObj.bidderCode !== BIDDER_CODE) {
-      if (eventType === BID_WON) {
-        bidToSend = {
-          cpm: bidObj.cpm,
-          auctionId: bidObj.auctionId
-        };
-      } else continue;
+    if (bidObj.bidderCode !== BIDDER_CODE && eventType !== BID_WON) {
+      continue;
     }
-
-    bidToSend = bidObj;
-
+    const bidToSend = { ...bidObj };
     if (eventType === BID_REJECTED) {
       bidToSend.params = smartyParams[bid.requestId];
     }

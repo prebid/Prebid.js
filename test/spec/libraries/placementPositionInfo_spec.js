@@ -15,7 +15,6 @@ describe('placementPositionInfo', function () {
   let getWindowSelfStub;
   let getBoundingClientRectStub;
   let percentInViewStub;
-  let cleanObjStub;
 
   let mockDocument;
   let mockWindow;
@@ -42,7 +41,7 @@ describe('placementPositionInfo', function () {
     getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf').returns(mockWindow);
     getBoundingClientRectStub = sandbox.stub(boundingClientRectLib, 'getBoundingClientRect');
     percentInViewStub = sandbox.stub(percentInViewLib, 'getViewability');
-    cleanObjStub = sandbox.stub(utils, 'cleanObj').callsFake(obj => obj);
+    sandbox.stub(utils, 'cleanObj').callsFake(obj => obj);
     sandbox.stub(winDimensions, 'getWinDimensions').returns(mockWindow);
     viewportOffset = { x: 0, y: 0 };
     sandbox.stub(percentInViewLib, 'getViewportOffset').callsFake(() => viewportOffset);

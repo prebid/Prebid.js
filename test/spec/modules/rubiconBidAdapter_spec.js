@@ -27,8 +27,7 @@ describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
     sizeMap,
-    getFloorResponse,
-    logErrorSpy;
+    getFloorResponse;
 
   /**
    * @typedef {import('../../../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -400,7 +399,7 @@ describe('the rubicon adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    logErrorSpy = sinon.spy(utils, 'logError');
+    sinon.spy(utils, 'logError');
     getFloorResponse = {};
     bidderRequest = {
       bidderCode: 'rubicon',
@@ -3054,7 +3053,7 @@ describe('the rubicon adapter', function () {
                 }
               };
               bidReq.bids[0].params.bidonmultiformat = true;
-              const [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              const [pbsRequest] = spec.buildRequests(bidReq.bids, bidReq);
               expect(pbsRequest.data.imp[0].ext.prebid.bidder.rubicon.formats).to.deep.equal(['native', 'banner']);
             });
 
@@ -3068,7 +3067,7 @@ describe('the rubicon adapter', function () {
                 }
               };
               bidReq.bids[0].params.bidonmultiformat = true;
-              const [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              const [, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
               const formatsIncluded = fastlanteRequest.data.indexOf('formats=native%2Cbanner') !== -1;
               expect(formatsIncluded).to.equal(true);
             });
@@ -4313,7 +4312,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
-            const adUnitSelector = `#${bid.adUnitCode}`;
+
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4383,7 +4382,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
-            const adUnitSelector = `#${bid.adUnitCode}`;
+
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 

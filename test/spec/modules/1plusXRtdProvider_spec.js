@@ -1,10 +1,8 @@
-import assert from 'assert';
 import { config } from 'src/config';
 import {
   buildOrtb2Updates,
   extractConfig,
   extractConsent,
-  extractFpid,
   getPapiUrl,
   onePlusXSubmodule,
   segtaxes,

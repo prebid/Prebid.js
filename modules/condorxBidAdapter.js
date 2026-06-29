@@ -106,7 +106,7 @@ function parseBannerAdResponse(tile, response) {
   if (tile.tag) {
     return tile.tag;
   }
-  let style = '';
+  let style;
   try {
     const config = JSON.parse(response.widget.config);
     const css = config.css || '';

@@ -847,8 +847,6 @@ describe('33acrossIdSystem', () => {
       });
 
       it('should call endpoint with the GPP applicable sections', () => {
-        const gppString = 'foo';
-
         [
           { applicableSections: [], expected: '' },
           { applicableSections: undefined, expected: '' },

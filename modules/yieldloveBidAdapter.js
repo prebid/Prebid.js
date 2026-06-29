@@ -127,9 +127,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
-    let gdprParams = '';
-    gdprParams = `gdpr=${Number(gdprConsent?.gdprApplies)}&`;
-    gdprParams += `gdpr_consent=${gdprConsent?.consentString || ''}`;
+    const gdprParams = `gdpr=${Number(gdprConsent?.gdprApplies)}&gdpr_consent=${gdprConsent?.consentString || ''}`;
 
     let bidderParams = '';
     if (participatedBidders.length > 0) {

@@ -1,5 +1,5 @@
 import { config } from 'src/config.js';
-import { deepAccess } from 'src/utils.js';
+
 import * as agRTD from 'modules/airgridRtdProvider.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
