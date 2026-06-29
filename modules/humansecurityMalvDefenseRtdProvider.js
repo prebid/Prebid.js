@@ -94,7 +94,11 @@ export function createRtdSubmodule(moduleName) {
    * @param {string} scriptURL The script URL to preload
    */
   function pageInitStepPreloadScript(scriptURL) {
-    preloadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_CODE).finally(() => { preloadStatus = 1; });
+    preloadExternalScript(scriptURL, MODULE_TYPE_RTD, moduleName).then(() => {
+      preloadStatus = 1;
+    }, () => {
+      preloadStatus = -1;
+    });
   }
 
   /**
@@ -181,6 +185,7 @@ export function createRtdSubmodule(moduleName) {
    * The function which performs submodule registration.
    */
   function beforeInit() {
+    preloadStatus = 0;
     submodule('realTimeData', /** @type {RtdSubmodule} */ ({
       name: moduleName,
 
