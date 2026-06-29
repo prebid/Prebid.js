@@ -1232,13 +1232,13 @@ describe('adqueryBidAdapter', function () {
 
     it('should include qid in sync URL when present in serverResponses', function () {
       const serverResponses = [{ body: { data: { qid: 'test-qid-value' } } }];
-      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {});
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, gdprConsentWithPurpose1, {});
       expect(sync[0].url).to.include('qid=test-qid-value');
     });
 
     it('should find qid from any response, not just the first', function () {
       const serverResponses = [{ body: '' }, { body: '' }, { body: { data: { qid: 'test-qid-value' } } }];
-      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {});
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, gdprConsentWithPurpose1, {});
       expect(sync[0].url).to.include('qid=test-qid-value');
     });
   })
