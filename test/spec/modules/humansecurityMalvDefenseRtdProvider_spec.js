@@ -1,7 +1,6 @@
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as utils from '../../../src/utils.js';
 import * as adloader from '../../../src/adloader.js';
-import { preloadExternalScript } from '../../../src/adloader.js';
 import * as hook from '../../../src/hook.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
