@@ -1170,6 +1170,7 @@ describe('adqueryBidAdapter', function () {
       gdprApplies: true,
       vendorData: { purpose: { consents: { 1: true } } }
     };
+    const serverResponsesWithQid = [{ body: { data: { qid: 'test-qid-value' } } }];
 
     it('should return iframe sync', function () {
       const sync = spec.getUserSyncs(
@@ -1177,7 +1178,7 @@ describe('adqueryBidAdapter', function () {
           iframeEnabled: true,
           pixelEnabled: true,
         },
-        {},
+        serverResponsesWithQid,
         gdprConsentWithPurpose1,
         {}
       )
@@ -1191,7 +1192,7 @@ describe('adqueryBidAdapter', function () {
           iframeEnabled: false,
           pixelEnabled: true,
         },
-        {},
+        serverResponsesWithQid,
         gdprConsentWithPurpose1,
         {}
       )
@@ -1201,7 +1202,7 @@ describe('adqueryBidAdapter', function () {
     })
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, gdprConsentWithPurpose1, {});
+      const syncData = spec.getUserSyncs({}, serverResponsesWithQid, gdprConsentWithPurpose1, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
@@ -1210,7 +1211,12 @@ describe('adqueryBidAdapter', function () {
 
     it('should return empty array when Purpose 1 consent is missing', function () {
       const gdprConsent = { gdprApplies: true, vendorData: { purpose: { consents: { 1: false } } } };
-      const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, gdprConsent, {});
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, gdprConsent, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when qid is not present in serverResponses', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, [{ body: { data: {} } }], gdprConsentWithPurpose1, {});
       expect(sync).to.be.an('array').that.is.empty;
     });
 
