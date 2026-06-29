@@ -486,6 +486,16 @@ describe('Adtrgtme Bid Adapter:', () => {
         );
         expect(response).to.have.lengthOf(0);
       });
+
+      it('should infer native mediaType from JSON markup when mtype is absent', () => {
+        const ortbNative = { ver: '1.2', assets: [{ id: 1, title: { text: 'x' } }] };
+        const response = buildAndInterpret(
+          createSeatBid({ mtype: undefined, adm: JSON.stringify(ortbNative), crid: 'native-crid' }),
+          { mediaTypes: { native: { ortb: { assets: [] } } } }
+        );
+        expect(response[0].mediaType).to.equal('native');
+        expect(response[0].native.ortb).to.deep.equal(ortbNative);
+      });
     }
 
     describe('adId fallbacks', () => {
@@ -613,6 +623,18 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(syncs[0].url).to.include('gdpr=1');
       expect(syncs[0].url).to.include('gdpr_consent=consent-123');
       expect(syncs[0].url).to.include('us_privacy=1YNN');
+    });
+
+    it('should append gpp params when gpp consent is provided', () => {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: false, pixelEnabled: true },
+        serverResponses,
+        undefined,
+        undefined,
+        { gppString: 'DBABMA~CPXxRfA', applicableSections: [7] }
+      );
+      expect(syncs[0].url).to.include('gpp=DBABMA');
+      expect(syncs[0].url).to.include('gpp_sid=7');
     });
   });
 });

@@ -26,17 +26,6 @@ const DEFAULT_BANNER_MIMES = [
   'image/jpg',
 ];
 
-/**
- * Public bidder parameters for the adtrgtme adapter (`adUnit.bids[].params`).
- *
- * @typedef {Object} AdtrgtmeBidParams
- * @property {string} sid - Adtarget site/app id provided by the SSP. Sent as `site.id`.
- * @property {(string|number)} [zid] - Strict placement id, forwarded as `imp.tagid`.
- * @property {{imp?: {bidfloor?: number, bidfloorcur?: string}}} [bidOverride]
- *   Manual impression bidfloor override, used as a fallback when the Price Floors module
- *   is not available.
- */
-
 function readConfig(key) {
   return config.getConfig(`${BIDDER_CODE}.${key}`);
 }
