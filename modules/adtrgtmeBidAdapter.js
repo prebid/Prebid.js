@@ -49,16 +49,24 @@ function resolveTtl(bidRequest) {
 }
 
 // The SSP omits ORTB "mtype" on some passback responses; infer the media type
-// from the markup so the converter can build the proper bid-response shape.
-function sniffMediaType(adm) {
-  if (isStr(adm)) {
-    const markup = adm.trim();
+// from the markup and, failing that, from the matched impression, so the converter
+// can build the proper bid-response shape.
+function resolveResponseMediaType(bid, imp) {
+  if (isStr(bid.adm)) {
+    const markup = bid.adm.trim();
     if (markup.startsWith('{') || markup.startsWith('[')) {
       return NATIVE;
     }
     if (/<vast/i.test(markup)) {
       return VIDEO;
     }
+  }
+  // No usable markup (e.g. VAST delivered via nurl): fall back to the impression.
+  if (imp?.video && (bid.nurl || !imp.banner)) {
+    return VIDEO;
+  }
+  if (imp?.native && !imp.banner && !imp.video) {
+    return NATIVE;
   }
   return BANNER;
 }
@@ -149,11 +157,15 @@ const converter = ortbConverter({
 
   bidResponse(buildBidResponse, bid, context) {
     if (bid.mtype == null) {
-      context.mediaType = sniffMediaType(bid.adm);
+      context.mediaType = resolveResponseMediaType(bid, context.imp);
     }
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.adId = bid.adId || bid.impid || bid.crid;
-    bidResponse.currency = bid.cur || DEFAULT_CUR;
+    // Keep the currency the converter derived from the top-level response `cur`;
+    // only a non-standard per-bid `cur` (legacy Adtarget responses) overrides it.
+    if (bid.cur) {
+      bidResponse.currency = bid.cur;
+    }
     if (isPlainObject(bidResponse.meta)) {
       bidResponse.meta.mediaType = bidResponse.mediaType;
     }

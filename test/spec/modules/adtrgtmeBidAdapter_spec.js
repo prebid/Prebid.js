@@ -451,6 +451,16 @@ describe('Adtrgtme Bid Adapter:', () => {
         );
         expect(response[0].mediaType).to.equal('video');
       });
+
+      it('should infer video mediaType from the matched imp when mtype/adm are absent and only nurl is set', () => {
+        const response = buildAndInterpret(
+          createSeatBid({ mtype: undefined, adm: undefined, nurl: 'https://vast.example/win' }),
+          { mediaTypes: { video: { playerSize: [[640, 480]], mimes: ['video/mp4'] } } }
+        );
+        expect(response[0].mediaType).to.equal('video');
+        expect(response[0].vastUrl).to.equal('https://vast.example/win');
+        expect(response[0].ad).to.be.undefined;
+      });
     }
 
     if (FEATURES.NATIVE) {
@@ -486,6 +496,30 @@ describe('Adtrgtme Bid Adapter:', () => {
       it('should fall back to impid when adId missing', () => {
         const response = buildAndInterpret(createSeatBid({ adm: '<div>ad</div>' }));
         expect(response[0].adId).to.equal(DEFAULT_BID_ID);
+      });
+    });
+
+    describe('currency', () => {
+      const interpret = (body) => {
+        const { validBR, bidderRequest } = createRequestMock();
+        const request = buildFirst(validBR, bidderRequest);
+        return spec.interpretResponse({ body }, request);
+      };
+
+      it('should keep the top-level response currency instead of forcing USD', () => {
+        const response = interpret({
+          cur: 'EUR',
+          seatbid: [{ bid: [createSeatBid({ adm: '<div>ad</div>' })] }],
+        });
+        expect(response[0].currency).to.equal('EUR');
+      });
+
+      it('should let a non-standard per-bid cur override the response currency', () => {
+        const response = interpret({
+          cur: 'EUR',
+          seatbid: [{ bid: [createSeatBid({ adm: '<div>ad</div>', cur: 'GBP' })] }],
+        });
+        expect(response[0].currency).to.equal('GBP');
       });
     });
 
