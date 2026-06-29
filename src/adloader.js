@@ -147,13 +147,9 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
   }
 };
 
-export const preloadExternalScript = memoize(function (url, moduleType, moduleCode, doc = document) {
+const doPreload = memoize(function (url) {
   return new Promise((resolve, reject) => {
-    if (!isAllowed(url, moduleType, moduleCode)) {
-      reject(new Error('Denied'));
-      return;
-    }
-    const link = doc.createElement('link');
+    const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'script';
     link.href = url;
@@ -162,3 +158,11 @@ export const preloadExternalScript = memoize(function (url, moduleType, moduleCo
     insertElement(link);
   });
 });
+
+export async function preloadExternalScript(url, moduleType, moduleCode) {
+  if (!isAllowed(url, moduleType, moduleCode)) {
+    throw new Error('Denied');
+  }
+  return doPreload(url);
+}
+preloadExternalScript.clear = doPreload.clear;

@@ -192,6 +192,19 @@ describe('adLoader', function () {
         expect(e).to.equal(err);
       }
     });
+
+    it('should allow loading after activities control change', async () => {
+      rule.returns({ allow: false });
+      try {
+        await preloadExternalScript('url', 'type', 'code');
+      } catch (e) {
+
+      }
+      sinon.assert.notCalled(utilsinsertElementStub);
+      rule.returns(undefined);
+      preloadExternalScript('url', 'type', 'code');
+      sinon.assert.called(utilsinsertElementStub);
+    });
   });
 
   it('attaches passed attributes to a script', function () {
