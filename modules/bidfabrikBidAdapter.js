@@ -71,7 +71,7 @@ export const spec = {
   gvlid: GVLID,
   aliases: [
     { code: 'revbid', gvlid: GVLID },
-    { code: 'revantage', gvlid: GVLID },
+    { code: 'revantagex', gvlid: GVLID },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
