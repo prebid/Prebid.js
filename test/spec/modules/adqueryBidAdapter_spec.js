@@ -1165,6 +1165,12 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('getUserSyncs', function () {
+    const gdprConsentWithPurpose1 = {
+      consentString: 'ALL',
+      gdprApplies: true,
+      vendorData: { purpose: { consents: { 1: true } } }
+    };
+
     it('should return iframe sync', function () {
       const sync = spec.getUserSyncs(
         {
@@ -1172,10 +1178,7 @@ describe('adqueryBidAdapter', function () {
           pixelEnabled: true,
         },
         {},
-        {
-          consentString: 'ALL',
-          gdprApplies: true,
-        },
+        gdprConsentWithPurpose1,
         {}
       )
       expect(sync.length).to.equal(1)
@@ -1189,10 +1192,7 @@ describe('adqueryBidAdapter', function () {
           pixelEnabled: true,
         },
         {},
-        {
-          consentString: 'ALL',
-          gdprApplies: true,
-        },
+        gdprConsentWithPurpose1,
         {}
       )
       expect(sync.length).to.equal(1)
@@ -1201,18 +1201,27 @@ describe('adqueryBidAdapter', function () {
     })
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
-        consentString: 'ALL',
-        gdprApplies: true,
-      }, {});
+      const syncData = spec.getUserSyncs({}, {}, gdprConsentWithPurpose1, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
     });
 
+    it('should return empty array when Purpose 1 consent is missing', function () {
+      const gdprConsent = { gdprApplies: true, vendorData: { purpose: { consents: { 1: false } } } };
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, gdprConsent, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
     it('should include qid in sync URL when present in serverResponses', function () {
       const serverResponses = [{ body: { data: { qid: 'test-qid-value' } } }];
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {});
+      expect(sync[0].url).to.include('qid=test-qid-value');
+    });
+
+    it('should find qid from any response, not just the first', function () {
+      const serverResponses = [{ body: '' }, { body: '' }, { body: { data: { qid: 'test-qid-value' } } }];
       const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {});
       expect(sync[0].url).to.include('qid=test-qid-value');
     });

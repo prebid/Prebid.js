@@ -9,6 +9,7 @@ import {
   deepSetValue,
   deepAccess
 } from '../src/utils.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -246,11 +247,12 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
+    if (!hasPurpose1Consent(gdprConsent)) return [];
     const syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
       'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
-      'qid': deepAccess(serverResponses, '0.body.data.qid') || '',
+      'qid': Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) || '' : '',
     };
 
     const syncUrlObject = {
