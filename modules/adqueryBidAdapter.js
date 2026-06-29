@@ -250,6 +250,7 @@ export const spec = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
       'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
+      'qid': deepAccess(serverResponses, '0.body.data.qid') || '',
     };
 
     const syncUrlObject = {

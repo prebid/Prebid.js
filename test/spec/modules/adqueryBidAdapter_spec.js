@@ -1211,15 +1211,10 @@ describe('adqueryBidAdapter', function () {
       expect(syncData[0].type).to.equal('image')
     });
 
-    it('should not include qid in sync URL even when window.qid is set', function () {
-      const originalQid = window.qid;
-      window.qid = 'test-qid-value';
-      try {
-        const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {});
-        expect(sync[0].url).to.not.include('qid');
-      } finally {
-        window.qid = originalQid;
-      }
+    it('should include qid in sync URL when present in serverResponses', function () {
+      const serverResponses = [{ body: { data: { qid: 'test-qid-value' } } }];
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {});
+      expect(sync[0].url).to.include('qid=test-qid-value');
     });
   })
 
