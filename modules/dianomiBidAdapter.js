@@ -64,7 +64,7 @@ const NATIVE_PARAMS = {
   },
 };
 let endpoint = 'www-prebid.dianomi.com';
-let bidderURL = "https://dianomi-bidder-proxy.dianomi.com/traffic_proxy";
+const defaultBidderURL = "https://dianomi-bidder-proxy.dianomi.com/traffic_proxy";
 
 const OUTSTREAM_RENDERER_URL = (hostname) => `https://${hostname}/prebid/outstream/renderer.js`;
 
@@ -116,6 +116,8 @@ export const spec = {
 
     const paramsBidderURL = setOnAny(validBidRequests, "params.bidderURL");
 
+    let bidderURL = defaultBidderURL;
+
     if (paramsBidderURL) {
       bidderURL = paramsBidderURL;
     }
@@ -143,8 +145,8 @@ export const spec = {
       const { smartadId } = bid.params;
 
       const imp = {
-        id: id + 1,
-        tagid: smartadId,
+        id: String(id + 1),
+        tagid: String(smartadId),
         bidfloor,
         bidfloorcur,
         ext: {
@@ -253,6 +255,9 @@ export const spec = {
       url: bidderURL,
       data: JSON.stringify(request),
       bids: validBidRequests,
+      options: {
+        contentType: 'application/json'
+      }
     };
   },
   interpretResponse: function (serverResponse, { bids }) {
