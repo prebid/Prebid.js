@@ -247,13 +247,13 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
-    if (!hasPurpose1Consent(gdprConsent)) return [];
+    if (!gdprConsent?.gdprApplies || !hasPurpose1Consent(gdprConsent)) return [];
     const qid = Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) : null;
     if (!qid) return [];
     const syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
-      'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
+      'ccpa_consent': uspConsent || '',
       'qid': qid,
     };
 

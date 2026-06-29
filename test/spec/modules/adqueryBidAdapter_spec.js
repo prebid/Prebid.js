@@ -1215,9 +1215,19 @@ describe('adqueryBidAdapter', function () {
       expect(sync).to.be.an('array').that.is.empty;
     });
 
+    it('should return empty array when GDPR does not apply', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, { gdprApplies: false }, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
     it('should return empty array when qid is not present in serverResponses', function () {
       const sync = spec.getUserSyncs({ pixelEnabled: true }, [{ body: { data: {} } }], gdprConsentWithPurpose1, {});
       expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should include ccpa_consent in sync URL when uspConsent provided', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, gdprConsentWithPurpose1, '1YNN');
+      expect(sync[0].url).to.include('ccpa_consent=1YNN');
     });
 
     it('should include qid in sync URL when present in serverResponses', function () {
