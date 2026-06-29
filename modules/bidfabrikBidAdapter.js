@@ -41,6 +41,31 @@ function resolveHost(params) {
   return host || DEFAULT_HOST;
 }
 
+function appendConsentParams(url, gdprConsent, uspConsent, gppConsent) {
+  const params = [];
+  if (gdprConsent) {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
+    }
+    if (isStr(gdprConsent.consentString)) {
+      params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`);
+    }
+  }
+  if (isStr(uspConsent)) {
+    params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+  }
+  if (gppConsent) {
+    if (isStr(gppConsent.gppString)) {
+      params.push(`gpp=${encodeURIComponent(gppConsent.gppString)}`);
+    }
+    if (isArray(gppConsent.applicableSections) && gppConsent.applicableSections.length > 0) {
+      params.push(`gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+    }
+  }
+  if (!params.length) return url;
+  return url + (url.includes('?') ? '&' : '?') + params.join('&');
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -124,7 +149,7 @@ export const spec = {
     }).bids;
   },
 
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
     if ((!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) || !isArray(serverResponses)) {
       return syncs;
@@ -138,10 +163,11 @@ export const spec = {
         if (!entry || !isStr(entry.url)) {
           return;
         }
+        const url = appendConsentParams(entry.url, gdprConsent, uspConsent, gppConsent);
         if (entry.type === 'iframe' && syncOptions.iframeEnabled) {
-          syncs.push({ type: 'iframe', url: entry.url });
+          syncs.push({ type: 'iframe', url });
         } else if (entry.type === 'image' && syncOptions.pixelEnabled) {
-          syncs.push({ type: 'image', url: entry.url });
+          syncs.push({ type: 'image', url });
         }
       });
     });
