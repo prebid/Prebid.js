@@ -13,7 +13,7 @@ const {
   setWrapper,
   getMacros,
   WRAPPER_URL,
-  preloadClient
+  loadClientInIframe
 } = geoedgeRtdModule;
 
 const key = '123123123';
@@ -68,10 +68,10 @@ describe('Geoedge RTD module', function () {
     });
     describe('init', function () {
       before(function () {
-        sinon.spy(geoedgeRtdModule, 'preloadClient');
+        sinon.spy(geoedgeRtdModule, 'loadClientInIframe');
       });
       after(function () {
-        geoedgeRtdModule.preloadClient.restore();
+        geoedgeRtdModule.loadClientInIframe.restore();
       });
       it('should return false when missing params or key', function () {
         const missingParams = geoedgeSubmodule.init({});
@@ -87,8 +87,8 @@ describe('Geoedge RTD module', function () {
         const isWrapperRequest = request && request.url && request.url && request.url === WRAPPER_URL;
         expect(isWrapperRequest).to.equal(true);
       });
-      it('should call preloadClient', function () {
-        expect(preloadClient.called);
+      it('should call loadClientInIframe', function () {
+        expect(loadClientInIframe.called);
       });
       it('should emit billable events with applicable winning bids', function (done) {
         let counter = 0;
@@ -111,9 +111,9 @@ describe('Geoedge RTD module', function () {
         expect(hasGrumiObj && window.grumi.key === key && window.grumi.fromPrebid).to.equal(true);
       });
     });
-    describe('preloadClient', function () {
+    describe('loadClientInIframe', function () {
       let iframe;
-      preloadClient(key);
+      loadClientInIframe(key);
       const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
       it('should create an invisible iframe and insert it to the DOM', function () {
         iframe = document.getElementById('grumiFrame');
@@ -123,7 +123,7 @@ describe('Geoedge RTD module', function () {
         const grumi = iframe.contentWindow.grumi;
         expect(grumi.key).to.equal(key);
       });
-      it('should preload the client into the iframe', function () {
+      it('should load the client into the iframe', function () {
         const isClientUrl = arg => arg === getClientUrl(key);
         expect(loadExternalScriptCall.calledWithMatch(isClientUrl)).to.equal(true);
       });
