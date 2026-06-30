@@ -30,7 +30,7 @@ const getBannerRequest = () => {
     start: 1487883186070,
     auctionStart: 1487883186069,
     timeout: 3000
-  }
+  };
 };
 
 const getVideoRequest = () => {
@@ -189,7 +189,7 @@ const getBidderResponse = () => {
       }
     }
   };
-}
+};
 
 describe('dxtechBidAdapter', function() {
   let videoBidRequest;
@@ -331,6 +331,11 @@ describe('dxtechBidAdapter', function() {
           publisherId: 'publisherId',
         }
       };
+    });
+
+    it('returns true when video request includes required params', function () {
+      videoBidRequest.params.placementId = 'placementId';
+      expect(spec.isBidRequestValid(videoBidRequest)).to.be.true;
     });
 
     it('should return true (skip validations) when e2etest = true', function () {

@@ -13,13 +13,13 @@ export const normalizeFPD = hook('sync', function(ortb2Fragments) {
     makeNormalizer('regs.gpp_sid', 'regs.ext.gpp_sid', 'regs.gpp_sid'),
   ].forEach(normalizer => applyNormalizer(normalizer, ortb2Fragments));
   return ortb2Fragments;
-})
+});
 
 function applyNormalizer(normalizer, ortb2Fragments) {
   ortb2Fragments.global = normalizer(ortb2Fragments.global, 'global FPD');
   Object.entries(ortb2Fragments.bidder).forEach(([bidder, ortb2]) => {
     ortb2Fragments.bidder[bidder] = normalizer(ortb2, `bidder '${bidder}' FPD`);
-  })
+  });
 }
 
 export function normalizeEIDs(target, context) {
@@ -32,7 +32,7 @@ export function normalizeEIDs(target, context) {
     if (seen.findIndex(([candidateSource, candidateEid]) =>
       source !== candidateSource && deepEqual(candidateEid, eid)
     ) > -1) {
-      logWarn(`Found duplicate EID in user.eids and user.ext.eids (${context})`, eid)
+      logWarn(`Found duplicate EID in user.eids and user.ext.eids (${context})`, eid);
       return false;
     } else {
       seen.push([source, eid]);
@@ -60,7 +60,7 @@ export function makeNormalizer(preferred, fallback, dest) {
       logWarn(`Conflicting ${preferred} and ${fallback} (${context}), preferring ${preferred}`, {
         [preferred]: prefData,
         [fallback]: fallbackData
-      })
+      });
     }
     if ((prefData ?? fallbackData) != null) {
       deepSetValue(ortb2, dest, prefData ?? fallbackData);
@@ -70,5 +70,5 @@ export function makeNormalizer(preferred, fallback, dest) {
       delete ignoredTarget[delProp];
     }
     return ortb2;
-  }
+  };
 }

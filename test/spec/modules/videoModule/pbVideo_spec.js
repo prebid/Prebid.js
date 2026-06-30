@@ -16,7 +16,6 @@ let gamSubmoduleFactoryMock;
 let videoImpressionVerifierFactoryMock;
 let videoImpressionVerifierMock;
 let adQueueCoordinatorMock;
-let adQueueCoordinatorFactoryMock;
 
 function resetTestVars() {
   ortbVideoMock = {};
@@ -63,8 +62,6 @@ function resetTestVars() {
     registerProvider: sinon.spy(),
     queueAd: sinon.spy()
   };
-
-  adQueueCoordinatorFactoryMock = () => adQueueCoordinatorMock;
 }
 
 const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator) => {
@@ -81,7 +78,7 @@ const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, v
   );
   pbVideo.init();
   return pbVideo;
-}
+};
 
 describe('Prebid Video', function () {
   beforeEach(() => resetTestVars());
@@ -226,7 +223,7 @@ describe('Prebid Video', function () {
       emit: () => {},
       on: (event, callback) => {
         if (event === EVENTS.AUCTION_END) {
-          auctionEndCallback = callback
+          auctionEndCallback = callback;
         }
       },
       off: () => {}
@@ -290,7 +287,7 @@ describe('Prebid Video', function () {
         .then(() => {
           sinon.assert.notCalled(gamSubmoduleMock.getAdTagUrl);
         });
-    })
+    });
 
     it('should load ad tag when ad server returns ad tag', function () {
       const expectedAdTag = 'resulting ad tag';

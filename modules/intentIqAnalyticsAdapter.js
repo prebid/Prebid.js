@@ -97,8 +97,8 @@ const getDefaultInitOptions = () => {
     additionalParams: null,
     reportingServerAddress: '',
     region: ''
-  }
-}
+  };
+};
 
 const iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ url: DEFAULT_URL, analyticsType }), {
   initOptions: getDefaultInitOptions(),
@@ -136,9 +136,9 @@ const { BID_WON, BID_REQUESTED } = EVENTS;
 function initAdapterConfig(config) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.adapterConfigInitialized) return;
 
-  const options = config?.options || {}
-  iiqConfig = options
-  const { manualWinReportEnabled, gamPredictReporting, reportMethod, reportingServerAddress, region, adUnitConfig, partner, ABTestingConfigurationSource, browserBlackList, domainName, additionalParams } = options
+  const options = config?.options || {};
+  iiqConfig = options;
+  const { manualWinReportEnabled, gamPredictReporting, reportMethod, reportingServerAddress, region, adUnitConfig, partner, ABTestingConfigurationSource, browserBlackList, domainName, additionalParams } = options;
   iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =
             manualWinReportEnabled || false;
   iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod = parseReportingMethod(reportMethod);
@@ -157,21 +157,21 @@ function initAdapterConfig(config) {
   iiqAnalyticsAnalyticsAdapter.initOptions.additionalParams = additionalParams || null;
   if (!partner) {
     logError('IIQ ANALYTICS -> partner ID is missing');
-    iiqAnalyticsAnalyticsAdapter.initOptions.partner = -1
-  } else iiqAnalyticsAnalyticsAdapter.initOptions.partner = partner
+    iiqAnalyticsAnalyticsAdapter.initOptions.partner = -1;
+  } else iiqAnalyticsAnalyticsAdapter.initOptions.partner = partner;
   defineGlobalVariableName();
-  iiqAnalyticsAnalyticsAdapter.initOptions.adapterConfigInitialized = true
+  iiqAnalyticsAnalyticsAdapter.initOptions.adapterConfigInitialized = true;
 }
 
 function receivePartnerData() {
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
-    const FPD = window[identityGlobalName]?.firstPartyData
+    const FPD = window[identityGlobalName]?.firstPartyData;
     if (!window[identityGlobalName] || !FPD) {
-      return false
+      return false;
     }
-    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = FPD
-    const { partnerData, clientHints = '', actualABGroup } = window[identityGlobalName]
+    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = FPD;
+    const { partnerData, clientHints = '', actualABGroup } = window[identityGlobalName];
 
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.dataIdsInitialized = true;
@@ -203,7 +203,7 @@ function receivePartnerData() {
 
 function shouldSubscribeOnGAM() {
   if (!iiqConfig?.gamObjectReference || !isPlainObject(iiqConfig.gamObjectReference)) return false;
-  const partnerData = window[identityGlobalName]?.partnerData
+  const partnerData = window[identityGlobalName]?.partnerData;
 
   if (partnerData) {
     return partnerData.gpr || (!('gpr' in partnerData) && iiqAnalyticsAnalyticsAdapter.initOptions.gamPredictReporting);
@@ -241,7 +241,7 @@ function bidWon(args, isReportExternal) {
     const preparedPayload = preparePayload(args);
     if (!preparedPayload) return false;
     if (success === false) {
-      preparedPayload[PARAMS_NAMES.terminationCause] = -1
+      preparedPayload[PARAMS_NAMES.terminationCause] = -1;
     }
     const { url, method, payload } = constructFullUrl(preparedPayload);
     if (method === 'POST') {
@@ -279,7 +279,7 @@ function defineGlobalVariableName() {
 
   const partnerId = iiqConfig?.partner || 0;
   globalName = `intentIqAnalyticsAdapter_${partnerId}`;
-  identityGlobalName = `iiq_identity_${partnerId}`
+  identityGlobalName = `iiq_identity_${partnerId}`;
 
   window[globalName] = { reportExternalWin };
 }
@@ -315,7 +315,7 @@ export function preparePayload(data) {
     result[PARAMS_NAMES.profile] = encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pid);
   }
   if (iiqAnalyticsAnalyticsAdapter.initOptions.configSource) {
-    result[PARAMS_NAMES.ABTestingConfigurationSource] = iiqAnalyticsAnalyticsAdapter.initOptions.configSource
+    result[PARAMS_NAMES.ABTestingConfigurationSource] = iiqAnalyticsAnalyticsAdapter.initOptions.configSource;
   }
   if (iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage !== null) {
     result[PARAMS_NAMES.abPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.abPercentage;
@@ -502,7 +502,7 @@ iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapte
 
 iiqAnalyticsAnalyticsAdapter.enableAnalytics = function (myConfig) {
   iiqAnalyticsAnalyticsAdapter.originEnableAnalytics(myConfig); // call the base class function
-  initAdapterConfig(myConfig)
+  initAdapterConfig(myConfig);
 };
 
 iiqAnalyticsAnalyticsAdapter.originDisableAnalytics = iiqAnalyticsAnalyticsAdapter.disableAnalytics;
@@ -513,8 +513,8 @@ iiqAnalyticsAnalyticsAdapter.disableAnalytics = function() {
   reportList = {};
   cleanReportsID = undefined;
   iiqConfig = undefined;
-  iiqAnalyticsAnalyticsAdapter.initOptions = getDefaultInitOptions()
-  iiqAnalyticsAnalyticsAdapter.originDisableAnalytics()
+  iiqAnalyticsAnalyticsAdapter.initOptions = getDefaultInitOptions();
+  iiqAnalyticsAnalyticsAdapter.originDisableAnalytics();
 };
 adapterManager.registerAnalyticsAdapter({
   adapter: iiqAnalyticsAnalyticsAdapter,

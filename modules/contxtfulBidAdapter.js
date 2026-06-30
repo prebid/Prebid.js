@@ -56,11 +56,11 @@ const _getRequestBidFloor = (mediaTypes, paramsBidFloor, bid) => {
     floor && (bidFloor.floor = floor);
     currency && (bidFloor.currency = currency);
   } else if (paramsBidFloor) {
-    bidFloor.floor = paramsBidFloor
+    bidFloor.floor = paramsBidFloor;
   }
 
   return bidFloor;
-}
+};
 
 // Get Parameters from the config.
 const extractParameters = (config) => {
@@ -75,7 +75,7 @@ const extractParameters = (config) => {
   }
 
   return { version, customer };
-}
+};
 
 // Construct the Payload towards the Bidding endpoint
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
@@ -88,11 +88,11 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
       params = {},
     } = bidRequest;
     bidRequest.bidFloor = _getRequestBidFloor(mediaTypes, params.bidfloor, bidRequest);
-    bidRequests.push(bidRequest)
+    bidRequests.push(bidRequest);
   });
   const config = pbjsConfig.getConfig();
   config.pbjsVersion = PREBID_VERSION;
-  const { version, customer } = extractParameters(config)
+  const { version, customer } = extractParameters(config);
   const adapterUrl = buildUrl({
     protocol: 'https',
     host: BIDDER_ENDPOINT,

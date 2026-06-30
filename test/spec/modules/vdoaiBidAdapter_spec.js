@@ -8,7 +8,7 @@ describe('vdoaiBidAdapter', function () {
     bidderRequestId: '145e1d6a7837c9',
     params: {
       host: 'exchange.ortb.net',
-      adUnitId: 123,
+      adUnitId: 123456,
       adUnitType: 'banner',
       publisherId: 'perfectPublisher',
       custom1: 'custom1',
@@ -60,14 +60,14 @@ describe('vdoaiBidAdapter', function () {
         }
       }
     }
-  }
+  };
   const bid2 = {
     bidId: '58ee9870c3164a',
     bidder: 'vdoai',
     bidderRequestId: '209fdaf1c81649',
     params: {
       host: 'ads.vdo.ai',
-      adUnitId: 456,
+      adUnitId: 123456,
       adUnitType: 'banner',
       custom1: 'custom1',
       custom2: 'custom2',
@@ -119,14 +119,14 @@ describe('vdoaiBidAdapter', function () {
         }
       }
     }
-  }
+  };
   const bid3 = {
     bidId: '019645c7d69460',
     bidder: 'vdoai',
     bidderRequestId: 'f2b15f89e77ba6',
     params: {
       host: 'exchange.ortb.net',
-      adUnitId: 789,
+      adUnitId: 123456,
       adUnitType: 'video',
       publisherId: 'secondPerfectPublisher',
       custom1: 'custom1',
@@ -177,14 +177,14 @@ describe('vdoaiBidAdapter', function () {
         }
       }
     }
-  }
+  };
   const bid4 = {
     bidId: '019645c7d69460',
     bidder: 'vdoai',
     bidderRequestId: 'f2b15f89e77ba6',
     params: {
       host: 'exchange.ortb.net',
-      adUnitId: 789,
+      adUnitId: 123456,
       adUnitType: 'video',
       custom1: 'custom1',
       custom2: 'custom2',
@@ -233,7 +233,7 @@ describe('vdoaiBidAdapter', function () {
         }
       }
     }
-  }
+  };
 
   describe('buildRequests', function () {
     const bidderRequest = {
@@ -250,22 +250,22 @@ describe('vdoaiBidAdapter', function () {
       refererInfo: {
         page: 'testPage'
       }
-    }
-    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
+    };
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest);
     it('Creates two ServerRequests', function() {
-      expect(serverRequests).to.exist
-      expect(serverRequests).to.have.lengthOf(2)
-    })
+      expect(serverRequests).to.exist;
+      expect(serverRequests).to.have.lengthOf(2);
+    });
     serverRequests.forEach(serverRequest => {
       it('Creates a ServerRequest object with method, URL and data', function () {
-        expect(serverRequest).to.exist
-        expect(serverRequest.method).to.exist
-        expect(serverRequest.url).to.exist
-        expect(serverRequest.data).to.exist
-      })
+        expect(serverRequest).to.exist;
+        expect(serverRequest.method).to.exist;
+        expect(serverRequest.url).to.exist;
+        expect(serverRequest.data).to.exist;
+      });
       it('Returns POST method', function () {
-        expect(serverRequest.method).to.equal('POST')
-      })
+        expect(serverRequest.method).to.equal('POST');
+      });
       it('Returns valid data if array of bids is valid', function () {
         const data = serverRequest.data;
         expect(data).to.be.an('object');
@@ -297,7 +297,7 @@ describe('vdoaiBidAdapter', function () {
             'custom3',
             'custom4',
             'custom5',
-            'ortb2Imp'
+            'ortb2Imp',
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -312,7 +312,8 @@ describe('vdoaiBidAdapter', function () {
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
           expect(adUnit.ortb2Imp).to.be.an('object');
-        })
+          expect(adUnit.bidfloor === undefined).to.equal(true);
+        });
         expect(data.sua.browsers).to.be.a('array');
         expect(data.sua.platform).to.be.a('array');
         expect(data.sua.mobile).to.be.a('number');
@@ -320,33 +321,117 @@ describe('vdoaiBidAdapter', function () {
         expect(data.page).to.be.a('string');
         expect(data.page).to.be.equal('testPage');
         expect(data.ortb2).to.be.an('object');
-      })
-    })
+      });
+    });
     it('Returns valid URL', function () {
-      expect(serverRequests[0].url).to.equal('https://exchange.ortb.net/hb')
-      expect(serverRequests[1].url).to.equal('https://ads.vdo.ai/hb')
-    })
+      expect(serverRequests[0].url).to.equal('https://exchange.ortb.net/hb');
+      expect(serverRequests[1].url).to.equal('https://ads.vdo.ai/hb');
+    });
     it('Returns valid adUnits', function () {
-      validateAdUnit(serverRequests[0].data.adUnits[0], bid1)
-      validateAdUnit(serverRequests[1].data.adUnits[0], bid2)
-      validateAdUnit(serverRequests[0].data.adUnits[1], bid3)
-    })
+      validateAdUnit(serverRequests[0].data.adUnits[0], bid1);
+      validateAdUnit(serverRequests[1].data.adUnits[0], bid2);
+      validateAdUnit(serverRequests[0].data.adUnits[1], bid3);
+      // validateAdUnit(serverRequests[1].data.adUnits[1], bid4)
+    });
+    it('normalizes single video playerSize into one size', function () {
+      const videoBid = {
+        ...bid3,
+        sizes: undefined,
+        mediaTypes: {
+          video: {
+            playerSize: [800, 600]
+          }
+        }
+      };
+      const serverRequests = spec.buildRequests([videoBid], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].sizes).to.deep.equal([
+        { width: 800, height: 600 }
+      ]);
+    });
+    it('normalizes video playerSize array of arrays', function () {
+      const videoBid = {
+        ...bid3,
+        sizes: undefined,
+        mediaTypes: {
+          video: {
+            playerSize: [[800, 600]]
+          }
+        }
+      };
+      const serverRequests = spec.buildRequests([videoBid], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].sizes).to.deep.equal([
+        { width: 800, height: 600 }
+      ]);
+    });
     it('Returns empty data if no valid requests are passed', function () {
-      const serverRequests = spec.buildRequests([])
-      expect(serverRequests).to.be.an('array').that.is.empty
-    })
+      const serverRequests = spec.buildRequests([]);
+      expect(serverRequests).to.be.an('array').that.is.empty;
+    });
     it('Returns request with page field value from ortb2 object if ortb2 has page field', function () {
       bidderRequest.ortb2.site = {
         page: 'testSitePage'
-      }
-      const serverRequests = spec.buildRequests([bid1], bidderRequest)
-      expect(serverRequests).to.have.lengthOf(1)
+      };
+      const serverRequests = spec.buildRequests([bid1], bidderRequest);
+      expect(serverRequests).to.have.lengthOf(1);
       serverRequests.forEach(serverRequest => {
         expect(serverRequest.data.page).to.be.a('string');
         expect(serverRequest.data.page).to.be.equal('testSitePage');
-      })
-    })
-  })
+      });
+    });
+    it('should include bidfloor from floor module when getFloor is available', function () {
+      const bidWithFloor = {
+        ...bid1,
+        getFloor: function () {
+          return { currency: 'USD', floor: 2.5 };
+        }
+      };
+      const serverRequests = spec.buildRequests([bidWithFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(2.5);
+    });
+    it('should use bidfloor from params when floor module returns invalid value', function () {
+      const bidWithInvalidFloor = {
+        ...bid1,
+        params: {
+          ...bid1.params,
+          bidfloor: 1.5
+        },
+        getFloor: function () {
+          return { currency: 'EUR', floor: 2.5 };
+        }
+      };
+      const serverRequests = spec.buildRequests([bidWithInvalidFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5);
+    });
+    it('should use bidfloor from params when getFloor is not available', function () {
+      const bidWithParamFloor = {
+        ...bid1,
+        params: {
+          ...bid1.params,
+          bidfloor: 1.5
+        }
+      };
+      const serverRequests = spec.buildRequests([bidWithParamFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5);
+    });
+    it('should return undefined for bidfloor when neither floor module nor bidfloor param is available', function () {
+      const serverRequests = spec.buildRequests([bid1], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.be.undefined;
+    });
+    it('should return fallback value for bidfloor when getFloor returns NaN', function () {
+      const bidWithNaNFloor = {
+        ...bid1,
+        params: {
+          ...bid1.params,
+          bidfloor: 1.5
+        },
+        getFloor: function () {
+          return { currency: 'USD', floor: NaN };
+        }
+      };
+      const serverRequests = spec.buildRequests([bidWithNaNFloor], bidderRequest);
+      expect(serverRequests[0].data.adUnits[0].bidfloor).to.equal(1.5);
+    });
+  });
   describe('interpretBannerResponse', function () {
     const resObject = {
       body: [{
@@ -384,10 +469,17 @@ describe('vdoaiBidAdapter', function () {
         expect(dataItem.meta.advertiserDomains).to.be.an('array');
         expect(dataItem.meta.mediaType).to.be.a('string');
       }
-      it('Returns an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Returns an empty array if invalid response is passed', function () {
+      serverResponses = spec.interpretResponse({
+        body: []
       });
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Returns an empty array if invalid meta properties are passed', function () {
+      resObject.body[0].meta.mediaType = "invalid";
+      serverResponses = spec.interpretResponse(resObject);
+      expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
   describe('interpretVideoResponse', function () {
@@ -427,10 +519,37 @@ describe('vdoaiBidAdapter', function () {
         expect(dataItem.meta.advertiserDomains).to.be.an('array');
         expect(dataItem.meta.mediaType).to.be.a('string');
       }
-      it('should return an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('should return an empty array if invalid response is passed', function () {
+      serverResponses = spec.interpretResponse({
+        body: []
       });
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
+  describe('interpretVideoResponseWithVastUrl', function () {
+    it('Returns a valid server response when vastUrl is provided instead of vastXml', function () {
+      const resObject = {
+        body: [{
+          requestId: '456',
+          cpm: 0.5,
+          width: 640,
+          height: 480,
+          vastUrl: 'https://example.com/vast.xml',
+          ttl: 300,
+          creativeId: '456def',
+          netRevenue: true,
+          currency: 'USD',
+          meta: {
+            advertiserDomains: ['example.com'],
+            mediaType: 'video'
+          }
+        }]
+      };
+      const serverResponses = spec.interpretResponse(resObject);
+      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      expect(serverResponses).to.have.lengthOf(1);
+      expect(serverResponses[0].vastUrl).to.equal('https://example.com/vast.xml');
     });
   });
   describe('isBidRequestValid', function() {
@@ -440,7 +559,7 @@ describe('vdoaiBidAdapter', function () {
       bidderRequestId: '145e1d6a7837c9',
       params: {
         host: 'exchange.ortb.net',
-        adUnitId: 123,
+        adUnitId: 123456,
         adUnitType: 'banner'
       },
       placementCode: 'placement_0',
@@ -455,9 +574,19 @@ describe('vdoaiBidAdapter', function () {
       });
     });
 
-    it('should return true when adUnitId is zero', function() {
-      bid.params.adUnitId = 0;
+    it('should return true when adUnitId is an integer', function() {
+      bid.params.adUnitId = 123456;
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false when adUnitId is empty string', function() {
+      bid.params.adUnitId = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when adUnitId is missing', function() {
+      delete bid.params.adUnitId;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function() {
@@ -465,7 +594,7 @@ describe('vdoaiBidAdapter', function () {
         bidder: 'vdoai',
         bidderRequestId: '145e1d6a7837c9',
         params: {
-          adUnitId: 123,
+          adUnitId: 123456,
           adUnitType: 'banner'
         },
         placementCode: 'placement_0',
@@ -503,7 +632,7 @@ describe('vdoaiBidAdapter', function () {
             mediaType: 'banner'
           }
         }, resObject]
-      }
+      };
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
     it('should skip responses which do not contain advertiser domains', function() {
@@ -512,7 +641,7 @@ describe('vdoaiBidAdapter', function () {
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
       const bidResponses = {
         body: [resObjectWithoutAdvertiserDomains, resObject]
-      }
+      };
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
     it('should return responses which contain empty advertiser domains', function() {
@@ -521,7 +650,7 @@ describe('vdoaiBidAdapter', function () {
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
       const bidResponses = {
         body: [resObjectWithEmptyAdvertiserDomains, resObject]
-      }
+      };
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
     it('should skip responses which do not contain meta media type', function() {
@@ -530,7 +659,7 @@ describe('vdoaiBidAdapter', function () {
       delete resObjectWithoutMetaMediaType.meta.mediaType;
       const bidResponses = {
         body: [resObjectWithoutMetaMediaType, resObject]
-      }
+      };
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
   });
@@ -566,14 +695,7 @@ describe('vdoaiBidAdapter', function () {
       const serverResponses = [
         {
           headers: {
-            get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
-                return 'https://tracker-1.ortb.net/sync';
-              }
-              if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-1.ortb.net/sync.html';
-              }
-            }
+            get: function (header) {}
           },
           body: []
         }
@@ -605,9 +727,6 @@ describe('vdoaiBidAdapter', function () {
               if (header === 'X-PLL-UserSync-Image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
-              }
             }
           },
           body: []
@@ -632,9 +751,6 @@ describe('vdoaiBidAdapter', function () {
               if (header === 'X-PLL-UserSync-Image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-1.ortb.net/sync.html';
-              }
             }
           },
           body: []
@@ -644,9 +760,6 @@ describe('vdoaiBidAdapter', function () {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
                 return 'https://tracker-2.ortb.net/sync';
-              }
-              if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-2.ortb.net/sync.html';
               }
             }
           },
@@ -676,9 +789,6 @@ describe('vdoaiBidAdapter', function () {
               if (header === 'X-PLL-UserSync-Image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
-              }
             }
           },
           body: []
@@ -688,9 +798,6 @@ describe('vdoaiBidAdapter', function () {
             get: function (header) {
               if (header === 'X-PLL-UserSync-Image') {
                 return 'https://tracker-lm.ortb.net/sync';
-              }
-              if (header === 'X-PLL-UserSync-Iframe') {
-                return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
           },
@@ -759,10 +866,11 @@ function validateAdUnit(adUnit, bid) {
     return {
       width: size[0],
       height: size[1]
-    }
+    };
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
   expect(adUnit.supplyChain).to.deep.equal(bid.ortb2?.source?.ext?.schain);
   expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
+  expect(adUnit.bidfloor).to.equal(bid.params.bidfloor || undefined);
 }

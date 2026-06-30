@@ -1,6 +1,6 @@
 import { parseSizesInput, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -36,7 +36,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
-      let mtype = 0;
+      let mtype;
       if (bidRequest.mediaTypes[BANNER]) {
         mtype = 1;
       } else {

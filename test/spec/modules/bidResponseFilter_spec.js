@@ -11,7 +11,7 @@ import { addBidResponse } from '../../../src/auction.js';
 import { config } from '../../../src/config.js';
 
 describe('bidResponseFilter', () => {
-  let mockAuctionIndex
+  let mockAuctionIndex;
   beforeEach(() => {
     mockAuctionIndex = {
       getBidRequest: () => {
@@ -23,7 +23,7 @@ describe('bidResponseFilter', () => {
   afterEach(() => {
     config.resetConfig();
     reset();
-  })
+  });
 
   describe('enable/disable', () => {
     let reject, dispatch;
@@ -47,7 +47,7 @@ describe('bidResponseFilter', () => {
       addBidResponse.call({ dispatch }, 'au', {}, reject);
       sinon.assert.called(reject);
       sinon.assert.notCalled(dispatch);
-    })
+    });
   });
 
   it('should pass the bid after successful ortb2 rules validation', () => {
@@ -62,13 +62,13 @@ describe('bidResponseFilter', () => {
         banner: {}
       },
       ortb2Imp: {}
-    })
+    });
 
     const bid = {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'EXAMPLE-CAT-ID',
-        attr: 'attr',
+        attr: ['attr'],
         mediaType: 'banner',
         cattax: 1
       }
@@ -86,7 +86,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'BANNED_CAT1',
-        attr: 'attr',
+        attr: ['attr'],
         cattax: 1
       }
     };
@@ -106,7 +106,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'BANNED_CAT1',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 1
         }
@@ -131,7 +131,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'ALLOWED_CAT',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 1
         }
@@ -156,7 +156,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'ALLOWED_CAT',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 2
         }
@@ -181,7 +181,7 @@ describe('bidResponseFilter', () => {
         meta: {
           advertiserDomains: ['domain1.com'],
           primaryCatId: 'BANNED_CAT1',
-          attr: 1,
+          attr: [1],
           mediaType: 'banner',
           cattax: 2
         }
@@ -208,7 +208,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 'attr',
+        attr: ['attr'],
         cattax: 1
       }
     };
@@ -220,32 +220,65 @@ describe('bidResponseFilter', () => {
     sinon.assert.calledWith(rejection, BID_ADV_DOMAINS_REJECTION_REASON);
   });
 
-  it('should reject the bid after failed ortb2 attr rule validation', () => {
-    const reject = sinon.stub();
-    const call = sinon.stub();
-    const bid = {
-      meta: {
-        advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
-        primaryCatId: 'VALID_CAT',
-        attr: 'BANNED_ATTR',
-        cattax: 1
-      },
-      mediaType: 'video'
-    };
-    mockAuctionIndex.getOrtb2 = () => ({
-      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+  describe('attr validation', () => {
+    let reject, call;
+
+    function makeBid(attr) {
+      return {
+        meta: {
+          advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
+          primaryCatId: 'VALID_CAT',
+          attr,
+          cattax: 1,
+          mediaType: 'video',
+        },
+        mediaType: 'video'
+      };
+    }
+
+    beforeEach(() => {
+      mockAuctionIndex.getOrtb2 = () => ({
+        badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+      });
+
+      mockAuctionIndex.getBidRequest = () => ({
+        mediaTypes: {
+          video: {}
+        },
+        ortb2Imp: {
+          video: {
+            battr: ['BANNED_ATTR']
+          }
+        }
+      });
+      reject = sinon.stub();
+      call = sinon.stub();
     });
 
-    mockAuctionIndex.getBidRequest = () => ({
-      ortb2Imp: {
-        video: {
-          battr: 'BANNED_ATTR'
-        }
-      }
-    })
+    it(`should reject the bid when its attr is banned`, () => {
+      addBidResponseHook(call, 'adcode', makeBid(['BANNED_ATTR', 'OTHER_ATTR']), reject, mockAuctionIndex);
+      sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+      sinon.assert.notCalled(call);
+    });
 
-    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
-    sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+    Object.entries({
+      'missing': null,
+      'empty': [],
+      'invalid': 'attr',
+    }).forEach(([t, attr]) => {
+      it(`should reject when attr is ${t}, and blockUnknown is set`, () => {
+        config.setConfig({ [MODULE_NAME]: { attr: { enforce: true, blockUnknown: true } } });
+        addBidResponseHook(call, 'adcode', makeBid(attr), reject, mockAuctionIndex);
+        sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
+        sinon.assert.notCalled(call);
+      });
+      it(`it should not reject when its attr is ${t}, but blockUnknown is false`, () => {
+        config.setConfig({ [MODULE_NAME]: { attr: { enforce: true, blockUnknown: false } } });
+        addBidResponseHook(call, 'adcode', makeBid(attr), reject, mockAuctionIndex);
+        sinon.assert.notCalled(reject);
+        sinon.assert.called(call);
+      });
+    });
   });
 
   it('should omit the validation if the flag is set to false', () => {
@@ -254,7 +287,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'BANNED_CAT1',
-        attr: 'valid_attr',
+        attr: ['valid_attr'],
         mediaType: 'banner',
         cattax: 1
       }
@@ -265,7 +298,7 @@ describe('bidResponseFilter', () => {
         banner: {}
       },
       ortb2Imp: {}
-    })
+    });
 
     mockAuctionIndex.getOrtb2 = () => ({
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
@@ -284,7 +317,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: undefined,
-        attr: 'valid_attr',
+        attr: ['valid_attr'],
         mediaType: 'banner',
         cattax: 1
       }
@@ -299,7 +332,7 @@ describe('bidResponseFilter', () => {
         banner: {}
       },
       ortb2Imp: {}
-    })
+    });
 
     config.setConfig({ [MODULE_NAME]: { cat: { blockUnknown: false } } });
 
@@ -315,7 +348,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 6,
+        attr: [6],
         mediaType: 'audio',
         cattax: 1
       },
@@ -326,20 +359,11 @@ describe('bidResponseFilter', () => {
     });
 
     mockAuctionIndex.getBidRequest = () => ({
-      ortb2Imp: {
-        banner: {
-        },
-        video: {
-        },
-      }
-    })
-
-    mockAuctionIndex.getBidRequest = () => ({
       mediaTypes: {
         banner: {},
       },
       ortb2Imp: {}
-    })
+    });
 
     addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
     sinon.assert.calledWith(reject, BID_MEDIA_TYPE_REJECTION_REASON);
@@ -352,7 +376,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 6,
+        attr: [6],
         mediaType: 'banner',
         cattax: 1
       },
@@ -385,7 +409,7 @@ describe('bidResponseFilter', () => {
       meta: {
         advertiserDomains: ['validdomain1.com'],
         primaryCatId: 'VALID_CAT',
-        attr: 6,
+        attr: [6],
         mediaType: 'banner',
         cattax: 1
       },
@@ -412,4 +436,4 @@ describe('bidResponseFilter', () => {
     sinon.assert.calledWith(reject, BID_MEDIA_TYPE_REJECTION_REASON);
     sinon.assert.notCalled(call);
   });
-})
+});

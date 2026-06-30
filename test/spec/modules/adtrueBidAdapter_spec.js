@@ -1,11 +1,10 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adtrueBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import * as utils from '../../../src/utils.js';
+import { expect } from 'chai';
+import { spec } from 'modules/adtrueBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 
 describe('AdTrueBidAdapter', function () {
-  const adapter = newBidder(spec)
+  const adapter = newBidder(spec);
   let bidRequests;
   let bidResponses;
   let bidResponses2;
@@ -144,15 +143,15 @@ describe('AdTrueBidAdapter', function () {
 
   describe('.code', function () {
     it('should return a bidder code of adtrue', function () {
-      expect(spec.code).to.equal('adtrue')
-    })
-  })
+      expect(spec.code).to.equal('adtrue');
+    });
+  });
 
   describe('inherited functions', function () {
     it('should exist and be a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
   describe('implementation', function () {
     describe('Bid validations', function () {
       it('valid bid case', function () {
@@ -259,10 +258,12 @@ describe('AdTrueBidAdapter', function () {
     });
     describe('Request formation', function () {
       it('buildRequests function should not modify original bidRequests object', function () {
-        const originalBidRequests = utils.deepClone(bidRequests);
-        const request = spec.buildRequests(bidRequests, {
+        const originalBidRequests = structuredClone(bidRequests);
+
+        spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'
         });
+
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
 
@@ -391,7 +392,7 @@ describe('AdTrueBidAdapter', function () {
       const request = spec.buildRequests(bidRequests, {
         auctionId: 'new-auction-id'
       });
-      const data = JSON.parse(request.data);
+
       const response = spec.interpretResponse(bidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);

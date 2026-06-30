@@ -66,7 +66,7 @@ export type Uid2IdSystemParams = {
    * Hashed, normalized user phone for client-side integration. Only one DII parameter may be set.
    */
   phoneHash?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -82,4 +82,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

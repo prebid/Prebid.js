@@ -5,12 +5,6 @@ import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import { expect } from 'chai/index.mjs';
 
-const config = {
-  storage: {
-    type: 'html5',
-  },
-};
-
 describe('AdqueryIdSystem', function () {
   describe('qid submodule', () => {
     it('should expose a "name" property containing qid', () => {
@@ -79,5 +73,5 @@ describe('AdqueryIdSystem', function () {
         }]
       });
     });
-  })
+  });
 });

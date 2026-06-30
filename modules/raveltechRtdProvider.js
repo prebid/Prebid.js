@@ -14,7 +14,7 @@ const getAnonymizedEids = (eids) => {
   if (!eids) { return eids; }
 
   eids.forEach(eid => {
-    if (!eid || !eid.uids || eid.uids.length === 0) { return eid }
+    if (!eid || !eid.uids || eid.uids.length === 0) { return eid; }
     logInfo('eid.source=', eid.source);
     eid.uids = eid.uids.flatMap(uid => {
       if (!uid || !uid.id) { return []; }
@@ -28,8 +28,8 @@ const getAnonymizedEids = (eids) => {
         ...uid,
         id
       }];
-    })
-  })
+    });
+  });
 
   return eids;
 };
@@ -49,7 +49,7 @@ const addRavelDataToRequest = (request, adapterName) => {
 };
 
 const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
-  const adapterName = getAdapterNameForAlias(aliasName)
+  const adapterName = getAdapterNameForAlias(aliasName);
 
   return (validBidRequests, ...rest) => {
     if (!window.ZKAD || !window.ZKAD.ready) {
@@ -81,7 +81,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
           request.url = RAVEL_ENDPOINT;
           request.method = 'POST';
           addRavelDataToRequest(request, adapterName);
-        })
+        });
       }
 
       return [...requests ?? [], ...ravelRequests ?? []];
@@ -89,7 +89,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
       logError('Error while generating ravel requests :', e);
       return requests;
     }
-  }
+  };
 };
 
 const getBidderRequestsHook = (config) => {
@@ -104,7 +104,7 @@ const getBidderRequestsHook = (config) => {
       wrappedBidders.push(spec.code);
     }
     next(spec, ...rest);
-  }
+  };
 };
 
 /**

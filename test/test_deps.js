@@ -6,7 +6,7 @@ window.__karma__.loaded = ((orig) => {
     } else {
       window.onload = orig;
     }
-  }
+  };
 })(window.__karma__.loaded.bind(window.__karma__));
 
 window.process = {
@@ -18,7 +18,7 @@ window.process = {
 window.addEventListener('error', function (ev) {
   // eslint-disable-next-line no-console
   console.error('Uncaught exception:', ev.error, ev.error?.stack);
-})
+});
 
 window.addEventListener('unhandledrejection', function (ev) {
   // this message is used for counting intentional failures created in the tests
@@ -31,7 +31,7 @@ window.addEventListener('unhandledrejection', function (ev) {
   ].some(msg => ev.reason?.message?.startsWith(msg))) return;
   // eslint-disable-next-line no-console
   console.error('Unhandled rejection:', ev.reason);
-})
+});
 
 const sinon = require('sinon');
 globalThis.sinon = sinon;
@@ -61,7 +61,7 @@ require('test/helpers/prebidGlobal.js');
 require('test/mocks/adloaderStub.js');
 require('test/mocks/xhr.js');
 require('test/mocks/analyticsStub.js');
-require('test/mocks/ortbConverter.js')
+require('test/mocks/ortbConverter.js');
 require('test/mocks/percentInView.js');
 require('test/mocks/storageManager.js');
 require('modules/rtdModule/index.js');

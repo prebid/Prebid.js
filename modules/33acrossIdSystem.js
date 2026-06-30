@@ -32,7 +32,7 @@ const GVLID = 58;
 
 const STORAGE_FPID_KEY = '33acrossIdFp';
 const STORAGE_TPID_KEY = '33acrossIdTp';
-const STORAGE_HEM_KEY = '33acrossIdHm'
+const STORAGE_HEM_KEY = '33acrossIdHm';
 const DEFAULT_1PID_SUPPORT = true;
 const DEFAULT_TPID_SUPPORT = true;
 
@@ -86,7 +86,7 @@ function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, en
     const { gppString = '', applicableSections = [] } = gppConsent;
 
     params.gpp = gppString;
-    params.gpp_sid = encodeURIComponent(applicableSections.join(','))
+    params.gpp_sid = encodeURIComponent(applicableSections.join(','));
   }
 
   if (gdprConsentData?.consentString) {
@@ -193,7 +193,7 @@ function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }
     updateSupplementalIdStorage(supplementalId, {
       enabledStorageTypes,
       expires
-    })
+    });
   });
 }
 

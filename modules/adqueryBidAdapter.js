@@ -187,15 +187,15 @@ export const spec = {
     logInfo('onBidWon', bid);
 
     if (bid.nurl) {
-      triggerPixel(bid.nurl)
-      return
+      triggerPixel(bid.nurl);
+      return;
     }
 
     const copyOfBid = {...bid}
 
     const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
     copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
-    delete copyOfBid.ad
+    delete copyOfBid.ad;
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
@@ -314,17 +314,17 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
   }
 
   if (isVideo) {
-    let baseRequest = bid.ortb2
+    let baseRequest = bid.ortb2;
     let videoRequest = {
       ...baseRequest,
       imp: [{
         id: bid.bidId,
         video: bid.ortb2Imp?.video || {},
       }]
-    }
+    };
 
     deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
-    videoRequest.id = bid.bidId
+    videoRequest.id = bid.bidId;
 
     if (bidderRequest?.gdprConsent?.consentString) {
       deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -335,7 +335,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     }
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
-    videoRequest.cur = [currency]
+    videoRequest.cur = [currency];
 
     let floorInfo;
     if (typeof bid.getFloor === 'function') {
@@ -349,11 +349,11 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     const bidfloorcur = floorInfo?.currency;
 
     if (bidfloor && bidfloorcur) {
-      videoRequest.imp[0].video.bidfloor = bidfloor
-      videoRequest.imp[0].video.bidfloorcur = bidfloorcur
+      videoRequest.imp[0].video.bidfloor = bidfloor;
+      videoRequest.imp[0].video.bidfloorcur = bidfloorcur;
     }
 
-    return videoRequest
+    return videoRequest;
   }
 
   return {

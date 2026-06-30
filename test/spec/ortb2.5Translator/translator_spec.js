@@ -76,5 +76,5 @@ describe('ORTB 2.5 translation', () => {
         expect(deepAccess(obj, path)).to.eql('val');
       });
     });
-  })
+  });
 });

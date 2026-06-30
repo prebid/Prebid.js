@@ -108,7 +108,7 @@ export function makeMemoizedFetch(maxSize = MAX_CACHE_SIZE) {
       });
     cache.set(pageUrl, pending);
     return pending;
-  }
+  };
 }
 
 export const getContextData = makeMemoizedFetch();
@@ -129,7 +129,7 @@ export function makeContextDataToKeyValuesReducer(config) {
       keyValues.push([`${prefix}_${key}`, value]);
     }
     return keyValues;
-  }
+  };
 }
 
 export async function fetchContextData() {
@@ -167,7 +167,7 @@ export function setTargeting(config, contextData) {
   logMessage('context', contextData);
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
-    .reduce(makeContextDataToKeyValuesReducer(config), [])
+    .reduce(makeContextDataToKeyValuesReducer(config), []);
 
   keyValues.forEach(([key, value]) => setKeyValue(key, value));
 }

@@ -5,12 +5,12 @@ describe('Consent data handler', () => {
   let handler;
   beforeEach(() => {
     handler = consentHandler();
-  })
+  });
 
   it('should be disabled, return null data on init', () => {
     expect(handler.enabled).to.be.false;
     expect(handler.getConsentData()).to.equal(null);
-  })
+  });
 
   it('should resolve promise to null when disabled', () => {
     return handler.promise.then((data) => {
@@ -64,8 +64,8 @@ describe('Consent data handler', () => {
         handler.setConsentData({ tcString: 'constant', other: 'ignored' });
         sinon.assert.notCalled(listener);
       });
-    })
-  })
+    });
+  });
 
   it('should return data after setConsentData', () => {
     const data = { consent: 'string' };
@@ -85,8 +85,8 @@ describe('Consent data handler', () => {
       setTimeout(() => {
         expect(actual).to.equal(data);
         done();
-      })
-    })
+      });
+    });
   });
 
   it('should resolve .promise to new data if setConsentData is called a second time', (done) => {
@@ -103,8 +103,8 @@ describe('Consent data handler', () => {
       setTimeout(() => {
         expect(actual).to.equal(d2);
         done();
-      })
-    })
+      });
+    });
   });
 
   describe('getHash', () => {
@@ -133,8 +133,8 @@ describe('Consent data handler', () => {
       const h1 = handler.hash;
       handler.setConsentData({ field: 'value', enabled: true, other: 'data' });
       expect(handler.hash).to.eql(h1);
-    })
-  })
+    });
+  });
 });
 
 describe('multiHandler', () => {
@@ -159,7 +159,7 @@ describe('multiHandler', () => {
         expect(multi[method]()).to.eql({
           h1: 'one',
           h2: 'two',
-        })
+        });
       });
     });
   });
@@ -168,7 +168,7 @@ describe('multiHandler', () => {
     it('resolves all underlying promises', (done) => {
       handlers.h1.promise = Promise.resolve('one');
       let resolver, result;
-      handlers.h2.promise = new Promise((resolve) => { resolver = resolve });
+      handlers.h2.promise = new Promise((resolve) => { resolver = resolve; });
       multi.promise.then((val) => {
         result = val;
         expect(result).to.eql({
@@ -176,24 +176,24 @@ describe('multiHandler', () => {
           h2: 'two'
         });
         done();
-      })
+      });
       handlers.h1.promise.then(() => {
         expect(result).to.not.exist;
         resolver('two');
       });
-    })
+    });
   });
 
   describe('.hash', () => {
     ['h1', 'h2'].forEach((handler, i) => {
       it(`changes when handler #${i + 1} changes hash`, () => {
         handlers.h1.hash = 'one';
-        handlers.h2.hash = 'two'
+        handlers.h2.hash = 'two';
         const first = multi.hash;
         handlers[handler].hash = 'new';
         expect(multi.hash).to.not.eql(first);
-      })
-    })
+      });
+    });
   });
   describe('onChange', () => {
     ['h1', 'h2'].forEach((handler, i) => {
@@ -206,16 +206,16 @@ describe('multiHandler', () => {
         sinon.assert.calledWith(listener, {
           h1: 'one',
           h2: 'two'
-        })
-      })
-    })
+        });
+      });
+    });
   });
-})
+});
 
 describe('coppaDataHandler', () => {
   after(() => {
     config.resetConfig();
-  })
+  });
   it('should default to false', () => {
     expect(coppaDataHandler.getCoppa()).to.be.false;
   });
@@ -231,8 +231,8 @@ describe('coppaDataHandler', () => {
     coppaDataHandler.reset();
     expect(coppaDataHandler.enabled).to.be.true;
     expect(coppaDataHandler.getConsentData()).to.be.true;
-  })
-})
+  });
+});
 
 describe('gvlidRegistry', () => {
   let registry;
@@ -241,13 +241,13 @@ describe('gvlidRegistry', () => {
   });
 
   it('returns undef when id cannoot be found', () => {
-    expect(registry.get('name')).to.eql({ modules: {} })
+    expect(registry.get('name')).to.eql({ modules: {} });
   });
 
   it('does not register null ids', () => {
     registry.register('type', 'name', null);
     expect(registry.get('type', 'name')).to.eql({ modules: {} });
-  })
+  });
 
   it('can retrieve registered GVL IDs', () => {
     registry.register('type', 'name', 123);
@@ -258,6 +258,6 @@ describe('gvlidRegistry', () => {
   it('does not return `gvlid` if there is more than one', () => {
     registry.register('type', 'name', 123);
     registry.register('otherType', 'name', 321);
-    expect(registry.get('name')).to.eql({ modules: { type: 123, otherType: 321 } })
+    expect(registry.get('name')).to.eql({ modules: { type: 123, otherType: 321 } });
   });
-})
+});

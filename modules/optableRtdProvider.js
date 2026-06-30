@@ -40,7 +40,7 @@ export const parseConfig = (moduleConfig) => {
     result.instance = instance;
   }
   return result;
-}
+};
 
 /**
  * Wait for Optable SDK event to fire with targeting data
@@ -150,7 +150,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     logError(error);
     callback();
   }
-}
+};
 
 /**
  * Get Optable targeting data and merge it into the ad units
@@ -221,7 +221,7 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
  */
 const init = (config, userConsent) => {
   return true;
-}
+};
 
 // Optable RTD submodule
 export const optableSubmodule = {
@@ -229,7 +229,7 @@ export const optableSubmodule = {
   init,
   getBidRequestData,
   getTargetingData,
-}
+};
 
 // Register the Optable RTD submodule
 submodule('realTimeData', optableSubmodule);

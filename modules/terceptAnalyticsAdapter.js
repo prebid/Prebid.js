@@ -10,7 +10,7 @@ import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v2.1.0';
+const terceptAnalyticsVersion = 'v2.3.0';
 const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 0;
@@ -90,9 +90,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         const winFields = {
           renderStatus: 4,
           renderedSize: args.size,
-          host: window.location.hostname,
-          path: window.location.pathname,
-          search: window.location.search,
+          host: getWindowLocation().hostname,
+          path: getWindowLocation().pathname,
+          search: getWindowLocation().search,
           adserverAdSlot,
           pbAdSlot
         };
@@ -114,6 +114,8 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
             timeToRespond: args.timeToRespond,
             requestTimestamp: args.requestTimestamp,
             responseTimestamp: args.responseTimestamp,
+            playerWidth: args.playerWidth ?? null,
+            playerHeight: args.playerHeight ?? null,
             ...winFields
           }
         });
@@ -124,9 +126,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           renderStatus: 7,
           renderTimestamp: Date.now(),
           renderedSize: bid.size,
-          host: window.location.hostname,
-          path: window.location.pathname,
-          search: window.location.search,
+          host: getWindowLocation().hostname,
+          path: getWindowLocation().pathname,
+          search: getWindowLocation().search,
           adserverAdSlot,
           pbAdSlot
         });
@@ -136,9 +138,9 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           renderStatus: 8,
           reason: args.reason,
           message: args.message,
-          host: window.location.hostname,
-          path: window.location.pathname,
-          search: window.location.search
+          host: getWindowLocation().hostname,
+          path: getWindowLocation().pathname,
+          search: getWindowLocation().search
         });
       } else if (eventType === EVENTS.BIDDER_ERROR) {
         const { bidderRequest, error } = args;
@@ -162,13 +164,25 @@ function updateBid(auctionId, bidId, fields) {
   const auction = pendingAuctions.get(auctionId);
   if (!auction) return;
   const bid = auction.bids.find(b => b.bidId === bidId);
-  if (bid) Object.assign(bid, fields);
+  if (!bid) return;
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined) bid[key] = value;
+  }
 }
 
 function mapBidRequests(params) {
   const arr = [];
   if (typeof params.bids !== 'undefined' && params.bids.length) {
     params.bids.forEach(function (bid) {
+      const mediaTypeKeys = Object.keys(bid.mediaTypes || {});
+      const mediaType = mediaTypeKeys.length === 1
+        ? (bid.mediaTypes.video ? 'video' : bid.mediaTypes.banner ? 'banner' : 'native')
+        : null;
+      const sizes = bid.mediaTypes?.banner?.sizes
+        ? parseSizesInput(bid.mediaTypes.banner.sizes).toString()
+        : bid.mediaTypes?.video?.playerSize
+          ? parseSizesInput(bid.mediaTypes.video.playerSize).toString()
+          : '';
       arr.push({
         bidderCode: bid.bidder,
         bidId: bid.bidId,
@@ -176,7 +190,9 @@ function mapBidRequests(params) {
         requestId: bid.bidderRequestId,
         auctionId: bid.auctionId,
         transactionId: bid.transactionId,
-        sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
+        mediaType,
+        sizes,
+        videoContext: bid.mediaTypes?.video?.context || null,
         renderStatus: 1,
         requestTimestamp: params.auctionStart
       });
@@ -242,6 +258,8 @@ function mapBidResponse(bidResponse, status) {
     adId: bidResponse.adId,
     adserverTargeting: bidResponse.adserverTargeting,
     videoCacheKey: bidResponse.videoCacheKey,
+    playerWidth: bidResponse.playerWidth ?? null,
+    playerHeight: bidResponse.playerHeight ?? null,
     meta: bidResponse.meta || {}
   };
 }
@@ -250,7 +268,7 @@ function send(data, useBeacon = false) {
   const location = getWindowLocation();
   if (data.auctionInit) {
     Object.assign(data.auctionInit, {
-      host: location.host,
+      host: location.hostname,
       path: location.pathname,
       search: location.search
     });

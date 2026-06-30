@@ -20,7 +20,7 @@ export type SyncType = 'image' | 'iframe';
 type SyncConfig = {
   bidders: '*' | BidderCode[];
   filter: 'include' | 'exclude'
-}
+};
 type FilterSettings = { [K in SyncType | 'all']?: SyncConfig };
 
 export interface UserSyncConfig {
@@ -82,6 +82,10 @@ config.setDefaults({
 
 const storage = getCoreStorageManager('usersync');
 
+export function browserSupportsUserSyncCookies() {
+  return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+}
+
 /**
  * Factory function which creates a new UserSyncPool.
  *
@@ -128,13 +132,13 @@ export function newUserSync(deps) {
 
   deps.regRule(ACTIVITY_SYNC_USER, 'userSync config', (params) => {
     if (!usConfig.syncEnabled) {
-      return { allow: false, reason: 'syncs are disabled' }
+      return { allow: false, reason: 'syncs are disabled' };
     }
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_BIDDER) {
       const syncType = params[ACTIVITY_PARAM_SYNC_TYPE];
       const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME];
       if (!publicApi.canBidderRegisterSync(syncType, bidder)) {
-        return { allow: false, reason: `${syncType} syncs are not enabled for ${bidder}` }
+        return { allow: false, reason: `${syncType} syncs are not enabled for ${bidder}` };
       }
     }
   });
@@ -227,7 +231,7 @@ export function newUserSync(deps) {
   function removeImagePixelsForBidder(queue, iframeSyncBidderName) {
     queue.image = queue.image.filter(imageSync => {
       const imageSyncBidderName = imageSync[0];
-      return imageSyncBidderName !== iframeSyncBidderName
+      return imageSyncBidderName !== iframeSyncBidderName;
     });
   }
 
@@ -312,7 +316,7 @@ export function newUserSync(deps) {
       const checkForFiltering = {
         'include': (bidders, bidder) => !bidders.includes(bidder),
         'exclude': (bidders, bidder) => bidders.includes(bidder)
-      }
+      };
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }
     return !permittedPixels[type];
@@ -400,7 +404,7 @@ export const userSync = newUserSync(Object.defineProperties({
   browserSupportsCookies: {
     get: function() {
       // call storage lazily to give time for consent data to be available
-      return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+      return browserSupportsUserSyncCookies();
     }
   }
 }));

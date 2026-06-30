@@ -21,7 +21,7 @@ describe('gravitompId module', function () {
     undefined,
     null,
     ''
-  ]
+  ];
 
   describe('getId()', function () {
     it('should return the gravitompId when it exists in cookie', function () {
