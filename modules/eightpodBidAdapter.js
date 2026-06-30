@@ -1,5 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 import { BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -78,9 +79,13 @@ function buildRequests(bids, bidderRequest) {
 }
 
 function bidResponse(buildBidResponse, bid, context) {
-  bid.nurl = replacePriceInUrl(bid.nurl, bid.price);
+  const nurl = replacePriceInUrl(bid.nurl, bid.price);
+  const bidWithoutNurl = {
+    ...bid,
+    nurl: undefined,
+  };
 
-  const bidResponse = buildBidResponse(bid, context);
+  const bidResponse = buildBidResponse(bidWithoutNurl, context);
 
   bidResponse.height = context?.imp?.banner?.format?.[0].h;
   bidResponse.width = context?.imp?.banner?.format?.[0].w;
@@ -88,6 +93,8 @@ function bidResponse(buildBidResponse, bid, context) {
   bidResponse.ext = bid.ext;
   bidResponse.crid = bid.crid;
   bidResponse.burl = replacePriceInUrl(bid.burl, bidResponse.originalCpm || bidResponse.cpm);
+  bidResponse.ad = addWinNoticeTracker(bidResponse.ad, nurl);
+  addBillingEventTracker(bidResponse, bidResponse.burl);
 
   bidResponse.meta = {
     advertiserDomains: bid.adomain || [],
@@ -95,6 +102,45 @@ function bidResponse(buildBidResponse, bid, context) {
   };
 
   return bidResponse;
+}
+
+function addBillingEventTracker(bidResponse, burl) {
+  if (typeof burl !== 'string') {
+    return;
+  }
+
+  bidResponse.eventtrackers = [
+    ...(Array.isArray(bidResponse.eventtrackers) ? bidResponse.eventtrackers : []),
+    {
+      event: EVENT_TYPE_IMPRESSION,
+      method: TRACKER_METHOD_IMG,
+      url: burl,
+    },
+  ];
+}
+
+function addWinNoticeTracker(ad, nurl) {
+  if (typeof ad !== 'string' || typeof nurl !== 'string') {
+    return ad;
+  }
+
+  const trackingPixel = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${escapeAttribute(nurl)}"></div>`;
+  const bodyMatch = /<body(\s[^>]*)?>/i.exec(ad);
+
+  if (bodyMatch) {
+    const insertAt = bodyMatch.index + bodyMatch[0].length;
+    return `${ad.slice(0, insertAt)}${trackingPixel}${ad.slice(insertAt)}`;
+  }
+
+  return `${trackingPixel}${ad}`;
+}
+
+function escapeAttribute(value) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function replacePriceInUrl(url, price) {
