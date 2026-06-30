@@ -4,48 +4,14 @@ import {
   deepAccess,
   isArray,
   isNumber,
-  generateUUID,
   isEmpty,
+  logError,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';
-const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid';
+const ENDPOINT = 'http://localhost:8080/prebid-bid';
 const TIME_TO_LIVE = 300;
-// in case that the publisher limits number of user syncs, these syncs will be discarded from the end of the list
-// so more important syncing calls should be at the start of the list
-const USER_SYNCS = [
-  // PARTNER_UID is a partner user id
-  {
-    type: 'img',
-    url: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=%PARTNER_UID%&dsp=ttd',
-    macro: '%PARTNER_UID%',
-  },
-  {
-    type: 'img',
-    url: 'https://dsp.myads.telkomsel.com/api/v1/pixel?uid=%USERID%',
-    macro: '%USERID%',
-  },
-];
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
-const VIDEO_PARAMS = [
-  'mimes',
-  'minduration',
-  'maxduration',
-  'protocols',
-  'startdelay',
-  'placement',
-  'plcmt',
-  'skip',
-  'skipafter',
-  'minbitrate',
-  'maxbitrate',
-  'delivery',
-  'playbackmethod',
-  'api',
-  'linearity',
-];
-
 const UNOMI_URL = 'https://revamp-unomi.techgadgetforus.com/context.json';
 const BIMAX_URL = 'https://bimax.telkomsel.com/oc/';
 const TMA_SCOPE = 'Digiads';
@@ -55,8 +21,61 @@ const SESSION_STORAGE_KEY = 'u_session_id';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 let _tmaLock = false;
+let _tmaPrimed = false; // NEW: ensure prime runs only once per page
 let _cachedUserId;
 
+// ---------------------------------------------------------------------------
+// Hook-safety helpers
+// ---------------------------------------------------------------------------
+// fun-hooks returns `undefined` when a hooked function is called before
+// Prebid's ready() fires. We treat that as "not ready" and skip — never throw.
+function storageReady() {
+  try {
+    return typeof storage.localStorageIsEnabled() === 'boolean'
+      ? storage.localStorageIsEnabled()
+      : false;
+  } catch {
+    return false;
+  }
+}
+
+function lsGet(key) {
+  try {
+    if (!storageReady()) return undefined;
+    return storage.getDataFromLocalStorage(key);
+  } catch {
+    return undefined;
+  }
+}
+function lsSet(key, val) {
+  try {
+    if (!storageReady()) return;
+    storage.setDataInLocalStorage(key, val);
+  } catch {
+    /* empty */
+  }
+}
+function ssGet(key) {
+  try {
+    if (!storage.hasSessionStorage || !storage.hasSessionStorage()) { return undefined; }
+    return storage.getDataFromSessionStorage(key) || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function ssSet(key, val) {
+  try {
+    if (!storage.hasSessionStorage || !storage.hasSessionStorage()) return;
+    storage.setDataInSessionStorage(key, val);
+  } catch {
+    /* empty */
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TMA helpers
+// ---------------------------------------------------------------------------
 function tmaDetectPublisherDomain() {
   try {
     const host = window.location?.hostname || '';
@@ -66,14 +85,14 @@ function tmaDetectPublisherDomain() {
       /^[a-zA-Z0-9][a-zA-Z0-9-]*(\.[a-zA-Z0-9][a-zA-Z0-9-]*)+$/.test(host);
     return valid ? host : 'unknown';
   } catch {
+    logError('[pstudio] Error when detect publisher domain');
     return 'unknown';
   }
 }
 
 function tmaGenUUID() {
   try {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID)
-      return crypto.randomUUID();
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) { return crypto.randomUUID(); }
   } catch {
     /* empty */
   }
@@ -83,40 +102,11 @@ function tmaGenUUID() {
   });
 }
 
-function lsGet(key) {
-  try {
-    return storage.localStorageIsEnabled()
-      ? storage.getDataFromLocalStorage(key)
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-function lsSet(key, val) {
-  try {
-    if (storage.localStorageIsEnabled())
-      storage.setDataInLocalStorage(key, val);
-  } catch { /* empty */ }
-}
-function ssGet(key) {
-  try {
-    return window.sessionStorage?.getItem(key) || undefined;
-  } catch {
-    return undefined;
-  }
-}
-function ssSet(key, val) {
-  try {
-    window.sessionStorage?.setItem(key, val);
-  } catch { /* empty */ }
-}
-
 async function tmaSyncIdentity({
   timeoutMs = 10000,
   gdprConsent,
   uspConsent,
 } = {}) {
-  // Optional gating consent (sederhana)
   const gdprApplies =
     typeof gdprConsent?.gdprApplies === 'boolean'
       ? gdprConsent.gdprApplies
@@ -124,40 +114,36 @@ async function tmaSyncIdentity({
   const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
   const ccpaOptOut = typeof uspConsent === 'string' && /^1Y/.test(uspConsent);
 
-  if (
-    !storage.localStorageIsEnabled() ||
-    (gdprApplies && !hasGdprConsent) ||
-    ccpaOptOut
-  ) {
+  // Bail cleanly on consent/storage gates
+  if (!storageReady() || (gdprApplies && !hasGdprConsent) || ccpaOptOut) {
     return null;
   }
-
   if (_tmaLock) return null;
   _tmaLock = true;
 
-  // session id
-  let sid = ssGet(SESSION_STORAGE_KEY);
-  if (!sid) {
-    sid = tmaGenUUID();
-    ssSet(SESSION_STORAGE_KEY, sid);
-  }
-
-  const current = lsGet(LOCAL_STORAGE_KEY);
-  const domain = tmaDetectPublisherDomain();
-  const payload = {
-    profileId: current || null,
-    events: [
-      {
-        eventType: 'view',
-        scope: TMA_SCOPE,
-        attributes: { publisherDomain: domain },
-      },
-    ],
-    source: { itemId: domain, itemType: 'publisher-site', scope: TMA_SCOPE },
-  };
-
   let got = null;
   try {
+    // session id
+    let sid = ssGet(SESSION_STORAGE_KEY);
+    if (!sid) {
+      sid = tmaGenUUID();
+      ssSet(SESSION_STORAGE_KEY, sid);
+    }
+
+    const current = lsGet(LOCAL_STORAGE_KEY);
+    const domain = tmaDetectPublisherDomain();
+    const payload = {
+      profileId: current || null,
+      events: [
+        {
+          eventType: 'view',
+          scope: TMA_SCOPE,
+          attributes: { publisherDomain: domain },
+        },
+      ],
+      source: { itemId: domain, itemType: 'publisher-site', scope: TMA_SCOPE },
+    };
+
     const ctrl =
       typeof AbortController !== 'undefined' ? new AbortController() : null;
     const t = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
@@ -171,18 +157,18 @@ async function tmaSyncIdentity({
     });
 
     if (t) clearTimeout(t);
-    if (!res.ok) throw new Error('Unomi Context Error');
+    if (!res.ok) throw new Error(`Unomi Context Error: ${res.status}`);
 
     const json = await res.json();
     const pid =
       json && typeof json.profileId === 'string' ? json.profileId : null;
     if (!pid) throw new Error('Invalid profile ID from Unomi');
 
-    // store & cache
     lsSet(LOCAL_STORAGE_KEY, pid);
     _cachedUserId = pid;
     got = pid;
 
+    // Fire-and-forget Bimax beacon
     try {
       const u = new URL(BIMAX_URL);
       u.searchParams.append('source_name', 'tma_ads_tech');
@@ -192,9 +178,12 @@ async function tmaSyncIdentity({
         mode: 'no-cors',
         keepalive: true,
       }).catch(() => {});
-    } catch { /* empty */ }
-  } catch {
-    // swallow errors
+    } catch {
+      /* empty */
+    }
+  } catch (err) {
+    // No longer silent — surface to Prebid's logger only (won't spam console.error in prod)
+    logError('[pstudio] tmaSyncIdentity failed:', err);
   } finally {
     _tmaLock = false;
   }
@@ -208,10 +197,60 @@ function tmaGetIdCached() {
   return _cachedUserId || undefined;
 }
 
-(function tmaPrimeEarly() {
-  _cachedUserId = lsGet(LOCAL_STORAGE_KEY) || _cachedUserId;
-  tmaSyncIdentity({ timeoutMs: 800 }).catch(() => {});
-})();
+// Primes _cachedUserId from LS and triggers a background sync, but ONLY when
+// invoked from a Prebid lifecycle method (i.e. after fun-hooks is ready).
+function tmaPrime(bidderRequest) {
+  if (_tmaPrimed) return;
+  _tmaPrimed = true;
+
+  if (!_cachedUserId) {
+    const v = lsGet(LOCAL_STORAGE_KEY);
+    if (v) _cachedUserId = v;
+  }
+
+  tmaSyncIdentity({
+    timeoutMs: 800,
+    gdprConsent: bidderRequest?.gdprConsent,
+    uspConsent: bidderRequest?.uspConsent,
+  }).catch((e) => logError('[pstudio] sync identity error:', e));
+}
+
+// ---------------------------------------------------------------------------
+// User syncs config
+// ---------------------------------------------------------------------------
+const USER_SYNCS = [
+  {
+    type: 'img',
+    url: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=%PARTNER_UID%&dsp=ttd',
+    macro: '%PARTNER_UID%',
+  },
+  {
+    type: 'img',
+    url: 'https://dsp.myads.telkomsel.com/api/v1/pixel?uid=%USERID%',
+    macro: '%USERID%',
+  },
+];
+
+// ============================
+// Adapter spec
+// ============================
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+const VIDEO_PARAMS = [
+  'mimes',
+  'minduration',
+  'maxduration',
+  'protocols',
+  'startdelay',
+  'placement',
+  'skip',
+  'skipafter',
+  'minbitrate',
+  'maxbitrate',
+  'delivery',
+  'playbackmethod',
+  'api',
+  'linearity',
+];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -223,12 +262,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    // TMA: kick background sync (honor consent) – non-blocking
-    tmaSyncIdentity({
-      timeoutMs: 800,
-      gdprConsent: bidderRequest?.gdprConsent,
-      uspConsent: bidderRequest?.uspConsent,
-    }).catch(() => {});
+    tmaPrime(bidderRequest);
 
     return validBidRequests.map((bid) => ({
       method: 'POST',
@@ -268,7 +302,6 @@ export const spec = {
     return bidResponses;
   },
 
-  // TMA: non-blocking, consent-aware, encode macro
   getUserSyncs(syncOptions, _serverResponse, gdprConsent, uspConsent) {
     const syncs = [];
     if (!syncOptions) return syncs;
@@ -280,9 +313,7 @@ export const spec = {
     const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
     const ccpaOptOut = typeof uspConsent === 'string' && /^1Y/.test(uspConsent);
 
-    if ((gdprApplies && !hasGdprConsent) || ccpaOptOut) {
-      return syncs;
-    }
+    if ((gdprApplies && !hasGdprConsent) || ccpaOptOut) return syncs;
 
     const userId = tmaGetIdCached();
     USER_SYNCS.forEach((us) => {
@@ -303,6 +334,9 @@ export const spec = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Request building
+// ---------------------------------------------------------------------------
 function buildRequestData(bid, bidderRequest) {
   let payloadObject = buildBaseObject(bid, bidderRequest);
   if (bid.mediaTypes.banner) {
@@ -366,26 +400,10 @@ function buildVideoObject(bid, payloadObject) {
   return payloadObject;
 }
 
-
-function _readUserIdFromLocalStorage(key) {
-  try {
-    if (storage.localStorageIsEnabled()) {
-      const storedValue = storage.getDataFromLocalStorage(key);
-      if (storedValue !== null && storedValue !== undefined) {
-        return storedValue;
-      }
-    }
-  } catch (error) {
-    return undefined;
-  }
-}
-
-function prepareFirstPartyData({ user, device, site, app, regs }) {
+function prepareFirstPartyData({ user, device, site, app, regs } = {}) {
   let userData, deviceData, siteData, appData, regsData;
 
-  if (user) {
-    userData = { yob: user.yob, gender: user.gender };
-  }
+  if (user) userData = { yob: user.yob, gender: user.gender };
   if (device) {
     deviceData = {
       ua: device.ua,
@@ -488,9 +506,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
       }),
     };
   }
-  if (regs) {
-    regsData = { coppa: regs.coppa };
-  }
+  if (regs) regsData = { coppa: regs.coppa };
 
   return cleanObject({
     user: userData,
@@ -503,7 +519,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
 
 function cleanObject(data) {
   for (let key in data) {
-    if (typeof data[key] == 'object') {
+    if (typeof data[key] === 'object') {
       cleanObject(data[key]);
       if (isEmpty(data[key])) delete data[key];
     }
@@ -538,21 +554,5 @@ function validateSizes(sizes) {
     )
   );
 }
-
-/* function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return bid.params.floorPrice ? bid.params.floorPrice : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*',
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
-} */
 
 registerBidder(spec);
