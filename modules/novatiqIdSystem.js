@@ -18,6 +18,15 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'novatiq';
 
+/** Ephemeral first-party key for the current page hyper ID (aligned with direct GAM integration). */
+const NVQ_HID_KEY = 'nvq_hid';
+const NVQ_HID_TTL_MS = 60 * 1000;
+
+/** @type {ReturnType<typeof setTimeout>|null} */
+let nvqHidLocalStorageExpiryTimer = null;
+
+export const novatiqStorage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
 
@@ -89,18 +98,20 @@ export const novatiqIdSubmodule = {
       res.sharedStatus = sharedStatus;
 
       return res;
-    } else {
-      this.sendSimpleSyncRequest(novatiqId, url);
-
-      return {
-        'id': novatiqId,
-        'sharedStatus': sharedStatus
-      };
     }
+
+    this.persistEphemeralHyperId(novatiqId);
+    this.sendSimpleSyncRequest(novatiqId, url);
+
+    return {
+      'id': novatiqId,
+      'sharedStatus': sharedStatus
+    };
   },
 
   sendAsyncSyncRequest(novatiqId, url) {
     logInfo('NOVATIQ Setting up ASYNC sync request');
+    const persistEphemeralHyperId = this.persistEphemeralHyperId.bind(this);
 
     const resp = function (callback) {
       logInfo('NOVATIQ *** Calling ASYNC sync request');
@@ -113,9 +124,11 @@ export const novatiqIdSubmodule = {
         logInfo('NOVATIQ *** ASYNC request returned ' + syncrc);
         if (syncrc === 200) {
           novatiqIdJson = { 'id': novatiqId, syncResponse: 1 };
+          persistEphemeralHyperId(novatiqId);
         } else {
           if (syncrc === 204) {
             novatiqIdJson = { 'id': novatiqId, syncResponse: 2 };
+            persistEphemeralHyperId(novatiqId);
           }
         }
         callback(novatiqIdJson);
@@ -135,6 +148,62 @@ export const novatiqIdSubmodule = {
     ajax(url, undefined, undefined, { method: 'GET', withCredentials: false });
 
     logInfo('NOVATIQ snowflake: ' + novatiqId);
+  },
+
+  /**
+   * Store the generated hyper ID briefly for first-party use: cookie when allowed, else localStorage JSON with expiresAt.
+   * @param {string} hyperId
+   */
+  persistEphemeralHyperId(hyperId) {
+    const ttlMs = NVQ_HID_TTL_MS;
+    if (!novatiqStorage.cookiesAreEnabled()) {
+      if (novatiqStorage.hasLocalStorage()) {
+        this.removeExpiredEphemeralHyperIdFromLocalStorage();
+        novatiqStorage.setDataInLocalStorage(NVQ_HID_KEY, JSON.stringify({
+          hyperId: hyperId,
+          expiresAt: Date.now() + ttlMs
+        }));
+        this.scheduleEphemeralHyperIdLocalStorageExpiry();
+        logInfo('NOVATIQ ephemeral hyperId stored in localStorage (' + (ttlMs / 1000) + 's TTL, cookies unavailable)');
+      }
+      return;
+    }
+    if (novatiqStorage.hasLocalStorage()) {
+      novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
+    }
+    const expiry = new Date(Date.now() + ttlMs).toUTCString();
+    novatiqStorage.setCookie(NVQ_HID_KEY, hyperId, expiry, 'Lax');
+    logInfo('NOVATIQ ephemeral hyperId stored in cookie (' + (ttlMs / 1000) + 's TTL)');
+  },
+
+  removeExpiredEphemeralHyperIdFromLocalStorage() {
+    if (!novatiqStorage.hasLocalStorage()) {
+      return;
+    }
+    const raw = novatiqStorage.getDataFromLocalStorage(NVQ_HID_KEY);
+    if (raw === null || raw === undefined || raw === '') {
+      return;
+    }
+    const payload = JSON.parse(raw);
+    if (typeof payload.expiresAt !== 'number' || payload.expiresAt <= Date.now()) {
+      novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
+    }
+  },
+
+  scheduleEphemeralHyperIdLocalStorageExpiry() {
+    if (typeof window === 'undefined' || typeof window.setTimeout !== 'function') {
+      return;
+    }
+    if (nvqHidLocalStorageExpiryTimer !== null) {
+      window.clearTimeout(nvqHidLocalStorageExpiryTimer);
+    }
+    nvqHidLocalStorageExpiryTimer = window.setTimeout(function () {
+      if (novatiqStorage.hasLocalStorage()) {
+        novatiqStorage.removeDataFromLocalStorage(NVQ_HID_KEY);
+        logInfo('NOVATIQ ephemeral hyperId removed from localStorage after TTL');
+      }
+      nvqHidLocalStorageExpiryTimer = null;
+    }, NVQ_HID_TTL_MS);
   },
 
   getNovatiqId(urlParams) {
@@ -227,17 +296,16 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       const cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
       // first check local storage
-      if (storage.hasLocalStorage()) {
-        sharedId = storage.getDataFromLocalStorage(cookieOrStorageID);
+      if (novatiqStorage.hasLocalStorage()) {
+        sharedId = novatiqStorage.getDataFromLocalStorage(cookieOrStorageID);
         logInfo('NOVATIQ sharedID retrieved from local storage:' + sharedId);
       }
 
       // if nothing check the local cookies
       if (sharedId === null || sharedId === undefined) {
-        sharedId = storage.getCookie(cookieOrStorageID);
+        sharedId = novatiqStorage.getCookie(cookieOrStorageID);
         logInfo('NOVATIQ sharedID retrieved from cookies:' + sharedId);
       }
     }
