@@ -1872,6 +1872,16 @@ describe('bidderFactory', () => {
       expect(ajaxStub.calledOnce).to.be.true;
       expect(ajaxStub.firstCall.args[0]).to.include('gzip=1'); // Ensure the URL has gzip=1
       expect(ajaxStub.firstCall.args[2]).to.equal(compressedPayload); // Ensure compressed data is sent
+      expect(ajaxStub.firstCall.args[3].customHeaders).to.deep.include({ 'Content-Encoding': 'gzip' }); // Ensure Content-Encoding header is set
+    });
+
+    it('should not set a Content-Encoding header when sending uncompressed data', async () => {
+      isGzipSupportedStub.returns(false);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+      await runRequest();
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[3].customHeaders).to.be.undefined; // No Content-Encoding header on uncompressed requests
     });
 
     it('should send the request normally if gzip is not supported', async () => {

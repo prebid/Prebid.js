@@ -542,7 +542,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         break;
       case 'POST':
         const enableGZipCompression = request.options?.endpointCompression;
-        const callAjax = ({ url, payload }) => {
+        const callAjax = ({ url, payload, customHeaders }: { url: string, payload: any, customHeaders?: Record<string, string> }) => {
           ajax(
             url,
             {
@@ -553,7 +553,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
             getOptions({
               method: 'POST',
               contentType: 'text/plain',
-              withCredentials: true
+              withCredentials: true,
+              ...(customHeaders ? { customHeaders: { ...request.options?.customHeaders, ...customHeaders } } : {})
             })
           );
         };
@@ -568,7 +569,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
             if (!url.searchParams.has('gzip')) {
               url.searchParams.set('gzip', '1');
             }
-            callAjax({ url: url.href, payload: compressedPayload });
+            callAjax({ url: url.href, payload: compressedPayload, customHeaders: { 'Content-Encoding': 'gzip' } });
           });
         } else {
           callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
