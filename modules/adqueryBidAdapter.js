@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   buildUrl,
   logInfo,
@@ -9,7 +9,7 @@ import {
   deepSetValue,
   deepAccess
 } from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -46,7 +46,7 @@ export const spec = {
       return !!(video.playerSize);
     }
 
-    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes);
   },
 
   /**
@@ -191,7 +191,7 @@ export const spec = {
       return;
     }
 
-    const copyOfBid = {...bid}
+    const copyOfBid = { ...bid };
 
     const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
     copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
