@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, getPageKeywords, parseUserAgent, createRequest, applyPrivacyConsent, GVLID } from 'modules/eightpodBidAdapter';
 import 'modules/priceFloors.js';
 import { config } from 'src/config.js';
+import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 import { newBidder } from 'src/adapters/bidderFactory';
 import sinon from 'sinon';
 
@@ -237,7 +238,14 @@ describe('eightpodBidAdapter', function () {
       expect(bid.crid).to.equal('creative-1');
       expect(bid.ext).to.deep.equal({ foo: 'bar' });
       expect(bid.ad).to.exist;
+      expect(bid.ad).to.match(/^<html><head>/);
+      expect(bid.ad).to.include('<body><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="https://example.com/nurl?p=1.23"></div>ad</body>');
       expect(bid.burl).to.equal('https://example.com/burl?p=1.23');
+      expect(bid.eventtrackers).to.deep.include({
+        event: EVENT_TYPE_IMPRESSION,
+        method: TRACKER_METHOD_IMG,
+        url: 'https://example.com/burl?p=1.23',
+      });
     });
 
     it('should populate meta.advertiserDomains and meta.mediaType from OpenRTB adomain', function() {
