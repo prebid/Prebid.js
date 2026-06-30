@@ -37,6 +37,10 @@ describe('wurflRtdProvider', function () {
         bidder2: {
           cap_indices: [12, 13, 14, 19, 20, 21, 22]
         }
+      },
+      beacon: {
+        // wurfl_id (0), complete_device_name (7), form_factor (9)
+        cap_indices: [0, 7, 9]
       }
     };
     const WURFL = {
@@ -604,8 +608,10 @@ describe('wurflRtdProvider', function () {
             expect(payload).to.have.property('ab_name', 'test_wurfl');
             expect(payload).to.have.property('ab_variant', 'control');
             expect(payload).to.have.property('enrichment', 'none');
-            // Beacon metadata should be read from cache even in control group
-            expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+            // Beacon metadata should be read from cache even in control group.
+            // New format active → wurfl_id lives inside wurfl_caps, not at top-level.
+            expect(payload).to.not.have.property('wurfl_id');
+            expect(payload.wurfl_caps).to.have.property('wurfl_id', 'lg_nexus5_ver1');
             expect(payload).to.have.property('sampling_rate', 100);
             done();
           };
@@ -653,7 +659,8 @@ describe('wurflRtdProvider', function () {
             expect(payload).to.have.property('ab_name', 'test_none_lce');
             expect(payload).to.have.property('ab_variant', 'control');
             expect(payload).to.have.property('enrichment', 'none_lce');
-            // No cache → beacon metadata stays at defaults
+            // No cache → no wurfl_caps; legacy top-level wurfl_id stays at its default
+            expect(payload).to.not.have.property('wurfl_caps');
             expect(payload).to.have.property('wurfl_id', '');
             expect(payload).to.have.property('sampling_rate', 100);
 
@@ -1564,7 +1571,8 @@ describe('wurflRtdProvider', function () {
         expect(payload).to.have.property('path');
         expect(payload).to.have.property('sampling_rate', 100);
         expect(payload).to.have.property('enrichment', 'wurfl_pub');
-        expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+        expect(payload).to.not.have.property('wurfl_id');
+        expect(payload.wurfl_caps).to.have.property('wurfl_id', 'lg_nexus5_ver1');
         expect(payload).to.have.property('over_quota', 0);
         expect(payload).to.have.property('consent_class', 0);
         expect(payload).to.have.property('ad_units');
@@ -1655,7 +1663,8 @@ describe('wurflRtdProvider', function () {
         expect(payload).to.have.property('path');
         expect(payload).to.have.property('sampling_rate', 100);
         expect(payload).to.have.property('enrichment', 'wurfl_pub');
-        expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+        expect(payload).to.not.have.property('wurfl_id');
+        expect(payload.wurfl_caps).to.have.property('wurfl_id', 'lg_nexus5_ver1');
         expect(payload).to.have.property('over_quota', 0);
         expect(payload).to.have.property('consent_class', 0);
         expect(payload).to.have.property('ad_units');
@@ -2133,6 +2142,112 @@ describe('wurflRtdProvider', function () {
         const userConsent = {};
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+      });
+    });
+
+    describe('beacon wurfl_caps', () => {
+      // The set of caps reported in the beacon is declared in wurfl_pbjs.beacon.cap_indices.
+      // Values are read from window.WURFL like any other cap; the plumbing is type-agnostic.
+      const expectedBeaconCaps = {
+        wurfl_id: 'lg_nexus5_ver1',
+        complete_device_name: 'Google Nexus 5',
+        form_factor: 'Feature Phone'
+      };
+
+      beforeEach(() => {
+        sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
+          getHighestCpmBids: () => []
+        });
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+      });
+
+      it('reports the configured beacon caps in wurfl_caps and drops the top-level wurfl_id', (done) => {
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.not.have.property('wurfl_id');
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('still reports wurfl_caps when over quota', (done) => {
+        const cachedData = { WURFL, wurfl_pbjs: { ...wurfl_pbjs, over_quota: 1 } };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.have.property('over_quota', 1);
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('does not emit wurfl_caps when there is no cached WURFL data (LCE)', (done) => {
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+        __testing__.setSuaPromise(Promise.resolve(null));
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.not.have.property('wurfl_caps');
+          expect(payload).to.have.property('wurfl_id', '');
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('preserves complex (array-valued) cap values intact', (done) => {
+        // pointing_method (index 30) is reused here with an array value purely to exercise the
+        // type-agnostic plumbing: a complex value must reach the beacon untouched.
+        const complexValue = [
+          { a: 1, b: 'x' },
+          { a: -2, b: 'y' }
+        ];
+        const cachedData = {
+          WURFL: { ...WURFL, pointing_method: complexValue },
+          wurfl_pbjs: { ...wurfl_pbjs, beacon: { cap_indices: [0, 30] } }
+        };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload.wurfl_caps).to.deep.equal({
+            wurfl_id: 'lg_nexus5_ver1',
+            pointing_method: complexValue
+          });
+          expect(payload.wurfl_caps.pointing_method).to.be.an('array').with.lengthOf(2);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
     });
 
