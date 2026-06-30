@@ -21,7 +21,7 @@ jobs:
         uses: ./.github/actions/npm-ci
       - name: Build
         run: |
-          npx gulp build
+          npx gulp build --polyfills
       - name: Upload dependencies.json
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v7
