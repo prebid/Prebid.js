@@ -90,7 +90,7 @@ jobs:
         uses: ./.github/actions/polyfills
         with:
           sha: ${{ github.sha }}
-          output: ${{ runner.temp }}/polyfills.json
+          output: ${{ runner.temp }}/head-polyfills.json
           fail-on-cache-miss: true
       - name: Compare and post comment
         uses: actions/github-script@v9
@@ -103,7 +103,7 @@ jobs:
             const process = require('process');
             
             const base = JSON.parse(fs.readFileSync('${{ runner.temp }}/base-polyfills.json').toString());
-            const head = JSON.parse(fs.readFileSync('${{ runner.temp }}/polyfills.json').toString());
+            const head = JSON.parse(fs.readFileSync('${{ runner.temp }}/head-polyfills.json').toString());
             const files = fs.readFileSync('${{ runner.temp }}/changed_files.txt').split('\n').map(f => f.trim());
             
             const diff = files.reduce((memo, file) => {
