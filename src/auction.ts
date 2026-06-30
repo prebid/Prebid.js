@@ -224,6 +224,84 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
   function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
 
+  const BID_IDENTITY_FIELDS_TO_DROP = ['ortb2', 'userId', 'userIdAsEids', 'ortb2Imp'];
+  const AD_UNIT_BID_IDENTITY_FIELDS_TO_DROP = BID_IDENTITY_FIELDS_TO_DROP.filter(field => field !== 'ortb2Imp');
+  const BID_REQUEST_FIELDS_TO_DROP = [
+    ...BID_IDENTITY_FIELDS_TO_DROP,
+    'params',
+    'mediaTypes',
+    'rtd',
+    'floorData',
+    'getFloor',
+    'labelAll'
+  ];
+  const BID_RESPONSE_FIELDS_TO_DROP = BID_REQUEST_FIELDS_TO_DROP.filter(field => field !== 'floorData');
+  const BIDDER_REQUEST_FIELDS_TO_DROP = ['ortb2', 'ortb2Imp', 'adUnitsS2SCopy', 'pbsExt', 'refererInfo'];
+
+  function dropFields(target, fields) {
+    fields.forEach(field => {
+      delete target?.[field];
+    });
+  }
+
+  function getRetainedMediaTypes(mediaTypes) {
+    const video = mediaTypes?.[VIDEO];
+    if (!video?.renderer) return;
+
+    return {
+      [VIDEO]: {
+        context: video.context,
+        renderer: video.renderer,
+        useCacheKey: video.useCacheKey
+      }
+    };
+  }
+
+  function dropRetainedBidRequestFields(bid) {
+    const retainedMediaTypes = getRetainedMediaTypes(bid?.mediaTypes);
+    dropFields(bid, BID_REQUEST_FIELDS_TO_DROP);
+    if (retainedMediaTypes) {
+      bid.mediaTypes = retainedMediaTypes;
+    }
+  }
+
+  function dropRetainedBidderRequestFields(bidderRequest) {
+    dropFields(bidderRequest, BIDDER_REQUEST_FIELDS_TO_DROP);
+    bidderRequest?.bids?.forEach(dropRetainedBidRequestFields);
+  }
+
+  function dropRetainedBidResponseFields(bid) {
+    dropFields(bid, BID_RESPONSE_FIELDS_TO_DROP);
+  }
+
+  function dropRetainedAdUnitBidIdentityFields(bid) {
+    dropFields(bid, AD_UNIT_BID_IDENTITY_FIELDS_TO_DROP);
+  }
+
+  function dropRetainedAdUnitFields(adUnit) {
+    adUnit?.bids?.forEach(dropRetainedAdUnitBidIdentityFields);
+  }
+
+  function dropRetainedUserExtEids(userExt) {
+    delete userExt?.eids;
+    delete userExt?.data?.eids;
+  }
+
+  function dropRetainedFpdEids() {
+    dropRetainedUserExtEids(ortb2Fragments?.global?.user?.ext);
+    Object.values(ortb2Fragments?.bidder ?? {}).forEach((bidderFpd: any) => {
+      dropRetainedUserExtEids(bidderFpd?.user?.ext);
+    });
+  }
+
+  function dropRetainedRequestFields() {
+    _adUnits.forEach(dropRetainedAdUnitFields);
+    _bidderRequests.forEach(dropRetainedBidderRequestFields);
+    _noBids.forEach(dropRetainedBidRequestFields);
+    _bidsReceived.toArray().forEach(dropRetainedBidResponseFields);
+    dropRetainedFpdEids();
+  }
+
   function getProperties() {
     return {
       auctionId: _auctionId,
@@ -284,15 +362,19 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
         } catch (e) {
           logError('Error executing bidsBackHandler', null, e);
         } finally {
-          // Calling timed out bidders
-          if (timedOutRequests.length) {
-            adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
-          }
-          // Only automatically sync if the publisher has not chosen to "enableOverride"
-          const userSyncConfig = config.getConfig('userSync') ?? {} as any;
-          if (!userSyncConfig.enableOverride) {
-            // Delay the auto sync by the config delay
-            syncUsers(userSyncConfig.syncDelay);
+          try {
+            // Calling timed out bidders
+            if (timedOutRequests.length) {
+              adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
+            }
+            // Only automatically sync if the publisher has not chosen to "enableOverride"
+            const userSyncConfig = config.getConfig('userSync') ?? {} as any;
+            if (!userSyncConfig.enableOverride) {
+              // Delay the auto sync by the config delay
+              syncUsers(userSyncConfig.syncDelay);
+            }
+          } finally {
+            dropRetainedRequestFields();
           }
         }
       });

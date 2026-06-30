@@ -339,6 +339,15 @@ type PBSAdUnit = Omit<AdUnit, 'bids'> & {
   bids: PBSAdUnitBid[];
 };
 
+function dropS2SBidUserIds(adUnit: PBSAdUnit) {
+  adUnit.bids.forEach((bid: any) => {
+    delete bid.userId;
+  });
+  if (adUnit.s2sBid) {
+    delete (adUnit.s2sBid as any).userId;
+  }
+}
+
 function getAdUnitCopyForPrebidServer(adUnits: AdUnit[], s2sConfig) {
   let adUnitsCopy = deepClone(adUnits) as PBSAdUnit[];
   let hasModuleBids = false;
@@ -360,6 +369,7 @@ function getAdUnitCopyForPrebidServer(adUnits: AdUnit[], s2sConfig) {
         bid.bid_id = getUniqueIdentifierStr();
         return bid;
       });
+    dropS2SBidUserIds(adUnit);
   });
   adUnitsCopy = adUnitsCopy.filter(adUnit => {
     if (s2sConfig.filterBidderlessCalls) {
