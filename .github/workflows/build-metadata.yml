@@ -104,7 +104,7 @@ jobs:
             
             const base = JSON.parse(fs.readFileSync('${{ runner.temp }}/base-polyfills.json').toString());
             const head = JSON.parse(fs.readFileSync('${{ runner.temp }}/head-polyfills.json').toString());
-            const files = fs.readFileSync('${{ runner.temp }}/changed_files.txt').split('\n').map(f => f.trim());
+            const files = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(f => f.trim());
             
             const diff = files.reduce((memo, file) => {
               const fileBase = new Set(base.files[file] ?? []);
