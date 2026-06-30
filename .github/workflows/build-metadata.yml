@@ -89,7 +89,7 @@ jobs:
       - name: Retrieve head branch polyfills.json
         uses: ./.github/actions/polyfills
         with:
-          sha: ${{ github.ref }}
+          sha: ${{ github.sha }}
           output: ${{ runner.temp }}/polyfills.json
           fail-on-cache-miss: true
       - name: Compare and post comment
