@@ -194,7 +194,7 @@ export const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const { siteId, pageId, formatId } = bidRequest.params;
+    const { siteId, pageId, formatId, placementuuid } = bidRequest.params;
 
     delete imp.dt;
 
@@ -207,7 +207,12 @@ export const converter = ortbConverter({
       mergeDeep(imp, { rwdd: bidRequest.mediaTypes.video.ext.rewarded });
     }
 
-    const bidder = { ...(siteId && { siteId }), ...(pageId && { pageId }), ...(formatId && { formatId }) };
+    // `placementuuid` is the preferred way to identify inventory. When it is
+    // provided it takes precedence over the <deprecated> `siteId`, `pageId` and
+    // `formatId` </deprecated> parameters, which are kept only to support the ramp-up period.
+    const bidder = placementuuid
+      ? { placementuuid }
+      : { ...(siteId && { siteId }), ...(pageId && { pageId }), ...(formatId && { formatId }) };
     if (Object.keys(bidder).length) {
       mergeDeep(imp.ext, { bidder });
     }
