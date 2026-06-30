@@ -25,7 +25,6 @@ Integration requires a valid Axonix `supplyId`. Contact Axonix for account setup
 | `region` | optional | String | Axonix regional endpoint prefix. Defaults to `us-east-1` | `"us-east-1"` |
 | `endpoint` | optional | String | Override the default bid URL | `"https://custom.example.com/bid"` |
 | `referrer` | optional | String | Page URL override for the bid request | `"https://example.com/page"` |
-| `secure` | optional | Boolean | When `true`, upgrades `http:` page URLs to `https:` | `true` |
 
 **Default bid endpoint:**
 

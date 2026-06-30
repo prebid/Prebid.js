@@ -177,13 +177,12 @@ describe('Axonix Bid Adapter', function () {
       expect(payload.refererInfo.page).to.equal('https://example.com/page');
     });
 
-    it('should prefer params.referrer and upgrade to https when secure is true', function () {
+    it('should prefer params.referrer and upgrade to https', function () {
       const bid = buildBidRequest({
         params: {
           supplyId: SUPPLY_ID,
           region: REGION,
-          referrer: 'http://example.com/custom',
-          secure: true,
+          referrer: 'http://example.com/custom'
         },
       });
       const requests = spec.buildRequests([bid], buildBidderRequest());

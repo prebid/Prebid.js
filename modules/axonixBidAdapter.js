@@ -31,7 +31,7 @@ function getPageUrl(bidRequest, bidderRequest) {
   const fallbackPage = deepAccess(bidderRequest, 'ortb2.site.page');
   let pageUrl = bidRequest?.params?.referrer || refererPage || fallbackPage || '';
 
-  if (bidRequest?.params?.secure && pageUrl) {
+  if (/^http:/i.test(pageUrl)) {
     pageUrl = pageUrl.replace(/^http:/i, 'https:');
   }
   return pageUrl;
