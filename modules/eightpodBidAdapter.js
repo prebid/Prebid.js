@@ -105,7 +105,7 @@ function bidResponse(buildBidResponse, bid, context) {
 }
 
 function addBillingEventTracker(bidResponse, burl) {
-  if (typeof burl !== 'string') {
+  if (typeof burl !== 'string' || burl.trim() === '') {
     return;
   }
 
@@ -120,7 +120,7 @@ function addBillingEventTracker(bidResponse, burl) {
 }
 
 function addWinNoticeTracker(ad, nurl) {
-  if (typeof ad !== 'string' || typeof nurl !== 'string') {
+  if (typeof ad !== 'string' || typeof nurl !== 'string' || nurl.trim() === '') {
     return ad;
   }
 

@@ -248,6 +248,41 @@ describe('eightpodBidAdapter', function () {
       });
     });
 
+    it('should not add trackers for blank nurl or burl values', function() {
+      const serverResponse = {
+        body: {
+          id: 'response-id',
+          seatbid: [
+            {
+              bid: [
+                {
+                  impid: 'test-bid-id-1',
+                  price: 1.23,
+                  adm: '<html><head></head><body>ad</body></html>',
+                  nurl: '   ',
+                  burl: '',
+                }
+              ]
+            }
+          ],
+          cur: 'USD',
+        }
+      };
+
+      const responses = spec.interpretResponse(serverResponse, request);
+
+      expect(responses).to.be.an('array').with.length(1);
+      const [bid] = responses;
+      expect(bid.ad).to.include('<body>ad</body>');
+      expect(bid.ad).to.not.include('visibility:hidden');
+      expect(bid.ad).to.not.include('<img src=""');
+      expect(bid.eventtrackers || []).to.not.deep.include({
+        event: EVENT_TYPE_IMPRESSION,
+        method: TRACKER_METHOD_IMG,
+        url: '',
+      });
+    });
+
     it('should populate meta.advertiserDomains and meta.mediaType from OpenRTB adomain', function() {
       const serverResponse = {
         body: {
