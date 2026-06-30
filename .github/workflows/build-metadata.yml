@@ -117,12 +117,12 @@ jobs:
             }, {});
             
             if (Object.keys(diff).length > 0) {
-              const cm = ['This PR introduces changes that may not work on all browsers. According to Babel, it may need the following polyfills, which are *not* automatically included:\n'];
+              const cm = ['This PR introduces changes that may not work on all browsers. According to Babel, the following polyfills may be needed, and they are *not* automatically included:\n'];
               Object.entries(diff).forEach(([filename, polys]) => { 
-                 polys = polys.map(p => `\`${p}\``).join(', ');
-                 cm.push(`* \`${filename}\`:  ${polys}`)
+                 cm.push(`* \`${filename}\`:`);
+                 polys.forEach(poly => cm.push(`    * "${poly}"`))
               })
-              cm.push(`\nThe best way to address this is to provide good test coverage, as normal PR checks run tests on older browser versions as well.`)
+              cm.push(`\nThe best way to address this is to provide good test coverage, as normal PR checks run unit tests on older browsers.`)
               fs.writeFileSync("${{ runner.temp }}/comment.json", JSON.stringify({
                 issue_number: context.issue.number,
                 body: cm.join('\n')
