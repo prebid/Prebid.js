@@ -28,16 +28,16 @@ jobs:
         with:
           name: dependencies.json
       - name: Download PR info
-        if: ${{ steps.download.output.exists == 'true' }}
+        if: ${{ steps.download.outputs.exists == 'true' }}
         uses: ./.github/actions/unzip-artifact
         with:
           name: prInfo
       - name: Install s3 client
-        if: ${{ steps.download.output.exists == 'true' }}
+        if: ${{ steps.download.outputs.exists == 'true' }}
         run: |
           npm install @aws-sdk/client-s3
       - name: Get PR properties
-        if: ${{ steps.download.output.exists == 'true' }}
+        if: ${{ steps.download.outputs.exists == 'true' }}
         id: get-props
         uses: actions/github-script@v9
         env:
@@ -61,7 +61,7 @@ jobs:
             console.log('PR properties:', JSON.stringify(props, null, 2));
             return props;
       - name: Assign reviewers
-        if: ${{ steps.download.output.exists == 'true' && !fromJSON(steps.get-props.outputs.result).review.ok }}
+        if: ${{ steps.download.outputs.exists == 'true' && !fromJSON(steps.get-props.outputs.result).review.ok }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
@@ -70,7 +70,7 @@ jobs:
             const reviewers = await assignReviewers({github, context, prData: ${{ steps.get-props.outputs.result }} });
             console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
       - name: Auto-label core PR
-        if: ${{ steps.download.output.exists == 'true' && fromJSON(steps.get-props.outputs.result).isCoreChange }}
+        if: ${{ steps.download.outputs.exists == 'true' && fromJSON(steps.get-props.outputs.result).isCoreChange }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
