@@ -1803,6 +1803,7 @@ describe('bidderFactory', () => {
     let url;
     let data;
     let endpointCompression;
+    let requestCustomHeaders;
 
     before(() => {
       origBS = getGlobal().bidderSettings;
@@ -1835,6 +1836,7 @@ describe('bidderFactory', () => {
       url = 'https://test.url.com';
       data = { arg: 'value' };
       endpointCompression = true;
+      requestCustomHeaders = undefined;
     });
 
     afterEach(() => {
@@ -1850,7 +1852,8 @@ describe('bidderFactory', () => {
           url: url,
           data: data,
           options: {
-            endpointCompression
+            endpointCompression,
+            ...(requestCustomHeaders ? { customHeaders: requestCustomHeaders } : {})
           }
         });
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, () => {
@@ -1882,6 +1885,22 @@ describe('bidderFactory', () => {
       await runRequest();
       expect(ajaxStub.calledOnce).to.be.true;
       expect(ajaxStub.firstCall.args[3].customHeaders).to.be.undefined; // No Content-Encoding header on uncompressed requests
+    });
+
+    it('should preserve the Content-Encoding header alongside bidder-provided customHeaders on compressed requests', async function () {
+      const compressedPayload = 'compressedData';
+      isGzipSupportedStub.returns(true);
+      gzipStub.resolves(compressedPayload);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+      requestCustomHeaders = { 'X-Custom': 'foo' };
+
+      await runRequest();
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[3].customHeaders).to.deep.equal({
+        'X-Custom': 'foo',
+        'Content-Encoding': 'gzip'
+      });
     });
 
     it('should send the request normally if gzip is not supported', async () => {

@@ -515,13 +515,17 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
 
     function getOptions(defaults) {
       const ro = request.options;
+      // capture headers injected by the caller (e.g. Content-Encoding for gzip) before `ro` is merged,
+      // so they survive and take precedence over any bidder-provided customHeaders.
+      const injectedHeaders = defaults.customHeaders;
       return Object.assign(defaults, ro, {
         browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
           ? false
           : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code)),
         suppressTopicsEnrollmentWarning: ro?.hasOwnProperty('suppressTopicsEnrollmentWarning')
           ? ro.suppressTopicsEnrollmentWarning
-          : !debugMode
+          : !debugMode,
+        ...((injectedHeaders || ro?.customHeaders) ? { customHeaders: { ...ro?.customHeaders, ...injectedHeaders } } : {})
       });
     }
 
@@ -554,7 +558,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
               method: 'POST',
               contentType: 'text/plain',
               withCredentials: true,
-              ...(customHeaders ? { customHeaders: { ...request.options?.customHeaders, ...customHeaders } } : {})
+              ...(customHeaders ? { customHeaders } : {})
             })
           );
         };
