@@ -25,7 +25,7 @@ runs:
       with:
         path: ${{ runner.temp }}/polyfills.json
         key: polyfills-${{ inputs.sha }}
-        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }]
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
     - name: Rename file
       if: ${{ inputs.input != '' && steps.restore.outputs.cache-hit != 'true' }}
       shell: bash
