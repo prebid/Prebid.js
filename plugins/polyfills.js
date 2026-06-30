@@ -1,10 +1,12 @@
 const corejs3Polyfills = require('babel-plugin-polyfill-corejs3');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const SUMMARY_FILE = path.resolve(__dirname, '../build/polyfills.json');
 
-// generates 'build/polyfills.json', a summary of core-js polyfills that would be injected babel-plugin-plugin-polyfill-corejs3.
+/**
+ * This plugins generates a JSON summary of core-js polyfills that would be injected with usage: 'global".
+*/
 module.exports = function (api, options, dirname) {
+  const outputFile = options.output;
   const polyfills = {
     global: new Set(),
     files: {}
@@ -12,7 +14,7 @@ module.exports = function (api, options, dirname) {
   const files = [];
   let dirty = true;
   const polyfillInjector = corejs3Polyfills.default(api, {
-    method: 'usage-pure',
+    method: 'usage-global',
     version: require('../node_modules/core-js/package.json').version,
     proposals: false,
     shouldInjectPolyfill(name, toBeInjected) {
@@ -43,8 +45,8 @@ module.exports = function (api, options, dirname) {
       handle = setTimeout(async () => {
         handle = null;
         try {
-          await fs.mkdir(path.dirname(SUMMARY_FILE), { recursive: true });
-          await fs.writeFile(SUMMARY_FILE, JSON.stringify({
+          await fs.mkdir(path.dirname(outputFile), { recursive: true });
+          await fs.writeFile(outputFile, JSON.stringify({
             global: Array.from(polyfills.global).toSorted(),
             files: Object.fromEntries(
               Object.entries(polyfills.files).map(([file, polys]) => [file, Array.from(polys).toSorted()])

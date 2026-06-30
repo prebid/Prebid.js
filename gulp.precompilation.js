@@ -20,7 +20,8 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
   return {
     disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
     distUrlBase: distUrlBase ?? argv.distUrlBase,
-    ES5: argv.ES5
+    ES5: argv.ES5,
+    dev
   }
 }
 
