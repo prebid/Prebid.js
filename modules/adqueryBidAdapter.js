@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {
   buildUrl,
   logInfo,
@@ -9,7 +9,7 @@ import {
   deepSetValue,
   deepAccess
 } from '../src/utils.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -191,7 +191,7 @@ export const spec = {
       return
     }
 
-    const copyOfBid = { ...bid }
+    const copyOfBid = {...bid}
 
     const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
     copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
@@ -247,9 +247,15 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
-    if (!gdprConsent?.gdprApplies || !hasPurpose1Consent(gdprConsent)) return [];
+    if (!gdprConsent?.gdprApplies || !hasPurpose1Consent(gdprConsent)) {
+      logMessage('no gdpr or purpose1 consent, no syncs');
+      return [];
+    }
     const qid = Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) : null;
-    if (!qid) return [];
+    if (!qid) {
+      logMessage('no qid found in server responses');
+      return [];
+    }
     const syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
