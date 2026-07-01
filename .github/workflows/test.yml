@@ -137,7 +137,7 @@ jobs:
     steps:
       - name: Restore from cache
         id: restore
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/coverage.info
           key: coverage-${{ needs.checkout.outputs.base-commit }}
