@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
-          fetch-depth: 0
+          allow-unsafe-pr-checkout: true
       - name: Checkout (Push)
         if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v7
