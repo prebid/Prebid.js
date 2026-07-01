@@ -3119,7 +3119,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should remove bids that have bidder not present in s2sConfig', () => {
-        s2sBidders = new Set('A', 'B');
+        s2sBidders = new Set(['A', 'B']);
         const s2sConfig = {};
         expect(filterBids(['A', 'C', 'D'].map((code) => ({ bidder: code })), s2sConfig)).to.eql([{ bidder: 'A' }]);
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
