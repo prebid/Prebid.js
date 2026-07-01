@@ -78,7 +78,7 @@ jobs:
       - name: Build base branch
         if: ${{ steps.restore.outputs.cache-hit != 'true' }}
         run: |
-          npx gulp build
+          npx gulp build --polyfills
       - name: Cache base branch polyfills.json
         if: ${{ steps.restore.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/polyfills
