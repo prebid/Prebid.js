@@ -9,7 +9,7 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import { ajaxBuilder } from './ajax.js';
+import { qualifiedAjaxBuilder } from './ajax.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
@@ -17,6 +17,7 @@ import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
 import type { AudioBidResponse, VideoBid, VideoBidResponse } from "./bidfactory.ts";
+import { MODULE_TYPE_PREBID } from "./activities/modules.ts";
 
 /**
  * Might be useful to be configurable in the future
@@ -96,6 +97,11 @@ declare module './bidfactory' {
      * The cache key that was used for this bid.
      */
     videoCacheKey?: string;
+    /**
+     * URL of the cache service Prebid used to cache this bid (`getConfig('cache.url')`). Undefined if Prebid did
+     * not cache this bid.
+     */
+    cacheUrl?: string;
   }
 }
 
@@ -200,7 +206,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
     success: function (responseBody) {
       let ids;
       try {
-        ids = JSON.parse(responseBody).responses
+        ids = JSON.parse(responseBody).responses;
       } catch (e) {
         done(e, []);
         return;
@@ -215,7 +221,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
     error: function (statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
     }
-  }
+  };
 }
 
 /**
@@ -226,7 +232,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = ajaxBuilder) {
+export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };
@@ -237,8 +243,8 @@ export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax 
   });
 }
 
-export function getCacheUrl(id) {
-  return `${config.getConfig('cache.url')}?uuid=${id}`;
+export function getCacheUrl(cacheUrl, id) {
+  return `${cacheUrl}?uuid=${id}`;
 }
 
 export const storeLocally = (bid) => {
@@ -287,7 +293,7 @@ export function handleVideoBidCaching({
 
 export const updateVast = hook('sync', function (bidResponse: VideoBidResponse | AudioBidResponse) {
   if (!bidResponse.vastXml && bidResponse.vastUrl) {
-    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers)
+    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers);
   }
 }, 'updateVast');
 
@@ -296,29 +302,31 @@ const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey?) => {
   if (!bid.vastUrl) {
     bid.vastUrl = vastUrl;
   }
-}
+};
 
 export const _internal = {
   store
-}
+};
 
 export function storeBatch(batch) {
-  const bids = batch.map(entry => entry.bidResponse)
+  const bids = batch.map(entry => entry.bidResponse);
   function err(msg) {
-    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
+    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids);
   }
+  const cacheUrl = config.getConfig('cache.url');
   _internal.store(bids, function (error, cacheIds) {
     if (error) {
-      err(error)
+      err(error);
     } else if (batch.length !== cacheIds.length) {
-      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`)
+      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`);
     } else {
       cacheIds.forEach((cacheId, i) => {
         const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
-          assignVastUrlAndCacheId(bidResponse, getCacheUrl(cacheId.uuid), cacheId.uuid);
+          bidResponse.cacheUrl = cacheUrl;
+          assignVastUrlAndCacheId(bidResponse, getCacheUrl(cacheUrl, cacheId.uuid), cacheId.uuid);
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }
@@ -342,12 +350,12 @@ if (FEATURES.VIDEO || FEATURES.AUDIO) {
       cleanupHandler = auctionManager.onExpiry((auction) => {
         auction.getBidsReceived()
           .forEach((bid) => {
-            const vastUrl = vastLocalCache.get(bid.videoCacheKey)
+            const vastUrl = vastLocalCache.get(bid.videoCacheKey);
             if (vastUrl && vastUrl.startsWith('blob')) {
               URL.revokeObjectURL(vastUrl);
             }
             vastLocalCache.delete(bid.videoCacheKey);
-          })
+          });
       });
     }
   });

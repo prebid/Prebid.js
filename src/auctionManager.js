@@ -106,19 +106,19 @@ export function newAuctionManager() {
       : (auction) => pre(auction) ? auction[name]() : [];
     const filter = post == null
       ? (items) => items
-      : (items) => items.filter(post)
+      : (items) => items.filter(post);
     auctionManager[mgrMethod] = () => {
       return filter(_auctions.toArray().flatMap(mapper));
-    }
-  })
+    };
+  });
 
   function allBidsReceived() {
-    return _auctions.toArray().flatMap(au => au.getBidsReceived())
+    return _auctions.toArray().flatMap(au => au.getBidsReceived());
   }
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
     return allBidsReceived()
-      .filter(bid => bid && bid.adUnitCode === adUnitCode)
+      .filter(bid => bid && bid.adUnitCode === adUnitCode);
   };
 
   auctionManager.createAuction = function(opts) {
@@ -147,16 +147,16 @@ export function newAuctionManager() {
         _auctions.refresh();
       }
     }
-  }
+  };
 
   auctionManager.getLastAuctionId = function() {
     const auctions = _auctions.toArray();
-    return auctions.length && auctions[auctions.length - 1].getAuctionId()
+    return auctions.length && auctions[auctions.length - 1].getAuctionId();
   };
 
   auctionManager.clearAllAuctions = function() {
     _auctions.clear();
-  }
+  };
 
   function _addAuction(auction) {
     _auctions.add(auction);

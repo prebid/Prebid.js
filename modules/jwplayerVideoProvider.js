@@ -385,7 +385,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             destination: offset,
             duration: duration
           };
-        }
+        };
         break;
 
       case SEEK_END:
@@ -470,7 +470,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     const jwEventName = utils.getJwEvent(externalEventName);
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
     player.on(jwEventName, eventHandler);
     callbackStorage.storeCallback(externalEventName, eventHandler, callback);
   }
@@ -568,7 +568,7 @@ const jwplayerSubmoduleFactory = function (config, sharedUtils) {
   const timeState = timeStateFactory();
   const callbackStorage = callbackStorageFactory();
   return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils, sharedUtils);
-}
+};
 
 jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
 submodule('video', jwplayerSubmoduleFactory);
@@ -874,7 +874,7 @@ export const utils = {
 
     return contentData;
   }
-}
+};
 
 /**
  * Tracks which functions are attached to events
@@ -918,7 +918,7 @@ export function callbackStorageFactory() {
     storeCallback,
     getCallback,
     clearStorage
-  }
+  };
 }
 
 // STATE
@@ -954,8 +954,6 @@ export function adStateFactory() {
       adPlacementType: convertPlacementToOrtbCode(event.placement),
       waterfallIndex: event.witem,
       waterfallCount: event.wcount,
-      adPodCount: event.podcount,
-      adPodIndex: event.sequence,
       wrapperAdIds: event.wrapperAdIds
     };
 

@@ -106,7 +106,7 @@ function parseBannerAdResponse(tile, response) {
   if (tile.tag) {
     return tile.tag;
   }
-  let style = '';
+  let style;
   try {
     const config = JSON.parse(response.widget.config);
     const css = config.css || '';
@@ -223,11 +223,11 @@ export const bidderSpec = {
 
         let subid;
         try {
-          let url
+          let url;
           try {
             url = new URL(pageUrl);
           } catch (e) {
-            url = new URL(getBidderRequestUrl(bidderRequest))
+            url = new URL(getBidderRequestUrl(bidderRequest));
           }
           subid = url.hostname;
         } catch (e) {

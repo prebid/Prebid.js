@@ -1,8 +1,54 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
+const { checkDeclarationFilename } = require('./filename.js');
+const noRedundantValidatedCondition = require('./noRedundantValidatedCondition.js');
+const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
+
+const COMPARISON_OPERATORS = new Set(['<', '<=', '>', '>=']);
 
 module.exports = {
   rules: {
+    'declaration-filename': {
+      meta: {
+        docs: {
+          description: 'enforces consistent names for .d.ts files'
+        }
+      },
+      create: function(context) {
+        return {
+          Program(node) {
+            checkDeclarationFilename(context, node);
+          }
+        };
+      }
+    },
+    'no-implicit-operand-conversion': {
+      meta: {
+        docs: {
+          description: 'disallows operands that are implicitly converted before comparisons'
+        },
+        schema: []
+      },
+      create: function(context) {
+        return {
+          BinaryExpression(node) {
+            if (!COMPARISON_OPERATORS.has(node.operator)) {
+              return;
+            }
+            [node.left, node.right].forEach(operand => {
+              if (operand.type === 'UnaryExpression' && operand.operator === '!') {
+                context.report({
+                  node: operand,
+                  message: 'Do not compare a negated value; compare the original operand explicitly instead.'
+                });
+              }
+            })
+          }
+        };
+      }
+    },
+    'no-redundant-validated-condition': noRedundantValidatedCondition,
+    'no-extra-function-args': noExtraFunctionArgs,
     'validate-imports': {
       meta: {
         docs: {

@@ -7,13 +7,14 @@
 
 import { logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
 import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('./unifiedIdSystem.d.ts').UnifiedId} UnifiedId
  */
 
 const MODULE_NAME = 'unifiedId';
@@ -33,7 +34,7 @@ export const unifiedIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {{TDID:string}} value
-   * @returns {{tdid:Object}}
+   * @returns {{tdid: UnifiedId}|undefined}
    */
   decode(value) {
     return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;

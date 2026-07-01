@@ -18,7 +18,7 @@ describe('Azerion Edge RTD submodule', function () {
   const resetAll = () => {
     window.azerionPublisherAudiences.resetHistory();
     loadExternalScriptStub.resetHistory();
-  }
+  };
 
   let reqBidsConfigObj;
   let storageStub;

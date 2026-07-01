@@ -57,7 +57,7 @@ const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBid
     method: 'POST',
     data: ortbRequest,
   };
-}
+};
 
 const interpretResponse: BidderSpec<typeof BIDDER_CODE>['interpretResponse'] = (serverResponse, bidderRequest) => {
   const response = converter.fromORTB({

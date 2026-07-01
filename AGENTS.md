@@ -69,3 +69,8 @@ This file contains instructions for the Codex agent and its friends when working
 - Submodules need to register in submodules.json
 - No one should be accessing navigator from vendor modules, if navigator needs to be accessed it should be in a common method or library
 - Low priority calls should be import ajax method and use fetch keepalive; they shouldnt use trigger pixel when it can be avoided or fail to specify keepalive.
+- Analytics modules must provide a disableAnalytics method.
+- Metadata files that say do not edit in the comments should not be edited; the build process is responsible for updating the metadata files.
+- PRs should not need to modify https://github.com/prebid/Prebid.js/blob/master/metadata/overrides.mjs as module codes and module names should generally match.
+- Make sure any uses of storage have a device disclosure file declared with appropriate identifier description fields set following https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md#example-1 in the https://vendor-list.consensu.org/v3/vendor-list.json if they have a gvlid, if they do not have a gvlid, encourage storage disclosure metadata is committed. Also encourage any use of storage is well described in the module md file.
+  

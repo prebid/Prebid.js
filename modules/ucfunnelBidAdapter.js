@@ -19,7 +19,7 @@ const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
-}
+};
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
@@ -61,7 +61,7 @@ export const spec = {
         url: spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
         bidRequest: bid
-      }
+      };
     });
   },
 
@@ -180,7 +180,7 @@ function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConse
 function parseSizes(bid) {
   const params = bid.params;
   if (bid.mediaType === VIDEO) {
-    let size = [];
+    let size;
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
@@ -220,7 +220,7 @@ function getMediaType(mediaTypes) {
   } else if (mediaTypes != null && mediaTypes.video) {
     return 'video';
   } else if (mediaTypes != null && mediaTypes.native) {
-    return 'native'
+    return 'native';
   }
   return 'banner';
 }
@@ -249,7 +249,7 @@ function addBidData(bidData, key, value) {
 }
 
 function getFormat(size) {
-  const formatList = []
+  const formatList = [];
   for (var i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
   }
@@ -289,7 +289,7 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (storage.cookiesAreEnabled()) {
-    let ucfUid = '';
+    let ucfUid;
     if (storage.getCookie(COOKIE_NAME) !== null) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;

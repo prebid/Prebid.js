@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -61,7 +61,7 @@ export const spec = {
         bidfloor: 0,
         bidfloorCurrency: 'USD',
         keywords: getANKeywordParam(bidderRequest.ortb2, adunitValue.params.keywords)
-      }
+      };
       adUnits.push(foo);
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
     });
@@ -183,5 +183,5 @@ export const spec = {
     return true;
   }
 
-}
+};
 registerBidder(spec);

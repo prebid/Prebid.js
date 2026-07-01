@@ -16,6 +16,11 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ajax, sendBeacon } from "../src/ajax.js";
 
+export const dep = {
+  ajax,
+  sendBeacon
+};
+
 const BIDDER_CODE = 'tadvertising';
 const GVL_ID = 213;
 const ENDPOINT_URL = 'https://prebid.tads.xplosion.de/bid';
@@ -119,11 +124,11 @@ export function getBidFloor (bid) {
 export const sendNotification = (notifyUrl, eventType, data) => {
   try {
     const notificationUrl = `${notifyUrl}/${eventType}`;
-    const payload = JSON.stringify(data)
+    const payload = JSON.stringify(data);
 
-    if (!sendBeacon(notificationUrl, payload)) {
+    if (!dep.sendBeacon(notificationUrl, payload)) {
       // Fallback to using AJAX if Beacon API is not supported
-      ajax(notificationUrl, null, payload, {
+      dep.ajax(notificationUrl, null, payload, {
         method: 'POST',
         contentType: 'text/plain',
         keepalive: true,
@@ -132,7 +137,7 @@ export const sendNotification = (notifyUrl, eventType, data) => {
   } catch (error) {
     logError(BIDDER_CODE, `Failed to notify event: ${eventType}`, error);
   }
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -185,13 +190,13 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let data = converter.toORTB({ validBidRequests, bidderRequest })
-    deepSetValue(data, 'site.publisher.id', bidderRequest.bids[0].params.publisherId)
+    let data = converter.toORTB({ validBidRequests, bidderRequest });
+    deepSetValue(data, 'site.publisher.id', bidderRequest.bids[0].params.publisherId);
 
-    const bidFloor = getBidFloor(bidderRequest.bids[0])
+    const bidFloor = getBidFloor(bidderRequest.bids[0]);
     if (bidFloor) {
-      deepSetValue(data, 'imp.0.bidfloor', bidFloor)
-      deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
+      deepSetValue(data, 'imp.0.bidfloor', bidFloor);
+      deepSetValue(data, 'imp.0.bidfloorcur', 'USD');
     }
 
     if (deepAccess(validBidRequests[0], 'userIdAsEids')) {
@@ -201,7 +206,7 @@ export const spec = {
     bidderRequest.bids.forEach((bid, index) => {
       pageCache[bid.bidId] = deepAccess(bid, 'ortb2.site.page');
       deepSetValue(data, `imp.${index}.ext.gpid`, bid.params.placementId);
-    })
+    });
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -213,7 +218,7 @@ export const spec = {
     if (isEmpty(response.body.seatbid)) {
       return [];
     }
-    deepSetValue(response, 'body.seatbid.0.bid.0.impid', deepAccess(serverRequest, 'data.imp.0.id'))
+    deepSetValue(response, 'body.seatbid.0.bid.0.impid', deepAccess(serverRequest, 'data.imp.0.id'));
 
     const bids = converter.fromORTB({ response: response.body, request: serverRequest.data }).bids;
 
@@ -227,13 +232,13 @@ export const spec = {
       } else {
         bid.ad = replaceAuctionPrice(bid.ad, bid.cpm);
       }
-    })
+    });
 
     return bids;
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = []
+    const syncs = [];
     if (serverResponses[0]?.body?.ext?.uss === 1 && gdprConsent && hasPurpose1Consent(gdprConsent)) {
       let gdprParams;
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -253,27 +258,27 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    const payload = buildSuccessNotification(bid)
-    sendNotification(spec.notify_url, "won", payload)
+    const payload = buildSuccessNotification(bid);
+    sendNotification(spec.notify_url, "won", payload);
   },
 
   onBidBillable: function (bid) {
     if (bid.burl) {
       triggerPixel(replaceAuctionPrice(bid.burl, bid.cpm));
     }
-    const payload = buildSuccessNotification(bid)
-    sendNotification(spec.notify_url, "billable", payload)
+    const payload = buildSuccessNotification(bid);
+    sendNotification(spec.notify_url, "billable", payload);
   },
 
   onTimeout: function (timeoutData) {
-    const payload = timeoutData.map(data => buildTimeoutNotification(data))
-    sendNotification(spec.notify_url, 'timeout', payload)
+    const payload = timeoutData.map(data => buildTimeoutNotification(data));
+    sendNotification(spec.notify_url, 'timeout', payload);
   },
 
   onBidderError: function ({ error, bidderRequest }) {
-    const payload = buildErrorNotification(bidderRequest, error)
-    sendNotification(spec.notify_url, 'error', payload)
+    const payload = buildErrorNotification(bidderRequest, error);
+    sendNotification(spec.notify_url, 'error', payload);
   }
-}
+};
 
 registerBidder(spec);
