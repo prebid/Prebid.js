@@ -1,5 +1,5 @@
-import { operaIdSubmodule } from 'modules/operaadsIdSystem'
-import * as ajaxLib from 'src/ajax.js'
+import { operaIdSubmodule } from 'modules/operaadsIdSystem';
+import * as ajaxLib from 'src/ajax.js';
 import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import { expect } from 'chai/index.mjs';
@@ -17,7 +17,7 @@ describe('operaads ID', () => {
     const ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
       return (url, cbObj) => {
         cbObj.success(JSON.stringify(operaIdRemoteResponse));
-      }
+      };
     });
     fn();
     ajaxBuilderStub.restore();
@@ -72,5 +72,5 @@ describe('operaads ID', () => {
         }]
       });
     });
-  })
-})
+  });
+});

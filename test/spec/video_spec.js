@@ -16,7 +16,7 @@ describe('video.js', function () {
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     utilsMock = sandbox.mock(utils);
-  })
+  });
 
   afterEach(() => {
     utilsMock.restore();
@@ -36,7 +36,7 @@ describe('video.js', function () {
         expect(fillDefaults({ context: 'outstream' })).to.eql({
           context: 'outstream',
           plcmt: 4
-        })
+        });
       });
       [2, 3, 4].forEach(placement => {
         it(`placemement is "${placement}"`, () => {
@@ -44,7 +44,7 @@ describe('video.js', function () {
             placement,
             plcmt: 4
           });
-        })
+        });
       });
     });
     describe('should set plcmt = 2 when', () => {
@@ -89,8 +89,8 @@ describe('video.js', function () {
       }).forEach(([t, { expected, video }]) => {
         it(t, () => {
           expect(fillDefaults(video).plcmt).to.eql(expected);
-        })
-      })
+        });
+      });
     });
     describe('video.playerSize', () => {
       Object.entries({
@@ -105,7 +105,7 @@ describe('video.js', function () {
                 playerSize
               }
             }
-          }
+          };
           fillVideoDefaults(adUnit);
 
           sinon.assert.match(adUnit.mediaTypes.video, {
@@ -121,10 +121,10 @@ describe('video.js', function () {
                 w: 123
               }
             }
-          }
+          };
           fillVideoDefaults(adUnit);
           expect(adUnit.mediaTypes.video.w).to.eql(123);
-        })
+        });
       });
 
       it('should set playerSize from w/h (if they are not defined)', () => {
@@ -135,7 +135,7 @@ describe('video.js', function () {
               h: 2
             }
           }
-        }
+        };
         fillVideoDefaults(adUnit);
         expect(adUnit.mediaTypes.video.playerSize).to.eql([[1, 2]]);
       });
@@ -148,12 +148,12 @@ describe('video.js', function () {
               h: 4
             }
           }
-        }
+        };
         fillVideoDefaults(adUnit);
         expect(adUnit.mediaTypes.video.playerSize).to.eql([1, 2]);
-      })
+      });
     });
-  })
+  });
 
   if (FEATURES.VIDEO) {
     describe('validateOrtbVideoFields', () => {
@@ -242,7 +242,7 @@ describe('video.js', function () {
         sinon.assert.calledOnce(onInvalidParam);
         sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
       });
-    })
+    });
   }
 
   describe('isValidVideoBid', () => {
@@ -354,7 +354,7 @@ describe('video.js', function () {
       const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
       expect(valid).to.equal(false);
     });
-  })
+  });
 
   describe('syncOrtb2', () => {
     if (!FEATURES.VIDEO) {
@@ -555,7 +555,7 @@ describe('video.js', function () {
         }
       };
       syncOrtb2(adUnit2, 'video');
-      expect(adUnit2.ortb2Imp.video).to.be.undefined
+      expect(adUnit2.ortb2Imp.video).to.be.undefined;
     });
   });
 });

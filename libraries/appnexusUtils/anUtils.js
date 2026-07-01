@@ -17,7 +17,6 @@ export const appnexusAliases = [
   { code: 'newdream', gvlid: 32 },
   { code: 'matomy', gvlid: 32 },
   { code: 'featureforward', gvlid: 32 },
-  { code: 'oftmedia', gvlid: 32 },
   { code: 'adasta', gvlid: 32 },
   { code: 'beintoo', gvlid: 618 },
   { code: 'projectagora', gvlid: 1032 },

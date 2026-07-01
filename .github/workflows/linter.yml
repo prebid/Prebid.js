@@ -51,7 +51,7 @@ jobs:
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __pr.json || true
 
       - name: Compare them and post comment if necessary
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: comment
         with:
           result-encoding: string

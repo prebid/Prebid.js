@@ -41,7 +41,7 @@ describe('jwplayerBidAdapter', function() {
         }
       },
       timeout: 1000
-    }
+    };
   });
 
   it('should use jwplayer bidder code', function () {

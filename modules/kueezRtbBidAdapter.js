@@ -10,7 +10,7 @@ import {
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
- * @typedef {import('./kueezRtbBidAdapterTypes.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
+ * @typedef {import('./kueezRtbBidAdapter.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
  */
 
 const GVLID = 1165;

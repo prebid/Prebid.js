@@ -18,8 +18,14 @@ import { UID2_EIDS } from '../libraries/uid2Eids/uid2Eids.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').uid2Id} uid2Id
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./uid2IdSystem.d.ts').Uid2IdSystemModuleName} Uid2IdSystemModuleName
+ * @typedef {import('./uid2IdSystem.d.ts').Uid2IdSystemParams} Uid2IdSystemParams
  */
 
+/**
+ * @type {Uid2IdSystemModuleName}
+ */
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
@@ -27,15 +33,13 @@ const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}
 const LOG_PRE_FIX = 'UID2: ';
 const ADVERTISING_COOKIE = '__uid2_advertising_token';
 
-// eslint-disable-next-line no-unused-vars
-const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
 const UID2_PROD_URL = 'https://prod.uidapi.com';
 const UID2_BASE_URL = UID2_PROD_URL;
 
 function createLogger(logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
-  }
+  };
 }
 
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
@@ -43,11 +47,11 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<Uid2IdSystemModuleName>} */
 export const uid2IdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {Uid2IdSystemModuleName}
    */
   name: MODULE_NAME,
 
@@ -83,14 +87,14 @@ export const uid2IdSubmodule = {
       storage: config?.params?.storage ?? 'localStorage',
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
-    }
+    };
 
     if (FEATURES.UID2_CSTG) {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
         ...extractIdentityFromParams(config?.params ?? {})
-      }
+      };
     }
     _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);

@@ -26,7 +26,7 @@ function convertTargetingsFromOldToNew(targetings) {
     if (!replaced) {
       newTargetings[currentKey] = targetings[currentKey];
     }
-  })
+  });
   return newTargetings;
 }
 
@@ -616,38 +616,6 @@ export function getBidResponses() {
   ];
 }
 
-export function getSlotTargeting() {
-  return {
-    '/19968336/header-bid-tag-0': [
-      convertTargetingsFromOldToNew({
-        'hb_bidder': [
-          'appnexus'
-        ]
-      }),
-      convertTargetingsFromOldToNew({
-        'hb_adid': [
-          '233bcbee889d46d'
-        ]
-      }),
-      convertTargetingsFromOldToNew({
-        'hb_pb': [
-          '10.00'
-        ]
-      }),
-      convertTargetingsFromOldToNew({
-        'hb_size': [
-          '300x250'
-        ]
-      }),
-      {
-        'foobar': [
-          '300x250'
-        ]
-      }
-    ]
-  };
-}
-
 export function getAdUnits() {
   return [
     {
@@ -875,7 +843,7 @@ export function getTwinAdUnits() {
         },
       ]
     }
-  ]
+  ];
 }
 
 export function getBidResponsesFromAPI() {

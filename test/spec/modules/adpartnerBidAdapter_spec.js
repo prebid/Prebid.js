@@ -239,12 +239,12 @@ describe('AdpartnerAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(miUtils, 'postRequest')
-    })
+      ajaxStub = sinon.stub(miUtils, 'postRequest');
+    });
 
     afterEach(() => {
-      ajaxStub.restore()
-    })
+      ajaxStub.restore();
+    });
 
     it('calls adpartner\'s callback endpoint', () => {
       const result = spec.onBidWon(bid);

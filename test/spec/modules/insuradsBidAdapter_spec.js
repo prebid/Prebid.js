@@ -7,32 +7,6 @@ import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
 const sandbox = sinon.createSandbox();
 
 describe('InsurAds bid adapter tests', () => {
-  const DEFAULT_OPTIONS = {
-    gdprConsent: {
-      gdprApplies: true,
-      consentString: 'BOzZdA0OzZdA0AGABBENDJ-AAAAvh7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Mw_v-_v-b7JCPN_Y3v-8Kg',
-      vendorData: {},
-    },
-    refererInfo: {
-      referer: 'https://www.prebid.org',
-      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page',
-    },
-    uspConsent: '1112223334',
-    userId: { id5id: { uid: '1111' } },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [{
-        asi: 'exchange1.com',
-        sid: '1234',
-        hp: 1,
-        rid: 'bid-request-1',
-        name: 'publisher',
-        domain: 'publisher.com',
-      }],
-    },
-  };
-
   it('We test getGzipSettings', () => {
     const output = getGzipSetting();
     expect(output).to.be.a('boolean');
@@ -50,7 +24,7 @@ describe('InsurAds bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
     it('We verify isBidRequestValid with unvalid adUnitName', () => {
@@ -103,7 +77,7 @@ describe('InsurAds bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -118,7 +92,7 @@ describe('InsurAds bid adapter tests', () => {
       expect(typeof output.nexx360Id).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -133,7 +107,7 @@ describe('InsurAds bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -148,7 +122,7 @@ describe('InsurAds bid adapter tests', () => {
       expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -163,7 +137,7 @@ describe('InsurAds bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -178,7 +152,7 @@ describe('InsurAds bid adapter tests', () => {
       expect(output).to.be.eql('abcdef');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -426,7 +400,7 @@ describe('InsurAds bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 

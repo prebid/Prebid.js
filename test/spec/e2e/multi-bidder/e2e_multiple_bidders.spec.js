@@ -28,4 +28,4 @@ setupTest({
     const targetingKeys = result['div-banner-native-2'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
   });
-})
+});

@@ -5,7 +5,7 @@ import { shouldThrottle } from '../pubmaticUtils.js';
 
 let _dynamicTimeoutConfig = null;
 export const getDynamicTimeoutConfig = () => _dynamicTimeoutConfig;
-export const setDynamicTimeoutConfig = (config) => { _dynamicTimeoutConfig = config; }
+export const setDynamicTimeoutConfig = (config) => { _dynamicTimeoutConfig = config; };
 
 export const CONSTANTS = Object.freeze({
   LOG_PRE_FIX: 'PubMatic-Dynamic-Timeout: ',
@@ -132,13 +132,13 @@ export const getFinalTimeout = (bidderTimeout, additionalTimeout) => {
   }
 
   return calculatedTimeout;
-}
+};
 
 export const getBidderTimeout = (reqBidsConfigObj) => {
   return getDynamicTimeoutConfig()?.config?.bidderTimeout
     ? getDynamicTimeoutConfig()?.config?.bidderTimeout
     : reqBidsConfigObj?.timeout || getGlobal()?.getConfig('bidderTimeout');
-}
+};
 
 /**
  * Get rules based on percentage values and bidderTimeout
@@ -158,7 +158,7 @@ export const getRules = (bidderTimeout) => {
   }
   // In Percentage - If no rules are available then create rules from the default defined - values are in percentages
   return createDynamicRules(RULES_PERCENTAGE, bidderTimeout);
-}
+};
 
 /**
  * Creates dynamic rules based on percentage values and bidder timeout

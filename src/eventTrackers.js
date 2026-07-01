@@ -19,5 +19,5 @@ export function parseEventTrackers(eventTrackers) {
     const trackersForMethod = trackersForType[method] = trackersForType[method] ?? [];
     trackersForMethod.push(url);
     return tally;
-  }, {})
+  }, {});
 }

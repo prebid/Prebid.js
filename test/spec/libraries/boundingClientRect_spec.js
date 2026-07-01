@@ -7,7 +7,7 @@ describe('getBoundingClientRect', () => {
   beforeEach(() => {
     element = document.createElement('div');
     getBoundingClientRectSpy = sinon.spy(element, 'getBoundingClientRect');
-  })
+  });
 
   afterEach(() => {
     getBoundingClientRectSpy.restore();
@@ -29,7 +29,7 @@ describe('getBoundingClientRect', () => {
       getBoundingClientRect(element);
       expect(getBoundingClientRectSpy.callCount).to.equal(2);
       done();
-    }
+    };
 
     const mockAuctionData = {
       bidsBackHandler: onAuctionDone,
@@ -47,7 +47,7 @@ describe('getBoundingClientRect', () => {
   });
 
   it('should return same value for multiple calls', () => {
-    const expectedWidth = 200
+    const expectedWidth = 200;
     const expectedHeight = 300;
     element.style.width = expectedWidth + 'px';
     element.style.height = expectedHeight + 'px';
