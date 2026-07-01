@@ -516,14 +516,20 @@ function onTimeout(timeoutData) {
   if (onetagTimeouts.length === 0) {
     return;
   }
-  // text/plain avoids a CORS preflight (OPTIONS) on this low-priority call.
-  spec.ajaxCall(TIMEOUT_ENDPOINT, null, JSON.stringify(onetagTimeouts), {
+  dep.ajax(TIMEOUT_ENDPOINT, null, JSON.stringify(onetagTimeouts), {
     method: 'POST',
     contentType: 'text/plain',
     keepalive: true,
     withCredentials: false
   });
 }
+
+// Container for the external dependencies used internally by the adapter.
+// Kept separate from `spec` (the interface exposed to Prebid) so these
+// dependencies can be stubbed in unit tests through a mutable reference.
+export const dep = {
+  ajax
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -533,10 +539,7 @@ export const spec = {
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
   getUserSyncs: getUserSyncs,
-  onTimeout: onTimeout,
-  // Thin wrapper around `ajax` so it can be stubbed in unit tests.
-  ajaxCall: ajax
-
+  onTimeout: onTimeout
 };
 
 registerBidder(spec);

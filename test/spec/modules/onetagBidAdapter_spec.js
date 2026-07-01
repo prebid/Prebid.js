@@ -1,4 +1,4 @@
-import { spec, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
+import { spec, dep, isValid, hasTypeVideo, isSchainValid, hasTypeNative } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
@@ -1023,7 +1023,7 @@ describe('onetag', function () {
     const TIMEOUT_ENDPOINT = 'https://onetag-sys.com/ptimeout';
     let ajaxStub;
     beforeEach(function () {
-      ajaxStub = sinon.stub(spec, 'ajaxCall');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
     afterEach(function () {
       ajaxStub.restore();
