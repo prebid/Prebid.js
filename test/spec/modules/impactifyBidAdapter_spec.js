@@ -1,19 +1,15 @@
 import { expect } from 'chai';
-import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
+import { spec, STORAGE } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const BIDDER_CODE = 'impactify';
-const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
-const LOGGER_URI = 'https://logger.impactify.media';
+
 const AUCTIONURI = '/bidder';
-const COOKIESYNCURI = '/static/cookie_sync.html';
-const GVLID = 606;
 
 var gdprData = {
   'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
@@ -21,8 +17,6 @@ var gdprData = {
 };
 
 describe('ImpactifyAdapter', function () {
-  let getLocalStorageStub;
-  let localStorageIsEnabledStub;
   let sandbox;
 
   beforeEach(function () {
@@ -33,8 +27,8 @@ describe('ImpactifyAdapter', function () {
     };
     sinon.stub(document.body, 'appendChild');
     sandbox = sinon.createSandbox();
-    getLocalStorageStub = sandbox.stub(STORAGE, 'getDataFromLocalStorage');
-    localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled');
+    sandbox.stub(STORAGE, 'getDataFromLocalStorage');
+    sandbox.stub(STORAGE, 'localStorageIsEnabled');
   });
 
   afterEach(function () {
@@ -62,55 +56,6 @@ describe('ImpactifyAdapter', function () {
         }
       }
     ];
-
-    const videoBidRequests = [
-      {
-        bidder: 'impactify',
-        params: {
-          appId: '1',
-          format: 'screen',
-          style: 'inline'
-        },
-        mediaTypes: {
-          video: {
-            context: 'instream'
-          }
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]],
-        bidId: '123456789',
-        bidderRequestId: '987654321',
-        auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
-        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002',
-        userId: {
-          pubcid: '87a0327b-851c-4bb3-a925-0c7be94548f5'
-        },
-        userIdAsEids: [
-          {
-            source: 'pubcid.org',
-            uids: [
-              {
-                id: '87a0327b-851c-4bb3-a925-0c7be94548f5',
-                atype: 1
-              }
-            ]
-          }
-        ]
-      }
-    ];
-    const videoBidderRequest = {
-      bidderRequestId: '98845765110',
-      auctionId: '165410516454',
-      bidderCode: 'impactify',
-      bids: [
-        {
-          ...videoBidRequests[0]
-        }
-      ],
-      refererInfo: {
-        referer: 'https://impactify.io'
-      }
-    };
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(validBids[0])).to.equal(true);
@@ -219,12 +164,12 @@ describe('ImpactifyAdapter', function () {
         return {
           currency: 'USD',
           floor: 1.23,
-        }
-      }
+        };
+      };
 
       const res = spec.buildRequests(videoBidRequests, videoBidderRequest);
-      const resData = JSON.parse(res.data)
-      expect(resData.imp[0].bidfloor).to.equal(1.23)
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].bidfloor).to.equal(1.23);
     });
 
     it('sends video bid request to ENDPOINT via POST', function () {
@@ -336,6 +281,7 @@ describe('ImpactifyAdapter', function () {
                 id: '65820304700829014',
                 impid: '462c08f20d428',
                 price: 3.40,
+                mtype: 2,
                 adm: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
                 adid: '97517771',
                 iurl: 'https://fra1-ib.adnxs.com/cr?id=97517771',
@@ -343,10 +289,10 @@ describe('ImpactifyAdapter', function () {
                 crid: '97517771',
                 w: 1,
                 h: 1,
-                meta: { 'advertiserDomains': ['testdomain.com'] },
+                adomain: ['testdomain.com'],
                 ext: {
                   prebid: {
-                    'type': 'video'
+                    type: 'video'
                   },
                   bidder: {
                     prebid: {
@@ -406,7 +352,8 @@ describe('ImpactifyAdapter', function () {
             }
           },
         ]
-      }
+      };
+
       const expectedResponse = [
         {
           id: '65820304700829014',
@@ -417,7 +364,8 @@ describe('ImpactifyAdapter', function () {
           ad: '<script type="text/javascript" src="https://ad.impactify.io/static/ad/tag.js"></script>',
           width: 1,
           height: 1,
-          meta: { 'advertiserDomains': ['testdomain.com'] },
+          mediaType: 'video',
+          meta: { advertiserDomains: ['testdomain.com'] },
           ttl: 300,
           creativeId: '97517771'
         }
@@ -448,6 +396,7 @@ describe('ImpactifyAdapter', function () {
               id: 'bid-1',
               impid: 'imp-1',
               price: 2.5,
+              mtype: 2,
               ext: {
                 vast_url: 'https://example.com/vast.xml'
               },
@@ -467,42 +416,53 @@ describe('ImpactifyAdapter', function () {
       expect(result[0].vastXml).to.equal('<VAST>fallback</VAST>');
       expect(result[0]).to.not.have.property('ad');
     });
+
+    it('should map banner responses to banner bids', function () {
+      const bidRequest = {
+        data: JSON.stringify({
+          imp: [{
+            id: 'imp-banner-1',
+            ext: {
+              impactify: {
+                format: 'display'
+              }
+            }
+          }]
+        })
+      };
+
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'bid-banner-1',
+              impid: 'imp-banner-1',
+              price: 1.75,
+              mtype: 1,
+              adm: '<div>banner creative</div>',
+              crid: 'creative-banner-1',
+              w: 300,
+              h: 250,
+              adomain: ['advertiser.com']
+            }]
+          }]
+        }
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+
+      expect(result).to.have.length(1);
+      expect(result[0].mediaType).to.equal('banner');
+      expect(result[0].ad).to.equal('<div>banner creative</div>');
+      expect(result[0]).to.not.have.property('vastUrl');
+      expect(result[0]).to.not.have.property('vastXml');
+      expect(result[0].meta).to.deep.equal({
+        advertiserDomains: ['advertiser.com']
+      });
+    });
   });
   describe('getUserSyncs', function () {
-    const videoBidRequests = [
-      {
-        bidder: 'impactify',
-        params: {
-          appId: '1',
-          format: 'screen',
-          style: 'inline'
-        },
-        mediaTypes: {
-          video: {
-            context: 'instream'
-          }
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]],
-        bidId: '123456789',
-        bidderRequestId: '987654321',
-        auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
-        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002'
-      }
-    ];
-    const videoBidderRequest = {
-      bidderRequestId: '98845765110',
-      auctionId: '165410516454',
-      bidderCode: 'impactify',
-      bids: [
-        {
-          ...videoBidRequests[0]
-        }
-      ],
-      refererInfo: {
-        referer: 'https://impactify.io'
-      }
-    };
     const validResponse = {
       id: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
       seatbid: [
@@ -599,4 +559,4 @@ describe('ImpactifyAdapter', function () {
     const result = spec.onTimeout(bid);
     assert.ok(result);
   });
-})
+});

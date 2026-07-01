@@ -43,7 +43,7 @@ function makeAdUnitNameMap() {
 
 function addAdUnitNameForArray(ar, map) {
   if (isArray(ar)) {
-    ar.forEach((it) => { addAdUnitName(it, map) });
+    ar.forEach((it) => { addAdUnitName(it, map); });
   }
 }
 

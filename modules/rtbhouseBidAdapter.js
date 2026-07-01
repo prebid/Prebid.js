@@ -299,7 +299,7 @@ function mapNative(slot) {
         assets: mapNativeAssets(slot)
       },
       ver: '1.1'
-    }
+    };
   }
 }
 
@@ -317,21 +317,21 @@ function mapNativeAssets(slot) {
       title: {
         len: params.title.len || 25
       }
-    })
+    });
   }
   if (params.image) {
     assets.push({
       id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
       required: params.image.required ? 1 : 0,
       img: mapNativeImage(params.image, OPENRTB.NATIVE.IMAGE_TYPE.MAIN)
-    })
+    });
   }
   if (params.icon) {
     assets.push({
       id: OPENRTB.NATIVE.ASSET_ID.ICON,
       required: params.icon.required ? 1 : 0,
       img: mapNativeImage(params.icon, OPENRTB.NATIVE.IMAGE_TYPE.ICON)
-    })
+    });
   }
   if (params.sponsoredBy) {
     assets.push({
@@ -341,7 +341,7 @@ function mapNativeAssets(slot) {
         type: OPENRTB.NATIVE.DATA_ASSET_TYPE.SPONSORED,
         len: params.sponsoredBy.len
       }
-    })
+    });
   }
   if (params.body) {
     assets.push({
@@ -351,7 +351,7 @@ function mapNativeAssets(slot) {
         type: OPENRTB.NATIVE.DATA_ASSET_TYPE.DESC,
         len: params.body.len
       }
-    })
+    });
   }
   if (params.cta) {
     assets.push({
@@ -361,7 +361,7 @@ function mapNativeAssets(slot) {
         type: OPENRTB.NATIVE.DATA_ASSET_TYPE.CTA_TEXT,
         len: params.cta.len
       }
-    })
+    });
   }
   return assets;
 }
@@ -384,7 +384,7 @@ function mapNativeImage(image, type) {
     img.w = size[0];
     img.h = size[1];
   }
-  return img
+  return img;
 }
 
 /**
@@ -406,7 +406,7 @@ function interpretBannerBid(serverBid) {
     },
     netRevenue: true,
     currency: 'USD'
-  }
+  };
 }
 
 /**
@@ -423,12 +423,12 @@ function validateDSA(dsa) {
     return prev && (
       !dsa.hasOwnProperty(attr.name) ||
       (isNumber(dsaEntry) && dsaEntry >= attr.min && dsaEntry <= attr.max)
-    )
+    );
   }, true) &&
     (!dsa.hasOwnProperty('transparency') ||
       (isArray(dsa.transparency) && dsa.transparency.every(
         v => isPlainObject(v) && isStr(v.domain) && v.domain && isArray(v.dsaparams) &&
           v.dsaparams.every(x => isNumber(x))
       ))
-    )
+    );
 }

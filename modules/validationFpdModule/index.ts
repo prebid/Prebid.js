@@ -165,7 +165,6 @@ export function validateFpd(fpd, path = '', parent = '') {
     return false;
   }).reduce((result, key) => {
     const mapping = deepAccess(ORTB_MAP, path + key);
-    let modified = {};
 
     if (mapping) {
       if (mapping.optoutApplies && optout) {
@@ -173,7 +172,7 @@ export function validateFpd(fpd, path = '', parent = '') {
         return result;
       }
 
-      modified = (mapping.type === 'object' && !mapping.isArray)
+      const modified = (mapping.type === 'object' && !mapping.isArray)
         ? validateFpd(fpd[key], path + key + '.children.', parent + key + '.')
         : (mapping.isArray && mapping.childType)
             ? filterArrayData(fpd[key], { type: mapping.childType, isArray: mapping.childisArray }, path + key, parent + key) : fpd[key];
@@ -201,7 +200,7 @@ function runValidations(data) {
   return {
     global: validateFpd(data.global),
     bidder: Object.fromEntries(Object.entries(data.bidder).map(([bidder, conf]) => [bidder, validateFpd(conf)]))
-  }
+  };
 }
 
 declare module '../../src/fpd/enrichment' {
@@ -230,6 +229,6 @@ export const validationSubmodule = {
   name: 'validation',
   queue: 1,
   processFpd
-}
+};
 
 submodule('firstPartyData', validationSubmodule);

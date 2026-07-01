@@ -35,10 +35,11 @@ function mockResponse(
   response = (url, successCallback) => successCallback(responseText)) {
   return function() {
     return response;
-  }
+  };
 }
 
 describe('Merkle System', function () {
+  let sandbox;
   describe('merkleIdSystem.decode()', function() {
     it('provides multiple Merkle IDs (EID) from a stored object', function() {
       const storage = {
@@ -67,33 +68,28 @@ describe('Merkle System', function () {
       expect(merkleIdSubmodule.decode(merkleId)).to.deep.equal({
         merkleId: { 'id': 'testmerkleId', 'keyID': 1 }
       });
-    })
+    });
 
     it('returns undefined', function() {
       const merkleId = {};
       expect(merkleIdSubmodule.decode(merkleId)).to.be.undefined;
-    })
+    });
   });
 
   describe('Merkle System getId()', function () {
     const callbackSpy = sinon.spy();
-    let sandbox;
-    let ajaxStub;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      sinon.stub(utils, 'logInfo');
-      sinon.stub(utils, 'logWarn');
-      sinon.stub(utils, 'logError');
+      sandbox.stub(utils, 'logInfo');
+      sandbox.stub(utils, 'logWarn');
+      sandbox.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      sandbox.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
-      utils.logInfo.restore();
-      utils.logWarn.restore();
-      utils.logError.restore();
-      ajaxStub.restore();
+      sandbox.restore();
     });
 
     it('getId() should fail on missing sv_pubid', function () {
@@ -167,23 +163,18 @@ describe('Merkle System', function () {
 
   describe('Merkle System extendId()', function () {
     const callbackSpy = sinon.spy();
-    let sandbox;
-    let ajaxStub;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      sinon.stub(utils, 'logInfo');
-      sinon.stub(utils, 'logWarn');
-      sinon.stub(utils, 'logError');
+      sandbox.stub(utils, 'logInfo');
+      sandbox.stub(utils, 'logWarn');
+      sandbox.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      sandbox.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
-      utils.logInfo.restore();
-      utils.logWarn.restore();
-      utils.logError.restore();
-      ajaxStub.restore();
+      sandbox.restore();
     });
 
     it('extendId() get storedid', function () {
@@ -287,7 +278,7 @@ describe('Merkle System', function () {
             ssp: 'ssp2'
           }
         }]
-      }
+      };
 
       const newEids = createEidsArray(userId);
       expect(newEids.length).to.equal(2);
@@ -318,5 +309,5 @@ describe('Merkle System', function () {
         }]
       });
     });
-  })
+  });
 });

@@ -1,7 +1,7 @@
 import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
 import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
-import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js'
+import * as equativUtils from '../../../libraries/equativUtils/equativUtils.js';
 
 describe('Equativ bid adapter tests', () => {
   let sandBox;
@@ -484,6 +484,43 @@ describe('Equativ bid adapter tests', () => {
       expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
     });
 
+    it('should default imp.displaymanager and imp.displaymanagerver to Prebid.js and prebid version', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
+    });
+
+    it('should preserve publisher-provided ortb2Imp.displaymanager', () => {
+      const bidRequests = [{
+        ...DEFAULT_BANNER_BID_REQUESTS[0],
+        ortb2Imp: {
+          ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
+          displaymanager: 'Smart RTB+',
+        },
+      }];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Smart RTB+');
+      expect(request.data.imp[0].displaymanagerver).to.equal('$prebid.version$');
+    });
+
+    it('should preserve publisher-provided ortb2Imp.displaymanagerver', () => {
+      const bidRequests = [{
+        ...DEFAULT_BANNER_BID_REQUESTS[0],
+        ortb2Imp: {
+          ...DEFAULT_BANNER_BID_REQUESTS[0].ortb2Imp,
+          displaymanagerver: 'Android SDK7.20.2',
+        },
+      }];
+      const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(request.data.imp[0].displaymanagerver).to.equal('Android SDK7.20.2');
+    });
+
     it('should build a video request properly under normal circumstances', () => {
       // ASSEMBLE
       if (FEATURES.VIDEO) {
@@ -676,7 +713,7 @@ describe('Equativ bid adapter tests', () => {
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // this value comes from native.js, part of the ortbConverter library
-        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.'
+        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.';
 
         // ACT
         spec.buildRequests(bidRequests, bidderRequest);
@@ -912,7 +949,7 @@ describe('Equativ bid adapter tests', () => {
         { type: 'iframe', url: 'https://sync.example.com' },
       ];
 
-      handleCookieSyncStub.returns(expectedResult)
+      handleCookieSyncStub.returns(expectedResult);
 
       const result = spec.getUserSyncs({ iframeEnabled: true },
         SAMPLE_RESPONSE,

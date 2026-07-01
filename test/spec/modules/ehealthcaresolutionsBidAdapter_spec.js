@@ -167,7 +167,8 @@ describe('ehealthcaresolutions adapter', function () {
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
-      const bidRequest = spec.buildRequests(bannerRequest);
+      spec.buildRequests(bannerRequest);
+
       expect(bannerRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
@@ -234,7 +235,8 @@ describe('ehealthcaresolutions adapter', function () {
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
-      const bidRequest = spec.buildRequests(nativeRequest);
+      spec.buildRequests(nativeRequest);
+
       expect(nativeRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
@@ -270,6 +272,12 @@ describe('ehealthcaresolutions adapter', function () {
     });
   });
   describe('Validate native response ', function () {
+    it('Validate bid response : invalid bid response', function () {
+      const bRequest = spec.buildRequests(nativeRequest);
+      const response = spec.interpretResponse(invalidNativeResponse, bRequest);
+      expect(response).to.be.an('array').that.is.empty;
+    });
+
     it('Validate bid response : valid bid response', function () {
       const _Request = spec.buildRequests(nativeRequest);
       const bResponse = spec.interpretResponse(nativeResponse, _Request);

@@ -93,7 +93,7 @@ const VIDEO_BID = {
       'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -444,7 +444,7 @@ describe('IlluminBidAdapter', function () {
     });
 
     it('should build video request with right url domain despite params.host', function () {
-      const videoBidWithHost = VIDEO_BID
+      const videoBidWithHost = VIDEO_BID;
       videoBidWithHost.params.host = "example1.com";
       config.setConfig({
         bidderTimeout: 3000
@@ -484,7 +484,7 @@ describe('IlluminBidAdapter', function () {
         'url': 'https://sync.illumin.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
       }]);
-    })
+    });
 
     it('should have valid user sync with coppa on response', function () {
       config.setConfig({
@@ -608,10 +608,10 @@ describe('IlluminBidAdapter', function () {
           "source": "audigent.com",
           "uids": [{ "id": "fakeidi6j6dlc6e" }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
+    });
     it("should include user ids from bid.userIdAsEids (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.userIdAsEids = [
@@ -623,11 +623,11 @@ describe('IlluminBidAdapter', function () {
           "source": "rwdcntrl.net",
           "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
       expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
+    });
     // testing user.ext.eid handling
     it("should include user ids from user.ext.eid (length=1)", function() {
       const bid = utils.deepClone(BID);
@@ -640,10 +640,10 @@ describe('IlluminBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
+    });
     it("should include user ids from user.ext.eid (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.user = {
@@ -659,11 +659,11 @@ describe('IlluminBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
       expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
+    });
   });
 
   describe('alternate param names extractors', function () {
@@ -701,7 +701,7 @@ describe('IlluminBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -717,7 +717,7 @@ describe('IlluminBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
@@ -748,7 +748,7 @@ describe('IlluminBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);

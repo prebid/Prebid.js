@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildGamVideoUrl as buildDfpVideoUrl, dep } from 'modules/gamAdServerVideo.js';
+import { buildGamVideoUrl as buildDfpVideoUrl, dep, getVastXml } from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
-import { deepClone } from 'src/utils.js';
+import { deepClone, generateUUID } from 'src/utils.js';
 import { config } from 'src/config.js';
 import { targeting } from 'src/targeting.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -14,9 +14,7 @@ import * as adServer from 'src/adserver.js';
 import { hook } from '../../../src/hook.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
-import { getVastXml } from '../../../modules/gamAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
-import { generateUUID } from '../../../src/utils.js';
 import { uspDataHandler, gppDataHandler } from '../../../src/consentHandler.js';
 
 describe('The DFP video support module', function () {
@@ -49,7 +47,7 @@ describe('The DFP video support module', function () {
       params: {
         'iu': 'my/adUnit'
       }
-    }, options)))
+    }, options)));
   }
   function getQueryParams(options) {
     return utils.parseQS(getURL(options).query);
@@ -82,7 +80,7 @@ describe('The DFP video support module', function () {
         expect(prm.description_url).to.eql('https%3A%2F%2Fexample.com%3Fiu%3D%2F99999999%2Fnews%26cust_params%3Dcurrent_hour%253D12%2526newscat%253Dtravel%26pbjs_debug%3Dtrue');
       });
     });
-  })
+  });
 
   it('should make a legal request URL when given the required params', function () {
     const url = getURL({
@@ -90,7 +88,7 @@ describe('The DFP video support module', function () {
         'iu': 'my/adUnit',
         'description_url': 'someUrl.com',
       }
-    })
+    });
     expect(url.protocol).to.equal('https:');
     expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
@@ -110,7 +108,7 @@ describe('The DFP video support module', function () {
     bid.vastUrl = 'vastUrl.example';
     const url = getURL({
       url: 'https://video.adserver.example/',
-    })
+    });
     expect(url.host).to.equal('video.adserver.example');
   });
 
@@ -146,7 +144,7 @@ describe('The DFP video support module', function () {
       hb_adid: 'ad_id',
     });
 
-    const customParams = getCustomParams()
+    const customParams = getCustomParams();
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
@@ -166,7 +164,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should not include the GDPR keys when GDPR Consent is not available', function () {
-    const queryObject = getQueryParams()
+    const queryObject = getQueryParams();
     expect(queryObject.gdpr).to.equal(undefined);
     expect(queryObject.gdpr_consent).to.equal(undefined);
     expect(queryObject.addtl_consent).to.equal(undefined);
@@ -177,7 +175,7 @@ describe('The DFP video support module', function () {
       gdprApplies: true,
       consentString: 'consent',
     });
-    const queryObject = getQueryParams()
+    const queryObject = getQueryParams();
     expect(queryObject.gdpr).to.equal('1');
     expect(queryObject.gdpr_consent).to.equal('consent');
     expect(queryObject.addtl_consent).to.equal(undefined);
@@ -207,10 +205,10 @@ describe('The DFP video support module', function () {
           ppid = undefined;
           const q = getQueryParams(opts);
           expect(q.hasOwnProperty('ppid')).to.be.false;
-        })
-      })
-    })
-  })
+        });
+      });
+    });
+  });
 
   describe('ORTB video parameters', () => {
     Object.entries({
@@ -336,18 +334,18 @@ describe('The DFP video support module', function () {
             });
             it('does not fill if param has no value', () => {
               expect(getQueryParams().hasOwnProperty(param)).to.be.false;
-            })
-          })
-        })
-      })
-    })
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('ppsj', () => {
     let ortb2;
     beforeEach(() => {
       ortb2 = null;
-    })
+    });
 
     function getSignals() {
       const ppsj = JSON.parse(atob(getQueryParams().ppsj));
@@ -404,7 +402,7 @@ describe('The DFP video support module', function () {
                 }
               ]
             }
-          }
+          };
           expect(getQueryParams().ppsj).to.not.exist;
         });
 
@@ -445,18 +443,18 @@ describe('The DFP video support module', function () {
               { id: '6-3' }
             ]
           },
-        ]
+        ];
 
         it('collects user.data segments with segtax = 4 into IAB_AUDIENCE_1_1', () => {
           ortb2 = {
             user: {
               data: SEGMENTS
             }
-          }
+          };
           expect(getSignals()).to.eql({
             IAB_AUDIENCE_1_1: ['4-1', '4-2', '4-3']
-          })
-        })
+          });
+        });
 
         it('collects site.content.data segments with segtax = 6 into IAB_CONTENT_2_2', () => {
           ortb2 = {
@@ -465,14 +463,14 @@ describe('The DFP video support module', function () {
                 data: SEGMENTS
               }
             }
-          }
+          };
           expect(getSignals()).to.eql({
             IAB_CONTENT_2_2: ['6-1', '6-2', '6-3']
-          })
-        })
-      })
-    })
-  })
+          });
+        });
+      });
+    });
+  });
 
   describe('special targeting unit test', function () {
     const allTargetingData = {
@@ -735,7 +733,7 @@ describe('The DFP video support module', function () {
 
   it('should substitue vast ad tag uri in gam wrapper with blob content in data uri format', (done) => {
     config.setConfig({ cache: { useLocal: true } });
-    const url = 'https://pubads.g.doubleclick.net/gampad/ads'
+    const url = 'https://pubads.g.doubleclick.net/gampad/ads';
     const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>';
     const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
     const uuid = generateUUID();
@@ -814,7 +812,7 @@ describe('The DFP video support module', function () {
         expect(finalGamWrapper).to.deep.eql(gamWrapper);
         done();
       })
-      .finally(config.resetConfig)
+      .finally(config.resetConfig);
 
     server.respond();
   });
@@ -823,7 +821,7 @@ describe('The DFP video support module', function () {
     config.setConfig({ cache: { useLocal: true } });
     const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa';
     const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a';
-    const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`
+    const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`;
     const gamWrapper = (
       `<VAST version="3.0">` +
         `<Ad>` +
@@ -845,7 +843,7 @@ describe('The DFP video support module', function () {
         expect(finalGamWrapper).to.deep.eql(gamWrapper);
         done();
       })
-      .finally(config.resetConfig)
+      .finally(config.resetConfig);
 
     server.respond();
   });
@@ -880,14 +878,14 @@ describe('The DFP video support module', function () {
         ima: {
           VERSION: '2.3.37'
         }
-      }
-    })
+      };
+    });
     afterEach(() => {
       config.resetConfig();
-    })
+    });
 
     async function obtainUsPrivacyInVastXmlRequest() {
-      const url = 'https://pubads.g.doubleclick.net/gampad/ads'
+      const url = 'https://pubads.g.doubleclick.net/gampad/ads';
       const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=4536229c-eddb-45b3-a919-89d889e925aa';
       const gamWrapper = (
         `<VAST version="3.0">` +
@@ -912,12 +910,12 @@ describe('The DFP video support module', function () {
     }
 
     function obtainUsPrivacyInGamVideoUrl() {
-      const url = 'https://pubads.g.doubleclick.net/gampad/ads'
+      const url = 'https://pubads.g.doubleclick.net/gampad/ads';
       return new URLSearchParams(buildDfpVideoUrl({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } })).get('us_privacy');
     }
 
     function mockGpp(gpp) {
-      sandbox.stub(gppDataHandler, 'getConsentData').returns(gpp)
+      sandbox.stub(gppDataHandler, 'getConsentData').returns(gpp);
     }
 
     function wrapParsedSectionsIntoGPPData(parsedSections) {
@@ -925,7 +923,7 @@ describe('The DFP video support module', function () {
         gppData: {
           parsedSections: parsedSections
         }
-      }
+      };
     }
 
     it('should use usp when available, even when gpp is available', async () => {
@@ -947,7 +945,7 @@ describe('The DFP video support module', function () {
       // It is not included in the URL returned by Prebid
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.be.null;
-    })
+    });
 
     it('no us_privacy when neither usp nor gpp is present', async () => {
       const usPrivacyFromRequqest = await obtainUsPrivacyInVastXmlRequest();
@@ -955,7 +953,7 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.be.null;
-    })
+    });
 
     it('can retrieve from usp section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -972,7 +970,7 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.equal('1YNY');
-    })
+    });
     it('can retrieve from usnat section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
         "usnat": {
@@ -1023,7 +1021,7 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.equal('1YYY');
-    })
+    });
     it('can retrieve from usnat section in gpp when usnat is an array', async() => {
       mockGpp(wrapParsedSectionsIntoGPPData({
         "usnat": [
@@ -1047,14 +1045,14 @@ describe('The DFP video support module', function () {
             "Gpc": false
           }
         ]
-      }))
+      }));
 
       const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
       expect(usPrivacyFromRequest).to.equal('1YNY');
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.equal('1YNY');
-    })
+    });
     it('no us_privacy when either SaleOptOutNotice or SaleOptOut is missing', async () => {
       // Missing SaleOptOutNotice
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1105,7 +1103,7 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.be.null;
-    })
+    });
     it('no us_privacy when either SaleOptOutNotice or SaleOptOut is null', async () => {
       // null SaleOptOut
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1157,7 +1155,7 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.be.null;
-    })
+    });
 
     it('can retrieve from usca section in gpp', async () => {
       mockGpp(wrapParsedSectionsIntoGPPData({
@@ -1197,6 +1195,6 @@ describe('The DFP video support module', function () {
 
       const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
       expect(usPrivacyFromUrl).to.equal('1YNY');
-    })
+    });
   });
 });

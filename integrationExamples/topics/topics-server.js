@@ -1,7 +1,6 @@
 // This is an example of a server-side endpoint that is utilizing the Topics API header functionality.
-// Note: This test endpoint requires the following to run: node.js, npm, express, cors, body-parser
+// Note: This test endpoint requires the following to run: node.js, npm, express, cors
 
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const express = require('express');
 
@@ -10,11 +9,11 @@ const port = process.env.PORT || 3000;
 const app = express();
 app.use(cors());
 app.use(
-  bodyParser.urlencoded({
+  express.urlencoded({
     extended: true,
   })
 );
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(express.static('public'));
 app.set('port', port);
 

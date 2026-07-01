@@ -114,7 +114,7 @@ export const spec = {
   },
 
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
 
     if (syncOptions.iframeEnabled) {
       const params = {};

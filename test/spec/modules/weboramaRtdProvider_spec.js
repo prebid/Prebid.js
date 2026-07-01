@@ -1,14 +1,13 @@
 import {
   weboramaSubmodule
+  ,
+  storage,
+  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
 } from 'modules/weboramaRtdProvider.js';
 import {
   server
 } from 'test/mocks/xhr.js';
-import {
-  storage,
-  DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
-  DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
-} from '../../../modules/weboramaRtdProvider.js';
 
 import 'src/prebid.js';
 
@@ -69,7 +68,7 @@ describe('weboramaRtdProvider', function() {
           gdpr: {
             gdprApplies: false,
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
       it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
@@ -112,7 +111,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
@@ -155,7 +154,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function() {
@@ -198,7 +197,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
@@ -226,7 +225,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss one purpose id', function() {
@@ -254,7 +253,7 @@ describe('weboramaRtdProvider', function() {
               }
             },
           },
-        }
+        };
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
     });
@@ -262,9 +261,11 @@ describe('weboramaRtdProvider', function() {
 
   describe('Handle Set Targeting and Bid Request', function() {
     let sandbox;
+    let onDataResponse;
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
+      onDataResponse = undefined;
 
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
 
@@ -277,17 +278,13 @@ describe('weboramaRtdProvider', function() {
 
     describe('Add site-centric data (contextual)', function() {
       it('should set gam targeting and send to bidders by default', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
               token: 'foo',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -352,7 +349,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -364,7 +361,6 @@ describe('weboramaRtdProvider', function() {
       });
 
       it('should use asset id when available and set gam targeting and send to bidders by default', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -372,10 +368,7 @@ describe('weboramaRtdProvider', function() {
               assetID: 'datasource:docId',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -439,7 +432,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -451,7 +444,6 @@ describe('weboramaRtdProvider', function() {
       });
 
       it('should use asset id as callback when available and set gam targeting and send to bidders by default', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -459,10 +451,7 @@ describe('weboramaRtdProvider', function() {
               assetID: () => 'datasource:docId',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -526,7 +515,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -538,7 +527,6 @@ describe('weboramaRtdProvider', function() {
       });
 
       it('should handle exception from asset id callback', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -548,10 +536,7 @@ describe('weboramaRtdProvider', function() {
               },
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -593,7 +578,6 @@ describe('weboramaRtdProvider', function() {
       });
 
       it('should handle case when callback return falsy value', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -601,10 +585,7 @@ describe('weboramaRtdProvider', function() {
               assetID: () => '',
               targetURL: 'https://prebid.org',
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -661,14 +642,13 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder === 'appnexus'
+            return bid.bidder === 'appnexus';
           },
         };
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
           it(`check sendToBidders as ${label}`, function() {
-            let onDataResponse = {};
             const moduleConfig = {
               params: {
                 weboCtxConf: {
@@ -676,10 +656,7 @@ describe('weboramaRtdProvider', function() {
                   targetURL: 'https://prebid.org',
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
-                    onDataResponse = {
-                      data: data,
-                      meta: meta,
-                    };
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -768,7 +745,7 @@ describe('weboramaRtdProvider', function() {
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
             expect(onDataResponse).to.deep.equal({
               data: data,
               meta: {
@@ -794,7 +771,6 @@ describe('weboramaRtdProvider', function() {
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
           it(`check sendToBidders as ${label}`, function() {
-            let onDataResponse = {};
             const moduleConfig = {
               params: {
                 weboCtxConf: {
@@ -802,10 +778,7 @@ describe('weboramaRtdProvider', function() {
                   targetURL: 'https://prebid.org',
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
-                    onDataResponse = {
-                      data: data,
-                      meta: meta,
-                    };
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -1035,7 +1008,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -1178,22 +1151,18 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
             onData: (data, meta) => {
-              onDataResponse = {
-                data: data,
-                meta: meta,
-              };
+              onDataResponse = { data, meta };
             },
             weboCtxConf: {
               token: 'foo',
@@ -1307,7 +1276,7 @@ describe('weboramaRtdProvider', function() {
               bidder: 'other',
             }]
           }]
-        }
+        };
         const onDoneSpy = sinon.spy();
 
         expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
@@ -1353,14 +1322,13 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of api error', function() {
         const defaultProfile = {
           webo_ctx: ['baz'],
         };
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -1369,10 +1337,7 @@ describe('weboramaRtdProvider', function() {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -1433,7 +1398,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -1445,7 +1410,6 @@ describe('weboramaRtdProvider', function() {
       });
 
       it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -1465,10 +1429,7 @@ describe('weboramaRtdProvider', function() {
               },
               baseURLProfileAPI: 'ctx.test.weborama.com',
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -1559,7 +1520,7 @@ describe('weboramaRtdProvider', function() {
               }
             });
 
-            return
+            return;
           }
 
           expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
@@ -1569,7 +1530,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           webo_ctx: ['foo', 'bar'],
           webo_ds: ['baz'],
@@ -1590,16 +1551,12 @@ describe('weboramaRtdProvider', function() {
 
     describe('Add user-centric data (wam)', function() {
       it('should set gam targeting from local storage and send to bidders by default', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboUserDataConf: {
               accoundId: 12345,
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -1666,7 +1623,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -1692,24 +1649,20 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder === 'appnexus'
+            return bid.bidder === 'appnexus';
           },
         };
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
           it(`check sendToBidders as ${label}`, function() {
-            let onDataResponse = {};
             const moduleConfig = {
               params: {
                 weboUserDataConf: {
                   accountId: 12345,
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
-                    onDataResponse = {
-                      data: data,
-                      meta: meta,
-                    };
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -1795,11 +1748,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
             expect(onDataResponse).to.deep.equal({
               data: data,
               meta: {
@@ -1825,17 +1778,13 @@ describe('weboramaRtdProvider', function() {
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
           it(`check sendToBidders as ${label}`, function() {
-            let onDataResponse = {};
             const moduleConfig = {
               params: {
                 weboUserDataConf: {
                   accountId: 12345,
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
-                    onDataResponse = {
-                      data: data,
-                      meta: meta,
-                    };
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -1920,11 +1869,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
 
             expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
@@ -2082,7 +2031,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -2227,22 +2176,18 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
             onData: (data, meta) => {
-              onDataResponse = {
-                data: data,
-                meta: meta,
-              };
+              onDataResponse = { data, meta };
             },
             weboUserDataConf: {
               accoundId: 12345,
@@ -2403,7 +2348,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -2470,7 +2415,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of something malformed on local storage', function() {
@@ -2546,14 +2491,13 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile if cant read from local storage', function() {
         const defaultProfile = {
           webo_audiences: [12345]
         };
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboUserDataConf: {
@@ -2561,10 +2505,7 @@ describe('weboramaRtdProvider', function() {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -2620,7 +2561,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -2632,7 +2573,6 @@ describe('weboramaRtdProvider', function() {
       });
 
       it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             weboUserDataConf: {
@@ -2651,10 +2591,7 @@ describe('weboramaRtdProvider', function() {
                 return true;
               },
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -2748,7 +2685,7 @@ describe('weboramaRtdProvider', function() {
               }
             });
 
-            return
+            return;
           }
 
           expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
@@ -2758,7 +2695,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -2773,15 +2710,11 @@ describe('weboramaRtdProvider', function() {
 
     describe('Add support to sfbx lite', function() {
       it('should set gam targeting from local storage and send to bidders by default', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             sfbxLiteDataConf: {
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -2848,7 +2781,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -2874,23 +2807,19 @@ describe('weboramaRtdProvider', function() {
             'other': false,
           },
           'callback': (bid) => {
-            return bid.bidder === 'appnexus'
+            return bid.bidder === 'appnexus';
           },
         };
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
           it(`check sendToBidders as ${label}`, function() {
-            let onDataResponse = {};
             const moduleConfig = {
               params: {
                 sfbxLiteDataConf: {
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
-                    onDataResponse = {
-                      data: data,
-                      meta: meta,
-                    };
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -2976,11 +2905,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -3007,16 +2936,12 @@ describe('weboramaRtdProvider', function() {
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
           it(`check sendToBidders as ${label}`, function() {
-            let onDataResponse = {};
             const moduleConfig = {
               params: {
                 sfbxLiteDataConf: {
                   sendToBidders: sendToBidders,
                   onData: (data, meta) => {
-                    onDataResponse = {
-                      data: data,
-                      meta: meta,
-                    };
+                    onDataResponse = { data, meta };
                   },
                 }
               }
@@ -3105,11 +3030,11 @@ describe('weboramaRtdProvider', function() {
                   }
                 });
 
-                return
+                return;
               }
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -3263,7 +3188,7 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
@@ -3407,22 +3332,18 @@ describe('weboramaRtdProvider', function() {
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            });
           });
         });
       });
 
       it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             setPrebidTargeting: false,
             sendToBidders: false,
             onData: (data, meta) => {
-              onDataResponse = {
-                data: data,
-                meta: meta,
-              };
+              onDataResponse = { data, meta };
             },
             sfbxLiteDataConf: {
               setPrebidTargeting: true, // submodule parameter will override module parameter
@@ -3585,7 +3506,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -3651,24 +3572,20 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
       });
 
       it('should use default profile if cant read from local storage', function() {
         const defaultProfile = {
           lite_hobbies: ['sport', 'cinéma'],
         };
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             sfbxLiteDataConf: {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -3731,7 +3648,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -3746,17 +3663,13 @@ describe('weboramaRtdProvider', function() {
         const defaultProfile = {
           lite_hobbies: ['sport', 'cinéma'],
         };
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             sfbxLiteDataConf: {
               setPrebidTargeting: true,
               defaultProfile: defaultProfile,
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -3811,7 +3724,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -3822,7 +3735,6 @@ describe('weboramaRtdProvider', function() {
         });
       });
       it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
-        let onDataResponse = {};
         const moduleConfig = {
           params: {
             sfbxLiteDataConf: {
@@ -3840,10 +3752,7 @@ describe('weboramaRtdProvider', function() {
                 return true;
               },
               onData: (data, meta) => {
-                onDataResponse = {
-                  data: data,
-                  meta: meta,
-                };
+                onDataResponse = { data, meta };
               },
             }
           }
@@ -3937,7 +3846,7 @@ describe('weboramaRtdProvider', function() {
               }
             });
 
-            return
+            return;
           }
 
           expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
@@ -3947,7 +3856,7 @@ describe('weboramaRtdProvider', function() {
               },
             }
           });
-        })
+        });
 
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           lite_occupation: ['gérant', 'bénévole'],
