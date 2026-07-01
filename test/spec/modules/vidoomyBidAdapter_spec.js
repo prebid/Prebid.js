@@ -1,14 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vidoomyBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { INSTREAM } from '../../../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'];
 
 describe('vidoomyBidAdapter', function() {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     let bid;
     beforeEach(() => {
@@ -163,6 +161,18 @@ describe('vidoomyBidAdapter', function() {
     it('should send multiBidsSupport parameters', function () {
       expect('' + request[0].data.multiBidsSupport).to.equal('1');
       expect('' + request[1].data.multiBidsSupport).to.equal('1');
+    });
+
+    it('should default gpid to empty string when ortb2Imp.ext.gpid is absent', function () {
+      expect(request[0].data.gpid).to.equal('');
+      expect(request[1].data.gpid).to.equal('');
+    });
+
+    it('should send gpid from ortb2Imp.ext.gpid when present', function () {
+      const gpid = 'example.com/vidoomyad/12345';
+      const bidRequest = { ...bidRequests[0], ortb2Imp: { ext: { gpid } } };
+      const req = spec.buildRequests([bidRequest], bidderRequest)[0];
+      expect(req.data.gpid).to.equal(gpid);
     });
 
     it('should send schain parameter in serialized form', function () {

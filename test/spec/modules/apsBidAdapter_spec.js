@@ -1,4 +1,4 @@
-import sinon from 'sinon';
+import 'sinon';
 import { expect } from 'chai';
 import { spec, ADAPTER_VERSION } from 'modules/apsBidAdapter';
 import { config } from 'src/config.js';
@@ -734,7 +734,7 @@ describe('apsBidAdapter', () => {
           ]);
         });
 
-        it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
+        it('when both iframe and pixel sync are disabled, should return empty array', () => {
           syncOptions = { iframeEnabled: false, pixelEnabled: false };
           const result = spec.getUserSyncs(
             syncOptions,
@@ -830,7 +830,7 @@ describe('apsBidAdapter', () => {
         ]);
       });
 
-      it('when both iframe and pixel sync are disabled, should return iframe and image user syncs', () => {
+      it('when both iframe and pixel sync are disabled, should return empty array', () => {
         syncOptions = { iframeEnabled: false, pixelEnabled: false };
         const result = spec.getUserSyncs(
           syncOptions,

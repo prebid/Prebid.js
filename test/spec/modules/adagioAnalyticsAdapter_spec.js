@@ -52,8 +52,6 @@ describe('adagio analytics adapter - adagio.js', () => {
     });
 
     it('builds and sends auction data', () => {
-      const w = utils.getWindowTop();
-
       const bidRequest = {
         bids: [{
           adUnitCode: 'div-1',

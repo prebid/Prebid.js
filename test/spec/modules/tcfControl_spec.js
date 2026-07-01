@@ -36,9 +36,8 @@ import { GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consen
 import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
-  let nextFnSpy;
   let logWarnSpy;
-  let gdprDataHandlerStub;
+
   const staticConfig = {
     cmpApi: 'static',
     timeout: 7500,

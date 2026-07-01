@@ -7,7 +7,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import { deepAccess, deepClone, getWinDimensions, mergeDeep } from 'src/utils.js';
+import { deepAccess, deepClone, getWinDimensions } from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
@@ -596,6 +596,7 @@ describe('s2s configuration', () => {
 
 describe('S2S Adapter', function () {
   let adapter;
+  let browserRestrictionStubs;
   let addBidResponse = sinon.spy();
   let done = sinon.spy();
 
@@ -614,6 +615,11 @@ describe('S2S Adapter', function () {
   });
 
   beforeEach(function () {
+    browserRestrictionStubs = sinon.createSandbox();
+    browserRestrictionStubs.stub(utils, 'isSafariBrowser').returns(false);
+    browserRestrictionStubs.stub(utils, 'isFirefoxBrowser').returns(false);
+    browserRestrictionStubs.stub(utils, 'isChromeIOSBrowser').returns(false);
+
     config.resetConfig();
     config.setConfig({ floors: { enabled: false } });
     adapter = new Adapter();
@@ -661,6 +667,7 @@ describe('S2S Adapter', function () {
   });
 
   afterEach(function () {
+    browserRestrictionStubs.restore();
     addBidResponse.resetHistory();
     addBidResponse.reject = sinon.spy();
     done.resetHistory();
@@ -1614,13 +1621,11 @@ describe('S2S Adapter', function () {
               }
             }).forEach(([t, { expectDesc, expectedFloor, expectedCur, conversionFn }]) => {
               describe(`and currency conversion ${t}`, () => {
-                let mockConvertCurrency;
                 const origConvertCurrency = getGlobal().convertCurrency;
                 beforeEach(() => {
                   if (conversionFn) {
-                    getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn);
+                    getGlobal().convertCurrency = sinon.stub().callsFake(conversionFn);
                   } else {
-                    mockConvertCurrency = null;
                     delete getGlobal().convertCurrency;
                   }
                 });
@@ -3044,7 +3049,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(await addFpdEnrichmentsToS2SRequest({
         ...s2sBidRequest,
         ortb2Fragments
-      }, bidRequests, cfg), bidRequests, addBidResponse, done, ajax);
+      }, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       // eslint-disable-next-line no-console
       console.log(parsedRequestBody);
@@ -3493,7 +3498,7 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledTwice(events.emit);
-      const event = events.emit.firstCall.args;
+
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('ttl', 30);
@@ -3835,6 +3840,19 @@ describe('S2S Adapter', function () {
           adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
           server.requests[0].respond(200, {}, JSON.stringify(csRes));
           expect(syncer().args[0]).to.include.members([123]);
+        });
+      });
+
+      Object.entries({
+        Safari: 'isSafariBrowser',
+        Firefox: 'isFirefoxBrowser',
+        'Chrome on iOS': 'isChromeIOSBrowser'
+      }).forEach(([browser, detector]) => {
+        it(`does not request PBS syncs on ${browser}`, () => {
+          utils[detector].returns(true);
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          expect(server.requests).to.have.length(1);
+          expect(server.requests[0].url).to.equal(cfg.endpoint.p1Consent);
         });
       });
     });

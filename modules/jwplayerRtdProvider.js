@@ -54,7 +54,7 @@ export const jwplayerSubmodule = {
 
 config.getConfig('realTimeData', ({ realTimeData }) => {
   const providers = realTimeData.dataProviders;
-  const jwplayerProvider = providers && ((providers) || []).find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
+  const jwplayerProvider = providers && providers.find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
   const params = jwplayerProvider && jwplayerProvider.params;
   if (!params) {
     return;

@@ -49,7 +49,7 @@ export function normalizer({ nullify = [], move = {}, fn }: {
   move = Object.fromEntries(Object.entries(move).map(([k, map]) => [k,
     Object.fromEntries(Object.entries(map)
       .map(([k, v]) => [k, Array.isArray(v) ? v : [v]])
-      .map(([k, v]: [any, any]) => [--k, v.map(el => --el)])
+      .map(([k, v]: [any, any]) => [k - 1, v.map(el => el - 1)])
     )])
   );
   return function (cd) {

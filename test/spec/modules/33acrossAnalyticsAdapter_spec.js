@@ -138,7 +138,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           performStandardAuction();
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
-          const [url, jsonString] = navigator.sendBeacon.firstCall.args;
+          const [, jsonString] = navigator.sendBeacon.firstCall.args;
           const { auctions } = JSON.parse(jsonString);
 
           assert.lengthOf(mapToBids(auctions).filter(bid => bid.hasWon), 3);
@@ -395,7 +395,7 @@ describe('33acrossAnalyticsAdapter:', function () {
         };
 
         // Reject first bid
-        const bidToReject = auction.BID_REQUESTED[0].bids[0];
+
         events.emit(EVENTS.BID_REJECTED, auction.BID_REJECTED[0]);
 
         // Accept remaining bids
@@ -698,7 +698,7 @@ function getLocalAssert() {
   function isValidAnalyticsReport(report) {
     assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
     if ('usPrivacy' in report) {
-      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
+      assert.match(report.usPrivacy, /[01][YN-]{3}/);
     }
     if ('gdpr' in report) {
       assert.oneOf(report.gdpr, [0, 1]);
