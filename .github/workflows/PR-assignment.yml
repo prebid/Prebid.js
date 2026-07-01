@@ -2,12 +2,11 @@ name: Assign PR reviewers
 on:
   workflow_run:
     workflows:
-      - Compile dependencies.json for PR assignment checks
+      - Build metadata
     types:
       - completed
 jobs:
   assign_reviewers:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Assign reviewers
     runs-on: ubuntu-latest
 
@@ -23,17 +22,21 @@ jobs:
           app-id: ${{ vars.PR_BOT_ID }}
           private-key: ${{ secrets.PR_BOT_PEM }}
       - name: Download dependencies.json
+        id: download
         uses: ./.github/actions/unzip-artifact
         with:
           name: dependencies.json
       - name: Download PR info
+        if: ${{ steps.download.outputs.exists == 'true' }}
         uses: ./.github/actions/unzip-artifact
         with:
           name: prInfo
       - name: Install s3 client
+        if: ${{ steps.download.outputs.exists == 'true' }}
         run: |
           npm install @aws-sdk/client-s3
       - name: Get PR properties
+        if: ${{ steps.download.outputs.exists == 'true' }}
         id: get-props
         uses: actions/github-script@v9
         env:
@@ -57,7 +60,7 @@ jobs:
             console.log('PR properties:', JSON.stringify(props, null, 2));
             return props;
       - name: Assign reviewers
-        if: ${{ !fromJSON(steps.get-props.outputs.result).review.ok }}
+        if: ${{ steps.download.outputs.exists == 'true' && !fromJSON(steps.get-props.outputs.result).review.ok }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
@@ -66,7 +69,7 @@ jobs:
             const reviewers = await assignReviewers({github, context, prData: ${{ steps.get-props.outputs.result }} });
             console.log('Assigned reviewers:', JSON.stringify(reviewers, null, 2));
       - name: Auto-label core PR
-        if: ${{ fromJSON(steps.get-props.outputs.result).isCoreChange }}
+        if: ${{ steps.download.outputs.exists == 'true' && fromJSON(steps.get-props.outputs.result).isCoreChange }}
         uses: actions/github-script@v9
         with:
           github-token: ${{ steps.token.outputs.token }}
