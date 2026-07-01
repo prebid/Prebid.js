@@ -33,7 +33,7 @@ jobs:
       - name: Checkout code (PR)
         id: checkout-pr
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
           fetch-depth: 0
@@ -41,7 +41,7 @@ jobs:
       - name: Checkout code (push)
         id: checkout-push
         if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Restore source
         uses: ./.github/actions/load
         with:
@@ -153,7 +153,7 @@ jobs:
           path: base-coverage.info
       - name: Checkout
         if: ${{ steps.restore.outputs.cache-hit != 'true' }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.checkout.outputs.base-commit }}
       - name: Install dependencies
@@ -179,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Combine coverage results
         uses: ./.github/actions/combine-coverage
         with:
@@ -193,7 +193,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Combine coverage results
         uses: ./.github/actions/combine-coverage
         with:
