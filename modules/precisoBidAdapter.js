@@ -20,9 +20,7 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-
     sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
-
     return Boolean(bid.bidId && bid.params && bid.params.publisherId);
   },
   buildRequests: buildRequests(endpoint),

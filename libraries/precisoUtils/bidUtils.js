@@ -4,7 +4,6 @@ import { ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
-import { getTimeZone } from '../timezone/timezone.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -14,7 +13,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
     user: {
-      id: validBidRequests[0].userId.pubcid || '',
+      id: validBidRequests[0].user.ext?.eids?.[0]?.uids?.[0]?.id || 'sharedd-id-not-found',
       buyeruid: validBidRequests[0].buyerUid || '',
       geo: {
         country: validBidRequests[0].params.region || city,
