@@ -2,9 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/ownadxBidAdapter.js';
 
 describe('ownadx', function () {
-  const METHOD = 'POST';
-  const URL = 'https://pbs-js.prebid-ownadx.com/publisher/prebid/9/1231?token=3f2941af4f7e446f9a19ca6045f8cff4';
-
   const bidRequest = {
     bidder: 'ownadx',
     params: {

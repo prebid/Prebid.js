@@ -7,13 +7,13 @@ import {
   _internal,
   storeBatch,
   callPrebidCache, updateVast
+  , storeLocally
 } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
-import { storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
 
@@ -48,7 +48,7 @@ describe('The video cache', function () {
         cache: {
           url: 'https://test.cache.url/endpoint'
         }
-      })
+      });
     });
 
     afterEach(function () {
@@ -75,7 +75,7 @@ describe('The video cache', function () {
       it('should use default when not specified', () => {
         store([], cb, getAjax);
         sinon.assert.calledWith(getAjax, undefined);
-      })
+      });
     });
 
     it('should execute the callback with a successful result when store() is called', function () {
@@ -240,7 +240,7 @@ describe('The video cache', function () {
         getAuctionStart() {
           return 1510852447530;
         }
-      }]))
+      }]));
       try {
         store(bids, function () { });
       } finally {
@@ -280,7 +280,7 @@ describe('The video cache', function () {
       it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
         const mockAfterBidAdded = function() {};
         let callback = null;
-        const mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+        const mockTimeout = sinon.stub().callsFake((cb) => { callback = cb; });
 
         config.setConfig({
           cache: {
@@ -339,7 +339,7 @@ describe('The video cache', function () {
 
   describe('storeBatch', () => {
     let sandbox;
-    let err, cacheIds
+    let err, cacheIds;
     beforeEach(() => {
       err = null;
       cacheIds = [];
@@ -350,36 +350,37 @@ describe('The video cache', function () {
     afterEach(() => {
       sandbox.restore();
       config.resetConfig();
-    })
+    });
     it('should log an error when store replies with an error', () => {
       err = new Error('err');
       storeBatch([]);
       sinon.assert.called(utils.logError);
     });
     it('should not process returned uuids if they do not match the batch size', () => {
-      const el = { auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub() }
+      const el = { auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub() };
       const batch = [el, el];
-      cacheIds = [{ uuid: 'mock-id' }]
+      cacheIds = [{ uuid: 'mock-id' }];
       storeBatch(batch);
       expect(el.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
     });
-    it('should set bids\' videoCacheKey and vastUrl', () => {
+    it('should set bids\' videoCacheKey, vastUrl, and cacheUrl', () => {
       config.setConfig({
         cache: {
           url: 'mock-cache'
         }
-      })
+      });
       const el = { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() };
-      cacheIds = [{ uuid: 'mock-id' }]
+      cacheIds = [{ uuid: 'mock-id' }];
       storeBatch([el]);
       sinon.assert.match(el.bidResponse, {
         videoCacheKey: 'mock-id',
-        vastUrl: 'mock-cache?uuid=mock-id'
-      })
+        vastUrl: 'mock-cache?uuid=mock-id',
+        cacheUrl: 'mock-cache',
+      });
     });
-  })
+  });
 
   describe('updateVast', () => {
     let bidResponse;
@@ -393,7 +394,7 @@ describe('The video cache', function () {
       bidResponse.vastXml = 'mock';
       updateVast(bidResponse);
       expect(bidResponse.vastXml).to.eql('mock');
-    })
+    });
 
     it('should set vastXml with a wrapper around vastUrl', () => {
       updateVast(bidResponse);
@@ -441,7 +442,7 @@ describe('The video cache', function () {
         ]
       };
       updateVast(bidResponse);
-      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking><Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>')
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking><Tracking event="complete"><![CDATA[https://tracking.mydomain.com/complete]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
     });
 
     it('should include all tracker types together', () => {
@@ -454,8 +455,8 @@ describe('The video cache', function () {
       };
       updateVast(bidResponse);
       expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
-    })
-  })
+    });
+  });
 
   describe('local video cache', function() {
     afterEach(function () {
@@ -499,7 +500,7 @@ describe('The video cache', function () {
         };
         addBidReceived = sinon.stub();
         afterBidAdded = sinon.stub();
-      })
+      });
 
       function runCaching() {
         return handleVideoBidCaching({
@@ -523,7 +524,7 @@ describe('The video cache', function () {
         before(() => {
           cacheHook = sinon.stub().callsFake((next, ...args) => {
             return next(...args);
-          })
+          });
           callPrebidCache.before(cacheHook);
         });
         after(() => {
@@ -532,9 +533,9 @@ describe('The video cache', function () {
         it('they should run', () => {
           runCaching();
           sinon.assert.called(cacheHook);
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('calls prebid cache path when remote cache is enabled', function () {
       config.setConfig({
@@ -587,32 +588,22 @@ describe('The video cache', function () {
         },
         afterBidAdded: sinon.stub(),
         videoMediaType: { context: 'outstream' }
-      }
+      };
       handleVideoBidCaching(request);
       sinon.assert.notCalled(logErrorStub);
       expect(request.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.calledWith(request.auctionInstance.addBidReceived, request.bidResponse);
       sinon.assert.called(request.afterBidAdded);
-    })
+    });
   });
 });
 
 describe('The getCache function', function () {
-  beforeEach(function () {
-    config.setConfig({
-      cache: {
-        url: 'https://test.cache.url/endpoint'
-      }
-    })
-  });
-
-  afterEach(function () {
-    config.resetConfig();
-  });
+  const CACHE_URL = 'https://test.cache.url/endpoint';
 
   it('should return the expected URL', function () {
     const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
-    const url = getCacheUrl(uuid);
+    const url = getCacheUrl(CACHE_URL, uuid);
     url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
   });
-})
+});

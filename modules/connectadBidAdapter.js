@@ -1,14 +1,126 @@
-import { deepAccess, deepSetValue, mergeDeep, logWarn, generateUUID } from '../src/utils.js';
+import { logWarn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO, NATIVE, AUDIO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import { getDNT } from '../libraries/dnt/index.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
-const ENDPOINT_URL = 'https://i.connectad.io/api/v2';
-const SUPPORTED_MEDIA_TYPES = [BANNER];
+const ENDPOINT_URL = 'https://i.connectad.io/api/v3';
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE, AUDIO];
+const MTYPE_TO_MEDIATYPE = {
+  1: BANNER,
+  2: VIDEO,
+  3: AUDIO,
+  4: NATIVE
+};
+const REQUEST_MEDIATYPE_PRIORITY = [BANNER, VIDEO, AUDIO, NATIVE];
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 360,
+    currency: 'USD'
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    imp.ext = imp.ext || {};
+
+    // Add ConnectAd specific parameters
+    imp.ext.siteId = bidRequest.params.siteId;
+    imp.ext.networkId = bidRequest.params.networkId;
+
+    // Fallback for bidfloor if floor module didn't set it
+    if (!imp.bidfloor && (bidRequest.params.bidfloor || bidRequest.params.floorprice)) {
+      imp.bidfloor = bidRequest.params.bidfloor || bidRequest.params.floorprice;
+      imp.bidfloorcur = 'USD';
+    }
+
+    // Viewability Integration
+    if (imp.banner || imp.video) {
+      const element = getAdUnitElement(bidRequest);
+      if (element && isViewabilityMeasurable(element)) {
+        let elementSize = { w: 0, h: 0 };
+
+        if (imp.video && imp.video.w > 0 && imp.video.h > 0) {
+          elementSize.w = imp.video.w;
+          elementSize.h = imp.video.h;
+        } else if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes && bidRequest.mediaTypes.banner.sizes.length > 0) {
+          const sizes = bidRequest.mediaTypes.banner.sizes[0];
+          elementSize.w = Array.isArray(sizes) ? sizes[0] : sizes.w;
+          elementSize.h = Array.isArray(sizes) ? sizes[1] : sizes.h;
+        }
+
+        const viewabilityAmount = getViewability(element, getWindowTop(), elementSize);
+        if (typeof viewabilityAmount === 'number') {
+          imp.ext.viewability = Math.round(viewabilityAmount);
+        }
+      }
+    }
+
+    return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    // Ensure creativeId is set, fallback to adid or id (e.g., for test environments)
+    bidResponse.creativeId = bidResponse.creativeId || bid.crid || bid.adid || bid.id || 'connectad-default-creative';
+
+    // Support outstream video with a default renderer if none is provided
+    if (bidResponse.mediaType === VIDEO && context.bidRequest?.mediaTypes?.video?.context === 'outstream' && !bidResponse.renderer && !context.bidRequest?.renderer) {
+      const rendererUrl = 'https://cdn.connectad.io/video/outstream/connectad-outstream.js';
+      bidResponse.renderer = Renderer.install({
+        id: bid.id,
+        url: rendererUrl,
+        adUnitCode: bidResponse.adUnitCode || context.bidRequest?.adUnitCode
+      });
+      bidResponse.renderer.setRender((bid) => {
+        bid.renderer.push(() => {
+          if (window.ConnectAdOutstream && typeof window.ConnectAdOutstream.renderAd === 'function') {
+            window.ConnectAdOutstream.renderAd({
+              targetId: bid.adUnitCode,
+              vastXml: bid.vastXml || bid.vastUrl || bid.adm,
+              sizes: [bid.width, bid.height]
+            });
+          } else {
+            logWarn('ConnectAd: Outstream renderer script not loaded or window.ConnectAdOutstream not defined.');
+          }
+        });
+      });
+    }
+
+    // ConnectAd specific response mappings (e.g. meta tags)
+    if (bid.ext && bid.ext.dsa) {
+      bidResponse.meta = bidResponse.meta || {};
+      bidResponse.meta.dsa = bid.ext.dsa;
+    }
+    if (bid.cat && bid.cat.length > 0) {
+      bidResponse.meta = bidResponse.meta || {};
+      bidResponse.meta.primaryCatId = bid.cat[0];
+    }
+
+    return bidResponse;
+  },
+  overrides: {
+    bidResponse: {
+      mediaType(orig, bidResponse, bid, context) {
+        if (bidResponse.mediaType) {
+          return;
+        }
+        bidResponse.mediaType = MTYPE_TO_MEDIATYPE[Number(bid.mtype)] ||
+          REQUEST_MEDIATYPE_PRIORITY.find((mediaType) => context.bidRequest?.mediaTypes?.[mediaType]);
+        if (!bidResponse.mediaType) {
+          orig(bidResponse, bid, context);
+        }
+      }
+    }
+  }
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,175 +133,119 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const ret = {
+    if (validBidRequests.length === 0) {
+      return [];
+    }
+
+    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+
+    let url = ENDPOINT_URL;
+    if (validBidRequests[0] && validBidRequests[0].params && validBidRequests[0].params.endpointUrl) {
+      url = validBidRequests[0].params.endpointUrl;
+    }
+
+    return {
       method: 'POST',
-      url: '',
-      data: '',
-      bidRequest: []
+      url: url,
+      data: data,
+      bids: validBidRequests
     };
-
-    if (validBidRequests.length < 1) {
-      return ret;
-    }
-
-    const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
-    const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
-
-    const data = Object.assign({
-      placements: [],
-      time: Date.now(),
-      url: bidderRequest.refererInfo?.page,
-      referrer: bidderRequest.refererInfo?.ref,
-      screensize: getScreenSize(),
-      dnt: getDNT() ? 1 : 0,
-      language: navigator.language,
-      ua: navigator.userAgent,
-      pversion: '$prebid.version$',
-      cur: 'USD',
-      user: {},
-      regs: {},
-      source: {},
-      site: {},
-      sda: sellerDefinedAudience,
-      sdc: sellerDefinedContext,
-    });
-
-    const ortb2Params = bidderRequest?.ortb2 || {};
-    ['site', 'user', 'device', 'bcat', 'badv', 'regs'].forEach(entry => {
-      const ortb2Param = ortb2Params[entry];
-      if (ortb2Param) {
-        mergeDeep(data, { [entry]: ortb2Param });
-      }
-    });
-
-    // coppa compliance
-    if (config.getConfig('coppa') === true) {
-      deepSetValue(data, 'regs.coppa', 1);
-    }
-
-    // adding schain object
-    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
-    if (schain) {
-      deepSetValue(data, 'source.ext.schain', schain);
-    }
-
-    // Attaching GDPR Consent Params
-    if (bidderRequest.gdprConsent) {
-      let gdprApplies;
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      }
-      deepSetValue(data, 'user.ext.gdpr', gdprApplies);
-      deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-    }
-
-    // CCPA
-    if (bidderRequest.uspConsent) {
-      deepSetValue(data, 'user.ext.us_privacy', bidderRequest.uspConsent);
-    }
-
-    // GPP Support
-    if (bidderRequest?.gppConsent?.gppString) {
-      deepSetValue(data, 'regs.gpp', bidderRequest.gppConsent.gppString);
-      deepSetValue(data, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
-    } else if (bidderRequest?.ortb2?.regs?.gpp) {
-      deepSetValue(data, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-      deepSetValue(data, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
-    }
-
-    // DSA Support
-    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
-      deepSetValue(data, 'regs.ext.dsa', bidderRequest.ortb2.regs.ext.dsa);
-    }
-
-    // EIDS Support
-    if (validBidRequests[0].userIdAsEids) {
-      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
-    }
-
-    const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
-    if (tid) {
-      deepSetValue(data, 'source.tid', tid)
-    }
-    data.tmax = bidderRequest.timeout;
-
-    validBidRequests.forEach(bid => {
-      const placement = Object.assign({
-        id: generateUUID(),
-        divName: bid.bidId,
-        tagId: bid.adUnitCode,
-        pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],
-        sizes: bid.mediaTypes.banner.sizes,
-        bidfloor: getBidFloor(bid),
-        siteId: bid.params.siteId,
-        networkId: bid.params.networkId,
-        tid: bid.ortb2Imp?.ext?.tid
-      });
-
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
-      if (gpid) {
-        placement.gpid = gpid;
-      }
-
-      if (placement.networkId && placement.siteId) {
-        data.placements.push(placement);
-      }
-    });
-
-    ret.data = JSON.stringify(data);
-    ret.bidRequest = validBidRequests;
-    ret.url = ENDPOINT_URL;
-
-    return ret;
   },
 
-  interpretResponse: function(serverResponse, bidRequest, bidderRequest) {
-    let bid;
-    let bids;
-    let bidId;
-    let bidObj;
-    const bidResponses = [];
+  interpretResponse: function(serverResponse, bidRequest) {
+    if (!serverResponse || !serverResponse.body || !bidRequest || !bidRequest.data) {
+      return [];
+    }
+    let response = serverResponse.body;
+    const request = bidRequest.data;
 
-    bids = bidRequest.bidRequest;
-
-    serverResponse = (serverResponse || {}).body;
-    for (let i = 0; i < bids.length; i++) {
-      bid = {};
-      bidObj = bids[i];
-      bidId = bidObj.bidId;
-
-      if (serverResponse) {
-        const decision = serverResponse.decisions && serverResponse.decisions[bidId];
-        const price = decision && decision.pricing && decision.pricing.clearPrice;
-
-        if (decision && price) {
-          bid.requestId = bidId;
-          bid.cpm = price;
-          bid.width = decision.width;
-          bid.height = decision.height;
-          bid.dealid = decision.dealid || null;
-          bid.meta = {
-            advertiserDomains: decision && decision.adomain ? decision.adomain : []
-          };
-          bid.ad = retrieveAd(decision);
-          bid.currency = 'USD';
-          bid.creativeId = decision.adId;
-          bid.ttl = 360;
-          bid.netRevenue = true;
-
-          if (decision.dsa) {
-            bid.meta = Object.assign({}, bid.meta, { dsa: decision.dsa })
-          }
-          if (decision.category) {
-            bid.meta = Object.assign({}, bid.meta, { primaryCatId: decision.category })
-          }
-
-          bidResponses.push(bid);
-        }
-      }
+    if (Array.isArray(response)) {
+      response = {
+        id: request?.id || '1',
+        seatbid: [{
+          bid: response
+        }]
+      };
     }
 
-    return bidResponses;
+    if (response.seatbid && response.seatbid.length > 0 && request && request.imp && request.imp.length > 0) {
+      const imps = request.imp;
+      response.seatbid.forEach(seatbid => {
+        if (seatbid.bid && seatbid.bid.length > 0) {
+          // ConnectAd may return one bid that references multiple imp IDs.
+          // Fan those out to one bid per impid for converter mapping.
+          const processedBids = [];
+          seatbid.bid.forEach(bid => {
+            if (Array.isArray(bid.impid)) {
+              bid.impid.forEach(id => {
+                const clonedBid = { ...bid, impid: id };
+                processedBids.push(clonedBid);
+              });
+            } else {
+              processedBids.push(bid);
+            }
+          });
+          seatbid.bid = processedBids;
+
+          // Some responses return an impid that doesn't match the request.
+          // If there is exactly one imp, map the response bid back to it.
+          seatbid.bid.forEach(bid => {
+            const matchesAnyImp = imps.some(imp => imp.id === bid.impid);
+            if (!matchesAnyImp && imps.length === 1) {
+              bid.impid = imps[0].id;
+            }
+          });
+
+          // Normalize native payloads and align response asset IDs to request asset IDs.
+          seatbid.bid.forEach(bid => {
+            const imp = imps.find(i => i.id === bid.impid);
+            const origBidRequest = bidRequest.bids && bidRequest.bids.find(b => b.bidId === bid.impid);
+            const isNative = (bid.mtype === 4 || bid.mtype === '4' || (imp && imp.native) || (origBidRequest && origBidRequest.mediaTypes && origBidRequest.mediaTypes.native));
+            if (isNative) {
+              let nativeResponse;
+              try {
+                nativeResponse = typeof bid.adm === 'string' ? JSON.parse(bid.adm) : bid.adm;
+              } catch {
+                // ignore
+              }
+              if (nativeResponse) {
+                let unwrapped = false;
+                // If the response is wrapped in a "native" object, unwrap it to get assets at root
+                if (nativeResponse.native) {
+                  nativeResponse = nativeResponse.native;
+                  unwrapped = true;
+                }
+                if (nativeResponse.assets) {
+                  let nativeRequest;
+                  if (imp && imp.native) {
+                    try {
+                      nativeRequest = typeof imp.native.request === 'string' ? JSON.parse(imp.native.request) : imp.native.request;
+                    } catch {
+                      // ignore
+                    }
+                  } else if (origBidRequest && origBidRequest.nativeOrtbRequest) {
+                    nativeRequest = origBidRequest.nativeOrtbRequest;
+                  }
+                  const requestAssets = nativeRequest?.assets;
+                  if (requestAssets) {
+                    alignNativeAssetIds(nativeResponse.assets, requestAssets);
+                  }
+                }
+                if (unwrapped || nativeResponse.assets) {
+                  if (typeof bid.adm === 'string') {
+                    bid.adm = JSON.stringify(nativeResponse);
+                  } else {
+                    bid.adm = nativeResponse;
+                  }
+                }
+              }
+            }
+          });
+        }
+      });
+    }
+
+    return converter.fromORTB({ response, request }).bids || [];
   },
 
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
@@ -234,28 +290,35 @@ export const spec = {
   }
 };
 
-function getBidFloor(bidRequest) {
-  let floorInfo = {};
-
-  if (typeof bidRequest.getFloor === 'function') {
-    floorInfo = bidRequest.getFloor({
-      currency: 'USD',
-      mediaType: 'banner',
-      size: '*'
-    });
-  }
-
-  const floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
-
-  return floor;
-}
-
-function retrieveAd(decision) {
-  return decision.contents && decision.contents[0] && decision.contents[0].body;
-}
-
-function getScreenSize() {
-  return [window.screen.width, window.screen.height].join('x');
-}
-
 registerBidder(spec);
+
+function alignNativeAssetIds(responseAssets, requestAssets) {
+  if (!Array.isArray(responseAssets) || !Array.isArray(requestAssets)) {
+    return;
+  }
+  responseAssets.forEach(respAsset => {
+    let matchedReqAsset;
+    if (respAsset.title) {
+      matchedReqAsset = requestAssets.find(reqAsset => reqAsset.title);
+    } else if (respAsset.img) {
+      // Try to match by image type (e.g. 1 for icon, 3 for main image)
+      matchedReqAsset = requestAssets.find(reqAsset => reqAsset.img && Number(reqAsset.img.type) === Number(respAsset.img.type));
+      if (!matchedReqAsset) {
+        // Fallback: match any image asset
+        matchedReqAsset = requestAssets.find(reqAsset => reqAsset.img);
+      }
+    } else if (respAsset.data) {
+      // Try to match by data asset type
+      matchedReqAsset = requestAssets.find(reqAsset => reqAsset.data && Number(reqAsset.data.type) === Number(respAsset.data.type));
+      if (!matchedReqAsset) {
+        // Fallback: match any data asset
+        matchedReqAsset = requestAssets.find(reqAsset => reqAsset.data);
+      }
+    } else if (respAsset.video) {
+      matchedReqAsset = requestAssets.find(reqAsset => reqAsset.video);
+    }
+    if (matchedReqAsset && matchedReqAsset.id !== undefined) {
+      respAsset.id = matchedReqAsset.id;
+    }
+  });
+}

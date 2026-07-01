@@ -2,7 +2,7 @@
 import { deepAccess, deepSetValue, getWinDimensions, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
 
@@ -212,7 +212,7 @@ const helpers = {
     return STORAGE.localStorageIsEnabled(false) ? STORAGE.getDataFromLocalStorage(STORAGE_KEY, false) : '';
   }
 
-}
+};
 
 /**
  * Create an OpenRTB formated object from prebid payload
@@ -301,13 +301,13 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     if (bannerObj) {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, bannerObj)
-      }
+      };
     }
 
     if (videoObj) {
       imp.video = {
         ...helpers.createOrtbImpVideoObj(bid)
-      }
+      };
     }
 
     if (typeof bid.getFloor === 'function') {
@@ -358,7 +358,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
     const request = createOpenRtbRequest(validBidRequests, bidderRequest);
-    const options = {}
+    const options = {};
 
     return {
       method: 'POST',
@@ -403,6 +403,18 @@ export const spec = {
             .filter((bid) => bid.price > 0)
             .map((bid) => {
               const isPlayer = impMap[bid.impid]?.ext?.impactify?.format === 'player';
+              const isVideo = !!impMap[bid.impid]?.video;
+              let mediaType;
+              if (bid?.mtype === 2) {
+                mediaType = 'video';
+              } else if (bid?.mtype === 1) {
+                mediaType = 'banner';
+              } else if (isPlayer || isVideo) {
+                mediaType = 'video';
+              } else {
+                mediaType = 'banner';
+              }
+
               return {
                 id: bid.id,
                 requestId: bid.impid,
@@ -413,6 +425,7 @@ export const spec = {
                 height: bid.h || 0,
                 ttl: 300,
                 creativeId: bid.crid || 0,
+                mediaType: mediaType,
                 meta: {
                   advertiserDomains:
                     bid.adomain && bid.adomain.length ? bid.adomain : [],
@@ -420,7 +433,6 @@ export const spec = {
 
                 ...(isPlayer
                   ? {
-                      mediaType: "video",
                       vastUrl: bid.ext?.vast_url,
                       vastXml: bid.adm,
                     }

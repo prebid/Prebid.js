@@ -7,9 +7,9 @@ import {
 import { server } from 'test/mocks/xhr.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 
-const expiresIn = 90 * 24 * 60 * 60 // 90 Days (seconds);
-const RESPONSE_VALUE = { uid: "v2|n_vl-BK185ZwF5Egm5UafsRms9mF6LTWpfWkTHmoRsz0Bh5hTWvfiJWD6nq_9g05OwNVG2pSTTTfwg", atype: 2, expiresIn, }
-const STORAGE_VALUE = { uid: "v2|n_vl-BK185ZwF5Egm5UafsRms9mF6LTWpfWkTHmoRsz0Bh5hTWvfiJWD6nq_9g05OwNVG2pSTTTfwg", atype: 2, }
+const expiresIn = 90 * 24 * 60 * 60; // 90 Days (seconds);
+const RESPONSE_VALUE = { uid: "v2|n_vl-BK185ZwF5Egm5UafsRms9mF6LTWpfWkTHmoRsz0Bh5hTWvfiJWD6nq_9g05OwNVG2pSTTTfwg", atype: 2, expiresIn, };
+const STORAGE_VALUE = { uid: "v2|n_vl-BK185ZwF5Egm5UafsRms9mF6LTWpfWkTHmoRsz0Bh5hTWvfiJWD6nq_9g05OwNVG2pSTTTfwg", atype: 2, };
 const DECODED_VALUE = {
   adplusId: { id: "v2|n_vl-BK185ZwF5Egm5UafsRms9mF6LTWpfWkTHmoRsz0Bh5hTWvfiJWD6nq_9g05OwNVG2pSTTTfwg", atype: 2, }
 };

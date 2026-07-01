@@ -8,8 +8,8 @@ describe('videonowBidAdapter', function () {
       params: {
         pId: 'advDesktopBillboard'
       }
-    })).to.equal(true)
-  })
+    })).to.equal(true);
+  });
 
   it('minimal params no placementId', function () {
     expect(spec.isBidRequestValid({
@@ -17,8 +17,8 @@ describe('videonowBidAdapter', function () {
       params: {
         currency: `GBP`
       }
-    })).to.equal(false)
-  })
+    })).to.equal(false);
+  });
 
   it('generated_params common case', function () {
     const bidRequestData = [{
@@ -34,9 +34,9 @@ describe('videonowBidAdapter', function () {
     const request = spec.buildRequests(bidRequestData);
     const req_data = request[0].data;
 
-    expect(req_data.places[0].id).to.equal(`bid1234`)
-    expect(req_data.places[0].placementId).to.equal(`advDesktopBillboard`)
-    expect(req_data.settings.currency).to.equal(`GBP`)
+    expect(req_data.places[0].id).to.equal(`bid1234`);
+    expect(req_data.places[0].placementId).to.equal(`advDesktopBillboard`);
+    expect(req_data.settings.currency).to.equal(`GBP`);
     expect(req_data.places[0].sizes[0][0]).to.equal(240);
     expect(req_data.places[0].sizes[0][1]).to.equal(400);
   });
@@ -70,13 +70,13 @@ describe('videonowBidAdapter', function () {
     const bids = spec.interpretResponse(serverResponse, bidRequestData);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
-    expect(bid.requestId).to.equal('123456')
+    expect(bid.requestId).to.equal('123456');
     expect(bid.cpm).to.equal(375);
     expect(bid.currency).to.equal('RUB');
     expect(bid.width).to.equal(640);
     expect(bid.height).to.equal(480);
     expect(bid.ad).to.equal('<html><body>test html</body></html>');
-    expect(bid.creativeId).to.equal(`123456`)
+    expect(bid.creativeId).to.equal(`123456`);
     expect(bid.netRevenue).to.equal(true);
   });
-})
+});

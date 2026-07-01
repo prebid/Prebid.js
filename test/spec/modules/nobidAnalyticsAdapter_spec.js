@@ -607,7 +607,7 @@ describe('NoBid Prebid Analytic', function () {
             { bidder: 'bidder2' }
           ]
         }
-      ]
+      ];
       nobidCarbonizer.carbonizeAdunits(adunits, true);
       stored = nobidCarbonizer.getStoredLocalData();
       expect(stored[nobidAnalytics.ANALYTICS_DATA_NAME]).to.contain('{"carbonizer_active":true,"ts":');
