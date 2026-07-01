@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec } from 'modules/floxisBidAdapter.js';
+import { spec, storage } from 'modules/floxisBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 
@@ -384,6 +384,144 @@ describe('floxisBidAdapter', function () {
       it('should default cur to USD', function () {
         const data = spec.buildRequests([validBannerBid], bidderRequest)[0].data;
         expect(data.cur).to.deep.equal(['USD']);
+      });
+    });
+
+    describe('First-party fallback id (user.ext.floxisId)', function () {
+      const STUBBED_UUID = '11111111-1111-4111-8111-111111111111';
+      const STORED_UUID = '22222222-2222-4222-8222-222222222222';
+      // ortb2.id avoids the core request processor's own generateUUID() call for req.id, so the stub's call count reflects only the floxisId logic.
+      const floxisIdBidderRequest = { ...bidderRequest, ortb2: { id: 'fixed-request-id' } };
+      let localStorageIsEnabledStub, cookiesAreEnabledStub;
+      let getDataFromLocalStorageStub, getCookieStub;
+      let setDataInLocalStorageStub, setCookieStub;
+      let generateUUIDStub;
+
+      beforeEach(function () {
+        localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+        cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+        getCookieStub = sinon.stub(storage, 'getCookie');
+        setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+        setCookieStub = sinon.stub(storage, 'setCookie');
+        generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(STUBBED_UUID);
+      });
+
+      afterEach(function () {
+        localStorageIsEnabledStub.restore();
+        cookiesAreEnabledStub.restore();
+        getDataFromLocalStorageStub.restore();
+        getCookieStub.restore();
+        setDataInLocalStorageStub.restore();
+        setCookieStub.restore();
+        generateUUIDStub.restore();
+      });
+
+      it('mints and persists a new id when none is stored', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(generateUUIDStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledWith('flx_uid', STUBBED_UUID)).to.be.true;
+        expect(setCookieStub.calledWith('flx_uid', STUBBED_UUID)).to.be.true;
+      });
+
+      it('reuses a valid stored id without regenerating it', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(STORED_UUID);
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(generateUUIDStub.called).to.be.false;
+      });
+
+      it('falls back to the cookie when localStorage has no stored value', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(STORED_UUID);
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(generateUUIDStub.called).to.be.false;
+      });
+
+      it('regenerates the id when the stored value is a malformed UUID', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns('not-a-uuid');
+        getCookieStub.returns('also-not-a-uuid');
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+        expect(generateUUIDStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledWith('flx_uid', STUBBED_UUID)).to.be.true;
+      });
+
+      it('sends no id and does not throw when storage is disallowed', function () {
+        localStorageIsEnabledStub.returns(false);
+        cookiesAreEnabledStub.returns(false);
+
+        let data;
+        expect(function () {
+          data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+        }).to.not.throw();
+
+        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(setDataInLocalStorageStub.called).to.be.false;
+        expect(setCookieStub.called).to.be.false;
+      });
+
+      it('sends no id and does not throw when a storage accessor throws', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.throws(new Error('storage access error'));
+
+        let data;
+        expect(function () {
+          data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+        }).to.not.throw();
+
+        expect(data.user?.ext?.floxisId).to.be.undefined;
+      });
+
+      it('does not clobber other user.ext fields set via ortb2 FPD', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+
+        const ortb2BidderRequest = {
+          ...floxisIdBidderRequest,
+          ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: { consent: 'consent-string-123' } } }
+        };
+        const data = spec.buildRequests([validBannerBid], ortb2BidderRequest)[0].data;
+
+        expect(data.user.ext.consent).to.equal('consent-string-123');
+        expect(data.user.ext.floxisId).to.equal(STUBBED_UUID);
+      });
+
+      it('does not overwrite an existing user.ext.floxisId', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+
+        const ortb2BidderRequest = {
+          ...floxisIdBidderRequest,
+          ortb2: { ...floxisIdBidderRequest.ortb2, user: { ext: { floxisId: STORED_UUID } } }
+        };
+        const data = spec.buildRequests([validBannerBid], ortb2BidderRequest)[0].data;
+
+        expect(data.user.ext.floxisId).to.equal(STORED_UUID);
+        expect(generateUUIDStub.called).to.be.false;
       });
     });
   });

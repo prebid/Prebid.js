@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
+import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'floxis';
 const GVLID = 1609;
@@ -11,6 +12,12 @@ const DEFAULT_NET_REVENUE = true;
 const DEFAULT_REGION = 'us-e';
 const DEFAULT_PARTNER = BIDDER_CODE;
 const SYNC_PATH = '/sync';
+const FLOXIS_ID_KEY = 'flx_uid';
+const FLOXIS_ID_COOKIE_EXP = 2592000000; // 30 days
+const UUID_LENGTH = 36;
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
 // Server-echo user-sync: the /pbjs response carries seat + region in this header (on bid and no-bid
 // alike), so getUserSyncs derives sync targets from serverResponses statelessly — no module state that
 // could leak across concurrent auctions. Absent header (older backend) => no sync, a safe no-op.
@@ -88,6 +95,40 @@ function normalizeBidParams(params = {}) {
   };
 }
 
+function isValidFloxisId(id) {
+  return typeof id === 'string' && id.length === UUID_LENGTH;
+}
+
+// Neither store available => null, not a freshly minted id we can't persist (would defeat stability).
+function getOrCreateFloxisId() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const localOk = storage.localStorageIsEnabled();
+    const cookieOk = storage.cookiesAreEnabled();
+    if (!localOk && !cookieOk) return null;
+
+    let id = localOk ? storage.getDataFromLocalStorage(FLOXIS_ID_KEY) : null;
+    if (!isValidFloxisId(id) && cookieOk) {
+      id = storage.getCookie(FLOXIS_ID_KEY);
+    }
+    if (!isValidFloxisId(id)) {
+      id = generateUUID();
+    }
+
+    if (localOk) {
+      storage.setDataInLocalStorage(FLOXIS_ID_KEY, id);
+    }
+    if (cookieOk) {
+      const expires = new Date(Date.now() + FLOXIS_ID_COOKIE_EXP).toUTCString();
+      storage.setCookie(FLOXIS_ID_KEY, id, expires);
+    }
+
+    return id;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Parse the server-echoed sync header (`seat=<seat>&region=<label>`) into a sync target. Returns null
 // for an absent or malformed header so a response without it simply contributes no sync.
 function parseSyncHeader(headerValue) {
@@ -151,6 +192,12 @@ const CONVERTER = ortbConverter({
         }
       }
     });
+    if (!req.user?.ext?.floxisId) {
+      const floxisId = getOrCreateFloxisId();
+      if (floxisId) {
+        mergeDeep(req, { user: { ext: { floxisId } } });
+      }
+    }
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
