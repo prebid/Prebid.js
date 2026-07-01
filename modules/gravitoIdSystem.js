@@ -33,7 +33,7 @@ export const gravitoIdSystemSubmodule = {
     }
     const result = {
       gravitompId: newId
-    }
+    };
     return { id: result };
   },
 
@@ -47,7 +47,7 @@ export const gravitoIdSystemSubmodule = {
     if (value && typeof value === 'object') {
       var result = {};
       if (value.gravitompId) {
-        result = value.gravitompId
+        result = value.gravitompId;
       }
       return { gravitompId: result };
     }
@@ -59,6 +59,6 @@ export const gravitoIdSystemSubmodule = {
       atype: 1
     },
   }
-}
+};
 
 submodule('userId', gravitoIdSystemSubmodule);

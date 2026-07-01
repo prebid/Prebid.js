@@ -8,7 +8,7 @@ describe('RetailSpot Adapter', function () {
   const referrerUrl = 'http://referrer.url/?param=value';
   const pageUrl = 'http://page.url/?param=value';
   const domain = 'domain:123';
-  const env = 'preprod';
+
   const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
   const bidderRequest = {
     'auctionId': '1d1a030790a475',
@@ -148,7 +148,7 @@ describe('RetailSpot Adapter', function () {
       'width': 300,
       'height': 600
     }
-  ]
+  ];
 
   const requestDataMultiPlacement = [
     {
@@ -163,7 +163,7 @@ describe('RetailSpot Adapter', function () {
       'width': 400,
       'height': 250
     }
-  ]
+  ];
 
   const testMetaObject = {
     'networkId': 123,
@@ -373,7 +373,7 @@ describe('RetailSpot Adapter', function () {
     beforeEach(function () {
       serverResponse = {
         body: {}
-      }
+      };
     });
 
     it('handles nobid responses', function () {

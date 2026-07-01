@@ -48,7 +48,7 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 | params.acBidders       | String[]             | An array of bidder codes to share cohorts with in certain versions of Prebid, see below       | `[]`               |
 | params.maxSegs         | Integer              | Maximum number of cohorts to be included in either the `permutive` or `p_standard` key-value. | `500`              |
 | params.enforceVendorConsent | Boolean         | When `true`, require TCF vendor consent for Permutive (vendor 361). See note below.           | `false`            |
-| params.bidders         | Object               | Per-bidder configuration for custom cohort sources. Keys are bidder codes.                    | `{}` |
+| params.bidders         | Object               | Per-bidder configuration for custom cohort sources. Keys are bidder codes; listing a bidder here also causes the module to write ortb2 data for that bidder, even if it is not in `acBidders` or on Permutive's SSP list. | `{}` |
 | params.bidders.\<bidder\>.customCohorts | Object | Custom cohorts source configuration for a specific bidder.                                   | -                  |
 | params.bidders.\<bidder\>.customCohorts.source | String | Storage type to read custom cohorts from. Currently only `'ls'` (localStorage) is supported. | -                  |
 | params.bidders.\<bidder\>.customCohorts.key | String | The localStorage key to read custom cohorts from.                                          | -                  |

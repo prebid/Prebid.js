@@ -78,7 +78,7 @@ prebidmanagerAnalytics.disableAnalytics = function () {
 function collectPageInfo() {
   const pageInfo = {
     domain: window.location.hostname,
-  }
+  };
   if (document.referrer) {
     pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
   }
@@ -128,9 +128,9 @@ function flush() {
 
 function handleEvent(eventType, eventArgs) {
   if (eventArgs) {
-    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs);
   } else {
-    eventArgs = {}
+    eventArgs = {};
   }
 
   const pmEvent = {};
@@ -140,8 +140,8 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.auctionId = eventArgs.auctionId;
       pmEvent.timeout = eventArgs.timeout;
       pmEvent.eventType = eventArgs.eventType;
-      pmEvent.adUnits = eventArgs.adUnits && eventArgs.adUnits.map(trimAdUnit)
-      pmEvent.bidderRequests = eventArgs.bidderRequests && eventArgs.bidderRequests.map(trimBidderRequest)
+      pmEvent.adUnits = eventArgs.adUnits && eventArgs.adUnits.map(trimAdUnit);
+      pmEvent.bidderRequests = eventArgs.bidderRequests && eventArgs.bidderRequests.map(trimBidderRequest);
       _startAuction = pmEvent.timestamp;
       _bidRequestTimeout = pmEvent.timeout;
       break;

@@ -12,16 +12,22 @@ import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./pubProvidedIdSystem.d.ts').PubProvidedIdSystemModuleName} PubProvidedIdSystemModuleName
+ * @typedef {import('./pubProvidedIdSystem.d.ts').PubProvidedIdSystemParams} PubProvidedIdSystemParams
  */
 
+/**
+ * @type {PubProvidedIdSystemModuleName}
+ */
 const MODULE_NAME = 'pubProvidedId';
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<PubProvidedIdSystemModuleName>} */
 export const pubProvidedIdSubmodule = {
 
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {PubProvidedIdSystemModuleName}
    */
   name: MODULE_NAME,
   gvlid: VENDORLESS_GVLID,

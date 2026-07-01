@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import { server } from '../../mocks/xhr.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
-const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
+const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout';
 
 describe('OguryBidAdapter', () => {
   let bidRequests, bidderRequestBase, ortb2;
@@ -41,10 +41,10 @@ describe('OguryBidAdapter', () => {
           floor: 0
         };
 
-        if (mediaType === 'banner') {
-          floorResult.floor = 4;
-        } else {
+        if (mediaType === 'video') {
           floorResult.floor = 1000;
+        } else {
+          floorResult.floor = 4;
         }
 
         return floorResult;
@@ -153,32 +153,32 @@ describe('OguryBidAdapter', () => {
     });
 
     it('should validate the request when only publisherId and adUnitCode is defined', () => {
-      const validBid = utils.deepClone(bidRequests[0])
-      delete validBid.params.adUnitId
-      delete validBid.params.assetKey
+      const validBid = utils.deepClone(bidRequests[0]);
+      delete validBid.params.adUnitId;
+      delete validBid.params.assetKey;
 
-      validBid.ortb2 = { site: { publisher: { id: 'publisherId' } } }
+      validBid.ortb2 = { site: { publisher: { id: 'publisherId' } } };
 
-      expect(spec.isBidRequestValid(validBid)).to.be.true
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
     it('should not validate the request when only publisherId is defined', () => {
-      const invalidBid = utils.deepClone(bidRequests[0])
-      delete invalidBid.params.adUnitId
-      delete invalidBid.params.assetKey
-      delete invalidBid.adUnitCode
+      const invalidBid = utils.deepClone(bidRequests[0]);
+      delete invalidBid.params.adUnitId;
+      delete invalidBid.params.assetKey;
+      delete invalidBid.adUnitCode;
 
-      invalidBid.ortb2 = { site: { publisher: { id: 'publisherId' } } }
+      invalidBid.ortb2 = { site: { publisher: { id: 'publisherId' } } };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
     it('should not validate the request when only adUnitCode is defined', () => {
-      const invalidBid = utils.deepClone(bidRequests[0])
-      delete invalidBid.params.adUnitId
-      delete invalidBid.params.assetKey
+      const invalidBid = utils.deepClone(bidRequests[0]);
+      delete invalidBid.params.adUnitId;
+      delete invalidBid.params.assetKey;
 
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
 
@@ -193,8 +193,8 @@ describe('OguryBidAdapter', () => {
       gppConsent = {
         gppString: 'DBABLA~BAAAAAAAAQA.QA',
         applicableSections: [7]
-      }
-      uspConsent = '1YNY'
+      };
+      uspConsent = '1YNY';
     });
 
     describe('pixel', () => {
@@ -212,27 +212,27 @@ describe('OguryBidAdapter', () => {
 
       it('should set the source as query param', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
-        expect(new URL(userSyncs[0].url).searchParams.get('source')).to.equal('prebid')
+        expect(new URL(userSyncs[0].url).searchParams.get('source')).to.equal('prebid');
       });
 
       it('should set the tcString as query param', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal(gdprConsent.consentString)
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal(gdprConsent.consentString);
       });
 
       it('should set the gppString as query param', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
-        expect(new URL(userSyncs[0].url).searchParams.get('gpp')).to.equal(gppConsent.gppString)
+        expect(new URL(userSyncs[0].url).searchParams.get('gpp')).to.equal(gppConsent.gppString);
       });
 
       it('should set the gpp_sid as query param', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
-        expect(new URL(userSyncs[0].url).searchParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString())
+        expect(new URL(userSyncs[0].url).searchParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString());
       });
 
       it('should set the us privacy consentString as query param', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
-        expect(new URL(userSyncs[0].url).searchParams.get('us_privacy')).to.equal(uspConsent)
+        expect(new URL(userSyncs[0].url).searchParams.get('us_privacy')).to.equal(uspConsent);
       });
 
       it('should return an empty array when pixel is disable', () => {
@@ -249,7 +249,7 @@ describe('OguryBidAdapter', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when consentString is null', () => {
@@ -261,7 +261,7 @@ describe('OguryBidAdapter', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gdprConsent is undefined', () => {
@@ -270,7 +270,7 @@ describe('OguryBidAdapter', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gdprConsent is null', () => {
@@ -279,7 +279,7 @@ describe('OguryBidAdapter', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gdprConsent is null and gdprApplies is false', () => {
@@ -291,7 +291,7 @@ describe('OguryBidAdapter', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
@@ -303,7 +303,7 @@ describe('OguryBidAdapter', () => {
         const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent, uspConsent, gppConsent);
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
-        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('')
+        expect(new URL(userSyncs[0].url).searchParams.get('gdpr_consent')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gppString is undefined', () => {
@@ -316,9 +316,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('gpp')).to.equal('')
-        expect(firstUrlSync.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString())
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('gpp')).to.equal('');
+        expect(firstUrlSync.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString());
       });
 
       it('should return syncs array with three elements of type image when gppString is null', () => {
@@ -331,9 +331,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('gpp')).to.equal('')
-        expect(firstUrlSync.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString())
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('gpp')).to.equal('');
+        expect(firstUrlSync.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString());
       });
 
       it('should return syncs array with three elements of type image when gppConsent is undefined', () => {
@@ -343,9 +343,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('gpp')).to.equal('')
-        expect(firstUrlSync.get('gpp_sid')).to.equal('')
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('gpp')).to.equal('');
+        expect(firstUrlSync.get('gpp_sid')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when uspConsent is undefined', () => {
@@ -355,8 +355,8 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('us_privacy')).to.equal('')
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('us_privacy')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gppConsent is null', () => {
@@ -366,9 +366,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('gpp')).to.equal('')
-        expect(firstUrlSync.get('gpp_sid')).to.equal('')
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('gpp')).to.equal('');
+        expect(firstUrlSync.get('gpp_sid')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when uspConsent is null', () => {
@@ -378,8 +378,8 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('us_privacy')).to.equal('')
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('us_privacy')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gppConsent is null and applicableSections is empty', () => {
@@ -392,9 +392,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('gpp')).to.equal('')
-        expect(firstUrlSync.get('gpp_sid')).to.equal('')
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('gpp')).to.equal('');
+        expect(firstUrlSync.get('gpp_sid')).to.equal('');
       });
 
       it('should return syncs array with three elements of type image when gppString is empty string and applicableSections is empty', () => {
@@ -407,9 +407,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('image');
 
-        const firstUrlSync = new URL(userSyncs[0].url).searchParams
-        expect(firstUrlSync.get('gpp')).to.equal('')
-        expect(firstUrlSync.get('gpp_sid')).to.equal('')
+        const firstUrlSync = new URL(userSyncs[0].url).searchParams;
+        expect(firstUrlSync.get('gpp')).to.equal('');
+        expect(firstUrlSync.get('gpp_sid')).to.equal('');
       });
     });
 
@@ -526,9 +526,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('gpp')).to.equal('')
-        expect(urlParams.get('gpp_sid')).to.equal('')
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('gpp')).to.equal('');
+        expect(urlParams.get('gpp_sid')).to.equal('');
       });
 
       it('should return syncs array with one element of type iframe when gppString is undefined', () => {
@@ -541,9 +541,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('gpp')).to.equal('')
-        expect(urlParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString())
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('gpp')).to.equal('');
+        expect(urlParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString());
       });
 
       it('should return syncs array with one element of type iframe when gppString is null', () => {
@@ -556,9 +556,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('gpp')).to.equal('')
-        expect(urlParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString())
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('gpp')).to.equal('');
+        expect(urlParams.get('gpp_sid')).to.equal(gppConsent.applicableSections.toString());
       });
 
       it('should return syncs array with one element of type iframe when gppConsent is undefined', () => {
@@ -568,9 +568,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('gpp')).to.equal('')
-        expect(urlParams.get('gpp_sid')).to.equal('')
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('gpp')).to.equal('');
+        expect(urlParams.get('gpp_sid')).to.equal('');
       });
 
       it('should return syncs array with one element of type iframe when uspConsent is undefined', () => {
@@ -580,8 +580,8 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('us_privacy')).to.equal('')
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('us_privacy')).to.equal('');
       });
 
       it('should return syncs array with one element of type iframe when gppConsent is null', () => {
@@ -591,9 +591,9 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('gpp')).to.equal('')
-        expect(urlParams.get('gpp_sid')).to.equal('')
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('gpp')).to.equal('');
+        expect(urlParams.get('gpp_sid')).to.equal('');
       });
 
       it('should return syncs array with one element of type iframe when uspConsent is null', () => {
@@ -603,8 +603,8 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('us_privacy')).to.equal('')
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('us_privacy')).to.equal('');
       });
 
       it('should return syncs array with one element of type iframe when gppConsent is null and applicableSections is empty', () => {
@@ -617,17 +617,17 @@ describe('OguryBidAdapter', () => {
         expect(userSyncs).to.have.lengthOf(1);
         expect(userSyncs[0].type).to.equal('iframe');
 
-        const urlParams = new URL(userSyncs[0].url).searchParams
-        expect(urlParams.get('gpp')).to.equal('')
-        expect(urlParams.get('gpp_sid')).to.equal('')
+        const urlParams = new URL(userSyncs[0].url).searchParams;
+        expect(urlParams.get('gpp')).to.equal('');
+        expect(urlParams.get('gpp_sid')).to.equal('');
       });
     });
   });
 
   describe('buildRequests', () => {
     let windowTopStub;
-    const stubbedCurrentTime = 1234567890
-    const stubbedDevicePixelRatio = 1
+    const stubbedCurrentTime = 1234567890;
+    const stubbedDevicePixelRatio = 1;
     const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
       return stubbedCurrentTime;
     });
@@ -676,7 +676,7 @@ describe('OguryBidAdapter', () => {
 
       expect(dataRequest.ext).to.deep.equal({
         prebidversion: '$prebid.version$',
-        adapterversion: '2.0.6'
+        adapterversion: '2.1.0'
       });
 
       expect(dataRequest.device).to.deep.equal({
@@ -766,7 +766,7 @@ describe('OguryBidAdapter', () => {
           return {
             currency: 'EUR',
             floor: 4
-          }
+          };
         }
       };
 
@@ -815,6 +815,7 @@ describe('OguryBidAdapter', () => {
             id: 'advertId',
             impid: 'bidId',
             price: 100,
+            mtype: 1,
             nurl: 'url',
             adm: `<div><img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div>`,
             adomain: ['renault.fr'],
@@ -834,6 +835,7 @@ describe('OguryBidAdapter', () => {
             id: 'advertId2',
             impid: 'bidId2',
             price: 150,
+            mtype: 1,
             nurl: 'url2',
             adm: `<div><img style="width: 600px; height: 500px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" /></div>`,
             adomain: ['peugeot.fr'],
@@ -903,29 +905,29 @@ describe('OguryBidAdapter', () => {
 
     beforeEach(function() {
       requests = server.requests;
-    })
+    });
 
     it('Should not create nurl request if bid is undefined', function() {
-      spec.onBidWon()
+      spec.onBidWon();
       expect(requests.length).to.equal(0);
-    })
+    });
 
     it('Should not create nurl request if bid does not contains nurl', function() {
-      spec.onBidWon({})
+      spec.onBidWon({});
       expect(requests.length).to.equal(0);
-    })
+    });
 
     it('Should not create nurl request if bid contains undefined nurl', function() {
-      spec.onBidWon({ nurl: undefined })
+      spec.onBidWon({ nurl: undefined });
       expect(requests.length).to.equal(0);
-    })
+    });
 
     it('Should create nurl request if bid nurl', function() {
-      spec.onBidWon({ nurl })
+      spec.onBidWon({ nurl });
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(nurl);
-      expect(requests[0].method).to.equal('GET')
-    })
+      expect(requests[0].method).to.equal('GET');
+    });
 
     it('Should trigger getWindowContext method', function() {
       const bidSample = {
@@ -947,27 +949,27 @@ describe('OguryBidAdapter', () => {
         },
         w: 180,
         h: 101
-      }
-      spec.onBidWon(bidSample)
-      expect(window.top.OG_PREBID_BID_OBJECT).to.deep.equal(bidSample)
-    })
-  })
+      };
+      spec.onBidWon(bidSample);
+      expect(window.top.OG_PREBID_BID_OBJECT).to.deep.equal(bidSample);
+    });
+  });
 
   describe('getWindowContext', function() {
     it('Should return top window if exist', function() {
-      const res = spec.getWindowContext()
-      expect(res).to.equal(window.top)
+      const res = spec.getWindowContext();
+      expect(res).to.equal(window.top);
       expect(res).to.not.be.undefined;
-    })
+    });
 
     it('Should return self window if getting top window throw an error', function() {
-      const stub = sinon.stub(utils, 'getWindowTop')
-      stub.throws()
-      const res = spec.getWindowContext()
-      expect(res).to.equal(window.self)
-      utils.getWindowTop.restore()
-    })
-  })
+      const stub = sinon.stub(utils, 'getWindowTop');
+      stub.throws();
+      const res = spec.getWindowContext();
+      expect(res).to.equal(window.self);
+      utils.getWindowTop.restore();
+    });
+  });
 
   describe('onTimeout', function () {
     let requests;
@@ -977,19 +979,303 @@ describe('OguryBidAdapter', () => {
       server.onCreate = (xhr) => {
         requests.push(xhr);
       };
-    })
+    });
 
     it('should send on bid timeout notification', function() {
       const bid = {
         ad: '<img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" />',
         cpm: 3
-      }
+      };
       spec.onTimeout(bid);
       expect(requests).to.not.be.undefined;
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(TIMEOUT_URL);
       expect(requests[0].method).to.equal('POST');
       expect(JSON.parse(requests[0].requestBody).location).to.equal(window.location.href);
-    })
+    });
+  });
+
+  describe('video support', () => {
+    let videoBidRequest;
+    let mixedBidRequest;
+    let windowTopStub;
+
+    beforeEach(() => {
+      videoBidRequest = {
+        adUnitCode: 'adUnitCodeVideo',
+        ortb2Imp: { ext: { gpid: 'gpidVideo' } },
+        auctionId: 'auctionId',
+        bidId: 'bidIdVideo',
+        bidder: 'ogury',
+        params: {
+          assetKey: 'OGY-assetkey',
+          adUnitId: 'adunitIdVideo'
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [[640, 480]],
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            protocols: [2, 3, 5, 6]
+          }
+        },
+        getFloor: ({ mediaType }) => ({
+          currency: 'USD',
+          floor: mediaType === 'video' ? 7 : 3
+        }),
+        transactionId: 'transactionIdVideo'
+      };
+
+      mixedBidRequest = utils.deepClone(bidRequests[0]);
+      mixedBidRequest.mediaTypes.video = {
+        playerSize: [[640, 480]],
+        context: 'outstream',
+        mimes: ['video/mp4']
+      };
+
+      windowTopStub = sinon.stub(utils, 'getWindowTop');
+      windowTopStub.returns({ location: { href: currentLocation }, devicePixelRatio: 1 });
+    });
+
+    afterEach(() => {
+      windowTopStub.restore();
+    });
+
+    describe('supportedMediaTypes', () => {
+      it('should declare both BANNER and VIDEO', () => {
+        expect(spec.supportedMediaTypes).to.include.members(['banner', 'video']);
+      });
+    });
+
+    describe('isBidRequestValid', () => {
+      it('should validate a video-only bid with playerSize', () => {
+        expect(spec.isBidRequestValid(videoBidRequest)).to.be.true;
+      });
+
+      it('should not validate a video-only bid without playerSize', () => {
+        const invalidBid = utils.deepClone(videoBidRequest);
+        delete invalidBid.mediaTypes.video.playerSize;
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+
+      it('should not validate a video-only bid with empty playerSize', () => {
+        const invalidBid = utils.deepClone(videoBidRequest);
+        invalidBid.mediaTypes.video.playerSize = [];
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+
+      it('should validate a mixed banner+video bid', () => {
+        expect(spec.isBidRequestValid(mixedBidRequest)).to.be.true;
+      });
+
+      it('should validate a video-only bid using publisherId + adUnitCode flow', () => {
+        const validBid = utils.deepClone(videoBidRequest);
+        delete validBid.params.adUnitId;
+        delete validBid.params.assetKey;
+        validBid.ortb2 = { site: { publisher: { id: 'publisherId' } } };
+        expect(spec.isBidRequestValid(validBid)).to.be.true;
+      });
+
+      it('should not validate a bid with empty mediaTypes.banner and no video', () => {
+        // Guard the edge case where mediaTypes.banner is declared but carries no
+        // sizes. isBidRequestValid must reject it — neither banner sizes nor
+        // video playerSize are present. This keeps getFloor's banner detection
+        // (Boolean(mediaTypes.banner)) safe: a malformed bid never reaches it.
+        const invalidBid = utils.deepClone(bidRequests[0]);
+        invalidBid.mediaTypes = { banner: {} };
+        delete invalidBid.sizes;
+        expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+      });
+    });
+
+    if (FEATURES.VIDEO) {
+      describe('buildRequests', () => {
+        it('should build imp.video from mediaTypes.video.playerSize', () => {
+          const request = spec.buildRequests([videoBidRequest], { ...bidderRequestBase, bids: [videoBidRequest] });
+          expect(request.data.imp[0].video).to.exist;
+          expect(request.data.imp[0].video.w).to.equal(640);
+          expect(request.data.imp[0].video.h).to.equal(480);
+          expect(request.data.imp[0].banner).to.be.an('undefined');
+        });
+
+        it('should set imp.bidfloor from video floor for video-only bids', () => {
+          const request = spec.buildRequests([videoBidRequest], { ...bidderRequestBase, bids: [videoBidRequest] });
+          expect(request.data.imp[0].bidfloor).to.equal(7);
+        });
+
+        it('should build both imp.banner and imp.video for mixed bids', () => {
+          const request = spec.buildRequests([mixedBidRequest], { ...bidderRequestBase, bids: [mixedBidRequest] });
+          expect(request.data.imp[0].banner).to.exist;
+          expect(request.data.imp[0].video).to.exist;
+        });
+
+        it('should use banner floor on mixed banner+video bids (preserves pre-video banner behavior)', () => {
+          const request = spec.buildRequests([mixedBidRequest], { ...bidderRequestBase, bids: [mixedBidRequest] });
+          expect(request.data.imp[0].bidfloor).to.equal(4);
+        });
+
+        it('should use banner floor on mixed bids even when video floor is higher', () => {
+          const bid = utils.deepClone(mixedBidRequest);
+          bid.getFloor = ({ mediaType }) => ({
+            currency: 'USD',
+            floor: mediaType === 'video' ? 10 : 5
+          });
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(5);
+        });
+
+        it('should not set imp.bidfloor on a video-only bid when getFloor is not a function', () => {
+          const bid = utils.deepClone(videoBidRequest);
+          bid.getFloor = undefined;
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.be.an('undefined');
+        });
+
+        it('should query video floor on a video-only bid even when bid.sizes is auto-populated from playerSize', () => {
+          // Prebid populates bid.sizes from mediaTypes.video.playerSize when no
+          // banner mediaType is declared. The adapter must not interpret that as
+          // a banner imp — banner detection lives on mediaTypes.banner, not on
+          // bid.sizes / getAdUnitSizes.
+          const bid = utils.deepClone(videoBidRequest);
+          bid.sizes = [[640, 480]];
+          bid.getFloor = ({ mediaType }) => ({
+            currency: 'USD',
+            floor: mediaType === 'video' ? 9 : 2
+          });
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(9);
+        });
+
+        it('should not query video floor when mediaTypes.video is declared without playerSize', () => {
+          const bid = utils.deepClone(bidRequests[0]);
+          bid.mediaTypes.video = { context: 'outstream', mimes: ['video/mp4'] };
+          bid.getFloor = ({ mediaType }) => ({
+            currency: 'USD',
+            floor: mediaType === 'video' ? 1 : 6
+          });
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(6);
+        });
+
+        it('should pass mediaType:"banner" to getFloor on a banner-only bid (ISO with pre-video behaviour)', () => {
+          // Blindage non-régression banner: detect that the new
+          // Boolean(mediaTypes.banner) check still routes pure banner bids to
+          // the banner floor query. If a future refactor reverses the
+          // hasBanner/hasVideo branching, this test will fail.
+          // We exercise spec.getFloor directly (not via buildRequests) to
+          // isolate the adapter's own getFloor invocation from the
+          // ortbConverter auto-floor processor (which also calls
+          // bid.getFloor when the priceFloors module is loaded by a sibling
+          // spec in the same Karma chunk).
+          const bid = utils.deepClone(bidRequests[0]);
+          const calls = [];
+          bid.getFloor = (args) => {
+            calls.push(args);
+            return { currency: 'USD', floor: 3 };
+          };
+
+          const floor = spec.getFloor(bid);
+          expect(calls).to.have.lengthOf(1);
+          expect(calls[0].mediaType).to.equal('banner');
+          expect(calls[0].size).to.equal('*');
+          expect(floor).to.equal(3);
+        });
+
+        it('should query banner floor with size:"*" (wildcard) rather than iterating per banner size', () => {
+          const bid = utils.deepClone(bidRequests[0]);
+          bid.mediaTypes.banner.sizes = [[300, 250], [728, 90]];
+          bid.getFloor = ({ size }) => {
+            if (size === '*') {
+              return { currency: 'USD', floor: 99 };
+            }
+            return { currency: 'USD', floor: 1 };
+          };
+
+          const request = spec.buildRequests([bid], { ...bidderRequestBase, bids: [bid] });
+          expect(request.data.imp[0].bidfloor).to.equal(99);
+        });
+      });
+
+      describe('interpretResponse', () => {
+        it('should mark bidResponse.mediaType as video for a video imp', () => {
+          const request = spec.buildRequests([videoBidRequest], { ...bidderRequestBase, bids: [videoBidRequest] });
+          const videoOrtbResponse = {
+            body: {
+              id: 'video_response',
+              seatbid: [{
+                bid: [{
+                  id: 'advertIdVideo',
+                  impid: 'bidIdVideo',
+                  price: 12,
+                  mtype: 2,
+                  nurl: 'urlVideo',
+                  adm: '<VAST version="3.0"><Ad></Ad></VAST>',
+                  adomain: ['ogury.com'],
+                  w: 640,
+                  h: 480
+                }]
+              }]
+            }
+          };
+
+          const result = spec.interpretResponse(videoOrtbResponse, request);
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].mediaType).to.equal('video');
+          expect(result[0].vastXml).to.contain('<VAST');
+        });
+      });
+
+      describe('instream', () => {
+        let instreamBidRequest;
+
+        beforeEach(() => {
+          instreamBidRequest = utils.deepClone(videoBidRequest);
+          instreamBidRequest.mediaTypes.video.context = 'instream';
+        });
+
+        it('should validate an instream video bid with playerSize', () => {
+          expect(spec.isBidRequestValid(instreamBidRequest)).to.be.true;
+        });
+
+        it('should build imp.video from an instream bid', () => {
+          const request = spec.buildRequests([instreamBidRequest], { ...bidderRequestBase, bids: [instreamBidRequest] });
+          expect(request.data.imp[0].video).to.exist;
+          expect(request.data.imp[0].video.w).to.equal(640);
+          expect(request.data.imp[0].video.h).to.equal(480);
+          expect(request.data.imp[0].banner).to.be.an('undefined');
+        });
+
+        it('should return a video bid with vastXml from a VAST instream response', () => {
+          const request = spec.buildRequests([instreamBidRequest], { ...bidderRequestBase, bids: [instreamBidRequest] });
+          const instreamOrtbResponse = {
+            body: {
+              id: 'instream_response',
+              seatbid: [{
+                bid: [{
+                  id: 'advertIdInstream',
+                  impid: 'bidIdVideo',
+                  price: 15,
+                  mtype: 2,
+                  nurl: 'urlInstream',
+                  adm: '<VAST version="3.0"><Ad></Ad></VAST>',
+                  adomain: ['ogury.com'],
+                  w: 640,
+                  h: 480
+                }]
+              }]
+            }
+          };
+
+          const result = spec.interpretResponse(instreamOrtbResponse, request);
+          expect(result).to.have.lengthOf(1);
+          expect(result[0].mediaType).to.equal('video');
+          expect(result[0].vastXml).to.contain('<VAST');
+        });
+      });
+    }
   });
 });

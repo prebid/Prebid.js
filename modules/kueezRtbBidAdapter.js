@@ -9,6 +9,10 @@ import {
   tryParseJSON
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
+/**
+ * @typedef {import('./kueezRtbBidAdapter.d.ts').KueezRtbBidRequestParams} KueezRtbBidRequestParams
+ */
+
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
@@ -61,7 +65,7 @@ function getFirstPartyUUID() {
     d = Math.floor(d / 16);
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
-};
+}
 
 function createUniqueRequestData(hashUrl, bid) {
   const { auctionId, transactionId } = bid;

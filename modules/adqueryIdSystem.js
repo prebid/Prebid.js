@@ -57,7 +57,7 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
-    return { qid: value }
+    return { qid: value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -75,7 +75,7 @@ export const adqueryIdSubmodule = {
         callback: function (callback) {
           callback(qid);
         }
-      }
+      };
     }
 
     if (!isPlainObject(config.params)) {
