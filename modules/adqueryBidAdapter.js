@@ -9,6 +9,7 @@ import {
   deepSetValue,
   deepAccess
 } from '../src/utils.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -41,14 +42,11 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
-    if (video) {
-      if (['instream', 'outstream'].includes(video.context)) {
-        return !!(video.playerSize);
-      }
-      return false;
+    if (video && ['instream', 'outstream'].includes(video.context)) {
+      return !!(video.playerSize);
     }
 
-    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes);
   },
 
   /**
@@ -189,15 +187,15 @@ export const spec = {
     logInfo('onBidWon', bid);
 
     if (bid.nurl) {
-      triggerPixel(bid.nurl)
-      return
+      triggerPixel(bid.nurl);
+      return;
     }
 
-    const copyOfBid = { ...bid }
+    const copyOfBid = { ...bid };
 
     const uuidMatch = copyOfBid.ad && typeof copyOfBid.ad === 'string' ? copyOfBid.ad.match(/data-uuid="([^"]*)"/) : null;
     copyOfBid.uuid = uuidMatch ? uuidMatch[1] : null;
-    delete copyOfBid.ad
+    delete copyOfBid.ad;
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
@@ -249,10 +247,20 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
+    if (!gdprConsent?.gdprApplies || !hasPurpose1Consent(gdprConsent)) {
+      logMessage('no gdpr or purpose1 consent, no syncs');
+      return [];
+    }
+    const qid = Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) : null;
+    if (!qid) {
+      logMessage('no qid found in server responses');
+      return [];
+    }
     const syncData = {
       'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
       'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
-      'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
+      'ccpa_consent': uspConsent || '',
+      'qid': qid,
     };
 
     const syncUrlObject = {
@@ -306,20 +314,22 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
   }
 
   if (isVideo) {
-    let baseRequest = bid.ortb2
+    let baseRequest = bid.ortb2;
     let videoRequest = {
       ...baseRequest,
       imp: [{
         id: bid.bidId,
         video: bid.ortb2Imp?.video || {},
       }]
-    }
+    };
 
     deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
-    videoRequest.id = bid.bidId
+    videoRequest.id = bid.bidId;
 
-    if (bidderRequest?.gdprConsent?.consentString) {
+    if (bidderRequest?.gdprConsent?.gdprApplies != null) {
       deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    }
+    if (bidderRequest?.gdprConsent?.consentString) {
       deepSetValue(videoRequest, 'user.consent', bidderRequest.gdprConsent.consentString);
     }
     if (bidderRequest?.uspConsent) {
@@ -327,7 +337,7 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     }
 
     let currency = bid?.ortb2?.ext?.prebid?.adServerCurrency || "PLN";
-    videoRequest.cur = [currency]
+    videoRequest.cur = [currency];
 
     let floorInfo;
     if (typeof bid.getFloor === 'function') {
@@ -341,11 +351,11 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     const bidfloorcur = floorInfo?.currency;
 
     if (bidfloor && bidfloorcur) {
-      videoRequest.imp[0].video.bidfloor = bidfloor
-      videoRequest.imp[0].video.bidfloorcur = bidfloorcur
+      videoRequest.imp[0].video.bidfloor = bidfloor;
+      videoRequest.imp[0].video.bidfloorcur = bidfloorcur;
     }
 
-    return videoRequest
+    return videoRequest;
   }
 
   return {
