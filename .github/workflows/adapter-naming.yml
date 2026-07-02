@@ -1,0 +1,4 @@
+name: Compile dependencies.json for PR assignment checks
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
