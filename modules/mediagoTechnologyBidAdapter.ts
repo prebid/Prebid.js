@@ -1,7 +1,3 @@
-/**
- * gulp serve --modules=mediagoBidAdapter,pubCommonId --nolint   --notest
- */
-
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -14,41 +10,41 @@ import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
-// import { config } from '../src/config.js';
-// import { isPubcidEnabled } from './pubCommonId.js';
+type MediaGoTechnologyBidParams = {
+  token: string;
+  publisher?: string;
+  placementId?: string;
+  test?: number;
+  tagid?: string;
+  bidfloor?: number;
+};
 
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').mediaType} mediaType
- */
+interface EidEntry {
+  source: string;
+  uids: Array<{ id: string }>;
+}
 
-const BIDDER_CODE = 'mediago';
-// const PROTOCOL = window.document.location.protocol;
-const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
-// const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
-export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
+interface OrtbSize {
+  w: number;
+  h: number;
+}
+
+const BIDDER_CODE = 'mediagoTechnology';
+const ENDPOINT_URL = 'https://gbid.mediagotechnology.com/api/bid?tn=';
+export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediagotechnology.com';
 
 const TIME_TO_LIVE = 500;
-const GVLID = 1020;
-// const ENDPOINT_URL = '/api/bid?tn=';
+const GVLID = 1575;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-const globals = {};
+const globals: Record<string, string> = {};
 
-/* ----- mguid:start ------ */
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
-const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
-const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000;
+const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediagotechnology.com/js/cookieSync.html';
 let reqTimes = 0;
 
-/**
- * Get or generate pmg uid
- *
- * @return {string}
- */
-export const getPmgUID = () => {
+export const getPmgUID = (): string | undefined => {
   if (!storage.cookiesAreEnabled()) return;
 
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
@@ -61,33 +57,16 @@ export const getPmgUID = () => {
   return pmgUid;
 };
 
-/* ----- pmguid:end ------ */
-
-/**
- * Extract uid from eids array by source
- *
- * @param  {Array}  eids   userIdAsEids array
- * @param  {string} source eid source domain
- * @return {string|undefined}
- */
-function getEidUid(eids, source) {
+function getEidUid(eids: EidEntry[] | undefined, source: string): string | undefined {
   if (!Array.isArray(eids)) return;
   const eid = eids.find(e => e && e.source === source);
   return eid && eid.uids && eid.uids[0] && eid.uids[0].id;
 }
 
-/**
- * Get a nested property value from object, return empty string if not found
- *
- * @param  {Object}    obj  object
- * @param  {...string} keys key path
- * @return {any}
- */
-function getProperty(obj, ...keys) {
+function getProperty(obj: any, ...keys: Array<string | number>): any {
   let o = obj;
 
   for (const key of keys) {
-    // console.log(key, o);
     if (o && o[key]) {
       o = o[key];
     } else {
@@ -97,13 +76,9 @@ function getProperty(obj, ...keys) {
   return o;
 }
 
-/**
- * Retrieve device platform/OS, priority order: userAgentData.platform > navigator.platform > UA parsing
- * @returns {string}
- */
-function getDeviceOs() {
-  if (navigator.userAgentData?.platform) {
-    return navigator.userAgentData.platform;
+function getDeviceOs(): string {
+  if ((navigator as any).userAgentData?.platform) {
+    return (navigator as any).userAgentData.platform;
   }
   if (navigator.platform) {
     return navigator.platform;
@@ -111,42 +86,11 @@ function getDeviceOs() {
   return getOsInfo().os || '';
 }
 
-/**
- * Get bid floor
- * @param {*} bid
- * @param {*} mediaType
- * @param {*} sizes
- * @returns
- */
-// function getBidFloor(bid, mediaType, sizes) {
-//   var floor;
-//   var size = sizes.length === 1 ? sizes[0] : '*';
-//   if (typeof bid.getFloor === 'function') {
-//     const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
-//     if (
-//       typeof floorInfo === 'object' &&
-//       floorInfo.currency === 'USD' &&
-//       !isNaN(parseFloat(floorInfo.floor))
-//     ) {
-//       floor = parseFloat(floorInfo.floor);
-//     }
-//   }
-//   return floor;
-// }
-
-// Supported ad sizes
 const mediagoAdSize = normalAdSize;
 
-/**
- * Get ad slot config
- * @param {Array}  validBidRequests an an array of bids
- * @param {Object} bidderRequest  The master bidRequest object
- * @return {Object}
- */
-function getItems(validBidRequests, bidderRequest) {
-  let items;
-  items = validBidRequests.map((req, i) => {
-    let ret = {};
+function getItems(validBidRequests: any[], bidderRequest: any): any[] {
+  const items = validBidRequests.map((req, i) => {
+    let ret: Record<string, any> = {};
     const mediaTypes = getProperty(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
@@ -154,7 +98,7 @@ function getItems(validBidRequests, bidderRequest) {
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
       utils.deepAccess(req, 'params.placementId', '');
 
-    const gdprConsent = {};
+    const gdprConsent: Record<string, any> = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
       gdprConsent.consent = bidderRequest.gdprConsent.consentString;
       gdprConsent.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
@@ -187,11 +131,11 @@ function getItems(validBidRequests, bidderRequest) {
         };
       }
     } else if (mediaTypes.banner) {
-      let sizes = transformSizesOrtb(getProperty(req, 'sizes'));
-      let matchSize;
+      const sizes: OrtbSize[] = transformSizesOrtb(getProperty(req, 'sizes'));
+      let matchSize: OrtbSize | undefined;
 
-      for (let size of sizes) {
-        matchSize = mediagoAdSize.find(item => size.w === item.w && size.h === item.h);
+      for (const size of sizes) {
+        matchSize = mediagoAdSize.find((item: OrtbSize) => size.w === item.w && size.h === item.h);
         if (matchSize) {
           break;
         }
@@ -217,7 +161,7 @@ function getItems(validBidRequests, bidderRequest) {
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
           publisher: req.params.publisher || '',
           transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
-          ...gdprConsent // gdpr
+          ...gdprConsent
         },
         tagid: req.params && req.params.tagid
       };
@@ -228,24 +172,13 @@ function getItems(validBidRequests, bidderRequest) {
   return items;
 }
 
-/**
- * get current time to UTC string
- * @returns utc string
- */
-export function getCurrentTimeToUTCString() {
+export function getCurrentTimeToUTCString(): string {
   const date = new Date();
   date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
   return date.toUTCString();
 }
 
-/**
- * Get RTB request params
- *
- * @param {Array}  validBidRequests an an array of bids
- * @param {Object} bidderRequest  The master bidRequest object
- * @return {Object}
- */
-function getParam(validBidRequests, bidderRequest) {
+function getParam(validBidRequests: any[], bidderRequest: any): Record<string, any> | null {
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
   const eids = bidsUserIdAsEids;
 
@@ -257,7 +190,6 @@ function getParam(validBidRequests, bidderRequest) {
   reqTimes += 1;
 
   const isMobile = getDevice() ? 1 : 0;
-  // input test status by Publisher. more frequently for test true req
   const isTest = validBidRequests[0].params.test || 0;
   const bidderRequestId = getProperty(bidderRequest, 'bidderRequestId');
   const items = getItems(validBidRequests, bidderRequest);
@@ -275,7 +207,7 @@ function getParam(validBidRequests, bidderRequest) {
 
   if (items && items.length) {
     const pmguid = getPmgUID();
-    const c = {
+    return {
       id: 'mgprebidjs_' + bidderRequestId,
       test: +isTest,
       at: 1,
@@ -317,7 +249,7 @@ function getParam(validBidRequests, bidderRequest) {
         page: page || location,
         ref: referer,
         mobile: isMobile,
-        cat: [], // todo
+        cat: [],
         publisher: {
           id: globals['publisher']
         }
@@ -325,7 +257,6 @@ function getParam(validBidRequests, bidderRequest) {
       imp: items,
       tmax: timeout
     };
-    return c;
   } else {
     return null;
   }
@@ -334,37 +265,23 @@ function getParam(validBidRequests, bidderRequest) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, NATIVE],
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
-  isBidRequestValid: function (bid) {
-    // console.log('mediago', {
-    //   bid
-    // });
-    if (bid.params.token) {
-      globals['token'] = bid.params.token;
+  supportedMediaTypes: [BANNER, NATIVE] as const,
+
+  isBidRequestValid: function (bid: any): boolean {
+    const params = bid.params as MediaGoTechnologyBidParams;
+    if (params.token) {
+      globals['token'] = params.token;
     }
-    if (bid.params.publisher) {
-      globals['publisher'] = bid.params.publisher;
+    if (params.publisher) {
+      globals['publisher'] = params.publisher;
     }
-    return !!bid.params.token;
+    return !!params.token;
   },
 
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {Array}  validBidRequests an an array of bids
-   * @param {Object} bidderRequest  The master bidRequest object
-   * @return ServerRequest Info describing the request to the server.
-   */
-  buildRequests: function (validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests: any[], bidderRequest: any) {
     const payload = getParam(validBidRequests, bidderRequest);
 
-    const mediaTypeMap = {};
+    const mediaTypeMap: Record<string, string> = {};
     validBidRequests.forEach((req) => {
       const bidId = getProperty(req, 'bidId');
       if (req.mediaTypes && req.mediaTypes.native) {
@@ -376,29 +293,24 @@ export const spec = {
 
     const payloadString = JSON.stringify(payload);
     return {
-      method: 'POST',
+      method: 'POST' as const,
       url: ENDPOINT_URL + globals['token'],
       data: payloadString,
       _mediaTypeMap: mediaTypeMap,
     };
   },
 
-  /**
-   * Unpack the response from the server into a list of bids.
-   * @param {ServerResponse} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse: any, bidRequest: any) {
     const bids = getProperty(serverResponse, 'body', 'seatbid', 0, 'bid');
     const cur = getProperty(serverResponse, 'body', 'cur');
-    const mediaTypeMap = (bidRequest && bidRequest._mediaTypeMap) || {};
+    const mediaTypeMap: Record<string, string> = (bidRequest && bidRequest._mediaTypeMap) || {};
 
-    const bidResponses = [];
+    const bidResponses: any[] = [];
     for (const bid of bids) {
       const impid = getProperty(bid, 'impid');
       if (impid) {
         const mediaType = mediaTypeMap[impid] || BANNER;
-        const bidResponse = {
+        const bidResponse: Record<string, any> = {
           requestId: impid,
           cpm: getProperty(bid, 'price'),
           creativeId: getProperty(bid, 'crid'),
@@ -437,38 +349,14 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions: any, serverResponse: any, gdprConsent: any, uspConsent: any, gppConsent: any) {
     return cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, THIRD_PARTY_COOKIE_ORIGIN, COOKY_SYNC_IFRAME_URL, getCurrentTimeToUTCString());
   },
 
-  /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {Object} data Containing timeout specific data
-   */
-  //   onTimeout: function (data) {
-  //     // console.log('onTimeout', data);
-  //     // Bidder specific code
-  //   },
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Object} bid The bid that won the auction
-   */
-  onBidWon: function (bid) {
-    // console.log('onBidWon： ', bid, config.getConfig('priceGranularity'));
-    // Bidder specific code
+  onBidWon: function (bid: Record<string, any>) {
     if (bid['nurl']) {
       utils.triggerPixel(bid['nurl']);
     }
   }
-
-  /**
-   * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   * @param {Bid} The bid of which the targeting has been set
-   */
-  //   onSetTargeting: function (bid) {
-  //     // console.log('onSetTargeting', bid);
-  //     // Bidder specific code
-  //   },
 };
 registerBidder(spec);
