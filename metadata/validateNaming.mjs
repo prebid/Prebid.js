@@ -101,9 +101,9 @@ export function formatViolationsSummary(violations) {
 }
 
 export async function validateNaming() {
-  const warn = formatViolationsSummary(await getViolationsSummary());
-  if (warn != null) {
-    console.warn(warn);
+  const violations = await getViolationsSummary();
+  if (Object.keys(violations).length > 0) {
+    console.warn(formatViolationsSummary(violations));
     throw new Error('Some adapters do not follow naming conventions');
   }
 }
