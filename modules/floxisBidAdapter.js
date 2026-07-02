@@ -99,7 +99,8 @@ function isValidFloxisId(id) {
   return typeof id === 'string' && id.length === UUID_LENGTH;
 }
 
-// Neither store available => null, not a freshly minted id we can't persist (would defeat stability).
+// Never returns an id that didn't persist (no store, or storageControl denying the key while the
+// keyless enablement checks pass) — an unpersisted id would rotate every auction, worse than none.
 function getOrCreateFloxisId() {
   if (typeof window === 'undefined') return null;
   try {
@@ -111,7 +112,8 @@ function getOrCreateFloxisId() {
     if (!isValidFloxisId(id) && cookieOk) {
       id = storage.getCookie(FLOXIS_ID_KEY);
     }
-    if (!isValidFloxisId(id)) {
+    const minted = !isValidFloxisId(id);
+    if (minted) {
       id = generateUUID();
     }
 
@@ -123,6 +125,11 @@ function getOrCreateFloxisId() {
       storage.setCookie(FLOXIS_ID_KEY, id, expires);
     }
 
+    if (minted &&
+        storage.getDataFromLocalStorage(FLOXIS_ID_KEY) !== id &&
+        storage.getCookie(FLOXIS_ID_KEY) !== id) {
+      return null;
+    }
     return id;
   } catch (e) {
     return null;
