@@ -1164,17 +1164,21 @@ describe('adqueryBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
+    const gdprConsentWithPurpose1 = {
+      consentString: 'ALL',
+      gdprApplies: true,
+      vendorData: { purpose: { consents: { 1: true } } }
+    };
+    const serverResponsesWithQid = [{ body: { data: { qid: 'test-qid-value' } } }];
+
     it('should return iframe sync', function () {
       const sync = spec.getUserSyncs(
         {
           iframeEnabled: true,
           pixelEnabled: true,
         },
-        {},
-        {
-          consentString: 'ALL',
-          gdprApplies: true,
-        },
+        serverResponsesWithQid,
+        gdprConsentWithPurpose1,
         {}
       );
       expect(sync.length).to.equal(1);
@@ -1187,11 +1191,8 @@ describe('adqueryBidAdapter', function () {
           iframeEnabled: false,
           pixelEnabled: true,
         },
-        {},
-        {
-          consentString: 'ALL',
-          gdprApplies: true,
-        },
+        serverResponsesWithQid,
+        gdprConsentWithPurpose1,
         {}
       );
       expect(sync.length).to.equal(1);
@@ -1200,25 +1201,44 @@ describe('adqueryBidAdapter', function () {
     });
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
-        consentString: 'ALL',
-        gdprApplies: true,
-      }, {});
+      const syncData = spec.getUserSyncs({}, serverResponsesWithQid, gdprConsentWithPurpose1, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object');
       expect(syncData[0].type).to.be.a('string');
       expect(syncData[0].type).to.equal('image');
     });
 
-    it('should not include qid in sync URL even when window.qid is set', function () {
-      const originalQid = window.qid;
-      window.qid = 'test-qid-value';
-      try {
-        const sync = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, {});
-        expect(sync[0].url).to.not.include('qid');
-      } finally {
-        window.qid = originalQid;
-      }
+    it('should return empty array when Purpose 1 consent is missing', function () {
+      const gdprConsent = { gdprApplies: true, vendorData: { purpose: { consents: { 1: false } } } };
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, gdprConsent, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when GDPR does not apply', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, { gdprApplies: false }, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when qid is not present in serverResponses', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, [{ body: { data: {} } }], gdprConsentWithPurpose1, {});
+      expect(sync).to.be.an('array').that.is.empty;
+    });
+
+    it('should include ccpa_consent in sync URL when uspConsent provided', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponsesWithQid, gdprConsentWithPurpose1, '1YNN');
+      expect(sync[0].url).to.include('ccpa_consent=1YNN');
+    });
+
+    it('should include qid in sync URL when present in serverResponses', function () {
+      const serverResponses = [{ body: { data: { qid: 'test-qid-value' } } }];
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, gdprConsentWithPurpose1, {});
+      expect(sync[0].url).to.include('qid=test-qid-value');
+    });
+
+    it('should find qid from any response, not just the first', function () {
+      const serverResponses = [{ body: '' }, { body: '' }, { body: { data: { qid: 'test-qid-value' } } }];
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, gdprConsentWithPurpose1, {});
+      expect(sync[0].url).to.include('qid=test-qid-value');
     });
   });
 
