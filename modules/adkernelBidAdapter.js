@@ -29,6 +29,7 @@ import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/types/ortb/ext/dsa.d.ts').DSARequest} DSARequest
  */
 
 const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
@@ -124,9 +125,10 @@ export const spec = {
       'zoneId' in bidRequest.params &&
       !isNaN(Number(bidRequest.params.zoneId)) &&
       bidRequest.params.zoneId > 0 &&
-      bidRequest.mediaTypes &&
-      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video ||
-        (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native))
+      (
+        isPlainObject(bidRequest?.mediaTypes?.banner) ||
+        isPlainObject(bidRequest?.mediaTypes?.video) ||
+        (isPlainObject(bidRequest?.mediaTypes?.native) && validateNativeAdUnit(bidRequest.mediaTypes.native))
       );
   },
 
@@ -223,6 +225,9 @@ export const spec = {
         }
         if (isStr(rtbBid.ext.agency_name)) {
           deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
+        }
+        if (isPlainObject(rtbBid.ext.dsa)) {
+          deepSetValue(prBid, 'meta.dsa', rtbBid.ext.dsa);
         }
       }
 
@@ -522,6 +527,42 @@ function makeSyncInfo(bidderRequest) {
 }
 
 /**
+ * Initialize DSA request
+ * @param fpd {Object}
+ */
+function makeDSARequest(fpd) {
+  /**
+   * @type {DSARequest}
+   */
+  const pubDsa = fpd?.regs?.ext?.dsa;
+  if (!isPlainObject(pubDsa)) {
+    return;
+  }
+  const dsaObj = {};
+  ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+    if (isNumber(pubDsa[dsaKey])) {
+      dsaObj[dsaKey] = pubDsa[dsaKey];
+    }
+  });
+  if (isArray(pubDsa.transparency) && pubDsa.transparency.every((v) => isPlainObject(v))) {
+    const tpData = [];
+    pubDsa.transparency.forEach((tpObj) => {
+      if (isStr(tpObj.domain) && tpObj.domain !== '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+        tpData.push(tpObj);
+      }
+    });
+    if (tpData.length > 0) {
+      dsaObj.transparency = tpData;
+    }
+  }
+  if (!isEmpty(dsaObj)) {
+    let res = {};
+    deepSetValue(res, 'regs.ext.dsa', dsaObj);
+    return res;
+  }
+}
+
+/**
  * Builds complete rtb request
  * @param imps {Object} Collection of rtb impressions
  * @param bidderRequest {BidderRequest}
@@ -537,7 +578,8 @@ function buildRtbRequest(imps, bidderRequest, schain) {
     makeSiteOrApp(bidderRequest, fpd),
     makeUser(bidderRequest, fpd),
     makeRegulations(bidderRequest),
-    makeSyncInfo(bidderRequest)
+    makeSyncInfo(bidderRequest),
+    makeDSARequest(fpd)
   );
   if (schain) {
     deepSetValue(req, 'source.ext.schain', schain);
