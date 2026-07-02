@@ -25,7 +25,7 @@ jobs:
         run: |
           echo '{"issue_number": ${{ github.event.pull_request.number }}, "body": "This PR includes an adapter whose code does not match its file name. Bid adapter modules should be named <bidderCode>BidAdapter, userId <userIdCode>IdSystem, RTD <rtdCode>RtdProvider, and analytics <analyticsCode>Analytics."}' > ${{ runner.temp }}/comment.json
       - name: Calculate diff
-        if: ${{ steps.update.outcome != 'success' }}
+        if: ${{ steps.update.outcome == 'success' }}
         run: |
           git diff --name-only $(git merge-base HEAD ${{ github.event.pull_request.base.sha }})..HEAD > ${{runner.temp}}/changed_files.txt
       - name: Check naming
