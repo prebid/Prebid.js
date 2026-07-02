@@ -43,11 +43,10 @@ jobs:
               Object.entries(await getViolationsSummary())
               .filter(([moduleName]) => modules.has(moduleName))
             );
-            const formatted = formatViolationsSummary(violations);
-            if (formatted != null) {
+            if (Object.keys(violations).length > 0) {
               fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
                 issue_number: ${{ github.event.pull_request.number }},
-                body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatted}`
+                body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatViolationsSummary(violations)}`
               }));
               return 'true';
             }
