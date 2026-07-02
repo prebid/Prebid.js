@@ -35,6 +35,7 @@ jobs:
         with:
           result-encoding: string
           script: |
+            const fs = require('fs');
             const { getViolationsSummary, formatViolationsSummary } = require('./metadata/validateNaming.mjs');
             const diff = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(s => s.trim());
             const modules = new Set(diff.map(filename => /^modules\/([^\/.]+)/.exec(filename)?.[1]).filter(fn => fn != null));
