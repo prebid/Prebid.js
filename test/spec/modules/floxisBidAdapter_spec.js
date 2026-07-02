@@ -417,8 +417,14 @@ describe('floxisBidAdapter', function () {
         cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
         getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
         getCookieStub = sinon.stub(storage, 'getCookie');
-        setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-        setCookieStub = sinon.stub(storage, 'setCookie');
+        // Writes persist to the paired get stub (withArgs overrides blanket returns) so the
+        // adapter's read-back sees them, like a real store; strict-mode tests override these.
+        setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (key, value) {
+          getDataFromLocalStorageStub.withArgs(key).returns(value);
+        });
+        setCookieStub = sinon.stub(storage, 'setCookie').callsFake(function (key, value) {
+          getCookieStub.withArgs(key).returns(value);
+        });
         generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(STUBBED_UUID);
       });
 
@@ -494,6 +500,20 @@ describe('floxisBidAdapter', function () {
         expect(data.user?.ext?.floxisId).to.be.undefined;
         expect(setDataInLocalStorageStub.called).to.be.false;
         expect(setCookieStub.called).to.be.false;
+      });
+
+      it('sends no id when key-specific access is denied but enablement checks pass (storageControl strict mode)', function () {
+        localStorageIsEnabledStub.returns(true);
+        cookiesAreEnabledStub.returns(true);
+        getDataFromLocalStorageStub.returns(null);
+        getCookieStub.returns(null);
+        setDataInLocalStorageStub.callsFake(function () {});
+        setCookieStub.callsFake(function () {});
+
+        const data = spec.buildRequests([validBannerBid], floxisIdBidderRequest)[0].data;
+
+        expect(data.user?.ext?.floxisId).to.be.undefined;
+        expect(generateUUIDStub.calledOnce).to.be.true;
       });
 
       it('sends no id and does not throw when a storage accessor throws', function () {
