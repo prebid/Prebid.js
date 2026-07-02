@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch_depth: 0
+          fetch-depth: 0
       - name: install dependencies
         uses: ./.github/actions/npm-ci
       - name: Update metadata
@@ -35,22 +35,22 @@ jobs:
         with:
           result-encoding: string
           script: |
-            const {getViolationsSummary, formatViolationsSummary} = require('./metadata/validateNaming.mjs');
+            const { getViolationsSummary, formatViolationsSummary } = require('./metadata/validateNaming.mjs');
             const diff = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(s => s.trim());
             const modules = new Set(diff.map(filename => /^modules\/([^\/.]+)/.exec(filename)?.[1]).filter(fn => fn != null));
             const violations = Object.fromEntries(
               Object.entries(await getViolationsSummary())
-               .filter([moduleName] => modules.has(moduleName))
+              .filter(([moduleName]) => modules.has(moduleName))
             );
             const formatted = formatViolationsSummary(violations);
             if (formatted != null) {
-               fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
-                  issue_number: ${{ github.event.pull_request.number }},
-                  body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatted}`
-               }))
-               return "true";
+              fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
+                issue_number: ${{ github.event.pull_request.number }},
+                body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatted}`;
+              }));
+              return 'true';
             }
-            return "false";            
+            return 'false';
 
       - name: Upload comment data
         if: ${{ steps.update.outcome != 'success' || steps.check.outputs.result == 'true' }}
