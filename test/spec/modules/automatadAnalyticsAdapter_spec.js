@@ -15,8 +15,33 @@ const obj = {
   auctionDebugHandler: (args) => {},
   bidderTimeoutHandler: (args) => {},
   bidRequestedHandler: (args) => {},
-  bidRejectedHandler: (args) => {}
+  bidRejectedHandler: (args) => {},
+  videoAuctionAdLoadAttemptHandler: (args) => {},
+  videoAuctionAdLoadQueuedHandler: (args) => {},
+  videoAuctionAdLoadAbortHandler: (args) => {},
+  videoBidImpressionHandler: (args) => {},
+  videoBidErrorHandler: (args) => {},
+  videoAdLoadedHandler: (args) => {},
+  videoAdStartedHandler: (args) => {},
+  videoAdImpressionHandler: (args) => {},
+  videoAdSkippedHandler: (args) => {},
+  videoAdErrorHandler: (args) => {},
+  videoAdCompleteHandler: (args) => {}
 };
+
+const VIDEO_EVENTS = [
+  ['videoAuctionAdLoadAttempt', 'videoAuctionAdLoadAttemptHandler'],
+  ['videoAuctionAdLoadQueued', 'videoAuctionAdLoadQueuedHandler'],
+  ['videoAuctionAdLoadAbort', 'videoAuctionAdLoadAbortHandler'],
+  ['videoBidImpression', 'videoBidImpressionHandler'],
+  ['videoBidError', 'videoBidErrorHandler'],
+  ['videoAdLoaded', 'videoAdLoadedHandler'],
+  ['videoAdStarted', 'videoAdStartedHandler'],
+  ['videoAdImpression', 'videoAdImpressionHandler'],
+  ['videoAdSkipped', 'videoAdSkippedHandler'],
+  ['videoAdError', 'videoAdErrorHandler'],
+  ['videoAdComplete', 'videoAdCompleteHandler']
+];
 
 const {
   AUCTION_DEBUG,
@@ -108,6 +133,7 @@ describe('Automatad Analytics Adapter', () => {
     it('Should successfully configure the adapter and set global log debug messages flag to true', () => {
       sandbox.stub(exports, 'initializeQueue').callsFake(() => {});
       sandbox.stub(exports, 'addGPTHandlers').callsFake(() => {});
+      sandbox.stub(exports, 'addVideoHandlers').callsFake(() => {});
       const config = {
         provider: 'atmtdAnalyticsAdapter',
         options: {
@@ -121,6 +147,7 @@ describe('Automatad Analytics Adapter', () => {
       expect(utils.logError.called).to.equal(false);
       expect(exports.initializeQueue.called).to.equal(true);
       expect(exports.addGPTHandlers.called).to.equal(true);
+      expect(exports.addVideoHandlers.called).to.equal(true);
       expect(utils.logMessage.called).to.equal(true);
       spec.disableAnalytics();
     });
@@ -196,6 +223,13 @@ describe('Automatad Analytics Adapter', () => {
     it('Should call the auctionDebugHandler when the auctionDebug event is fired', () => {
       events.emit(AUCTION_DEBUG, { type: AUCTION_DEBUG });
       expect(global.window.atmtdAnalytics.auctionDebugHandler.called).to.equal(true);
+    });
+
+    VIDEO_EVENTS.forEach(([eventType, handler]) => {
+      it(`Should call the ${handler} when the ${eventType} event is tracked`, () => {
+        spec.track({ eventType, args: { type: eventType } });
+        expect(global.window.atmtdAnalytics[handler].called).to.equal(true);
+      });
     });
   });
 
@@ -301,6 +335,17 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2);
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_TIMEOUT);
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_TIMEOUT);
+    });
+
+    VIDEO_EVENTS.forEach(([eventType]) => {
+      it(`Should push to the que when the ${eventType} event is tracked`, () => {
+        spec.track({ eventType, args: { type: eventType } });
+        expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true);
+        expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1);
+        expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2);
+        expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(eventType);
+        expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(eventType);
+      });
     });
   });
 
@@ -511,6 +556,80 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.queuePointer).to.equal(0);
       expect(exports.processEvents.callCount).to.equal(5);
     });
+
+    it('Should retry processing videoAdStarted in certain intervals', () => {
+      expect(exports.queuePointer).to.equal(0);
+      expect(exports.retryCount).to.equal(0);
+      const que = [['videoAdStarted', { type: 'videoAdStarted' }]];
+      exports.__atmtdAnalyticsQueue.push(que[0]);
+      exports.processEvents();
+      expect(exports.prettyLog.getCall(0).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(0).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 1`);
+      expect(exports.prettyLog.getCall(1).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(1).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 1500ms ...`);
+      clock.tick(1510);
+      expect(exports.prettyLog.getCall(2).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(2).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 2`);
+      expect(exports.prettyLog.getCall(3).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(3).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 3000ms ...`);
+      clock.tick(3010);
+      expect(exports.prettyLog.getCall(4).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(4).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 3`);
+      expect(exports.prettyLog.getCall(5).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(5).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 5000ms ...`);
+      clock.tick(5010);
+      expect(exports.prettyLog.getCall(6).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(6).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 4`);
+      expect(exports.prettyLog.getCall(7).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(7).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 10000ms ...`);
+      clock.tick(10010);
+      expect(exports.prettyLog.getCall(8).args[0]).to.equal('error');
+      expect(exports.prettyLog.getCall(8).args[1]).to.equal(`Aggregator still hasn't loaded. Processing que stopped`);
+      expect(exports.queuePointer).to.equal(0);
+      expect(exports.processEvents.callCount).to.equal(5);
+    });
+  });
+
+  describe('Process Events from Que when SDK is loaded without video handlers', () => {
+    before(() => {
+      spec.enableAnalytics({
+        provider: 'atmtdAnalyticsAdapter',
+        options: {
+          publisherID: '230',
+          siteID: '421'
+        }
+      });
+      global.window.atmtdAnalytics = {
+        auctionInitHandler: (args) => {}
+      };
+      exports.retryCount = 0;
+      exports.queuePointer = 0;
+      exports.__atmtdAnalyticsQueue = [
+        ['videoAdStarted', { type: 'videoAdStarted' }]
+      ];
+    });
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.spy(exports, 'prettyLog');
+      sandbox.spy(exports, 'processEvents');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    after(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+    });
+
+    it('Should skip unimplemented video events without retrying', () => {
+      exports.processEvents();
+      expect(exports.retryCount).to.equal(0);
+      expect(exports.processEvents.callCount).to.equal(1);
+      expect(exports.queuePointer).to.equal(exports.__atmtdAnalyticsQueue.length);
+      expect(exports.qBeingUsed).to.equal(false);
+      expect(exports.qTraversalComplete).to.equal(true);
+    });
   });
 
   describe('Process Events from Que when SDK has loaded', () => {
@@ -534,7 +653,18 @@ describe('Automatad Analytics Adapter', () => {
         impressionViewableHandler: (args) => {},
         slotRenderEndedGPTHandler: (args) => {},
         bidRequestedHandler: (args) => {},
-        bidRejectedHandler: (args) => {}
+        bidRejectedHandler: (args) => {},
+        videoAuctionAdLoadAttemptHandler: (args) => {},
+        videoAuctionAdLoadQueuedHandler: (args) => {},
+        videoAuctionAdLoadAbortHandler: (args) => {},
+        videoBidImpressionHandler: (args) => {},
+        videoBidErrorHandler: (args) => {},
+        videoAdLoadedHandler: (args) => {},
+        videoAdStartedHandler: (args) => {},
+        videoAdImpressionHandler: (args) => {},
+        videoAdSkippedHandler: (args) => {},
+        videoAdErrorHandler: (args) => {},
+        videoAdCompleteHandler: (args) => {}
       };
 
       global.window.atmtdAnalytics = obj;
@@ -555,7 +685,8 @@ describe('Automatad Analytics Adapter', () => {
         [AUCTION_DEBUG, { type: AUCTION_DEBUG }],
         [BID_TIMEOUT, { type: BID_TIMEOUT }],
         ['slotRenderEnded', { type: 'slotRenderEnded' }],
-        ['impressionViewable', { type: 'impressionViewable' }]
+        ['impressionViewable', { type: 'impressionViewable' }],
+        ...VIDEO_EVENTS.map(([eventType]) => [eventType, { type: eventType }])
       ];
     });
     afterEach(() => {
@@ -583,6 +714,96 @@ describe('Automatad Analytics Adapter', () => {
       expect(global.window.atmtdAnalytics.bidderDoneHandler.calledOnce).to.equal(true);
       expect(global.window.atmtdAnalytics.slotRenderEndedGPTHandler.calledOnce).to.equal(true);
       expect(global.window.atmtdAnalytics.impressionViewableHandler.calledOnce).to.equal(true);
+      VIDEO_EVENTS.forEach(([, handler]) => {
+        expect(global.window.atmtdAnalytics[handler].calledOnce).to.equal(true);
+      });
+    });
+  });
+
+  describe('Behaviour of the adapter when a video handler is not implemented but the SDK is loaded', () => {
+    before(() => {
+      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+    });
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.stub(utils, 'logMessage');
+      sandbox.stub(utils, 'logError');
+
+      global.window.atmtdAnalytics = {
+        auctionInitHandler: (args) => {},
+        bidResponseHandler: (args) => {},
+        bidderDoneHandler: (args) => {},
+        bidWonHandler: (args) => {},
+        noBidHandler: (args) => {},
+        auctionDebugHandler: (args) => {},
+        bidderTimeoutHandler: (args) => {},
+        bidRequestedHandler: (args) => {},
+        bidRejectedHandler: (args) => {}
+      };
+      exports.qBeingUsed = false;
+      exports.__atmtdAnalyticsQueue.length = 0;
+      sandbox.stub(exports.__atmtdAnalyticsQueue, 'push').callsFake((args) => {
+        Array.prototype.push.apply(exports.__atmtdAnalyticsQueue, [args]);
+      });
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    after(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+    });
+
+    VIDEO_EVENTS.forEach(([eventType]) => {
+      it(`Should drop the ${eventType} event without queueing when its handler is not implemented`, () => {
+        spec.track({ eventType, args: { type: eventType } });
+        expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(false);
+        expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(0);
+      });
+    });
+  });
+
+  describe('Behaviour of the adapter when video events are emitted on the event bus', () => {
+    let videoObj;
+    before(() => {
+      events.addEvents(VIDEO_EVENTS.map(([eventType]) => eventType));
+      sandbox = sinon.createSandbox();
+      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.stub(utils, 'logMessage');
+      sandbox.stub(utils, 'logError');
+      videoObj = {};
+      VIDEO_EVENTS.forEach(([, handler]) => { videoObj[handler] = (args) => {}; });
+
+      spec.enableAnalytics(CONFIG_WITH_DEBUG);
+      global.window.atmtdAnalytics = videoObj;
+      exports.qBeingUsed = false;
+      exports.qTraversalComplete = undefined;
+      Object.keys(videoObj).forEach((fn) => sandbox.spy(global.window.atmtdAnalytics, fn));
+    });
+    afterEach(() => {
+      Object.keys(videoObj).forEach((handler) => global.window.atmtdAnalytics[handler].resetHistory());
+    });
+    after(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+      sandbox.restore();
+      exports.qBeingUsed = false;
+      exports.qTraversalComplete = undefined;
+    });
+
+    VIDEO_EVENTS.forEach(([eventType, handler]) => {
+      it(`Should call the ${handler} when the ${eventType} event is emitted`, () => {
+        events.emit(eventType, { type: eventType });
+        expect(global.window.atmtdAnalytics[handler].calledOnce).to.equal(true);
+      });
+    });
+
+    it('Should remove the video event listeners on disableAnalytics', () => {
+      spec.disableAnalytics();
+      events.emit('videoAdStarted', { type: 'videoAdStarted' });
+      expect(global.window.atmtdAnalytics.videoAdStartedHandler.called).to.equal(false);
+      spec.enableAnalytics(CONFIG_WITH_DEBUG);
     });
   });
 

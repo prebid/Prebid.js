@@ -10,6 +10,21 @@ import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
+import * as events from '../src/events.js';
+import { getExternalVideoEventName } from '../libraries/video/shared/helpers.js';
+import {
+  AD_LOADED,
+  AD_STARTED,
+  AD_IMPRESSION,
+  AD_SKIPPED,
+  AD_ERROR,
+  AD_COMPLETE,
+  AUCTION_AD_LOAD_ATTEMPT,
+  AUCTION_AD_LOAD_QUEUED,
+  AUCTION_AD_LOAD_ABORT,
+  BID_IMPRESSION,
+  BID_ERROR
+} from '../libraries/video/constants/events.js';
 
 /** Prebid Event Handlers */
 
@@ -113,6 +128,83 @@ const processEvents = () => {
             window.atmtdAnalytics.auctionDebugHandler(args);
           }
           break;
+        case 'videoAuctionAdLoadAttempt':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler) {
+            window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAuctionAdLoadQueued':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler) {
+            window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAuctionAdLoadAbort':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAbortHandler) {
+            window.atmtdAnalytics.videoAuctionAdLoadAbortHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoBidImpression':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidImpressionHandler) {
+            window.atmtdAnalytics.videoBidImpressionHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoBidError':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidErrorHandler) {
+            window.atmtdAnalytics.videoBidErrorHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdLoaded':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdLoadedHandler) {
+            window.atmtdAnalytics.videoAdLoadedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdStarted':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdStartedHandler) {
+            window.atmtdAnalytics.videoAdStartedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdImpression':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdImpressionHandler) {
+            window.atmtdAnalytics.videoAdImpressionHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdSkipped':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdSkippedHandler) {
+            window.atmtdAnalytics.videoAdSkippedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdError':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdErrorHandler) {
+            window.atmtdAnalytics.videoAdErrorHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
+        case 'videoAdComplete':
+          if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdCompleteHandler) {
+            window.atmtdAnalytics.videoAdCompleteHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
+          }
+          break;
         case 'slotRenderEnded':
           if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler) {
             window.atmtdAnalytics.slotRenderEndedGPTHandler(args);
@@ -173,6 +265,40 @@ const addGPTHandlers = () => {
   });
 };
 
+const VIDEO_EVENTS = [
+  AUCTION_AD_LOAD_ATTEMPT,
+  AUCTION_AD_LOAD_QUEUED,
+  AUCTION_AD_LOAD_ABORT,
+  BID_IMPRESSION,
+  BID_ERROR,
+  AD_LOADED,
+  AD_STARTED,
+  AD_IMPRESSION,
+  AD_SKIPPED,
+  AD_ERROR,
+  AD_COMPLETE
+].map(getExternalVideoEventName);
+
+var registeredVideoHandlers = [];
+
+const removeVideoHandlers = () => {
+  registeredVideoHandlers.forEach(([eventType, handler]) => events.off(eventType, handler));
+  registeredVideoHandlers = [];
+};
+
+const addVideoHandlers = () => {
+  self.removeVideoHandlers();
+  VIDEO_EVENTS.forEach((eventType) => {
+    if (events.has(eventType)) {
+      const handler = (args) => atmtdAdapter.track({ eventType, args });
+      events.on(eventType, handler);
+      registeredVideoHandlers.push([eventType, handler]);
+    } else {
+      self.prettyLog('warn', `Video event ${eventType} is not registered, skipping listener. Is the video module included?`);
+    }
+  });
+};
+
 const initializeQueue = () => {
   self.__atmtdAnalyticsQueue.push = (args) => {
     self.qBeingUsed = true;
@@ -201,6 +327,7 @@ const baseAdapter = adapter({ analyticsType: 'bundle' });
 const atmtdAdapter = Object.assign({}, baseAdapter, {
 
   disableAnalytics() {
+    self.removeVideoHandlers();
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
@@ -280,6 +407,94 @@ const atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args]);
         }
         break;
+      case 'videoAuctionAdLoadAttempt':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAuctionAdLoadQueued':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAuctionAdLoadAbort':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAbortHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAuctionAdLoadAbortHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAuctionAdLoadAbortHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoBidImpression':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidImpressionHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoBidImpressionHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoBidImpressionHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoBidError':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidErrorHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoBidErrorHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoBidErrorHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdLoaded':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdLoadedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdLoadedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdLoadedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdStarted':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdStartedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdStartedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdStartedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdImpression':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdImpressionHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdImpressionHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdImpressionHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdSkipped':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdSkippedHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdSkippedHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdSkippedHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdError':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdErrorHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdErrorHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdErrorHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
+      case 'videoAdComplete':
+        if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdCompleteHandler && shouldNotPushToQueue) {
+          window.atmtdAnalytics.videoAdCompleteHandler(args);
+        } else if (!window.atmtdAnalytics || window.atmtdAnalytics.videoAdCompleteHandler) {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args]);
+        }
+        break;
     }
   }
 });
@@ -301,6 +516,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
   self.initializeQueue();
   self.addGPTHandlers();
+  self.addVideoHandlers();
 
   window.__atmtdSDKConfig = {
     publisherID: conf.publisherID,
@@ -325,6 +541,8 @@ export var self = {
   processEvents,
   initializeQueue,
   addGPTHandlers,
+  addVideoHandlers,
+  removeVideoHandlers,
   prettyLog,
   queuePointer,
   retryCount,
