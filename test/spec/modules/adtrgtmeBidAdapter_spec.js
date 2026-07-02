@@ -257,6 +257,16 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(data.site.id).to.equal('9876543210');
     });
 
+    it('should set app.id (and no site) for app requests', () => {
+      const ortb2 = { app: { bundle: 'com.adtarget.example' } };
+      const { validBR, bidderRequest } = createRequestMock({ ortb2 });
+      const request = buildFirst(validBR, bidderRequest);
+      expect(request.data.app.id).to.equal(DEFAULT_SID);
+      expect(request.data.app.bundle).to.equal('com.adtarget.example');
+      expect(request.data.site).to.be.undefined;
+      expect(request.url).to.equal('https://rtb.cdn.adtarget.market/ssp?prebid&s=' + DEFAULT_SID);
+    });
+
     it('should set imp.tagid from params.zid', () => {
       const { validBR, bidderRequest } = createRequestMock();
       validBR[0].params.zid = '54321';
@@ -312,6 +322,15 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(data.imp[0].bidfloor).to.equal(2.5);
       expect(data.imp[0].bidfloorcur).to.equal('EUR');
       expect(data.cur).to.deep.equal(['EUR']);
+    });
+
+    it('should query getFloor with the sole media type (banner-specific floor rule)', () => {
+      const { bidRequest, validBR, bidderRequest } = createRequestMock();
+      // floor is defined only for the banner media type, not the '*' wildcard
+      bidRequest.getFloor = ({ mediaType }) =>
+        (mediaType === 'banner' ? { floor: 2.0, currency: 'USD' } : {});
+      const { data } = buildFirst(validBR, bidderRequest);
+      expect(data.imp[0].bidfloor).to.equal(2.0);
     });
   });
 

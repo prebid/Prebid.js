@@ -37,6 +37,17 @@ function resolveTtl(bidRequest) {
   return globalTtl ? withinBounds(globalTtl) : withinBounds(bidRequest?.params?.ttl);
 }
 
+// When every bid in a request shares a single media type, pass it through the
+// converter context so price-floor lookups (and imp generation) are scoped to
+// that media type instead of the '*' wildcard.
+function soleMediaType(bidRequests) {
+  const types = new Set();
+  bidRequests.forEach((bid) => {
+    Object.keys(bid.mediaTypes || {}).forEach((type) => types.add(type));
+  });
+  return types.size === 1 ? types.values().next().value : undefined;
+}
+
 // The SSP omits ORTB "mtype" on some passback responses; infer the media type
 // from the markup and, failing that, from the matched impression, so the converter
 // can build the proper bid-response shape.
@@ -100,8 +111,16 @@ const converter = ortbConverter({
     const bid = context.bidRequests?.[0] || bidderRequest.bids?.[0] || {};
     const params = bid.params || {};
 
-    deepSetValue(request, 'site.id', String(params.sid));
-    if (!request.site.page && bidderRequest.refererInfo?.page) {
+    // The converter's one-client processor has already selected the client
+    // section (site/app/dooh) from ortb2; write sid into that section so app/dooh
+    // requests don't end up with an invalid extra `site` object.
+    const clientSection = request.app ? 'app' : request.dooh ? 'dooh' : 'site';
+    deepSetValue(request, `${clientSection}.id`, String(params.sid));
+    if (
+      clientSection === 'site' &&
+      !request.site.page &&
+      bidderRequest.refererInfo?.page
+    ) {
       request.site.page = bidderRequest.refererInfo.page;
     }
 
@@ -164,7 +183,9 @@ const converter = ortbConverter({
 
 function buildServerRequest(data, options, bidderRequest) {
   return {
-    url: `${readConfig('endpoint') || BIDDER_URL}${data.site?.id || ''}`,
+    url: `${readConfig('endpoint') || BIDDER_URL}${
+      data.site?.id || data.app?.id || data.dooh?.id || ''
+    }`,
     method: 'POST',
     data,
     options,
@@ -206,12 +227,22 @@ export const spec = {
     };
 
     if (readConfig('singleRequestMode') === true) {
-      const data = converter.toORTB({ bidRequests, bidderRequest });
+      const mediaType = soleMediaType(bidRequests);
+      const data = converter.toORTB({
+        bidRequests,
+        bidderRequest,
+        context: mediaType ? { mediaType } : {},
+      });
       return buildServerRequest(data, options, bidderRequest);
     }
 
     return bidRequests.map((bid) => {
-      const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
+      const mediaType = soleMediaType([bid]);
+      const data = converter.toORTB({
+        bidRequests: [bid],
+        bidderRequest,
+        context: mediaType ? { mediaType } : {},
+      });
       return buildServerRequest(data, options, bid);
     });
   },
