@@ -36,6 +36,7 @@ import {
 // @ts-expect-error the ts compiler is confused by build-time renaming of validate.mjs to validate.js
 import { validatePurposeDeclarations } from '../libraries/purposeDeclarations/validate.js';
 import type { TCFConsentData } from "./consentManagementTcf.ts";
+import { getPathConsent, getPurposeConsent, getVendorConsent } from '../libraries/consentManagement/tcfConsentUtils.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -294,8 +295,23 @@ export function getAcceptableFlags(consentData: TCFConsentData, type: 'purpose' 
 }
 
 function getConsentOrLI(consentData, path, id, acceptConsent, acceptLI) {
-  const data = deepAccess(consentData, `vendorData.${path}`);
-  return (acceptConsent && !!data?.consents?.[id]) || (acceptLI && !!data?.legitimateInterests?.[id]);
+  let hasConsent = false;
+  if (acceptConsent) {
+    if (path === 'purpose') {
+      hasConsent = getPurposeConsent(consentData, id);
+    } else if (path === 'vendor') {
+      hasConsent = getVendorConsent(consentData, id);
+    } else {
+      hasConsent = getPathConsent(consentData, path, id);
+    }
+  }
+  if (hasConsent) {
+    return true;
+  }
+  if (!acceptLI) {
+    return false;
+  }
+  return !!deepAccess(consentData, `vendorData.${path}.legitimateInterests.${id}`);
 }
 
 function getConsent(consentData, type, purposeNo, gvlId) {
