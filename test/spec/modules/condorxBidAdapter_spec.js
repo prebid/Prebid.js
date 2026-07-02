@@ -387,13 +387,17 @@ describe('CondorX Bid Adapter Tests', function () {
 
     it('should not mutate the original bid object', function () {
       const originalBidRequests = utils.deepClone(basicBidRequests);
-      const request = adapterSpec.buildRequests(basicBidRequests);
+
+      adapterSpec.buildRequests(basicBidRequests);
+
       expect(basicBidRequests).to.deep.equal(originalBidRequests);
     });
 
     it('should maintain the integrity of the native bid object', function () {
       const originalBidRequests = utils.deepClone(nativeBidData);
-      const request = adapterSpec.buildRequests(nativeBidData);
+
+      adapterSpec.buildRequests(nativeBidData);
+
       expect(nativeBidData).to.deep.equal(originalBidRequests);
     });
 
@@ -416,7 +420,6 @@ describe('CondorX Bid Adapter Tests', function () {
   describe('Response Validation', function () {
     let nativeResponseData;
     let bannerResponseData;
-    let ortbResponseData;
 
     beforeEach(() => {
       const baseResponse = {
@@ -453,23 +456,6 @@ describe('CondorX Bid Adapter Tests', function () {
         widget: {
           config: '{"css":".__condorx_banner_title{display:block!important;}"}'
         },
-      };
-
-      ortbResponseData = {
-        id: 'response-123',
-        seatbid: [{
-          bid: [{
-            id: 'bid-123',
-            impid: 'condorx121212',
-            price: 0.5,
-            adm: '<div>Test Banner Ad</div>',
-            w: 300,
-            h: 250,
-            crid: '12345',
-            adomain: ['condorx.test']
-          }]
-        }],
-        cur: 'USD'
       };
     });
 

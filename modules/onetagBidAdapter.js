@@ -243,12 +243,10 @@ function createRenderer(bid, rendererOptions = {}) {
 
 function getFrameNesting() {
   let topmostFrame = window;
-  let parent = window.parent;
   try {
     while (topmostFrame !== topmostFrame.parent) {
-      parent = topmostFrame.parent;
       // eslint-disable-next-line no-unused-expressions
-      parent.location.href;
+      topmostFrame.parent.location.href;
       topmostFrame = topmostFrame.parent;
     }
   } catch (e) { }

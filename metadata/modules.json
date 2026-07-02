@@ -4651,6 +4651,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adnex",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "smartico",
       "aliasOf": null,
       "gvlid": null,
@@ -5801,6 +5808,12 @@
       "componentType": "rtd",
       "componentName": "SirdataRTDModule",
       "gvlid": 53,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "stackupRtd",
+      "gvlid": null,
       "disclosureURL": null
     },
     {

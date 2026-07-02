@@ -138,7 +138,7 @@ function evaluateSizeConfig(configs) {
       typeof config.mediaQuery === 'string' &&
       config.mediaQuery.length > 0
     ) {
-      let ruleMatch = false;
+      let ruleMatch;
 
       try {
         ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;

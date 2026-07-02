@@ -434,7 +434,7 @@ describe('Tappx bid adapter', function () {
     it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
       // default getFloor response is empty object so should not break and not send hard_floor
       bidderRequest_f.bids[0].getFloor = () => getFloorResponse;
-      let request = spec.buildRequests(bidderRequest_f.bids, bidderRequest_f);
+      let request;
       let payload;
 
       getFloorResponse = undefined;

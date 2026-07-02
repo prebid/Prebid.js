@@ -305,8 +305,8 @@ describe('adWMGBidAdapter', function () {
         apiVersion: 2
       };
       const serverResponse = {};
-      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
-      syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
+      spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
       expect(syncs[0].url.match(/gdpr/g).length).to.equal(2); // gdpr + gdpr_consent
       expect(syncs[0].url.match(/gdpr_consent/g).length).to.equal(1);
     });

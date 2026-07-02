@@ -23,10 +23,9 @@ import { expect } from 'chai';
 import { deepClone } from '../../src/utils.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
-import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
-import { sandbox } from 'sinon';
+
 import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
@@ -160,7 +159,6 @@ function mockBidder(bidderCode, bids) {
 }
 
 const TEST_BIDS = [mockBid()];
-const TEST_BID_REQS = TEST_BIDS.map(mockBidRequest);
 
 function mockAjaxBuilder() {
   return function(url, callback) {
@@ -1214,7 +1212,7 @@ describe('auctionmanager.js', function () {
           'on bid': () => bidderRequests[0].bids[0],
           'on mediatype': () => bidderRequests[0].bids[0].mediaTypes.banner,
         }).forEach(([t, getObj]) => {
-          let renderer, bid;
+          let renderer;
           beforeEach(() => {
             renderer = {
               url: 'renderer.js',
@@ -2332,7 +2330,6 @@ describe('auctionmanager.js', function () {
           }
         });
 
-        const start = Date.now();
         auction = mockAuction(() => bidRequests);
         indexAuctions = [auction];
       });

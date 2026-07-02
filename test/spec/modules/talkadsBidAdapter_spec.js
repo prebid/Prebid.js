@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/talkadsBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from '../../../src/config.js';
+
 import { server } from '../../mocks/xhr.js';
 
 describe('TalkAds adapter', function () {
