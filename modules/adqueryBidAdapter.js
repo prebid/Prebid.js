@@ -326,8 +326,10 @@ function buildRequest(bid, bidderRequest, isVideo = false) {
     deepSetValue(videoRequest, 'site.ext.bidder', bid.params);
     videoRequest.id = bid.bidId;
 
-    if (bidderRequest?.gdprConsent?.consentString) {
+    if (bidderRequest?.gdprConsent?.gdprApplies != null) {
       deepSetValue(videoRequest, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    }
+    if (bidderRequest?.gdprConsent?.consentString) {
       deepSetValue(videoRequest, 'user.consent', bidderRequest.gdprConsent.consentString);
     }
     if (bidderRequest?.uspConsent) {
