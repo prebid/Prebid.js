@@ -71,18 +71,34 @@ module.exports = {
         if (!isES5Mode) {
           return [];
         } else {
-          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), ES5: true});
           return [
             {
-              test: /\.node_modules\/.*\.js$/,
+              test: /\.[cm]?js$/,
               use: [
                 {
                   loader: 'babel-loader',
-                  options: Object.assign(
-                    {cacheDirectory: cacheDir, cacheCompression: false},
-                    babelConfig,
-                    helpers.getAnalyticsOptions()
-                  ),
+                  options: {
+                    cacheDirectory: cacheDir,
+                    cacheCompression: false,
+                    presets: [
+                      [
+                        '@babel/preset-env',
+                        {
+                          'useBuiltIns': 'usage',
+                          'corejs': '3.42.0',
+                          'modules': 'commonjs',
+                          'targets': {
+                            'browsers': [
+                              'ie >= 11',
+                              'chrome >= 50',
+                              'firefox >= 50',
+                              'safari >= 10'
+                            ]
+                          }
+                        }
+                      ]
+                    ]
+                  }
                 }
               ]
             },
