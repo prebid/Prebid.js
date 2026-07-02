@@ -46,7 +46,7 @@ jobs:
             if (formatted != null) {
               fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
                 issue_number: ${{ github.event.pull_request.number }},
-                body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatted}`;
+                body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatted}`
               }));
               return 'true';
             }
