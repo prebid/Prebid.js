@@ -91,8 +91,8 @@ export function formatViolationsSummary(violations) {
         naming.push(`Module '${moduleName}' defines ${declaration(component)}, which ${name}`);
       }
       if (conflicts) {
-        conflicting.push(`Module '${moduleName}' defines ${declaration(component)}, which conflicts with:`);
-        conflicts.forEach(conflict => conflicting.push(`  ${declaration(conflict)} defined in module ${conflict.moduleName}`));
+        conflicting.push(`* Module '${moduleName}' defines ${declaration(component)}, which conflicts with:`);
+        conflicts.forEach(conflict => conflicting.push(`    * ${declaration(conflict)} defined in module ${conflict.moduleName}`));
       }
     });
   });
