@@ -82,17 +82,17 @@ export function formatViolationsSummary(violations) {
   const conflicting = [];
 
   function declaration(component) {
-    return `${component.componentType} ${component.aliasOf ? 'alias' : 'code'} '${component.componentName}'`;
+    return `${component.componentType} ${component.aliasOf ? 'alias' : 'code'} \`${component.componentName}\``;
   }
 
   Object.entries(violations).forEach(([moduleName, entries]) => {
     entries.forEach(({ component, name, conflicts }) => {
       if (name) {
-        naming.push(`Module '${moduleName}' defines ${declaration(component)}, which ${name}`);
+        naming.push(`Module \`${moduleName}\` defines ${declaration(component)}, which ${name}`);
       }
       if (conflicts) {
-        conflicting.push(`* Module '${moduleName}' defines ${declaration(component)}, which conflicts with:`);
-        conflicts.forEach(conflict => conflicting.push(`    * ${declaration(conflict)} defined in module ${conflict.moduleName}`));
+        conflicting.push(`* Module \`${moduleName}\` defines ${declaration(component)}, which conflicts with:`);
+        conflicts.forEach(conflict => conflicting.push(`    * ${declaration(conflict)} defined in module \`${conflict.moduleName}\``));
       }
     });
   });
