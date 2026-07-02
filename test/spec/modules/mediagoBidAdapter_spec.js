@@ -70,8 +70,8 @@ describe('mediago:BidAdapterTests', function () {
         adUnitCode: 'regular_iframe',
         transactionId: '7b26fdae-96e6-4c35-a18b-218dda11397d',
         sizes: [[300, 250]],
-        bidId: '54d73f19c9d47a', // todo
-        bidderRequestId: '4fec04e87ad785', // todo
+        bidId: '54d73f19c9d47a',
+        bidderRequestId: '4fec04e87ad785',
         auctionId: '883a346a-6d62-4adb-a600-0f3a869061d1',
         src: 'client',
         bidRequestsCount: 1,
@@ -92,34 +92,13 @@ describe('mediago:BidAdapterTests', function () {
       }
     },
     userIdAsEids: [
-      {
-        source: 'adserver.org',
-        uids: [{ id: 'sample-userid' }]
-      },
-      {
-        source: 'criteo.com',
-        uids: [{ id: 'sample-criteo-userid' }]
-      },
-      {
-        source: 'netid.de',
-        uids: [{ id: 'sample-netId-userid' }]
-      },
-      {
-        source: 'liveramp.com',
-        uids: [{ id: 'sample-idl-userid' }]
-      },
-      {
-        source: 'uidapi.com',
-        uids: [{ id: 'sample-uid2-value' }]
-      },
-      {
-        source: 'puburl.com',
-        uids: [{ id: 'pubid1' }]
-      },
-      {
-        source: 'puburl2.com',
-        uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
-      }
+      { source: 'adserver.org', uids: [{ id: 'sample-userid' }] },
+      { source: 'criteo.com', uids: [{ id: 'sample-criteo-userid' }] },
+      { source: 'netid.de', uids: [{ id: 'sample-netId-userid' }] },
+      { source: 'liveramp.com', uids: [{ id: 'sample-idl-userid' }] },
+      { source: 'uidapi.com', uids: [{ id: 'sample-uid2-value' }] },
+      { source: 'puburl.com', uids: [{ id: 'pubid1' }] },
+      { source: 'puburl2.com', uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }] }
     ]
   };
   let request = [];
@@ -176,7 +155,7 @@ describe('mediago:BidAdapterTests', function () {
         sandbox.restore();
       });
 
-      it('should generate new UUID and set cookie if not exists', () => {
+      it('should generate new UUID and set cookie when no existing cookie', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
         const uid = getPmgUID();
@@ -184,7 +163,7 @@ describe('mediago:BidAdapterTests', function () {
         expect(storage.setCookie.calledOnce).to.be.true;
       });
 
-      it('should return existing UUID from cookie', () => {
+      it('should return existing UUID from cookie without setting new one', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => 'existing-uuid');
         const uid = getPmgUID();
@@ -192,11 +171,119 @@ describe('mediago:BidAdapterTests', function () {
         expect(storage.setCookie.called).to.be.false;
       });
 
-      it('should not set new UUID when cookies are not enabled', () => {
+      it('should return undefined when cookies are not enabled', () => {
         storage.cookiesAreEnabled.callsFake(() => false);
+        const uid = getPmgUID();
+        expect(uid).to.be.undefined;
+        expect(storage.setCookie.called).to.be.false;
+      });
+
+      it('should ignore gdprConsent parameter (not used by implementation)', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
-        getPmgUID();
-        expect(storage.setCookie.calledOnce).to.be.false;
+        expect(getPmgUID({ gdprApplies: true, consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==' })).to.equal('new-uuid');
+        expect(getPmgUID({ gdprApplies: false })).to.equal('new-uuid');
+        expect(getPmgUID(undefined)).to.equal('new-uuid');
+      });
+    });
+
+    describe('buyeruid and user.id logic', function() {
+      let sandbox;
+
+      const makeBidRequests = (overrides = {}) => [{
+        bidder: 'mediago',
+        params: { token: 'test-token' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]],
+        bidId: 'bid-1',
+        adUnitCode: 'ad-1',
+        userIdAsEids: [],
+        ...overrides
+      }];
+
+      const baseBidderRequest = {
+        bidderRequestId: 'req-1',
+        refererInfo: { domain: 'example.com', page: 'https://example.com' },
+        timeout: 2000,
+        ortb2: {},
+      };
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(storage, 'getCookie');
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+        sandbox.stub(utils, 'generateUUID').returns('generated-uuid');
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should use mguid cookie as buyeruid when available', () => {
+        storage.getCookie.callsFake((key) => {
+          if (key === '__mguid_') return 'mguid-value';
+          if (key === '__pmguid_') return 'pmguid-value';
+          return null;
+        });
+
+        const bidRequests = makeBidRequests();
+        spec.isBidRequestValid(bidRequests[0]);
+        const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+        expect(payload.user.buyeruid).to.equal('mguid-value');
+      });
+
+      it('should leave buyeruid undefined when mguid is not available', () => {
+        storage.getCookie.callsFake((key) => {
+          if (key === '__pmguid_') return 'pmguid-value';
+          return null;
+        });
+
+        const bidRequests = makeBidRequests();
+        spec.isBidRequestValid(bidRequests[0]);
+        const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+        expect(payload.user.buyeruid).to.be.undefined;
+      });
+
+      it('should use crumbs.pubcid as user.id with highest priority', () => {
+        storage.getCookie.returns(null);
+        const bidRequests = makeBidRequests({
+          crumbs: { pubcid: 'crumbs-pubcid-value' },
+          userIdAsEids: [{ source: 'pubcid.org', uids: [{ id: 'eids-pubcid-value' }] }],
+        });
+        spec.isBidRequestValid(bidRequests[0]);
+        const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+        expect(payload.user.id).to.equal('crumbs-pubcid-value');
+      });
+
+      it('should fallback to pubcid.org eid when crumbs.pubcid is absent', () => {
+        storage.getCookie.returns(null);
+        const bidRequests = makeBidRequests({
+          userIdAsEids: [{ source: 'pubcid.org', uids: [{ id: 'eids-pubcid-value' }] }],
+        });
+        spec.isBidRequestValid(bidRequests[0]);
+        const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+        expect(payload.user.id).to.equal('eids-pubcid-value');
+      });
+
+      it('should fallback to sharedid.org when both crumbs.pubcid and pubcid.org are absent', () => {
+        storage.getCookie.returns(null);
+        const bidRequests = makeBidRequests({
+          userIdAsEids: [{ source: 'sharedid.org', uids: [{ id: 'eids-sharedid-value' }] }],
+        });
+        spec.isBidRequestValid(bidRequests[0]);
+        const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+        expect(payload.user.id).to.equal('eids-sharedid-value');
+      });
+
+      it('should have undefined user.id when no pubcid source is available', () => {
+        storage.getCookie.returns(null);
+        const bidRequests = makeBidRequests({
+          userIdAsEids: [{ source: 'criteo.com', uids: [{ id: 'criteo-id' }] }],
+        });
+        spec.isBidRequestValid(bidRequests[0]);
+        const payload = JSON.parse(spec.buildRequests(bidRequests, baseBidderRequest).data);
+        expect(payload.user.id).to.be.undefined;
       });
     });
   });
@@ -235,13 +322,9 @@ describe('mediago:BidAdapterTests', function () {
     };
 
     const bids = spec.interpretResponse(serverResponse);
-    // console.log({
-    //   bids
-    // });
     expect(bids).to.have.lengthOf(1);
 
     const bid = bids[0];
-
     expect(bid.creativeId).to.equal('ff32b6f9b3bbc45c00b78b6674a2952e');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
@@ -251,30 +334,14 @@ describe('mediago:BidAdapterTests', function () {
 
 describe('mediago: getUserSyncs', function() {
   const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
-  const IFRAME_ENABLED = {
-    iframeEnabled: true,
-    pixelEnabled: false,
-  };
-  const IFRAME_DISABLED = {
-    iframeEnabled: false,
-    pixelEnabled: false,
-  };
-  const GDPR_CONSENT = {
-    consentString: 'gdprConsentString',
-    gdprApplies: true
-  };
-  const USP_CONSENT = {
-    consentString: 'uspConsentString'
-  };
+  const IFRAME_ENABLED = { iframeEnabled: true, pixelEnabled: false };
+  const IFRAME_DISABLED = { iframeEnabled: false, pixelEnabled: false };
+  const GDPR_CONSENT = { consentString: 'gdprConsentString', gdprApplies: true };
+  const USP_CONSENT = { consentString: 'uspConsentString' };
 
   let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
   syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
-  const expectedIframeSyncs = [
-    {
-      type: 'iframe',
-      url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
-    }
-  ];
+  const expectedIframeSyncs = [{ type: 'iframe', url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}` }];
 
   it('should return nothing if iframe is disabled', () => {
     const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
@@ -291,236 +358,114 @@ describe('mediago Bid Adapter Tests', function () {
   describe('buildRequests', () => {
     describe('getPageTitle function', function() {
       let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.createSandbox();
-      });
-
-      afterEach(() => {
-        sandbox.restore();
-      });
+      beforeEach(() => { sandbox = sinon.createSandbox(); });
+      afterEach(() => { sandbox.restore(); });
 
       it('should return the top document title if available', function() {
-        const fakeTopDocument = {
-          title: 'Top Document Title',
-          querySelector: () => ({ content: 'Top Document Title test' })
-        };
-        const fakeTopWindow = {
-          document: fakeTopDocument
-        };
-        const result = getPageTitle({ top: fakeTopWindow });
-        expect(result).to.equal('Top Document Title');
+        const fakeTopWindow = { document: { title: 'Top Document Title', querySelector: () => ({ content: 'og' }) } };
+        expect(getPageTitle({ top: fakeTopWindow })).to.equal('Top Document Title');
       });
 
-      it('should return the content of top og:title meta tag if title is empty', function() {
-        const ogTitleContent = 'Top OG Title Content';
+      it('should return og:title from top if title is empty', function() {
         const fakeTopWindow = {
-          document: {
-            title: '',
-            querySelector: sandbox.stub().withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
-          }
+          document: { title: '', querySelector: sandbox.stub().withArgs('meta[property="og:title"]').returns({ content: 'Top OG Title' }) }
         };
-
-        const result = getPageTitle({ top: fakeTopWindow });
-        expect(result).to.equal(ogTitleContent);
+        expect(getPageTitle({ top: fakeTopWindow })).to.equal('Top OG Title');
       });
 
-      it('should return the document title if no og:title meta tag is present', function() {
+      it('should fallback to current document title', function() {
         document.title = 'Test Page Title';
         sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
-
-        const result = getPageTitle({ top: undefined });
-        expect(result).to.equal('Test Page Title');
+        expect(getPageTitle({ top: undefined })).to.equal('Test Page Title');
       });
 
-      it('should return the content of og:title meta tag if present', function() {
+      it('should fallback to current og:title if document.title is empty', function() {
         document.title = '';
-        const ogTitleContent = 'Top OG Title Content';
-        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
-        const result = getPageTitle({ top: undefined });
-        expect(result).to.equal(ogTitleContent);
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: 'OG Title' });
+        expect(getPageTitle({ top: undefined })).to.equal('OG Title');
       });
 
-      it('should return an empty string if no title or og:title meta tag is found', function() {
+      it('should return empty string if nothing is found', function() {
         document.title = '';
         sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
-        const result = getPageTitle({ top: undefined });
-        expect(result).to.equal('');
+        expect(getPageTitle({ top: undefined })).to.equal('');
       });
 
-      it('should handle exceptions when accessing top.document and fallback to current document', function() {
-        const fakeWindow = {
-          get top() {
-            throw new Error('Access denied');
-          }
-        };
-        const ogTitleContent = 'Current OG Title Content';
+      it('should handle top access exceptions and fallback to current document', function() {
         document.title = 'Current Document Title';
-        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
-        const result = getPageTitle(fakeWindow);
-        expect(result).to.equal('Current Document Title');
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+        const fakeWindow = { get top() { throw new Error('Access denied'); } };
+        expect(getPageTitle(fakeWindow)).to.equal('Current Document Title');
       });
     });
 
     describe('getPageDescription function', function() {
       let sandbox;
+      beforeEach(() => { sandbox = sinon.createSandbox(); });
+      afterEach(() => { sandbox.restore(); });
 
-      beforeEach(() => {
-        sandbox = sinon.createSandbox();
+      it('should return top document description if available', function() {
+        const fakeTopWindow = { document: { querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: 'Top Desc' }) } };
+        expect(getPageDescription({ top: fakeTopWindow })).to.equal('Top Desc');
       });
 
-      afterEach(() => {
-        sandbox.restore();
+      it('should return top og:description if description is not present', function() {
+        const fakeTopWindow = { document: { querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: 'Top OG Desc' }) } };
+        expect(getPageDescription({ top: fakeTopWindow })).to.equal('Top OG Desc');
       });
 
-      it('should return the top document description if available', function() {
-        const descriptionContent = 'Top Document Description';
-        const fakeTopDocument = {
-          querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: descriptionContent })
-        };
-        const fakeTopWindow = { document: fakeTopDocument };
-        const result = getPageDescription({ top: fakeTopWindow });
-        expect(result).to.equal(descriptionContent);
+      it('should fallback to current document on top access exception', function() {
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="description"]').returns({ content: 'Current Desc' });
+        const fakeWindow = { get top() { throw new Error('Access denied'); } };
+        expect(getPageDescription(fakeWindow)).to.equal('Current Desc');
       });
 
-      it('should return the top document og:description if description is not present', function() {
-        const ogDescriptionContent = 'Top OG Description';
-        const fakeTopDocument = {
-          querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
-        };
-        const fakeTopWindow = { document: fakeTopDocument };
-        const result = getPageDescription({ top: fakeTopWindow });
-        expect(result).to.equal(ogDescriptionContent);
-      });
-
-      it('should return the current document description if top document is not accessible', function() {
-        const descriptionContent = 'Current Document Description';
-        sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="description"]').returns({ content: descriptionContent });
-        const fakeWindow = {
-          get top() {
-            throw new Error('Access denied');
-          }
-        };
-        const result = getPageDescription(fakeWindow);
-        expect(result).to.equal(descriptionContent);
-      });
-
-      it('should return the current document og:description if description is not present and top document is not accessible', function() {
-        const ogDescriptionContent = 'Current OG Description';
-        sandbox.stub(document, 'querySelector')
-          .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent });
-
-        const fakeWindow = {
-          get top() {
-            throw new Error('Access denied');
-          }
-        };
-        const result = getPageDescription(fakeWindow);
-        expect(result).to.equal(ogDescriptionContent);
+      it('should fallback to current og:description if description is absent and top is inaccessible', function() {
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:description"]').returns({ content: 'Current OG Desc' });
+        const fakeWindow = { get top() { throw new Error('Access denied'); } };
+        expect(getPageDescription(fakeWindow)).to.equal('Current OG Desc');
       });
     });
 
     describe('getPageKeywords function', function() {
       let sandbox;
+      beforeEach(() => { sandbox = sinon.createSandbox(); });
+      afterEach(() => { sandbox.restore(); });
 
-      beforeEach(() => {
-        sandbox = sinon.createSandbox();
+      it('should return top document keywords if available', function() {
+        const fakeTopWindow = { document: { querySelector: sandbox.stub().withArgs('meta[name="keywords"]').returns({ content: 'k1, k2' }) } };
+        expect(getPageKeywords({ top: fakeTopWindow })).to.equal('k1, k2');
       });
 
-      afterEach(() => {
-        sandbox.restore();
+      it('should fallback to current document keywords on top access exception', function() {
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns({ content: 'k3, k4' });
+        const fakeWindow = { get top() { throw new Error('Access denied'); } };
+        expect(getPageKeywords(fakeWindow)).to.equal('k3, k4');
       });
 
-      it('should return the top document keywords if available', function() {
-        const keywordsContent = 'keyword1, keyword2, keyword3';
-        const fakeTopDocument = {
-          querySelector: sandbox.stub()
-            .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
-        };
-        const fakeTopWindow = { document: fakeTopDocument };
-
-        const result = getPageKeywords({ top: fakeTopWindow });
-        expect(result).to.equal(keywordsContent);
-      });
-
-      it('should return the current document keywords if top document is not accessible', function() {
-        const keywordsContent = 'keyword1, keyword2, keyword3';
-        sandbox.stub(document, 'querySelector')
-          .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
-
-        // 模拟顶层窗口访问异常
-        const fakeWindow = {
-          get top() {
-            throw new Error('Access denied');
-          }
-        };
-
-        const result = getPageKeywords(fakeWindow);
-        expect(result).to.equal(keywordsContent);
-      });
-
-      it('should return an empty string if no keywords meta tag is found', function() {
+      it('should return empty string if no keywords meta tag', function() {
         sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
-
-        const result = getPageKeywords();
-        expect(result).to.equal('');
+        expect(getPageKeywords()).to.equal('');
       });
     });
+
     describe('getConnectionDownLink function', function() {
-      let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.createSandbox();
+      it('should return downlink as string if available', function() {
+        expect(getConnectionDownLink({ navigator: { connection: { downlink: 2.5 } } })).to.equal('2.5');
       });
 
-      afterEach(() => {
-        sandbox.restore();
-      });
-
-      it('should return the downlink value as a string if available', function() {
-        const downlinkValue = 2.5;
-        const fakeNavigator = {
-          connection: {
-            downlink: downlinkValue
-          }
-        };
-
-        const result = getConnectionDownLink({ navigator: fakeNavigator });
-        expect(result).to.equal(downlinkValue.toString());
-      });
-
-      it('should return undefined if downlink is not available', function() {
-        const fakeNavigator = {
-          connection: {}
-        };
-
-        const result = getConnectionDownLink({ navigator: fakeNavigator });
-        expect(result).to.be.undefined;
-      });
-
-      it('should return undefined if connection is not available', function() {
-        const fakeNavigator = {};
-
-        const result = getConnectionDownLink({ navigator: fakeNavigator });
-        expect(result).to.be.undefined;
-      });
-
-      it('should handle cases where navigator is not defined', function() {
-        const result = getConnectionDownLink({});
-        expect(result).to.be.undefined;
+      it('should return undefined if downlink/connection/navigator is missing', function() {
+        expect(getConnectionDownLink({ navigator: { connection: {} } })).to.be.undefined;
+        expect(getConnectionDownLink({ navigator: {} })).to.be.undefined;
+        expect(getConnectionDownLink({})).to.be.undefined;
       });
     });
 
     describe('getUserSyncs with message event listener', function() {
       function messageHandler(event) {
-        if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) {
-          return;
-        }
-
+        if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) return;
         window.removeEventListener('message', messageHandler, true);
         event.stopImmediatePropagation();
-
         const response = event.data;
         if (!response.optout && response.mguid) {
           storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
@@ -528,16 +473,12 @@ describe('mediago Bid Adapter Tests', function () {
       }
 
       let sandbox;
-
       beforeEach(() => {
         sandbox = sinon.createSandbox();
         sandbox.stub(storage, 'setCookie');
         sandbox.stub(window, 'removeEventListener');
       });
-
-      afterEach(() => {
-        sandbox.restore();
-      });
+      afterEach(() => { sandbox.restore(); });
 
       it('should set a cookie when a valid message is received', () => {
         const fakeEvent = {
@@ -545,22 +486,19 @@ describe('mediago Bid Adapter Tests', function () {
           origin: THIRD_PARTY_COOKIE_ORIGIN,
           stopImmediatePropagation: sinon.spy()
         };
-
         messageHandler(fakeEvent);
-
         expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
         expect(window.removeEventListener.calledWith('message', messageHandler, true)).to.be.true;
         expect(storage.setCookie.calledWith(COOKIE_KEY_MGUID, '12345', sinon.match.string)).to.be.true;
       });
+
       it('should not do anything when an invalid message is received', () => {
         const fakeEvent = {
           data: null,
           origin: 'http://invalid-origin.com',
           stopImmediatePropagation: sinon.spy()
         };
-
         messageHandler(fakeEvent);
-
         expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
         expect(window.removeEventListener.notCalled).to.be.true;
         expect(storage.setCookie.notCalled).to.be.true;
@@ -570,19 +508,10 @@ describe('mediago Bid Adapter Tests', function () {
 });
 
 describe('mediago: transformSizesOrtb', function() {
-  it('should transform a single size array [w, h] to [{w, h}]', function() {
-    const result = transformSizesOrtb([300, 250]);
-    expect(result).to.deep.equal([{ w: 300, h: 250 }]);
-  });
-
-  it('should transform multi-size array [[w,h],[w,h]] to [{w,h},{w,h}]', function() {
-    const result = transformSizesOrtb([[300, 250], [728, 90]]);
-    expect(result).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
-  });
-
-  it('should return empty array for empty input', function() {
-    const result = transformSizesOrtb([]);
-    expect(result).to.deep.equal([]);
+  it('should transform sizes correctly', function() {
+    expect(transformSizesOrtb([300, 250])).to.deep.equal([{ w: 300, h: 250 }]);
+    expect(transformSizesOrtb([[300, 250], [728, 90]])).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+    expect(transformSizesOrtb([])).to.deep.equal([]);
   });
 });
 
@@ -592,26 +521,17 @@ describe('mediago: buildRequests with non-standard size', function() {
       bidderCode: 'mediago',
       auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
       bidderRequestId: '4fec04e87ad785',
-      bids: [
-        {
-          bidder: 'mediago',
-          params: {
-            token: '85a6b01e41ac36d49744fad726e3655d',
-            publisher: '52',
-          },
-          mediaTypes: {
-            banner: {
-              sizes: [[999, 888]],
-            }
-          },
-          adUnitCode: 'test_ad_unit',
-          sizes: [[999, 888]],
-          bidId: 'bid123',
-          bidderRequestId: '4fec04e87ad785',
-          auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
-          userIdAsEids: [],
-        }
-      ],
+      bids: [{
+        bidder: 'mediago',
+        params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
+        mediaTypes: { banner: { sizes: [[999, 888]] } },
+        adUnitCode: 'test_ad_unit',
+        sizes: [[999, 888]],
+        bidId: 'bid123',
+        bidderRequestId: '4fec04e87ad785',
+        auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
+        userIdAsEids: [],
+      }],
     };
 
     spec.isBidRequestValid(bidRequestData.bids[0]);
@@ -625,15 +545,8 @@ describe('mediago: buildRequests with non-standard size', function() {
 
 describe('mediago: onBidWon', function() {
   let sandbox;
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    sandbox.stub(utils, 'triggerPixel');
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-  });
+  beforeEach(() => { sandbox = sinon.createSandbox(); sandbox.stub(utils, 'triggerPixel'); });
+  afterEach(() => { sandbox.restore(); });
 
   it('should call triggerPixel when nurl exists', function() {
     spec.onBidWon({ nurl: 'https://trace.mediago.io/win?id=123' });
@@ -644,5 +557,299 @@ describe('mediago: onBidWon', function() {
   it('should not call triggerPixel when nurl is empty', function() {
     spec.onBidWon({});
     expect(utils.triggerPixel.called).to.be.false;
+  });
+});
+
+describe('mediago: Native Ad Support', function() {
+  const nativeOrtbRequest = {
+    ver: '1.2',
+    assets: [
+      { id: 1, required: 1, img: { type: 3, wmin: 275, hmin: 144 } },
+      { id: 2, required: 1, title: { len: 100 } },
+      { id: 3, required: 1, data: { type: 1 } }
+    ],
+    eventtrackers: [
+      { event: 1, methods: [1, 2] },
+      { event: 2, methods: [1] }
+    ],
+    plcmttype: 1,
+    plcmtcnt: 1,
+    privacy: 1
+  };
+
+  const nativeBidRequests = [{
+    bidder: 'mediago',
+    params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
+    mediaTypes: { native: {} },
+    nativeOrtbRequest: nativeOrtbRequest,
+    adUnitCode: 'native-ad-1',
+    transactionId: 'native-txn-001',
+    bidId: 'native-bid-1',
+    bidderRequestId: 'native-req-1',
+    auctionId: 'native-auction-1',
+    userIdAsEids: [],
+  }];
+
+  const bidderRequest = {
+    bidderRequestId: 'native-req-1',
+    refererInfo: { domain: 'example.com', page: 'https://example.com/article' },
+    timeout: 2000,
+    ortb2: {},
+  };
+
+  describe('buildRequests with native mediaType', function() {
+    beforeEach(() => { spec.isBidRequestValid(nativeBidRequests[0]); });
+
+    it('should build native imp with correct structure', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const imp = payload.imp[0];
+
+      expect(payload.imp).to.have.lengthOf(1);
+      expect(imp.banner).to.be.undefined;
+      expect(imp.native).to.exist;
+      expect(imp.native.ver).to.equal('1.2');
+      expect(imp.id).to.equal('native-bid-1');
+      expect(imp.bidfloor).to.be.a('number');
+      expect(imp.bidfloorcur).to.be.undefined;
+      expect(imp.secure).to.be.undefined;
+      expect(imp.instl).to.be.undefined;
+    });
+
+    it('should serialize nativeOrtbRequest correctly in native.request', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      const parsed = JSON.parse(payload.imp[0].native.request);
+
+      expect(parsed.ver).to.equal('1.2');
+      expect(parsed.assets).to.have.lengthOf(3);
+      expect(parsed.assets[0].img.type).to.equal(3);
+      expect(parsed.assets[1].title.len).to.equal(100);
+      expect(parsed.assets[2].data.type).to.equal(1);
+      expect(parsed.eventtrackers).to.have.lengthOf(2);
+      expect(parsed.eventtrackers[0].methods).to.deep.equal([1, 2]);
+    });
+
+    it('should include correct ext fields on native imp', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const ext = JSON.parse(request.data).imp[0].ext;
+
+      expect(ext.adUnitCode).to.equal('native-ad-1');
+      expect(ext.publisher).to.equal('52');
+    });
+
+    it('should set _mediaTypeMap correctly', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      expect(request._mediaTypeMap).to.exist;
+      expect(request._mediaTypeMap['native-bid-1']).to.equal('native');
+    });
+
+    it('should handle mixed banner and native ad units', function() {
+      const mixedBidRequests = [
+        {
+          bidder: 'mediago',
+          params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          sizes: [[300, 250]],
+          adUnitCode: 'banner-ad-1',
+          bidId: 'banner-bid-1',
+          bidderRequestId: 'mixed-req-1',
+          auctionId: 'mixed-auction-1',
+          userIdAsEids: [],
+        },
+        {
+          bidder: 'mediago',
+          params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
+          mediaTypes: { native: {} },
+          nativeOrtbRequest: nativeOrtbRequest,
+          adUnitCode: 'native-ad-1',
+          bidId: 'native-bid-1',
+          bidderRequestId: 'mixed-req-1',
+          auctionId: 'mixed-auction-1',
+          userIdAsEids: [],
+        }
+      ];
+
+      const request = spec.buildRequests(mixedBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.imp).to.have.lengthOf(2);
+      expect(payload.imp[0].banner).to.exist;
+      expect(payload.imp[0].native).to.be.undefined;
+      expect(payload.imp[1].native).to.exist;
+      expect(payload.imp[1].banner).to.be.undefined;
+      expect(request._mediaTypeMap['banner-bid-1']).to.equal('banner');
+      expect(request._mediaTypeMap['native-bid-1']).to.equal('native');
+    });
+
+    it('should pass tagid and transactionId from params/ortb2Imp', function() {
+      const reqsWithExtras = [{
+        ...nativeBidRequests[0],
+        params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52', tagid: 'tag-123' },
+        ortb2Imp: { ext: { tid: 'ortb2-tid-value' } }
+      }];
+      spec.isBidRequestValid(reqsWithExtras[0]);
+      const payload = JSON.parse(spec.buildRequests(reqsWithExtras, bidderRequest).data);
+
+      expect(payload.imp[0].tagid).to.equal('tag-123');
+      expect(payload.imp[0].ext.transactionId).to.equal('ortb2-tid-value');
+    });
+
+    it('should return empty imp when nativeOrtbRequest is missing', function() {
+      const reqsNoOrtb = [{ ...nativeBidRequests[0], nativeOrtbRequest: undefined }];
+      spec.isBidRequestValid(reqsNoOrtb[0]);
+      const payload = JSON.parse(spec.buildRequests(reqsNoOrtb, bidderRequest).data);
+      expect(payload.imp[0]).to.deep.equal({});
+    });
+
+    it('should not have hardcoded ip in device and set test field correctly', function() {
+      const request = spec.buildRequests(nativeBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.device.ip).to.be.undefined;
+      expect(payload.test).to.equal(0);
+
+      const reqsWithTest = [{ ...nativeBidRequests[0], params: { ...nativeBidRequests[0].params, test: 1 } }];
+      spec.isBidRequestValid(reqsWithTest[0]);
+      const payload2 = JSON.parse(spec.buildRequests(reqsWithTest, bidderRequest).data);
+      expect(payload2.test).to.equal(1);
+    });
+
+    it('should include GDPR consent in native imp ext when present', function() {
+      const gdprBidderRequest = {
+        ...bidderRequest,
+        gdprConsent: { consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==', gdprApplies: true }
+      };
+      const payload = JSON.parse(spec.buildRequests(nativeBidRequests, gdprBidderRequest).data);
+      expect(payload.imp[0].ext.consent).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
+      expect(payload.imp[0].ext.gdpr).to.equal(1);
+    });
+  });
+
+  describe('interpretResponse with native bids', function() {
+    const nativeAdm = JSON.stringify({
+      assets: [
+        { id: 1, img: { type: 3, url: 'https://images.mediago.io/img/300x157.png', w: 300, h: 157 } },
+        { id: 2, title: { text: 'Test Native Ad Title', len: 20 } },
+        { id: 3, data: { type: 1, value: 'TestSponsor' } }
+      ],
+      link: { url: 'https://trace.mediago.io/ju/ic?tn=test&ap={AUCTION_PRICE}' },
+      eventtrackers: [
+        { event: 1, method: 1, url: 'https://trace.mediago.io/ju/imp?tn=test' },
+        { event: 2, method: 1, url: 'https://trace.mediago.io/ju/view?tn=test' }
+      ],
+      privacy: 'https://cdn.mediago.io/js/officialWebsite/privacy.html'
+    });
+
+    const nativeServerResponse = {
+      body: {
+        id: 'mgprebidjs_native-req-1',
+        seatbid: [{
+          seat: 'MediaGo',
+          bid: [{
+            id: 'bid-response-1',
+            impid: 'native-bid-1',
+            price: 0.15,
+            adm: nativeAdm,
+            adomain: ['advertiser.com'],
+            crid: 'creative-native-001',
+            nurl: 'https://trace.mediago.io/ju/win?tn=test&ap=${AUCTION_PRICE}'
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    const bidRequest = { _mediaTypeMap: { 'native-bid-1': 'native' } };
+
+    it('should return correct native bid response with all fields', function() {
+      const bids = spec.interpretResponse(nativeServerResponse, bidRequest);
+
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.mediaType).to.equal('native');
+      expect(bid.width).to.equal(1);
+      expect(bid.height).to.equal(1);
+      expect(bid.cpm).to.equal(0.15);
+      expect(bid.creativeId).to.equal('creative-native-001');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.be.true;
+      expect(bid.ttl).to.be.above(0);
+      expect(bid.nurl).to.equal('https://trace.mediago.io/ju/win?tn=test&ap=${AUCTION_PRICE}');
+      expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('should parse native ortb object correctly', function() {
+      const bids = spec.interpretResponse(nativeServerResponse, bidRequest);
+      const ortb = bids[0].native.ortb;
+
+      expect(ortb.assets).to.have.lengthOf(3);
+      expect(ortb.assets[0].img.url).to.equal('https://images.mediago.io/img/300x157.png');
+      expect(ortb.assets[1].title.text).to.equal('Test Native Ad Title');
+      expect(ortb.assets[2].data.value).to.equal('TestSponsor');
+      expect(ortb.link.url).to.include('trace.mediago.io');
+      expect(ortb.eventtrackers).to.have.lengthOf(2);
+      expect(ortb.eventtrackers[0].event).to.equal(1);
+      expect(ortb.privacy).to.equal('https://cdn.mediago.io/js/officialWebsite/privacy.html');
+    });
+
+    it('should handle adm wrapped with native key', function() {
+      const wrappedAdm = JSON.stringify({
+        native: {
+          assets: [{ id: 1, img: { type: 3, url: 'https://images.mediago.io/img/wrapped.png', w: 300, h: 157 } }],
+          link: { url: 'https://trace.mediago.io/ju/ic?wrapped=1' }
+        }
+      });
+      const wrappedResponse = {
+        body: { id: 'mgprebidjs_wrapped', seatbid: [{ bid: [{ id: 'bid-wrapped', impid: 'native-bid-1', price: 0.2, adm: wrappedAdm, crid: 'crid-w' }] }], cur: 'USD' }
+      };
+      const bids = spec.interpretResponse(wrappedResponse, bidRequest);
+
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].native.ortb.assets[0].img.url).to.equal('https://images.mediago.io/img/wrapped.png');
+      expect(bids[0].native.ortb.link.url).to.include('wrapped=1');
+    });
+
+    it('should skip bid when adm is invalid JSON', function() {
+      const invalidResponse = {
+        body: { id: 'mgprebidjs_invalid', seatbid: [{ bid: [{ id: 'bid-inv', impid: 'native-bid-1', price: 0.1, adm: 'not-valid-json{{{', crid: 'crid-inv' }] }], cur: 'USD' }
+      };
+      expect(spec.interpretResponse(invalidResponse, bidRequest)).to.have.lengthOf(0);
+    });
+
+    it('should default to banner when _mediaTypeMap is not provided', function() {
+      const bids = spec.interpretResponse(nativeServerResponse, {});
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('banner');
+      expect(bids[0].ad).to.be.a('string');
+      expect(bids[0].native).to.be.undefined;
+    });
+
+    it('should handle mixed banner and native responses', function() {
+      const mixedResponse = {
+        body: {
+          id: 'mgprebidjs_mixed',
+          seatbid: [{
+            bid: [
+              { id: 'bid-banner', impid: 'banner-bid-1', price: 0.5, adm: '<div>banner</div>', crid: 'crid-b', w: 300, h: 250 },
+              { id: 'bid-native', impid: 'native-bid-1', price: 0.15, adm: nativeAdm, crid: 'crid-n' }
+            ]
+          }],
+          cur: 'USD'
+        }
+      };
+      const mixedBidRequest = { _mediaTypeMap: { 'banner-bid-1': 'banner', 'native-bid-1': 'native' } };
+      const bids = spec.interpretResponse(mixedResponse, mixedBidRequest);
+
+      expect(bids).to.have.lengthOf(2);
+      const bannerBid = bids.find(b => b.requestId === 'banner-bid-1');
+      expect(bannerBid.mediaType).to.equal('banner');
+      expect(bannerBid.width).to.equal(300);
+      expect(bannerBid.height).to.equal(250);
+
+      const nativeBid = bids.find(b => b.requestId === 'native-bid-1');
+      expect(nativeBid.mediaType).to.equal('native');
+      expect(nativeBid.width).to.equal(1);
+      expect(nativeBid.native.ortb.assets).to.have.lengthOf(3);
+    });
   });
 });
