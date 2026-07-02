@@ -426,12 +426,6 @@ describe('permutiveRtdProvider', function () {
 
       const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]));
 
-      const transformedUserData = {
-        name: 'transformation',
-        ext: { test: true },
-        segment: [1, 2, 3]
-      };
-
       setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 
       acBidders.forEach(bidder => {
@@ -461,12 +455,6 @@ describe('permutiveRtdProvider', function () {
       };
 
       const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]));
-
-      const transformedUserData = {
-        name: 'transformation',
-        ext: { test: true },
-        segment: [1, 2, 3]
-      };
 
       setBidderRtb(bidderConfig, moduleConfig, segmentsData);
 

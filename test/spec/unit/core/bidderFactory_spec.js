@@ -44,17 +44,18 @@ before(() => {
 const wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
+  let doneStub;
   let onTimelyResponseStub;
 
   beforeEach(() => {
+    doneStub = sinon.stub();
     onTimelyResponseStub = sinon.stub();
   });
 
   describe('bidders created by newBidder', function () {
     let spec;
-    let bidder;
+
     let addBidResponseStub;
-    let doneStub;
 
     beforeEach(function () {
       spec = {
@@ -67,13 +68,11 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sinon.stub();
       addBidResponseStub.reject = sinon.stub();
-      doneStub = sinon.stub();
     });
 
     describe('when the ajax response is irrelevant', function () {
       let sandbox;
       let ajaxStub;
-      let getConfigSpy;
       let aliasRegistryStub, aliasRegistry;
 
       beforeEach(function () {
@@ -81,7 +80,7 @@ describe('bidderFactory', () => {
         sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
         ajaxStub = sandbox.stub(ajax, 'ajax');
         addBidResponseStub.resetHistory();
-        getConfigSpy = sandbox.spy(config, 'getConfig');
+        sandbox.spy(config, 'getConfig');
         doneStub.resetHistory();
         aliasRegistry = {};
         aliasRegistryStub = sandbox.stub(adapterManager, 'aliasRegistry');
@@ -1210,7 +1209,6 @@ describe('bidderFactory', () => {
     let spec;
     let indexStub, adUnits, bidderRequests;
     let addBidResponseStub;
-    let doneStub;
     let ajaxStub;
     let logErrorSpy;
 
@@ -1243,7 +1241,6 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sinon.stub();
       addBidResponseStub.reject = sinon.stub();
-      doneStub = sinon.stub();
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
@@ -1612,15 +1609,6 @@ describe('bidderFactory', () => {
           transactionId: 'au',
         }]
       };
-      const paapiConfig = {
-        bidId: '1',
-        config: {
-          foo: 'bar'
-        },
-        igb: {
-          foo: 'bar'
-        }
-      };
 
       it('should unwrap bids', function() {
         const bidder = newBidder(spec);
@@ -1645,7 +1633,7 @@ describe('bidderFactory', () => {
 
   describe('bid response isValid', () => {
     describe('size check', () => {
-      let req, index;
+      let req;
 
       beforeEach(() => {
         req = {
@@ -1808,7 +1796,6 @@ describe('bidderFactory', () => {
     let spec;
     let ajaxStub;
     let addBidResponseStub;
-    let doneStub;
     let origBS;
     let getParameterByNameStub;
     let debugTurnedOnStub;
@@ -1841,7 +1828,7 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sandbox.stub();
       addBidResponseStub.reject = sandbox.stub();
-      doneStub = sandbox.stub();
+      sandbox.stub();
       getParameterByNameStub = sandbox.stub(utils, 'getParameterByName');
       debugTurnedOnStub = sandbox.stub(utils, 'debugTurnedOn');
       bidder = newBidder(spec);

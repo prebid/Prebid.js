@@ -16,16 +16,6 @@ const MOCK_RESPONSE_NULL = {
   nvggid: null
 };
 
-function mockResponse(responseText, isSuccess = true) {
-  return function(url, callbacks) {
-    if (isSuccess) {
-      callbacks.success(responseText);
-    } else {
-      callbacks.error(new Error('Mock Error'));
-    }
-  };
-}
-
 function deleteAllCookies() {
   document.cookie.split(';').forEach(cookie => {
     const eqPos = cookie.indexOf('=');
