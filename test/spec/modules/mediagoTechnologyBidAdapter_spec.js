@@ -6,7 +6,7 @@ import {
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
   getCurrentTimeToUTCString
-} from 'modules/mediagoTechnologyBidAdapter.js';
+} from 'modules/mediagoTechnologyBidAdapter.ts';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import { transformSizesOrtb } from '../../../libraries/sizeUtils/tranformSize.js';
 import * as utils from 'src/utils.js';
