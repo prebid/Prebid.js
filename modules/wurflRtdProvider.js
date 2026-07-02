@@ -1425,6 +1425,10 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   // Report the configured WURFL capabilities in the new wurfl_caps object (it carries wurfl_id);
   // otherwise fall back to the legacy top-level wurfl_id so the field is always present.
   if (wurflCaps && Object.keys(wurflCaps).length) {
+    // Guarantee the WURFL identifier is present even if beacon.cap_indices omits it.
+    if (!('wurfl_id' in wurflCaps) && wurflId) {
+      wurflCaps.wurfl_id = wurflId;
+    }
     payloadData.wurfl_caps = wurflCaps;
   } else {
     payloadData.wurfl_id = wurflId;

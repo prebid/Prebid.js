@@ -2249,6 +2249,30 @@ describe('wurflRtdProvider', function () {
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
+
+      it('injects wurfl_id into wurfl_caps when beacon.cap_indices omits it', (done) => {
+        // beacon.cap_indices without index 0 (wurfl_id): the identifier must still reach the
+        // beacon, carried inside wurfl_caps, so the payload is never left without a WURFL id.
+        const cachedData = {
+          WURFL,
+          wurfl_pbjs: { ...wurfl_pbjs, beacon: { cap_indices: [7, 9] } }
+        };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.not.have.property('wurfl_id');
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
     });
 
     describe('device type mapping', () => {
