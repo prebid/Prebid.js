@@ -1,4 +1,4 @@
-import { pubmaticIdSubmodule, storage } from 'modules/pubmaticIdSystem.js';
+import { pubmaticIdSubmodule } from 'modules/pubmaticIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from 'src/adapterManager.js';

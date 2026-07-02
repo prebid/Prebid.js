@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/stackadaptBidAdapter';
 import { deepClone, mergeDeep, deepSetValue } from 'src/utils.js';
-import { config } from 'src/config';
 
 describe('stackadaptBidAdapter', function () {
   describe('intepretResponse() mediatypes - complete', () => {

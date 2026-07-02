@@ -1003,10 +1003,6 @@ describe('IndexexchangeAdapter', function () {
 
   const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
-  const DEFAULT_USERID_BID_DATA = {
-    lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
-  };
-
   const extractPayload = function (bidRequest) {
     return bidRequest.data;
   };
@@ -1564,21 +1560,27 @@ describe('IndexexchangeAdapter', function () {
         expect(payload.user).to.exist;
         expect(payload.user.eids).to.not.exist;
       });
+
+      it('payload should not include RTI eids when GDPR applies and consentString is missing', function () {
+        const options = {
+          gdprConsent: {
+            gdprApplies: true,
+            vendorData: {}
+          }
+        };
+
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options)[0];
+        payload = extractPayload(request);
+
+        expect(payload.regs.ext.gdpr).to.equal(1);
+        expect(payload.user).to.be.undefined;
+      });
     });
   });
 
   describe('buildRequestsUserId', function () {
     let validIdentityResponse;
     let validUserIdPayload;
-    const serverResponse = {
-      body: {
-        ext: {
-          pbjs_allow_all_eids: {
-            activated: true
-          }
-        }
-      }
-    };
 
     beforeEach(function () {
       window.headertag = {};
@@ -2966,7 +2968,6 @@ describe('IndexexchangeAdapter', function () {
       expect(request.data.sn).to.be.undefined;
 
       impressions.forEach((impression, impressionIndex) => {
-        const firstSizeObject = bids[impressionIndex].mediaTypes.banner.sizes[0];
         const sidValue = bids[impressionIndex].params.id;
 
         expect(impression.banner.format).to.be.length(2);
@@ -3781,27 +3782,7 @@ describe('IndexexchangeAdapter', function () {
     it('should set creativeId to default value if not provided', function () {
       const bidResponse = utils.deepClone(DEFAULT_BANNER_BID_RESPONSE);
       delete bidResponse.seatbid[0].bid[0].crid;
-      const expectedParse = [
-        {
-          requestId: '1a2b3c4d',
-          cpm: 1,
-          creativeId: '-',
-          width: 300,
-          height: 250,
-          mediaType: 'banner',
-          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
-          currency: 'USD',
-          ttl: 300,
-          netRevenue: true,
-          meta: {
-            networkId: 50,
-            brandId: 303325,
-            brandName: 'OECTA',
-            advertiserDomains: ['www.abc.com']
-          }
-        }
-      ];
-      const result = spec.interpretResponse({ body: bidResponse }, bannerBidderRequest);
+      expect(spec.interpretResponse({ body: bidResponse }, bannerBidderRequest)[0].creativeId).to.equal('-');
     });
 
     it('should set Japanese price correctly', function () {
@@ -5283,7 +5264,7 @@ describe('IndexexchangeAdapter', function () {
               sinon.assert.calledOnce(ajaxStub);
               const ajaxCall = ajaxStub.returnValues[0];
               sinon.assert.calledOnce(ajaxCall);
-              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
+              const [calledUrl, , calledData, calledOptions] = ajaxCall.getCall(0).args;
 
               expect(calledUrl).to.equal(request.url);
               expect(calledData).to.equal(request.data);

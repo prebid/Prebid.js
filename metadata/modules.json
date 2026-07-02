@@ -2278,6 +2278,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "engerio",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "eplanning",
       "aliasOf": null,
       "gvlid": null,
@@ -2362,6 +2369,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "myfeature",
+      "aliasOf": "ferio",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "finative",
       "aliasOf": null,
       "gvlid": null,
@@ -2378,7 +2392,7 @@
       "componentType": "bidder",
       "componentName": "floxis",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1609,
       "disclosureURL": null
     },
     {
@@ -3034,6 +3048,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "datafusion",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3132,6 +3153,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "m152",
+      "aliasOf": null,
+      "gvlid": 1111,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mabidder",
       "aliasOf": null,
       "gvlid": null,
@@ -3149,6 +3177,13 @@
       "componentName": "madvertise",
       "aliasOf": null,
       "gvlid": 153,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "magicbid",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3385,6 +3420,13 @@
     {
       "componentType": "bidder",
       "componentName": "oftmedia",
+      "aliasOf": "msft",
+      "gvlid": 32,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "msftstaila",
       "aliasOf": "msft",
       "gvlid": 32,
       "disclosureURL": null
@@ -4203,6 +4245,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "revbidortb",
+      "aliasOf": "revantage",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "revcontent",
       "aliasOf": null,
       "gvlid": 203,
@@ -4589,6 +4638,20 @@
     {
       "componentType": "bidder",
       "componentName": "radiantfusion",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "stackup",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adnex",
       "aliasOf": "smarthub",
       "gvlid": null,
       "disclosureURL": null
@@ -5745,6 +5808,12 @@
       "componentType": "rtd",
       "componentName": "SirdataRTDModule",
       "gvlid": 53,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "stackupRtd",
+      "gvlid": null,
       "disclosureURL": null
     },
     {

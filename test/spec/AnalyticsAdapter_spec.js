@@ -5,7 +5,6 @@ import { server } from 'test/mocks/xhr.js';
 import { disableAjaxForAnalytics, enableAjaxForAnalytics } from '../mocks/analyticsStub.js';
 import { clearEvents } from 'src/events.js';
 import {
-  DEFAULT_EXCLUDE_EVENTS,
   DEFAULT_INCLUDE_EVENTS,
   setDebounceDelay
 } from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
@@ -67,6 +66,16 @@ FEATURE: Analytics Adapters API
     const index = server.requests.length - 1;
     const result = JSON.parse(server.requests[index].requestBody);
     sinon.assert.match(result, { eventType, args: { wat: 'wot' } });
+  });
+
+  it('should not fire twice for the same event', () => {
+    events.emit(BID_WON, { n: 1 });
+    adapter.enableAnalytics();
+    adapter.disableAnalytics();
+    events.emit(BID_WON, { n: 2 });
+    adapter.enableAnalytics();
+    const sent = server.requests.map(req => JSON.parse(req.requestBody)).filter(({ eventType }) => eventType === BID_WON).map(({ args }) => args.n);
+    expect(sent).to.eql([1, 2]);
   });
 
   describe('analyticsLabels', () => {

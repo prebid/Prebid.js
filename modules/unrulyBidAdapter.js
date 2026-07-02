@@ -23,6 +23,17 @@ function notifyRenderer(bidResponseBid) {
   parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
 }
 
+const UNRULY_RENDERER_HOST_PATTERN = /(^|\.)unrulymedia\.com$/;
+
+const isValidRendererUrl = (url) => {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === 'https:' && UNRULY_RENDERER_HOST_PATTERN.test(parsedUrl.hostname);
+  } catch (e) {
+    return false;
+  }
+};
+
 const addBidFloorInfo = (validBid) => {
   Object.keys(validBid.mediaTypes).forEach((key) => {
     let floor;
@@ -144,6 +155,10 @@ const handleOutStreamBid = (bid) => {
   }
   if (!hasSiteId) {
     logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
+    return;
+  }
+  if (!isValidRendererUrl(deepAccess(bid, 'ext.renderer.url'))) {
+    logError(new Error('UnrulyBidAdapter: Invalid renderer URL.'));
     return;
   }
 

@@ -295,7 +295,7 @@ function getWins(gdpr, auctionIds) {
 }
 
 function getGdprPos(gdpr, auction) {
-  var gdprPos = 0;
+  var gdprPos;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
     if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
         gdpr[gdprPos].gdprConsent === auction.gdprConsent) {
@@ -311,7 +311,7 @@ function getGdprPos(gdpr, auction) {
 }
 
 function getAuctionIdPos(auctionIds, auctionId) {
-  var auctionIdPos = 0;
+  var auctionIdPos;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
     if (auctionIds[auctionIdPos] === auctionId) {
       break;

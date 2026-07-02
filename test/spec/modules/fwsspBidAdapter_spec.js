@@ -1,5 +1,8 @@
 const { expect } = require('chai');
+const { getGlobal } = require('../../../src/prebidGlobal.js');
 const { spec, getSDKVersion, formatAdHTML, getBidFloor } = require('modules/fwsspBidAdapter');
+
+const pbjsVersion = getGlobal().version;
 
 describe('fwsspBidAdapter', () => {
   describe('isBidRequestValid', () => {
@@ -136,7 +139,7 @@ describe('fwsspBidAdapter', () => {
       expect(actualDataString).to.include('vprn=');
       expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
       expect(actualDataString).to.include('mode=on-demand');
-      expect(actualDataString).to.include(`vclr=js-7.11.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include(`vclr=js-7.11.0-prebid-${pbjsVersion};`);
       expect(actualDataString).to.include('_fw_player_width=1920');
       expect(actualDataString).to.include('_fw_player_height=1080');
       expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
@@ -159,7 +162,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjsVersion};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -235,7 +238,7 @@ describe('fwsspBidAdapter', () => {
       bidRequests[0].params.adRequestKeyValues._fw_is_lat = 1;
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=1&_fw_atts=1&_fw_is_lat=1&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjsVersion};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=1&_fw_atts=1&_fw_is_lat=1&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -268,7 +271,7 @@ describe('fwsspBidAdapter', () => {
 
       const requests = spec.buildRequests(bidRequests, bidderRequest2);
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=0&_fw_atts=0&_fw_is_lat=0&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.11.0-prebid-${pbjsVersion};_fw_player_width=1920&_fw_player_height=1080&_fw_coppa=0&_fw_atts=0&_fw_is_lat=0&_fw_bidfloor=2&_fw_bidfloorcur=EUR&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -471,7 +474,7 @@ describe('fwsspBidAdapter', () => {
       expect(actualDataString).to.include('vprn=');
       expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
       expect(actualDataString).to.include('mode=live');
-      expect(actualDataString).to.include(`vclr=js-7.11.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include(`vclr=js-7.11.0-prebid-${pbjsVersion};`);
       expect(actualDataString).to.include('_fw_player_width=1920');
       expect(actualDataString).to.include('_fw_player_height=1080');
       expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
@@ -511,7 +514,7 @@ describe('fwsspBidAdapter', () => {
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
 
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjsVersion};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -537,7 +540,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest2);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjsVersion};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null&schain=1.0,1!example.com,0,1,bidrequestid,,example.com;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -1324,7 +1327,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.11.0-prebid-${pbjsVersion};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=1&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');

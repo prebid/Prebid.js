@@ -59,7 +59,7 @@ describe('YieldmoAdapter', function () {
         startdelay: 10,
         protocols: [2, 3],
         api: [2, 3],
-        skipppable: true,
+        skippable: true,
         playbackmethod: [1, 2],
         ...videoParams,
       },
@@ -149,25 +149,34 @@ describe('YieldmoAdapter', function () {
       });
     });
 
-    describe('Blocklist params (bcat / badv):', function () {
-      it('allows a bid when bcat/badv are absent (missing is fine)', function () {
+    describe('Blocklist param (bcat):', function () {
+      it('allows a bid when bcat is absent (missing is fine)', function () {
         expect(spec.isBidRequestValid(mockBannerBid())).to.be.true;
         expect(spec.isBidRequestValid(mockVideoBid())).to.be.true;
       });
 
-      it('allows a bid when bcat/badv are arrays', function () {
-        expect(spec.isBidRequestValid(mockBannerBid({}, { bcat: ['IAB1-1'], badv: ['x.com'] }))).to.be.true;
-        expect(spec.isBidRequestValid(mockVideoBid({}, { bcat: ['IAB1-1'], badv: ['x.com'] }))).to.be.true;
+      it('allows a bid when bcat is an array', function () {
+        expect(spec.isBidRequestValid(mockBannerBid({}, { bcat: ['IAB1-1'] }))).to.be.true;
+        expect(spec.isBidRequestValid(mockVideoBid({}, { bcat: ['IAB1-1'] }))).to.be.true;
       });
 
       it('drops a bid when bcat is present but not an array', function () {
         expect(spec.isBidRequestValid(mockBannerBid({}, { bcat: 'IAB1-1' }))).to.be.false;
         expect(spec.isBidRequestValid(mockVideoBid({}, { bcat: 'IAB1-1' }))).to.be.false;
       });
+    });
 
-      it('drops a bid when badv is present but not an array', function () {
-        expect(spec.isBidRequestValid(mockBannerBid({}, { badv: 'ford.com' }))).to.be.false;
+    describe('badv param (video-only validation):', function () {
+      it('allows a video bid when badv is an array', function () {
+        expect(spec.isBidRequestValid(mockVideoBid({}, { badv: ['ford.com'] }))).to.be.true;
+      });
+
+      it('drops a video bid when badv is present but not an array', function () {
         expect(spec.isBidRequestValid(mockVideoBid({}, { badv: 'ford.com' }))).to.be.false;
+      });
+
+      it('does not validate badv for banner bids (allowed even when not an array)', function () {
+        expect(spec.isBidRequestValid(mockBannerBid({}, { badv: 'ford.com' }))).to.be.true;
       });
     });
   });
@@ -364,7 +373,7 @@ describe('YieldmoAdapter', function () {
 
       it('should not write 0 bidfloor value by default', function() {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
-        expect(placementsData[0].bidfloor).to.undefined;
+        expect(placementsData[0].bidfloor).to.be.undefined;
       });
 
       it('should not exceed max url length', () => {
@@ -552,7 +561,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
 
         it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
@@ -584,7 +593,7 @@ describe('YieldmoAdapter', function () {
         it('should not set video.skip if params.video.skippable is false', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
           utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
-          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+          expect(buildVideoBidAndGetVideoParam().skip).to.be.undefined;
         });
       });
 
@@ -838,12 +847,11 @@ describe('YieldmoAdapter', function () {
       });
     });
 
-    describe('bcat / badv blocklists (FS-12403)', function () {
-      it('banner: sends merged bcat/badv as comma-delimited GET params', function () {
-        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'], badv: ['ortb.com'] } });
-        const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB2-2'], badv: ['param.com'] })], 0, bidderReq);
+    describe('bcat blocklist (FS-12403)', function () {
+      it('banner: sends merged bcat as a comma-delimited GET param', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'] } });
+        const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB2-2'] })], 0, bidderReq);
         expect(data.bcat).to.equal('IAB1-1,IAB2-2');
-        expect(data.badv).to.equal('ortb.com,param.com');
       });
 
       it('banner: unions ortb2 + params (neither source silently wins)', function () {
@@ -859,29 +867,31 @@ describe('YieldmoAdapter', function () {
       });
 
       it('banner: reads from ortb2 alone', function () {
-        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'], badv: ['x.com'] } });
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'] } });
         const data = buildAndGetData([mockBannerBid()], 0, bidderReq);
         expect(data.bcat).to.equal('IAB1-1');
-        expect(data.badv).to.equal('x.com');
       });
 
       it('banner: reads from params alone', function () {
-        const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB1-1'], badv: ['x.com'] })], 0, mockBidderRequest());
+        const data = buildAndGetData([mockBannerBid({}, { bcat: ['IAB1-1'] })], 0, mockBidderRequest());
         expect(data.bcat).to.equal('IAB1-1');
-        expect(data.badv).to.equal('x.com');
       });
 
-      it('banner: omits bcat/badv entirely when empty', function () {
+      it('banner: omits bcat entirely when empty', function () {
         const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest());
         expect(data).to.not.have.property('bcat');
+      });
+
+      it('banner: never sends badv (reverted in FS-12411)', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { badv: ['ortb.com'] } });
+        const data = buildAndGetData([mockBannerBid({}, { badv: ['param.com'] })], 0, bidderReq);
         expect(data).to.not.have.property('badv');
       });
 
-      it('video: sends merged bcat/badv as deduped arrays', function () {
-        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'], badv: ['ortb.com'] } }, [mockVideoBid()]);
-        const payload = buildAndGetData([mockVideoBid({}, { bcat: ['IAB2-2'], badv: ['param.com'] })], 0, bidderReq);
+      it('video: sends merged bcat as a deduped array', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { bcat: ['IAB1-1'] } }, [mockVideoBid()]);
+        const payload = buildAndGetData([mockVideoBid({}, { bcat: ['IAB2-2'] })], 0, bidderReq);
         expect(payload.bcat).to.deep.equal(['IAB1-1', 'IAB2-2']);
-        expect(payload.badv).to.deep.equal(['ortb.com', 'param.com']);
       });
 
       it('video: reads ortb2.bcat (not the legacy bidderRequest.bcat path)', function () {
@@ -890,13 +900,23 @@ describe('YieldmoAdapter', function () {
         expect(payload.bcat).to.deep.equal(['RIGHT']);
       });
 
-      it('video: defaults to empty arrays when no blocklists are set', function () {
+      it('video: defaults bcat to an empty array when unset', function () {
         const payload = buildAndGetData([mockVideoBid()], 0, mockBidderRequest({}, [mockVideoBid()]));
         expect(payload.bcat).to.deep.equal([]);
+      });
+
+      it('video: sends badv from params only — no ortb2/merge (reverted in FS-12411)', function () {
+        const bidderReq = mockBidderRequest({ ortb2: { badv: ['ortb.com'] } }, [mockVideoBid()]);
+        const payload = buildAndGetData([mockVideoBid({}, { badv: ['param.com'] })], 0, bidderReq);
+        expect(payload.badv).to.deep.equal(['param.com']);
+      });
+
+      it('video: defaults badv to an empty array when unset', function () {
+        const payload = buildAndGetData([mockVideoBid()], 0, mockBidderRequest({}, [mockVideoBid()]));
         expect(payload.badv).to.deep.equal([]);
       });
 
-      describe('blocklist normalization in mergeBlocklist', function () {
+      describe('bcat normalization in getBlocklist', function () {
         let logWarnStub;
         beforeEach(function () { logWarnStub = sinon.stub(utils, 'logWarn'); });
         afterEach(function () { logWarnStub.restore(); });

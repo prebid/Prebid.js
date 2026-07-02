@@ -45,8 +45,8 @@ describe('Nexx360 bid adapter tests', () => {
       sandbox.restore();
     });
 
-    it('defaults to true when no config and no URL override', () => {
-      expect(getGzipSetting()).to.equal(true);
+    it('defaults to false when no config and no URL override', () => {
+      expect(getGzipSetting()).to.equal(false);
     });
 
     it('returns false when bidder config gzipEnabled is the string "false"', () => {
@@ -70,9 +70,16 @@ describe('Nexx360 bid adapter tests', () => {
       expect(getGzipSetting()).to.equal(false);
     });
 
-    it('returns true when URL has nexx360_debug with a value other than 1', () => {
+    it('returns false (the default) when URL has nexx360_debug with a value other than 1', () => {
       getParamStub.withArgs('nexx360_debug').returns('0');
-      expect(getGzipSetting()).to.equal(true);
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('reads the config of the passed alias bidder code', () => {
+      config.setBidderConfig({ bidders: ['revenuemaker'], config: { gzipEnabled: true } });
+      expect(getGzipSetting('revenuemaker')).to.equal(true);
+      // the nexx360 bucket is untouched, so it falls back to the default
+      expect(getGzipSetting('nexx360')).to.equal(false);
     });
   });
 
@@ -91,7 +98,7 @@ describe('Nexx360 bid adapter tests', () => {
       };
     });
 
-    it('We verify isBidRequestValid with unvalid adUnitName', () => {
+    it('We verify isBidRequestValid with invalid adUnitName', () => {
       bannerBid.params = { adUnitName: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -106,17 +113,17 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with unvalid divId', () => {
+    it('We verify isBidRequestValid with invalid divId', () => {
       bannerBid.params = { divId: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid unvalid allBids', () => {
+    it('We verify isBidRequestValid invalid allBids', () => {
       bannerBid.params = { allBids: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });

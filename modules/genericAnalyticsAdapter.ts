@@ -1,4 +1,4 @@
-import AnalyticsAdapter, { type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import AnalyticsAdapter, { type AnalyticsAdapterInstance, type DefaultOptions } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { prefixLog, isPlainObject } from '../src/utils.js';
 import { type Events, has as hasEvent } from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
@@ -91,14 +91,24 @@ const TYPES = {
 
 const MAX_CALL_DEPTH = 20;
 
-export function GenericAnalytics() {
+type GenericAnalyticsAdapter = AnalyticsAdapterInstance<'generic'> & {
+  gvlid: (config) => number | undefined;
+};
+
+type GenericAnalyticsConstructor = new () => GenericAnalyticsAdapter;
+
+export function GenericAnalytics(): GenericAnalyticsAdapter {
+  if (!new.target) {
+    return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
+  }
+
   const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
   const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
   let options, handler, timer, translate;
 
-  function optionsAreValid(options) {
+  function optionsAreValid(options: DefaultOptions & (UrlOptions | BasicHandlerOptions | CustomHandlersOptions<EventMapping>)) {
     if (!options.url && !options.handler) {
       logError('options must specify either `url` or `handler`');
       return false;
@@ -157,7 +167,7 @@ export function GenericAnalytics() {
     }
   }
 
-  function translator(eventHandlers) {
+  function translator(eventHandlers: EventMapping | undefined) {
     if (!eventHandlers) {
       return (data) => data;
     }
@@ -210,8 +220,10 @@ export function defaultHandler({ url, method, batchSize, ajax = ajaxBuilder() })
     success() {},
     error() {}
   };
-  const extract = batchSize > 1 ? (events) => events : (events) => events[0];
-  const serialize = method === 'GET' ? (data) => ({ data: JSON.stringify(data) }) : (data) => JSON.stringify(data);
+  type SerializedPayload = string | { data: string };
+  const extract: (events: unknown[]) => unknown = batchSize > 1 ? (events: unknown[]) => events : (events: unknown[]) => events[0];
+  const serialize: (data: unknown) => SerializedPayload =
+    method === 'GET' ? (data: unknown) => ({ data: JSON.stringify(data) }) : (data: unknown) => JSON.stringify(data);
 
   return function (events) {
     ajax(url, callbacks, serialize(extract(events)), { method, keepalive: true });

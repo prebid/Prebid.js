@@ -147,7 +147,7 @@ async function getPRProperties({github, context, prNo, reviewerTeam, engTeam, au
     prebidReviewers,
     prebidEngineers,
     review,
-  }
+  };
   data.review.requires = reviewRequirements(data);
   data.review.ok = data.draft || satisfiesReviewRequirements(data.review);
   return data;

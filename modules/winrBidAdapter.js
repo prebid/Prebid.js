@@ -315,7 +315,6 @@ export const spec = {
 };
 
 function formatRequest(payload, bidderRequest) {
-  let request = [];
   const options = {
     withCredentials: true
   };
@@ -336,15 +335,13 @@ function formatRequest(payload, bidderRequest) {
   }
 
   const payloadString = JSON.stringify(payload);
-  request = {
+  return {
     method: 'POST',
     url: endpointUrl,
     data: payloadString,
     bidderRequest,
     options,
   };
-
-  return request;
 }
 
 /**

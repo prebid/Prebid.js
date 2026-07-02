@@ -106,6 +106,8 @@ describe('AdvRed Analytics Adapter', function () {
           publisherId: '1234567890'
         }
       });
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+      advRedAnalytics.sendEvents();
 
       const message = JSON.parse(server.requests[0].requestBody);
       expect(message.pageUrl).to.equal(window.top.location.href);
