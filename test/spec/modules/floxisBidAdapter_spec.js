@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { spec, storage } from 'modules/floxisBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
+import 'modules/priceFloors.js';
 
 describe('floxisBidAdapter', function () {
   const DEFAULT_PARAMS = { seat: 'Gmtb', region: 'us-e', partner: 'floxis' };
@@ -318,6 +319,20 @@ describe('floxisBidAdapter', function () {
         const requests = spec.buildRequests([bidStaticFloor], bidderRequest);
         const imp = requests[0].data.imp[0];
         expect(imp.bidfloor).to.equal(1.75);
+        expect(imp.bidfloorcur).to.equal('USD');
+      });
+
+      it('should set bidfloor from getFloor and default bidfloorcur when currency is absent', function () {
+        // no currency field: priceFloors' tryGetFloor skips it, so the adapter fallback fires
+        const bidNoCurrencyFloor = {
+          ...validBannerBid,
+          getFloor: function () {
+            return { floor: 1.5 };
+          }
+        };
+        const requests = spec.buildRequests([bidNoCurrencyFloor], bidderRequest);
+        const imp = requests[0].data.imp[0];
+        expect(imp.bidfloor).to.equal(1.5);
         expect(imp.bidfloorcur).to.equal('USD');
       });
     });
