@@ -131,56 +131,78 @@ const processEvents = () => {
         case 'videoAuctionAdLoadAttempt':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler) {
             window.atmtdAnalytics.videoAuctionAdLoadAttemptHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAuctionAdLoadQueued':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler) {
             window.atmtdAnalytics.videoAuctionAdLoadQueuedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAuctionAdLoadAbort':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAuctionAdLoadAbortHandler) {
             window.atmtdAnalytics.videoAuctionAdLoadAbortHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoBidImpression':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidImpressionHandler) {
             window.atmtdAnalytics.videoBidImpressionHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoBidError':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoBidErrorHandler) {
             window.atmtdAnalytics.videoBidErrorHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAdLoaded':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdLoadedHandler) {
             window.atmtdAnalytics.videoAdLoadedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAdStarted':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdStartedHandler) {
             window.atmtdAnalytics.videoAdStartedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAdImpression':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdImpressionHandler) {
             window.atmtdAnalytics.videoAdImpressionHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAdSkipped':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdSkippedHandler) {
             window.atmtdAnalytics.videoAdSkippedHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAdError':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdErrorHandler) {
             window.atmtdAnalytics.videoAdErrorHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'videoAdComplete':
           if (window.atmtdAnalytics && window.atmtdAnalytics.videoAdCompleteHandler) {
             window.atmtdAnalytics.videoAdCompleteHandler(args);
+          } else if (!window.atmtdAnalytics) {
+            shouldTryAgain = true;
           }
           break;
         case 'slotRenderEnded':

@@ -556,6 +556,80 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.queuePointer).to.equal(0);
       expect(exports.processEvents.callCount).to.equal(5);
     });
+
+    it('Should retry processing videoAdStarted in certain intervals', () => {
+      expect(exports.queuePointer).to.equal(0);
+      expect(exports.retryCount).to.equal(0);
+      const que = [['videoAdStarted', { type: 'videoAdStarted' }]];
+      exports.__atmtdAnalyticsQueue.push(que[0]);
+      exports.processEvents();
+      expect(exports.prettyLog.getCall(0).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(0).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 1`);
+      expect(exports.prettyLog.getCall(1).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(1).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 1500ms ...`);
+      clock.tick(1510);
+      expect(exports.prettyLog.getCall(2).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(2).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 2`);
+      expect(exports.prettyLog.getCall(3).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(3).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 3000ms ...`);
+      clock.tick(3010);
+      expect(exports.prettyLog.getCall(4).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(4).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 3`);
+      expect(exports.prettyLog.getCall(5).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(5).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 5000ms ...`);
+      clock.tick(5010);
+      expect(exports.prettyLog.getCall(6).args[0]).to.equal('status');
+      expect(exports.prettyLog.getCall(6).args[1]).to.equal(`Que has been inactive for a while. Adapter starting to process que now... Trial Count = 4`);
+      expect(exports.prettyLog.getCall(7).args[0]).to.equal('warn');
+      expect(exports.prettyLog.getCall(7).args[1]).to.equal(`Adapter failed to process event as aggregator has not loaded. Retrying in 10000ms ...`);
+      clock.tick(10010);
+      expect(exports.prettyLog.getCall(8).args[0]).to.equal('error');
+      expect(exports.prettyLog.getCall(8).args[1]).to.equal(`Aggregator still hasn't loaded. Processing que stopped`);
+      expect(exports.queuePointer).to.equal(0);
+      expect(exports.processEvents.callCount).to.equal(5);
+    });
+  });
+
+  describe('Process Events from Que when SDK is loaded without video handlers', () => {
+    before(() => {
+      spec.enableAnalytics({
+        provider: 'atmtdAnalyticsAdapter',
+        options: {
+          publisherID: '230',
+          siteID: '421'
+        }
+      });
+      global.window.atmtdAnalytics = {
+        auctionInitHandler: (args) => {}
+      };
+      exports.retryCount = 0;
+      exports.queuePointer = 0;
+      exports.__atmtdAnalyticsQueue = [
+        ['videoAdStarted', { type: 'videoAdStarted' }]
+      ];
+    });
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(events, 'getEvents').returns([]);
+      sandbox.spy(exports, 'prettyLog');
+      sandbox.spy(exports, 'processEvents');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    after(() => {
+      global.window.atmtdAnalytics = undefined;
+      spec.disableAnalytics();
+    });
+
+    it('Should skip unimplemented video events without retrying', () => {
+      exports.processEvents();
+      expect(exports.retryCount).to.equal(0);
+      expect(exports.processEvents.callCount).to.equal(1);
+      expect(exports.queuePointer).to.equal(exports.__atmtdAnalyticsQueue.length);
+      expect(exports.qBeingUsed).to.equal(false);
+      expect(exports.qTraversalComplete).to.equal(true);
+    });
   });
 
   describe('Process Events from Que when SDK has loaded', () => {
