@@ -3,7 +3,16 @@
   "disclosures": {
     "https://cdn.mediagotechnology.com/js/tcf.json": {
       "timestamp": "2026-07-02T08:00:00.000Z",
-      "disclosures": []
+      "disclosures": [
+        {
+          "identifier": "__mguid_",
+          "type": "cookie",
+          "maxAgeSeconds": 31536000,
+          "cookieRefresh": false,
+          "purposes": [1],
+          "domain": ".mediagotechnology.com"
+        }
+      ]
     }
   },
   "purposes": {

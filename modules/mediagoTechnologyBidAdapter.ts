@@ -39,23 +39,9 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const globals: Record<string, string> = {};
 
 export const COOKIE_KEY_MGUID = '__mguid_';
-const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000;
 const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediagotechnology.com/js/cookieSync.html';
 let reqTimes = 0;
-
-export const getPmgUID = (): string | undefined => {
-  if (!storage.cookiesAreEnabled()) return;
-
-  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
-  if (!pmgUid) {
-    pmgUid = utils.generateUUID();
-    try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
-    } catch (e) {}
-  }
-  return pmgUid;
-};
 
 function getEidUid(eids: EidEntry[] | undefined, source: string): string | undefined {
   if (!Array.isArray(eids)) return;
@@ -150,7 +136,7 @@ function getItems(validBidRequests: any[], bidderRequest: any): any[] {
         banner: {
           h: matchSize.h,
           w: matchSize.w,
-          pos: 1,
+          pos: utils.deepAccess(req, 'mediaTypes.banner.pos') || 1,
           format: sizes
         },
         ext: {
@@ -206,7 +192,6 @@ function getParam(validBidRequests: any[], bidderRequest: any): Record<string, a
   const keywords = getPageKeywords();
 
   if (items && items.length) {
-    const pmguid = getPmgUID();
     return {
       id: 'mgprebidjs_' + bidderRequestId,
       test: +isTest,
@@ -227,7 +212,6 @@ function getParam(validBidRequests: any[], bidderRequest: any): Record<string, a
         content,
         cat,
         reqTimes,
-        pmguid: pmguid,
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
