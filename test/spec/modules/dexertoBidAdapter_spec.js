@@ -111,7 +111,7 @@ describe('dexerto adapter', function () {
       const _Request = spec.buildRequests(request);
       expect(_Request.url).to.equal('https://rtb.dexerto.media/hb/dexerto');
       expect(_Request.method).to.equal('POST');
-      expect(_Request.options.contentType).to.equal('application/json');
+      expect(_Request.options.contentType).to.equal('text/plain');
     });
     it('Validate bid request : Impression', function () {
       const _Request = spec.buildRequests(request);
