@@ -578,3 +578,9 @@ gulp.task('compile-metadata', function (done) {
 });
 gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));
 module.exports = nodeBundle;
+
+gulp.task('validate-names', function (done) {
+  import('./metadata/validateNaming.mjs').then(({ validateNaming }) => {
+    validateNaming().then(done, done);
+  });
+});
