@@ -23,7 +23,7 @@ Module that connects to MediaGo Technology LLC's demand sources
             },
             bids: [
                 {
-                    bidder: "mediagoTechnology",
+                    bidder: "mgtechnology",
                     params: {
                         token: ''  // required, send email to ext_mediago_am@baidu.com to get the corresponding token
                     }

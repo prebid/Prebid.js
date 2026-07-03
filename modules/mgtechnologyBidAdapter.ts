@@ -29,7 +29,7 @@ interface OrtbSize {
   h: number;
 }
 
-const BIDDER_CODE = 'mediagoTechnology';
+const BIDDER_CODE = 'mgtechnology';
 const ENDPOINT_URL = 'https://gbid.mediagotechnology.com/api/bid?tn=';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediagotechnology.com';
 

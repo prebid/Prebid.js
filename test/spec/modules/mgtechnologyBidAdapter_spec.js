@@ -1,24 +1,23 @@
 import { expect } from 'chai';
 import {
   spec,
-  getPmgUID,
   storage,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
   getCurrentTimeToUTCString
-} from 'modules/mediagoTechnologyBidAdapter.ts';
+} from 'modules/mgtechnologyBidAdapter.ts';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import { transformSizesOrtb } from '../../../libraries/sizeUtils/tranformSize.js';
 import * as utils from 'src/utils.js';
 
-describe('mediagoTechnology:BidAdapterTests', function () {
+describe('mgtechnology:BidAdapterTests', function () {
   const bidRequestData = {
-    bidderCode: 'mediagoTechnology',
+    bidderCode: 'mgtechnology',
     auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
     bidderRequestId: '4fec04e87ad785',
     bids: [
       {
-        bidder: 'mediagoTechnology',
+        bidder: 'mgtechnology',
         params: {
           token: '85a6b01e41ac36d49744fad726e3655d',
           siteId: 'siteId_01',
@@ -103,10 +102,10 @@ describe('mediagoTechnology:BidAdapterTests', function () {
   };
   let request = [];
 
-  it('mediagoTechnology:validate_pub_params', function () {
+  it('mgtechnology:validate_pub_params', function () {
     expect(
       spec.isBidRequestValid({
-        bidder: 'mediagoTechnology',
+        bidder: 'mgtechnology',
         params: {
           token: ['85a6b01e41ac36d49744fad726e3655d'],
           publisher: ['test_publisher']
@@ -116,26 +115,26 @@ describe('mediagoTechnology:BidAdapterTests', function () {
   });
 
   it('should return false when token is missing', function () {
-    expect(spec.isBidRequestValid({ bidder: 'mediagoTechnology', params: {} })).to.be.false;
-    expect(spec.isBidRequestValid({ bidder: 'mediagoTechnology', params: { publisher: 'pub1' } })).to.be.false;
+    expect(spec.isBidRequestValid({ bidder: 'mgtechnology', params: {} })).to.be.false;
+    expect(spec.isBidRequestValid({ bidder: 'mgtechnology', params: { publisher: 'pub1' } })).to.be.false;
   });
 
   it('should return false when token is empty string', function () {
-    expect(spec.isBidRequestValid({ bidder: 'mediagoTechnology', params: { token: '' } })).to.be.false;
+    expect(spec.isBidRequestValid({ bidder: 'mgtechnology', params: { token: '' } })).to.be.false;
   });
 
   it('should store publisher in globals when provided', function () {
     spec.isBidRequestValid({
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token', publisher: 'pub-xyz' }
     });
     expect(spec.isBidRequestValid({
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' }
     })).to.be.true;
   });
 
-  it('mediagoTechnology:validate_generated_params', function () {
+  it('mgtechnology:validate_generated_params', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     const req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
@@ -146,72 +145,25 @@ describe('mediagoTechnology:BidAdapterTests', function () {
     expect(banner.format).to.deep.equal([{ w: 300, h: 250 }]);
   });
 
-  it('mediagoTechnology:validate_transactionId_in_request', function () {
+  it('mgtechnology:validate_transactionId_in_request', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     const req_data = JSON.parse(request.data);
     expect(req_data.imp[0].ext.transactionId).to.equal('7b26fdae-96e6-4c35-a18b-218dda11397d');
   });
 
-  it('mediagoTechnology:validate_pbjs_source_and_version_in_request', function () {
+  it('mgtechnology:validate_pbjs_source_and_version_in_request', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     const req_data = JSON.parse(request.data);
     expect(req_data.ext.pbjsversion).to.be.a('string');
     expect(req_data.ext.pbjsversion.length).to.be.above(0);
   });
 
-  describe('mediagoTechnology: buildRequests', function() {
-    describe('getPmgUID function', function() {
-      let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.createSandbox();
-        sandbox.stub(storage, 'getCookie');
-        sandbox.stub(storage, 'setCookie');
-        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
-        sandbox.stub(storage, 'cookiesAreEnabled');
-      });
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
-      it('should generate new UUID and set cookie when no existing cookie', () => {
-        storage.cookiesAreEnabled.callsFake(() => true);
-        storage.getCookie.callsFake(() => null);
-        const uid = getPmgUID();
-        expect(uid).to.equal('new-uuid');
-        expect(storage.setCookie.calledOnce).to.be.true;
-      });
-
-      it('should return existing UUID from cookie without setting new one', () => {
-        storage.cookiesAreEnabled.callsFake(() => true);
-        storage.getCookie.callsFake(() => 'existing-uuid');
-        const uid = getPmgUID();
-        expect(uid).to.equal('existing-uuid');
-        expect(storage.setCookie.called).to.be.false;
-      });
-
-      it('should return undefined when cookies are not enabled', () => {
-        storage.cookiesAreEnabled.callsFake(() => false);
-        const uid = getPmgUID();
-        expect(uid).to.be.undefined;
-        expect(storage.setCookie.called).to.be.false;
-      });
-
-      it('should ignore gdprConsent parameter (not used by implementation)', () => {
-        storage.cookiesAreEnabled.callsFake(() => true);
-        storage.getCookie.callsFake(() => null);
-        expect(getPmgUID({ gdprApplies: true, consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==' })).to.equal('new-uuid');
-        expect(getPmgUID({ gdprApplies: false })).to.equal('new-uuid');
-        expect(getPmgUID(undefined)).to.equal('new-uuid');
-      });
-    });
-
+  describe('mgtechnology: buildRequests', function() {
     describe('buyeruid and user.id logic', function() {
       let sandbox;
 
       const makeBidRequests = (overrides = {}) => [{
-        bidder: 'mediagoTechnology',
+        bidder: 'mgtechnology',
         params: { token: 'test-token' },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
         sizes: [[300, 250]],
@@ -243,7 +195,6 @@ describe('mediagoTechnology:BidAdapterTests', function () {
       it('should use mguid cookie as buyeruid when available', () => {
         storage.getCookie.callsFake((key) => {
           if (key === '__mguid_') return 'mguid-value';
-          if (key === '__pmguid_') return 'pmguid-value';
           return null;
         });
 
@@ -254,10 +205,7 @@ describe('mediagoTechnology:BidAdapterTests', function () {
       });
 
       it('should leave buyeruid undefined when mguid is not available', () => {
-        storage.getCookie.callsFake((key) => {
-          if (key === '__pmguid_') return 'pmguid-value';
-          return null;
-        });
+        storage.getCookie.callsFake(() => null);
 
         const bidRequests = makeBidRequests();
         spec.isBidRequestValid(bidRequests[0]);
@@ -312,7 +260,7 @@ describe('mediagoTechnology:BidAdapterTests', function () {
       let originalUAD;
 
       const makeBidRequest = () => [{
-        bidder: 'mediagoTechnology',
+        bidder: 'mgtechnology',
         params: { token: 'test-token' },
         mediaTypes: { banner: { sizes: [[300, 250]] } },
         sizes: [[300, 250]],
@@ -373,7 +321,7 @@ describe('mediagoTechnology:BidAdapterTests', function () {
     });
   });
 
-  it('mediagoTechnology:validate_response_params', function () {
+  it('mgtechnology:validate_response_params', function () {
     let adm =
       '<link rel="stylesheet" href="https://cdn.mediagotechnology.com/js/style/style_banner_300*250.css"><div id="mgcontainer-99afea272c2b0e8626489674ddb7a0bb" class="mediago-placement imgTopTitleBottom" style="position:relative;width:298px;height:248px;overflow:hidden"><a href="https://trace.mediagotechnology.com/api/bidder/track?tn=39934c2bda4debbe4c680be1dd02f5d3&price=djUJcggeuWWfbm28q4WXHdgMFkO28DrGw49FnubQ0Bk&evt=102&rid=6e28cfaf115a354ea1ad8e1304d6d7b8&campaignid=1339145&impid=44-300x250-1&offerid=24054386&test=0&time=1660789795&cp=jZDh1xu6_QqJLlKVtCkiHIP_TER6gL9jeTrlHCBoxOM&clickid=44_6e28cfaf115a354ea1ad8e1304d6d7b8_44-300x250-1&acid=599&trackingid=99afea272c2b0e8626489674ddb7a0bb&uid=a865b9ae-fa9e-4c09-8204-2db99ac7c8f7&jt=2&url=oxZA2i2aUVY76Xy2t3HffaK_ZtBDsgFwFc_Nbnw-bz3yCxmoUyZvATKnFc9ZkUfT1eQizhtczCwDzjHwwwDgTehUnp1EwdY4g1LRcuOwlRpXnVTt3zPQdaVx5nVDw25by7lQ0q469LCv2eEFDTAv_FOuVT32WiOx_ArOIlxCnDGpjPLUNyxm3cTZFGOJn4B7&bm=2&la=en&cn=us&cid=3998296&info=Si3oM-qfCbw2iZRYs01BkUWyH6c5CQWHrA8CQLE0VHcXAcf4ljY9dyLzQ4vAlTWd6-j_ou4ySor3e70Ll7wlKiiauQKaUkZqNoTizHm73C4FK8DYJSTP3VkhJV8RzrYk&sid=128__110__1__12__28__38__163__96__58__24__47__99&sp=djUJcggeuWWfbm28q4WXHdgMFkO28DrGw49FnubQ0Bk&scp=zK0DRYY1UV-syqSpmcMYBpOebtoQJV9ZEJT0JFqbTQg&acu=USD&scu=USD&sgcp=zK0DRYY1UV-syqSpmcMYBpOebtoQJV9ZEJT0JFqbTQg&gprice=djUJcggeuWWfbm28q4WXHdgMFkO28DrGw49FnubQ0Bk&gcp=zK0DRYY1UV-syqSpmcMYBpOebtoQJV9ZEJT0JFqbTQg&ah=&pb=&de=wjh.popin.cc&cat=&iv=0" target="_blank" class="mediago-placement-track" style="display: inline-block;"><img alt="Ranger\'s spot giant lion - vet is shocked when looking at the ultrasound" src="https://d2cli4kgl5uxre.cloudfront.net/ML/ff32b6f9b3bbc45c00b78b6674a2952e__scv1__300x175.png" style="height:70%;width:100%;border-width:0;border:none;"><h3 class="title" style="font-size:16px;">Ranger\'s spot giant lion - vet is shocked when looking at the ultrasound</h3></a><span class="source"><a class="sourcename" href="//www.mediagotechnology.com" target="_blank"><span>Ad</span> </a><a class="mgmgsrcnameadslabelurl" href="//www.mediagotechnology.com/privacy" target="_blank"><span>soo-healthy</span></a></span></div>';
     let temp = '%3Cscr';
@@ -417,7 +365,7 @@ describe('mediagoTechnology:BidAdapterTests', function () {
   });
 });
 
-describe('mediagoTechnology: interpretResponse edge cases', function() {
+describe('mgtechnology: interpretResponse edge cases', function() {
   it('should return empty array for empty server response', function () {
     expect(spec.interpretResponse({}, {})).to.deep.equal([]);
   });
@@ -493,7 +441,7 @@ describe('mediagoTechnology: interpretResponse edge cases', function() {
   });
 });
 
-describe('mediagoTechnology: getUserSyncs', function() {
+describe('mgtechnology: getUserSyncs', function() {
   const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediagotechnology.com/js/cookieSync.html';
   const IFRAME_ENABLED = { iframeEnabled: true, pixelEnabled: false };
   const IFRAME_DISABLED = { iframeEnabled: false, pixelEnabled: false };
@@ -515,7 +463,7 @@ describe('mediagoTechnology: getUserSyncs', function() {
   });
 });
 
-describe('mediagoTechnology Bid Adapter Tests', function () {
+describe('mgtechnology Bid Adapter Tests', function () {
   describe('buildRequests', () => {
     describe('getPageTitle function', function() {
       let sandbox;
@@ -668,7 +616,7 @@ describe('mediagoTechnology Bid Adapter Tests', function () {
   });
 });
 
-describe('mediagoTechnology: getCurrentTimeToUTCString', function() {
+describe('mgtechnology: getCurrentTimeToUTCString', function() {
   it('should return a UTC date string approximately 1 year in the future', function () {
     const now = Date.now();
     const result = getCurrentTimeToUTCString();
@@ -685,7 +633,7 @@ describe('mediagoTechnology: getCurrentTimeToUTCString', function() {
   });
 });
 
-describe('mediagoTechnology: buildRequests additional edge cases', function() {
+describe('mgtechnology: buildRequests additional edge cases', function() {
   let sandbox;
 
   const baseBidderRequest = {
@@ -708,7 +656,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should include tmax from bidderRequest timeout', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -723,7 +671,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should include site info from refererInfo', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -743,7 +691,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should handle bidfloor from getFloor function', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -759,7 +707,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should include gpid from ortb2Imp.ext.gpid', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -775,7 +723,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should fallback gpid to params.placementId when ortb2Imp.ext.gpid is absent', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token', placementId: 'placement-abc' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -790,7 +738,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should set gdpr fields in imp ext when gdprConsent is present', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -809,7 +757,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should handle multiple sizes and pick the first matching standard size', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'test-token' },
       mediaTypes: { banner: { sizes: [[320, 50], [300, 250]] } },
       sizes: [[320, 50], [300, 250]],
@@ -827,7 +775,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
 
   it('should set request method to POST and url to contain token', function () {
     const bidRequests = [{
-      bidder: 'mediagoTechnology',
+      bidder: 'mgtechnology',
       params: { token: 'my-token-123' },
       mediaTypes: { banner: { sizes: [[300, 250]] } },
       sizes: [[300, 250]],
@@ -842,7 +790,7 @@ describe('mediagoTechnology: buildRequests additional edge cases', function() {
   });
 });
 
-describe('mediagoTechnology: transformSizesOrtb', function() {
+describe('mgtechnology: transformSizesOrtb', function() {
   it('should transform sizes correctly', function() {
     expect(transformSizesOrtb([300, 250])).to.deep.equal([{ w: 300, h: 250 }]);
     expect(transformSizesOrtb([[300, 250], [728, 90]])).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
@@ -850,14 +798,14 @@ describe('mediagoTechnology: transformSizesOrtb', function() {
   });
 });
 
-describe('mediagoTechnology: buildRequests with non-standard size', function() {
+describe('mgtechnology: buildRequests with non-standard size', function() {
   it('should use fallback size when no standard size matches', function() {
     const bidRequestData = {
-      bidderCode: 'mediagoTechnology',
+      bidderCode: 'mgtechnology',
       auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
       bidderRequestId: '4fec04e87ad785',
       bids: [{
-        bidder: 'mediagoTechnology',
+        bidder: 'mgtechnology',
         params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
         mediaTypes: { banner: { sizes: [[999, 888]] } },
         adUnitCode: 'test_ad_unit',
@@ -878,7 +826,7 @@ describe('mediagoTechnology: buildRequests with non-standard size', function() {
   });
 });
 
-describe('mediagoTechnology: onBidWon', function() {
+describe('mgtechnology: onBidWon', function() {
   let sandbox;
   beforeEach(() => { sandbox = sinon.createSandbox(); sandbox.stub(utils, 'triggerPixel'); });
   afterEach(() => { sandbox.restore(); });
@@ -895,7 +843,7 @@ describe('mediagoTechnology: onBidWon', function() {
   });
 });
 
-describe('mediagoTechnology: Native Ad Support', function() {
+describe('mgtechnology: Native Ad Support', function() {
   const nativeOrtbRequest = {
     ver: '1.2',
     assets: [
@@ -913,7 +861,7 @@ describe('mediagoTechnology: Native Ad Support', function() {
   };
 
   const nativeBidRequests = [{
-    bidder: 'mediagoTechnology',
+    bidder: 'mgtechnology',
     params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
     mediaTypes: { native: {} },
     nativeOrtbRequest: nativeOrtbRequest,
@@ -982,7 +930,7 @@ describe('mediagoTechnology: Native Ad Support', function() {
     it('should handle mixed banner and native ad units', function() {
       const mixedBidRequests = [
         {
-          bidder: 'mediagoTechnology',
+          bidder: 'mgtechnology',
           params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
           mediaTypes: { banner: { sizes: [[300, 250]] } },
           sizes: [[300, 250]],
@@ -993,7 +941,7 @@ describe('mediagoTechnology: Native Ad Support', function() {
           userIdAsEids: [],
         },
         {
-          bidder: 'mediagoTechnology',
+          bidder: 'mgtechnology',
           params: { token: '85a6b01e41ac36d49744fad726e3655d', publisher: '52' },
           mediaTypes: { native: {} },
           nativeOrtbRequest: nativeOrtbRequest,

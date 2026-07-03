@@ -34,7 +34,7 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "mediagoTechnology",
+      "componentName": "mgtechnology",
       "aliasOf": null,
       "gvlid": 1575,
       "disclosureURL": "https://cdn.mediagotechnology.com/js/tcf.json"
