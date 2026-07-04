@@ -199,4 +199,10 @@ describe('JJTech bid adapter', () => {
       expect(bids).to.have.lengthOf(0);
     });
   });
+
+  describe('getUserSyncs', () => {
+    it('registers no user syncs', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])).to.deep.equal([]);
+    });
+  });
 });
