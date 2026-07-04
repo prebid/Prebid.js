@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/jjtechBidAdapter.ts';
+import { deepClone } from '../../../src/utils.js';
 
 const ENDPOINT_URL = 'https://prebid-server.jambojar.com/openrtb2/auction';
 
@@ -22,6 +23,43 @@ describe('JJTech bid adapter', () => {
       expect(spec).to.have.property('buildRequests').that.is.a('function');
       expect(spec).to.have.property('interpretResponse').that.is.a('function');
       expect(spec).to.have.property('getUserSyncs').that.is.a('function');
+    });
+  });
+
+  describe('isBidRequestValid', () => {
+    let bid;
+
+    beforeEach(() => {
+      bid = deepClone(bidRequestBase);
+    });
+
+    it('returns true when placementId is a non-empty string', () => {
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('returns false when params is missing', () => {
+      delete bid.params;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('returns false when placementId is missing', () => {
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('returns false when placementId is an empty string', () => {
+      bid.params = { placementId: '' };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('returns false when placementId is a number', () => {
+      bid.params = { placementId: 12345 };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('returns false when placementId is null', () => {
+      bid.params = { placementId: null };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
 });

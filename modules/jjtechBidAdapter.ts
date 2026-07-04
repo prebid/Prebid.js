@@ -29,7 +29,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
 });
 
 const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (bid) => {
-  return false;
+  return typeof bid?.params?.placementId === 'string' && bid.params.placementId.length > 0;
 };
 
 const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBidRequests, bidderRequest) => {
