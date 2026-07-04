@@ -127,4 +127,76 @@ describe('JJTech bid adapter', () => {
       expect(request.data.regs.coppa).to.equal(1);
     });
   });
+
+  describe('interpretResponse', () => {
+    let bid;
+    let bidderRequest;
+    let request;
+
+    const serverResponse = {
+      body: {
+        id: 'response-id',
+        cur: 'USD',
+        seatbid: [
+          {
+            seat: 'jjtech',
+            bid: [
+              {
+                id: 'seatbid-bid-id',
+                impid: 'bid-id-1',
+                price: 1.25,
+                adm: '<div>jjtech-ad</div>',
+                adomain: ['advertiser.com'],
+                crid: 'creative-id-1',
+                w: 300,
+                h: 250,
+                mtype: 1,
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    beforeEach(() => {
+      bid = deepClone(bidRequestBase);
+      bidderRequest = {
+        bidderCode: 'jjtech',
+        auctionId: bid.auctionId,
+        bidderRequestId: bid.bidderRequestId,
+        bids: [bid],
+        ortb2: {},
+      };
+      request = spec.buildRequests([bid], bidderRequest);
+    });
+
+    it('maps an ORTB banner bid to a Prebid bid', () => {
+      const result = spec.interpretResponse(serverResponse, request);
+      const bids = result.bids || result;
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('bid-id-1');
+      expect(bids[0].cpm).to.equal(1.25);
+      expect(bids[0].width).to.equal(300);
+      expect(bids[0].height).to.equal(250);
+      expect(bids[0].ad).to.equal('<div>jjtech-ad</div>');
+      expect(bids[0].creativeId).to.equal('creative-id-1');
+      expect(bids[0].currency).to.equal('USD');
+      expect(bids[0].netRevenue).to.equal(true);
+      expect(bids[0].ttl).to.equal(300);
+      expect(bids[0].mediaType).to.equal('banner');
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('returns no bids for an empty response body', () => {
+      const result = spec.interpretResponse({ body: null }, request);
+      const bids = result.bids || result;
+      expect(bids).to.have.lengthOf(0);
+    });
+
+    it('returns no bids when seatbid is missing', () => {
+      const result = spec.interpretResponse({ body: { id: 'response-id' } }, request);
+      const bids = result.bids || result;
+      expect(bids).to.have.lengthOf(0);
+    });
+  });
 });
