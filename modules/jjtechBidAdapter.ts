@@ -1,6 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { deepSetValue } from '../src/utils.js';
 
 interface JJTechBidParams {
   /**
@@ -25,6 +26,11 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     netRevenue: true,
     ttl: DEFAULT_TTL,
     currency: DEFAULT_CURRENCY,
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'ext.jjtech.placementId', bidRequest.params.placementId);
+    return imp;
   },
 });
 
