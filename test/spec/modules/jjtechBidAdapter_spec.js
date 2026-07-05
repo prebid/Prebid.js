@@ -172,7 +172,7 @@ describe('JJTech bid adapter', () => {
 
     it('maps an ORTB banner bid to a Prebid bid', () => {
       const result = spec.interpretResponse(serverResponse, request);
-      const bids = result.bids || result;
+      const bids = result.bids;
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('bid-id-1');
       expect(bids[0].cpm).to.equal(1.25);
@@ -189,13 +189,13 @@ describe('JJTech bid adapter', () => {
 
     it('returns no bids for an empty response body', () => {
       const result = spec.interpretResponse({ body: null }, request);
-      const bids = result.bids || result;
+      const bids = result.bids;
       expect(bids).to.have.lengthOf(0);
     });
 
     it('returns no bids when seatbid is missing', () => {
       const result = spec.interpretResponse({ body: { id: 'response-id' } }, request);
-      const bids = result.bids || result;
+      const bids = result.bids;
       expect(bids).to.have.lengthOf(0);
     });
   });
