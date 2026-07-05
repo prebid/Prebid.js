@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/jjtechBidAdapter.ts';
 import { deepClone } from '../../../src/utils.js';
 
-const ENDPOINT_URL = 'https://prebid-server.jambojar.com/openrtb2/auction';
+const ENDPOINT_URL = 'https://prebid-server.jambojar-tech.com/openrtb2/auction';
 
 const bidRequestBase = {
   adUnitCode: 'banner-ad-unit-code',
@@ -94,7 +94,7 @@ describe('JJTech bid adapter', () => {
       expect(request.data.site.page).to.equal('https://example.com/article');
     });
 
-    it('puts placementId on each imp at ext.jjtech.placementId', () => {
+    it('puts placementId on each imp at ext.prebid.storedrequest.id', () => {
       const secondBid = deepClone(bidRequestBase);
       secondBid.bidId = 'bid-id-2';
       secondBid.adUnitCode = 'banner-ad-unit-code-2';
@@ -103,8 +103,8 @@ describe('JJTech bid adapter', () => {
 
       const request = spec.buildRequests([bid, secondBid], bidderRequest);
       expect(request.data.imp).to.have.lengthOf(2);
-      expect(request.data.imp[0].ext.jjtech.placementId).to.equal('test-placement-1');
-      expect(request.data.imp[1].ext.jjtech.placementId).to.equal('test-placement-2');
+      expect(request.data.imp[0].ext.prebid.storedrequest.id).to.equal('test-placement-1');
+      expect(request.data.imp[1].ext.prebid.storedrequest.id).to.equal('test-placement-2');
     });
 
     it('forwards the US privacy string', () => {

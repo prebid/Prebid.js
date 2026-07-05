@@ -17,7 +17,7 @@ declare module '../src/adUnits' {
 }
 
 const BIDDER_CODE = 'jjtech';
-const ENDPOINT_URL = 'https://prebid-server.jambojar.com/openrtb2/auction';
+const ENDPOINT_URL = 'https://prebid-server.jambojar-tech.com/openrtb2/auction';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
@@ -29,7 +29,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'ext.jjtech.placementId', bidRequest.params.placementId);
+    deepSetValue(imp, 'ext.prebid.storedrequest.id', bidRequest.params.placementId);
     return imp;
   },
 });
