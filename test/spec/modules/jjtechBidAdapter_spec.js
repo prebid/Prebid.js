@@ -126,6 +126,16 @@ describe('JJTech bid adapter', () => {
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.regs.coppa).to.equal(1);
     });
+
+    it('sends only a banner imp for mixed banner+video ad units', () => {
+      bid.mediaTypes = {
+        banner: { sizes: [[300, 250]] },
+        video: { context: 'outstream', playerSize: [[640, 480]], mimes: ['video/mp4'] },
+      };
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.imp[0].banner).to.exist;
+      expect(request.data.imp[0].video).to.not.exist;
+    });
   });
 
   describe('interpretResponse', () => {

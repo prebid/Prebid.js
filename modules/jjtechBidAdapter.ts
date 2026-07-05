@@ -26,6 +26,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     netRevenue: true,
     ttl: DEFAULT_TTL,
     currency: DEFAULT_CURRENCY,
+    mediaType: BANNER,
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
