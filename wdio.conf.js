@@ -47,7 +47,7 @@ exports.config = {
   ],
   user: process.env.BROWSERSTACK_USERNAME,
   key: process.env.BROWSERSTACK_ACCESS_KEY,
-  maxInstances: Math.max(Object.keys(browsers).length, 5),
+  maxInstances: 5,
   maxInstancesPerCapability: 1,
   capabilities: getCapabilities(),
 }
