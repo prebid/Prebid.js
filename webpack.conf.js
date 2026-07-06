@@ -66,40 +66,7 @@ module.exports = {
         exclude: path.resolve('./node_modules'),
         extractSourceMap: true,
       },
-      ...(() => {
-        if (!isES5Mode) {
-          return [];
-        } else {
-          return [
-            {
-              test: /\.[cm]?js$/,
-              use: [
-                {
-                  loader: 'babel-loader',
-                  options: {
-                    presets: [
-                      [
-                        '@babel/preset-env',
-                        {
-                          'useBuiltIns': 'usage',
-                          'corejs': '3.42.0',
-                          'modules': 'commonjs',
-                          'targets': {
-                            'browsers': require('./package.json').es5browserslist
-                          }
-                        }
-                      ]
-                    ],
-                    plugins: [
-                      '@babel/plugin-transform-runtime'
-                    ]
-                  }
-                }
-              ]
-            },
-          ]
-        }
-      })()
+      ...require('./webpack.babel.js')
     ],
   },
   entry: (() => {

@@ -38,12 +38,6 @@
     "> 0.25%",
     "not ios_saf 11"
   ],
-  "es5browserslist": [
-    "ie >= 11",
-    "chrome >= 50",
-    "firefox >= 50",
-    "safari >= 10"
-  ],
   "keywords": [
     "advertising",
     "auction",
@@ -61,6 +55,7 @@
     "@babel/eslint-parser": "^7.28.6",
     "@babel/plugin-transform-runtime": "^7.27.4",
     "@babel/register": "^7.28.3",
+    "@babel/runtime-corejs3": "^8.0.0",
     "@chiragrupani/karma-chromium-edge-launcher": "^2.4.1",
     "@eslint/compat": "^1.4.1",
     "@types/google-publisher-tag": "^1.20250210.0",
@@ -72,7 +67,9 @@
     "assert": "^2.0.0",
     "babel-loader": "^8.4.1",
     "babel-plugin-istanbul": "^6.1.1",
+    "babel-plugin-polyfill-corejs3": "^1.0.0",
     "chai": "^4.2.0",
+    "core-js-pure": "^3.49.0",
     "deep-equal": "^2.0.3",
     "eslint": "^9.31.0",
     "eslint-plugin-chai-friendly": "^1.1.0",

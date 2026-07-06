@@ -32,33 +32,11 @@ module.exports = {
     path: path.resolve('./build/creative'),
   },
   module: {
-    rules: [{
-      extractSourceMap: true
-    }, isES5Mode && {
-      test: /\.[cm]?js$/,
-      use: [
-        {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              [
-                '@babel/preset-env',
-                {
-                  'useBuiltIns': 'usage',
-                  'corejs': '3.42.0',
-                  'modules': 'commonjs',
-                  'targets': {
-                    'browsers': require('./package.json').es5browserslist
-                  }
-                }
-              ]
-            ],
-            plugins: [
-              '@babel/plugin-transform-runtime'
-            ]
-          }
-        }
-      ]
-    }]
+    rules: [
+      {
+        extractSourceMap: true
+      },
+      ...require('./webpack.babel.js')
+    ]
   }
 };

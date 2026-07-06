@@ -10,6 +10,9 @@ module.exports = {
       'node_modules'
     ],
   },
+  module: {
+    rules: require('./webpack.babel.js')
+  },
   entry: {
     'debugging-standalone': {
       import: './modules/debugging/standalone.js',
