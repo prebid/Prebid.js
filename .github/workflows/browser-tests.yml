@@ -27,7 +27,6 @@ jobs:
       source-key: ${{ inputs.source-key }}
       windows: ${{ !inputs.coverage-only }}
       macos: ${{ !inputs.coverage-only }}
-
   setup:
     needs: build
     name: "Define testing strategy"
@@ -160,6 +159,30 @@ jobs:
       chunks: 8
       browserstack: true
       browserstack-sessions: ${{ fromJSON(needs.setup.outputs.bstack-sessions) }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  build-es5:
+    needs: [setup]
+    if: ${{ needs.setup.outputs.bstack-key }}
+    name: Build (ES5)
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp build --ES5
+
+  test-es5:
+    needs: [setup, build-es5]
+    name: "ES5 tests"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build-es5.outputs.linux }}
+      test-cmd: npx gulp test-only-nobuild --browserstack --no-coverage --ES5
+      chunks: 8
+      browserstack: true
+      browserstack-sessions: 1
+      browsers-json: 'browsers-es5.json'
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

@@ -52,6 +52,11 @@ on:
         description: URL to deb to install before tests
         type: string
         required: false
+      browsers-json:
+        description: BROWSERS_JSON environment variable
+        type: string
+        required: false
+        default: 'browsers.json'
     outputs:
       coverage:
         description: Artifact name for coverage results
@@ -97,6 +102,7 @@ jobs:
       TEST_CHUNKS: ${{ inputs.chunks }}
       TEST_CHUNK: ${{ matrix.chunk-no }}
       BROWSER: ${{ inputs.browser }}
+      BROWSERS_JSON: ${{ inputs.browsers-json }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
     concurrency:
