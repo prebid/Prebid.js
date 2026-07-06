@@ -197,6 +197,7 @@ function getCacheConfig(): {
 
 export const subModuleObj: RtdProviderSpec<"stackupRtd"> = {
   name: MODULE_NAME as "stackupRtd",
+  disclosureURL: "local://modules/stackupRtdProvider.json",
   init,
   getBidRequestData,
 };
