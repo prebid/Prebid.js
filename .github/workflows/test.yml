@@ -159,7 +159,7 @@ jobs:
       test-cmd: npx gulp e2e-test-nobuild --ES5
       chunks: 1
       browserstack: true
-      browserstack-sessions: ${{ needs.setup-es5.outputs.sessions }}
+      browserstack-sessions: ${{ fromJSON(needs.setup-es5.outputs.sessions) }}
       browsers-json: 'browsers-es5.json'
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
