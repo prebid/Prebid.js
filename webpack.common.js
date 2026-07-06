@@ -3,8 +3,15 @@ const { argv } = require('yargs');
 const TerserPlugin = require('terser-webpack-plugin');
 const isES5Mode = argv.ES5;
 
+const browsers = [
+  'ie >= 11',
+  'chrome >= 50',
+  'firefox >= 50',
+  'safari >= 10'
+];
+
 module.exports = function (config) {
-  config.target = isES5Mode ?  ['web', 'es5'] : 'web';
+  config.target = isES5Mode ? ['web', 'es5'] : 'web';
   if (isES5Mode) {
     config.module = config.module || {};
     config.module.rules = config.module.rules || [];
@@ -19,21 +26,22 @@ module.exports = function (config) {
         {
           loader: 'babel-loader',
           options: {
+            presets: [
+              ['@babel/preset-env', {
+                useBuiltIns: false,
+                modules: 'commonjs',
+                targets: { browsers }
+              }]
+            ],
             plugins: [
               ['polyfill-corejs3', {
                 'method': 'usage-pure',
                 'version': require('core-js-pure/package.json').version,
-                targets: {
-                  browsers: [
-                    'ie >= 11',
-                    'chrome >= 50',
-                    'firefox >= 50',
-                    'safari >= 10'
-                  ]
-                }
+                targets: { browsers }
               }],
-              '@babel/plugin-transform-runtime',
-              '@babel/plugin-transform-modules-commonjs',
+              ['@babel/plugin-transform-runtime', {
+                absoluteRuntime: true,
+              }],
             ]
           }
         }
