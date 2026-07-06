@@ -4,6 +4,7 @@ on:
     workflows:
       - Check for Duplicated Code
       - Check for linter warnings / exceptions
+      - Check adapter naming conventions
     types:
       - completed
 

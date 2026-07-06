@@ -501,7 +501,7 @@ export function setEnforcementConfig(config) {
   }
   rules = Object.fromEntries((rules as any || []).map(r => [r.purpose, r])) as any;
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
-  defaultPurposeDeclaration = Object.assign({}, NO_PURPOSE_DECLARATION, config.gdpr?.defaultLegalBasis ?? DEFAULT_PURPOSE_DECLARATION);
+  defaultPurposeDeclaration = Object.assign({}, NO_PURPOSE_DECLARATION, config?.gdpr?.defaultLegalBasis ?? DEFAULT_PURPOSE_DECLARATION);
 
   Object.entries(CONFIGURABLE_RULES).forEach(([name, opts]) => {
     ACTIVE_RULES[opts.type][opts.id] = rules[name] ?? opts.default;
