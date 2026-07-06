@@ -32,6 +32,10 @@ pbjs.setBidderConfig({
 falls back to the default (disabled). Compression is automatically skipped when Prebid debug mode is
 enabled or when the browser does not support GZIP.
 
+When enabled, the adapter sends a `Content-Encoding: gzip` request header alongside the compressed
+payload so the endpoint knows to decompress the body. The header is omitted in Prebid debug mode,
+where core skips compression, so the header always matches the actual payload encoding.
+
 # Test Parameters
 
 ```js

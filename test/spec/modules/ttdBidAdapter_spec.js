@@ -808,12 +808,34 @@ describe('ttdBidAdapter', function () {
 
     afterEach(function () {
       sandbox.restore();
+      config.setConfig({ debug: false });
     });
 
     it('should default endpointCompression to false when no bidder config is set', function () {
       bidderConfigStub.returns({});
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
       expect(request.options.endpointCompression).to.be.false;
+    });
+
+    it('should not add a Content-Encoding header when gzip is disabled', function () {
+      bidderConfigStub.returns({});
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.customHeaders).to.be.undefined;
+    });
+
+    it('should add a Content-Encoding: gzip header when gzip is enabled', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: true } });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(request.options.customHeaders).to.deep.equal({ 'Content-Encoding': 'gzip' });
+    });
+
+    it('should not add a Content-Encoding header in debug mode even when gzip is enabled', function () {
+      bidderConfigStub.returns({ ttd: { gzipEnabled: true } });
+      config.setConfig({ debug: true });
+      const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      // gzip stays requested (core decides), but the header is dropped since core skips compression
+      expect(request.options.endpointCompression).to.be.true;
+      expect(request.options.customHeaders).to.be.undefined;
     });
 
     it('should interpret correctly gzip configuration given as a boolean', function () {
@@ -846,6 +868,7 @@ describe('ttdBidAdapter', function () {
       const aliasBidderRequest = { ...baseBidderRequest, bidderCode: 'thetradedesk' };
       const request = testBuildRequests(aliasBidRequests, aliasBidderRequest);
       expect(request.options.endpointCompression).to.be.true;
+      expect(request.options.customHeaders).to.deep.equal({ 'Content-Encoding': 'gzip' });
     });
 
     it('should fall back to the canonical ttd config when on an alias without its own config', function () {
@@ -854,6 +877,7 @@ describe('ttdBidAdapter', function () {
       const aliasBidderRequest = { ...baseBidderRequest, bidderCode: 'thetradedesk' };
       const request = testBuildRequests(aliasBidRequests, aliasBidderRequest);
       expect(request.options.endpointCompression).to.be.true;
+      expect(request.options.customHeaders).to.deep.equal({ 'Content-Encoding': 'gzip' });
     });
   });
 
