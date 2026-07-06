@@ -1,10 +1,8 @@
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
-const { argv } = require('yargs');
+const addCommonConfig = require('./webpack.common.js');
 
-const isES5Mode = argv.ES5;
-
-module.exports = {
+module.exports = addCommonConfig({
   mode: 'production',
   context: helpers.getPrecompiledPath(),
   devtool: false,
@@ -35,8 +33,7 @@ module.exports = {
     rules: [
       {
         extractSourceMap: true
-      },
-      ...require('./webpack.babel.js')
+      }
     ]
   }
-};
+});

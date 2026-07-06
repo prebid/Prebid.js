@@ -30,8 +30,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     loader: 'babel-loader',
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,
-      presets: [['@babel/preset-env', {modules: 'commonjs'}]],
-      plugins: codeCoverage ? ['babel-plugin-istanbul'] : []
+      plugins: ['@babel/plugin-transform-modules-commonjs'].concat(codeCoverage ? ['babel-plugin-istanbul'] : [])
     }
   })
   return webpackConfig;
