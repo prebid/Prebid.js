@@ -1319,11 +1319,19 @@ function triggerBilling({ adId, adUnitCode }: {
 }
 addApiMethod('triggerBilling', triggerBilling);
 
+type FireViewUrlOptions = {
+  adUnitCode?: AdUnitCode;
+  adId?: string;
+};
+
 /**
- * Fire the GAM view URL for the current winning bid matching an ad unit code.
+ * Fire the GAM view URL for the current winning bid matching an ad unit code or ad ID.
  */
-function fireViewUrlForAdUnitCode(adUnitCode: AdUnitCode) {
-  const bid = auctionManager.getAllWinningBids().find(bid => bid.adUnitCode === adUnitCode);
+function fireViewUrlForAdUnitCode(adUnitCodeOrOptions?: AdUnitCode | FireViewUrlOptions, adId?: string) {
+  const options = isPlainObject(adUnitCodeOrOptions)
+    ? adUnitCodeOrOptions as FireViewUrlOptions
+    : { adUnitCode: adUnitCodeOrOptions, adId };
+  const bid = auctionManager.getAllWinningBids().find(bid => (options.adId != null && bid.adId === options.adId) || (options.adUnitCode != null && bid.adUnitCode === options.adUnitCode));
   if (bid?.viewUrl) {
     utilsInternal.triggerPixel(bid.viewUrl);
   }

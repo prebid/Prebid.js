@@ -1440,6 +1440,20 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
+    it('fires the GAM view URL by ad id', function () {
+      const viewUrl = 'http://www.example.com/view-ad-id';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>'
+      });
+
+      return renderAd(doc, bidId, { viewUrl }).then(() => {
+        triggerPixelStub.resetHistory();
+        pbjs.fireViewUrlForAdUnitCode(null, bidId);
+        sinon.assert.calledOnce(triggerPixelStub);
+        sinon.assert.calledWith(triggerPixelStub, viewUrl);
+      });
+    });
+
     it('should call addWinningBid', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
