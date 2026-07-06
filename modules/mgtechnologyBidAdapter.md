@@ -4,11 +4,14 @@
 Module Name: MediaGo Technology LLC Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: fangsimin@baidu.com
+Alias of: mediagoBidAdapter
 ```
 
 # Description
 
-Module that connects to MediaGo Technology LLC's demand sources
+This adapter is an alias of the MediaGo Bidder Adapter (`mediagoBidAdapter`), connecting to MediaGo Technology LLC's demand sources via a separate endpoint and GVL ID (1575).
+
+To use this adapter, include `mediagoBidAdapter` in your build. The `mgtechnology` bidder code is automatically registered as an alias.
 
 # Test Parameters
 
