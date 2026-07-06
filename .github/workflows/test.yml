@@ -121,6 +121,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
   setup-es5:
+    needs: [checkout]
     name: "Define ES5 testing strategy"
     runs-on: ubuntu-latest
     outputs:
