@@ -172,21 +172,7 @@ function getItems(validBidRequests, bidderRequest) {
       ...gdprConsent
     };
 
-    if (mediaTypes.native) {
-      const nativeOrtbRequest = req.nativeOrtbRequest;
-      if (nativeOrtbRequest) {
-        ret = {
-          id: id,
-          bidfloor: bidFloor,
-          native: {
-            request: JSON.stringify(nativeOrtbRequest),
-            ver: '1.2'
-          },
-          ext: ext,
-          tagid: req.params && req.params.tagid
-        };
-      }
-    } else if (mediaTypes.banner) {
+    if (mediaTypes.banner) {
       let sizes = transformSizesOrtb(getProperty(req, 'sizes'));
       let matchSize;
 
@@ -221,6 +207,20 @@ function getItems(validBidRequests, bidderRequest) {
         },
         tagid: req.params && req.params.tagid
       };
+    } else if (mediaTypes.native) {
+      const nativeOrtbRequest = req.nativeOrtbRequest;
+      if (nativeOrtbRequest) {
+        ret = {
+          id: id,
+          bidfloor: bidFloor,
+          native: {
+            request: JSON.stringify(nativeOrtbRequest),
+            ver: '1.2'
+          },
+          ext: ext,
+          tagid: req.params && req.params.tagid
+        };
+      }
     }
 
     return ret;
@@ -367,7 +367,9 @@ export const spec = {
     const mediaTypeMap = {};
     validBidRequests.forEach((req) => {
       const bidId = getProperty(req, 'bidId');
-      if (req.mediaTypes && req.mediaTypes.native) {
+      if (req.mediaTypes && req.mediaTypes.banner) {
+        mediaTypeMap[bidId] = BANNER;
+      } else if (req.mediaTypes && req.mediaTypes.native) {
         mediaTypeMap[bidId] = NATIVE;
       } else {
         mediaTypeMap[bidId] = BANNER;
