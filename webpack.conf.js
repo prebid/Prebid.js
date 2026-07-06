@@ -140,6 +140,13 @@ module.exports = addCommonConfig({
         const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, renderers,{
+          corejs: {
+            name: 'corejs',
+            test: (module) => {
+              return module.resource?.startsWith(path.resolve(nodeMods, 'core-js')) ||
+                module.resource?.startsWith(path.resolve(nodeMods, 'core-js-pure'))
+            }
+          },
           core: {
             name: 'chunk-core',
             test: (module) => {
