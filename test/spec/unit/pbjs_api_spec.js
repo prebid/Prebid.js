@@ -1424,6 +1424,37 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
+    it('stores the GAM view URL for firing by ad unit code', function () {
+      const viewUrl = 'http://www.example.com/view';
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>',
+        adUnitCode
+      });
+      auctionManager.addWinningBid({ adUnitCode, viewUrl: 'http://www.example.com/old-view' });
+
+      return renderAd(doc, bidId, { viewUrl }).then(() => {
+        triggerPixelStub.resetHistory();
+        pbjs.fireViewUrlForAdUnitCode(adUnitCode);
+        sinon.assert.calledOnce(triggerPixelStub);
+        sinon.assert.calledWith(triggerPixelStub, viewUrl);
+      });
+    });
+
+    it('fires the GAM view URL by ad id', function () {
+      const viewUrl = 'http://www.example.com/view-ad-id';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>'
+      });
+
+      return renderAd(doc, bidId, { viewUrl }).then(() => {
+        triggerPixelStub.resetHistory();
+        pbjs.fireViewUrlForAdUnitCode(null, bidId);
+        sinon.assert.calledOnce(triggerPixelStub);
+        sinon.assert.calledWith(triggerPixelStub, viewUrl);
+      });
+    });
+
     it('should call addWinningBid', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"

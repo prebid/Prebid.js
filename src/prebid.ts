@@ -22,7 +22,8 @@ import {
   mergeDeep,
   transformAdServerTargetingObj,
   uniques,
-  unsupportedBidderMessage
+  unsupportedBidderMessage,
+  internal as utilsInternal
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
@@ -490,6 +491,7 @@ declare module './prebidGlobal' {
     setBidderConfig: typeof config.setBidderConfig;
     processQueue: typeof processQueue;
     triggerBilling: typeof triggerBilling;
+    fireViewUrlForAdUnitCode: typeof fireViewUrlForAdUnitCode;
     refreshPageViewId: typeof refreshPageViewId;
   }
 }
@@ -640,6 +642,10 @@ type RenderAdOptions = {
    * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
    */
   clickThrough?: string;
+  /**
+   * GAM view URL to store on the rendered bid for later firing.
+   */
+  viewUrl?: string;
 };
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
@@ -1312,6 +1318,32 @@ function triggerBilling({ adId, adUnitCode }: {
     });
 }
 addApiMethod('triggerBilling', triggerBilling);
+
+type FireViewUrlOptions = {
+  adUnitCode?: AdUnitCode;
+  adId?: string;
+};
+
+/**
+ * Fire the GAM view URL for the current winning bid matching an ad unit code or ad ID.
+ */
+function fireViewUrlForAdUnitCode(adUnitCodeOrOptions?: AdUnitCode | FireViewUrlOptions, adId?: string) {
+  const options = isPlainObject(adUnitCodeOrOptions)
+    ? adUnitCodeOrOptions as FireViewUrlOptions
+    : { adUnitCode: adUnitCodeOrOptions, adId };
+  const bids = auctionManager.getAllWinningBids();
+  let bid;
+  for (let i = bids.length - 1; i >= 0; i--) {
+    if ((options.adId != null && bids[i].adId === options.adId) || (options.adUnitCode != null && bids[i].adUnitCode === options.adUnitCode)) {
+      bid = bids[i];
+      break;
+    }
+  }
+  if (bid?.viewUrl) {
+    utilsInternal.triggerPixel(bid.viewUrl);
+  }
+}
+addApiMethod('fireViewUrlForAdUnitCode', fireViewUrlForAdUnitCode);
 
 /**
  * Refreshes the previously generated page view ID. Can be used to instruct bidders
