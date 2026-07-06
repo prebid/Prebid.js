@@ -440,26 +440,9 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded) {
-  let addBid = true;
-
-  const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
-  const videoMediaType =
-  bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
-
-  if (config.getConfig('cache.url') && context !== OUTSTREAM) {
-    if (!bidResponse.videoCacheKey) {
-      addBid = false;
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, bidderRequest);
-    } else if (!bidResponse.vastUrl) {
-      utils.logError('videoCacheKey specified but not required vastUrl for video bid');
-      addBid = false;
-    }
-  }
-  if (addBid) {
-    addBidToAuction(auctionInstance, bidResponse);
-    afterBidAdded();
-  }
+  // USAT: We completely remove the caching attempt here. 
+  addBidToAuction(auctionInstance, bidResponse);
+  afterBidAdded();
 }
 
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
