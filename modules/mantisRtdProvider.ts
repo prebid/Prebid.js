@@ -15,6 +15,7 @@ import type { AllConsentData } from '../src/consentHandler.ts';
 import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
 import { isNumber } from '../src/utils/objects.ts';
+import { getRefererInfo } from '../src/refererDetection.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -172,7 +173,7 @@ export const cleanUrl = (url: string): string => {
  * @param endpoint - Base URL of the Mantis RTD API.
  */
 export function buildApiUrl(endpoint: string): string {
-  const url = cleanUrl(window.location.href);
+  const url = cleanUrl(getRefererInfo().page);
   if (!url) return '';
   const params = [
     'cacheType=public',
