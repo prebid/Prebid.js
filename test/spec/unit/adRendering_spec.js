@@ -47,6 +47,11 @@ describe('adRendering', () => {
       expect(result.instl).to.be.true;
     });
 
+    it('stores viewUrl on the bid response', () => {
+      getRenderingData(bidResponse, { viewUrl: 'https://view.example.com' });
+      expect(bidResponse.viewUrl).to.eql('https://view.example.com');
+    });
+
     ['ad', 'adUrl'].forEach((prop) => {
       describe(`on ${prop}`, () => {
         it('replaces AUCTION_PRICE macro', () => {

@@ -200,6 +200,7 @@ function creativeMessageHandler(deps) {
 
 type RenderOptions = {
   clickUrl?: string;
+  viewUrl?: string;
 };
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
@@ -215,6 +216,9 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
 
 function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
   const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse;
+  if (options?.viewUrl != null) {
+    bidResponse.viewUrl = options.viewUrl;
+  }
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -444,7 +448,7 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
       bid = auctionManager.findBidByAdId(adId);
-      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough }, bidResponse: bid, doc });
+      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);

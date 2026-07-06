@@ -122,13 +122,26 @@ describe('cross-domain creative', () => {
     });
   });
 
-  it('generates request message with adId and clickUrl', () => {
-    renderAd({ adId: '123', clickUrl: 'https://click-url.com', pubUrl: ORIGIN });
+  it('generates request message with adId, clickUrl and viewUrl', () => {
+    renderAd({ adId: '123', clickUrl: 'https://click-url.com', viewUrl: 'https://view-url.com', pubUrl: ORIGIN });
     expect(messages[0].payload).to.eql({
       message: MESSAGE_REQUEST,
       adId: '123',
       options: {
-        clickUrl: 'https://click-url.com'
+        clickUrl: 'https://click-url.com',
+        viewUrl: 'https://view-url.com'
+      }
+    });
+  });
+
+  it('supports GAM creative positional arguments with viewUrl as the fourth argument', () => {
+    renderAd('123', ORIGIN, 'https://click-url.com', 'https://view-url.com');
+    expect(messages[0].payload).to.eql({
+      message: MESSAGE_REQUEST,
+      adId: '123',
+      options: {
+        clickUrl: 'https://click-url.com',
+        viewUrl: 'https://view-url.com'
       }
     });
   });
