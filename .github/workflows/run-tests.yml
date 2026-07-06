@@ -110,7 +110,7 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
+      group: ${{ inputs.browserstack && format('browserstack-{0}-{1}', inputs.test-cmd, github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
       cancel-in-progress: false
 
     runs-on: ${{ inputs.runs-on }}
