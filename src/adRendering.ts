@@ -216,9 +216,6 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
 
 function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
   const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse;
-  if (options?.viewUrl != null) {
-    bidResponse.viewUrl = options.viewUrl;
-  }
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -305,6 +302,9 @@ doRender.before(function (next, args) {
 }, 100);
 
 export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
+  if (bidResponse != null && options?.viewUrl != null) {
+    bidResponse.viewUrl = options.viewUrl;
+  }
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({

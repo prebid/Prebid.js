@@ -1431,6 +1431,7 @@ describe('Unit: Prebid Module', function () {
         ad: '<div>ad</div>',
         adUnitCode
       });
+      auctionManager.addWinningBid({ adUnitCode, viewUrl: 'http://www.example.com/old-view' });
 
       return renderAd(doc, bidId, { viewUrl }).then(() => {
         triggerPixelStub.resetHistory();

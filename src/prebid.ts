@@ -1331,7 +1331,14 @@ function fireViewUrlForAdUnitCode(adUnitCodeOrOptions?: AdUnitCode | FireViewUrl
   const options = isPlainObject(adUnitCodeOrOptions)
     ? adUnitCodeOrOptions as FireViewUrlOptions
     : { adUnitCode: adUnitCodeOrOptions, adId };
-  const bid = auctionManager.getAllWinningBids().find(bid => (options.adId != null && bid.adId === options.adId) || (options.adUnitCode != null && bid.adUnitCode === options.adUnitCode));
+  const bids = auctionManager.getAllWinningBids();
+  let bid;
+  for (let i = bids.length - 1; i >= 0; i--) {
+    if ((options.adId != null && bids[i].adId === options.adId) || (options.adUnitCode != null && bids[i].adUnitCode === options.adUnitCode)) {
+      bid = bids[i];
+      break;
+    }
+  }
   if (bid?.viewUrl) {
     utilsInternal.triggerPixel(bid.viewUrl);
   }
