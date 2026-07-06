@@ -38,6 +38,12 @@
     "> 0.25%",
     "not ios_saf 11"
   ],
+  "es5browserslist": [
+    "ie >= 11",
+    "chrome >= 50",
+    "firefox >= 50",
+    "safari >= 10"
+  ],
   "keywords": [
     "advertising",
     "auction",

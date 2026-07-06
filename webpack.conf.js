@@ -88,12 +88,7 @@ module.exports = {
                           'corejs': '3.42.0',
                           'modules': 'commonjs',
                           'targets': {
-                            'browsers': [
-                              'ie >= 11',
-                              'chrome >= 50',
-                              'firefox >= 50',
-                              'safari >= 10'
-                            ]
+                            'browsers': require('./package.json').es5browserslist
                           }
                         }
                       ]

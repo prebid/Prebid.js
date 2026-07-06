@@ -1,5 +1,8 @@
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
+const { argv } = require('yargs');
+
+const isES5Mode = argv.ES5;
 
 module.exports = {
   mode: 'production',
@@ -31,6 +34,28 @@ module.exports = {
   module: {
     rules: [{
       extractSourceMap: true
+    }, isES5Mode && {
+      test: /\.[cm]?js$/,
+      use: [
+        {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              [
+                '@babel/preset-env',
+                {
+                  'useBuiltIns': 'usage',
+                  'corejs': '3.42.0',
+                  'modules': 'commonjs',
+                  'targets': {
+                    'browsers': require('./package.json').es5browserslist
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ]
     }]
   }
-}
+};
