@@ -7,7 +7,6 @@ import {
   coreStorage,
   dep,
   enrichEids,
-  findRootDomain,
   generateSubmoduleContainers,
   getConsentHash,
   getValidSubmoduleConfigs,
@@ -56,6 +55,7 @@ const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
 describe('User ID', function () {
+  let adUnits;
   function getConfigMock(...configArrays) {
     return {
       userSync: {
@@ -117,6 +117,10 @@ describe('User ID', function () {
       bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }, { bidder: 'anotherSampleBidder', params: { placementId: 'banner-only-bidder' } }]
     };
   }
+
+  beforeEach(() => {
+    adUnits = [getAdUnitMock()];
+  });
 
   function addConfig(cfg, name, value) {
     if (cfg && cfg.userSync && cfg.userSync.userIds) {
@@ -366,7 +370,7 @@ describe('User ID', function () {
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       config.setConfig(customConfig);
-      const fpd = {};
+
       const eids = await getGlobalEids();
       expect(eids).to.deep.equal([{
         source: 'pubcid.org',
@@ -889,7 +893,6 @@ describe('User ID', function () {
     });
 
     it('should set googletag ppid correctly', function () {
-      const adUnits = [getAdUnitMock()];
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
@@ -911,7 +914,6 @@ describe('User ID', function () {
     });
 
     it('should set googletag ppid correctly when prioritized according to config available to core', () => {
-      const adUnits = [getAdUnitMock()];
       init(config);
       setSubmoduleRegistry([
         // some of the ids are padded to have length >= 32 characters
@@ -1016,7 +1018,6 @@ describe('User ID', function () {
     });
 
     it('should set PPID when the source needs to call out to the network', () => {
-      const adUnits = [getAdUnitMock()];
       init(config);
       const callback = sinon.stub();
       setSubmoduleRegistry([{
@@ -1053,8 +1054,6 @@ describe('User ID', function () {
     });
 
     it('should log a warning if PPID too big or small', function () {
-      const adUnits = [getAdUnitMock()];
-
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
@@ -1720,7 +1719,6 @@ describe('User ID', function () {
 
     describe('auction and user sync delays', function () {
       let sandbox;
-      let adUnits;
       let mockIdCallback;
       let auctionSpy;
 
@@ -1731,8 +1729,6 @@ describe('User ID', function () {
 
         // remove cookie
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
-
-        adUnits = [getAdUnitMock()];
 
         auctionSpy = sandbox.spy();
         mockIdCallback = sandbox.stub();
@@ -1918,10 +1914,7 @@ describe('User ID', function () {
     });
 
     describe('Start auction hook appends userId to first party data', function () {
-      let adUnits;
-
       beforeEach(function () {
-        adUnits = [getAdUnitMock()];
       });
 
       function getGlobalEids() {
@@ -2366,7 +2359,6 @@ describe('User ID', function () {
 
     describe('Consent changes determine getId refreshes', function () {
       let expStr;
-      let adUnits;
       let mockGetId;
       let mockDecode;
       let mockExtendId;
@@ -2407,7 +2399,6 @@ describe('User ID', function () {
         allConsent.reset();
 
         // init
-        adUnits = [getAdUnitMock()];
         init(config);
 
         // init id system
@@ -2434,9 +2425,7 @@ describe('User ID', function () {
         setStorage({ lastDelta: 1000 });
         config.setConfig(userIdConfig);
 
-        let innerAdUnits;
         return runBidsHook((config) => {
-          innerAdUnits = config.adUnits;
         }, { adUnits }).then(() => {
           sinon.assert.calledOnce(mockGetId);
           sinon.assert.calledOnce(mockDecode);
@@ -2448,9 +2437,7 @@ describe('User ID', function () {
         setStorage();
         config.setConfig(userIdConfig);
 
-        let innerAdUnits;
         return runBidsHook((config) => {
-          innerAdUnits = config.adUnits;
         }, { adUnits }).then(() => {
           sinon.assert.calledOnce(mockGetId);
           sinon.assert.calledOnce(mockDecode);
@@ -2462,9 +2449,7 @@ describe('User ID', function () {
         setStorage({ cst: '' });
         config.setConfig(userIdConfig);
 
-        let innerAdUnits;
         return runBidsHook((config) => {
-          innerAdUnits = config.adUnits;
         }, { adUnits }).then(() => {
           sinon.assert.calledOnce(mockGetId);
           sinon.assert.calledOnce(mockDecode);
@@ -2480,9 +2465,7 @@ describe('User ID', function () {
 
         config.setConfig(userIdConfig);
 
-        let innerAdUnits;
         return runBidsHook((config) => {
-          innerAdUnits = config.adUnits;
         }, { adUnits }).then(() => {
           sinon.assert.calledOnce(mockGetId);
           sinon.assert.calledOnce(mockDecode);
@@ -2495,9 +2478,7 @@ describe('User ID', function () {
 
         config.setConfig(userIdConfig);
 
-        let innerAdUnits;
         return runBidsHook((config) => {
-          innerAdUnits = config.adUnits;
         }, { adUnits }).then(() => {
           sinon.assert.notCalled(mockGetId);
           sinon.assert.calledOnce(mockDecode);
@@ -2509,9 +2490,7 @@ describe('User ID', function () {
         setStorage({ lastDelta: 1000 });
         config.setConfig(userIdConfig);
 
-        let innerAdUnits;
         return runBidsHook((config) => {
-          innerAdUnits = config.adUnits;
         }, { adUnits }).then(() => {
           sinon.assert.calledOnce(mockGetId);
 
@@ -3250,31 +3229,14 @@ describe('User ID', function () {
     });
   });
   describe('adUnitEidsHook', () => {
-    let next, auction, adUnits, ortb2Fragments;
+    let next, auction, ortb2Fragments;
     beforeEach(() => {
       next = sinon.stub();
-      adUnits = [
-        {
-          code: 'au1',
-          bids: [
-            {
-              bidder: 'bidderA'
-            },
-            {
-              bidder: 'bidderB'
-            }
-          ]
-        },
-        {
-          code: 'au2',
-          bids: [
-            {
-              bidder: 'bidderC'
-            }
-          ]
-        }
-      ];
       ortb2Fragments = {};
+      adUnits = [{
+        ...getAdUnitMock(),
+        bids: [{ bidder: 'bidderA' }, { bidder: 'bidderB' }]
+      }];
       auction = {
         getAdUnits: () => adUnits,
         getFPD: () => ortb2Fragments

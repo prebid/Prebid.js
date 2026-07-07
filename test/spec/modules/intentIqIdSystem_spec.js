@@ -16,7 +16,6 @@ import { clearAllCookies } from '../../helpers/cookies.js';
 import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, PREBID, WITH_IIQ, WITHOUT_IIQ } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import { decryptData } from '../../../libraries/intentIqUtils/cryptionUtils.js';
-import { isCHSupported } from '../../../libraries/intentIqUtils/chUtils.js';
 
 const partner = 10;
 const pai = '11';
@@ -808,7 +807,7 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, FPD);
       const callBackSpy = sinon.spy();
       const submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } }).callback;
       submoduleCallback(callBackSpy);
@@ -830,7 +829,7 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, FPD);
       const returnedObject = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } });
       await waitForClientHints();
       expect(returnedObject.callback).to.be.undefined;
@@ -841,7 +840,7 @@ describe('IntentIQ tests', function () {
       // Simulates page reload: FPD has a GDPR string from the previous session,
       // but getCmpData() returns null because the TCF CMP has not responded yet.
       // Without the cmpHasData guard this mismatch would incorrectly trigger a server call.
-      const allowedStorage = ['html5'];
+
       const freshSCal = Date.now();
       const freshDate = Date.now();
       const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
@@ -874,7 +873,7 @@ describe('IntentIQ tests', function () {
     it('should NOT call the server for opted-out user when partner data has no cttl (e.g. only terminationCause stored)', async function () {
       // After our OptOut storage change, partner data only stores { terminationCause }.
       // Without the !isOptedOut guard, missing cttl would incorrectly trigger a server call.
-      const allowedStorage = ['html5'];
+
       const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
 
       const FPD = {
@@ -891,7 +890,7 @@ describe('IntentIQ tests', function () {
       localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(FPD));
       localStorage.setItem(partnerDataKey, JSON.stringify(strippedPartnerData));
 
-      const returnedObj = intentIqIdSubmodule.getId(defaultConfigParams);
+      intentIqIdSubmodule.getId(defaultConfigParams);
       await waitForClientHints();
 
       expect(server.requests.length).to.equal(0);
@@ -900,7 +899,7 @@ describe('IntentIQ tests', function () {
     it('should call the server when CMP strings actually change (user updated consent)', async function () {
       // When CMP has loaded and the consent string differs from the stored one,
       // a server call MUST happen so the server receives the new consent.
-      const allowedStorage = ['html5'];
+
       const partnerDataKey = `${FIRST_PARTY_KEY}_${partner}`;
 
       const FPD = {
@@ -1135,7 +1134,6 @@ describe('IntentIQ tests', function () {
     });
 
     it('should make request to correct address with iiqPixelServerAddress parameter', async function() {
-      let wasCallbackCalled = false;
       const callbackConfigParams = {
         params: {
           partner: partner,
@@ -1144,9 +1142,7 @@ describe('IntentIQ tests', function () {
           partnerClientId,
           browserBlackList: 'Chrome',
           iiqPixelServerAddress: syncTestAPILink,
-          callback: () => {
-            wasCallbackCalled = true;
-          }
+          callback: () => {}
         }
       };
 

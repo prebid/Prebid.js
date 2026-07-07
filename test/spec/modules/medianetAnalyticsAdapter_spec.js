@@ -11,6 +11,16 @@ import { config } from 'src/config.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import sinon from "sinon";
 import * as mnUtils from '../../../libraries/medianetUtils/utils.js';
+import * as refererDetection from 'src/refererDetection.js';
+import * as medianetLogger from '../../../libraries/medianetUtils/logger.js';
+import { server } from 'test/mocks/xhr.js';
+import {
+  CONFIG_ERROR,
+  CONFIG_PASS,
+  CONFIG_URL,
+  DEFAULT_LOGGING_PERCENT,
+  mnetGlobals,
+} from '../../../libraries/medianetUtils/constants.js';
 
 const {
   AUCTION_INIT,
@@ -438,6 +448,104 @@ describe('Media.net Analytics Adapter', function () {
       medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
       expect(utils.logError.called).to.equal(false);
       medianetAnalytics.disableAnalytics();
+    });
+  });
+
+  describe('fetchAnalyticsConfig', function () {
+    const nonLocalReferer = {
+      domain: 'example.com',
+      topmostLocation: 'https://www.example.com/page',
+    };
+
+    function respondConfigWithBody(body) {
+      server.respondWith(
+        (url) => url.startsWith(CONFIG_URL),
+        (req) => req.respond(200, { 'Content-Type': 'text/plain' }, body)
+      );
+    }
+
+    beforeEach(function () {
+      mnetGlobals.initialized = false;
+      sandbox.stub(refererDetection, 'getRefererInfo').returns(nonLocalReferer);
+      sandbox.stub(mnUtils, 'isSampledForLogging').returns(false);
+    });
+
+    afterEach(function () {
+      medianetAnalytics.disableAnalytics();
+      mnetGlobals.initialized = false;
+    });
+
+    it('should apply logging config from ajax success with valid percentage and call CONFIG_URL with cid and dn', function () {
+      respondConfigWithBody(JSON.stringify({ percentage: 50 }));
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(50);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+      expect(server.requests.some((r) =>
+        r.url.startsWith(`${CONFIG_URL}?`) &&
+        r.url.includes('cid=test123') &&
+        r.url.includes('dn=example.com')
+      )).to.equal(true);
+    });
+
+    it('should use domain-specific percentage from ajax response when domain key matches referer', function () {
+      refererDetection.getRefererInfo.returns({
+        domain: 'mysite',
+        topmostLocation: 'https://mysite.example/page',
+      });
+      respondConfigWithBody(JSON.stringify({
+        percentage: 20,
+        domain: { mysite: { percentage: 75 } },
+      }));
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(75);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+    });
+
+    it('should not update loggingPercent when ajax response percentage is not numeric', function () {
+      respondConfigWithBody(JSON.stringify({ percentage: 'invalid' }));
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(DEFAULT_LOGGING_PERCENT);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
+    });
+
+    it('should set CONFIG_ERROR when ajax success returns invalid JSON', function () {
+      const sendStub = sandbox.stub();
+      sandbox.stub(medianetLogger, 'errorLogger').returns({ send: sendStub });
+      respondConfigWithBody('not valid json');
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_ERROR);
+      expect(sendStub.called).to.be.true;
+    });
+
+    it('should set CONFIG_ERROR when ajax request fails', function () {
+      const sendStub = sandbox.stub();
+      sandbox.stub(medianetLogger, 'errorLogger').returns({ send: sendStub });
+      server.respondWith(
+        (url) => url.startsWith(CONFIG_URL),
+        (req) => req.respond(500, {}, '')
+      );
+      medianetAnalytics.enableAnalytics(VALID_CONFIGURATION);
+      server.respond();
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_ERROR);
+      expect(sendStub.called).to.be.true;
+    });
+
+    it('should apply loggingConfig from options without calling ajax', function () {
+      medianetAnalytics.enableAnalytics({
+        options: {
+          cid: CUSTOMER_ID,
+          loggingConfig: { percentage: 60, loggingDelay: 1000 },
+        },
+      });
+      server.respond();
+      expect(server.requests.filter((r) => r.url.startsWith(CONFIG_URL)).length).to.equal(0);
+      expect(mnetGlobals.configuration.loggingPercent).to.equal(60);
+      expect(mnetGlobals.configuration.loggingDelay).to.equal(1000);
+      expect(mnetGlobals.configuration.ajaxState).to.equal(CONFIG_PASS);
     });
   });
 

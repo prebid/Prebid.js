@@ -1,12 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vrtcalBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+
 import { config } from 'src/config.js';
-import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('vrtcalBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   const bidRequest = {
     bidId: 'bidID0001',
     transactionId: 'transID0001',

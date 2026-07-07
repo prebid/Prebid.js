@@ -333,6 +333,11 @@ describe('dxtechBidAdapter', function() {
       };
     });
 
+    it('returns true when video request includes required params', function () {
+      videoBidRequest.params.placementId = 'placementId';
+      expect(spec.isBidRequestValid(videoBidRequest)).to.be.true;
+    });
+
     it('should return true (skip validations) when e2etest = true', function () {
       this.bid.params = {
         e2etest: true

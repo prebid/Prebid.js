@@ -136,7 +136,7 @@ function parseCookies(cookie) {
 
 function getRandAsStr(digits) {
   let str = '';
-  let rand = 0;
+  let rand;
   let i;
 
   digits = digits || 4;
@@ -168,7 +168,7 @@ function initSession() {
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_DURATION);
   const timestamp = Math.floor(now.getTime() / 1000);
-  let begin = 0;
+  let begin;
   let cookies;
   let sessionId;
   let sessionDuration;

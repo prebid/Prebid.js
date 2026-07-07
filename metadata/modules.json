@@ -2392,7 +2392,7 @@
       "componentType": "bidder",
       "componentName": "floxis",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1609,
       "disclosureURL": null
     },
     {
@@ -3048,6 +3048,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "datafusion",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,
@@ -3142,6 +3149,13 @@
       "componentName": "luponmedia",
       "aliasOf": null,
       "gvlid": 1132,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "m152",
+      "aliasOf": null,
+      "gvlid": 1111,
       "disclosureURL": null
     },
     {
@@ -4637,6 +4651,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adnex",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "smartico",
       "aliasOf": null,
       "gvlid": null,
@@ -5787,6 +5808,12 @@
       "componentType": "rtd",
       "componentName": "SirdataRTDModule",
       "gvlid": 53,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "stackupRtd",
+      "gvlid": null,
       "disclosureURL": null
     },
     {

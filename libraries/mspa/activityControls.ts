@@ -75,7 +75,7 @@ export const isTransmitUfpdConsentDenied = (() => {
   const sensitiveFlags = (() => {
     // deny anything that smells like: genetic, biometric, state/national ID, financial, union membership,
     // personal communication data, status as victim of crime (version 2), status as transgender/nonbinary (version 2)
-    const cannotBeInScope = [6, 7, 9, 10, 12, 14, 16].map(el => --el);
+    const cannotBeInScope = [6, 7, 9, 10, 12, 14, 16].map(el => el - 1);
     // require consent for everything else (except geo, which is treated separately)
     const allExceptGeo = Array.from(Array(16).keys()).filter((el) => el !== SENSITIVE_DATA_GEO);
     const mustHaveConsent = allExceptGeo.filter(el => !cannotBeInScope.includes(el));

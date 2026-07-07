@@ -23,10 +23,9 @@ import { expect } from 'chai';
 import { deepClone } from '../../src/utils.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
-import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
-import { sandbox } from 'sinon';
+
 import { getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL, onMinBidCacheTTLChange } from '../../src/bidTTL.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
@@ -160,7 +159,6 @@ function mockBidder(bidderCode, bids) {
 }
 
 const TEST_BIDS = [mockBid()];
-const TEST_BID_REQS = TEST_BIDS.map(mockBidRequest);
 
 function mockAjaxBuilder() {
   return function(url, callback) {
@@ -1214,7 +1212,7 @@ describe('auctionmanager.js', function () {
           'on bid': () => bidderRequests[0].bids[0],
           'on mediatype': () => bidderRequests[0].bids[0].mediaTypes.banner,
         }).forEach(([t, getObj]) => {
-          let renderer, bid;
+          let renderer;
           beforeEach(() => {
             renderer = {
               url: 'renderer.js',
@@ -1244,6 +1242,29 @@ describe('auctionmanager.js', function () {
             delete renderer.url;
             expect(getBid().renderer.renderNow).to.be.true;
           });
+        });
+
+        // Regression: a bid can be accepted when its ad unit is no longer
+        // resolvable (e.g. the originating auction has expired out of the
+        // auctionManager TTL collection, or the bid carries an adUnitId that
+        // matches no held ad unit). getPreparedBidForAuction must not throw
+        // while reading the publisher-defined renderer off the (missing) ad unit.
+        it('does not throw when the bid has no matching ad unit', () => {
+          const index = {
+            getAdUnit: () => undefined,
+            getBidRequest: () => undefined,
+            getMediaTypes: () => undefined,
+          };
+          const bid = {
+            cpm: 1.0,
+            bidderCode: BIDDER_CODE,
+            mediaType: 'banner',
+          };
+          let prepared;
+          expect(() => {
+            prepared = auctionModule.getPreparedBidForAuction(bid, { index });
+          }).to.not.throw();
+          expect(prepared.renderer).to.not.exist;
         });
       });
 
@@ -1413,8 +1434,9 @@ describe('auctionmanager.js', function () {
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy, auctionDone, bidsBackCallback;
 
-      function respondToRequest(requestIndex) {
-        server.requests[requestIndex].respond(200, {}, 'response body');
+      function respondToRequest(discriminator) {
+        const request = typeof discriminator === 'function' ? server.requests.find(discriminator) : server.requests[discriminator];
+        request.respond(200, {}, 'response body');
       }
 
       function runAuction() {
@@ -1599,7 +1621,7 @@ describe('auctionmanager.js', function () {
             BIDDER_CODE1,
           ]);
         });
-        respondToRequest(1);
+        respondToRequest(request => request.url.includes('ib.adnxs.com/openrtb2/prebid'));
         return pm;
       });
 
@@ -2308,7 +2330,6 @@ describe('auctionmanager.js', function () {
           }
         });
 
-        const start = Date.now();
         auction = mockAuction(() => bidRequests);
         indexAuctions = [auction];
       });

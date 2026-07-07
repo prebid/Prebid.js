@@ -174,7 +174,7 @@ export function initializeGlobalIIQ(partnerId) {
 export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
   const browser = detectBrowser();
 
-  let url = iiqPixelServerAddress(configParams, cmpData.gdprString);
+  let url = iiqPixelServerAddress(configParams);
   url += '/profiles_engine/ProfilesEngineServlet?at=20&mi=10&secure=1';
   url += '&dpi=' + configParams.partner;
   url = appendFirstPartyData(url, firstPartyData, partnerData);
@@ -280,11 +280,11 @@ function clearCountersAndStore(allowedStorage, partnerData) {
   storeCounters(allowedStorage, partnerData);
 }
 
-function storeCounters(storage, partnerData) {
+function storeCounters(allowedStorage, partnerData) {
   partnerData.callCount = callCount;
   partnerData.failCount = failCount;
   partnerData.noDataCounter = noDataCount;
-  storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), storage, firstPartyData);
+  storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
 }
 
 /** @type {Submodule} */

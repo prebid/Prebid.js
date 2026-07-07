@@ -1,4 +1,4 @@
-/* globals describe, beforeEach, afterEach, sinon */
+/* globals describe, afterEach */
 import { expect } from 'chai';
 import { getDeviceType, getBrowser, getOS } from 'libraries/userAgentUtils';
 import { deviceTypes, browserTypes, osTypes } from 'libraries/userAgentUtils/userAgentTypes.enums.js';
