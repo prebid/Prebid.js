@@ -1,5 +1,4 @@
 import { adqueryIdSubmodule, storage } from 'modules/adqueryIdSystem.js';
-import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
 import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
@@ -18,41 +17,44 @@ describe('AdqueryIdSystem', function () {
 
   describe('getId', function () {
     let getDataFromLocalStorageStub;
+    let setDataInLocalStorageStub;
 
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     });
 
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
+      setDataInLocalStorageStub.restore();
     });
 
-    it('gets a adqueryId', function () {
-      const config = {
-        params: {}
-      };
-      const callbackSpy = sinon.spy();
-      const callback = adqueryIdSubmodule.getId(config).callback;
-      callback(callbackSpy);
-      const request = server.requests[0];
-      expect(request.url).to.contain(`https://bidder.adquery.io/prebid/qid`);
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ qid: 'qid_string' }));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal('qid_string');
+    it('returns the persisted qid synchronously when one already exists', function () {
+      getDataFromLocalStorageStub.withArgs('qid').returns('existing-qid');
+
+      const result = adqueryIdSubmodule.getId();
+
+      expect(result).to.deep.equal({ id: 'existing-qid' });
+      expect(setDataInLocalStorageStub.called).to.be.false;
     });
 
-    it('allows configurable id url', function () {
-      const config = {
-        params: {
-          url: 'https://bidder2.adquery.io'
-        }
-      };
-      const callbackSpy = sinon.spy();
-      const callback = adqueryIdSubmodule.getId(config).callback;
-      callback(callbackSpy);
-      const request = server.requests[0];
-      expect(request.url).to.contains('https://bidder2.adquery.io');
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ qid: 'testqid' }));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal('testqid');
+    it('generates and persists a new qid when none is stored yet', function () {
+      getDataFromLocalStorageStub.withArgs('qid').returns(null);
+
+      const result = adqueryIdSubmodule.getId();
+
+      expect(result.id).to.be.a('string').that.is.not.empty;
+      expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
+    });
+
+    it('reuses the same qid across multiple getId calls once persisted', function () {
+      getDataFromLocalStorageStub.withArgs('qid').returns(null);
+      const first = adqueryIdSubmodule.getId();
+
+      getDataFromLocalStorageStub.withArgs('qid').returns(first.id);
+      const second = adqueryIdSubmodule.getId();
+
+      expect(second.id).to.equal(first.id);
     });
   });
   describe('eid', () => {
