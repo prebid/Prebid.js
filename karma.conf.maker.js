@@ -30,8 +30,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     loader: 'babel-loader',
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,
-      presets: [['@babel/preset-env', {modules: 'commonjs'}]],
-      plugins: codeCoverage ? ['babel-plugin-istanbul'] : []
+      plugins: ['@babel/plugin-transform-modules-commonjs'].concat(codeCoverage ? ['babel-plugin-istanbul'] : [])
     }
   })
   return webpackConfig;
@@ -101,7 +100,7 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json');
+    karmaConf.customLaunchers = require(`./${process.env.BROWSERS_JSON ?? 'browsers.json'}`);
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();

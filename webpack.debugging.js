@@ -1,6 +1,7 @@
 const helpers = require('./gulpHelpers.js');
+const addCommonConfig = require('./webpack.common.js');
 
-module.exports = {
+module.exports = addCommonConfig({
   mode: 'production',
   devtool: 'source-map',
   context: helpers.getPrecompiledPath(),
@@ -15,4 +16,4 @@ module.exports = {
       import: './modules/debugging/standalone.js',
     }
   },
-};
+});

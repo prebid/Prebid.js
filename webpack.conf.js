@@ -1,16 +1,12 @@
-const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
-const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 const fs = require('fs');
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
-
-// Check if ES5 mode is requested
-const isES5Mode = argv.ES5;
+const addCommonConfig = require('./webpack.common.js');
 
 var plugins = [
   new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
@@ -40,10 +36,9 @@ if (argv.analyze) {
   )
 }
 
-module.exports = {
+module.exports = addCommonConfig({
   mode: 'production',
   devtool: 'source-map',
-  target: isES5Mode ? ['web', 'es5'] : 'web',
   cache: {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')
@@ -66,29 +61,7 @@ module.exports = {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'),
         extractSourceMap: true,
-      },
-      ...(() => {
-        if (!isES5Mode) {
-          return [];
-        } else {
-          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), ES5: true});
-          return [
-            {
-              test: /\.node_modules\/.*\.js$/,
-              use: [
-                {
-                  loader: 'babel-loader',
-                  options: Object.assign(
-                    {cacheDirectory: cacheDir, cacheCompression: false},
-                    babelConfig,
-                    helpers.getAnalyticsOptions()
-                  ),
-                }
-              ]
-            },
-          ]
-        }
-      })()
+      }
     ],
   },
   entry: (() => {
@@ -128,22 +101,6 @@ module.exports = {
   optimization: {
     usedExports: true,
     sideEffects: true,
-    minimizer: [
-      new TerserPlugin({
-        extractComments: false, // do not generate unhelpful LICENSE comment
-        terserOptions: {
-          module: isES5Mode ? false : true, // Force ES5 output if ES5 mode is enabled
-          ...(isES5Mode && {
-            ecma: 5, // Target ES5
-            compress: {
-              ecma: 5 // Ensure compression targets ES5
-            },
-            mangle: {
-              safari10: true // Ensure compatibility with older browsers
-            }
-          })        }
-      })
-    ],
     splitChunks: {
       chunks: 'initial',
       minChunks: 1,
@@ -183,6 +140,13 @@ module.exports = {
         const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, renderers,{
+          corejs: {
+            name: 'corejs',
+            test: (module) => {
+              return module.resource?.startsWith(path.resolve(nodeMods, 'core-js')) ||
+                module.resource?.startsWith(path.resolve(nodeMods, 'core-js-pure'))
+            }
+          },
           core: {
             name: 'chunk-core',
             test: (module) => {
@@ -204,4 +168,4 @@ module.exports = {
     }
   },
   plugins
-};
+});
