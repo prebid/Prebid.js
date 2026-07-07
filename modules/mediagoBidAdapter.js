@@ -86,6 +86,19 @@ export const getPmgUID = () => {
 /* ----- pmguid:end ------ */
 
 /**
+ * Extract uid from eids array by source
+ *
+ * @param  {Array}  eids   userIdAsEids array
+ * @param  {string} source eid source domain
+ * @return {string|undefined}
+ */
+function getEidUid(eids, source) {
+  if (!Array.isArray(eids)) return;
+  const eid = eids.find(e => e && e.source === source);
+  return eid && eid.uids && eid.uids[0] && eid.uids[0].id;
+}
+
+/**
  * Get a nested property value from object, return empty string if not found
  *
  * @param  {Object}    obj  object
