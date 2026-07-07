@@ -26,7 +26,7 @@ import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
-import { hasVendorPurposeConsent } from '../../libraries/consentManagement/tcfConsentUtils.js';
+import { hasVendorPurposeConsent } from '../../libraries/consentManagement/consentUtils.js';
 import { buildPBSRequest, interpretPBSResponse } from './ortbConverter.js';
 import { useMetrics } from '../../src/utils/perfMetrics.js';
 import { isActivityAllowed } from '../../src/activities/rules.js';
