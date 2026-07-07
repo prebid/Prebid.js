@@ -1334,13 +1334,14 @@ function fireViewUrlForAdUnitCode(adUnitCodeOrOptions?: AdUnitCode | FireViewUrl
   const bids = auctionManager.getAllWinningBids();
   let bid;
   for (let i = bids.length - 1; i >= 0; i--) {
-    if ((options.adId != null && bids[i].adId === options.adId) || (options.adUnitCode != null && bids[i].adUnitCode === options.adUnitCode)) {
+    if (options.adId != null ? bids[i].adId === options.adId : options.adUnitCode != null && bids[i].adUnitCode === options.adUnitCode) {
       bid = bids[i];
       break;
     }
   }
   if (bid?.viewUrl) {
     utilsInternal.triggerPixel(bid.viewUrl);
+    bid.viewUrl = undefined;
   }
 }
 addApiMethod('fireViewUrlForAdUnitCode', fireViewUrlForAdUnitCode);
