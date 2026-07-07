@@ -38,6 +38,15 @@ const CACHE_SCHEMA_VERSION = 1;
 // any analytics adapter to read a snapshot before it is evicted.
 const MAX_SNAPSHOTS = 10;
 
+// segtax values this module recognises and merges into ortb2. Blocks carrying
+// any other taxonomy are ignored (filtered out) rather than rejected, so an
+// unexpected segtax never discards the whole enrichment payload.
+//   4   = IAB Audience Taxonomy
+//   501 = StackUP Audience Taxonomy 1.0 (legacy audience signals)
+//   502 = StackUP Content Taxonomy 1.0
+//   600 = StackUP Publisher FPD (private)
+const ALLOWED_SEGTAX = new Set<number>([4, 501, 502, 600]);
+
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
@@ -101,6 +110,11 @@ type EmotionBlock = unknown; // TODO: define properly when we have real data
 
 // types/stackup.ts — shared between RTD and analytics modules
 
+// segtax values StackUP emits across content, audience and publisher-FPD blocks.
+// Content segments use segtax 502; IAB Audience segments use segtax 4; legacy
+// StackUp audience signals remain segtax 501; publisher FPD uses private segtax 600.
+export type StackupSegtax = 4 | 501 | 502 | 600;
+
 export interface EnrichmentSnapshot {
   articleId: string;
   fetchedAt: number; // unix ms when enrichment landed
@@ -125,8 +139,12 @@ export interface Ortb2ContentSegment {
   id?: string;
   name: string; // provider domain: 'data.stackup-ai.com'
   ext: {
-    segtax: 502; // StackUP Content Taxonomy 1.0
-    stackup?: { taxonomy_version: string; source_tier?: string };
+    segtax: StackupSegtax; // typically 502 (content) or 600 (publisher FPD)
+    stackup?: {
+      taxonomy_version: string;
+      source_tier?: string;
+      dimension?: string;
+    };
   };
   segment: Array<{
     id: string;
@@ -140,7 +158,7 @@ export interface Ortb2UserSegment {
   id?: string;
   name: string; // provider domain: 'data.stackup-ai.com'
   ext: {
-    segtax: 501; // StackUP Audience Taxonomy 1.0 — one block per dimension
+    segtax: StackupSegtax; // typically 501 (legacy audience) or 4 (IAB Audience)
     stackup?: { dimension: string; taxonomy_version: string };
   };
   segment: Array<{
@@ -348,9 +366,10 @@ function fetchEnrichment(
           content: {
             ...data.site.content,
             id: data.site.content.id ?? articleId,
+            data: filterAllowedSegtax(data.site.content.data),
           },
         },
-        user: { data: data.user?.data ?? [] },
+        user: { data: filterAllowedSegtax(data.user?.data ?? []) },
       };
       setCachedEnrichment(articleId, snapshot);
       return snapshot;
@@ -362,12 +381,12 @@ function isValidEnrichment(data: any): data is RawEnrichmentResponse {
   if (!data.site?.content) return false;
   if (!isArray(data.site.content.data)) return false;
 
-  // Validate every segment in site.content.data.
-  // segtax 502 = StackUP Content Taxonomy 1.0 — the only value emitted by the
-  // StackUP worker and returned by the /v1/enrich-ortb-rtd endpoint.
+  // Validate the recognised segments in site.content.data. Blocks whose taxonomy
+  // is not in ALLOWED_SEGTAX are ignored here and filtered out before merge, so a
+  // single unrecognised segtax never rejects the whole enrichment payload.
   for (const block of data.site.content.data) {
+    if (!ALLOWED_SEGTAX.has(block?.ext?.segtax)) continue;
     if (!isStr(block.name)) return false;
-    if (block.ext?.segtax !== 502) return false;
     if (!isArray(block.segment)) return false;
     for (const seg of block.segment) {
       if (!isStr(seg.id)) return false;
@@ -663,6 +682,14 @@ function mergeUserData(global: any, ours: any[]): void {
       global.user.data.push(dedupeSegments(ourBlock));
     }
   }
+}
+
+// Keep only blocks whose taxonomy this module recognises (ALLOWED_SEGTAX).
+// Applied before merge so unrecognised taxonomies never reach ortb2.
+function filterAllowedSegtax<T extends { ext?: { segtax?: number } }>(
+  blocks: T[]
+): T[] {
+  return blocks.filter((b) => ALLOWED_SEGTAX.has(b?.ext?.segtax as number));
 }
 
 // Identity key for an ORTB data block. StackUP delivers several blocks under a

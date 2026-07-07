@@ -624,11 +624,32 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
 
-    it("should reject content segments with segtax !== 502", async function () {
-      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
-      bad.site.content.data[0].ext.segtax = 999;
-      const req = await runAndGetReq(bad);
-      expect(req.ortb2Fragments.global.site).to.be.undefined;
+    it("should drop content blocks with an unrecognised segtax", async function () {
+      const resp = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      // Foreign taxonomy block alongside the valid segtax:502 block — the
+      // foreign block must be filtered out without discarding the whole payload.
+      resp.site.content.data.push({
+        name: "foreign.example.com",
+        ext: { segtax: 999 },
+        segment: [{ id: "x", name: "Foreign" }],
+      });
+      const req = await runAndGetReq(resp);
+      const data = req.ortb2Fragments.global.site.content.data;
+      expect(data).to.have.length(1);
+      expect(data[0].ext.segtax).to.equal(502);
+    });
+
+    it("should accept publisher-FPD blocks (segtax 600)", async function () {
+      const resp = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      resp.site.content.data.push({
+        name: "phonearena.com",
+        ext: { segtax: 600, stackup: { dimension: "publisher_intelligence" } },
+        segment: [{ id: "cpm_tier", name: "cpm_tier", value: "Mid-range" }],
+      });
+      const req = await runAndGetReq(resp);
+      const data = req.ortb2Fragments.global.site.content.data;
+      expect(data).to.have.length(2);
+      expect(data.map((b) => b.ext.segtax)).to.include(600);
     });
 
     it("should reject content segments where segment is not an array", async function () {
