@@ -56,6 +56,23 @@ describe('AdqueryIdSystem', function () {
 
       expect(second.id).to.equal(first.id);
     });
+
+    it('falls back to Math.random when window.crypto.getRandomValues is unavailable', function () {
+      getDataFromLocalStorageStub.withArgs('qid').returns(null);
+
+      const cryptoTmp = window.crypto;
+      delete window.crypto;
+
+      let result;
+      try {
+        result = adqueryIdSubmodule.getId();
+      } finally {
+        window.crypto = cryptoTmp;
+      }
+
+      expect(result.id).to.be.a('string').that.is.not.empty;
+      expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
+    });
   });
   describe('eid', () => {
     before(() => {
