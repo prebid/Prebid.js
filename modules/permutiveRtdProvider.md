@@ -57,44 +57,78 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 
 While Permutive is listed as a TCF vendor (ID: 361), Permutive does not typically obtain vendor consent from the TCF, but instead relies on the publisher purpose consents. Publishers wishing to use TCF vendor consent instead can add 361 to their CMP and set params.enforceVendorConsent to `true`.
 
-## SDK-Driven Configuration
+## SDK-Driven Cohort Routing
 
-In addition to the static configuration described in this document, the Permutive SDK can dynamically specify which cohorts should be sent to which bidders and where in the ORTB2 structure they should be placed. This enables cohort distribution to be managed from the Permutive platform without Prebid configuration changes.
+In addition to the static configuration described in this document, cohort distribution can be driven by the normalised cohort store the Permutive SDK maintains under the `_pcohorts` localStorage key. This enables cohort routing to be managed from the Permutive platform without Prebid configuration changes.
 
-The Permutive SDK writes cohort distribution rules to the `_ppbconf` localStorage key as a JSON-encoded array. The RTD module reads these rules and applies them alongside the static configuration: cohorts from both sources targeting the same bidder and ORTB2 location are merged and deduplicated, and `params.maxSegs` is enforced per location after the merge.
-
-Each rule has the following shape:
+The store holds each cohort once under `categories`, and per-bidder reference lists under `activations.ortb2.<bidder>`:
 
 ```json
-[
-  {
-    "bidders": ["appnexus", "rubicon"],
-    "cohorts": ["cohort1", "cohort2"],
-    "locations": [
-      { "path": "user.data", "name": "permutive.com" },
-      { "path": "user.keywords", "key": "p_standard" }
-    ]
+{
+  "categories": {
+    "standard": ["10000123", "10000456"],
+    "dcr": ["cr_12"],
+    "curated": ["IAB42"],
+    "clm": ["clm_5"],
+    "custom": ["275361"]
+  },
+  "activations": {
+    "ortb2": {
+      "appnexus": ["10000123", "cr_12", "IAB42", "275361"],
+      "rubicon": ["275361"]
+    }
   }
-]
+}
 ```
 
-- **bidders**: bidder codes that should receive these cohorts
-- **cohorts**: cohort IDs to deliver
-- **locations**: where in the ORTB2 object to write the cohorts
+A bidder is pointed at its reference list by adding a `path` to its `customCohorts` config:
+
+```javascript
+params: {
+  bidders: {
+    appnexus: {
+      customCohorts: { source: 'ls', key: '_pcohorts', path: 'activations.ortb2.appnexus' }
+    }
+  }
+}
+```
+
+Each referenced cohort is resolved to its category via the store's `categories` index, and the category's placement policy decides which ORTB2 locations it is written to. Without a `path`, the whole key is read as a flat list of custom cohort IDs, exactly as before.
+
+Cohorts resolved from the store are merged and deduplicated with cohorts from the legacy configuration targeting the same bidder and location, and `params.maxSegs` is enforced per location after the merge.
+
+### Locations and placement
+
+ORTB2 destinations are declared once as *locations* and referenced by id from *placement* policies. Built-in defaults mirror the legacy hard-coded routing and can be extended or overridden via `params.locations` and `params.placement` (or per bidder via `params.bidders.<bidder>.placement`):
+
+```javascript
+params: {
+  locations: {
+    // built-in: pcom, pstd_kw, psaud_kw, pstd_ext, pstd_site, perm, perm_kw, perm_ext
+    topics600: { path: 'user.data', name: 'permutive.com', ext: { segtax: 600 } }
+  },
+  placement: {
+    // built-in: standard/dcr -> [pcom, pstd_kw, pstd_ext, pstd_site],
+    //           curated -> the same plus psaud_kw,
+    //           clm/custom -> [perm, perm_kw, perm_ext]
+    custom: ['topics600']
+  }
+}
+```
 
 Supported location paths:
 
 {: .table .table-bordered .table-striped }
 | Path                 | Required field | Example                                              |
 | -------------------- | -------------- | ---------------------------------------------------- |
-| `user.data`          | `name`         | `{ "path": "user.data", "name": "permutive.com" }`   |
-| `user.keywords`      | `key`          | `{ "path": "user.keywords", "key": "p_standard" }`   |
-| `user.ext.data`      | `key`          | `{ "path": "user.ext.data", "key": "p_standard" }`   |
-| `site.ext.permutive` | `key`          | `{ "path": "site.ext.permutive", "key": "p_standard" }` |
+| `user.data`          | `name`         | `{ path: 'user.data', name: 'permutive.com' }`       |
+| `user.keywords`      | `key`          | `{ path: 'user.keywords', key: 'p_standard' }`       |
+| `user.ext.data`      | `key`          | `{ path: 'user.ext.data', key: 'p_standard' }`       |
+| `site.ext.permutive` | `key`          | `{ path: 'site.ext.permutive', key: 'p_standard' }`  |
 
-A `user.data` location may also carry an `ext` object (e.g. `{ "segtax": 600 }`), which is attached to the resulting `user.data` entry. Locations with the same name but different `ext` values produce separate entries.
+A `user.data` location may also carry an `ext` object (e.g. `{ segtax: 600 }`), which is attached to the resulting `user.data` entry. Locations with the same name but different `ext` values produce separate entries.
 
-Rules are validated individually; a malformed rule is ignored without affecting the others. Only the location paths listed above can be written to.
+Only the location paths listed above can be written to. Dangling cohort references and unknown location ids are dropped with a console warning, never silently.
 
 ## Local Storage
 
@@ -103,7 +137,7 @@ The module reads the following localStorage keys, all of which are written by th
 {: .table .table-bordered .table-striped }
 | Key         | Contents                                                       |
 | ----------- | -------------------------------------------------------------- |
-| `_ppbconf`  | SDK-driven cohort distribution rules (see above)                |
+| `_pcohorts` | Normalised cohort store: categories and per-bidder activations (see above) |
 | `_psegs`    | Segment IDs; IDs >= 1000000 are included in AC signals          |
 | `_pcrprs`   | Data Clean Room cohort IDs, included in AC signals              |
 | `_pssps`    | `{ ssps: [...], cohorts: [...] }` SSP bidder list and cohorts   |

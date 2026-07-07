@@ -22,18 +22,20 @@
                 // SSP signals: bidder list and cohorts
                 _pssps: { ssps: ['appnexus', 'some other'], cohorts: ['abcd', 'efgh', 'ijkl'] },
 
-                // SDK-driven signal rules: dynamic cohort distribution without
-                // Prebid config changes
-                _ppbconf: [
-                  {
-                    bidders: ['ozone'],
-                    cohorts: ['sdk_cohort_1', 'sdk_cohort_2'],
-                    locations: [
-                      { path: 'user.data', name: 'permutive' },
-                      { path: 'user.keywords', key: 'permutive' }
-                    ]
+                // SDK-maintained cohort store: cohorts once per category, plus
+                // per-bidder activation reference lists
+                _pcohorts: {
+                  categories: {
+                    standard: ['10000123', '10000456'],
+                    curated: ['IAB42'],
+                    custom: ['275361']
+                  },
+                  activations: {
+                    ortb2: {
+                      ozone: ['10000123', '10000456', 'IAB42', '275361']
+                    }
                   }
-                ]
+                }
               }
 
               for (let key in data) {
@@ -169,6 +171,13 @@
                       params: {
                         acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
                         maxSegs: 500,
+                        // SDK-driven cohort routing: resolve ozone's cohorts from
+                        // the _pcohorts store by category and placement policy
+                        bidders: {
+                          ozone: {
+                            customCohorts: { source: 'ls', key: '_pcohorts', path: 'activations.ortb2.ozone' }
+                          }
+                        },
                         transformations: [
                           {
                             id: 'iab',

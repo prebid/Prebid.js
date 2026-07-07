@@ -12,9 +12,36 @@ export interface PermutiveCustomCohortsConfig {
   source: PermutiveCustomCohortsSource;
   /**
    * The localStorage key to read the custom cohort IDs from.
-   * The value must be a JSON-encoded array of cohort IDs.
+   * Without `path`, the value must be a JSON-encoded array of cohort IDs.
    */
   key: string;
+  /**
+   * Optional dot-path into the parsed value, pointing at this bidder's cohort
+   * reference list within a cohort store (e.g. `activations.ortb2.appnexus`
+   * within `_pcohorts`). When set, each referenced cohort is resolved to its
+   * category via the store's `categories` index and placed according to the
+   * placement policy. When omitted, the whole key is read as a flat list of
+   * custom cohort IDs.
+   */
+  path?: string;
+}
+
+/**
+ * Cohort categories understood by the placement policy.
+ */
+export type PermutiveCohortCategory = 'standard' | 'dcr' | 'curated' | 'clm' | 'custom';
+
+/**
+ * The normalised cohort store maintained by the Permutive SDK (conventionally
+ * under the `_pcohorts` localStorage key). Cohorts appear once under
+ * `categories`; activation values are lists of references into `categories`.
+ */
+export interface PermutiveCohortsStore {
+  categories?: Partial<Record<PermutiveCohortCategory, Array<string | number>>>;
+  activations?: {
+    ortb2?: Record<string, Array<string | number>>;
+    [activation: string]: unknown;
+  };
 }
 
 export interface PermutiveBidderConfig {
@@ -23,6 +50,12 @@ export interface PermutiveBidderConfig {
    * IDs from the configured source and attach them to the bidder's ortb2 payload.
    */
   customCohorts?: PermutiveCustomCohortsConfig;
+  /**
+   * Per-bidder placement overrides, taking precedence over `params.placement`
+   * for this bidder. Values are location ids resolved against
+   * `params.locations` (over the built-in defaults).
+   */
+  placement?: Partial<Record<PermutiveCohortCategory, string[]>>;
 }
 
 export interface PermutiveIabTransformationConfig {
@@ -74,6 +107,16 @@ export interface PermutiveRtdProviderParams {
    * to the ortb2 payload.
    */
   transformations?: PermutiveTransformationConfig[];
+  /**
+   * ORTB2 location definitions, merged over the built-in defaults. Keys are
+   * location ids referenced from placement policies.
+   */
+  locations?: Record<string, PermutiveSignalLocation>;
+  /**
+   * Placement policy mapping cohort categories to location ids, merged over
+   * the built-in defaults (which mirror the legacy hard-coded routing).
+   */
+  placement?: Partial<Record<PermutiveCohortCategory, string[]>>;
 }
 
 /**
@@ -102,8 +145,9 @@ export type PermutiveSignalLocation =
     };
 
 /**
- * A cohort distribution rule, written by the Permutive SDK to the `_ppbconf`
- * localStorage key as a JSON-encoded array of rules.
+ * The module's internal routing unit: cohorts to deliver to a set of bidders
+ * at a set of ORTB2 locations. Rules are derived from the cohort store and
+ * from the legacy configuration, then merged per bidder and location.
  */
 export interface PermutiveSignalRule {
   /**

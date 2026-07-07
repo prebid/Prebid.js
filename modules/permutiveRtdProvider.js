@@ -5,10 +5,16 @@
  *
  * Cohorts are delivered to bidders through two mechanisms that run together:
  *
- * 1. SDK-driven signal rules (recommended): the Permutive SDK writes cohort
- *    distribution rules to the `_ppbconf` localStorage key. Each rule states
- *    which cohorts go to which bidders at which ORTB2 locations, so cohort
- *    routing can change without modifying this module or publisher config.
+ * 1. SDK-driven cohort routing (recommended): the Permutive SDK maintains a
+ *    normalised cohort store in the `_pcohorts` localStorage key, holding the
+ *    user's cohorts once per category (`categories`) and per-bidder reference
+ *    lists (`activations.ortb2.<bidder>`). Bidders are pointed at their
+ *    reference list with `params.bidders.<bidder>.customCohorts` plus a
+ *    `path`. Each referenced cohort is resolved to its category, and the
+ *    category's placement policy (`params.placement`, over the built-in
+ *    defaults) decides which ORTB2 locations (`params.locations`, over the
+ *    built-in defaults) it is written to. Routing therefore changes with the
+ *    store and config, without modifying this module.
  *
  * 2. Legacy configuration: cohorts are read from fixed localStorage keys and
  *    routed by hard-coded logic:
@@ -50,7 +56,7 @@ const MODULE_NAME = 'permutive';
 const logger = prefixLog('[PermutiveRTD]');
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd';
-export const PERMUTIVE_SIGNAL_RULES_KEY = '_ppbconf';
+export const PERMUTIVE_COHORTS_KEY = '_pcohorts';
 export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard';
 export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive';
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud';
@@ -68,6 +74,38 @@ const SITE_EXT_PERMUTIVE_PATH = 'site.ext.permutive';
  * compatibility with existing activations.
  */
 const LEGACY_CUSTOM_COHORT_BIDDERS = ['appnexus', 'rubicon', 'ix', 'gam'];
+
+/**
+ * Built-in ORTB2 location definitions, overridable via `params.locations`.
+ * Each destination is declared once and referenced by id from placement
+ * policies.
+ */
+const DEFAULT_LOCATIONS = {
+  pcom: { path: USER_DATA_PATH, name: PERMUTIVE_DATA_PROVIDER_NAME },
+  pstd_kw: { path: USER_KEYWORDS_PATH, key: PERMUTIVE_STANDARD_KEYWORD },
+  psaud_kw: { path: USER_KEYWORDS_PATH, key: PERMUTIVE_STANDARD_AUD_KEYWORD },
+  pstd_ext: { path: USER_EXT_DATA_PATH, key: PERMUTIVE_STANDARD_KEYWORD },
+  pstd_site: { path: SITE_EXT_PERMUTIVE_PATH, key: PERMUTIVE_STANDARD_KEYWORD },
+  perm: { path: USER_DATA_PATH, name: PERMUTIVE_CUSTOM_COHORTS_KEYWORD },
+  perm_kw: { path: USER_KEYWORDS_PATH, key: PERMUTIVE_CUSTOM_COHORTS_KEYWORD },
+  perm_ext: { path: USER_EXT_DATA_PATH, key: PERMUTIVE_CUSTOM_COHORTS_KEYWORD },
+};
+
+/**
+ * Built-in placement policy mapping cohort categories to location ids,
+ * overridable via `params.placement` (or per bidder via
+ * `params.bidders.<bidder>.placement`). Mirrors the legacy hard-coded
+ * routing: standard/DCR cohorts follow the AC signal locations, curated
+ * cohorts additionally set the `p_standard_aud` keyword, and custom/CLM
+ * cohorts follow the custom cohort locations.
+ */
+const DEFAULT_PLACEMENT = {
+  standard: ['pcom', 'pstd_kw', 'pstd_ext', 'pstd_site'],
+  dcr: ['pcom', 'pstd_kw', 'pstd_ext', 'pstd_site'],
+  curated: ['pcom', 'pstd_kw', 'psaud_kw', 'pstd_ext', 'pstd_site'],
+  clm: ['perm', 'perm_kw', 'perm_ext'],
+  custom: ['perm', 'perm_kw', 'perm_ext'],
+};
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
@@ -142,68 +180,143 @@ export function getModuleConfig(customModuleConfig) {
 }
 
 /**
- * Reads and validates SDK-driven signal rules from the `_ppbconf` localStorage key.
- * Invalid rules are dropped individually so one malformed entry cannot disable the rest.
+ * Builds signal rules from the SDK-maintained cohort store for every bidder
+ * whose `customCohorts` config carries a `path`.
  *
- * @return {PermutiveSignalRule[]} Validated signal rules
+ * The store (conventionally the `_pcohorts` localStorage key) holds each
+ * cohort once under `categories`, and per-bidder reference lists (e.g. under
+ * `activations.ortb2.<bidder>`). Each referenced cohort is resolved to its
+ * category, and the category's placement policy decides which locations it is
+ * written to.
+ *
+ * @param {PermutiveRtdProviderConfig} moduleConfig - Publisher config for module
+ * @return {PermutiveSignalRule[]} Signal rules derived from the cohort store
  */
-function readSdkSignalRules() {
-  const rules = readSegments(PERMUTIVE_SIGNAL_RULES_KEY, null);
-  if (!Array.isArray(rules)) {
-    return [];
-  }
-  return rules.filter(isValidSignalRule);
+function buildCohortStoreSignalRules(moduleConfig) {
+  const biddersConfig = deepAccess(moduleConfig, 'params.bidders') || {};
+  const locations = { ...DEFAULT_LOCATIONS, ...(deepAccess(moduleConfig, 'params.locations') || {}) };
+  const placement = { ...DEFAULT_PLACEMENT, ...(deepAccess(moduleConfig, 'params.placement') || {}) };
+
+  const storeCache = {};
+  const readStore = (key) => {
+    if (!(key in storeCache)) {
+      const store = readSegments(key, null);
+      storeCache[key] = isPlainObject(store) ? store : null;
+    }
+    return storeCache[key];
+  };
+
+  const rules = [];
+
+  Object.entries(biddersConfig).forEach(([bidder, bidderConfig]) => {
+    const customCohorts = bidderConfig?.customCohorts;
+    // Without a path the whole key is read as a flat cohort list via the
+    // legacy route instead
+    if (customCohorts?.source !== 'ls' || !customCohorts?.key || !customCohorts?.path) {
+      return;
+    }
+
+    const store = readStore(customCohorts.key);
+    if (!store) {
+      return;
+    }
+
+    const refs = deepAccess(store, customCohorts.path);
+    if (!Array.isArray(refs)) {
+      return;
+    }
+
+    const cohortsByCategory = groupRefsByCategory(refs, store.categories, bidder);
+
+    Object.entries(cohortsByCategory).forEach(([category, cohorts]) => {
+      const locationIds = bidderConfig.placement?.[category] || placement[category];
+      if (!Array.isArray(locationIds)) {
+        logger.logWarn(`No placement configured for cohort category "${category}"`, { bidder });
+        return;
+      }
+
+      const resolvedLocations = locationIds
+        .map(id => {
+          const location = locations[id];
+          if (!location) {
+            logger.logWarn(`Unknown location id "${id}" in placement for category "${category}"`, { bidder });
+            return null;
+          }
+          return isValidLocation(location, id) ? location : null;
+        })
+        .filter(Boolean);
+
+      if (resolvedLocations.length > 0) {
+        rules.push({ bidders: [bidder], cohorts, locations: resolvedLocations });
+      }
+    });
+  });
+
+  return rules;
 }
 
 /**
- * Validates a single SDK signal rule.
- * @param {PermutiveSignalRule} rule
- * @return {boolean}
+ * Groups cohort references by their category, using the store's `categories`
+ * index. Dangling references (not present in any category) are dropped with a
+ * warning so under-delivery is never silent.
+ *
+ * @param {Array<string|number>} refs - Cohort references for one bidder
+ * @param {Object} categories - The store's category -> cohort IDs index
+ * @param {string} bidder - For log context
+ * @return {Object} category -> cohort IDs
  */
-function isValidSignalRule(rule) {
-  if (!isPlainObject(rule)) {
-    logger.logWarn('Ignoring signal rule: not an object', rule);
-    return false;
+function groupRefsByCategory(refs, categories, bidder) {
+  const categoryByCohort = new Map();
+  if (isPlainObject(categories)) {
+    Object.entries(categories).forEach(([category, cohorts]) => {
+      if (Array.isArray(cohorts)) {
+        cohorts.forEach(cohort => categoryByCohort.set(String(cohort), category));
+      }
+    });
   }
 
-  if (!Array.isArray(rule.bidders) || rule.bidders.length === 0 || !rule.bidders.every(isStr)) {
-    logger.logWarn('Ignoring signal rule: bidders must be a non-empty array of strings', rule);
-    return false;
+  const cohortsByCategory = {};
+  const dangling = [];
+
+  refs.forEach(ref => {
+    const cohort = String(ref);
+    const category = categoryByCohort.get(cohort);
+    if (!category) {
+      dangling.push(cohort);
+      return;
+    }
+    (cohortsByCategory[category] = cohortsByCategory[category] || []).push(cohort);
+  });
+
+  if (dangling.length > 0) {
+    logger.logWarn('Dropping cohort references not present in any category', { bidder, dangling });
   }
 
-  if (!Array.isArray(rule.cohorts)) {
-    logger.logWarn('Ignoring signal rule: cohorts must be an array', rule);
-    return false;
-  }
-
-  if (!Array.isArray(rule.locations) || rule.locations.length === 0) {
-    logger.logWarn('Ignoring signal rule: locations must be a non-empty array', rule);
-    return false;
-  }
-
-  return rule.locations.every(location => isValidSignalLocation(location, rule));
+  return cohortsByCategory;
 }
 
 /**
- * Validates a single location within an SDK signal rule.
+ * Validates an ORTB2 location definition. Only the allowlisted paths can be
+ * written to.
+ *
  * @param {PermutiveSignalLocation} location
- * @param {PermutiveSignalRule} rule - The parent rule, for log context
+ * @param {string} locationId - For log context
  * @return {boolean}
  */
-function isValidSignalLocation(location, rule) {
+function isValidLocation(location, locationId) {
   if (!isPlainObject(location)) {
-    logger.logWarn('Ignoring signal rule: location is not an object', rule);
+    logger.logWarn(`Ignoring location "${locationId}": not an object`, location);
     return false;
   }
 
   if (location.ext !== undefined && !isPlainObject(location.ext)) {
-    logger.logWarn('Ignoring signal rule: location.ext must be an object', rule);
+    logger.logWarn(`Ignoring location "${locationId}": ext must be an object`, location);
     return false;
   }
 
   if (location.path === USER_DATA_PATH) {
     if (!isStr(location.name) || location.name === '') {
-      logger.logWarn(`Ignoring signal rule: "${USER_DATA_PATH}" location requires a name`, rule);
+      logger.logWarn(`Ignoring location "${locationId}": "${USER_DATA_PATH}" requires a name`, location);
       return false;
     }
     return true;
@@ -212,13 +325,13 @@ function isValidSignalLocation(location, rule) {
   if ([USER_KEYWORDS_PATH, USER_EXT_DATA_PATH, SITE_EXT_PERMUTIVE_PATH].includes(location.path)) {
     // Dots are rejected as the key contributes to a deepSetValue path
     if (!isStr(location.key) || location.key === '' || location.key.includes('.')) {
-      logger.logWarn(`Ignoring signal rule: "${location.path}" location requires a key without dots`, rule);
+      logger.logWarn(`Ignoring location "${locationId}": "${location.path}" requires a key without dots`, location);
       return false;
     }
     return true;
   }
 
-  logger.logWarn('Ignoring signal rule: unknown location path', rule);
+  logger.logWarn(`Ignoring location "${locationId}": unknown path`, location);
   return false;
 }
 
@@ -304,6 +417,11 @@ function buildLegacySignalRules(moduleConfig, segmentData) {
 function getCustomCohorts(bidderConfig, bidder, segmentData) {
   const customCohorts = bidderConfig?.customCohorts;
   if (customCohorts?.source === 'ls' && customCohorts?.key) {
+    // With a path the cohorts are resolved through the cohort store flow
+    // (buildCohortStoreSignalRules) instead of a whole-key read
+    if (customCohorts.path) {
+      return [];
+    }
     return makeSafe(() => readSegments(customCohorts.key, []).map(String)) || [];
   }
   if (LEGACY_CUSTOM_COHORT_BIDDERS.includes(bidder)) {
@@ -358,9 +476,10 @@ function collectBidderSignals(rules) {
 /**
  * Sets ortb2 config for bidders with Permutive signals.
  *
- * Merges SDK-driven signal rules (from `_ppbconf`) with rules derived from the
- * legacy configuration, then applies the merged cohorts to each bidder's ORTB2
- * fragment. `maxSegs` is enforced per location after the merge.
+ * Merges rules resolved from the SDK-maintained cohort store (`_pcohorts`)
+ * with rules derived from the legacy configuration, then applies the merged
+ * cohorts to each bidder's ORTB2 fragment. `maxSegs` is enforced per location
+ * after the merge.
  *
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
  * @param {PermutiveRtdProviderConfig} moduleConfig - Publisher config for module
@@ -375,7 +494,7 @@ export function setBidderRtb(bidderOrtb2, moduleConfig, segmentData) {
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || [];
 
   const rules = [
-    ...readSdkSignalRules(),
+    ...buildCohortStoreSignalRules(moduleConfig),
     ...buildLegacySignalRules(moduleConfig, segmentData),
   ];
 
