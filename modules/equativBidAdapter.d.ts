@@ -6,7 +6,7 @@ export interface EquativBidderParams {
   networkId?: number;
   /**
    * Placement identifier used to source inventory.
-   * Preferred way to identify inventory. When provided, it takes precedence
+   * Forwarded as `imp.ext.bidder.plcmtuuid`. When provided, it takes precedence
    * over the deprecated `siteId`, `pageId` and `formatId` parameters.
    */
   placementuuid?: string;
