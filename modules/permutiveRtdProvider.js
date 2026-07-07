@@ -2,13 +2,34 @@
  * This module adds permutive provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  * The module will add custom segment targeting to ad units of specific bidders
+ *
+ * Cohorts are delivered to bidders through two mechanisms that run together:
+ *
+ * 1. SDK-driven signal rules (recommended): the Permutive SDK writes cohort
+ *    distribution rules to the `_ppbconf` localStorage key. Each rule states
+ *    which cohorts go to which bidders at which ORTB2 locations, so cohort
+ *    routing can change without modifying this module or publisher config.
+ *
+ * 2. Legacy configuration: cohorts are read from fixed localStorage keys and
+ *    routed by hard-coded logic:
+ *      - `_psegs` (IDs >= 1000000) and `_pcrprs` form the AC signals sent to
+ *        `params.acBidders`
+ *      - `_pssps` ({ ssps, cohorts }) routes SSP signals to the listed bidders
+ *      - `_papns`, `_prubicons`, `_pindexs`, `_pdfps` hold custom cohorts for
+ *        appnexus, rubicon, ix and gam respectively
+ *      - `_ppsts` holds Privacy Sandbox Topics keyed by IAB taxonomy version
+ *
+ * Signals from both mechanisms are merged and deduplicated per bidder and
+ * ORTB2 location before being applied, with `params.maxSegs` enforced per
+ * location after the merge.
+ *
  * @module modules/permutiveRtdProvider
  * @requires module:modules/realTimeData
  */
 import { getGlobal } from '../src/prebidGlobal.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog } from '../src/utils.js';
+import { deepAccess, deepSetValue, isFn, isStr, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog } from '../src/utils.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 import { hasPurposeConsent } from '../libraries/permutiveUtils/index.js';
 
@@ -20,6 +41,8 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
  * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveRtdProviderParams} PermutiveRtdProviderParams
  * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveBidderConfig} PermutiveBidderConfig
  * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveTransformationConfig} PermutiveTransformationConfig
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveSignalRule} PermutiveSignalRule
+ * @typedef {import('./permutiveRtdProvider.d.ts').PermutiveSignalLocation} PermutiveSignalLocation
  */
 
 const MODULE_NAME = 'permutive';
@@ -27,9 +50,24 @@ const MODULE_NAME = 'permutive';
 const logger = prefixLog('[PermutiveRTD]');
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd';
+export const PERMUTIVE_SIGNAL_RULES_KEY = '_ppbconf';
 export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard';
 export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive';
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud';
+
+const PERMUTIVE_DATA_PROVIDER_NAME = 'permutive.com';
+
+const USER_DATA_PATH = 'user.data';
+const USER_KEYWORDS_PATH = 'user.keywords';
+const USER_EXT_DATA_PATH = 'user.ext.data';
+const SITE_EXT_PERMUTIVE_PATH = 'site.ext.permutive';
+
+/**
+ * Bidders that historically receive custom cohorts from their dedicated
+ * localStorage keys without any publisher configuration. Kept for backwards
+ * compatibility with existing activations.
+ */
+const LEGACY_CUSTOM_COHORT_BIDDERS = ['appnexus', 'rubicon', 'ix', 'gam'];
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 
@@ -104,159 +142,361 @@ export function getModuleConfig(customModuleConfig) {
 }
 
 /**
- * Sets ortb2 config for ac bidders
+ * Reads and validates SDK-driven signal rules from the `_ppbconf` localStorage key.
+ * Invalid rules are dropped individually so one malformed entry cannot disable the rest.
+ *
+ * @return {PermutiveSignalRule[]} Validated signal rules
+ */
+function readSdkSignalRules() {
+  const rules = readSegments(PERMUTIVE_SIGNAL_RULES_KEY, null);
+  if (!Array.isArray(rules)) {
+    return [];
+  }
+  return rules.filter(isValidSignalRule);
+}
+
+/**
+ * Validates a single SDK signal rule.
+ * @param {PermutiveSignalRule} rule
+ * @return {boolean}
+ */
+function isValidSignalRule(rule) {
+  if (!isPlainObject(rule)) {
+    logger.logWarn('Ignoring signal rule: not an object', rule);
+    return false;
+  }
+
+  if (!Array.isArray(rule.bidders) || rule.bidders.length === 0 || !rule.bidders.every(isStr)) {
+    logger.logWarn('Ignoring signal rule: bidders must be a non-empty array of strings', rule);
+    return false;
+  }
+
+  if (!Array.isArray(rule.cohorts)) {
+    logger.logWarn('Ignoring signal rule: cohorts must be an array', rule);
+    return false;
+  }
+
+  if (!Array.isArray(rule.locations) || rule.locations.length === 0) {
+    logger.logWarn('Ignoring signal rule: locations must be a non-empty array', rule);
+    return false;
+  }
+
+  return rule.locations.every(location => isValidSignalLocation(location, rule));
+}
+
+/**
+ * Validates a single location within an SDK signal rule.
+ * @param {PermutiveSignalLocation} location
+ * @param {PermutiveSignalRule} rule - The parent rule, for log context
+ * @return {boolean}
+ */
+function isValidSignalLocation(location, rule) {
+  if (!isPlainObject(location)) {
+    logger.logWarn('Ignoring signal rule: location is not an object', rule);
+    return false;
+  }
+
+  if (location.ext !== undefined && !isPlainObject(location.ext)) {
+    logger.logWarn('Ignoring signal rule: location.ext must be an object', rule);
+    return false;
+  }
+
+  if (location.path === USER_DATA_PATH) {
+    if (!isStr(location.name) || location.name === '') {
+      logger.logWarn(`Ignoring signal rule: "${USER_DATA_PATH}" location requires a name`, rule);
+      return false;
+    }
+    return true;
+  }
+
+  if ([USER_KEYWORDS_PATH, USER_EXT_DATA_PATH, SITE_EXT_PERMUTIVE_PATH].includes(location.path)) {
+    // Dots are rejected as the key contributes to a deepSetValue path
+    if (!isStr(location.key) || location.key === '' || location.key.includes('.')) {
+      logger.logWarn(`Ignoring signal rule: "${location.path}" location requires a key without dots`, rule);
+      return false;
+    }
+    return true;
+  }
+
+  logger.logWarn('Ignoring signal rule: unknown location path', rule);
+  return false;
+}
+
+/**
+ * Expresses the legacy (hard-coded) cohort routing as signal rules, so both
+ * mechanisms share a single merge and apply path.
+ *
+ * @param {PermutiveRtdProviderConfig} moduleConfig - Publisher config for module
+ * @param {Object} segmentData - Segment data from getSegments()
+ * @return {PermutiveSignalRule[]} Signal rules equivalent to the legacy routing
+ */
+function buildLegacySignalRules(moduleConfig, segmentData) {
+  const acBidders = deepAccess(moduleConfig, 'params.acBidders') || [];
+  const biddersConfig = deepAccess(moduleConfig, 'params.bidders') || {};
+
+  const acSignals = segmentData?.ac ?? [];
+  const sspBidders = segmentData?.ssp?.ssps ?? [];
+  const sspSignals = segmentData?.ssp?.cohorts ?? [];
+  const topics = segmentData?.topics ?? {};
+
+  const standardLocations = [
+    { path: USER_DATA_PATH, name: PERMUTIVE_DATA_PROVIDER_NAME },
+    { path: USER_KEYWORDS_PATH, key: PERMUTIVE_STANDARD_KEYWORD },
+    { path: USER_EXT_DATA_PATH, key: PERMUTIVE_STANDARD_KEYWORD },
+    { path: SITE_EXT_PERMUTIVE_PATH, key: PERMUTIVE_STANDARD_KEYWORD },
+  ];
+
+  const customCohortLocations = [
+    { path: USER_DATA_PATH, name: PERMUTIVE_CUSTOM_COHORTS_KEYWORD },
+    { path: USER_KEYWORDS_PATH, key: PERMUTIVE_CUSTOM_COHORTS_KEYWORD },
+    { path: USER_EXT_DATA_PATH, key: PERMUTIVE_CUSTOM_COHORTS_KEYWORD },
+  ];
+
+  const rules = [];
+
+  if (acBidders.length > 0) {
+    rules.push({ bidders: acBidders, cohorts: acSignals, locations: standardLocations });
+  }
+
+  if (sspBidders.length > 0) {
+    rules.push({
+      bidders: sspBidders,
+      cohorts: sspSignals,
+      locations: [...standardLocations, { path: USER_KEYWORDS_PATH, key: PERMUTIVE_STANDARD_AUD_KEYWORD }],
+    });
+  }
+
+  const allBidders = new Set([
+    ...acBidders,
+    ...sspBidders,
+    ...Object.keys(biddersConfig),
+    ...LEGACY_CUSTOM_COHORT_BIDDERS,
+  ]);
+
+  allBidders.forEach(bidder => {
+    rules.push({
+      bidders: [bidder],
+      cohorts: getCustomCohorts(biddersConfig[bidder], bidder, segmentData),
+      locations: customCohortLocations,
+    });
+
+    for (const [taxonomy, topicIds] of Object.entries(topics)) {
+      if (topicIds.length > 0) {
+        rules.push({
+          bidders: [bidder],
+          cohorts: topicIds,
+          locations: [{ path: USER_DATA_PATH, name: PERMUTIVE_DATA_PROVIDER_NAME, ext: { segtax: Number(taxonomy) } }],
+        });
+      }
+    }
+  });
+
+  return rules;
+}
+
+/**
+ * Resolves custom cohorts for a bidder, reading from localStorage if configured.
+ * @param {PermutiveBidderConfig} bidderConfig - Bidder-specific configuration from params.bidders
+ * @param {string} bidder - The bidder identifier
+ * @param {Object} segmentData - Segment data grouped by bidder or type
+ * @return {string[]} Custom cohort IDs
+ */
+function getCustomCohorts(bidderConfig, bidder, segmentData) {
+  const customCohorts = bidderConfig?.customCohorts;
+  if (customCohorts?.source === 'ls' && customCohorts?.key) {
+    return makeSafe(() => readSegments(customCohorts.key, []).map(String)) || [];
+  }
+  if (LEGACY_CUSTOM_COHORT_BIDDERS.includes(bidder)) {
+    return deepAccess(segmentData, bidder) || [];
+  }
+  return [];
+}
+
+/**
+ * A stable identity for an ORTB2 location, so cohorts destined for the same
+ * location merge into one entry. `ext` participates in the identity: two
+ * user.data locations with the same name but different segtax stay separate.
+ *
+ * @param {PermutiveSignalLocation} location
+ * @return {string} Identity usable as a Map key. Never parsed back.
+ */
+function locationId(location) {
+  const ext = location.ext ? Object.fromEntries(Object.entries(location.ext).sort(([a], [b]) => a.localeCompare(b))) : null;
+  return JSON.stringify([location.path, location.name ?? null, location.key ?? null, ext]);
+}
+
+/**
+ * Merges signal rules into per-bidder, per-location cohort sets.
+ *
+ * @param {PermutiveSignalRule[]} rules
+ * @return {Map<string, Map<string, {location: PermutiveSignalLocation, cohorts: Set<string>}>>}
+ */
+function collectBidderSignals(rules) {
+  const bidderSignals = new Map();
+
+  rules.forEach(rule => {
+    rule.bidders.forEach(bidder => {
+      if (!bidderSignals.has(bidder)) {
+        bidderSignals.set(bidder, new Map());
+      }
+      const locations = bidderSignals.get(bidder);
+
+      rule.locations.forEach(location => {
+        const id = locationId(location);
+        if (!locations.has(id)) {
+          locations.set(id, { location, cohorts: new Set() });
+        }
+        const { cohorts } = locations.get(id);
+        rule.cohorts.forEach(cohort => cohorts.add(String(cohort)));
+      });
+    });
+  });
+
+  return bidderSignals;
+}
+
+/**
+ * Sets ortb2 config for bidders with Permutive signals.
+ *
+ * Merges SDK-driven signal rules (from `_ppbconf`) with rules derived from the
+ * legacy configuration, then applies the merged cohorts to each bidder's ORTB2
+ * fragment. `maxSegs` is enforced per location after the merge.
+ *
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
  * @param {PermutiveRtdProviderConfig} moduleConfig - Publisher config for module
  * @param {Object} segmentData - Segment data grouped by bidder or type
  */
-export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
-  const acBidders = deepAccess(moduleConfig, 'params.acBidders');
+export function setBidderRtb(bidderOrtb2, moduleConfig, segmentData) {
+  if (!bidderOrtb2) {
+    return;
+  }
+
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs');
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || [];
-  const biddersConfig = deepAccess(moduleConfig, 'params.bidders') || {};
 
-  const ssps = segmentData?.ssp?.ssps ?? [];
-  const sspCohorts = segmentData?.ssp?.cohorts ?? [];
-  const topics = segmentData?.topics ?? {};
+  const rules = [
+    ...readSdkSignalRules(),
+    ...buildLegacySignalRules(moduleConfig, segmentData),
+  ];
 
-  const bidders = new Set([...acBidders, ...ssps, ...Object.keys(biddersConfig)]);
-  bidders.forEach(function (bidder) {
-    const bidderConfig = biddersConfig[bidder] || {};
-    const currConfig = { ortb2: bidderOrtb2[bidder] || {} };
+  const bidderSignals = collectBidderSignals(rules);
 
-    let cohorts = [];
+  bidderSignals.forEach((locations, bidder) => {
+    const ortbConfig = { ortb2: mergeDeep({}, bidderOrtb2[bidder] || {}) };
 
-    const isAcBidder = acBidders.indexOf(bidder) > -1;
-    if (isAcBidder) {
-      cohorts = segmentData.ac;
-    }
+    locations.forEach(({ location, cohorts }) => {
+      const limitedCohorts = Array.from(cohorts).slice(0, maxSegs);
+      applyCohortsToOrtb2(ortbConfig, location, limitedCohorts, transformationConfigs);
+    });
 
-    const isSspBidder = ssps.indexOf(bidder) > -1;
-    if (isSspBidder) {
-      cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs);
-    }
-
-    const customCohortsData = getCustomCohortsData(bidderConfig, bidder, segmentData, maxSegs);
-
-    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, customCohortsData);
-    bidderOrtb2[bidder] = nextConfig.ortb2;
+    logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig });
+    bidderOrtb2[bidder] = ortbConfig.ortb2;
   });
 }
 
 /**
- * Resolves custom cohorts data for a bidder, reading from localStorage if configured.
- * @param {PermutiveBidderConfig} bidderCfg - Bidder-specific configuration from params.bidders
- * @param {string} bidder - The bidder identifier
- * @param {Object} segmentData - Segment data grouped by bidder or type
- * @param {number} maxSegs - Maximum number of segments
- * @return {string[]} Custom cohort IDs
+ * Applies cohorts to a single ORTB2 location.
+ *
+ * @param {Object} ortbConfig - Object with an `ortb2` property, mutated in place
+ * @param {PermutiveSignalLocation} location
+ * @param {string[]} cohorts
+ * @param {PermutiveTransformationConfig[]} transformationConfigs
  */
-function getCustomCohortsData (bidderCfg, bidder, segmentData, maxSegs) {
-  const customCohorts = bidderCfg?.customCohorts;
-  if (customCohorts?.source === 'ls' && customCohorts?.key) {
-    return makeSafe(() => readSegments(customCohorts.key, []).map(String).slice(0, maxSegs)) || [];
+function applyCohortsToOrtb2(ortbConfig, location, cohorts, transformationConfigs) {
+  switch (location.path) {
+    case USER_DATA_PATH:
+      applyToUserData(ortbConfig, location, cohorts, transformationConfigs);
+      break;
+    case USER_KEYWORDS_PATH:
+      applyToUserKeywords(ortbConfig, location.key, cohorts);
+      break;
+    case USER_EXT_DATA_PATH:
+      if (cohorts.length > 0) {
+        deepSetValue(ortbConfig, `ortb2.user.ext.data.${location.key}`, cohorts);
+      }
+      break;
+    case SITE_EXT_PERMUTIVE_PATH:
+      if (cohorts.length > 0) {
+        deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${location.key}`, cohorts);
+      }
+      break;
   }
-  return deepAccess(segmentData, bidder) || [];
 }
 
 /**
- * Updates `user.data` object in existing bidder config with Permutive segments
- * @param {string} bidder - The bidder identifier
- * @param {Object} currConfig - Current bidder config
- * @param {string[]} segmentIDs - Permutive segment IDs
- * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
- * @param {Object} topics - Privacy Sandbox Topics, keyed by IAB taxonomy version (600, 601, etc.)
- * @param {PermutiveTransformationConfig[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
- *                                           the transformations on user data to include the ORTB2 object
- * @param {string[]} customCohortsData - Custom cohort IDs for this bidder
- * @return {Object} Merged ortb2 object
+ * Whether two user.data entries occupy the same slot, i.e. share both name and
+ * ext. Entries this module writes replace existing entries in the same slot
+ * only, so a plain entry never clobbers a segtax entry of the same name (and
+ * vice versa) regardless of the order locations are applied in.
  */
-function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, customCohortsData) {
-  logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig });
+function isSameUserDataSlot(a, b) {
+  return a.name === b.name && JSON.stringify(a.ext ?? null) === JSON.stringify(b.ext ?? null);
+}
 
-  const name = 'permutive.com';
+/**
+ * Applies cohorts to a user.data entry identified by name and (optional) ext.
+ *
+ * @param {Object} ortbConfig - Object with an `ortb2` property, mutated in place
+ * @param {PermutiveSignalLocation} location
+ * @param {string[]} cohorts
+ * @param {PermutiveTransformationConfig[]} transformationConfigs
+ */
+function applyToUserData(ortbConfig, location, cohorts, transformationConfigs) {
+  const { name, ext } = location;
 
-  const permutiveUserData = {
-    name,
-    segment: segmentIDs.map(segmentId => ({ id: segmentId })),
-  };
-
-  const transformedUserData = transformationConfigs
-    .filter(({ id }) => ortb2UserDataTransformations.hasOwnProperty(id))
-    .map(({ id, config }) => ortb2UserDataTransformations[id](permutiveUserData, config));
-
-  const customCohortsUserData = {
-    name: PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
-    segment: customCohortsData.map(cohortID => ({ id: cohortID })),
-  };
-
-  const ortbConfig = mergeDeep({}, currConfig);
-  const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || [];
-
-  const topicsUserData = [];
-  for (const [k, value] of Object.entries(topics)) {
-    topicsUserData.push({
-      name,
-      ext: {
-        segtax: Number(k)
-      },
-      segment: value.map(topic => ({ id: topic.toString() })),
-    });
+  // The custom cohorts entry has always been present even when empty, and is
+  // kept that way in case consumers rely on its presence.
+  if (cohorts.length === 0 && name !== PERMUTIVE_CUSTOM_COHORTS_KEYWORD) {
+    return;
   }
 
-  const updatedUserData = currentUserData
-    .filter(el => el.name !== permutiveUserData.name && el.name !== customCohortsUserData.name)
-    .concat(permutiveUserData, transformedUserData, customCohortsUserData)
-    .concat(topicsUserData);
-
-  logger.logInfo(`Updating ortb2.user.data`, { bidder, user_data: updatedUserData });
-  deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData);
-
-  // Set ortb2.user.keywords
-  const currentKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords');
-  const keywordGroups = {
-    [PERMUTIVE_STANDARD_KEYWORD]: segmentIDs,
-    [PERMUTIVE_STANDARD_AUD_KEYWORD]: sspSegmentIDs,
-    [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData,
+  const userData = {
+    name,
+    segment: cohorts.map(id => ({ id })),
+    ...(ext && { ext }),
   };
 
-  // Transform groups of key-values into a single array of strings
-  // i.e { permutive: ['1', '2'], p_standard: ['3', '4'] } => ['permutive=1', 'permutive=2', 'p_standard=3',' p_standard=4']
-  const transformedKeywordGroups = Object.entries(keywordGroups)
-    .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`));
+  // Publisher-configured IAB taxonomy transformations only ever apply to the
+  // standard cohorts entry
+  const transformedUserData = (name === PERMUTIVE_DATA_PROVIDER_NAME && !ext && cohorts.length > 0)
+    ? transformationConfigs
+      .filter(({ id }) => ortb2UserDataTransformations.hasOwnProperty(id))
+      .map(({ id, config }) => ortb2UserDataTransformations[id](userData, config))
+    : [];
+
+  const newEntries = [userData, ...transformedUserData];
+
+  const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || [];
+  const updatedUserData = currentUserData
+    .filter(existing => !newEntries.some(entry => isSameUserDataSlot(existing, entry)))
+    .concat(newEntries);
+
+  deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData);
+}
+
+/**
+ * Merges cohorts into the user.keywords string as `key=cohort` pairs,
+ * preserving and deduplicating against existing keywords.
+ *
+ * @param {Object} ortbConfig - Object with an `ortb2` property, mutated in place
+ * @param {string} keywordKey - Keyword prefix (e.g. p_standard)
+ * @param {string[]} cohorts
+ */
+function applyToUserKeywords(ortbConfig, keywordKey, cohorts) {
+  if (cohorts.length === 0) {
+    return;
+  }
+
+  const currentKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords');
 
   const keywords = Array.from(new Set([
     ...(currentKeywords || '').split(',').map(kv => kv.trim()),
-    ...transformedKeywordGroups
+    ...cohorts.map(id => `${keywordKey}=${id}`),
   ]))
     .filter(Boolean)
     .join(',');
 
-  logger.logInfo(`Updating ortb2.user.keywords`, {
-    bidder,
-    keywords,
-  });
   deepSetValue(ortbConfig, 'ortb2.user.keywords', keywords);
-
-  // Set user extensions
-  if (segmentIDs.length > 0) {
-    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs);
-    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs);
-  }
-
-  if (customCohortsData.length > 0) {
-    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}`, customCohortsData.map(String));
-    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData);
-  }
-
-  // Set site extensions
-  if (segmentIDs.length > 0) {
-    deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs);
-    logger.logInfo(`Extending ortb2.site.ext.permutive with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs);
-  }
-
-  logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig });
-  return ortbConfig;
 }
 
 /**
@@ -351,10 +591,9 @@ export function getSegments(maxSegs) {
               .filter((seg) => seg >= 1000000)
               .map(String),
           ) || [];
-        const _ppam = makeSafe(() => readSegments('_ppam', []).map(String)) || [];
         const _pcrprs = makeSafe(() => readSegments('_pcrprs', []).map(String)) || [];
 
-        return [..._pcrprs, ..._ppam, ...legacySegs];
+        return [..._pcrprs, ...legacySegs];
       }) || [],
 
     ix:

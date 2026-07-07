@@ -7,6 +7,7 @@ import {
   setBidderRtb,
   getModuleConfig,
   PERMUTIVE_SUBMODULE_CONFIG_KEY,
+  PERMUTIVE_SIGNAL_RULES_KEY,
   readAndSetCohorts,
   PERMUTIVE_STANDARD_KEYWORD,
   PERMUTIVE_STANDARD_AUD_KEYWORD,
@@ -460,9 +461,10 @@ describe('permutiveRtdProvider', function () {
 
       acBidders.forEach(bidder => {
         const customCohortsData = segmentsData[bidder] || [];
+        // p_standard_aud is only sent to bidders listed in _pssps.ssps, which
+        // none of these acBidders are
         const keywordGroups = {
           [PERMUTIVE_STANDARD_KEYWORD]: segmentsData.ac,
-          [PERMUTIVE_STANDARD_AUD_KEYWORD]: segmentsData.ssp.cohorts,
           [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData
         };
 
@@ -582,6 +584,56 @@ describe('permutiveRtdProvider', function () {
         name: 'permutive.com',
         segment: expectedOtherTargetingData
       }]);
+    });
+
+    it('should only send p_standard_aud keywords to ssp bidders', function () {
+      const customTargetingData = {
+        ...getTargetingData(),
+        '_pssps': {
+          ssps: ['foo'],
+          cohorts: ['xyz', 'uvw'],
+        }
+      };
+      const segmentsData = transformedTargeting(customTargetingData);
+      setLocalStorage(customTargetingData);
+
+      const moduleConfig = {
+        name: 'permutive',
+        params: {
+          acBidders: ['other'],
+          maxSegs: 500
+        }
+      };
+      const bidderConfig = {};
+
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
+
+      segmentsData.ssp.cohorts.forEach(id => {
+        expect(bidderConfig['foo'].user.keywords).to.include(`${PERMUTIVE_STANDARD_AUD_KEYWORD}=${id}`);
+      });
+      expect(bidderConfig['other'].user.keywords || '').to.not.include(PERMUTIVE_STANDARD_AUD_KEYWORD);
+    });
+
+    it('should send custom cohorts to the legacy custom cohort bidders without any configuration', function () {
+      const segmentsData = transformedTargeting();
+
+      const moduleConfig = {
+        name: 'permutive',
+        params: {
+          acBidders: [],
+          maxSegs: 500
+        }
+      };
+      const bidderConfig = {};
+
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData);
+
+      ['appnexus', 'rubicon', 'ix', 'gam'].forEach(bidder => {
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([{
+          name: 'permutive',
+          segment: segmentsData[bidder].map(id => ({ id })),
+        }]);
+      });
     });
 
     describe('ortb2.user.ext tests', function () {
@@ -772,6 +824,171 @@ describe('permutiveRtdProvider', function () {
         });
       });
     });
+
+    describe('SDK-driven signal rules', function () {
+      afterEach(function () {
+        storage.removeDataFromLocalStorage(PERMUTIVE_SIGNAL_RULES_KEY);
+      });
+
+      const setSignalRules = (rules) => {
+        storage.setDataInLocalStorage(PERMUTIVE_SIGNAL_RULES_KEY, JSON.stringify(rules));
+      };
+
+      const emptySegmentData = () => transformedTargeting({
+        _pdfps: [],
+        _prubicons: [],
+        _papns: [],
+        _psegs: [],
+        _ppam: [],
+        _pcrprs: [],
+        _pindexs: [],
+        _pssps: { ssps: [], cohorts: [] },
+        _ppsts: {},
+      });
+
+      it('should route cohorts to the configured bidders at every supported location', function () {
+        setSignalRules([{
+          bidders: ['ozone'],
+          cohorts: ['a', 'b'],
+          locations: [
+            { path: 'user.data', name: 'permutive.com' },
+            { path: 'user.keywords', key: 'p_custom' },
+            { path: 'user.ext.data', key: 'p_custom' },
+            { path: 'site.ext.permutive', key: 'p_custom' },
+          ],
+        }]);
+
+        const moduleConfig = { name: 'permutive', params: { maxSegs: 500 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, emptySegmentData());
+
+        expect(bidderConfig['ozone'].user.data).to.deep.include.members([{
+          name: 'permutive.com',
+          segment: [{ id: 'a' }, { id: 'b' }],
+        }]);
+        expect(bidderConfig['ozone'].user.keywords).to.equal('p_custom=a,p_custom=b');
+        expect(bidderConfig['ozone'].user.ext.data.p_custom).to.deep.equal(['a', 'b']);
+        expect(bidderConfig['ozone'].site.ext.permutive.p_custom).to.deep.equal(['a', 'b']);
+      });
+
+      it('should merge and deduplicate rule cohorts with legacy cohorts at the same location', function () {
+        setSignalRules([{
+          bidders: ['appnexus'],
+          cohorts: ['pcrprs1', 'extra'],
+          locations: [{ path: 'user.data', name: 'permutive.com' }],
+        }]);
+
+        const segmentsData = transformedTargeting();
+        const moduleConfig = { name: 'permutive', params: { acBidders: ['appnexus'], maxSegs: 500 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData);
+
+        const standardEntry = bidderConfig['appnexus'].user.data.find(d => d.name === 'permutive.com' && !d.ext);
+        // Rule cohorts first, then the legacy AC cohorts with 'pcrprs1' deduplicated
+        expect(standardEntry.segment).to.deep.equal(
+          ['pcrprs1', 'extra', 'pcrprs2', 'dup', '1000001', '1000002'].map(id => ({ id }))
+        );
+      });
+
+      it('should keep user.data entries with the same name but different ext separate', function () {
+        // The segtax rule comes first: applying the plain entry afterwards must
+        // not remove or absorb it
+        setSignalRules([
+          {
+            bidders: ['ozone'],
+            cohorts: ['t1', 't2'],
+            locations: [{ path: 'user.data', name: 'permutive.com', ext: { segtax: 600 } }],
+          },
+          {
+            bidders: ['ozone'],
+            cohorts: ['a'],
+            locations: [{ path: 'user.data', name: 'permutive.com' }],
+          },
+        ]);
+
+        const moduleConfig = { name: 'permutive', params: { maxSegs: 500 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, emptySegmentData());
+
+        expect(bidderConfig['ozone'].user.data).to.deep.include.members([
+          {
+            name: 'permutive.com',
+            ext: { segtax: 600 },
+            segment: [{ id: 't1' }, { id: 't2' }],
+          },
+          {
+            name: 'permutive.com',
+            segment: [{ id: 'a' }],
+          },
+        ]);
+      });
+
+      it('should drop invalid rules individually and apply the valid ones', function () {
+        setSignalRules([
+          'not an object',
+          { bidders: [], cohorts: ['a'], locations: [{ path: 'user.data', name: 'x' }] },
+          { bidders: ['ozone'], cohorts: 'not-an-array', locations: [{ path: 'user.data', name: 'x' }] },
+          { bidders: ['ozone'], cohorts: ['a'], locations: [] },
+          { bidders: ['ozone'], cohorts: ['a'], locations: [{ path: 'user.data' }] },
+          { bidders: ['ozone'], cohorts: ['a'], locations: [{ path: 'user.unknown', key: 'k' }] },
+          { bidders: ['ozone'], cohorts: ['a'], locations: [{ path: 'user.ext.data', key: 'dotted.key' }] },
+          { bidders: ['ozone'], cohorts: ['ok'], locations: [{ path: 'user.keywords', key: 'p_ok' }] },
+        ]);
+
+        const moduleConfig = { name: 'permutive', params: { maxSegs: 500 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, emptySegmentData());
+
+        expect(bidderConfig['ozone'].user.keywords).to.equal('p_ok=ok');
+        expect(bidderConfig['ozone'].user).to.not.have.property('data');
+        expect(bidderConfig['ozone'].user).to.not.have.property('ext');
+      });
+
+      it('should ignore a non-array value under the signal rules key', function () {
+        setSignalRules({ bidders: ['ozone'], cohorts: ['a'], locations: [{ path: 'user.data', name: 'x' }] });
+
+        const moduleConfig = { name: 'permutive', params: { maxSegs: 500 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, emptySegmentData());
+
+        expect(bidderConfig).to.not.have.property('ozone');
+      });
+
+      it('should enforce maxSegs on the merged cohorts per location', function () {
+        setSignalRules([{
+          bidders: ['ozone'],
+          cohorts: ['a', 'b', 'c'],
+          locations: [{ path: 'user.ext.data', key: 'p_custom' }],
+        }]);
+
+        const moduleConfig = { name: 'permutive', params: { maxSegs: 2 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, emptySegmentData());
+
+        expect(bidderConfig['ozone'].user.ext.data.p_custom).to.deep.equal(['a', 'b']);
+      });
+
+      it('should coerce cohort IDs to strings', function () {
+        setSignalRules([{
+          bidders: ['ozone'],
+          cohorts: [1, 2],
+          locations: [{ path: 'user.ext.data', key: 'p_custom' }],
+        }]);
+
+        const moduleConfig = { name: 'permutive', params: { maxSegs: 500 } };
+        const bidderConfig = {};
+
+        setBidderRtb(bidderConfig, moduleConfig, emptySegmentData());
+
+        expect(bidderConfig['ozone'].user.ext.data.p_custom).to.deep.equal(['1', '2']);
+      });
+    });
   });
 
   describe('Getting segments', function () {
@@ -944,7 +1161,9 @@ function transformedTargeting (data = getTargetingData()) {
   })();
 
   return {
-    ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)].map(String),
+    // _ppam is deliberately not included: the key is no longer written by the
+    // Permutive SDK and the module no longer reads it
+    ac: [...data._pcrprs, ...data._psegs.filter(seg => seg >= 1000000)].map(String),
     appnexus: data._papns.map(String),
     ix: data._pindexs.map(String),
     rubicon: data._prubicons.map(String),

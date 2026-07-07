@@ -57,6 +57,62 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 
 While Permutive is listed as a TCF vendor (ID: 361), Permutive does not typically obtain vendor consent from the TCF, but instead relies on the publisher purpose consents. Publishers wishing to use TCF vendor consent instead can add 361 to their CMP and set params.enforceVendorConsent to `true`.
 
+## SDK-Driven Configuration
+
+In addition to the static configuration described in this document, the Permutive SDK can dynamically specify which cohorts should be sent to which bidders and where in the ORTB2 structure they should be placed. This enables cohort distribution to be managed from the Permutive platform without Prebid configuration changes.
+
+The Permutive SDK writes cohort distribution rules to the `_ppbconf` localStorage key as a JSON-encoded array. The RTD module reads these rules and applies them alongside the static configuration: cohorts from both sources targeting the same bidder and ORTB2 location are merged and deduplicated, and `params.maxSegs` is enforced per location after the merge.
+
+Each rule has the following shape:
+
+```json
+[
+  {
+    "bidders": ["appnexus", "rubicon"],
+    "cohorts": ["cohort1", "cohort2"],
+    "locations": [
+      { "path": "user.data", "name": "permutive.com" },
+      { "path": "user.keywords", "key": "p_standard" }
+    ]
+  }
+]
+```
+
+- **bidders**: bidder codes that should receive these cohorts
+- **cohorts**: cohort IDs to deliver
+- **locations**: where in the ORTB2 object to write the cohorts
+
+Supported location paths:
+
+{: .table .table-bordered .table-striped }
+| Path                 | Required field | Example                                              |
+| -------------------- | -------------- | ---------------------------------------------------- |
+| `user.data`          | `name`         | `{ "path": "user.data", "name": "permutive.com" }`   |
+| `user.keywords`      | `key`          | `{ "path": "user.keywords", "key": "p_standard" }`   |
+| `user.ext.data`      | `key`          | `{ "path": "user.ext.data", "key": "p_standard" }`   |
+| `site.ext.permutive` | `key`          | `{ "path": "site.ext.permutive", "key": "p_standard" }` |
+
+A `user.data` location may also carry an `ext` object (e.g. `{ "segtax": 600 }`), which is attached to the resulting `user.data` entry. Locations with the same name but different `ext` values produce separate entries.
+
+Rules are validated individually; a malformed rule is ignored without affecting the others. Only the location paths listed above can be written to.
+
+## Local Storage
+
+The module reads the following localStorage keys, all of which are written by the Permutive SDK and disclosed in [Permutive's device storage disclosure](https://assets.permutive.app/tcf/tcf.json):
+
+{: .table .table-bordered .table-striped }
+| Key         | Contents                                                       |
+| ----------- | -------------------------------------------------------------- |
+| `_ppbconf`  | SDK-driven cohort distribution rules (see above)                |
+| `_psegs`    | Segment IDs; IDs >= 1000000 are included in AC signals          |
+| `_pcrprs`   | Data Clean Room cohort IDs, included in AC signals              |
+| `_pssps`    | `{ ssps: [...], cohorts: [...] }` SSP bidder list and cohorts   |
+| `_papns`, `_prubicons`, `_pindexs`, `_pdfps` | Custom cohorts for appnexus, rubicon, ix and gam respectively |
+| `_ppsts`    | Privacy Sandbox Topics keyed by IAB taxonomy version            |
+| `permutive-prebid-rtd` | Cached module configuration                          |
+
+> Note: the legacy `_ppam` key is no longer written by the Permutive SDK and is no longer read by this module.
+
 ## Cohort Activation with Permutive RTD Module
 
 **Note**: Publishers must be enabled on the above Permutive RTD Submodule to enable Standard Cohorts.

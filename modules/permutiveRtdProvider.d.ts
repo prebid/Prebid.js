@@ -76,6 +76,50 @@ export interface PermutiveRtdProviderParams {
   transformations?: PermutiveTransformationConfig[];
 }
 
+/**
+ * An ORTB2 location that a signal rule writes cohorts to.
+ */
+export type PermutiveSignalLocation =
+  | {
+      path: 'user.data';
+      /**
+       * Data provider name for the `user.data` entry (e.g. `permutive.com`).
+       */
+      name: string;
+      /**
+       * Optional extension attached to the `user.data` entry, e.g.
+       * `{ segtax: 600 }`. Participates in the entry's identity: locations with
+       * the same name but different `ext` produce separate entries.
+       */
+      ext?: Record<string, unknown>;
+    }
+  | {
+      path: 'user.keywords' | 'user.ext.data' | 'site.ext.permutive';
+      /**
+       * The key the cohorts are written under. Must not contain dots.
+       */
+      key: string;
+    };
+
+/**
+ * A cohort distribution rule, written by the Permutive SDK to the `_ppbconf`
+ * localStorage key as a JSON-encoded array of rules.
+ */
+export interface PermutiveSignalRule {
+  /**
+   * Bidder codes that should receive these cohorts.
+   */
+  bidders: string[];
+  /**
+   * Cohort IDs to deliver. Coerced to strings.
+   */
+  cohorts: Array<string | number>;
+  /**
+   * ORTB2 locations to write the cohorts to.
+   */
+  locations: PermutiveSignalLocation[];
+}
+
 export interface PermutiveRtdProviderConfig {
   /**
    * When `true`, the auction waits for the Permutive SDK to reach real-time

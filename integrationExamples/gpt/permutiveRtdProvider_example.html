@@ -10,13 +10,30 @@
 
             function setLocalStorageData () {
               const data = {
+                // Custom cohorts for the legacy bidders (gam, rubicon, appnexus, ix)
                 _pdfps: ['gam1', 'gam2'],
                 _prubicons: ['rubicon1', 'rubicon2'],
                 _papns: ['appnexus1', 'appnexus2'],
+
+                // AC signals: standard cohorts (IDs >= 1000000) and DCR cohorts
                 _psegs: ['1234', '1000001', '1000002'],
-                _ppam: ['ppam1', 'ppam2'],
                 _pcrprs: ['pcrprs1', 'pcrprs2'],
+
+                // SSP signals: bidder list and cohorts
                 _pssps: { ssps: ['appnexus', 'some other'], cohorts: ['abcd', 'efgh', 'ijkl'] },
+
+                // SDK-driven signal rules: dynamic cohort distribution without
+                // Prebid config changes
+                _ppbconf: [
+                  {
+                    bidders: ['ozone'],
+                    cohorts: ['sdk_cohort_1', 'sdk_cohort_2'],
+                    locations: [
+                      { path: 'user.data', name: 'permutive' },
+                      { path: 'user.keywords', key: 'permutive' }
+                    ]
+                  }
+                ]
               }
 
               for (let key in data) {
