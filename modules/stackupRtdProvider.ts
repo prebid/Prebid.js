@@ -623,11 +623,14 @@ function mergeSiteContent(global: any, ours: any): void {
   target.id = target.id ?? ours.id;
   target.title = target.title ?? ours.title;
 
-  // Array merge by provider name
+  // Array merge by block identity (name + segtax + dimension).
+  // StackUP emits multiple blocks under the same provider `name`
+  // (e.g. several segtax:501 user dimensions all named data.stackup-ai.com),
+  // so keying on `name` alone would overwrite sibling dimensions.
   target.data = target.data ?? [];
   for (const ourBlock of ours.data) {
     const existingIdx = target.data.findIndex(
-      (b: any) => b.name === ourBlock.name
+      (b: any) => blockKey(b) === blockKey(ourBlock)
     );
     if (existingIdx >= 0) {
       target.data[existingIdx] = dedupeSegments(ourBlock);
@@ -652,7 +655,7 @@ function mergeUserData(global: any, ours: any[]): void {
 
   for (const ourBlock of ours) {
     const existingIdx = global.user.data.findIndex(
-      (b: any) => b.name === ourBlock.name
+      (b: any) => blockKey(b) === blockKey(ourBlock)
     );
     if (existingIdx >= 0) {
       global.user.data[existingIdx] = dedupeSegments(ourBlock);
@@ -660,6 +663,18 @@ function mergeUserData(global: any, ours: any[]): void {
       global.user.data.push(dedupeSegments(ourBlock));
     }
   }
+}
+
+// Identity key for an ORTB data block. StackUP delivers several blocks under a
+// single provider `name`, distinguished only by taxonomy (`ext.segtax`) and,
+// for user data, `ext.stackup.dimension` (profile, purchase_intent, ...).
+// Merging/de-duping on `name` alone collapses these siblings, so the key
+// combines all three.
+function blockKey(block: any): string {
+  const name = block?.name ?? "";
+  const segtax = block?.ext?.segtax ?? "";
+  const dimension = block?.ext?.stackup?.dimension ?? "";
+  return `${name}|${segtax}|${dimension}`;
 }
 
 function dedupeSegments(block: any): any {
