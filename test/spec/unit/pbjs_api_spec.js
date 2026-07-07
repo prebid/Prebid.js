@@ -1424,53 +1424,15 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    it('stores the GAM view URL for firing by ad unit code', function () {
+    it('stores the GAM view URL on the winning bid', function () {
       const viewUrl = 'http://www.example.com/view';
-      const adUnitCode = '/19968336/header-bid-tag-0';
-      pushBidResponseToAuction({
-        ad: '<div>ad</div>',
-        adUnitCode
-      });
-      auctionManager.addWinningBid({ adUnitCode, viewUrl: 'http://www.example.com/old-view' });
-
-      return renderAd(doc, bidId, { viewUrl }).then(() => {
-        triggerPixelStub.resetHistory();
-        pbjs.fireViewUrlForAdUnitCode(adUnitCode);
-        pbjs.fireViewUrlForAdUnitCode(adUnitCode);
-        sinon.assert.calledOnce(triggerPixelStub);
-        sinon.assert.calledWith(triggerPixelStub, viewUrl);
-      });
-    });
-
-    it('fires the GAM view URL by ad id', function () {
-      const viewUrl = 'http://www.example.com/view-ad-id';
       pushBidResponseToAuction({
         ad: '<div>ad</div>'
       });
 
       return renderAd(doc, bidId, { viewUrl }).then(() => {
-        triggerPixelStub.resetHistory();
-        pbjs.fireViewUrlForAdUnitCode(null, bidId);
-        sinon.assert.calledOnce(triggerPixelStub);
-        sinon.assert.calledWith(triggerPixelStub, viewUrl);
-      });
-    });
-
-    it('gives ad id precedence when firing the GAM view URL', function () {
-      const adUnitCode = '/19968336/header-bid-tag-0';
-      const oldAdId = 'old-ad-id';
-      const oldViewUrl = 'http://www.example.com/old-view';
-      auctionManager.addWinningBid({ auctionId: 1, adId: oldAdId, adUnitCode, viewUrl: oldViewUrl });
-      pushBidResponseToAuction({
-        ad: '<div>ad</div>',
-        adUnitCode
-      });
-
-      return renderAd(doc, bidId, { viewUrl: 'http://www.example.com/new-view' }).then(() => {
-        triggerPixelStub.resetHistory();
-        pbjs.fireViewUrlForAdUnitCode(adUnitCode, oldAdId);
-        sinon.assert.calledOnce(triggerPixelStub);
-        sinon.assert.calledWith(triggerPixelStub, oldViewUrl);
+        const winningBid = pbjs.getAllWinningBids().find(el => el.adId === adResponse.adId);
+        expect(winningBid.viewUrl).to.equal(viewUrl);
       });
     });
 

@@ -22,8 +22,7 @@ import {
   mergeDeep,
   transformAdServerTargetingObj,
   uniques,
-  unsupportedBidderMessage,
-  internal as utilsInternal
+  unsupportedBidderMessage
 } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
@@ -491,7 +490,6 @@ declare module './prebidGlobal' {
     setBidderConfig: typeof config.setBidderConfig;
     processQueue: typeof processQueue;
     triggerBilling: typeof triggerBilling;
-    fireViewUrlForAdUnitCode: typeof fireViewUrlForAdUnitCode;
     refreshPageViewId: typeof refreshPageViewId;
   }
 }
@@ -1318,33 +1316,6 @@ function triggerBilling({ adId, adUnitCode }: {
     });
 }
 addApiMethod('triggerBilling', triggerBilling);
-
-type FireViewUrlOptions = {
-  adUnitCode?: AdUnitCode;
-  adId?: string;
-};
-
-/**
- * Fire the GAM view URL for the current winning bid matching an ad unit code or ad ID.
- */
-function fireViewUrlForAdUnitCode(adUnitCodeOrOptions?: AdUnitCode | FireViewUrlOptions, adId?: string) {
-  const options = isPlainObject(adUnitCodeOrOptions)
-    ? adUnitCodeOrOptions as FireViewUrlOptions
-    : { adUnitCode: adUnitCodeOrOptions, adId };
-  const bids = auctionManager.getAllWinningBids();
-  let bid;
-  for (let i = bids.length - 1; i >= 0; i--) {
-    if (options.adId != null ? bids[i].adId === options.adId : options.adUnitCode != null && bids[i].adUnitCode === options.adUnitCode) {
-      bid = bids[i];
-      break;
-    }
-  }
-  if (bid?.viewUrl) {
-    utilsInternal.triggerPixel(bid.viewUrl);
-    bid.viewUrl = undefined;
-  }
-}
-addApiMethod('fireViewUrlForAdUnitCode', fireViewUrlForAdUnitCode);
 
 /**
  * Refreshes the previously generated page view ID. Can be used to instruct bidders
