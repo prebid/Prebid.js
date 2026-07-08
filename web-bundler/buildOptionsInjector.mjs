@@ -12,6 +12,7 @@ import { types as t } from '@babel/core';
  */
 export function injector(buildOptionsSource) {
   const tree = parse(buildOptionsSource);
+  let found = false;
   traverse.default(tree, {
     Program(path) {
       assert.equal(path.node.body.length, 1);
@@ -31,11 +32,16 @@ export function injector(buildOptionsSource) {
       }
     },
     ObjectProperty(path) {
-      if (t.isStringLiteral(path.node.key) && path.node.key.value === 'pbGlobal') {
+      if (
+        (t.isStringLiteral(path.node.key) && path.node.key.value === 'pbGlobal') ||
+        (t.isIdentifier(path.node.key)) && path.node.key.name === 'pbGlobal'
+      ) {
+        found = true;
         assert.ok(t.isObjectExpression(path.parentPath.node));
         path.parentPath.replaceWith(t.identifier('__buildOptions__'));
       }
     }
   });
+  assert.ok(found);
   return generate(tree).code;
 }
