@@ -454,7 +454,7 @@ export function insertUserSyncIframe(url, done, timeout) {
 }
 
 function decodeAmpersandEntities(url) {
-  return url.replace(/&amp;/gi, '&');
+  return url.replace(/&(amp|#38|#x26);/gi, '&');
 }
 
 /**

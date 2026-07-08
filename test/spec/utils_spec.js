@@ -857,9 +857,15 @@ describe('Utils', function () {
       });
 
       it('does not double-escape html-encoded query separators', () => {
-        const url = 'https://www.example.com/?a=1&amp;b=2&amp;c=3';
+        const cases = [
+          ['https://www.example.com/?a=1&amp;b=2&amp;c=3', 'https://www.example.com/?a=1&amp;b=2&amp;c=3'],
+          ['https://www.example.com/?a=1&#38;b=2', 'https://www.example.com/?a=1&amp;b=2'],
+          ['https://www.example.com/?a=1&#x26;b=2', 'https://www.example.com/?a=1&amp;b=2']
+        ];
 
-        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?a=1&amp;b=2&amp;c=3"');
+        cases.forEach(([url, expected]) => {
+          expect(utils.createTrackPixelHtml(url)).to.contain(`src="${expected}"`);
+        });
       });
     });
   });
