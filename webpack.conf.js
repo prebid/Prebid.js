@@ -28,6 +28,12 @@ var plugins = [
           .filter(chunk => chunk.name !== name)
           .flatMap(chunk => [...chunk.files])
           .filter(Boolean);
+        const parent = helpers.getParentModule(name.replace(/\.js$/, ''));
+        if (parent != null) {
+          // include parent module as a dependency so that the web bundler doesn't need
+          // to worry about .submodules.json
+          files.push(parent + '.js');
+        }
         return name && files.length ? {...acc, [`${name}.js`]: files} : acc
       }, seed)
     }
