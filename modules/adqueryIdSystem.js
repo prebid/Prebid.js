@@ -7,7 +7,7 @@
 
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
-import { logInfo, logMessage } from '../src/utils.js';
+import { generateUUID, logInfo, logMessage } from '../src/utils.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
@@ -55,8 +55,12 @@ export const adqueryIdSubmodule = {
     let qid = storage.getDataFromLocalStorage('qid');
 
     if (!qid) {
-      const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-      qid = randomValues.map(val => val.toString(36)).join('').substring(0, 20);
+      if (window.crypto && window.crypto.getRandomValues) {
+        const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+        qid = randomValues.map(val => val.toString(36)).join('').substring(0, 20);
+      } else {
+        qid = generateUUID();
+      }
       storage.setDataInLocalStorage('qid', qid);
 
       logInfo('adqueryIdSubmodule ID QID GENERATED:', qid);
