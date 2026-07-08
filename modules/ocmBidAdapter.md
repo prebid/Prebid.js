@@ -27,8 +27,8 @@ var adUnits = [
         bids: [{
             bidder: 'ocm',
             params: {
-                publisherId: 'your_publisher_id',
-                placementId: 'your_placement_id'
+                publisherId: 'orangeclickmedia.com',
+                placementId: '65b49bb0cc723602'
             }
         }]
     }
