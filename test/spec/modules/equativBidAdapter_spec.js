@@ -303,7 +303,7 @@ describe('Equativ bid adapter tests', () => {
       });
     });
 
-    it('should let placementuuid take precedence over siteId, pageId, formatId when both are provided', () => {
+    it('should forward plcmtuuid alongside deprecated params when all inventory params are provided', () => {
       const bidRequests = [
         {
           ...DEFAULT_BANNER_BID_REQUESTS[0],
@@ -314,6 +314,9 @@ describe('Equativ bid adapter tests', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.imp[0].ext.bidder).to.deep.equal({
         plcmtuuid: 'abc-123',
+        siteId: 123,
+        pageId: 456,
+        formatId: 789,
       });
     });
 
