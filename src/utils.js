@@ -453,6 +453,10 @@ export function insertUserSyncIframe(url, done, timeout) {
   internal.insertElement(iframe, document, 'html', true);
 }
 
+function decodeAmpersandEntities(url) {
+  return url.replace(/&(amp|#38|#x26);/gi, '&');
+}
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
@@ -464,7 +468,7 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
     return '';
   }
 
-  const escapedUrl = encode(url).replace(/["'&<>]/g, (char) => {
+  const escapedUrl = encode(decodeAmpersandEntities(url)).replace(/["'&<>]/g, (char) => {
     switch (char) {
       case '"':
         return '&quot;';
