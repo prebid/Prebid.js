@@ -278,13 +278,15 @@ function getFilesToBundle(dev, moduleArr) {
     }
   }
   const chunks = resolveDependencies(modules, require(helpers.getBuiltPath(dev, 'dependencies.json')), (module) => helpers.getMetadataEntry(module) != null);
-  return chunks.map((file) => helpers.getBuiltPath(dev, file))
+  return {
+    modules,
+    files: chunks.map((file) => helpers.getBuiltPath(dev, file))
+  }
 }
 
 function bundle(dev, moduleArr) {
-  var modules = moduleArr || helpers.getArgModules();
   const sm = dev || argv.sourceMaps;
-  const entries = getFilesToBundle(dev, moduleArr);
+  const {files: entries, modules} = getFilesToBundle(dev, moduleArr);
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
   // change output filename if argument --tag given
@@ -500,7 +502,7 @@ function buildManifest(dev) {
   }
 
   return function(done) {
-    getManifest(require(helpers.getBuiltPath(dev, 'dependencies.json')), getFilesToBundle(dev))
+    getManifest(require(helpers.getBuiltPath(dev, 'dependencies.json')), getFilesToBundle(dev).files)
       .then(manifest => {
         return Promise.all([
           writeJSON('checksums.json', manifest.checksums),
