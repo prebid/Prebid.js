@@ -22,11 +22,16 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
+  webpackConfig.resolve = webpackConfig.resolve || {};
+  webpackConfig.resolve.alias = webpackConfig.resolve.alias || {};
+  Object.assign(webpackConfig.resolve.alias, {
+    'web-bundler': path.resolve(__dirname, 'web-bundler')
+  })
   webpackConfig.module = webpackConfig.module || {};
   webpackConfig.module.rules = webpackConfig.module.rules || [];
   webpackConfig.module.rules.push({
     test: /\.js$/,
-    exclude: path.resolve('./node_modules'),
+    exclude: [path.resolve('./node_modules'), path.resolve(__dirname, 'web-bundler')],
     loader: 'babel-loader',
     options: {
       cacheDirectory: cacheDir, cacheCompression: false,
