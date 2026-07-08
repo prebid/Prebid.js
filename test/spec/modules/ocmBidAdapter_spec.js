@@ -569,6 +569,44 @@ describe('ocmBidAdapter', function () {
       expect(bid.renderer).to.equal(undefined);
     });
 
+    // Regression: the documented override shape (mediaTypes.video.renderer.options, an options-only
+    // holder with no url/render) must NOT be mistaken for a publisher renderer. Otherwise the OCM
+    // renderer is skipped and the outstream bid is left with no renderer at all. Core only prefers
+    // an ad-unit renderer that defines both url and render (isRendererPreferredFromAdUnit).
+    it('installs the OCM renderer when the ad unit only supplies renderer.options (documented override)', function () {
+      const optionsBid = {
+        ...outstreamVideoBid,
+        mediaTypes: {
+          video: {
+            ...outstreamVideoBid.mediaTypes.video,
+            renderer: { options: { player: { muted: false, autoplay: false } } }
+          }
+        }
+      };
+      const request = spec.buildRequests([optionsBid], { bidderCode: 'ocm', bids: [optionsBid] });
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      expect(bid.renderer).to.exist;
+      expect(bid.renderer.url).to.equal(RENDERER_URL);
+      // The publisher's options ride along on the OCM renderer config (merged into the player at render time).
+      expect(bid.renderer.getConfig()).to.deep.equal({ player: { muted: false, autoplay: false } });
+    });
+
+    it('installs the OCM renderer over a publisher renderer flagged backupOnly', function () {
+      const backupBid = {
+        ...outstreamVideoBid,
+        mediaTypes: {
+          video: {
+            ...outstreamVideoBid.mediaTypes.video,
+            renderer: { url: 'https://pub.example/r.js', render: () => {}, backupOnly: true }
+          }
+        }
+      };
+      const request = spec.buildRequests([backupBid], { bidderCode: 'ocm', bids: [backupBid] });
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      expect(bid.renderer).to.exist;
+      expect(bid.renderer.url).to.equal(RENDERER_URL);
+    });
+
     it('renders an outstream bid through window.OcmPlayer with the bid VAST and player size', function () {
       const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
       const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];

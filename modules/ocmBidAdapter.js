@@ -438,16 +438,30 @@ function isOutstreamVideo(bidRequest) {
 }
 
 /**
- * Determines whether the OCM renderer should be installed on a bid. It is skipped when the publisher
- * supplied their own renderer (at the ad unit or mediaTypes.video level) that is not flagged
- * backupOnly, so the publisher's renderer wins. Prebid core enforces the same precedence at render
- * time (isRendererPreferredFromAdUnit in src/Renderer.js); this just avoids installing a redundant one.
+ * Determines whether a renderer object counts as a publisher-supplied renderer. This mirrors Prebid
+ * core's isRendererPreferredFromAdUnit (src/Renderer.js), which only prefers an ad-unit/mediaType
+ * renderer that defines BOTH `url` and `render`. In particular, the documented OCM override shape
+ * `mediaTypes.video.renderer.options` (an options-only holder with no `url`/`render`) is NOT a
+ * publisher renderer, so it must not suppress the OCM renderer.
+ * @param {Object} [renderer] - A candidate renderer (ad unit or mediaTypes.video level)
+ * @returns {boolean} True if it is a real publisher renderer that should take precedence
+ */
+function isPublisherRenderer(renderer) {
+  return !!(renderer && renderer.url && renderer.render && renderer.backupOnly !== true);
+}
+
+/**
+ * Determines whether the OCM renderer should be installed on a bid. It is skipped only when the
+ * publisher supplied their own real renderer (at the ad unit or mediaTypes.video level) that is not
+ * flagged backupOnly, so the publisher's renderer wins. An options-only renderer holder (the
+ * documented `mediaTypes.video.renderer.options` override) does not count and still gets the OCM
+ * renderer, matching the precedence Prebid core enforces at render time (isRendererPreferredFromAdUnit).
  * @param {BidRequest} bidRequest - The originating bid request
  * @returns {boolean} True if the OCM renderer should be installed
  */
 function shouldAttachRenderer(bidRequest) {
-  const publisherRenderer = bidRequest?.renderer || deepAccess(bidRequest, 'mediaTypes.video.renderer');
-  return !publisherRenderer || publisherRenderer.backupOnly === true;
+  return !(isPublisherRenderer(bidRequest?.renderer) ||
+    isPublisherRenderer(deepAccess(bidRequest, 'mediaTypes.video.renderer')));
 }
 
 /**
