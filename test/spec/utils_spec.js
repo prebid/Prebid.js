@@ -839,8 +839,8 @@ describe('Utils', function () {
       ].forEach(([input, expected]) => {
         it(`can encode ${input} -> ${expected}`, () => {
           expect(encodeMacroURI(input)).to.eql(expected);
-        })
-      })
+        });
+      });
     });
 
     describe('createTrackPixelHtml', () => {
@@ -854,6 +854,12 @@ describe('Utils', function () {
         const url = 'https://www.example.com/?x="test"';
 
         expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=%22test%22"');
+      });
+
+      it('does not double-escape html-encoded query separators', () => {
+        const url = 'https://www.example.com/?a=1&amp;b=2&amp;c=3';
+
+        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?a=1&amp;b=2&amp;c=3"');
       });
     });
   });
