@@ -21,7 +21,7 @@ export function scriptLoader(base) {
 export async function getManifest(loader, checksum) {
   let callback;
   do {
-    callback = `__pbjsManifest${ (Math.random() + 1).toString(36).substring(10) }`
+    callback = `__pbjsManifest${ (Math.random() + 1).toString(36).substring(2) }`
   } while (window[callback] != null);
   let manifest;
   window[callback] = function (response) {
