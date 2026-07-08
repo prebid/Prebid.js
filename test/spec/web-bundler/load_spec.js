@@ -1,4 +1,4 @@
-import { checkAndRun, getManifest, loadModules, parseParams } from 'web-bundler/load.mjs';
+import { checkAndRun, getManifest, loadModules } from 'web-bundler/load.mjs';
 
 describe('web bundler load utils', () => {
   let loader, success, fail;
