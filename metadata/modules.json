@@ -2803,6 +2803,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "jjtech",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "justpremium",
       "aliasOf": null,
       "gvlid": 62,
