@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { CORE_MOD } from '../../../web-bundler/dependencies.mjs';
-import { BO_CHUNK, cleanDependencies } from '../../../web-bundler/manifest.mjs';
+import { CORE_MOD } from '../../web-bundler/dependencies.mjs';
+import { BO_CHUNK, cleanDependencies } from '../../web-bundler/manifest.mjs';
 import sinon from 'sinon';
 
 describe('cleanDependencies', () => {

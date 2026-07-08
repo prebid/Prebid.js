@@ -27,8 +27,6 @@ export function cleanDependencies(dependencies, requiresMeta = requiresMetadata)
       .map(([file, deps]) => {
         // omit modules that are not intended for production
         if (file.startsWith('_')) return null;
-        // do not include buildOptions, as that gets injected from bundler.js
-        if (file === BO_CHUNK) return null;
         if (isMetadataFile(file)) {
           // sanity check: metadata files should all have the same single dependency...
           assert.equal(deps.length, 1);
@@ -48,6 +46,8 @@ export function cleanDependencies(dependencies, requiresMeta = requiresMetadata)
           // exclude dependencies of core as they're always included
           deps = deps.filter(dep => !coreDeps.has(dep));
         }
+        // do not include buildOptions, as that gets injected from bundler.js
+        deps = deps.filter(dep => dep !== BO_CHUNK)
         return [file, deps];
       })
       .filter(entry => entry != null)
