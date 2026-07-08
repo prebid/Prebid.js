@@ -1,4 +1,4 @@
-import { getBuildOptions, parseParams } from 'web-bundler/options.mjs';
+import { parseParams } from 'web-bundler/options.mjs';
 
 describe('web bundler options', () => {
   describe('parseParams', () => {

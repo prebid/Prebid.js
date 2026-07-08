@@ -183,6 +183,13 @@ module.exports = {
         const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, renderers,{
+          buildOptions: {
+            // isolate build options so that the web bundler can easily swap them out
+            name: 'buildOptions',
+            test: (module) => {
+              return module.resource === helpers.getPrecompiledPath('buildOptions.mjs');
+            }
+          },
           core: {
             name: 'chunk-core',
             test: (module) => {
@@ -194,7 +201,7 @@ module.exports = {
                 }
                 return resource.startsWith(core);
               }
-            }
+            },
           },
         }, {
           default: false,

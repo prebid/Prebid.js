@@ -9,7 +9,8 @@ function makeConfig(dev, cfg) {
     resolve: {
       alias: {
         ...Object.fromEntries(MANIFEST_FILES.map(f => [f, helpers.getBuiltPath(dev, f)])),
-        'buildOptions.mjs': helpers.getPrecompiledPath('buildOptions.mjs')
+        'buildOptions.mjs': helpers.getPrecompiledPath('buildOptions.mjs'),
+        'injectBuildOptions': helpers.getBuiltPath(dev, 'injectBuildOptions.mjs'),
       },
     },
     module: {
@@ -35,8 +36,11 @@ module.exports = {
   bundler: (dev) => makeConfig(dev,{
     entry: {
       'bundle': {
-        import: './web-bundler/out/bundle.js',
+        import: './web-bundler/out/bundler.js',
       },
+      'prebid.web' :{
+        import: './web-bundler/out/webbundle.js',
+      }
     },
   }),
 };

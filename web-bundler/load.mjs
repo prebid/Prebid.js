@@ -5,7 +5,7 @@ export function scriptLoader(base) {
     const script = document.createElement('script');
     Object.entries({
       src: base + chunk,
-      defer: true,
+      defer: 'defer',
       crossorigin: 'anonymous',
       crossoriginstorage: '*',
       integrity: checksum
@@ -57,11 +57,3 @@ export function checkAndRun(globalVarName, load) {
   }
 }
 
-export function load(manifestChecksum, options, mkLoader = scriptLoader, manifest = getManifest, modules = loadModules) {
-  const global = options.buildOptions.pbGlobal;
-  checkAndRun(global, () => {
-    const loader = mkLoader(options.buildOptions.distUrlBase);
-    return manifest(loader, manifestChecksum)
-      .then(manifest => modules(loader, manifest, options.modules))
-  });
-}

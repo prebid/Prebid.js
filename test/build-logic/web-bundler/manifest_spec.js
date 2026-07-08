@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { CORE_MOD } from '../../../web-bundler/dependencies.mjs';
-import { cleanDependencies } from '../../../web-bundler/manifest.mjs';
+import { BO_CHUNK, cleanDependencies } from '../../../web-bundler/manifest.mjs';
 import sinon from 'sinon';
 
 describe('cleanDependencies', () => {
@@ -22,6 +22,11 @@ describe('cleanDependencies', () => {
     deps[coreFile].push('dep.js');
     deps.testModule = [coreFile, 'dep.js', 'other.js'];
     expect(clean().testModule).to.eql(['other.js']);
+  });
+
+  it(`should exclude ${BO_CHUNK}`, () => {
+    deps.testModule = [BO_CHUNK];
+    expect(clean().testModule).to.not.include(BO_CHUNK);
   });
 
   it('should omit metadata modules', () => {

@@ -4,6 +4,8 @@ import fs from 'fs/promises';
 import { CORE_MOD, METADATA_SUFFIX, requiresMetadata } from './dependencies.mjs';
 import crypto from 'crypto';
 
+export const BO_CHUNK = 'buildOptions.js';
+
 const ALGO = 'sha256';
 
 export function getChecksum(file) {
@@ -25,6 +27,8 @@ export function cleanDependencies(dependencies, requiresMeta = requiresMetadata)
       .map(([file, deps]) => {
         // omit modules that are not intended for production
         if (file.startsWith('_')) return null;
+        // do not include buildOptions, as that gets injected from bundler.js
+        if (file === BO_CHUNK) return null;
         if (isMetadataFile(file)) {
           // sanity check: metadata files should all have the same single dependency...
           assert.equal(deps.length, 1);

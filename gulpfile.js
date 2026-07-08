@@ -29,6 +29,7 @@ const rename = require('gulp-rename');
 const merge = require('merge-stream');
 const { resolveDependencies } = require('./web-bundler/dependencies.mjs');
 const { getChecksum, getManifest } = require('./web-bundler/manifest.mjs');
+const { injector } = require('./web-bundler/buildOptionsInjector.mjs');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -307,7 +308,7 @@ function bundle(dev, moduleArr) {
 function setupDist() {
   return gulp.src(['build/dist/**/*'])
     .pipe(rename(function (path) {
-      if (path.dirname === '.' && path.basename === 'prebid') {
+      if (path.dirname === '.' && (path.basename === 'prebid' || path.basename === 'prebid.web')) {
         path.dirname = '../not-for-prod';
       } else if (path.dirname === '.' && path.basename === 'bundle') {
         path.dirname = '..';
@@ -521,6 +522,16 @@ function buildManifestChecksums(dev) {
   };
 }
 
+function buildOptionsInjector(dev) {
+  return function (done) {
+    fs.promises.readFile(helpers.getBuiltPath(dev, 'buildOptions.js'))
+      .then((contents) => injector(contents.toString()))
+      .then((tpl) => fs.promises.writeFile(helpers.getBuiltPath(dev, 'injectBuildOptions.mjs'), tpl))
+      .then(() => done(), done);
+  }
+}
+
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
@@ -530,8 +541,8 @@ gulp.task(clean);
 gulp.task(escapePostbidConfig);
 
 
-gulp.task('build-web-bundler-prod', gulp.series(buildManifest(false), makeWebpackPkg(makeManifestConfig(false)), buildManifestChecksums(false), makeWebpackPkg(makeBundlerConfig(false))));
-gulp.task('build-web-bundler-dev', gulp.series(buildManifest(true), makeDevpackPkg(makeManifestConfig(true)), buildManifestChecksums(true), makeDevpackPkg(makeBundlerConfig(true))));
+gulp.task('build-web-bundler-prod', gulp.series(buildManifest(false), makeWebpackPkg(makeManifestConfig(false)), gulp.parallel(buildManifestChecksums(false), buildOptionsInjector(false)), makeWebpackPkg(makeBundlerConfig(false))));
+gulp.task('build-web-bundler-dev', gulp.series(buildManifest(true), makeDevpackPkg(makeManifestConfig(true)), gulp.parallel(buildManifestChecksums(true), buildOptionsInjector(true)), makeDevpackPkg(makeBundlerConfig(true))));
 gulp.task('build-bundle-dev-no-precomp', gulp.series(makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulp.parallel('build-web-bundler-dev', gulpBundle.bind(null, true))));
 gulp.task('build-bundle-dev', gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp'));
 gulp.task('build-bundle-prod', gulp.series(precompile(), makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulp.parallel('build-web-bundler-prod', gulpBundle.bind(null, false))));
