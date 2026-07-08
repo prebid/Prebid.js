@@ -275,4 +275,21 @@ describe('AdPlus analytics adapter', function () {
     // No ajax call since no auctionData
     expect(server.requests.length).to.equal(0);
   });
+
+  it('should not fall back to the page URL when referrer is unavailable', function () {
+    refererDetection.getRefererInfo.restore();
+    sandbox.stub(refererDetection, 'getRefererInfo').returns({
+      page: 'https://test-site.com/page.html',
+      domain: 'test-site.com',
+      ref: ''
+    });
+
+    events.emit(EVENTS.AUCTION_END, { auctionId, bidsReceived });
+    events.emit(EVENTS.BID_WON, bidWon1);
+
+    clock.tick(0);
+
+    const payload = JSON.parse(server.requests[0].requestBody);
+    expect(payload.referrer).to.not.equal(payload.pageUrl);
+  });
 });

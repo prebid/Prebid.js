@@ -73,7 +73,7 @@ function createBidRequest(bid, bidderRequest) {
 
   const pageUrl = refererInfo?.page || window.location.href || '';
   const domain = refererInfo?.domain || window.location.hostname || '';
-  const referrer = refererInfo?.ref || window.document.referrer || window.location.href || '';
+  const referrer = refererInfo?.ref || window.document.referrer || '';
 
   return {
     method: 'POST',

@@ -39,7 +39,7 @@ const adplusAnalyticsAdapter = Object.assign(adapter({ SERVER_URL, analyticsType
           const refererInfo = getRefererInfo();
           const pageUrl = refererInfo?.page || window.location.href || '';
           const domain = refererInfo?.domain || window.location.hostname || '';
-          const referrer = refererInfo?.ref || window.document.referrer || window.location.href || '';
+          const referrer = refererInfo?.ref || window.document.referrer || '';
 
           const winningBid = bidDataAdapter(BID_WON, bid);
 
@@ -99,7 +99,7 @@ function bidDataAdapter(type, bid) {
     mediaType: bid.mediaType,
     dealId: getStringValue(bid.dealId),
     transactionId: getStringValue(bid.transactionId),
-  }
+  };
 }
 
 function getStringValue(value) {
@@ -167,6 +167,8 @@ adplusAnalyticsAdapter.auctionBids = auctionBids;
 
 adplusAnalyticsAdapter.reset = function () {
   auctionBids = {};
+  sendQueue = [];
+  isSending = false;
   adplusAnalyticsAdapter.auctionBids = auctionBids;
 };
 

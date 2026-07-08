@@ -171,6 +171,18 @@ describe('AplusBidAdapter', function () {
       expect(request[0].data).to.not.have.deep.property('latitude');
       expect(request[0].data).to.not.have.deep.property('longitude');
     });
+
+    it('does not fall back to the page URL when referrer is unavailable', function () {
+      const request = spec.buildRequests(validRequest, {
+        refererInfo: {
+          page: 'https://test.domain/page.html',
+          domain: 'test.domain',
+          ref: ''
+        }
+      });
+
+      expect(request[0].data.referrer).to.not.equal(request[0].data.pageUrl);
+    });
   });
 
   describe('interpretResponse', function () {
