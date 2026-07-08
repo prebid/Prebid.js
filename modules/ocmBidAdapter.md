@@ -236,11 +236,18 @@ Flow:
 1. `getUserSyncs` reads the bidders PBS actually invoked from the auction response
    (`ext.responsetimemillis` keys, plus any `seatbid[].seat`).
 2. It renders an iframe to the loader page with those bidders, the publisher `account`
-   (the `publisherId`), the sync `limit`, and all consent signals
+   (the `ext.account` PBS echoes on the auction response), the sync `limit`, the sync policy
+   (`filter` — the allowed sync types, and `coopSync=0`), and all consent signals
    (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`).
-3. The loader POSTs `{ bidders, account, limit, gdpr, ... }` to
+3. The loader POSTs `{ bidders, account, limit, filterSettings, coopSync, gdpr, ... }` to
    `https://pbam.orangeclickmedia.com/cookie_sync` and drops each returned `usersync` (an `iframe`
-   type becomes a hidden iframe; a `redirect` type becomes an image pixel).
+   type becomes a hidden iframe; a `redirect` type becomes an image pixel). The loader **must** honour
+   the forwarded `filter`/`coopSync`: it only requests/drops the sync types the publisher enabled
+   (`iframe` always; `image`/`redirect` only when pixel syncing is enabled) and disables PBS
+   cooperative syncing, so a disabled sync type or an unrequested bidder never fires from inside the
+   loader iframe. The `account` is taken solely from the current auction's echoed `ext.account`, so
+   overlapping OCM auctions cannot leak one publisher's account into another's sync — PBS must echo
+   `ext.account` for the account to be forwarded.
 
 **Deployment requirement:** the loader page must be reachable at
 `https://pbam.orangeclickmedia.com/static/cookie_sync.html`. On PBS-Go, drop the file into the
@@ -250,7 +257,7 @@ which keeps it same-origin with `/cookie_sync` (no CORS) and with the PBS `uids`
 
 User syncing only runs if the publisher enables iframe syncing and allows the `ocm` bidder
 (the adapter returns an iframe sync only — the loader handles the per-bidder image/iframe pixels
-itself). For example:
+itself, constrained to the sync types the publisher enabled). For example:
 
 ```javascript
 pbjs.setConfig({

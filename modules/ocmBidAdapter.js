@@ -68,16 +68,10 @@ const converter = ortbConverter({
  */
 
 /**
- * OCM bidder-specific parameters, supplied on each ad unit's `bids[].params`. These are the adapter's
- * public interface; everything else (sizes, video/native config, consent, first-party data) is read
- * from standard ad-unit / ORTB2 fields by the ORTB converter rather than from params.
- * @typedef {Object} OcmBidParams
- * @property {string} publisherId - OCM-issued publisher ID. Used as the Prebid Server `account` and set
- *   as `site`/`app` `publisher.id` on the ORTB request. Required.
- * @property {string} placementId - OCM placement ID; mapped to the PBS stored-request id
- *   (`imp.ext.prebid.storedrequest.id`). Required.
- * @property {Object} [rendererConfig] - Optional overrides deep-merged into the OCM outstream video
- *   player config at render time (an alternative to `mediaTypes.video.renderer.options`).
+ * OCM bidder-specific parameters (the adapter's public interface). The type is declared in the
+ * co-located ocmBidAdapter.d.ts, which also augments the global `BidderParams` map so `adUnit.bids[]`
+ * with `bidder: 'ocm'` are typed. Importing it here pulls the declaration into the TS program.
+ * @typedef {import('./ocmBidAdapter.d.ts').OcmBidParams} OcmBidParams
  */
 
 const ENDPOINT = 'https://pbam.orangeclickmedia.com/openrtb2/auction';
@@ -101,14 +95,6 @@ const GVLID = 1148;
 // video is deliberately left to the publisher's own player / ad server, so no renderer is attached
 // for it. The same player is used as a custom renderer in the OCM prebid wrapper (dsg-core).
 const RENDERER_URL = 'https://cdn.orangeclickmedia.com/tech/libs/ocm-player.js';
-
-// Publisher id captured during buildRequests and used as the fallback cookie_sync `account` in
-// getUserSyncs, which does not receive bid params. This is a last resort: getUserSyncs prefers an
-// account echoed by PBS in the auction response (which is correlated with the responses actually
-// being synced). The fallback is a single mutable scalar, so on a page running several OCM
-// auctions the most recent buildRequests wins — it therefore assumes a single OCM publisher per
-// page. See getUserSyncs.
-let syncAccount = null;
 
 /**
  * Checks if the bid request includes video media type
@@ -315,10 +301,6 @@ function addOrtbPublisherData(data, bidRequests) {
  * @returns {ServerRequest} Server request object with url, method, and data
  */
 function buildRequests(bidRequests, bidderRequest) {
-  // getUserSyncs has no access to bid params, so capture the publisher id here for reuse as the
-  // cookie_sync `account`.
-  syncAccount = bidRequests?.[0]?.params?.publisherId || null;
-
   const ortbRequest = converter.toORTB({ bidderRequest, bidRequests });
 
   return {
@@ -359,7 +341,9 @@ function interpretResponse(response, request) {
  * seats) — i.e. the bidders PBS actually invoked for the stored request — because the client has no
  * visibility into the stored request's contents.
  *
- * @param {Object} syncOptions - Allowed sync types (only iframe applies here; the loader is an HTML page)
+ * @param {Object} syncOptions - Allowed sync types. The loader itself is delivered as an iframe, and
+ *   the enabled types (iframeEnabled/pixelEnabled) are forwarded to it so it only drops syncs of a type
+ *   the publisher permitted.
  * @param {Array} serverResponses - Auction responses; source of the participating bidder list
  * @param {Object} gdprConsent - GDPR consent data (gdprApplies, consentString)
  * @param {string} uspConsent - US privacy (CCPA) consent string
@@ -367,8 +351,10 @@ function interpretResponse(response, request) {
  * @returns {Array<{type: string, url: string}>} A single iframe sync to the loader, or empty if disabled / no bidders
  */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  // The loader is an HTML page, so only iframe syncing applies here. The per-bidder pixels the
-  // loader itself drops still honour both image (redirect) and iframe sync types.
+  // The loader is an HTML page, so it can only be delivered as an iframe sync; if iframe syncing is
+  // disabled there is nothing to return. The sync types the loader is then allowed to actually drop
+  // (iframe vs image/redirect) are constrained by the `filter` it is passed below, derived from
+  // syncOptions, so a disabled sync type never fires from inside the loader iframe.
   if (!syncOptions.iframeEnabled) {
     return [];
   }
@@ -387,16 +373,30 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [];
   }
 
+  // Forward the sync policy Prebid authorised so the loader can constrain its PBS /cookie_sync POST
+  // (filterSettings + coopSync) instead of dropping whatever PBS returns into the hidden iframe.
+  // Without this, image/redirect syncs (when only iframe is enabled) or cooperatively-synced bidders
+  // the publisher never authorised would still fire from inside the loader iframe. iframe is always
+  // allowed at this point (we returned early otherwise); image is allowed only when pixelEnabled.
+  const filter = syncOptions.pixelEnabled ? 'iframe,image' : 'iframe';
+
   const params = [
     `bidders=${encodeURIComponent([...bidders].slice(0, MAX_SYNC_COUNT).join(','))}`,
-    `limit=${MAX_SYNC_COUNT}`
+    `limit=${MAX_SYNC_COUNT}`,
+    `filter=${encodeURIComponent(filter)}`,
+    // Prebid only authorised syncing the bidders that participated in this auction, so disable PBS
+    // cooperative syncing (which would sync additional, unrequested bidders).
+    'coopSync=0'
   ];
 
-  // Prefer an account echoed by PBS in the auction response (correlated with these responses); fall
-  // back to the publisherId captured at request time (single-publisher-per-page assumption).
+  // The cookie_sync `account` is taken solely from the account PBS echoes in the auction response
+  // (ext.account), which is scoped to exactly these responses. Deriving it per-auction here — rather
+  // than from a shared module-level value captured in buildRequests — is what keeps overlapping OCM
+  // auctions (or multiple pbjs instances) from leaking one auction's publisher account into another's
+  // sync. OCM's PBS echoes ext.account for this purpose.
   const account = (serverResponses || [])
     .map((response) => response?.body?.ext?.account)
-    .find(Boolean) || syncAccount;
+    .find(Boolean);
   if (account) {
     params.push(`account=${encodeURIComponent(account)}`);
   }

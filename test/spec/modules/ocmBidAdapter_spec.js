@@ -679,18 +679,35 @@ describe('ocmBidAdapter', function () {
       expect(decodeURIComponent(syncs[0].url)).to.contain('bidders=pubmatic,ix');
     });
 
-    it('includes the account captured from publisherId during buildRequests', function () {
-      spec.buildRequests([bannerBid], bannerBidderRequest); // sets the module-level sync account
+    it('constrains the loader to iframe syncs and disables cooperative syncing by default', function () {
+      // When only iframe syncing is enabled, the loader must be told not to drop image/redirect syncs
+      // and not to co-operatively sync bidders the publisher never requested.
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
-      expect(syncs[0].url).to.contain('account=pub-123');
+      const url = decodeURIComponent(syncs[0].url);
+      expect(url).to.contain('filter=iframe');
+      expect(url).to.not.contain('image');
+      expect(syncs[0].url).to.contain('coopSync=0');
     });
 
-    it('prefers an account echoed in the auction response over the captured publisherId', function () {
-      spec.buildRequests([bannerBid], bannerBidderRequest); // captures account=pub-123
+    it('allows image syncs in the loader filter when pixel syncing is enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
+      expect(decodeURIComponent(syncs[0].url)).to.contain('filter=iframe,image');
+    });
+
+    it('includes the account echoed by PBS in the auction response', function () {
       const responses = [{ body: { ext: { account: 'echoed-789', responsetimemillis: { appnexus: 80 } } } }];
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
       expect(syncs[0].url).to.contain('account=echoed-789');
-      expect(syncs[0].url).to.not.contain('account=pub-123');
+    });
+
+    it('scopes the sync account to the auction response and never a captured fallback', function () {
+      // Regression: the cookie_sync account must come only from THIS auction's response (ext.account),
+      // not from a module-level value captured during buildRequests — otherwise an overlapping auction
+      // could leak its publisher account into this sync. buildRequests runs first (it used to capture
+      // account=pub-123) but the response below echoes no account, so no account must be emitted.
+      spec.buildRequests([bannerBid], bannerBidderRequest);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
+      expect(syncs[0].url).to.not.contain('account=');
     });
 
     it('forwards GDPR, USP and GPP consent', function () {
