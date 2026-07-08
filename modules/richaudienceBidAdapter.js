@@ -106,10 +106,11 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
-    var response = serverResponse.body;
+    const response = serverResponse.body;
     if (response) {
-      var bidResponse = {
-        requestId: JSON.parse(bidRequest.data).bidId,
+      const request = JSON.parse(bidRequest.data);
+      const bidResponse = {
+        requestId: request.bidId,
         cpm: response.cpm,
         width: response.width,
         height: response.height,
@@ -128,7 +129,7 @@ export const spec = {
         bidResponse.vastXml = response.vastXML;
         try {
           if (bidResponse.vastXml != null) {
-            if (JSON.parse(bidRequest.data).videoData.format === 'outstream' || JSON.parse(bidRequest.data).videoData.format === 'banner') {
+            if (request.videoData.format === 'outstream' || request.videoData.format === 'banner') {
               bidResponse.renderer = Renderer.install({
                 id: bidRequest.bidId,
                 adunitcode: bidRequest.tagId,
