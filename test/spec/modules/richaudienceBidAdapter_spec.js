@@ -644,6 +644,26 @@ describe('Richaudience adapter tests', function () {
     expect(bid.meta.advertiserDomains[0]).to.equal('richaudience.com');
   });
 
+  it('response without adomain does not throw and returns empty advertiserDomains', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        page: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const response = { body: { ...BID_RESPONSE.body } };
+    delete response.body.adomain;
+
+    const bids = spec.interpretResponse(response, request[0]);
+    expect(bids).to.have.lengthOf(1);
+    expect(bids[0].meta.advertiserDomains).to.deep.equal([]);
+  });
+
   it('no banner media response inestream', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_IN, {
       gdprConsent: {

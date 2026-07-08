@@ -119,7 +119,7 @@ export const spec = {
         currency: response.currency,
         ttl: response.ttl,
         meta: {
-          advertiserDomains: [response.adomain[0]]
+          advertiserDomains: response.adomain?.length ? [response.adomain[0]] : []
         },
         dealId: response.dealId
       };
@@ -136,8 +136,8 @@ export const spec = {
                 config: response.media_type,
                 url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
               });
+              bidResponse.renderer.setRender(renderer);
             }
-            bidResponse.renderer.setRender(renderer);
           }
         } catch (e) {
           bidResponse.ad = response.adm;
