@@ -751,7 +751,7 @@ describe('cadent_aperture_mx Adapter', function () {
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.renderer).to.exist.and.to.be.a('object');
-      expect(ad0.renderer.url).to.equal('https://js.brealtime.com/outstream/1.30.0/bundle.js');
+      expect(ad0.renderer.url).to.equal('https://js.ssp.cadent.com/outstream/1.30.0/bundle.js');
       expect(ad0.renderer.id).to.equal('987654321cba');
       expect(ad1.renderer).to.equal(undefined);
     });
@@ -794,7 +794,7 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs).to.not.be.an('undefined');
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html');
+      expect(syncs[0].url).to.equal('https://js.ssp.cadent.com/check.html');
     });
 
     it('should pass gdpr params', function () {
@@ -805,7 +805,7 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.contains('gdpr=0');
-      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=0&gdpr_consent=test');
+      expect(syncs[0].url).to.equal('https://js.ssp.cadent.com/check.html?gdpr=0&gdpr_consent=test');
     });
 
     it('should pass us_privacy string', function () {
@@ -832,7 +832,7 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.contains('gdpr=1');
       expect(syncs[0].url).to.contains('usp=test');
-      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test');
+      expect(syncs[0].url).to.equal('https://js.ssp.cadent.com/check.html?gdpr=1&gdpr_consent=test&usp=test');
     });
 
     it('should pass gpp string and section id', function() {
@@ -865,7 +865,7 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs[0].url).to.contains('gdpr=1');
       expect(syncs[0].url).to.contains('usp=test');
       expect(syncs[0].url).to.contains('gpp=abcdefgs');
-      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test&gpp=abcdefgs&gpp_sid=1,2,4');
+      expect(syncs[0].url).to.equal('https://js.ssp.cadent.com/check.html?gdpr=1&gdpr_consent=test&usp=test&gpp=abcdefgs&gpp_sid=1,2,4');
     });
   });
 });

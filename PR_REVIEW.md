@@ -136,6 +136,11 @@ Follow steps above for general review process. In addition:
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
 - Make sure there's a docs pull request
 
+### Storage use
+
+- Make sure any uses of storage have a device disclosure description field set following https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md#example-1 in the https://vendor-list.consensu.org/v3/vendor-list.json if they have a gvlid, if they do not have a gvlid, encourage storage disclosure metadata is committed. Also encourage any use of storage is well described in the module md file.
+- Make sure the gvlid is published on https://vendor-list.consensu.org/v3/vendor-list.json if it is declared and that the company name roughly matches.
+
 ### Reviewing changes to the `debugging` module
 
 The debugging module cannot import from core in the same way that other modules can. See this [warning](https://github.com/prebid/Prebid.js/blob/master/modules/debugging/WARNING.md) for more details.
