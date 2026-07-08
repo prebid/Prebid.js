@@ -47,19 +47,6 @@ export const THIRD_PARTY_COOKIE_ORIGIN = BIDDER_ENDPOINTS[BIDDER_CODE].cookieOri
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const globals = {};
 
-/**
- * Extract uid from eids array by source
- *
- * @param  {Array}  eids   userIdAsEids array
- * @param  {string} source eid source domain
- * @return {string|undefined}
- */
-function getEidUid(eids, source) {
-  if (!Array.isArray(eids)) return;
-  const eid = eids.find(e => e && e.source === source);
-  return eid && eid.uids && eid.uids[0] && eid.uids[0].id;
-}
-
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
