@@ -16,6 +16,8 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./ftrackIdSystem.d.ts').FtrackIdSystemModuleName} FtrackIdSystemModuleName
  */
 
 const MODULE_NAME = 'ftrackId';
@@ -37,7 +39,7 @@ const consentInfo = {
   }
 };
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<FtrackIdSystemModuleName>} */
 export const ftrackIdSubmodule = {
   /**
    * used to link submodule with config
@@ -63,7 +65,7 @@ export const ftrackIdSubmodule = {
         uid: '',
         ext: {}
       }
-    }
+    };
 
     // Loop over the value's properties:
     // -- if string, assign value as is.

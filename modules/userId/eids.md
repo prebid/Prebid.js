@@ -10,6 +10,23 @@ userIdAsEids = [
         }]
     },
     {
+        source: 'abtshield.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: {
+                segments: ['seg-1', 'seg-2']
+            }
+        }]
+    },
+    {
+        source: 'acxiom.id',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',

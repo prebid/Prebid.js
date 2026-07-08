@@ -5,10 +5,11 @@
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
-import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getOsInfo } from '../libraries/nexverseUtils/index.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
@@ -61,6 +62,19 @@ export const getPmgUID = () => {
 };
 
 /* ----- pmguid:end ------ */
+
+/**
+ * Extract uid from eids array by source
+ *
+ * @param  {Array}  eids   userIdAsEids array
+ * @param  {string} source eid source domain
+ * @return {string|undefined}
+ */
+function getEidUid(eids, source) {
+  if (!Array.isArray(eids)) return;
+  const eid = eids.find(e => e && e.source === source);
+  return eid && eid.uids && eid.uids[0] && eid.uids[0].id;
+}
 
 /**
  * Get a nested property value from object, return empty string if not found
@@ -130,24 +144,10 @@ const mediagoAdSize = normalAdSize;
  * @return {Object}
  */
 function getItems(validBidRequests, bidderRequest) {
-  let items = [];
+  let items;
   items = validBidRequests.map((req, i) => {
     let ret = {};
     const mediaTypes = getProperty(req, 'mediaTypes');
-
-    const sizes = transformSizes(getProperty(req, 'sizes'));
-    let matchSize;
-
-    // Validate size meets requirements
-    for (const size of sizes) {
-      matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
-      if (matchSize) {
-        break;
-      }
-    }
-    if (!matchSize) {
-      matchSize = sizes[0] ? { h: sizes[0].height || 0, w: sizes[0].width || 0 } : { h: 0, w: 0 };
-    }
 
     const bidFloor = getBidFloor(req);
     const gpid =
@@ -158,19 +158,34 @@ function getItems(validBidRequests, bidderRequest) {
     if (bidderRequest && bidderRequest.gdprConsent) {
       gdprConsent.consent = bidderRequest.gdprConsent.consentString;
       gdprConsent.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      // if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
-      //   let ac = bidderRequest.gdprConsent.addtlConsent;
-      //   // pull only the ids from the string (after the ~) and convert them to an array of ints
-      //   let acStr = ac.substring(ac.indexOf('~') + 1);
-      //   gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
-      // }
     }
 
-    // if (mediaTypes.native) {}
-    // Banner ad type
+    const id = getProperty(req, 'bidId') || ('' + (i + 1) + Math.random().toString(36).substring(2, 15));
+    const ext = {
+      adUnitCode: req.adUnitCode,
+      referrer: getReferrer(req, bidderRequest),
+      ortb2Imp: utils.deepAccess(req, 'ortb2Imp'),
+      gpid: gpid + '',
+      adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+      publisher: req.params.publisher || '',
+      transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
+      ...gdprConsent
+    };
+
     if (mediaTypes.banner) {
-      // fix id is not unique where there are multiple requests in the same page
-      const id = getProperty(req, 'bidId') || ('' + (i + 1) + Math.random().toString(36).substring(2, 15));
+      let sizes = transformSizesOrtb(getProperty(req, 'sizes'));
+      let matchSize;
+
+      for (let size of sizes) {
+        matchSize = mediagoAdSize.find(item => size.w === item.w && size.h === item.h);
+        if (matchSize) {
+          break;
+        }
+      }
+      if (!matchSize) {
+        matchSize = sizes[0] ? { h: sizes[0].h || 0, w: sizes[0].w || 0 } : { h: 0, w: 0 };
+      }
+
       ret = {
         id: id,
         bidfloor: bidFloor,
@@ -184,7 +199,7 @@ function getItems(validBidRequests, bidderRequest) {
           adUnitCode: req.adUnitCode,
           referrer: getReferrer(req, bidderRequest),
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'),
-          gpid: gpid,
+          gpid: gpid + '',
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
           publisher: req.params.publisher || '',
           transactionId: utils.deepAccess(req, 'ortb2Imp.ext.tid') || req.transactionId || '',
@@ -192,6 +207,20 @@ function getItems(validBidRequests, bidderRequest) {
         },
         tagid: req.params && req.params.tagid
       };
+    } else if (mediaTypes.native) {
+      const nativeOrtbRequest = req.nativeOrtbRequest;
+      if (nativeOrtbRequest) {
+        ret = {
+          id: id,
+          bidfloor: bidFloor,
+          native: {
+            request: JSON.stringify(nativeOrtbRequest),
+            ver: '1.2'
+          },
+          ext: ext,
+          tagid: req.params && req.params.tagid
+        };
+      }
     }
 
     return ret;
@@ -217,10 +246,12 @@ export function getCurrentTimeToUTCString() {
  * @return {Object}
  */
 function getParam(validBidRequests, bidderRequest) {
-  const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
   const eids = bidsUserIdAsEids;
+
+  const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid') ||
+    getEidUid(eids, 'pubcid.org') ||
+    getEidUid(eids, 'sharedid.org');
   const content = utils.deepAccess(bidderRequest, 'ortb2.site.content');
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
@@ -243,6 +274,7 @@ function getParam(validBidRequests, bidderRequest) {
   const keywords = getPageKeywords();
 
   if (items && items.length) {
+    const pmguid = getPmgUID();
     const c = {
       id: 'mgprebidjs_' + bidderRequestId,
       test: +isTest,
@@ -250,11 +282,7 @@ function getParam(validBidRequests, bidderRequest) {
       cur: ['USD'],
       device: {
         connectiontype: 0,
-        // ip: '98.61.5.0',
         js: 1,
-        // language: 'en',
-        // os: 'Microsoft Windows',
-        // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
         os: getDeviceOs(),
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language
@@ -267,7 +295,7 @@ function getParam(validBidRequests, bidderRequest) {
         content,
         cat,
         reqTimes,
-        pmguid: getPmgUID(),
+        pmguid: pmguid,
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
@@ -276,7 +304,7 @@ function getParam(validBidRequests, bidderRequest) {
         },
         device: {
           nbw: getConnectionDownLink(),
-        }
+        },
       },
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
@@ -306,6 +334,7 @@ function getParam(validBidRequests, bidderRequest) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -335,11 +364,24 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const payload = getParam(validBidRequests, bidderRequest);
 
+    const mediaTypeMap = {};
+    validBidRequests.forEach((req) => {
+      const bidId = getProperty(req, 'bidId');
+      if (req.mediaTypes && req.mediaTypes.banner) {
+        mediaTypeMap[bidId] = BANNER;
+      } else if (req.mediaTypes && req.mediaTypes.native) {
+        mediaTypeMap[bidId] = NATIVE;
+      } else {
+        mediaTypeMap[bidId] = BANNER;
+      }
+    });
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL + globals['token'],
       data: payloadString,
+      _mediaTypeMap: mediaTypeMap,
     };
   },
 
@@ -351,33 +393,45 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bids = getProperty(serverResponse, 'body', 'seatbid', 0, 'bid');
     const cur = getProperty(serverResponse, 'body', 'cur');
+    const mediaTypeMap = (bidRequest && bidRequest._mediaTypeMap) || {};
 
     const bidResponses = [];
     for (const bid of bids) {
       const impid = getProperty(bid, 'impid');
       if (impid) {
+        const mediaType = mediaTypeMap[impid] || BANNER;
         const bidResponse = {
-          requestId: getProperty(bid, 'impid'),
+          requestId: impid,
           cpm: getProperty(bid, 'price'),
-          width: getProperty(bid, 'w'),
-          height: getProperty(bid, 'h'),
           creativeId: getProperty(bid, 'crid'),
           dealId: '',
           currency: cur,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
-          // referrer: REFERER,
-          ad: getProperty(bid, 'adm'),
-          nurl: getProperty(bid, 'nurl')
-          //   adserverTargeting: {
-          //     granularityMultiplier: 0.1,
-          //     priceGranularity: 'pbHg',
-          //     pbMg: '0.01',
-          //   },
-          //   pbMg: '0.01',
-          //   granularityMultiplier: 0.1,
-          //   priceGranularity: 'pbHg',
+          nurl: getProperty(bid, 'nurl'),
+          meta: {
+            advertiserDomains: getProperty(bid, 'adomain') || []
+          }
         };
+
+        if (mediaType === NATIVE) {
+          bidResponse.mediaType = NATIVE;
+          try {
+            const admObj = JSON.parse(bid.adm);
+            const nativeObj = admObj.native || admObj;
+            bidResponse.native = { ortb: nativeObj };
+          } catch (e) {
+            continue;
+          }
+          bidResponse.width = 1;
+          bidResponse.height = 1;
+        } else {
+          bidResponse.mediaType = BANNER;
+          bidResponse.ad = getProperty(bid, 'adm');
+          bidResponse.width = getProperty(bid, 'w');
+          bidResponse.height = getProperty(bid, 'h');
+        }
+
         bidResponses.push(bidResponse);
       }
     }

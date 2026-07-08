@@ -28,10 +28,9 @@ const PROTOCOL_PATTERN = /^[a-z0-9.+-]+:/i;
 
 type Mode = 'every' | 'some';
 
-interface TeqBlazeBidParams {
-  placementId?: string | number;
-  endpointId?: string | number;
-}
+export type TeqBlazeBidParams =
+  | { placementId: string | number; endpointId?: string | number }
+  | { placementId?: string | number; endpointId: string | number };
 
 interface RequestBody {
   deviceWidth: number;
@@ -207,7 +206,7 @@ const checkIfObjectHasKey = (keys: string[], obj: Record<string, unknown>, mode:
   }
 
   return mode === 'every';
-}
+};
 
 export const isBidRequestValid =
     (keys: string[] = ['placementId', 'endpointId'], mode?: Mode) =>
@@ -310,7 +309,7 @@ export function interpretResponseBuilder({ addtlBidValidation = (_bid: any): boo
     }
 
     return response;
-  }
+  };
 }
 
 export const interpretResponse = interpretResponseBuilder();

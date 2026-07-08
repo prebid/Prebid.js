@@ -1,7 +1,7 @@
 import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
-import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
@@ -161,7 +161,7 @@ describe('relevadRtdProvider', function() {
         },
         'metrics': {},
         'defer': { 'promise': {} }
-      }
+      };
 
       const data = {
         segments: ['segment1', 'segment2'],

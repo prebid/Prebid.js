@@ -27,7 +27,7 @@ describe('Bitmedia Bid Adapter', function () {
         floor: 0.4
       })
     }, overrides);
-  }
+  };
 
   const createBidderRequest = (overrides = {}) => {
     return Object.assign({
@@ -53,7 +53,7 @@ describe('Bitmedia Bid Adapter', function () {
         }
       }
     }, overrides);
-  }
+  };
   // Helper function to stub storage for user ID
   const stubStorage = (sandbox, userIdInLocalStorage = null, userIdInCookies = null) => {
     sandbox.stub(STORAGE, 'hasLocalStorage').returns(true);
@@ -72,7 +72,7 @@ describe('Bitmedia Bid Adapter', function () {
         .withArgs(encodedFid)
         .returns(`{"fid":"user123"}`);
     }
-  }
+  };
 
   describe('isBidRequestValid', function () {
     let bid;

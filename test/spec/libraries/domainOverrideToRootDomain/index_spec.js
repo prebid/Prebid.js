@@ -29,23 +29,23 @@ describe('domainOverride', () => {
     });
   });
 
-  afterEach(() => sandbox.restore())
+  afterEach(() => sandbox.restore());
 
   it('test cookies include the module name', () => {
-    domain = 'greatpublisher.com'
-    rejectCookiesFor = 'greatpublisher.com'
+    domain = 'greatpublisher.com';
+    rejectCookiesFor = 'greatpublisher.com';
 
     // stub Date.now() to return a constant value
-    sandbox.stub(Date, 'now').returns(1234567890)
+    sandbox.stub(Date, 'now').returns(1234567890);
 
-    const randomName = `adapterV${(Math.random() * 1e8).toString(16)}`
-    const localDomainOverride = domainOverrideToRootDomain(storage, randomName)
+    const randomName = `adapterV${(Math.random() * 1e8).toString(16)}`;
+    const localDomainOverride = domainOverrideToRootDomain(storage, randomName);
 
     const time = Date.now();
     localDomainOverride();
 
-    sandbox.assert.callCount(setCookieStub, 2)
-    sandbox.assert.calledWith(setCookieStub, `_gd${time}_${randomName}`, '1', undefined, undefined, 'greatpublisher.com')
+    sandbox.assert.callCount(setCookieStub, 2);
+    sandbox.assert.calledWith(setCookieStub, `_gd${time}_${randomName}`, '1', undefined, undefined, 'greatpublisher.com');
   });
 
   it('will return the root domain when given a subdomain', () => {
@@ -57,21 +57,21 @@ describe('domainOverride', () => {
     ];
 
     test_domains.forEach((testDomain) => {
-      domain = testDomain
-      rejectCookiesFor = 'com'
+      domain = testDomain;
+      rejectCookiesFor = 'com';
       expect(domainOverride()).to.equal('greatpublisher.com');
     });
   });
 
   it(`If we can't set cookies on the root domain, we'll return the subdomain`, () => {
-    domain = 'subdomain.greatpublisher.com'
-    rejectCookiesFor = 'greatpublisher.com'
+    domain = 'subdomain.greatpublisher.com';
+    rejectCookiesFor = 'greatpublisher.com';
     expect(domainOverride()).to.equal('subdomain.greatpublisher.com');
   });
 
   it('Will return undefined if we can\'t set cookies on the root domain or the subdomain', () => {
-    domain = 'subdomain.greatpublisher.com'
-    rejectCookiesFor = 'subdomain.greatpublisher.com'
+    domain = 'subdomain.greatpublisher.com';
+    rejectCookiesFor = 'subdomain.greatpublisher.com';
     expect(domainOverride()).to.equal(undefined);
   });
 });

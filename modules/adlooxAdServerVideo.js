@@ -8,10 +8,13 @@
 
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
-import { ajax } from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { EVENTS } from '../src/constants.js';
 import { targeting } from '../src/targeting.js';
 import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+
+const ajax = qualifiedAjaxBuilder(MODULE_TYPE_ANALYTICS, 'adloox');
 
 const MODULE = 'adlooxAdserverVideo';
 
@@ -135,7 +138,7 @@ function VASTWrapper(options, callback) {
       const epoch = timestamp() - new Date().getTimezoneOffset() * 60 * 1000;
       const expires0 = options.bid.ttl * 1000 - (epoch - options.bid.responseTimestamp);
       const expires = Math.max(30 * 1000, expires0);
-      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)) }, expires);
+      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)); }, expires);
     }
 
     if (!result) {

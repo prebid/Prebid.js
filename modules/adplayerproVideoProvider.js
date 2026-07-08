@@ -120,7 +120,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
   }
 
   function setAdTagUrl(adTagUrl, options) {
-    setupPlayer(playerConfig, adTagUrl || options.adXml)
+    setupPlayer(playerConfig, adTagUrl || options.adXml);
   }
 
   function setAdXml(vastXml) {
@@ -165,7 +165,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     }
 
     const playerEventName = utils.getPlayerEvent(externalEventName);
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
     player && player.on(playerEventName, eventHandler);
     callbackStorage.storeCallback(playerEventName, eventHandler, callback);
   }
@@ -264,7 +264,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
 const adPlayerProSubmoduleFactory = function (config, sharedUtils) {
   const callbackStorage = callbackStorageFactory();
   return AdPlayerProProvider(config, window.playerPro, callbackStorage, utils);
-}
+};
 
 adPlayerProSubmoduleFactory.vendorCode = AD_PLAYER_PRO_VENDOR;
 submodule('video', adPlayerProSubmoduleFactory);
@@ -366,7 +366,7 @@ export const utils = {
     // INSTREAM must be set to “sound on” by default at player start
     return type === 'inStream' && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT;
   }
-}
+};
 
 /**
  * Tracks which functions are attached to events
@@ -453,5 +453,5 @@ export function callbackStorageFactory() {
     clearCallback,
     addAllCallbacks,
     clearStorage,
-  }
+  };
 }

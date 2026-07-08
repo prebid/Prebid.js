@@ -99,8 +99,8 @@ describe('AMX ID', () => {
       callback(spy);
 
       const [request] = server.requests;
-      expect(request.withCredentials).to.be.true
-      expect(request.requestHeaders['Content-Type']).to.match(/text\/plain/)
+      expect(request.withCredentials).to.be.true;
+      expect(request.requestHeaders['Content-Type']).to.match(/text\/plain/);
 
       const { search } = utils.parseUrl(request.url);
       expect(search.av).to.equal(amxIdSubmodule.version);
@@ -195,7 +195,7 @@ describe('AMX ID', () => {
       attachIdSystem(amxIdSubmodule);
     });
     it('amxId', () => {
-      const id = 'c4bcadb0-124f-4468-a91a-d3d44cf311c5'
+      const id = 'c4bcadb0-124f-4468-a91a-d3d44cf311c5';
       const userId = {
         amxId: id
       };
@@ -209,5 +209,5 @@ describe('AMX ID', () => {
         }]
       });
     });
-  })
-})
+  });
+});

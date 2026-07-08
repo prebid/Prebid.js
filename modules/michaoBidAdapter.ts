@@ -28,7 +28,7 @@ type MichaoBidParams = {
   placement: string;
   partner?: number;
   test?: boolean;
-}
+};
 
 declare module '../src/adUnits' {
   interface BidderParams {
