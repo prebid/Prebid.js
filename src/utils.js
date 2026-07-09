@@ -59,7 +59,7 @@ var getIncrementalInteger = (function () {
 
 // generate a random string (to be used as a dynamic JSONP callback)
 export function getUniqueIdentifierStr() {
-  return getIncrementalInteger() + Math.random().toString(16).substr(2);
+  return getIncrementalInteger() + Math.random().toString(16).substring(2);
 }
 
 /**
