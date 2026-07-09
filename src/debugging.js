@@ -9,8 +9,16 @@ import { MODULE_TYPE_PREBID } from './activities/modules.js';
 import * as utils from './utils.js';
 import { BANNER, NATIVE, VIDEO } from './mediaTypes.js';
 import { Renderer } from './Renderer.js';
+import { getCoreStorageManager } from './storageManager.js';
+import { hasPubcidOptout } from '../libraries/fpdUtils/pubcidOptout.js';
 
 import { getDistUrlBase, getGlobalVarName } from './buildOptions.js';
+
+const STORAGE = getCoreStorageManager('debugFpdValidation');
+
+export function getPubcidOptout() {
+  return hasPubcidOptout(STORAGE);
+}
 
 export const DEBUG_KEY = `__${getGlobalVarName()}_debugging__`;
 
@@ -48,7 +56,8 @@ export function debuggingModuleLoader({ alreadyInstalled = isDebuggingInstalled,
                 BANNER,
                 NATIVE,
                 VIDEO,
-                Renderer
+                Renderer,
+                getPubcidOptout,
               });
             }).then(resolve, reject);
           }

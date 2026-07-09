@@ -1,4 +1,5 @@
 import makeResponseResolvers from './responses.js';
+import { validateInterceptedBidFpd } from './fpdValidation.js';
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -215,6 +216,7 @@ export function makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer }) {
       }
       const [matches, remainder] = this.matchAll(bids, bidRequest);
       if (matches.length > 0) {
+        validateInterceptedBidFpd(bidRequest);
         const callDone = delayExecution(done, matches.length);
         matches.forEach((match) => {
           const mockResponse = match.rule.replace(match.bid, bidRequest);

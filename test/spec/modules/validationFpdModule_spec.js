@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import {
   filterArrayData,
   validateFpd
-} from 'modules/validationFpdModule/index.js';
+} from '../../../libraries/fpdUtils/validateFpd.js';
 
 describe('the first party data validation module', function () {
   const ortb2 = {

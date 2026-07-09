@@ -1,6 +1,7 @@
 import { makebidInterceptor } from './bidInterceptor.js';
 import { makePbsInterceptor } from './pbsInterceptor.js';
 import { addHooks, removeHooks } from './legacy.js';
+import { configureFpdValidation } from './fpdValidation.js';
 
 /**
  * @typedef {import('./debuggingModule.d.ts').DebugModuleConfiguration} DebugModuleConfiguration
@@ -126,7 +127,8 @@ export function makeBidderBidInterceptor({ utils }) {
   };
 }
 
-export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer }) {
+export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer, getPubcidOptout = () => false }) {
+  configureFpdValidation({ getOptout: getPubcidOptout });
   const BidInterceptor = makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer });
   bidInterceptor = new BidInterceptor({ logger });
   const pbsBidInterceptor = makePbsInterceptor({ createBid, utils });
