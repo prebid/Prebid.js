@@ -8,7 +8,7 @@ import * as debug from './utils/debug.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
-export * from './utils/objects.js'
+export * from './utils/objects.js';
 export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
 
 // many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
@@ -22,7 +22,6 @@ export const debugTurnedOn = debug.debugTurnedOn;
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
-  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   canAccessWindowTop,
@@ -124,10 +123,10 @@ export function sizesToSizeTuples(sizes) {
       .split(/\s*,\s*/)
       .map(sz => sz.match(/^(\d+)x(\d+)$/i))
       .filter(match => match)
-      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)]);
   } else if (Array.isArray(sizes)) {
     if (isValidGPTSingleSize(sizes)) {
-      return [sizes]
+      return [sizes];
     }
     return sizes.filter(isValidGPTSingleSize);
   }
@@ -144,7 +143,7 @@ export function parseSizesInput(sizeObj) {
 }
 
 export function sizeTupleToSizeString(size) {
-  return size[0] + 'x' + size[1]
+  return size[0] + 'x' + size[1];
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -163,7 +162,7 @@ export function sizeTupleToRtbSize(size) {
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return sizeTupleToRtbSize(singleSize)
+    return sizeTupleToRtbSize(singleSize);
   }
 }
 
@@ -220,13 +219,13 @@ export const createIframe = (() => {
     scrolling: 'no',
     frameBorder: '0',
     allowtransparency: 'true'
-  }
+  };
   return (doc, attrs, style = {}) => {
     const f = doc.createElement('iframe');
     Object.assign(f, Object.assign({}, DEFAULTS, attrs));
     Object.assign(f.style, style);
     return f;
-  }
+  };
 })();
 
 export function createInvisibleIframe() {
@@ -299,7 +298,7 @@ export function contains(a, obj) {
  */
 export function _map(object, callback) {
   if (isFn(object?.map)) return object.map(callback);
-  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object));
 }
 
 /*
@@ -438,10 +437,16 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
 export function insertUserSyncIframe(url, done, timeout) {
-  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
-  const div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  const iframe = div.firstChild;
+  if (!url) return;
+  const iframe = createIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+    style: {
+      width: '0px',
+      height: '0px',
+      display: 'none'
+    }
+  });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
@@ -473,37 +478,8 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
 export function encodeMacroURI(url) {
   const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
   return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
-  }, encodeURI(url))
-}
-
-/**
- * Creates a snippet of Iframe HTML that retrieves the specified `url`
- * @param  {string} url plain URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
- * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
- * @return {string}     HTML snippet that contains the iframe src = set to `url`
- */
-export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') {
-  if (!url) {
-    return '';
-  }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
-  if (sandbox) {
-    sandbox = `sandbox="${sandbox}"`;
-  }
-
-  return `<iframe ${sandbox} id="${getUniqueIdentifierStr()}"
-      frameborder="0"
-      allowtransparency="true"
-      marginheight="0" marginwidth="0"
-      width="0" hspace="0" vspace="0" height="0"
-      style="height:0px;width:0px;display:none;"
-      scrolling="no"
-      src="${url}">
-    </iframe>`;
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro);
+  }, encodeURI(url));
 }
 
 export function uniques(value, index, arry) {
@@ -519,7 +495,7 @@ export function getBidRequest(id, bidderRequests) {
     return;
   }
   return bidderRequests.flatMap(br => br.bids)
-    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id))
+    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id));
 }
 
 export function getValue(obj, key) {
@@ -546,7 +522,7 @@ export function isApnGetTagDefined() {
 
 export const sortByHighestCpm = (a, b) => {
   return b.cpm - a.cpm;
-}
+};
 
 /**
  * Fisher–Yates shuffle
@@ -629,7 +605,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, { AUCTION_PRICE: cpm })
+  return replaceMacros(str, { AUCTION_PRICE: cpm });
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -716,7 +692,7 @@ export function delayExecution(func, numRequiredCalls) {
     if (numCalls === numRequiredCalls) {
       func.apply(this, arguments);
     }
-  }
+  };
 }
 
 /**
@@ -803,7 +779,7 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'));
 }
 
 /**
@@ -1078,7 +1054,7 @@ export function memoize(fn, key = function (arg) { return arg; }) {
       cache.set(cacheKey, fn.apply(this, arguments));
     }
     return cache.get(cacheKey);
-  }
+  };
   memoized.clear = cache.clear.bind(cache);
   return memoized;
 }
@@ -1116,7 +1092,7 @@ export function convertObjectToArray(obj) {
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {
-  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v))
+  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v));
 }
 
 /**

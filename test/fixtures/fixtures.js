@@ -26,7 +26,7 @@ function convertTargetingsFromOldToNew(targetings) {
     if (!replaced) {
       newTargetings[currentKey] = targetings[currentKey];
     }
-  })
+  });
   return newTargetings;
 }
 
@@ -843,7 +843,7 @@ export function getTwinAdUnits() {
         },
       ]
     }
-  ]
+  ];
 }
 
 export function getBidResponsesFromAPI() {

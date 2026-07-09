@@ -4,6 +4,7 @@ import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
+import * as refererDetection from 'src/refererDetection.js';
 
 let events = require('src/events');
 
@@ -13,6 +14,7 @@ describe('AdPlus analytics adapter', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     sandbox.spy(console, 'log');
+    sandbox.stub(refererDetection, 'getRefererInfo').returns(mockRefererInfo);
 
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);
@@ -26,6 +28,12 @@ describe('AdPlus analytics adapter', function () {
 
   const auctionId = 'test-auction-123';
 
+  const mockRefererInfo = {
+    page: 'https://test-site.com/page.html',
+    domain: 'test-site.com',
+    ref: 'https://google.com'
+  };
+
   const bidsReceived = [
     {
       bidderCode: 'adplus',
@@ -37,9 +45,17 @@ describe('AdPlus analytics adapter', function () {
       width: 300,
       height: 250,
       creativeId: 'crea-1',
+      originalCpm: 5.5,
+      originalCurrency: 'EUR',
       timeToRespond: 120,
       netRevenue: true,
-      dealId: null
+      dealId: null,
+      adId: 'ad-id-1',
+      adUnitId: 'ad-unit-id-1',
+      requestId: 'request-id-1',
+      instl: 0,
+      mediaType: 'banner',
+      transactionId: 'transaction-id-1'
     },
     {
       bidderCode: 'adplus',
@@ -51,9 +67,17 @@ describe('AdPlus analytics adapter', function () {
       width: 728,
       height: 90,
       creativeId: 'crea-2',
+      originalCpm: 7.5,
+      originalCurrency: 'EUR',
       timeToRespond: 110,
       netRevenue: true,
-      dealId: 'deal123'
+      dealId: 'deal123',
+      adId: 'ad-id-2',
+      adUnitId: 'ad-unit-id-2',
+      requestId: 'request-id-2',
+      instl: 0,
+      mediaType: 'banner',
+      transactionId: 'transaction-id-2'
     }
   ];
 
@@ -67,9 +91,17 @@ describe('AdPlus analytics adapter', function () {
     width: 300,
     height: 250,
     creativeId: 'crea-1',
+    originalCpm: 5.5,
+    originalCurrency: 'EUR',
     timeToRespond: 120,
     netRevenue: true,
-    dealId: null
+    dealId: null,
+    adId: 'ad-id-1',
+    adUnitId: 'ad-unit-id-1',
+    requestId: 'request-id-1',
+    instl: 0,
+    mediaType: 'banner',
+    transactionId: 'transaction-id-1'
   };
 
   const bidWon2 = {
@@ -82,9 +114,17 @@ describe('AdPlus analytics adapter', function () {
     width: 728,
     height: 90,
     creativeId: 'crea-2',
+    originalCpm: 7.5,
+    originalCurrency: 'EUR',
     timeToRespond: 110,
     netRevenue: true,
-    dealId: 'deal123'
+    dealId: 'deal123',
+    adId: 'ad-id-2',
+    adUnitId: 'ad-unit-id-2',
+    requestId: 'request-id-2',
+    instl: 0,
+    mediaType: 'banner',
+    transactionId: 'transaction-id-2'
   };
 
   it('should store bids on AUCTION_END and not send immediately', function () {
@@ -103,8 +143,20 @@ describe('AdPlus analytics adapter', function () {
       adUnitCode: 'adunit-1',
       bidder: 'adplus',
       cpm: 5,
-      currency: 'USD'
+      currency: 'USD',
+      originalCpm: 5.5,
+      originalCurrency: 'EUR',
+      adId: 'ad-id-1',
+      adUnitId: 'ad-unit-id-1',
+      requestId: 'request-id-1',
+      instl: 0,
+      mediaType: 'banner',
+      transactionId: 'transaction-id-1'
     });
+    expect(storedData['adunit-1'][0].adId).to.be.a('string');
+    expect(storedData['adunit-1'][0].adUnitId).to.be.a('string');
+    expect(storedData['adunit-1'][0].requestId).to.be.a('string');
+    expect(storedData['adunit-1'][0].transactionId).to.be.a('string');
   });
 
   it('should batch BID_WON events and send after delay with retries', function (done) {
@@ -149,11 +201,44 @@ describe('AdPlus analytics adapter', function () {
     const payload1 = JSON.parse(server.requests[0].requestBody);
     const payload2 = JSON.parse(server.requests[3].requestBody);
 
+    expect(payload1).to.include({
+      pageUrl: 'https://test-site.com/page.html',
+      domain: 'test-site.com',
+      referrer: 'https://google.com'
+    });
+
+    expect(payload2).to.include({
+      pageUrl: 'https://test-site.com/page.html',
+      domain: 'test-site.com',
+      referrer: 'https://google.com'
+    });
+
     expect(payload1.winningBid).to.include({
       auctionId,
       adUnitCode: 'adunit-1',
       bidder: 'adplus',
       cpm: 5,
+      originalCpm: 5.5,
+      originalCurrency: 'EUR',
+      adId: 'ad-id-1',
+      adUnitId: 'ad-unit-id-1',
+      requestId: 'request-id-1',
+      instl: 0,
+      mediaType: 'banner',
+      transactionId: 'transaction-id-1'
+    });
+    expect(payload1.winningBid.adId).to.be.a('string');
+    expect(payload1.winningBid.adUnitId).to.be.a('string');
+    expect(payload1.winningBid.requestId).to.be.a('string');
+    expect(payload1.winningBid.transactionId).to.be.a('string');
+    expect(payload1.allBids[0]).to.include({
+      adId: 'ad-id-1',
+      adUnitId: 'ad-unit-id-1',
+      requestId: 'request-id-1',
+      originalCpm: 5.5,
+      originalCurrency: 'EUR',
+      mediaType: 'banner',
+      transactionId: 'transaction-id-1'
     });
 
     expect(payload2.winningBid).to.include({
@@ -161,6 +246,23 @@ describe('AdPlus analytics adapter', function () {
       adUnitCode: 'adunit-2',
       bidder: 'adplus',
       cpm: 7,
+      originalCpm: 7.5,
+      originalCurrency: 'EUR',
+      adId: 'ad-id-2',
+      adUnitId: 'ad-unit-id-2',
+      requestId: 'request-id-2',
+      instl: 0,
+      mediaType: 'banner',
+      transactionId: 'transaction-id-2'
+    });
+    expect(payload2.allBids[0]).to.include({
+      adId: 'ad-id-2',
+      adUnitId: 'ad-unit-id-2',
+      requestId: 'request-id-2',
+      originalCpm: 7.5,
+      originalCurrency: 'EUR',
+      mediaType: 'banner',
+      transactionId: 'transaction-id-2'
     });
 
     done();
@@ -172,5 +274,22 @@ describe('AdPlus analytics adapter', function () {
 
     // No ajax call since no auctionData
     expect(server.requests.length).to.equal(0);
+  });
+
+  it('should not fall back to the page URL when referrer is unavailable', function () {
+    refererDetection.getRefererInfo.restore();
+    sandbox.stub(refererDetection, 'getRefererInfo').returns({
+      page: 'https://test-site.com/page.html',
+      domain: 'test-site.com',
+      ref: ''
+    });
+
+    events.emit(EVENTS.AUCTION_END, { auctionId, bidsReceived });
+    events.emit(EVENTS.BID_WON, bidWon1);
+
+    clock.tick(0);
+
+    const payload = JSON.parse(server.requests[0].requestBody);
+    expect(payload.referrer).to.not.equal(payload.pageUrl);
   });
 });

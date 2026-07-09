@@ -59,12 +59,12 @@ export function getReplier(ev) {
 function ensureAdId(adId, reply) {
   return function (data, ...args) {
     return reply(Object.assign({}, data, { adId }), ...args);
-  }
+  };
 }
 
 export function receiveMessage(ev, cb) {
   var key = ev.message ? 'message' : 'data';
-  var data = {};
+  var data;
   try {
     data = JSON.parse(ev[key]);
   } catch (e) {
@@ -83,7 +83,7 @@ function getResizer(adId, bidResponse) {
   // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
   return function (width, height) {
     resizeRemoteCreative({ ...bidResponse, width, height, adId });
-  }
+  };
 }
 function handleRenderRequest(reply, message, bidResponse) {
   handleRender({
@@ -158,13 +158,13 @@ export function resizeAnchor(ins, width, height) {
             ins.style[dimension] = getDimension(newValue);
             done = true;
           }
-        })
+        });
       if (done || (tryCounter-- === 0)) {
         clearInterval(resizer);
-        done ? resolve() : reject(new Error('Could not resize anchor'))
+        done ? resolve() : reject(new Error('Could not resize anchor'));
       }
-    }, 50)
-  })
+    }, 50);
+  });
 }
 
 export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, height }) {
@@ -175,7 +175,7 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
   function resize(element) {
     if (element) {
       const elementStyle = element.style;
-      elementStyle.width = getDimension(width)
+      elementStyle.width = getDimension(width);
       elementStyle.height = getDimension(height);
     } else {
       logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);

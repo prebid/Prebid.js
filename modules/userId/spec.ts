@@ -91,7 +91,7 @@ export type ProviderResponse = {
    * If provided, will be invoked at a later point.
    */
   callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
-}
+};
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
 
@@ -125,7 +125,7 @@ type EIDConfig<K extends keyof UserId> = {
    * Returns an object to use for eids.uid.ext
    */
   getUidExt?: (id: IdValue<K>) => Ext;
-}
+};
 
 type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
 
@@ -179,7 +179,7 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   eids?: {
     [K in keyof UserId]?: K extends string ? EIDConfig<K> | EIDFn<K, P> : never;
   }
-}
+};
 
 declare module '../../src/hook' {
   interface Submodules {

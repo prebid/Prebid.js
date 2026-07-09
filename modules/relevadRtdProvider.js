@@ -39,7 +39,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
   moduleConfig.params = moduleConfig.params || {};
   moduleConfig.params.partnerid = moduleConfig.params.partnerid ? moduleConfig.params.partnerid : 1;
 
-  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params] })]; });
+  const adunitInfo = reqBidsConfigObj.adUnits.map(adunit => { return [adunit.code, adunit.bids.map(bid => { return [bid.bidder, bid.params]; })]; });
   serverData.page = moduleConfig.params.actualUrl || getRefererInfo().page || '';
   const url = (RELEVAD_API_DOMAIN + '/apis/rweb2/' +
                 '?url=' + encodeURIComponent(serverData.page) +
@@ -88,7 +88,7 @@ export function setGlobalOrtb2(ortb2, rtdData) {
     const addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(addOrtb2) && mergeDeep(ortb2, addOrtb2);
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
@@ -142,7 +142,7 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
     bidderOrtbFragment[bidder] = bidderOrtbFragment[bidder] || {};
     mergeDeep(bidderOrtbFragment[bidder], addOrtb2);
   } catch (e) {
-    logError(e)
+    logError(e);
   }
 }
 
@@ -330,7 +330,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     cid: encodeURIComponent(config.params?.partnerid || ''),
     gdpra: encodeURIComponent(userConsent?.gdpr?.gdprApplies || ''),
     gdprc: encodeURIComponent(userConsent?.gdpr?.consentString || ''),
-  }
+  };
   if (!config.dryrun) {
     data.page = serverData?.page || config?.params?.actualUrl || getRefererInfo().page || '';
   }

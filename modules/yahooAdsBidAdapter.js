@@ -12,7 +12,7 @@ const BIDDER_ALIASES = [
   { code: 'yahoossp', gvlid: GVLID },
   { code: 'yahooAdvertising', gvlid: GVLID }
 ];
-const ADAPTER_VERSION = '2.1.0';
+const ADAPTER_VERSION = '2.2.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -66,7 +66,7 @@ function getSize(size) {
   return {
     w: parseInt(size[0]),
     h: parseInt(size[1])
-  }
+  };
 }
 
 function transformSizes(sizes) {
@@ -126,7 +126,7 @@ function updateConsentQueryParams(url, consentData) {
     'gpp': consentData.gpp ? consentData.gpp.gppString : '',
     'gpp_sid': consentData.gpp && Array.isArray(consentData.gpp.applicableSections)
       ? consentData.gpp.applicableSections.join(',') : ''
-  }
+  };
 
   const existingUrl = new URL(url);
   const params = existingUrl.searchParams;
@@ -256,7 +256,7 @@ function getTtl(bidderRequest) {
 };
 
 function validateTTL(ttl) {
-  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
+  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL;
 };
 
 function isNotEmptyStr(value) {
@@ -320,7 +320,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
     if (getPubIdMode(bid) === true) {
       outBoundBidRequest.site.publisher = {
         id: bid.params.pubId
-      }
+      };
       if (deepAccess(bid, 'params.bidOverride.site.id') || deepAccess(bid, 'params.siteId')) {
         outBoundBidRequest.site.id = deepAccess(bid, 'params.bidOverride.site.id') || bid.params.siteId;
       }
@@ -411,7 +411,7 @@ function appendImpObject(bid, openRtbObject) {
         protocols: deepAccess(bid, 'params.bidOverride.imp.video.protocols') || bid.mediaTypes.video.protocols || [2, 5],
         startdelay: deepAccess(bid, 'params.bidOverride.imp.video.startdelay') || bid.mediaTypes.video.startdelay || 0,
         rewarded: deepAccess(bid, 'params.bidOverride.imp.video.rewarded') || undefined
-      }
+      };
 
       // Add video pod fields only if they have values (OpenRTB 2.6)
       const podid = deepAccess(bid, 'params.bidOverride.imp.video.podid') || bid.mediaTypes.video.podid;
@@ -459,7 +459,7 @@ function appendImpObject(bid, openRtbObject) {
     if (getPubIdMode(bid) === false) {
       impObject.tagid = bid.params.pos;
     } else if (deepAccess(bid, 'params.placementId')) {
-      impObject.tagid = bid.params.placementId
+      impObject.tagid = bid.params.placementId;
     };
 
     openRtbObject.imp.push(impObject);
@@ -671,7 +671,7 @@ function createRenderer(bidderRequest, bidResponse) {
     url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
     adUnitCode: bidderRequest.adUnitCode
-  })
+  });
 
   try {
     renderer.setRender(function(bidResponse) {
@@ -716,10 +716,7 @@ export const spec = {
     };
 
     const requestOptions = {
-      contentType: 'application/json',
-      customHeaders: {
-        'x-openrtb-version': '2.6'
-      }
+      contentType: 'text/plain'
     };
 
     requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);

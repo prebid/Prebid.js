@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -37,7 +37,7 @@ function buildRequests(bidRequests, bidderRequest) {
     options: {
       withCredentials: false
     }
-  }]
+  }];
 }
 
 function interpretResponse(response, request) {
@@ -47,7 +47,7 @@ function interpretResponse(response, request) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  const syncs = []
+  const syncs = [];
 
   let syncParams = '';
   if (gdprConsent) {

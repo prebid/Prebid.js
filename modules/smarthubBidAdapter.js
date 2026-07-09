@@ -14,7 +14,9 @@ const DEFAULT_REGION = 'us_east';
 
 const SYNC_URLS = {
   '1': 'https://us.shb-sync.com',
+  '2': 'https://us2.shb-sync.com',
   '4': 'https://us4.shb-sync.com',
+  '13': 'https://wls-stckp.shb-sync.com'
 };
 
 const ALIASES = {
@@ -31,6 +33,8 @@ const ALIASES = {
   'amcom': { area: '1', pid: '397' },
   'adastra': { area: '1', pid: '33' },
   'radiantfusion': { area: '1', pid: '455' },
+  'stackup': { area: '13', pid: '469' },
+  'adnex': { area: '2', pid: '359' }
 };
 
 const BASE_URL_TEMPLATES = {
@@ -77,6 +81,12 @@ const PARTNER_ENDPOINTS = {
   },
   radiantfusion: {
     us_east: 'https://radiantfusion-prebid.attekmi.co/pbjs',
+  },
+  stackup: {
+    us_east: 'https://stackup-prebid.attekmi.co/pbjs',
+  },
+  adnex: {
+    us_east: 'https://adnex-prebid.attekmi.co/pbjs'
   }
 };
 
@@ -134,7 +144,7 @@ const getPlacementReqData = buildPlacementProcessingFunction({
       region: normalizeRegion(region)
     });
   }
-})
+});
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const bidsByKey = {};
@@ -151,7 +161,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
   return Object.values(bidsByKey).map((bids) => {
     const partner = getPartnerName(bids[0]);
-    const region = normalizeRegion(bids[0].params.region);
+    const region = normalizeRegion(bids[0].params?.region);
     const { seat, token } = bids[0].params || {};
     const endpoint = resolveEndpoint({ partner, region, seat, token });
 
@@ -171,7 +181,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 const baseInterpretResponse = interpretResponseBuilder({
   addtlBidValidation(bid) {
-    return bid.hasOwnProperty('netRevenue');
+    return Object.prototype.hasOwnProperty.call(bid, 'netRevenue');
   }
 });
 
@@ -195,7 +205,8 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   let res = serverResponses?.find?.(r => r.partner && r.area && r.pid);
 
   if (!res) {
-    res = ALIASES[DEFAULT_PROVIDER];
+    const fallbackAlias = ALIASES[DEFAULT_PROVIDER] || { area: '1', pid: '300' };
+    res = { partner: DEFAULT_PROVIDER, area: fallbackAlias.area, pid: fallbackAlias.pid };
   }
 
   const { area, pid } = res;

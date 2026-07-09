@@ -4,7 +4,7 @@ export function simpleCompare(a, b) {
 }
 
 export function keyCompare(key = (item) => item) {
-  return (a, b) => simpleCompare(key(a), key(b))
+  return (a, b) => simpleCompare(key(a), key(b));
 }
 
 export function reverseCompare(compare = simpleCompare) {
@@ -18,7 +18,7 @@ export function tiebreakCompare(...compares) {
       if (val !== 0) return val;
     }
     return 0;
-  }
+  };
 }
 
 export function minimum(compare = simpleCompare) {
@@ -33,7 +33,7 @@ const cpmCompare = keyCompare((bid) => bid.cpm);
 const timestampCompare = keyCompare((bid) => bid.responseTimestamp);
 
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
-export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))))
+export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))));
 
 const bidDesirabilityCompare = keyCompare((bid) => bid.desirability);
 
@@ -45,8 +45,8 @@ export const getHighestDesirability = maximum(
 
 // This function will get the oldest highest cpm value bid, in case of tie it will return the bid which came in first
 // Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
-export const getOldestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, reverseCompare(timestampCompare)))
+export const getOldestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, reverseCompare(timestampCompare)));
 
 // This function will get the latest highest cpm value bid, in case of tie it will return the bid which came in last
 // Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
-export const getLatestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, timestampCompare))
+export const getLatestHighestCpmBid = maximum(tiebreakCompare(cpmCompare, timestampCompare));

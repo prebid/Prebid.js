@@ -38,7 +38,7 @@ describe('wurflRtdProvider', function () {
           cap_indices: [12, 13, 14, 19, 20, 21, 22]
         }
       }
-    }
+    };
     const WURFL = {
       advertised_browser: 'Chrome Mobile',
       advertised_browser_version: '130.0.0.0',
@@ -77,15 +77,14 @@ describe('wurflRtdProvider', function () {
 
     // expected analytics values
     const expectedStatsURL = 'https://stats.prebid.wurflcloud.com/v2/prebid/stats';
-    const expectedData = JSON.stringify({ bidders: ['bidder1', 'bidder2'] });
 
     let sandbox;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       window.WURFLPromises = {
-        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
-        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
+        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
+        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
       };
       // Initialize module with clean state for each test
       wurflSubmodule.init({ params: {} });
@@ -2355,9 +2354,6 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
         });
-
-        // Import the WurflLCEDevice to stub it
-        const wurflRtdProvider = require('modules/wurflRtdProvider.js');
 
         const callback = () => {
           const device = reqBidsConfigObj.ortb2Fragments.global.device;

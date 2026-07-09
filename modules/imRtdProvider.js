@@ -61,7 +61,7 @@ export function getBidderFunction(bidderName) {
           `${dctr ? dctr + '|' : ''}im_segments=${segments.join(',')}`
         );
       }
-      return bid
+      return bid;
     },
     fluct: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
@@ -72,19 +72,19 @@ export function getBidderFunction(bidderName) {
           segments
         );
       }
-      return bid
+      return bid;
     }
-  }
+  };
   return biddersFunction[bidderName] || null;
 }
 
 export function getCustomBidderFunction(config, bidder) {
-  const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`)
+  const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`);
 
   if (overwriteFn && isFn(overwriteFn)) {
-    return overwriteFn
+    return overwriteFn;
   } else {
-    return null
+    return null;
   }
 }
 
@@ -105,7 +105,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
     deepSetValue(ortb2, 'user.ext.data.im_uid', data.im_uid);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
-      setKeyValue('im_segments', segments)
+      setKeyValue('im_segments', segments);
     }
   }
 
@@ -118,7 +118,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
       } else if (bidderFunction) {
         bidderFunction(bid, data, moduleConfig);
       }
-    })
+    });
   });
 }
 
@@ -216,7 +216,7 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
       }
       logError('unable to get Intimate Merger segment data');
     }
-  }
+  };
 }
 
 /**

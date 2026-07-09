@@ -159,25 +159,25 @@ const converter = ortbConverter({
 /* Metrics */
 const sendMetrics = (data, sampleRate = 0.0001) => {
   try {
-    if (Math.random() > sampleRate) return
-    const url = IS_LOCAL_MODE ? URL_METRICS_LOCAL : URL_METRICS
+    if (Math.random() > sampleRate) return;
+    const url = IS_LOCAL_MODE ? URL_METRICS_LOCAL : URL_METRICS;
     const payload = {
       ...data,
       source: 'goldbach_pbjs',
       projected: 1 / sampleRate,
       ts: Date.now()
-    }
+    };
     dep.ajax(url, null, JSON.stringify(payload), {
       withCredentials: false,
       method: 'POST',
       crossOrigin: true,
       contentType: 'text/plain',
       keepalive: true,
-    })
+    });
   } catch (error) {
     // Silent catch
   }
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -201,7 +201,7 @@ export const spec = {
   },
   interpretResponse: function (ortbResponse, request) {
     const bids = converter.fromORTB({ response: ortbResponse.body, request: request.data }).bids;
-    return bids
+    return bids;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
@@ -305,6 +305,6 @@ export const spec = {
     };
     sendMetrics(payload, METRICS_SAMPLE_RATE_REGULAR);
   },
-}
+};
 
 registerBidder(spec);

@@ -73,7 +73,7 @@ const eidsProvidersMap = {
   'sharedid': 'pubcid.org',
   'publishercommonid': 'pubcid.org',
   'pubcid.org': 'pubcid.org',
-}
+};
 
 // params
 let params = {

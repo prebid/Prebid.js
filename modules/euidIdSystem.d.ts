@@ -60,7 +60,7 @@ export type EuidIdSystemParams = {
    * Hashed, normalized user phone for CSTG mode. Only one DII parameter may be set.
    */
   phoneHash?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -76,4 +76,4 @@ declare module './userId/spec' {
   }
 }
 
-export {}
+export {};

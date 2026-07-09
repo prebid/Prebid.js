@@ -57,7 +57,7 @@ describe('Piano DMP Analytics Adapter', () => {
         const [method, params] = callQueue.filter(item => item[1].eventType === event)[0];
         expect(method).to.equal('prebid');
         expect(params.params).to.deep.equal(args);
-      })
+      });
     });
   });
 });

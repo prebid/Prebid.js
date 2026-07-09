@@ -14,7 +14,7 @@ runs:
   steps:
     - name: Restore deb
       id: deb-restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: "${{ runner.temp }}/${{ inputs.name }}"
         key: ${{ inputs.url }}
@@ -25,7 +25,7 @@ runs:
         wget --no-verbose "${{ inputs.url }}" -O "${{ runner.temp }}/${{ inputs.name }}"
     - name: Cache deb
       if: ${{ steps.deb-restore.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: "${{ runner.temp }}/${{ inputs.name }}"
         key: ${{ inputs.url }}

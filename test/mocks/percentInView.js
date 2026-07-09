@@ -13,7 +13,7 @@ dep.getElement = (el) => {
   } else {
     return orig.call(dep, el);
   }
-}
+};
 
 export function enable() {
   enabled = true;

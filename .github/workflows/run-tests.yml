@@ -11,13 +11,9 @@ on:
         required: false
         type: number
         default: 1
-      build-cmd:
-        description: Build command, run once
-        required: false
-        type: string
       built-key:
         description: Artifact name for built source
-        required: false
+        required: true
         type: string
       test-cmd:
         description: Test command, run once per chunk
@@ -52,11 +48,6 @@ on:
         description: Chrome version to install via @puppeteer/browsers
         type: string
         required: false
-      run-npm-install:
-        description: Run npm install before tests
-        type: boolean
-        required: false
-        default: false
       install-deb:
         description: URL to deb to install before tests
         type: string
@@ -91,14 +82,8 @@ jobs:
           echo 'id='"$(uuidgen)" >> out;
           cat out >> "$GITHUB_OUTPUT";
         
-  build:
-    uses: ./.github/workflows/build.yml
-    with:
-      build-cmd: ${{ !inputs.built-key && inputs.build-cmd || '' }}
-      source-key: ${{ inputs.built-key || 'source' }}
-
   run-tests:
-    needs: [define, build]
+    needs: [define]
     strategy:
       fail-fast: false
       max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
@@ -125,12 +110,12 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.built-key }}
+          name: ${{ inputs.built-key }}
 
       - name: Install safari
         if: ${{ inputs.install-safari }}
@@ -155,11 +140,6 @@ jobs:
         uses: ./.github/actions/install-deb
         with:
           url: ${{ inputs.install-deb }}
-
-      - name: Run npm install
-        if: ${{ inputs.run-npm-install }}
-        run: |
-          npm install
 
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
@@ -214,19 +194,19 @@ jobs:
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
-    needs: [define, build, run-tests]
+    needs: [define, run-tests]
     name: 'Collect coverage results'
     runs-on: ubuntu-latest
     outputs:
       coverage: ${{ steps.save.outputs.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.built-key }}
+          name: ${{ inputs.built-key }}
 
       - name: Download coverage results
         uses: actions/download-artifact@v8

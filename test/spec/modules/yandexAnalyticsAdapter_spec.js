@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import yandexAnalytics, { EVENTS_TO_TRACK, PBJS_INIT_EVENT_NAME } from 'modules/yandexAnalyticsAdapter.js';
-import * as log from '../../../src/utils.js'
+import * as log from '../../../src/utils.js';
 import * as events from '../../../src/events.js';
 import * as globalUtils from '../../../src/prebidGlobal.js';
 
@@ -18,7 +18,7 @@ describe('Yandex analytics adapter testing', () => {
     data: {
       version: prebidVersion,
     },
-  }
+  };
 
   beforeEach(() => {
     yandexAnalytics.counters = {};
