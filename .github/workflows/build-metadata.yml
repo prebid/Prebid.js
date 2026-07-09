@@ -59,7 +59,7 @@ jobs:
         run:  |
           git fetch origin ${{ github.event.pull_request.base.ref }}
           base=$(git merge-base HEAD "origin/${{ github.event.pull_request.base.ref }}")          
-          git diff --name-only $base..HEAD  > ${{runner.temp}}/changed_files.txt || true
+          git diff --name-only $base..HEAD  > ${{runner.temp}}/changed_files.txt
           echo "base=$base" >> $GITHUB_OUTPUT
       - name: Restore from cache
         id: restore
