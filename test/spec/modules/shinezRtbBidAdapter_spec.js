@@ -20,7 +20,6 @@ import { useFakeTimers } from 'sinon';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import * as utils from 'src/utils.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
