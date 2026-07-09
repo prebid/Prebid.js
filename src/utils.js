@@ -1070,8 +1070,10 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
   if (acceptableUnits.indexOf(timeUnit) < 0) {
     return Date.now();
   }
-  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
-  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+  const millisecondsOffset = timeUnit === 'm'
+    ? timeValue * 60 * 1000
+    : timeValue * 24 * 60 * 60 * 1000;
+  return Date.now() + (timeValue && timeValue > 0 ? millisecondsOffset : 0);
 }
 
 /**
