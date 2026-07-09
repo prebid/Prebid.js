@@ -138,7 +138,6 @@ describe('adapterManager tests', function () {
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
-      adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
     });
 
     afterEach(function () {
