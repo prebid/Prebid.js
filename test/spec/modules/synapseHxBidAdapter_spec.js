@@ -1,0 +1,485 @@
+import { expect } from 'chai';
+import { spec } from 'modules/synapseHxBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { deepClone } from 'src/utils.js';
+
+const VALID_PARAMS = {
+  tenantId: 'tenant_id',
+  adUnitId: 'ad_unit_id'
+};
+
+const DEFAULT_REQUEST_DATA = {
+  adUnitCode: 'test-div',
+  auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+  bidId: '32d4d86b4f22ed',
+  bidder: 'synapsehx',
+  bidderRequestId: '1bbb7854dfa0d8',
+  mediaTypes: {
+    banner: {
+      sizes: [
+        [300, 250],
+        [300, 600]
+      ]
+    }
+  },
+  params: VALID_PARAMS,
+  src: 'client',
+  transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
+};
+
+const VALID_MEDIA_TYPES_REQUESTS = {
+  [BANNER]: [{
+    ...DEFAULT_REQUEST_DATA,
+    mediaTypes: {
+      [BANNER]: {
+        sizes: [
+          [300, 250],
+          [300, 600]
+        ]
+      }
+    },
+  }],
+  [VIDEO]: [{
+    ...DEFAULT_REQUEST_DATA,
+    mediaTypes: {
+      [VIDEO]: {
+        minduration: 3,
+        maxduration: 43,
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+        protocols: [2]
+      }
+    },
+  }]
+};
+
+const DEFAULT_BIDDER_REQUEST = {
+  refererInfo: { referer: 'https://example.com' },
+};
+
+const VALID_BIDDER_REQUEST = {
+  auctionId: '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
+  bidderCode: 'synapsehx',
+  bidderRequestId: '1bbb7854dfa0d8',
+  bids: [
+    {
+      params: VALID_PARAMS,
+    }
+  ],
+  refererInfo: {
+    page: 'test-page',
+    domain: 'test-domain',
+    ref: 'test-referer'
+  },
+};
+
+const DEFAULT_BID_RESPONSE_DATA = {
+  'id': '29596384-e502-4d3c-a47d-4f16b16bd554',
+  'impid': '32d4d86b4f22ed',
+  'price': 0.18417903447819028,
+  'adid': '2:64:162:1001',
+  'adomain': [
+    'synapsehx'
+  ],
+  'nurl': 'https://synapsehx/v1',
+  'lurl': 'https://synapsehx/v1',
+  'iurl': 'https://synapsehx/v1',
+  'cid': '1982494692188097775',
+  'crid': '5889732975267688811',
+  'cat': ['IAB1-1', 'IAB1-6'],
+  'w': 300,
+  'h': 250,
+};
+
+const EXT_SYNC = {
+  synapsehx: {
+    sync: {
+      image: [
+        'https://sync.hx.compasonline.com/pbserver/image/1',
+        'https://sync.hx.compasonline.com/pbserver/image/2',
+        'https://sync.hx.compasonline.com/pbserver/image/3',
+      ],
+      iframe: 'https://sync.hx.compasonline.com/pbserver/iframe'
+    }
+  }
+};
+
+const SERVER_RESPONSE_BANNER = {
+  'id': '5d997535-e900-4a6b-9cb7-737e402d5cfa',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          ...DEFAULT_BID_RESPONSE_DATA,
+          'mtype': 1,
+          'adm': 'banner.img',
+          'ext': {
+            'duration': 0,
+            'prebid': {
+              'type': BANNER
+            }
+          }
+        }
+      ],
+      'seat': 'synapsehx',
+      'group': 0
+    }
+  ],
+  'cur': 'USD',
+  'ext': EXT_SYNC
+};
+
+const SERVER_RESPONSE_VIDEO = {
+  'id': '8cd85aed-25a6-4db0-ad98-4a3af1f7601c',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          ...DEFAULT_BID_RESPONSE_DATA,
+          'mtype': 2,
+          'adm': '<VAST version=4.0></VAST>',
+          'ext': {
+            'duration': 0,
+            'prebid': {
+              'type': VIDEO
+            }
+          }
+        }
+      ],
+      'seat': 'synapsehx',
+      'group': 0
+    }
+  ],
+  'cur': 'USD',
+  'ext': EXT_SYNC
+};
+
+describe('Prebid Adapter: Synapse HX', function () {
+  describe('code returns a bidder code of synapsehx', function () {
+    expect(spec.code).to.eql('synapsehx');
+  });
+
+  describe('isBidRequestValid', function () {
+    it('verifies bidder params', function () {
+      const validTenantAndAdUnit = {
+        bidder: 'synapsehx',
+        params: VALID_PARAMS
+      };
+      expect(spec.isBidRequestValid(validTenantAndAdUnit)).to.eql(true);
+
+      const invalidAdUnit = {
+        bidder: 'synapsehx',
+        params: {
+          tenantId: 'tenant_id',
+          adUnitId: 1
+        }
+      };
+      expect(spec.isBidRequestValid(invalidAdUnit)).to.eql(false);
+
+      const emptyAdUnit = {
+        bidder: 'synapsehx',
+        params: {
+          tenantId: 'tenant_id',
+          adUnitId: ''
+        }
+      };
+      expect(spec.isBidRequestValid(emptyAdUnit)).to.eql(false);
+
+      const noAdUnit = {
+        bidder: 'synapsehx',
+        params: {
+          tenantId: 'tenant_id'
+        }
+      };
+      expect(spec.isBidRequestValid(noAdUnit)).to.eql(true);
+
+      const invalidTenant = {
+        bidder: 'synapsehx',
+        params: {
+          tenantId: 1
+        }
+      };
+      expect(spec.isBidRequestValid(invalidTenant)).to.eql(false);
+
+      const emptyTenant = {
+        bidder: 'synapsehx',
+        params: {
+          tenantId: ''
+        }
+      };
+      expect(spec.isBidRequestValid(emptyTenant)).to.eql(false);
+    });
+    it('verifies bidFloorCur', function () {
+      const bidRequestUSD = {
+        bidder: 'synapsehx',
+        params: VALID_PARAMS,
+        ortb2Imp: {
+          bidfloorcur: 'USD'
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequestUSD)).to.eql(true);
+
+      const bidRequestEUR = {
+        bidder: 'synapsehx',
+        params: VALID_PARAMS,
+        ortb2Imp: {
+          bidfloorcur: 'EUR'
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequestEUR)).to.eql(false);
+    });
+  });
+
+  describe('buildRequests', function () {
+    it('should build request for banner media type', function () {
+      const bidRequest = VALID_MEDIA_TYPES_REQUESTS[BANNER][0];
+
+      const requests = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST);
+
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.contain('pid=tenant_id');
+      expect(request.data).to.have.property('imp');
+    });
+
+    it('should provide bidfloor when either bid param or getFloor function exists', function () {
+      let bidRequest = deepClone(DEFAULT_REQUEST_DATA);
+
+      // with no param or getFloor bidfloor is not specified
+      let request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+      expect(request.imp[0].bidfloor).to.not.exist;
+      expect(request.imp[0].bidfloorcur).to.not.exist;
+
+      // with param and no getFloor bidfloor uses value from param
+      bidRequest.params.floor = 1.3;
+      request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+      expect(request.imp[0].bidfloor).to.equal(1.3);
+      expect(request.imp[0].bidfloorcur).to.equal('USD');
+
+      // with param and getFloor bidfloor uses value form getFloor
+      bidRequest.getFloor = () => { return { currency: 'USD', floor: 2.4 }; };
+      request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
+      expect(request.imp[0].bidfloor).to.equal(2.4);
+      expect(request.imp[0].bidfloorcur).to.equal('USD');
+    });
+
+    it('should provide coppa', () => {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+      bidderRequest.ortb2 = { regs: { coppa: 0 } };
+      let request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.coppa).to.equal(0);
+
+      bidderRequest.ortb2 = { regs: { coppa: 1 } };
+      request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.coppa).to.equal(1);
+    });
+
+    it('should provide GPP', () => {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+      bidderRequest.ortb2 = { regs: { gpp: 0, gpp_sid: [] } };
+      let request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.gpp).to.equal(0);
+      expect(request.regs.gpp_sid).to.deep.equal([]);
+
+      bidderRequest.ortb2 = { regs: { gpp: 1, gpp_sid: [1, 2] } };
+      request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.gpp).to.equal(1);
+      expect(request.regs.gpp_sid).to.deep.equal([1, 2]);
+    });
+
+    it('should provide GDPR', () => {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+      bidderRequest.ortb2 = { regs: { gdpr: 0 }, user: { consent: '' } };
+      let request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.gdpr).to.equal(0);
+      expect(request.user.consent).to.equal('');
+
+      bidderRequest.ortb2 = { regs: { gdpr: 1 }, user: { consent: 'GDPR_string' } };
+      request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+      expect(request.regs.gdpr).to.equal(1);
+      expect(request.user.consent).to.equal('GDPR_string');
+    });
+
+    it('should provide us_privacy', function () {
+      let bidderRequest = deepClone(DEFAULT_BIDDER_REQUEST);
+
+      bidderRequest.ortb2 = { regs: { us_privacy: '1YYN' } };
+      const request = spec.buildRequests([DEFAULT_REQUEST_DATA], bidderRequest)[0].data;
+
+      expect(request.regs.us_privacy).to.equal('1YYN');
+    });
+
+    if (FEATURES.VIDEO) {
+      it('should build request for video media type', function () {
+        const bidRequest = VALID_MEDIA_TYPES_REQUESTS[VIDEO][0];
+
+        const requests = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST);
+
+        expect(requests).to.have.lengthOf(1);
+        const request = requests[0];
+
+        expect(request.data.imp[0].video).to.exist;
+        expect(request.data.imp[0].video.minduration).to.equal(3);
+        expect(request.data.imp[0].video.maxduration).to.equal(43);
+      });
+    }
+  });
+
+  describe('interpretResponse', function () {
+    it('should return a valid bid array with a banner bid', () => {
+      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
+      const { data } = requests[0];
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data }).bids;
+
+      expect(bids).to.be.a('array').that.has.lengthOf(1);
+      bids.forEach(value => {
+        expect(value).to.be.a('object').that.has.all.keys(
+          'ad', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'seatBidId', 'creative_id'
+        );
+      });
+    });
+
+    it('should set meta.adomain from the bid response adomain field', () => {
+      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
+      const { data } = requests[0];
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data }).bids;
+
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+
+      expect(bid.meta).to.be.an('object');
+      expect(bid.meta.advertiserDomains).to.be.an('array').that.includes('synapsehx');
+    });
+
+    if (FEATURES.VIDEO) {
+      it('should return a valid bid array with a video bid', () => {
+        const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[VIDEO], VALID_BIDDER_REQUEST);
+        const { data } = requests[0];
+        const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data }).bids;
+        expect(bids).to.be.a('array').that.has.lengthOf(1);
+        bids.forEach(value => {
+          expect(value).to.be.a('object').that.has.all.keys(
+            'vastUrl', 'vastXml', 'playerHeight', 'playerWidth', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'seatBidId', 'creative_id'
+          );
+        });
+      });
+    }
+  });
+
+  describe('getUserSyncs', function () {
+    it('pixelEnabled and iframeEnabled on', function () {
+      const syncOptions = { pixelEnabled: true, iframeEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, [{ body: SERVER_RESPONSE_BANNER }]);
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://sync.hx.compasonline.com/pbserver/iframe');
+    });
+
+    it('pixelEnabled on', function () {
+      const syncOptions = { pixelEnabled: true, iframeEnabled: false };
+      const syncs = spec.getUserSyncs(syncOptions, [{ body: SERVER_RESPONSE_BANNER }]);
+      expect(syncs).to.have.length(3);
+      expect(syncs).to.deep.equal([
+        { type: 'image', url: 'https://sync.hx.compasonline.com/pbserver/image/1' },
+        { type: 'image', url: 'https://sync.hx.compasonline.com/pbserver/image/2' },
+        { type: 'image', url: 'https://sync.hx.compasonline.com/pbserver/image/3' }
+      ]);
+    });
+
+    it('iframeEnabled on', function () {
+      const syncOptions = { pixelEnabled: false, iframeEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, [{ body: SERVER_RESPONSE_BANNER }]);
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://sync.hx.compasonline.com/pbserver/iframe');
+    });
+
+    it('pixelEnabled and iframeEnabled off', function () {
+      const syncOptions = { pixelEnabled: false, iframeEnabled: false };
+      const syncs = spec.getUserSyncs(syncOptions, [{ body: SERVER_RESPONSE_BANNER }]);
+      expect(syncs).to.have.length(0);
+    });
+
+    [{ iframeEnabled: true }, { pixelEnabled: true }].forEach(option => {
+      // eslint-disable-next-line no-console
+      console.log(`requests: '${JSON.stringify(option)}'`);
+      describe(`privacy parameters with ${JSON.stringify(option)}`, function () {
+        it('with GDPR applies = false', function () {
+          const gdprConsent = {
+            gdprApplies: false,
+            consentString: ''
+          };
+
+          const syncs = spec.getUserSyncs(option, [{ body: SERVER_RESPONSE_BANNER }], gdprConsent);
+
+          expect(syncs).to.not.be.empty;
+          syncs.forEach(sync => {
+            expect(sync.url).to.include('gdpr=0');
+          });
+        });
+
+        it('with GDPR applies = true', function () {
+          const gdprConsent = {
+            gdprApplies: true,
+            consentString: 'GDPR_string'
+          };
+
+          const syncs = spec.getUserSyncs(option, [{ body: SERVER_RESPONSE_BANNER }], gdprConsent);
+
+          expect(syncs).to.not.be.empty;
+          syncs.forEach(sync => {
+            expect(sync.url).to.include('gdpr=1');
+            expect(sync.url).to.include('gdpr_consent=GDPR_string');
+          });
+        });
+
+        it('with us_privacy', function () {
+          const syncs = spec.getUserSyncs(option, [{ body: SERVER_RESPONSE_BANNER }], undefined, '1YNN');
+
+          expect(syncs).to.not.be.empty;
+          syncs.forEach(sync => {
+            expect(sync.url).to.include('us_privacy=1YNN');
+          });
+        });
+
+        it('with GPP', function () {
+          const gppConsent = {
+            gppString: 'GPP_string',
+            applicableSections: [1, 2]
+          };
+
+          const syncs = spec.getUserSyncs(option, [{ body: SERVER_RESPONSE_BANNER }], undefined, undefined, gppConsent);
+
+          expect(syncs).to.not.be.empty;
+          syncs.forEach(sync => {
+            expect(sync.url).to.include('gpp=GPP_string');
+            expect(sync.url).to.include('gpp_sid=1,2');
+          });
+        });
+
+        it('with all consent params', function () {
+          const gdprConsent = {
+            gdprApplies: true,
+            consentString: 'GDPR_string'
+          };
+          const gppConsent = {
+            gppString: 'GPP_string',
+            applicableSections: [1, 2]
+          };
+
+          const syncs = spec.getUserSyncs(option, [{ body: SERVER_RESPONSE_BANNER }], gdprConsent, '1YNN', gppConsent);
+
+          expect(syncs).to.not.be.empty;
+          syncs.forEach(sync => {
+            expect(sync.url).to.include('gdpr=1');
+            expect(sync.url).to.include('gdpr_consent=GDPR_string');
+            expect(sync.url).to.include('us_privacy=1YNN');
+            expect(sync.url).to.include('gpp=GPP_string');
+            expect(sync.url).to.include('gpp_sid=1,2');
+          });
+        });
+      });
+    });
+  });
+});
