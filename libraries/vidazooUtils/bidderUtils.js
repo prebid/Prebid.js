@@ -208,7 +208,7 @@ export function onBidViewable(bid) {
     status: bid.status,
   };
   const qs = formatQS(viewablePayload);
-  const url = bid.veiwableUrl + "?" + qs;
+  const url = bid.veiwableUrl + (bid.veiwableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
   triggerPixel(url);
 }
 
@@ -232,7 +232,7 @@ export function onAdRenderSucceeded(bid) {
     status: bid.status,
   };
   const qs = formatQS(renderSuccessPayload);
-  const url = bid.renderSuccessUrl + "?" + qs;
+  const url = bid.renderSuccessUrl + (bid.veiwableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
   triggerPixel(url);
 }
 
