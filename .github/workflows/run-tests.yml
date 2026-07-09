@@ -6,10 +6,6 @@ on:
         description: value to set as the BROWSER env variable
         required: false
         type: string
-      browser-version:
-        description: value to set as the BROWSER_VERSION env variable
-        required: false
-        type: string
       chunks:
         description: Number of chunks to split tests into
         required: false

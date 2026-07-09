@@ -124,7 +124,6 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       browser: ${{ matrix.browser.wdioName }}
-      browser-version: ${{ matrix.browser.version }}
       built-key: ${{ needs.build.outputs[matrix.browser.os] }}
       test-cmd: npx gulp e2e-test-nobuild --local
       chunks: 1
