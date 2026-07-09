@@ -40,6 +40,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('./msClarityRtdProvider.d.ts').MsClarityRtdProviderConfig} MsClarityRtdProviderConfig
  */
 
 const MODULE_NAME = 'msClarity';
@@ -765,7 +766,7 @@ export function loadFromStorage() {
 /**
  * Module init — validates config, optionally injects Clarity, starts tracker.
  *
- * @param {Object} config
+ * @param {MsClarityRtdProviderConfig} config
  * @returns {boolean}
  */
 function init(config) {
@@ -797,7 +798,7 @@ function init(config) {
  *
  * @param {Object}   reqBidsConfigObj
  * @param {function} callback
- * @param {Object}   config
+ * @param {MsClarityRtdProviderConfig} config
  */
 function getBidRequestData(reqBidsConfigObj, callback, config) {
   try {

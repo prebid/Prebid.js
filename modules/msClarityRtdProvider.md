@@ -31,6 +31,22 @@ The Clarity JS tag is **injected by default** for analytics / session-recording 
 gulp build --modules=rtdModule,msClarityRtdProvider,appnexusBidAdapter,msftBidAdapter
 ```
 
+
+### TypeScript definitions
+
+The RTD provider parameters are typed in `modules/msClarityRtdProvider.d.ts` and exported as `MsClarityRtdProviderParams` for publisher integrations that import Prebid types:
+
+```typescript
+export interface MsClarityRtdProviderParams {
+  /** Microsoft Clarity project ID. */
+  projectId: string;
+  /** Load the Clarity JavaScript tag through Prebid's external-script loader. Defaults to true. */
+  injectClarity?: boolean;
+  /** Prefix for generated site.keywords entries. Defaults to "msc". */
+  targetingPrefix?: string;
+}
+```
+
 ### Configuration
 
 ```javascript
