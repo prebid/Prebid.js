@@ -2638,7 +2638,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
       });
 
-      it('should filter adUnits/bidders based on applid labels for s2s requests', function () {
+      it('should filter adUnits/bidders based on applied labels for s2s requests', function () {
         adUnits[0].labelAll = ['visitor-uk', 'mobile'];
         adUnits[1].labelAny = ['visitor-uk', 'desktop'];
         adUnits[1].bids[0].labelAny = ['mobile'];
