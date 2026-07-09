@@ -318,7 +318,7 @@ export const spec = {
       logInfo("GDPR purpose 1 consent was given, adding user-syncs");
       const type = syncOptions.pixelEnabled
         ? "image"
-        : null ?? syncOptions.iframeEnabled
+        : syncOptions.iframeEnabled
           ? "iframe"
           : null;
       if (type) {

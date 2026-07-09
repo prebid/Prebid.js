@@ -1,4 +1,4 @@
-import * as utilities from 'libraries/vidazooUtils/bidderUtils.js'
+import * as utilities from 'libraries/vidazooUtils/bidderUtils.js';
 import { expect } from "chai";
 import sinon from "sinon";
 import * as utils from 'src/utils.js';
@@ -13,7 +13,7 @@ import { bidderSettings } from 'src/bidderSettings.js';
 describe('Vidazoo Bidder Utils Tests', function () {
   describe('createSessionId', function () {
     it('Should return string with wsid_', function () {
-      const result = utilities.createSessionId()
+      const result = utilities.createSessionId();
       expect(result).to.exist.and.to.include('wsid_');
     });
   });
@@ -293,7 +293,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       clock.restore();
     });
     it('should get value that was previously set', function () {
-      const value = "something"
+      const value = "something";
       const localStore = { newKey: value };
       const storageMock = {
         setDataInLocalStorage: sinon.stub().callsFake((k, v) => { localStore[k] = v; }),
@@ -345,7 +345,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         const current = utilities.getUniqueDealId(storageMock, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
@@ -379,13 +379,13 @@ describe('Vidazoo Bidder Utils Tests', function () {
   });
   describe('hashCode', function () {
     it('should result with _ as a prefix and 8 digits', function () {
-      const result = utilities.hashCode("code")
+      const result = utilities.hashCode("code");
       expect(result).to.be.equal("_3059181");
-    })
+    });
     it('should result with ^ as a prefix and 10 digits', function () {
-      const result = utilities.hashCode("1234567890", "^")
+      const result = utilities.hashCode("1234567890", "^");
       expect(result).to.be.equal("^-2054162789");
-    })
+    });
     it('should return prefix with 0 for empty string', function () {
       const result = utilities.hashCode('');
       expect(result).to.equal('_0');
@@ -967,6 +967,21 @@ describe('Vidazoo Bidder Utils Tests', function () {
         baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
       );
       expect(data.dsa).to.deep.equal({ required: 1 });
+    });
+
+    it('should not include device.deviceType if original is not a number', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          ...baseBidderRequest.ortb2,
+          regs: { coppa: 0, ext: { dsa: { required: 1 } } }
+        }
+      };
+      bidderRequest.ortb2.device.devicetype = '';
+      const data = utilities.buildRequestData(
+        baseBid, 'https://publisher.com', [[300, 250]], bidderRequest, 3000, storageMock, '1.0.0', 'vidazoo', null
+      );
+      expect(data?.device?.devicetype).not.exist;
     });
 
     it('should include placementId when set in params', function () {
@@ -1670,4 +1685,4 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(requests[0].url).to.include('twist.win');
     });
   });
-})
+});

@@ -6,7 +6,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
-const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
 
 describe('gumgumAdapter', function () {
   const adapter = newBidder(spec);
@@ -400,8 +400,8 @@ describe('gumgumAdapter', function () {
 
     it('should send the banner dimension with the greatest width or height for slot ads', function () {
       const legacyRequest = { ...bidRequests[0] };
-      const slotZoneRequest = { ...bidRequests[0], params: { ...zoneParam, slot: 9 } }
-      const slotPubIdRequest = { ...bidRequests[0], params: { ...pubIdParam, slot: 9 } }
+      const slotZoneRequest = { ...bidRequests[0], params: { ...zoneParam, slot: 9 } };
+      const slotPubIdRequest = { ...bidRequests[0], params: { ...pubIdParam, slot: 9 } };
       const legacyBidRequest = spec.buildRequests([legacyRequest])[0];
       const slotZoneBidRequest = spec.buildRequests([slotZoneRequest])[0];
       const slotPubIdBidRequest = spec.buildRequests([slotPubIdRequest])[0];
@@ -434,7 +434,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the iriscat param when found', function () {
-      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
+      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.have.property('iriscat');
     });
@@ -709,18 +709,18 @@ describe('gumgumAdapter', function () {
       });
     });
     it('should not set the iriscat param when not found', function () {
-      const request = { ...bidRequests[0] }
+      const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.not.have.property('iriscat');
     });
     it('should not set the irisid param when not found', function () {
-      const request = { ...bidRequests[0] }
+      const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.not.have.property('irisid');
     });
 
     it('should not set the irisid param when not of type string', function () {
-      const request = { ...bidRequests[0], params: { irisid: 123456 } }
+      const request = { ...bidRequests[0], params: { irisid: 123456 } };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.not.have.property('irisid');
     });
@@ -739,29 +739,29 @@ describe('gumgumAdapter', function () {
             }
           }
         }
-      }
+      };
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
     });
     it('should set the global placement id (gpid) if in gpid property', function () {
-      const gpid = 'abc123'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } } }
+      const gpid = 'abc123';
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } } };
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the global placement id (gpid) if media type is video', function () {
-      const gpid = 'cde456'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } }, params: zoneParam, mediaTypes: vidMediaTypes }
+      const gpid = 'cde456';
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } }, params: zoneParam, mediaTypes: vidMediaTypes };
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
-      const req = { ...bidRequests[0], params: { bidfloor: 42 } }
+      const req = { ...bidRequests[0], params: { bidfloor: 42 } };
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('fp');
       expect(bidRequest.data.fp).to.equal(42);
@@ -852,7 +852,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.sizes).to.equal(vidMediaTypes.video.playerSize);
     });
     it('should handle multiple sizes for inslot', function () {
-      const mediaTypes = { banner: { sizes: [[300, 250], [300, 600]] } }
+      const mediaTypes = { banner: { sizes: [[300, 250], [300, 600]] } };
       const request = { ...bidRequests[0], mediaTypes };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.bf).to.equal('300x250,300x600');
@@ -886,7 +886,7 @@ describe('gumgumAdapter', function () {
       it('should return a floor currency', function () {
         const request = spec.buildRequests(bidRequests)[0];
         expect(request.data.fpc).to.equal(floorTestData.currency);
-      })
+      });
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
@@ -1068,10 +1068,10 @@ describe('gumgumAdapter', function () {
       const gdprConsent = { consent_string: undefined, gdprApplies: undefined };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
-      expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
+      expect(bidRequest.data).to.not.include.any.keys('gdprConsent');
     });
     it('should add gpp parameters if gppConsent is present', function () {
-      const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [7] }
+      const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [7] };
       const fakeBidRequest = { gppConsent: gppConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppString).to.equal(gppConsent.gppString);
@@ -1084,13 +1084,13 @@ describe('gumgumAdapter', function () {
           gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
           gpp_sid: [7]
         }
-      }
+      };
       const fakeBidRequest = { gppConsent: ortb2 };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
-      expect(bidRequest.data.gpp).to.eq(fakeBidRequest[0])
+      expect(bidRequest.data.gpp).to.eq(fakeBidRequest[0]);
     });
     it('should handle gppConsent is present but values are undefined case', function () {
-      const gppConsent = { gppString: undefined, applicableSections: undefined }
+      const gppConsent = { gppString: undefined, applicableSections: undefined };
       const fakeBidRequest = { gppConsent: gppConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppString).to.equal('');
@@ -1102,11 +1102,11 @@ describe('gumgumAdapter', function () {
           gpp: undefined,
           gpp_sid: undefined
         }
-      }
+      };
       const fakeBidRequest = { gppConsent: ortb2 };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
-      expect(bidRequest.data.gppString).to.eq('')
-      expect(bidRequest.data.gppSid).to.eq('')
+      expect(bidRequest.data.gppString).to.eq('');
+      expect(bidRequest.data.gppSid).to.eq('');
     });
     it('should add DSA information to payload if available', function () {
       // Define the sample ORTB2 object with DSA information
@@ -1224,7 +1224,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.have.property('uid2');
     });
     it('should send schain parameter in serialized form', function () {
-      const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com';
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.include.any.keys('schain');
       expect(request.data.schain).to.eq(serializedForm);
@@ -1337,7 +1337,7 @@ describe('gumgumAdapter', function () {
           hwv: 'iPhone15,2',
           os: 'iOS',
           osv: '17.4',
-          ext: { fiftyonedegrees_deviceId: '17595-133085-133468-18092' },
+          ext: { fod: { deviceId: '17595-133085-133468-18092' } },
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
           lmt: 1,
@@ -1358,7 +1358,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.hwv).to.equal(ortb2.device.hwv);
       expect(bidRequest.data.os).to.equal(ortb2.device.os);
       expect(bidRequest.data.osv).to.equal(ortb2.device.osv);
-      expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
+      expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fod.deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
       expect(bidRequest.data.lmt).to.equal(ortb2.device.lmt);
@@ -1397,11 +1397,11 @@ describe('gumgumAdapter', function () {
     it('should set tId to an empty string if neither ortb2Imp.ext.tid nor bidderRequest.ortb2.source.tid are available', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.tId).to.equal('');
-    })
-  })
+    });
+  });
 
   describe('interpretResponse', function () {
-    const metaData = { adomain: ['advertiser.com'], mediaType: BANNER }
+    const metaData = { adomain: ['advertiser.com'], mediaType: BANNER };
     const serverResponse = {
       ad: {
         id: 29593,
@@ -1425,14 +1425,14 @@ describe('gumgumAdapter', function () {
       jcsi: { t: 0, rq: 8 },
       thms: 10000,
       meta: metaData
-    }
+    };
     const bidRequest = {
       id: 12345,
       sizes: [[300, 250], [1, 1]],
       url: ENDPOINT,
       method: 'GET',
       pi: 3
-    }
+    };
     const expectedMetaData = { advertiserDomains: ['advertiser.com'], mediaType: BANNER };
     const expectedResponse = {
       ad: '<html><h3>I am an ad</h3></html>',
@@ -1493,7 +1493,7 @@ describe('gumgumAdapter', function () {
           'js': 'console.log("environment", env);'
         },
         'thms': 10000
-      }
+      };
       const result = spec.interpretResponse({ body: response }, bidRequest);
       expect(result.length).to.equal(0);
     });
@@ -1522,7 +1522,7 @@ describe('gumgumAdapter', function () {
             pi: 5,
             t: 'ggumtest'
           }
-        }
+        };
         const serverResponse = {
           'ad': {
             'id': 2065333,
@@ -1541,7 +1541,7 @@ describe('gumgumAdapter', function () {
             'pvid': 'aa8bbb65-427f-4689-8cee-e3eed0b89eec',
           },
           'thms': 10000
-        }
+        };
         const result = spec.interpretResponse({ body: serverResponse }, bidRequest);
         expect(result[0].width).to.equal('1');
         expect(result[0].height).to.equal('1');
@@ -1564,7 +1564,7 @@ describe('gumgumAdapter', function () {
 
         expect(result.width = expectedSize[0]);
         expect(result.height = expectedSize[1]);
-      })
+      });
 
       it('request size that  matches response size for in-slot', function () {
         const request = { ...bidRequest };
@@ -1577,19 +1577,19 @@ describe('gumgumAdapter', function () {
         result = spec.interpretResponse({ body }, request)[0];
         expect(result.width = expectedSize[1][0]);
         expect(result.height = expectedSize[1][1]);
-      })
+      });
 
       it('defaults to use bidRequest sizes', function () {
-        const { ad, jcsi, pag, thms, meta } = serverResponse
-        const noAdSizes = { ...ad }
-        delete noAdSizes.width
-        delete noAdSizes.height
-        const responseWithoutSizes = { jcsi, pag, thms, meta, ad: noAdSizes }
-        const request = { ...bidRequest, sizes: [[100, 200]] }
+        const { ad, jcsi, pag, thms, meta } = serverResponse;
+        const noAdSizes = { ...ad };
+        delete noAdSizes.width;
+        delete noAdSizes.height;
+        const responseWithoutSizes = { jcsi, pag, thms, meta, ad: noAdSizes };
+        const request = { ...bidRequest, sizes: [[100, 200]] };
         const result = spec.interpretResponse({ body: responseWithoutSizes }, request)[0];
 
-        expect(result.width).to.equal(request.sizes[0][0].toString())
-        expect(result.height).to.equal(request.sizes[0][1].toString())
+        expect(result.width).to.equal(request.sizes[0][0].toString());
+        expect(result.height).to.equal(request.sizes[0][1].toString());
       });
     });
 
@@ -1679,11 +1679,11 @@ describe('gumgumAdapter', function () {
       expect(result.mediaType).to.equal(NATIVE);
       expect(result.native).to.be.undefined;
     });
-  })
+  });
   describe('getUserSyncs', function () {
     const syncOptions = {
       'iframeEnabled': 'true'
-    }
+    };
     const response = {
       'pxs': {
         'scr': [
@@ -1697,9 +1697,9 @@ describe('gumgumAdapter', function () {
           }
         ]
       }
-    }
+    };
     const result = spec.getUserSyncs(syncOptions, [{ body: response }]);
-    expect(result[0].type).to.equal('image')
-    expect(result[1].type).to.equal('iframe')
-  })
+    expect(result[0].type).to.equal('image');
+    expect(result[1].type).to.equal('iframe');
+  });
 });

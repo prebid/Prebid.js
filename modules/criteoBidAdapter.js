@@ -28,12 +28,16 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 const TRANSLATOR = ortb25Translator();
 
-const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js'
+const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js';
 const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
 const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
 const DEFAULT_GZIP_ENABLED = true;
+
+export const dep = {
+  ajax
+};
 
 /**
  * Defines the generic oRTB converter and all customization functions.
@@ -74,7 +78,7 @@ function imp(buildImp, bidRequest, context) {
     },
   });
 
-  delete imp.rwdd // oRTB 2.6 field moved to ext
+  delete imp.rwdd; // oRTB 2.6 field moved to ext
 
   if (hasVideoMediaType(bidRequest)) {
     const paramsVideo = bidRequest.params.video;
@@ -86,15 +90,13 @@ function imp(buildImp, bidRequest, context) {
         minduration: imp.video.minduration || paramsVideo.minduration,
         playbackmethod: imp.video.playbackmethod || paramsVideo.playbackmethod,
         startdelay: imp.video.startdelay || paramsVideo.startdelay || 0,
-      })
+      });
     }
     deepSetValue(imp, 'video.ext', {
       context: bidRequest.mediaTypes.video.context,
       playersizes: parseSizes(bidRequest?.mediaTypes?.video?.playerSize, parseSize),
       plcmt: bidRequest.mediaTypes.video.plcmt,
-      poddur: bidRequest.mediaTypes.video.adPodDurationSec,
-      rqddurs: bidRequest.mediaTypes.video.durationRangeSec,
-    })
+    });
   }
 
   if (imp.native && typeof imp.native.request !== 'undefined') {
@@ -172,7 +174,7 @@ function bidResponse(buildBidResponse, bid, context) {
     });
   }
   if (typeof bid?.ext?.paf?.content_id !== 'undefined') {
-    deepSetValue(bidResponse, 'meta.paf.content_id', bid.ext.paf.content_id)
+    deepSetValue(bidResponse, 'meta.paf.content_id', bid.ext.paf.content_id);
   }
 
   if (bidResponse.mediaType === VIDEO) {
@@ -406,7 +408,7 @@ export const spec = {
     const id = readFromAllStorages(BUNDLE_COOKIE_NAME);
     if (id) {
       deleteFromAllStorages(BUNDLE_COOKIE_NAME);
-      ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
+      dep.ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
         null,
         JSON.stringify({ publisherUserId: id }),
         {
@@ -621,7 +623,7 @@ function getFloors(bidRequest) {
     if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         floors.banner = {};
-        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes)
+        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes);
         bannerSizes.forEach(bannerSize => {
           floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER });
         });
@@ -629,7 +631,7 @@ function getFloors(bidRequest) {
 
       if (bidRequest.mediaTypes?.video) {
         floors.video = {};
-        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize)
+        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize);
         videoSizes.forEach(videoSize => {
           floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO });
         });
@@ -656,7 +658,7 @@ function createOutstreamVideoRenderer(bid) {
     documentResolver: (_, sourceDocument, renderDocument) => {
       return renderDocument ?? sourceDocument;
     }
-  }
+  };
 
   const render = (_, renderDocument) => {
     const payload = {
@@ -667,7 +669,7 @@ function createOutstreamVideoRenderer(bid) {
     };
 
     const outstreamConfig = bid.ext.videoPlayerConfig;
-    window.CriteoOutStream[bid.ext.videoPlayerType].play(payload, outstreamConfig)
+    window.CriteoOutStream[bid.ext.videoPlayerType].play(payload, outstreamConfig);
   };
 
   const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });

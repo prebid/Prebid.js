@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/luceadBidAdapter.js';
+import { dep, spec } from 'modules/luceadBidAdapter.js';
 import sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as ajax from 'src/ajax.js';
 
 describe('Lucead Adapter', () => {
   describe('inherited functions', function () {
@@ -48,11 +47,11 @@ describe('Lucead Adapter', () => {
     });
 
     it('should trigger impression pixel', function () {
-      sandbox.spy(ajax, 'fetch');
+      sandbox.spy(dep, 'fetch');
 
       for (const bid of bids) {
         spec.onBidWon(bid);
-        expect(ajax?.fetch?.args[0][0]).to.match(/report\/impression$/);
+        expect(dep?.fetch?.args[0][0]).to.match(/report\/impression$/);
       }
     });
 

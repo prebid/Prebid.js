@@ -38,7 +38,7 @@ function buildBid(bidData) {
   const position = {
     domParent: bid.meta.domParent ? `'${bid.meta.domParent}'` : null,
     child: bid.meta.child ? bid.meta.child : 4
-  }
+  };
   bid.ad = wrapAd(bid, position);
   return bid;
 }
@@ -315,7 +315,6 @@ export const spec = {
 };
 
 function formatRequest(payload, bidderRequest) {
-  let request = [];
   const options = {
     withCredentials: true
   };
@@ -336,15 +335,13 @@ function formatRequest(payload, bidderRequest) {
   }
 
   const payloadString = JSON.stringify(payload);
-  request = {
+  return {
     method: 'POST',
     url: endpointUrl,
     data: payloadString,
     bidderRequest,
     options,
   };
-
-  return request;
 }
 
 /**
@@ -455,7 +452,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {

@@ -4,6 +4,8 @@ on:
     workflows:
       - Check for Duplicated Code
       - Check for linter warnings / exceptions
+      - Check adapter naming conventions
+      - Build metadata
     types:
       - completed
 
@@ -17,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: master
       - name: Retrieve comment data
@@ -28,7 +30,7 @@ jobs:
 
       - name: 'Comment on PR'
         if: ${{ steps.get-comment.outputs.exists == 'true' }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');

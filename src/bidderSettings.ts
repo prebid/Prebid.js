@@ -51,6 +51,11 @@ export interface BidderScopedSettings<B extends BidderCode> extends BidderSettin
    */
   bidCpmAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;
   /**
+   * Optional score used when sorting bids for targeting / winners.
+   * Should return a comparable number; higher is preferred. Defaults to `cpm`.
+   */
+  bidDesirabilityAdjustment?: (cpm: number, bid: Bid, bidRequest: BidRequest<B>) => number;
+  /**
    * Define which key/value pairs are sent to the ad server.
    */
   adserverTargeting?: ({
@@ -71,7 +76,7 @@ export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends
    * Get setting value at `path` under the given scope, falling back to the default scope if needed.
    * If `scope` is `null`, get the setting's default value.
    */
-  get<P extends keyof SETTINGS>(scope, path: P): SETTINGS[P] {
+  get<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
     let value = this.getOwn(scope, path);
     if (typeof value === 'undefined') {
       value = this.getOwn(null, path);
@@ -84,7 +89,7 @@ export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends
    */
   getOwn<P extends keyof SCOPED>(scope, path: P): SCOPED[P] {
     scope = this.#resolveScope(scope);
-    return deepAccess(this.getSettings(), `${scope}.${path as any}`)
+    return deepAccess(this.getSettings(), `${scope}.${path as any}`);
   }
 
   /**

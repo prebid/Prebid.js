@@ -10,7 +10,7 @@ export function fireEvents(events = [
 ]) {
   return events.map((ev, i) => {
     ev = Array.isArray(ev) ? ev : [ev, { i: i }];
-    pbEvents.emit.apply(null, ev)
+    pbEvents.emit.apply(null, ev);
     return ev;
   });
 }
@@ -26,7 +26,7 @@ export function expectEvents(events) {
       },
       beBundledTo(bundleFn) {
         events.forEach(([eventType, args]) => {
-          sinon.assert.calledWithMatch(bundleFn, sinon.match.any, eventType, sinon.match(args))
+          sinon.assert.calledWithMatch(bundleFn, sinon.match.any, eventType, sinon.match(args));
         });
       },
     },

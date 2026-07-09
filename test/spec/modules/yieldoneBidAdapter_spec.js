@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { getBrowser, getOS } from '../../../libraries/userAgentUtils/index.js';
 import { browserTypes, osTypes } from '../../../libraries/userAgentUtils/userAgentTypes.enums.js';
 
@@ -11,8 +11,6 @@ const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/d
 const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 
 describe('yieldoneBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'yieldone',
@@ -572,7 +570,7 @@ describe('yieldoneBidAdapter', function () {
 
         bidRequests.forEach((bidRequest, ind) => {
           expect(request[ind].data).to.not.have.property('instl');
-        })
+        });
       });
 
       it('should send instl if available', function () {
@@ -591,7 +589,7 @@ describe('yieldoneBidAdapter', function () {
         bidRequests.forEach((bidRequest, ind) => {
           expect(request[ind].data).to.have.property('instl');
           expect(request[ind].data.instl).to.equal(1);
-        })
+        });
       });
     });
   });

@@ -23,43 +23,19 @@ import {
 } from '../src/utils.js';
 import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
-import { fetch } from '../src/ajax.js';
+import { noCredsFetch as fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 
 import { getGlobalVarName } from '../src/buildOptions.js';
 import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
-/**
- * @typedef {Object} DfpVideoParams
- *
- * This object contains the params needed to form a URL which hits the
- * [DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en}.
- *
- * All params (except iu, mentioned below) should be considered optional. This module will choose reasonable
- * defaults for all of the other required params.
- *
- * The cust_params property, if present, must be an object. It will be merged with the rest of the
- * standard Prebid targeting params (hb_adid, hb_bidder, etc).
- *
- * @param {string} iu This param *must* be included, in order for us to create a valid request.
- * @param [string] description_url This field is required if you want Ad Exchange to bid on our ad unit...
- *   but otherwise optional
- */
 
 /**
- * @typedef {Object} DfpVideoOptions
- *
- * @param {Object} adUnit The adUnit which this bid is supposed to help fill.
- * @param [Object] bid The bid which should be considered alongside the rest of the adserver's demand.
- *   If this isn't defined, then we'll use the winning bid for the adUnit.
- *
- * @param {DfpVideoParams} [params] Query params which should be set on the DFP request.
- *   These will override this module's defaults whenever they conflict.
- * @param {string} [url] video adserver url
+ * @typedef {import('./gamAdServerVideo.d.ts').GamVideoOptions} GamVideoOptions
  */
 
 export const dep = {
   ri: getRefererInfo
-}
+};
 
 export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
@@ -68,7 +44,7 @@ export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
  *
  * @see [The DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en#env} for details.
  *
- * @param {DfpVideoOptions} options Options which should be used to construct the URL.
+ * @param {GamVideoOptions} options Options which should be used to construct the URL.
  *
  * @return {string} A URL which calls DFP, letting options.bid
  *   (or the auction's winning bid for this adUnit, if undefined) compete alongside the rest of the
@@ -192,7 +168,7 @@ export function buildGamVideoUrl(options) {
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
       PublisherProvidedTaxonomySignals: signals
-    }))
+    }));
   }
 
   return buildUrl(Object.assign({}, GAM_ENDPOINT, urlComponents, { search: queryParams }));
@@ -300,7 +276,9 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
     return gamVastWrapper;
   }
 };
-
+/**
+ * @param {GamVideoOptions} options
+ */
 export async function getVastXml(options, localCacheMap = vastLocalCache) {
   let vastUrl = buildGamVideoUrl(options);
 
@@ -348,7 +326,7 @@ function retrieveUspInfoFromGpp(gpp) {
   if (parsedSections) {
     if (parsedSections.uspv1) {
       const usp = parsedSections.uspv1;
-      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`
+      return `${usp.Version}${usp.Notice}${usp.OptOutSale}${usp.LspaCovered}`;
     } else {
       let saleOptOut;
       let saleOptOutNotice;
@@ -370,7 +348,7 @@ function retrieveUspInfoFromGpp(gpp) {
       }
     }
   }
-  return undefined
+  return undefined;
 }
 
 export async function getBase64BlobContent(blobUrl) {

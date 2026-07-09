@@ -193,7 +193,7 @@ export const internal = {
   buildEndpointUrl: (publisher) => {
     return ENDPOINT_URL.replace(ENDPOINT_URL_PUBLISHER_PLACEHOLDER, encodeURIComponent(publisher));
   },
-}
+};
 
 /**
  * The bid adapter definition
@@ -341,7 +341,7 @@ export const spec = {
         meta: {
           advertiserDomains: bid.creative.advertiserDomains
         }
-      }
+      };
 
       if (bid.creative.html) {
         bidResponse.mediaType = BANNER;

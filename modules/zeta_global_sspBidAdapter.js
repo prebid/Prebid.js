@@ -44,7 +44,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -195,7 +195,7 @@ export const spec = {
         ext: {
           schain: schain
         }
-      }
+      };
     }
 
     if (bidderRequest?.timeout) {
@@ -258,8 +258,8 @@ export const spec = {
             bid.dspId = seat;
           }
           bidResponses.push(bid);
-        })
-      })
+        });
+      });
     }
     return bidResponses;
   },
@@ -304,7 +304,7 @@ export const spec = {
       }];
     }
   }
-}
+};
 
 function buildBanner(request) {
   let sizes = request.sizes;
@@ -318,18 +318,18 @@ function buildBanner(request) {
       return {
         w: s[0],
         h: s[1]
-      }
+      };
     });
     return {
       w: sizes[0][0],
       h: sizes[0][1],
       format: format
-    }
+    };
   } else {
     return {
       w: sizes[0][0],
       h: sizes[0][1]
-    }
+    };
   }
 }
 
