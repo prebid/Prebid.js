@@ -578,7 +578,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       utils.triggerPixel.restore();
     });
 
-    it('should append ? when veiwableUrl has no existing query string', function () {
+    it('should append ? when viewableUrl has no existing query string', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -593,7 +593,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
         originalCurrency: 'USD',
         height: 250,
         mediaType: 'banner',
-        veiwableUrl: 'https://test.com/onBidViewable',
+        viewableUrl: 'https://test.com/onBidViewable',
         netRevenue: true,
         requestId: '2d52001cabd527',
         ttl: 30,
@@ -605,7 +605,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(url).to.match(/^https:\/\/test\.com\/onBidViewable\?adId=/);
     });
 
-    it('should not call triggerPixel when veiwableUrl not passed in bid', function () {
+    it('should not call triggerPixel when viewableUrl not passed in bid', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',

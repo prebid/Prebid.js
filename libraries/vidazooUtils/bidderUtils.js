@@ -189,7 +189,7 @@ export function onBidBillable(bid) {
 }
 
 export function onBidViewable(bid) {
-  if (!bid.veiwableUrl) {
+  if (!bid.viewableUrl) {
     return;
   }
   const viewablePayload = {
@@ -208,7 +208,7 @@ export function onBidViewable(bid) {
     status: bid.status,
   };
   const qs = formatQS(viewablePayload);
-  const url = bid.veiwableUrl + (bid.veiwableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
+  const url = bid.viewableUrl + (bid.viewableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
   triggerPixel(url);
 }
 
@@ -232,7 +232,7 @@ export function onAdRenderSucceeded(bid) {
     status: bid.status,
   };
   const qs = formatQS(renderSuccessPayload);
-  const url = bid.renderSuccessUrl + (bid.veiwableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
+  const url = bid.renderSuccessUrl + (bid.viewableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
   triggerPixel(url);
 }
 
@@ -505,7 +505,9 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
           burl,
           advertiserDomains,
           metaData,
-          mediaType = BANNER
+          mediaType = BANNER,
+          viewableUrl,
+          renderSuccessUrl,
         } = result;
         if (!ad || !price) {
           return;
@@ -527,6 +529,12 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
         }
         if (burl) {
           response.burl = burl;
+        }
+        if (viewableUrl) {
+          response.viewableUrl = viewableUrl;
+        }
+        if (renderSuccessUrl) {
+          response.renderSuccessUrl = renderSuccessUrl;
         }
 
         if (metaData) {
