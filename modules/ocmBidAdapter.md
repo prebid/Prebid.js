@@ -1,20 +1,21 @@
 # Overview
 
-```
+```text
 Module Name: OCM Bid Adapter
 Module Type: Bidder Adapter
 Maintainer: support@orangeclickmedia.com
 ```
 
-# Description
+## Description
 
 OCM Bid Adapter supports Banner, Video, and Native media types.
 
 The adapter uses OpenRTB format and connects to Orange Click Media's prebid server.
 
-# Test Parameters
+## Test Parameters
 
 ## Banner Ad Unit
+
 ```javascript
 var adUnits = [
     {
@@ -27,8 +28,8 @@ var adUnits = [
         bids: [{
             bidder: 'ocm',
             params: {
-                publisherId: 'orangeclickmedia.com',
-                placementId: '65b49bb0cc723602'
+                publisherId: 'your_publisher_id',
+                placementId: 'your_placement_id'
             }
         }]
     }
@@ -36,6 +37,7 @@ var adUnits = [
 ```
 
 ## Video Ad Unit: Instream
+
 ```javascript
 var adUnits = [
     {
@@ -62,6 +64,7 @@ var adUnits = [
 ```
 
 ## Video Ad Unit: Outstream
+
 ```javascript
 var adUnits = [
     {
@@ -86,6 +89,7 @@ var adUnits = [
 ```
 
 ## Native Ad Unit
+
 ```javascript
 var adUnits = [
     {
@@ -133,6 +137,7 @@ var adUnits = [
 ```
 
 ## Multi-Format Ad Unit
+
 ```javascript
 var adUnits = [
     {
@@ -171,7 +176,7 @@ var adUnits = [
 ];
 ```
 
-# Outstream Video Rendering
+## Outstream Video Rendering
 
 Outstream video bids are rendered automatically by the adapter using the **OCM Video Player**. When
 an outstream video bid is built, the adapter attaches a Prebid `Renderer` to it; Prebid lazily loads
@@ -216,7 +221,7 @@ var adUnits = [
 ];
 ```
 
-# Configuration
+## Configuration
 
 ## Required Parameters
 
@@ -225,7 +230,7 @@ var adUnits = [
 | `publisherId` | String | Your publisher ID provided by Orange Click Media |
 | `placementId` | String | The placement ID for the ad unit |
 
-# User Syncing
+## User Syncing
 
 OCM's Prebid Server `cookie_sync` endpoint is POST-only, so it cannot be loaded directly from an
 iframe/pixel. Syncing is therefore routed through a small GET-renderable **loader page** that the
@@ -233,31 +238,25 @@ adapter renders in a hidden iframe; the loader POSTs to `cookie_sync` (with cred
 the per-bidder sync pixels it returns.
 
 Flow:
+
 1. `getUserSyncs` reads the bidders PBS actually invoked from the auction response
    (`ext.responsetimemillis` keys, plus any `seatbid[].seat`).
 2. It renders an iframe to the loader page with those bidders, the publisher `account`
-   (the `ext.account` PBS echoes on the auction response), the sync `limit`, the sync policy
-   (`filter` — the allowed sync types, and `coopSync=0`), and all consent signals
+   (the `publisherId`), the sync `limit`, and all consent signals
    (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`).
-3. The loader POSTs `{ bidders, account, limit, filterSettings, coopSync, gdpr, ... }` to
+3. The loader POSTs `{ bidders, account, limit, gdpr, ... }` to
    `https://pbam.orangeclickmedia.com/cookie_sync` and drops each returned `usersync` (an `iframe`
-   type becomes a hidden iframe; a `redirect` type becomes an image pixel). The loader **must** honour
-   the forwarded `filter`/`coopSync`: it only requests/drops the sync types the publisher enabled
-   (`iframe` always; `image`/`redirect` only when pixel syncing is enabled) and disables PBS
-   cooperative syncing, so a disabled sync type or an unrequested bidder never fires from inside the
-   loader iframe. The `account` is taken solely from the current auction's echoed `ext.account`, so
-   overlapping OCM auctions cannot leak one publisher's account into another's sync — PBS must echo
-   `ext.account` for the account to be forwarded.
+   type becomes a hidden iframe; a `redirect` type becomes an image pixel).
 
 **Deployment requirement:** the loader page must be reachable at
 `https://pbam.orangeclickmedia.com/static/cookie_sync.html`. On PBS-Go, drop the file into the
 server's `./static/` directory (served via `ServeFiles("/static/*filepath", http.Dir("static"))`),
 which keeps it same-origin with `/cookie_sync` (no CORS) and with the PBS `uids` cookie
-(first-party). A reference implementation is provided in `tasks/cookie_sync.html`.
+(first-party).
 
 User syncing only runs if the publisher enables iframe syncing and allows the `ocm` bidder
 (the adapter returns an iframe sync only — the loader handles the per-bidder image/iframe pixels
-itself, constrained to the sync types the publisher enabled). For example:
+itself). For example:
 
 ```javascript
 pbjs.setConfig({
@@ -274,7 +273,7 @@ pbjs.setConfig({
 
 Without iframe syncing enabled for `ocm`, `getUserSyncs` returns no syncs (it is a no-op).
 
-# Notes
+## Notes
 
 - Both `publisherId` and `placementId` are required parameters for all ad units
 - The adapter supports all three media types: Banner, Video, and Native
