@@ -49,8 +49,8 @@ export const c1xAdapter = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = {};
-    let tagObj = {};
+    let payload;
+    let tagObj;
     const bidRequest = [];
     const adunits = validBidRequests.length;
     const rnd = new Date().getTime();

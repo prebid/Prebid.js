@@ -161,22 +161,6 @@ describe('invibesBidAdapter:', function () {
     auctionStart: Date.now()
   };
 
-  const StubbedPersistence = function (initialValue) {
-    var value = initialValue;
-    return {
-      load: function () {
-        const str = value || '';
-        try {
-          return JSON.parse(str);
-        } catch (e) {
-        }
-      },
-      save: function (obj) {
-        value = JSON.stringify(obj);
-      }
-    };
-  };
-
   const SetBidderAccess = function() {
     config.setConfig({
       deviceAccess: true
@@ -1372,7 +1356,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('does not make multiple bids', function () {
-        const result = spec.interpretResponse({ body: response }, { bidRequests });
+        spec.interpretResponse({ body: response }, { bidRequests });
         const secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1415,6 +1399,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
@@ -1424,6 +1409,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
@@ -1433,6 +1419,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult).to.be.empty;
       });
 
@@ -1442,6 +1429,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult).to.be.empty;
       });
 
@@ -1451,6 +1439,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult).to.be.empty;
       });
     });

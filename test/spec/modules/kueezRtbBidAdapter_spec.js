@@ -273,7 +273,7 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
-    let createFirstPartyDataStub;
+
     before(function () {
       getGlobal().bidderSettings = {
         kueezrtb: {
@@ -282,7 +282,7 @@ describe('KueezRtbBidAdapter', function () {
       };
       sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
-      createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
+      sandbox.stub(adapter, 'createFirstPartyData').returns({
         pcid: 'pcid',
         pcidDate: 1000
       });

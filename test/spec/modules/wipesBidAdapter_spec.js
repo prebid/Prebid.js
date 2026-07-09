@@ -1,12 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/wipesBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
 describe('wipesBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'wipes',

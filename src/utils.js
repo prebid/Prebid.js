@@ -22,7 +22,6 @@ export const debugTurnedOn = debug.debugTurnedOn;
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
-  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   canAccessWindowTop,
@@ -438,10 +437,16 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
 export function insertUserSyncIframe(url, done, timeout) {
-  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
-  const div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  const iframe = div.firstChild;
+  if (!url) return;
+  const iframe = createIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+    style: {
+      width: '0px',
+      height: '0px',
+      display: 'none'
+    }
+  });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
@@ -475,35 +480,6 @@ export function encodeMacroURI(url) {
   return macros.reduce((str, macro) => {
     return str.replace('$' + encodeURIComponent(macro), '$' + macro);
   }, encodeURI(url));
-}
-
-/**
- * Creates a snippet of Iframe HTML that retrieves the specified `url`
- * @param  {string} url plain URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
- * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
- * @return {string}     HTML snippet that contains the iframe src = set to `url`
- */
-export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') {
-  if (!url) {
-    return '';
-  }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
-  if (sandbox) {
-    sandbox = `sandbox="${sandbox}"`;
-  }
-
-  return `<iframe ${sandbox} id="${getUniqueIdentifierStr()}"
-      frameborder="0"
-      allowtransparency="true"
-      marginheight="0" marginwidth="0"
-      width="0" hspace="0" vspace="0" height="0"
-      style="height:0px;width:0px;display:none;"
-      scrolling="no"
-      src="${url}">
-    </iframe>`;
 }
 
 export function uniques(value, index, arry) {

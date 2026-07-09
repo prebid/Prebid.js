@@ -2,7 +2,6 @@ import concertAnalytics from 'modules/concertAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
-import { server } from 'test/mocks/xhr.js';
 
 import sinon from 'sinon';
 const adapterManager = require('src/adapterManager').default;

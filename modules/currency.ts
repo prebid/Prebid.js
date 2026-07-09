@@ -325,7 +325,7 @@ function processBidResponseQueue() {
 }
 
 function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
-  var conversionRate = null;
+  var conversionRate;
   var rates;
   const cacheKey = `${fromCurrency}->${toCurrency}`;
   if (cacheKey in conversionCache) {

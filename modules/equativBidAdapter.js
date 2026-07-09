@@ -92,7 +92,28 @@ export const spec = {
     const requests = [];
 
     bidRequests.forEach(bid => {
+      if (!isValid(bid)) {
+        logWarn(`${LOG_PREFIX} Skipping bid: invalid media types.`, bid.bidId);
+        return;
+      }
+
       const data = converter.toORTB({ bidRequests: [bid], bidderRequest });
+
+      if (!data) {
+        logWarn(`${LOG_PREFIX} Skipping bid: converter returned empty data.`, bid.bidId);
+        return;
+      }
+
+      if (!data.id) {
+        logWarn(`${LOG_PREFIX} Skipping bid: request is missing required id field.`, bid.bidId);
+        return;
+      }
+
+      if (!data.imp?.length) {
+        logWarn(`${LOG_PREFIX} Skipping bid: no valid impressions after processing.`, bid.bidId);
+        return;
+      }
+
       requests.push({
         data,
         method: 'POST',
@@ -194,7 +215,7 @@ export const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const { siteId, pageId, formatId } = bidRequest.params;
+    const { siteId, pageId, formatId } = bidRequest.params || {};
 
     delete imp.dt;
 
@@ -222,8 +243,12 @@ export const converter = ortbConverter({
 
     let req = buildRequest(splitImps, bidderRequest, context);
 
+    if (!splitImps?.length) {
+      return req;
+    }
+
     let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
-    networkId = deepAccess(bid, env + '.id') || bid.params.networkId;
+    networkId = deepAccess(bid, env + '.id') || deepAccess(bid, 'params.networkId');
     deepSetValue(req, env.replace('ortb2.', '') + '.id', networkId);
 
     [
@@ -234,7 +259,7 @@ export const converter = ortbConverter({
       if (deepAccess(bid, path)) {
         props.forEach(prop => {
           if (!deepAccess(bid, `${path}.${prop}`)) {
-            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request. Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid);
+            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request. Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid.bidId);
           }
         });
       }

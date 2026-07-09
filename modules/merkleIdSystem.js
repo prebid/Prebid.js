@@ -26,7 +26,7 @@ const SESSION_COOKIE_NAME = '_svsid';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function getSession(configParams) {
-  let session = null;
+  let session;
   if (typeof configParams.sv_session === 'string') {
     session = configParams.sv_session;
   } else {
@@ -191,9 +191,8 @@ export const merkleIdSubmodule = {
     }
 
     const storedDate = new Date(storedId.date);
-    let refreshNeeded = false;
     if (storedDate) {
-      refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
+      const refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
       if (refreshNeeded) {
         logInfo('User ID - merkleId needs refreshing id');
         const resp = generateId(configParams, configStorage);

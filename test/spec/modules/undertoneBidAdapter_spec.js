@@ -3,7 +3,6 @@ import { spec } from 'modules/undertoneBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { deepClone, getWinDimensions } from '../../../src/utils.js';
 import * as adUnits from 'src/utils/adUnits';
-import { getAdUnitElement } from 'src/utils/adUnits';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';

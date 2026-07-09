@@ -218,7 +218,7 @@ function replaceAuctionPrice(str, cpm) {
 
 function getFloor(bid, size) {
   if (typeof bid.getFloor === 'function') {
-    let floorInfo = {};
+    let floorInfo;
     floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: 'banner',

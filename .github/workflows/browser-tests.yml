@@ -25,6 +25,8 @@ jobs:
     with:
       build-cmd: npx gulp build
       source-key: ${{ inputs.source-key }}
+      windows: ${{ !inputs.coverage-only }}
+      macos: ${{ !inputs.coverage-only }}
 
   setup:
     needs: build
@@ -38,11 +40,11 @@ jobs:
       bstack-sessions: ${{ fromJSON(steps.define.outputs.result).bsBrowsers }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name:  Restore working directory
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.built-key }}
+          name: ${{ needs.build.outputs.linux }}
       - name: "Define testing strategy"
         uses: actions/github-script@v9
         id: define
@@ -64,8 +66,11 @@ jobs:
               }
               return browsers;
             }).filter(browser => {
+             browser.os = browser.runsOn?.startsWith('windows') ? 'windows'
+               : browser.runsOn?.startsWith('macos') ? 'macos'
+                 : 'linux'
              return !${{inputs.coverage-only}} || browser.coverage
-            });
+            });            
             const bstackBrowsers = ${{inputs.coverage-only}} ? {} : Object.fromEntries(
               // exclude versions of browsers that we can test on GH actions
               Object.entries(require('./browsers.json'))
@@ -104,7 +109,7 @@ jobs:
     uses:
       ./.github/workflows/run-tests.yml
     with:
-      built-key: ${{ needs.build.outputs.built-key }}
+      built-key: ${{ needs.build.outputs.linux }}
       test-cmd: gulp test-build-logic
 
   e2e-tests:
@@ -119,12 +124,11 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       browser: ${{ matrix.browser.wdioName }}
-      built-key: ${{ needs.build.outputs.built-key }}
+      built-key: ${{ needs.build.outputs[matrix.browser.os] }}
       test-cmd: npx gulp e2e-test-nobuild --local
       chunks: 1
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
-      install-safari: ${{ matrix.browser.runsOn == 'macos-latest' }}
-      run-npm-install: ${{ matrix.browser.runsOn == 'windows-latest' }}
+      install-safari: ${{ matrix.browser.os == 'macos' }}
       browserstack: false
 
   unit-tests:
@@ -139,7 +143,7 @@ jobs:
     with:
       install-deb: ${{ matrix.browser.deb }}
       install-chrome: ${{ matrix.browser.chrome }}
-      built-key: ${{ needs.build.outputs.built-key }}
+      built-key: ${{ needs.build.outputs[matrix.browser.os] }}
       test-cmd: npx gulp test-only-nobuild --browsers ${{ matrix.browser.name }} ${{ matrix.browser.coverage && '--coverage' || '--no-coverage' }}
       chunks: 8
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
