@@ -626,7 +626,7 @@ export function getPerformanceNow() {
 }
 
 /**
- * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * Returns the difference between `timing.domLoading` and `timing.navigationStart`.
  * This function uses the deprecated `Performance.timing` API and should be removed in future.
  * It has not been updated yet because it is still used in some modules.
  * @deprecated
