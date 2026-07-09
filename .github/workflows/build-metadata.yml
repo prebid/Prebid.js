@@ -57,7 +57,8 @@ jobs:
       - name: Calculate base SHA and diff
         id: base
         run:  |
-          base=$(git merge-base HEAD ${{ github.event.pull_request.base.ref }})          
+          git fetch "origin/${{ github.event.pull_request.base.ref }}"
+          base=$(git merge-base HEAD "origin/${{ github.event.pull_request.base.ref }}")          
           git diff --name-only $base..HEAD  > ${{runner.temp}}/changed_files.txt || true
           echo "base=$base" >> $GITHUB_OUTPUT
       - name: Restore from cache
