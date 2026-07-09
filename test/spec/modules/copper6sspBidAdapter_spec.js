@@ -772,3 +772,321 @@ describe('copper6sspBidAdapter', function () {
     });
   });
 });
+// Supporting legacy adapter requests
+
+const LEGACY_BID = {
+  'bidId': '2d52001cabd527',
+  'adUnitCode': 'div-gpt-ad-12345-0',
+  'params': {
+    'placementId': '59db6b3b4ffaa70004f45cdc',
+    'endpointId': '59ac17c192832d0011283fe3',
+  },
+  'placementCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+  'sizes': [[300, 250], [300, 600]],
+  'bidderRequestId': '1fdb5ff1b6eaa7',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
+  'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'mediaTypes': [BANNER],
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '0123456789'
+    }
+  }
+};
+
+const LEGACY_BID_NO_PARAMS = {
+  'bidId': '2d52001cabd527',
+  'adUnitCode': 'div-gpt-ad-12345-0',
+  'params': {},
+  'placementCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+  'sizes': [[300, 250], [300, 600]],
+  'bidderRequestId': '1fdb5ff1b6eaa7',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
+  'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'mediaTypes': [BANNER],
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '0123456789'
+    }
+  }
+};
+const LEGACY_VIDEO_BID = {
+  'bidId': '2d52001cabd527',
+  'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
+  'bidderRequestId': '12a8ae9ada9c13',
+  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'params': {
+    'placementId': '635509f7ff6642d368cb9837',
+    'endpointId': '59ac17c192832d0011283fe3',
+  },
+  'sizes': [[545, 307]],
+  'mediaTypes': {
+    'video': {
+      'playerSize': [[545, 307]],
+      'context': 'instream',
+      'mimes': [
+        'video/mp4',
+        'application/javascript'
+      ],
+      'protocols': [2, 3, 5, 6],
+      'maxduration': 60,
+      'minduration': 0,
+      'startdelay': 0,
+      'linearity': 1,
+      'api': [2],
+      'placement': 1
+    }
+  }
+}
+
+describe('build requests for legacy adapter calls', function () {
+  let sandbox;
+  before(function () {
+    getGlobal().bidderSettings = {
+      copper6ssp: {
+        storageAllowed: true
+      }
+    };
+    sandbox = sinon.createSandbox();
+    sandbox.stub(Date, 'now').returns(1000);
+  });
+
+  it('should build video request', function () {
+    const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+    config.setConfig({
+      bidderTimeout: 3000
+    });
+    const requests = adapter.buildRequests([LEGACY_VIDEO_BID], BIDDER_REQUEST);
+    expect(requests).to.have.length(1);
+    expect(requests[0]).to.deep.equal({
+      method: 'POST',
+      url: `${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`,
+      data: {
+        adUnitCode: '63550ad1ff6642d368cba59dh5884270560',
+        bidId: '2d52001cabd527',
+        bidderVersion: adapter.version,
+        bidderRequestId: '12a8ae9ada9c13',
+        cb: 1000,
+        gdpr: 1,
+        gdprConsent: 'consent_string',
+        usPrivacy: 'consent_string',
+        gppString: 'gpp_string',
+        gppSid: [7],
+        prebidVersion: version,
+        transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+        auctionId: 'auction_id',
+        bidRequestsCount: 4,
+        bidderRequestsCount: 3,
+        bidderWinsCount: 1,
+        bidderTimeout: 3000,
+        publisherId: '59ac17c192832d0011283fe3',
+        url: 'https%3A%2F%2Fwww.greatsite.com',
+        referrer: 'https://www.somereferrer.com',
+        res: `${window.top.screen.width}x${window.top.screen.height}`,
+        schain: VIDEO_BID.schain,
+        sizes: ['545x307'],
+        sua: {
+          'source': 2,
+          'platform': {
+            'brand': 'Android',
+            'version': ['8', '0', '0']
+          },
+          'browsers': [
+            { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+            { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+            { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
+          ],
+          'mobile': 1,
+          'model': 'SM-G955U',
+          'bitness': '64',
+          'architecture': ''
+        },
+        device: ORTB2_DEVICE,
+        uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
+        uqs: getTopWindowQueryParams(),
+        mediaTypes: {
+          video: {
+            api: [2],
+            context: 'instream',
+            linearity: 1,
+            maxduration: 60,
+            mimes: [
+              'video/mp4',
+              'application/javascript'
+            ],
+            minduration: 0,
+            placement: 1,
+            playerSize: [[545, 307]],
+            protocols: [2, 3, 5, 6],
+            startdelay: 0
+          }
+        },
+        gpid: '',
+        cat: [],
+        contentLang: 'en',
+        contentData: [],
+        isStorageAllowed: true,
+        pagecat: [],
+        ortb2: ORTB2_OBJ,
+        userData: [],
+        coppa: 0
+      }
+    });
+  });
+
+  it('should build banner request for each size', function () {
+    const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+    config.setConfig({
+      bidderTimeout: 3000
+    });
+    const requests = adapter.buildRequests([LEGACY_BID], BIDDER_REQUEST);
+    expect(requests).to.have.length(1);
+    expect(requests[0]).to.deep.equal({
+      method: 'POST',
+      url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
+      data: {
+        gdprConsent: 'consent_string',
+        gdpr: 1,
+        gppString: 'gpp_string',
+        gppSid: [7],
+        usPrivacy: 'consent_string',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        auctionId: 'auction_id',
+        bidRequestsCount: 4,
+        bidderRequestsCount: 3,
+        bidderWinsCount: 1,
+        bidderTimeout: 3000,
+        bidderRequestId: '1fdb5ff1b6eaa7',
+        sizes: ['300x250', '300x600'],
+        sua: {
+          'source': 2,
+          'platform': {
+            'brand': 'Android',
+            'version': ['8', '0', '0']
+          },
+          'browsers': [
+            { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+            { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+            { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
+          ],
+          'mobile': 1,
+          'model': 'SM-G955U',
+          'bitness': '64',
+          'architecture': ''
+        },
+        device: ORTB2_DEVICE,
+        url: 'https%3A%2F%2Fwww.greatsite.com',
+        referrer: 'https://www.somereferrer.com',
+        cb: 1000,
+        bidId: '2d52001cabd527',
+        adUnitCode: 'div-gpt-ad-12345-0',
+        publisherId: '59ac17c192832d0011283fe3',
+        uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
+        bidderVersion: adapter.version,
+        prebidVersion: version,
+        schain: BID.schain,
+        res: `${window.top.screen.width}x${window.top.screen.height}`,
+        mediaTypes: [BANNER],
+        gpid: '0123456789',
+        uqs: getTopWindowQueryParams(),
+        cat: [],
+        contentLang: 'en',
+        contentData: [],
+        isStorageAllowed: true,
+        pagecat: [],
+        ortb2Imp: BID.ortb2Imp,
+        ortb2: ORTB2_OBJ,
+        userData: [],
+        coppa: 0
+      }
+    });
+  });
+
+  it('should build banner request for each size with default cId,pId', function () {
+    const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+    config.setConfig({
+      bidderTimeout: 3000
+    });
+    const requests = adapter.buildRequests([LEGACY_BID_NO_PARAMS], BIDDER_REQUEST);
+    expect(requests).to.have.length(1);
+    expect(requests[0]).to.deep.equal({
+      method: 'POST',
+      url: `${createDomain(SUB_DOMAIN)}/prebid/multi/600000000000000000000cc6`,
+      data: {
+        gdprConsent: 'consent_string',
+        gdpr: 1,
+        gppString: 'gpp_string',
+        gppSid: [7],
+        usPrivacy: 'consent_string',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        auctionId: 'auction_id',
+        bidRequestsCount: 4,
+        bidderRequestsCount: 3,
+        bidderWinsCount: 1,
+        bidderTimeout: 3000,
+        bidderRequestId: '1fdb5ff1b6eaa7',
+        sizes: ['300x250', '300x600'],
+        sua: {
+          'source': 2,
+          'platform': {
+            'brand': 'Android',
+            'version': ['8', '0', '0']
+          },
+          'browsers': [
+            { 'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0'] },
+            { 'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119'] },
+            { 'brand': 'Chromium', 'version': ['109', '0', '5414', '119'] }
+          ],
+          'mobile': 1,
+          'model': 'SM-G955U',
+          'bitness': '64',
+          'architecture': ''
+        },
+        device: ORTB2_DEVICE,
+        url: 'https%3A%2F%2Fwww.greatsite.com',
+        referrer: 'https://www.somereferrer.com',
+        cb: 1000,
+        bidId: '2d52001cabd527',
+        adUnitCode: 'div-gpt-ad-12345-0',
+        publisherId: '600000000000000000000dc6',
+        uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
+        bidderVersion: adapter.version,
+        prebidVersion: version,
+        schain: BID.schain,
+        res: `${window.top.screen.width}x${window.top.screen.height}`,
+        mediaTypes: [BANNER],
+        gpid: '0123456789',
+        uqs: getTopWindowQueryParams(),
+        cat: [],
+        contentLang: 'en',
+        contentData: [],
+        isStorageAllowed: true,
+        pagecat: [],
+        ortb2Imp: BID.ortb2Imp,
+        ortb2: ORTB2_OBJ,
+        userData: [],
+        coppa: 0
+      }
+    });
+  });
+
+  after(function () {
+    getGlobal().bidderSettings = {};
+    sandbox.restore();
+  });
+});
