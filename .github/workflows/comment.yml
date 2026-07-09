@@ -43,7 +43,7 @@ jobs:
             
             const request = (args) => Object.assign({owner: context.repo.owner, repo: context.repo.repo}, args);
             
-            const previousComment = (await github.rest.issues.listComments(request({issue_number})))
+            const previousComment = (await github.rest.issues.listComments(request({issue_number, per_page: 100})))
               .data
               .find(comment => comment.user.login === whoami && comment.body.includes(tag));
             
