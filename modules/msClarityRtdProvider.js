@@ -44,6 +44,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
  */
 
 const MODULE_NAME = 'msClarity';
+const APPNEXUS_GVLID = 32;
 const LOG_PREFIX = '[MsClarity RTD]';
 
 /**
@@ -871,6 +872,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config) {
 /** @type {RtdSubmodule} */
 export const msClaritySubmodule = {
   name: MODULE_NAME,
+  gvlid: APPNEXUS_GVLID,
   init,
   getBidRequestData,
 };

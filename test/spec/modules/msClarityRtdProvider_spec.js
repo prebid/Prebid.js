@@ -1235,6 +1235,10 @@ describe('msClarityRtdProvider', function () {
       expect(msClaritySubmodule.name).to.equal('msClarity');
     });
 
+    it('should use the AppNexus GVL ID', function () {
+      expect(msClaritySubmodule.gvlid).to.equal(32);
+    });
+
     it('should expose init and getBidRequestData only', function () {
       expect(msClaritySubmodule.init).to.be.a('function');
       expect(msClaritySubmodule.getBidRequestData).to.be.a('function');
