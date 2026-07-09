@@ -84,7 +84,7 @@ var rubiconAdapterMock = {
 };
 
 var pubmaticAdapterMock = {
-  bidder: 'rubicon',
+  bidder: 'pubmatic',
   callBids: sinon.stub()
 };
 
