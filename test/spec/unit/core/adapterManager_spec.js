@@ -153,7 +153,7 @@ describe('adapterManager tests', function () {
       let unregRule;
       beforeEach(() => {
         unregRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test',
-          ({ componentName, componentTypeType }) => {
+          ({ componentName, componentType }) => {
             if (componentType === 'bidder' && componentName === 'appnexus') {
               return { allow: false };
             }
