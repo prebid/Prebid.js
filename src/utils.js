@@ -1144,7 +1144,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
       value instanceof Map ||
       value instanceof Set ||
       value instanceof Date ||
-      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+      (value !== null && type === 'object' && Object.prototype.hasOwnProperty.call(value, 'toJSON'))
     ) {
       return true;
     }
