@@ -79,7 +79,7 @@ describe('Deepintent adapter', function () {
             'crid': '13665',
             'w': 300,
             'h': 250,
-            'dealId': 'dee_12312stdszzsx'
+            'dealid': 'dee_12312stdszzsx'
           }],
           'seat': '10000'
         }],
@@ -198,12 +198,14 @@ describe('Deepintent adapter', function () {
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
-    })
+    });
   });
   describe('request check', function () {
     it('unmutaable bid request check', function () {
       const oRequest = utils.deepClone(request);
-      const bidRequest = spec.buildRequests(request);
+
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {
@@ -342,8 +344,6 @@ describe('Deepintent adapter', function () {
   });
   describe('response check', function () {
     it('bid response check: valid bid response', function () {
-      const bRequest = spec.buildRequests(request);
-      const data = JSON.parse(bRequest.data);
       const bResponse = spec.interpretResponse(bannerResponse, request);
       expect(bResponse).to.be.an('array').with.length.above(0);
       expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
@@ -355,7 +355,7 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].meta.advertiserDomains).to.deep.equal(['deepintent.com']);
       expect(bResponse[0].ttl).to.equal(300);
       expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
-      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
+      expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealid);
     });
     it('bid response check: valid video bid response', function() {
       const request = spec.buildRequests(videoBidRequests);
@@ -401,6 +401,43 @@ describe('Deepintent adapter', function () {
       const bRequest = spec.buildRequests(request, bidderReq);
       const data = JSON.parse(bRequest.data);
       expect(data.regs.coppa).to.equal(1);
+    });
+  });
+  describe('ortb2 blocking (bcat, badv)', function() {
+    it('should add bcat and badv to payload when bidderRequest.ortb2 has them', function() {
+      const bidderReq = {
+        ortb2: {
+          bcat: ['IAB1', 'IAB2'],
+          badv: ['example.com']
+        }
+      };
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.deep.equal(['IAB1', 'IAB2']);
+      expect(data.badv).to.deep.equal(['example.com']);
+    });
+    it('should not add bcat or badv when bidderRequest.ortb2 does not have them', function() {
+      const bidderReq = { ortb2: {} };
+      const bRequest = spec.buildRequests(request, bidderReq);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.be.undefined;
+      expect(data.badv).to.be.undefined;
+    });
+    it('should use params.bcat and params.badv as fallback when ortb2 does not set them', function() {
+      const requestWithParams = [{
+        bidder: 'deepintent',
+        bidId: 'test-bid-id',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        params: {
+          tagId: '100013',
+          bcat: ['IAB25'],
+          badv: ['blocked-advertiser.com']
+        }
+      }];
+      const bRequest = spec.buildRequests(requestWithParams);
+      const data = JSON.parse(bRequest.data);
+      expect(data.bcat).to.deep.equal(['IAB25']);
+      expect(data.badv).to.deep.equal(['blocked-advertiser.com']);
     });
   });
   describe('deals functionality', function() {

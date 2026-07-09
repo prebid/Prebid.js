@@ -8,7 +8,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
   const PUBMATIC_ALIAS_BIDDER = 'pubmaticAlias';
-  const request = {};
+
   firstBid = {
     adUnitCode: 'Div1',
     bidder: 'pubmatic',
@@ -91,7 +91,7 @@ describe('PubMatic adapter', () => {
         }
       }
     }
-  }
+  };
   firstAliasBid = {
     adUnitCode: 'Div1',
     bidder: PUBMATIC_ALIAS_BIDDER,
@@ -174,7 +174,7 @@ describe('PubMatic adapter', () => {
         }
       }
     }
-  }
+  };
   videoBid = {
     'seat': 'seat-id',
     'ext': {
@@ -233,7 +233,7 @@ describe('PubMatic adapter', () => {
       id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
       seatbid: [videoBid]
     }
-  }
+  };
   const validBidRequests = [firstBid];
   const validAliasBidRequests = [firstAliasBid];
   const bidderRequest = {
@@ -337,9 +337,9 @@ describe('PubMatic adapter', () => {
             skippable: false,
             skip: 1,
             linearity: 2
-          }
+          };
           videoBidRequest.params.outstreamAU = 'outstreamAU';
-          videoBidRequest.params.renderer = 'renderer_test_pubmatic'
+          videoBidRequest.params.renderer = 'renderer_test_pubmatic';
         });
         it('should return false if mimes are missing in a video impression request', () => {
           const isValid = spec.isBidRequestValid(videoBidRequest);
@@ -350,7 +350,7 @@ describe('PubMatic adapter', () => {
           delete videoBidRequest.mediaTypes.context;
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(false);
-        })
+        });
 
         it('should return true if banner/native present, but outstreamAU or renderer is missing', () => {
           videoBidRequest.mediaTypes.video.mimes = ['video/flv'];
@@ -585,14 +585,14 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
 
-      xit('should include custom targeting data in imp.ext when provided by RTD', () => {
+      it('should include custom targeting data in imp.ext when provided by RTD', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('ext');
         expect(imp[0].ext).to.have.property('key_val');
         expect(imp[0].ext.key_val).to.deep.equal('im_segments=segment1,segment2|jw-id=jwplayer-content-id|jw-jwplayer-segment-1=1|jw-jwplayer-segment-2=1');
-      })
+      });
 
       if (FEATURES.VIDEO) {
         describe('VIDEO', () => {
@@ -617,15 +617,15 @@ describe('PubMatic adapter', () => {
               minbitrate: 10,
               maxbitrate: 10,
               playerSize: [640, 480]
-            }
+            };
             videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
-            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic'
+            videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
             videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
           afterEach(() => {
             utilsLogWarnMock.restore();
-          })
+          });
 
           it('should generate request with mediatype video', () => {
             const request = spec.buildRequests(validBidRequests, videoBidderRequest);
@@ -637,7 +637,11 @@ describe('PubMatic adapter', () => {
           it('should log a warning if playerSize is missing', () => {
             delete videoBidderRequest.bids[0].mediaTypes.video.playerSize;
             const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+            const { imp } = request?.data;
+
+            expect(imp).to.be.an('array');
             sinon.assert.called(utils.logWarn);
+            expect(imp[0].video).to.be.undefined;
           });
 
           it('should log a warning if plcmt is missing', () => {
@@ -703,18 +707,50 @@ describe('PubMatic adapter', () => {
               sponsoredBy: {
                 required: true
               }
-            }
+            };
           });
 
           afterEach(() => {
             utilsLogWarnMock.restore();
-          })
+          });
 
           it('should generate request with mediatype native', () => {
             const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
             const { imp } = request?.data;
             expect(imp).to.be.an('array');
             expect(imp[0]).to.have.property('native');
+          });
+
+          it('should set privacy to 1 in native request when privacyLink is present', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native.privacyLink = { required: false };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            expect(nativeRequest).to.have.property('privacy').equal(1);
+          });
+
+          it('should not add privacyLink as an asset in the native request', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native.privacyLink = { required: true };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            const hasPrivacyLinkAsset = nativeRequest.assets.some(asset => asset.privacyLink !== undefined);
+            expect(hasPrivacyLinkAsset).to.be.false;
+          });
+
+          it('should set privacy to 1 and have no assets when privacyLink is the only native key', () => {
+            nativeBidderRequest.bids[0].mediaTypes.native = { privacyLink: { required: false } };
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const { imp } = request?.data;
+            expect(imp).to.be.an('array');
+            expect(imp[0]).to.have.property('native');
+            const nativeRequest = JSON.parse(imp[0].native.request);
+            expect(nativeRequest).to.have.property('privacy').equal(1);
+            expect(nativeRequest.assets).to.deep.equal([]);
           });
         });
       }
@@ -783,7 +819,7 @@ describe('PubMatic adapter', () => {
           expect(result).to.have.property('ias-brand-safety');
           expect(result['ias-brand-safety']).to.deep.equal('content=news|sports=cricket|cricket=player');
         });
-      })
+      });
     });
 
     describe('rest of ORTB request', () => {
@@ -1048,7 +1084,7 @@ describe('PubMatic adapter', () => {
           copiedBidderRequest.ortb2.site.ext = {
             id: 'site-id',
             name: 'site-name',
-          }
+          };
           copiedBidderRequest.ortb2.badv = ['example.com'];
         });
 
@@ -1098,7 +1134,7 @@ describe('PubMatic adapter', () => {
             ext: {
               consent: 'kjfdniwjnifwenrif3'
             }
-          }
+          };
         });
 
         it('should have GDPR string', () => {
@@ -1115,7 +1151,7 @@ describe('PubMatic adapter', () => {
           copiedBidderRequest.ortb2.regs = {
             gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
             gpp_sid: [5]
-          }
+          };
           const request = spec.buildRequests(validBidRequests, copiedBidderRequest);
           expect(request.data).to.have.property('regs');
           expect(request.data.regs).to.have.property('gpp').to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
@@ -1481,7 +1517,7 @@ describe('PubMatic adapter', () => {
             minbitrate: 10,
             maxbitrate: 10,
             playerSize: [640, 480]
-          }
+          };
           videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
           videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
           videoBidderRequest.bids[0].adUnitCode = 'Div1';
@@ -1604,7 +1640,7 @@ describe('PubMatic adapter', () => {
         });
       });
     });
-  })
+  });
 
   it('should add userIdAsEids to user.ext.eids when present in bidRequest', () => {
     const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
@@ -1820,7 +1856,7 @@ describe('PubMatic adapter', () => {
     // The impression-level bidfloor should match the banner floor (2.5)
     expect(builtImp.bidfloor).to.equal(2.5);
   });
-})
+});
 
 describe('addViewabilityToImp', () => {
   let imp;
@@ -1856,13 +1892,13 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should add viewability to imp.ext when measurable', () => {
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
-    const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    sandbox.stub(utils, 'inIframe').returns(true);
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');
   });
@@ -1870,13 +1906,13 @@ describe('addViewabilityToImp', () => {
   it('should not add viewability if element is not found', () => {
     document.getElementById.restore();
     sandbox.stub(document, 'getElementById').returns(null);
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.not.have.property('viewability');
   });
 
   it('should create imp.ext if not present', () => {
     imp = {};
-    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    addViewabilityToImp(imp, { adUnitCode: 'Div1' }, { w: 300, h: 250 });
     expect(imp.ext).to.exist;
     expect(imp.ext).to.have.property('viewability');
   });

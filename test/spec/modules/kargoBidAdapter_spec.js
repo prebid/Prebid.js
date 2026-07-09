@@ -528,7 +528,7 @@ describe('kargo adapter tests', function() {
         topmostLocation: 'https://random.com/this/is/a/url'
       });
 
-      delete bidderRequest.refererInfo
+      delete bidderRequest.refererInfo;
       payload = getPayloadFromTestBids(testBids);
       expect(payload.ext).to.be.undefined;
     });
@@ -1026,7 +1026,7 @@ describe('kargo adapter tests', function() {
       it('retrieves CRB from localStorage and cookies', function() {
         setCrb('valid', 'valid');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.equal(crbValues.valid);
         expect(payload.rawCRBLocalStorage).to.equal(crbValues.validLs);
@@ -1040,7 +1040,7 @@ describe('kargo adapter tests', function() {
       it('retrieves CRB from localStorage if cookie is missing', function() {
         setCrb(false, 'valid');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.be.undefined;
         expect(payload.rawCRBLocalStorage).to.equal(crbValues.validLs);
@@ -1054,7 +1054,7 @@ describe('kargo adapter tests', function() {
       it('retrieves CRB from cookies if localstorage is missing', function() {
         setCrb('valid', false);
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.equal(crbValues.valid);
         expect(payload.rawCRBLocalStorage).to.be.undefined;
@@ -1071,7 +1071,7 @@ describe('kargo adapter tests', function() {
         sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
         setCrb('valid', 'invalid');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.equal(crbValues.valid);
         expect(payload.rawCRBLocalStorage).to.be.undefined;
@@ -1083,7 +1083,7 @@ describe('kargo adapter tests', function() {
       });
 
       it('does not fail if CRB is missing', function() {
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.be.undefined;
         expect(payload.rawCRBLocalStorage).to.be.undefined;
@@ -1097,7 +1097,7 @@ describe('kargo adapter tests', function() {
       it('fails gracefully if the CRB is invalid base 64 cookie', function() {
         setCrb('invalidB64', false);
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.equal(crbValues.invalidB64);
         expect(payload.rawCRBLocalStorage).to.be.undefined;
@@ -1111,7 +1111,7 @@ describe('kargo adapter tests', function() {
       it('fails gracefully if the CRB is invalid base 64 localStorage', function() {
         setCrb(false, 'invalidB64');
 
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.rawCRB).to.be.undefined;
         expect(payload.rawCRBLocalStorage).to.equal(crbValues.invalidB64Ls);
@@ -1134,7 +1134,7 @@ describe('kargo adapter tests', function() {
       ].forEach(config => {
         it(`uses ${config[2]} if the cookie is ${config[0]} and localStorage is ${config[1]}`, function() {
           setCrb(config[0], config[1]);
-          const payload = getPayloadFromTestBids(testBids, bidderRequest);
+          const payload = getPayloadFromTestBids(testBids);
 
           expect(payload.rawCRB).to.equal(crbValues[config[0]]);
           expect(payload.rawCRBLocalStorage).to.equal(crbValues[`${config[1]}Ls`]);
@@ -1162,21 +1162,21 @@ describe('kargo adapter tests', function() {
 
       it('uses the tdID from cerberus to populate the tdID field', function() {
         setCrb('valid', 'valid');
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage');
       });
 
       it('uses the lexId from cerberus to populate the kargoID field', function() {
         setCrb('valid', 'valid');
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.user.kargoID).to.equal('test-lexid-cerberus-localstorage');
       });
 
       it('uses the clientId from cerberus to populate the clientID field', function() {
         setCrb('valid', 'valid');
-        const payload = getPayloadFromTestBids(testBids, bidderRequest);
+        const payload = getPayloadFromTestBids(testBids);
 
         expect(payload.user.clientID).to.equal('test-clientid-cerberus-localstorage');
       });
@@ -1184,12 +1184,12 @@ describe('kargo adapter tests', function() {
       it('uses the optOut from cerberus to populate the clientID field', function() {
         setCrb('valid', 'valid');
         let payload;
-        payload = getPayloadFromTestBids(testBids, bidderRequest);
+        payload = getPayloadFromTestBids(testBids);
 
         expect(payload.user.optOut).to.equal(false);
 
         setLocalStorageValue('krg_crb', buildCrbValue(false, true, true, true, true, true));
-        payload = getPayloadFromTestBids(testBids, bidderRequest);
+        payload = getPayloadFromTestBids(testBids);
 
         expect(payload.user.optOut).to.equal(true);
       });
@@ -1253,7 +1253,7 @@ describe('kargo adapter tests', function() {
 
       it('fetches gpp from the bidder request if present', function() {
         bidderRequest.gppConsent = {
-          consentString: 'gppString',
+          gppString: 'gppString',
           applicableSections: [-1]
         };
         const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
@@ -1266,7 +1266,7 @@ describe('kargo adapter tests', function() {
 
       it('does not send empty gpp values', function() {
         bidderRequest.gppConsent = {
-          consentString: '',
+          gppString: '',
           applicableSections: ''
         };
         const payload = getPayloadFromTestBids([{ ...minimumBidParams }]);
@@ -1932,55 +1932,6 @@ describe('kargo adapter tests', function() {
         advertiserDomains: ['https://foo.com', 'https://bar.com']
       });
     });
-
-    it('should return paapi if provided in bid response', function () {
-      const auctionConfig = {
-        seller: 'https://kargo.com',
-        decisionLogicUrl: 'https://kargo.com/decision_logic.js',
-        interestGroupBuyers: ['https://some_buyer.com'],
-        perBuyerSignals: {
-          'https://some_buyer.com': { a: 1 }
-        }
-      }
-
-      const body = response.body;
-      for (const key in body) {
-        if (body.hasOwnProperty(key)) {
-          if (key % 2 !== 0) { // Add auctionConfig to every other object
-            body[key].auctionConfig = auctionConfig;
-          }
-        }
-      }
-
-      const result = spec.interpretResponse(response, bidderRequest);
-
-      // Test properties of bidResponses
-      result.bids.forEach(bid => {
-        expect(bid).to.have.property('requestId');
-        expect(bid).to.have.property('cpm');
-        expect(bid).to.have.property('width');
-        expect(bid).to.have.property('height');
-        expect(bid).to.have.property('ttl');
-        expect(bid).to.have.property('creativeId');
-        expect(bid.netRevenue).to.be.true;
-        expect(bid).to.have.property('meta').that.is.an('object');
-      });
-
-      // Test properties of paapi
-      expect(result.paapi).to.have.lengthOf(3);
-
-      const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
-      result.paapi.forEach(config => {
-        expect(config).to.have.property('bidId');
-        expect(expectedBidIds).to.include(config.bidId);
-
-        expect(config).to.have.property('config').that.is.an('object');
-        expect(config.config).to.have.property('seller', 'https://kargo.com');
-        expect(config.config).to.have.property('decisionLogicUrl', 'https://kargo.com/decision_logic.js');
-        expect(config.config.interestGroupBuyers).to.be.an('array').that.includes('https://some_buyer.com');
-        expect(config.config.perBuyerSignals).to.have.property('https://some_buyer.com').that.deep.equals({ a: 1 });
-      });
-    });
   });
 
   describe('getUserSyncs', function() {
@@ -2077,13 +2028,13 @@ describe('kargo adapter tests', function() {
 
     it('includes gpp information if provided', function() {
       [
-        { applicableSections: [-1], consentString: 'test-consent-string', as: '-1', cs: 'test-consent-string' },
-        { applicableSections: [1, 2, 3], consentString: 'test-consent-string', as: '1,2,3', cs: 'test-consent-string' },
+        { applicableSections: [-1], gppString: 'test-consent-string', as: '-1', cs: 'test-consent-string' },
+        { applicableSections: [1, 2, 3], gppString: 'test-consent-string', as: '1,2,3', cs: 'test-consent-string' },
         { applicableSections: [-1], as: '-1', cs: '' },
-        { applicableSections: false, consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
-        { applicableSections: null, consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
-        { applicableSections: {}, consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
-        { applicableSections: [], consentString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: false, gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: null, gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: {}, gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
+        { applicableSections: [], gppString: 'test-consent-string', as: '', cs: 'test-consent-string' },
         { as: '', cs: '' },
       ].forEach(value => expect(getUserSyncs(undefined, undefined, value), `Value - ${value}`)
         .to.deep.equal(buildSyncUrls(baseUrl
@@ -2109,7 +2060,7 @@ describe('kargo adapter tests', function() {
       expect(getUserSyncs(
         { gdprApplies: true, consentString: 'test-gdpr-consent' },
         '1---',
-        { applicableSections: [1, 2, 3], consentString: 'test-gpp-consent' }
+        { applicableSections: [1, 2, 3], gppString: 'test-gpp-consent' }
       )).to.deep.equal(buildSyncUrls(baseUrl
         .replace(/gdpr=\d/, 'gdpr=1')
         .replace(/gdpr_consent=/, 'gdpr_consent=test-gdpr-consent')

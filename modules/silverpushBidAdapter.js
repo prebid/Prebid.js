@@ -82,7 +82,7 @@ export const CONVERTER = ortbConverter({
       ext: {
         bc: `${bidderConfig}_${bidderVersion}`
       }
-    })
+    });
 
     const userAgent = navigator.userAgent;
     utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
@@ -111,28 +111,13 @@ export const CONVERTER = ortbConverter({
     }
 
     bidResponse = buildVideoVastResponse(bidResponse);
-    bidResponse = buildVideoOutstreamResponse(bidResponse, context)
+    bidResponse = buildVideoOutstreamResponse(bidResponse, context);
 
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-
-    let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
-          bidId,
-          auctionSignals: {}
-        }, cfg);
-      });
-      return {
-        bids: response.bids,
-        paapi: fledgeAuctionConfigs,
-      }
-    } else {
-      return response.bids
-    }
+    return response.bids;
   }
 });
 
@@ -218,7 +203,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     url: REQUEST_URL,
     data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } }),
     bidderRequest
-  }
+  };
 }
 
 function buildVideoVastResponse(bidResponse) {
@@ -226,7 +211,7 @@ function buildVideoVastResponse(bidResponse) {
     bidResponse.vastUrl = bidResponse.vastXml;
   }
 
-  return { ...bidResponse }
+  return { ...bidResponse };
 }
 
 function buildVideoOutstreamResponse(bidResponse, context) {
@@ -240,9 +225,7 @@ function buildVideoOutstreamResponse(bidResponse, context) {
       url: bidResponse.rendererUrl
     });
 
-    bidResponse.renderer.setRender(_renderer(bidResponse));
-
-    bidResponse.renderer.render(bidResponse);
+    bidResponse.renderer.setRender(() => _renderer(bidResponse));
   }
 
   return { ...bidResponse };

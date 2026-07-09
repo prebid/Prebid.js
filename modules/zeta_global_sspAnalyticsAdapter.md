@@ -8,7 +8,16 @@ Maintainer: abermanov@zetaglobal.com
 
 ## Description
 
-Analytics Adapter which sends auctionEnd and adRenderSucceeded events to Zeta Global SSP analytics endpoints
+Analytics Adapter which sends Prebid analytics events to Zeta Global SSP analytics endpoints.
+
+Tracked events:
+
+- `auctionEnd`
+- `adRenderSucceeded`
+- `adRenderFailed`
+- `bidTimeout`
+- `bidderError`
+- `browserIntervention`
 
 ## How to configure
 ```

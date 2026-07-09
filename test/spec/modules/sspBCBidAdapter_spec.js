@@ -15,7 +15,7 @@ describe('SSPBC adapter', function () {
     const gdprConsent = {
       consentString: 'BOtq-3dOtq-30BIABCPLC4-AAAAthr_7__7-_9_-_f__9uj3Or_v_f__30ccL59v_h_7v-_7fi_20nV4u_1vft9yfk1-5ctDztp505iakivHmqNeb9v_mz1_5pRP78k89r7337Ew_v8_v-b7JCON_Ig',
       gdprApplies: true,
-    }
+    };
     const bids = [{
       adUnitCode: 'test_wideboard',
       bidder: BIDDER_CODE,
@@ -498,7 +498,7 @@ describe('SSPBC adapter', function () {
       'body': {
         'id': bidderRequestId,
       }
-    }
+    };
     return {
       bid_OneCode,
       bids,
@@ -647,8 +647,8 @@ describe('SSPBC adapter', function () {
         note that payload comes from first, and payloadSingle from second auction in the test run
         also, since both have same adUnitName, value of pbsize property should be the same
       */
-      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
-      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
+      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1');
+      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1');
     });
 
     it('should send supply chain data', function () {
@@ -662,7 +662,7 @@ describe('SSPBC adapter', function () {
             hp: 1
           },
         ]
-      }
+      };
       const bidWithSupplyChain = Object.assign(bids[0], { ortb2: { source: { ext: { schain: supplyChain } } } });
       const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest);
       const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false };
@@ -672,7 +672,7 @@ describe('SSPBC adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
+    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
     const request = spec.buildRequests(bids, bidRequest);
     const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
     const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);
@@ -690,14 +690,14 @@ describe('SSPBC adapter', function () {
 
       expect(result.length).to.equal(bids.length);
       expect(resultSingle.length).to.equal(1);
-      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls');
+      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls', 'eventtrackers');
     });
 
     it('should create bid from OneCode (parameter-less) request, if response contains siteId', function () {
       const resultOneCode = spec.interpretResponse(serverResponseOneCode, requestOneCode);
 
       expect(resultOneCode.length).to.equal(1);
-      expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls');
+      expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls', 'eventtrackers');
     });
 
     it('should not create bid from OneCode (parameter-less) request, if response does not contain siteId', function () {
@@ -724,7 +724,7 @@ describe('SSPBC adapter', function () {
       expect(resultVideo.length).to.equal(1);
 
       const videoBid = resultVideo[0];
-      expect(videoBid).to.have.keys('adType', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl', 'vurls');
+      expect(videoBid).to.have.keys('adType', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl', 'vurls', 'eventtrackers');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
       expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
@@ -738,7 +738,7 @@ describe('SSPBC adapter', function () {
       expect(resultNative.length).to.equal(1);
 
       const nativeBid = resultNative[0];
-      expect(nativeBid).to.have.keys('cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls');
+      expect(nativeBid).to.have.keys('cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls', 'eventtrackers');
       expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers', 'clickTrackers');
     });
 
@@ -746,13 +746,6 @@ describe('SSPBC adapter', function () {
       const resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle);
 
       expect(resultIncorrect.length).to.equal(0);
-    });
-
-    it('should response with fledge auction configs', function () {
-      const { bids, fledgeAuctionConfigs } = spec.interpretResponse(serverResponsePaapi, requestSingle);
-
-      expect(bids.length).to.equal(1);
-      expect(fledgeAuctionConfigs.length).to.equal(1);
     });
   });
 

@@ -1,5 +1,6 @@
 import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
-import { compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques, isEmpty } from '../../src/utils.js';
+import { deepAccess, isGptPubadsDefined, uniques, isEmpty, isAdUnitCodeMatchingSlot } from '../../src/utils.js';
+import { setPageTargeting } from '../../src/utils/gptTargeting.js';
 
 const slotInfoCache = new Map();
 
@@ -13,7 +14,10 @@ export function clearSlotInfoCache() {
  * @return {function} filter function
  */
 export function isSlotMatchingAdUnitCode(adUnitCode) {
-  return (slot) => compareCodeAndSlot(slot, adUnitCode);
+  return (slot) => {
+    const match = isAdUnitCodeMatchingSlot(slot);
+    return match(adUnitCode);
+  };
 }
 
 /**
@@ -22,9 +26,13 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 export function setKeyValue(key, value) {
   if (!key || typeof key !== 'string') return false;
   window.googletag = window.googletag || { cmd: [] };
-  window.googletag.cmd = window.googletag.cmd || [];
-  window.googletag.cmd.push(() => {
-    window.googletag.pubads().setTargeting(key, value);
+  setKeyValueOn(key, value, window.googletag);
+}
+
+export function setKeyValueOn(key, value, gpt = window.googletag) {
+  gpt.cmd = gpt.cmd || [];
+  gpt.cmd.push(() => {
+    setPageTargeting(key, value, gpt);
   });
 }
 
@@ -35,7 +43,10 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
-    matchingSlot = window.googletag.pubads().getSlots().find(isSlotMatchingAdUnitCode(adUnitCode));
+    matchingSlot = window.googletag.pubads().getSlots().find(slot => {
+      const match = isAdUnitCodeMatchingSlot(slot);
+      return match(adUnitCode);
+    });
   }
   return matchingSlot;
 }
@@ -77,7 +88,7 @@ export function getSegments(fpd, sections, segtax) {
     .filter(datum => datum.ext?.segtax === segtax)
     .flatMap(datum => datum.segment?.map(seg => seg.id))
     .filter(ob => ob)
-    .filter(uniques)
+    .filter(uniques);
 }
 
 /**
@@ -141,5 +152,5 @@ export function subscribeToGamEvent(event, callback) {
  * @param {SlotRenderEndedEventCallback} callback
  */
 export function subscribeToGamSlotRenderEndedEvent(callback) {
-  subscribeToGamEvent('slotRenderEnded', callback)
+  subscribeToGamEvent('slotRenderEnded', callback);
 }

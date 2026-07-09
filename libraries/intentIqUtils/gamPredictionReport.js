@@ -1,19 +1,20 @@
 import { getEvents } from '../../src/events.js';
 import { logError } from '../../src/utils.js';
+import { getSlotTargetingMap } from '../../src/utils/gptTargeting.js';
 
 export function gamPredictionReport (gamObjectReference, sendData) {
   try {
-    if (!gamObjectReference || !sendData) logError('Failed to get gamPredictionReport, required data is missed');
+    if (!gamObjectReference || !sendData) {
+      logError('Failed to get gamPredictionReport, required data is missed');
+      return;
+    }
     const getSlotTargeting = (slot) => {
-      const kvs = {};
       try {
-        (slot.getTargetingKeys() || []).forEach((k) => {
-          kvs[k] = slot.getTargeting(k);
-        });
+        return getSlotTargetingMap(slot);
       } catch (e) {
-        logError('Failed to get targeting keys: ' + e);
+        logError('Failed to get slot targeting: ' + e);
+        return {};
       }
-      return kvs;
     };
 
     const extractWinData = (gamEvent) => {

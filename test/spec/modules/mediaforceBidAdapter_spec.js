@@ -1,7 +1,6 @@
 import { assert } from 'chai';
 import { spec, resolveFloor } from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import { getDNT } from 'libraries/dnt/index.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('mediaforce bid adapter', function () {
@@ -126,7 +125,7 @@ describe('mediaforce bid adapter', function () {
       ]
     };
 
-    const dnt = getDNT() ? 1 : 0;
+    const dnt = 0; // DNT deprecated by W3C; Prebid no longer supports DNT
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     const pageUrl = window.location.href;
     const timeout = 1500;
@@ -227,7 +226,7 @@ describe('mediaforce bid adapter', function () {
             tid: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
           }
         },
-      }
+      };
     });
 
     const requestUrl = `${baseUrl}/header_bid`;
@@ -254,7 +253,7 @@ describe('mediaforce bid adapter', function () {
       const expectedDataCopy = utils.deepClone(createExpectedData());
       assert.exists(data.id);
 
-      expectedDataCopy.id = data.id
+      expectedDataCopy.id = data.id;
       assert.deepEqual(data, expectedDataCopy);
     });
 
@@ -277,7 +276,7 @@ describe('mediaforce bid adapter', function () {
         min_width: 100,
         ratio_width: 4,
         ratio_height: 3
-      }]
+      }];
       bid.mediaTypes.native.image.aspect_ratios = aspect_ratios;
       bid.nativeParams.image.aspect_ratios = aspect_ratios;
 
@@ -315,8 +314,8 @@ describe('mediaforce bid adapter', function () {
       const expectedDataCopy = utils.deepClone(createExpectedData());
       assert.exists(data.id);
 
-      expectedDataCopy.id = data.id
-      expectedDataCopy.imp[0].bidfloor = bid.params.bidfloor
+      expectedDataCopy.id = data.id;
+      expectedDataCopy.imp[0].bidfloor = bid.params.bidfloor;
       assert.deepEqual(data, expectedDataCopy);
     });
 
@@ -744,7 +743,7 @@ describe('mediaforce bid adapter', function () {
           hb_pb: '0.20',
           hb_size: '350x250'
         }
-      }
+      };
       spec.onBidWon(bid);
       assert.equal(bid.burl, 'burl&s=0.20');
     });

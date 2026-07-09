@@ -40,15 +40,7 @@ export const spec = {
 
     serverResponse.seatbid.forEach(function (seatbid) {
       bids.push(seatbid.bid);
-    })
-
-    const fledgeAuctionConfigs = deepAccess(serverResponse, 'ext.fledgeAuctionConfigs') || [];
-    if (fledgeAuctionConfigs.length) {
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs,
-      };
-    }
+    });
 
     return bids;
   },
@@ -72,15 +64,7 @@ function newBidRequest(bidRequest, bidderRequest) {
     sizes: bidRequest.sizes,
     params: bidRequest.params,
     mediaTypes: bidRequest.mediaTypes,
-  }
-
-  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
-  if (fledgeEnabled) {
-    const ae = deepAccess(bidRequest, 'ortb2Imp.ext.ae');
-    if (ae) {
-      bid.ae = ae;
-    }
-  }
+  };
 
   const data = {
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781

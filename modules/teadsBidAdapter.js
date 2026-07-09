@@ -101,7 +101,7 @@ export const spec = {
       const isValidConsentString = typeof gpp.gppString === 'string';
       const validateApplicableSections =
         Array.isArray(gpp.applicableSections) &&
-        gpp.applicableSections.every((section) => typeof (section) === 'number')
+        gpp.applicableSections.every((section) => typeof (section) === 'number');
       payload.gpp = {
         consentString: isValidConsentString ? gpp.gppString : '',
         applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
@@ -178,7 +178,7 @@ export const spec = {
           placementId: bid.placementId
         };
         if (bid.dealId) {
-          bidResponse.dealId = bid.dealId
+          bidResponse.dealId = bid.dealId;
         }
         if (bid?.ext?.dsa) {
           bidResponse.meta.dsa = bid.ext.dsa;
@@ -201,12 +201,11 @@ function getSharedViewerIdParameters(validBidRequests) {
     id5Id: 'id5-sync.com', // id5IdSystem
     criteoId: 'criteo.com', // criteoIdSystem
     yahooConnectId: 'yahoo.com', // connectIdSystem
-    quantcastId: 'quantcast.com', // quantcastIdSystem
     epsilonPublisherLinkId: 'epsilon.com', // publinkIdSystem
     publisherFirstPartyViewerId: 'pubcid.org', // sharedIdSystem
     merkleId: 'merkleinc.com', // merkleIdSystem
     kinessoId: 'kpuid.com' // kinessoIdSystem
-  }
+  };
 
   const sharedViewerIdObject = {};
   for (const sharedViewerId in sharedViewerIdMapping) {
@@ -215,7 +214,7 @@ function getSharedViewerIdParameters(validBidRequests) {
       if (eid.source === userIdKey && eid.uids?.[0].id) {
         sharedViewerIdObject[sharedViewerId] = eid.uids[0].id;
       }
-    })
+    });
   }
   return sharedViewerIdObject;
 }
@@ -234,11 +233,11 @@ function getReferrerInfo(bidderRequest) {
 
 function getPageTitle() {
   try {
-    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]');
 
     return window.top.document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
-    const ogTitle = document.querySelector('meta[property="og:title"]')
+    const ogTitle = document.querySelector('meta[property="og:title"]');
 
     return document.title || (ogTitle && ogTitle.content) || '';
   }
@@ -249,10 +248,10 @@ function getPageDescription() {
 
   try {
     element = window.top.document.querySelector('meta[name="description"]') ||
-      window.top.document.querySelector('meta[property="og:description"]')
+      window.top.document.querySelector('meta[property="og:description"]');
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
-      document.querySelector('meta[property="og:description"]')
+      document.querySelector('meta[property="og:description"]');
   }
 
   return (element && element.content) || '';
@@ -321,7 +320,7 @@ function concatSizes(bid) {
           if (isArray(currSize[0])) {
             currSize.forEach(function (childSize) {
               acc.push(childSize);
-            })
+            });
           } else {
             acc.push(currSize);
           }

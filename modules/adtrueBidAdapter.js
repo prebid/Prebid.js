@@ -1,10 +1,10 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'adtrue';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -83,12 +83,12 @@ function _getDomainFromURL(url) {
 const platform = (function getPlatform() {
   var ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
-    return 'Android'
+    return 'Android';
   }
   if (ua.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/)) {
-    return 'iOS'
+    return 'iOS';
   }
-  return 'windows'
+  return 'windows';
 })();
 
 function _generateGUID() {
@@ -97,7 +97,7 @@ function _generateGUID() {
     var r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
     return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  })
+  });
   return guid;
 }
 
@@ -150,9 +150,9 @@ function _getLanguage() {
 function _createOrtbTemplate(conf) {
   var guid;
   if (storage.getDataFromLocalStorage('adtrue_user_id') == null) {
-    storage.setDataInLocalStorage('adtrue_user_id', _generateGUID())
+    storage.setDataInLocalStorage('adtrue_user_id', _generateGUID());
   }
-  guid = storage.getDataFromLocalStorage('adtrue_user_id')
+  guid = storage.getDataFromLocalStorage('adtrue_user_id');
 
   return {
     id: '' + new Date().getTime(),
@@ -216,11 +216,11 @@ function _checkParamDataType(key, value, datatype) {
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    var adm = '';
+    var adm;
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
-      // logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      // logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native response for ad response: ' + newBid.adm);
       return;
     }
     if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
@@ -347,7 +347,7 @@ function _createVideoRequest(bid) {
 }
 
 function _checkMediaType(adm, newBid) {
-  var admStr = '';
+  var admStr;
   var videoRegex = new RegExp(/VAST\s+version/);
   newBid.mediaType = BANNER;
   if (videoRegex.test(adm)) {
@@ -359,13 +359,13 @@ function _checkMediaType(adm, newBid) {
         newBid.mediaType = NATIVE;
       }
     } catch (e) {
-      logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+      logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native response for ad response: ' + adm);
     }
   }
 }
 
 function _createImpressionObject(bid, conf) {
-  var impObj = {};
+  var impObj;
   var bannerObj;
   var videoObj;
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];

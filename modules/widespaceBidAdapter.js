@@ -4,6 +4,7 @@ import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/u
 import { getStorageManager } from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -53,7 +54,7 @@ export const spec = {
         'inFrame': 1,
         'sid': bid.params.sid,
         'lcuid': LC_UID,
-        'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
+        'vol': isInHostileIframe ? '' : visibleOnLoad(getAdUnitElement(bid)),
         'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
@@ -154,12 +155,11 @@ export const spec = {
       }
     });
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, serverResponses = []) {
-    let userSyncs = [];
-    userSyncs = serverResponses.reduce((allSyncPixels, response) => {
+    return serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
         (response.body[0].syncPixels || []).forEach((url) => {
           allSyncPixels.push({ type: 'image', url });
@@ -167,7 +167,6 @@ export const spec = {
       }
       return allSyncPixels;
     }, []);
-    return userSyncs;
   }
 };
 

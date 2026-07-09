@@ -1,6 +1,6 @@
 import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
@@ -9,6 +9,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
 import { addDealCustomTargetings, addPMPDeals } from '../libraries/dealUtils/dealUtils.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -95,7 +96,7 @@ const converter = ortbConverter({
     if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
     if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
-    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes);
+    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, bidRequest, bidRequest?.sizes);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
@@ -142,12 +143,11 @@ const converter = ortbConverter({
     if (mediaType === VIDEO) {
       if (!bidResponse.width) bidResponse.width = playerWidth;
       if (!bidResponse.height) bidResponse.height = playerHeight;
-      const { context, maxduration } = mediaTypes[mediaType];
+      const { context } = mediaTypes[mediaType];
       if (context === 'outstream' && params.outstreamAU && adUnitCode) {
         bidResponse.rendererCode = params.outstreamAU;
         bidResponse.renderer = BB_RENDERER.newRenderer(bidResponse.rendererCode, adUnitCode);
       }
-      assignDealTier(bidResponse, context, maxduration);
     }
     if (mediaType === NATIVE && bid.adm) {
       try {
@@ -185,7 +185,7 @@ export const shouldAddDealTargeting = (ortb2) => {
   if (hasImSegments) result.im_segments = `im_segments=${imSegmentData.join(',')}`;
   if (hasIasBrandSafety) result['ias-brand-safety'] = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`).join('|');
   return Object.keys(result).length ? result : undefined;
-}
+};
 
 export function _calculateBidCpmAdjustment(bid) {
   if (!bid) return;
@@ -245,7 +245,7 @@ const handleImageProperties = asset => {
   asset.ext && (imgProps.ext = asset.ext);
   asset.mimes && (imgProps.mimes = asset.mimes);
   return imgProps;
-}
+};
 
 const toOrtbNativeRequest = legacyNativeAssets => {
   const ortb = { ver: '1.2', assets: [] };
@@ -253,6 +253,11 @@ const toOrtbNativeRequest = legacyNativeAssets => {
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key) && !PREBID_NATIVE_DATA_KEY_VALUES.includes(key)) {
       logWarn(`${LOG_WARN_PREFIX}: Unrecognized asset: ${key}. Ignored.`);
+      continue;
+    }
+
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
       continue;
     }
 
@@ -276,7 +281,7 @@ const toOrtbNativeRequest = legacyNativeAssets => {
     ortb.assets.push(ortbAsset);
   }
   return ortb;
-}
+};
 
 const setImpFields = imp => {
   imp.displaymanager ||= 'Prebid.js';
@@ -284,21 +289,21 @@ const setImpFields = imp => {
   const gptAdSlot = imp.ext?.data?.adserver?.adslot;
   if (gptAdSlot) imp.ext.dfp_ad_unit_code = gptAdSlot;
   // Delete ext.data in case of no-adserver
-  if (imp.ext?.data && Object.keys(imp.ext.data).length === 0) delete imp.ext.data
-}
+  if (imp.ext?.data && Object.keys(imp.ext.data).length === 0) delete imp.ext.data;
+};
 
 function removeGranularFloor(imp, mediaTypes) {
   mediaTypes.forEach(mt => {
     if (imp[mt]?.ext && imp[mt].ext.bidfloor === imp.bidfloor && imp[mt].ext.bidfloorcur === imp.bidfloorcur) {
       delete imp[mt].ext;
     }
-  })
+  });
 }
 
 const setFloorInImp = (imp, bid) => {
   let bidFloor = -1;
   const requestedMediatypes = Object.keys(bid.mediaTypes);
-  const isMultiFormatRequest = requestedMediatypes.length > 1
+  const isMultiFormatRequest = requestedMediatypes.length > 1;
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (!imp.hasOwnProperty(mediaType)) return;
@@ -339,7 +344,7 @@ const setFloorInImp = (imp, bid) => {
   logInfo(LOG_WARN_PREFIX, 'Updated imp.bidfloor:', imp.bidfloor);
   // remove granular floor if impression level floor is same as granular
   if (isMultiFormatRequest) removeGranularFloor(imp, requestedMediatypes);
-}
+};
 
 const updateBannerImp = (bannerObj, adSlot) => {
   const slot = adSlot.split(':');
@@ -359,12 +364,12 @@ const updateBannerImp = (bannerObj, adSlot) => {
   );
   if (!bannerObj.format?.length) delete bannerObj.format;
   bannerObj.pos ??= 0;
-}
+};
 
 const setImpTagId = (imp, adSlot, hashedKey) => {
   const splits = adSlot.split(':')[0].split('@');
   imp.tagid = hashedKey || splits[0];
-}
+};
 
 const updateNativeImp = (imp, nativeParams) => {
   if (!nativeParams?.ortb) {
@@ -380,7 +385,7 @@ const updateNativeImp = (imp, nativeParams) => {
       imp.native.request = JSON.stringify({ ver: '1.2', ...nativeConfig });
     }
   }
-}
+};
 
 const updateVideoImp = (videoParams, adUnitCode, imp) => {
   const videoImp = imp.video;
@@ -391,7 +396,7 @@ const updateVideoImp = (videoParams, adUnitCode, imp) => {
     delete imp.video;
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
   }
-}
+};
 
 const addJWPlayerSegmentData = (imp, jwplayer) => {
   const jwSegData = jwplayer?.targeting;
@@ -412,8 +417,8 @@ const updateRequestExt = (req, bidderRequest) => {
     : allBiddersList;
   req.ext.marketplace = {
     allowedbidders: (biddersList.includes('*') || biddersList.includes('all')) ? allBiddersList : [...new Set(['pubmatic', ...biddersList.filter(val => val && val.trim())])]
-  }
-}
+  };
+};
 
 const reqLevelParams = (req) => {
   deepSetValue(req, 'at', AUCTION_TYPE);
@@ -454,7 +459,7 @@ const updateUserSiteDevice = (req, bidRequest) => {
   } else if (req.user.geo && !req.device.geo) {
     req.device.geo = req.user.geo;
   }
-}
+};
 
 const updateResponseWithCustomFields = (res, bid, ctx) => {
   const { ortbRequest, seatbid } = ctx;
@@ -469,7 +474,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
     res.dealChannel = bid.ext?.deal_channel ? dealChannel[bid.ext.deal_channel] || null : 'PMP';
   }
   if (seatbid.ext?.buyid) {
-    res.adserverTargeting = { 'hb_buyid_pubmatic': seatbid.ext.buyid }
+    res.adserverTargeting = { 'hb_buyid_pubmatic': seatbid.ext.buyid };
   }
   if (bid.ext?.marketplace) {
     res.bidderCode = bid.ext.marketplace;
@@ -506,7 +511,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
     res.meta.secondaryCatIds = bid.cat;
     res.meta.primaryCatId = bid.cat[0];
   }
-}
+};
 
 const addExtenstionParams = (req, bidderRequest) => {
   const { profId, verId, wiid } = conf;
@@ -521,29 +526,8 @@ const addExtenstionParams = (req, bidderRequest) => {
       biddercode: bidderRequest?.bidderCode
     },
     cpmAdjustment: cpmAdjustment
-  }
-}
-
-/**
- * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
- * so that adpod module can set the hb_pb_cat_dur targetting key.
- * @param {*} bid
- * @param {*} context
- * @param {*} maxduration
- * @returns
- */
-const assignDealTier = (bid, context, maxduration) => {
-  if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
-  if (context !== ADPOD) return;
-
-  const duration = bid?.ext?.video?.duration || maxduration;
-  // if (!duration) return;
-  bid.video = {
-    context: ADPOD,
-    durationSeconds: duration,
-    dealTier: bid.ext.prebiddealpriority
   };
-}
+};
 
 const validateAllowedCategories = (acat) => {
   return [...new Set(
@@ -565,7 +549,7 @@ const validateBlockedCategories = (bcats) => {
   const droppedCategories = bcats.filter(item => typeof item !== 'string' || item.length < 3);
   logWarn(LOG_WARN_PREFIX + 'bcat: Each category must be a string with a length greater than 3, ignoring ' + droppedCategories);
   return [...new Set(bcats.filter(item => typeof item === 'string' && item.length >= 3))];
-}
+};
 
 /**
  * Optimizes the impressions array by consolidating impressions for the same ad unit and media type
@@ -621,7 +605,7 @@ const BB_RENDERER = {
     }
 
     const rendererId = BB_RENDERER.getRendererId(PUBLICATION, bid.rendererCode);
-    const ele = document.getElementById(bid.adUnitCode); // NB convention
+    const ele = getAdUnitElement(bid);
 
     const renderer = window.bluebillywig.renderers.find(r => r._id === rendererId);
     if (renderer) renderer.bootstrap(config, ele);
@@ -723,10 +707,10 @@ function _getMinSize(sizes) {
 /**
  * Measures viewability for an element and adds it to the imp object at the ext level
  * @param {Object} imp - The impression object
- * @param {string} adUnitCode - The ad unit code for element identification
+ * @param {Object} bidRequest - The bid request for element identification
  * @param {Object} sizes - Sizes object with width and height properties
  */
-export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
+export const addViewabilityToImp = (imp, bidRequest, sizes) => {
   let elementSize = { w: 0, h: 0 };
 
   if (imp.video?.w > 0 && imp.video?.h > 0) {
@@ -735,7 +719,7 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   } else {
     elementSize = _getMinSize(sizes);
   }
-  const element = document.getElementById(adUnitCode);
+  const element = getAdUnitElement(bidRequest);
   if (!element) return;
 
   const viewabilityAmount = isViewabilityMeasurable(element)
@@ -820,7 +804,7 @@ export const spec = {
       kadpageurl: page || window.location.href,
       profId: profId,
       verId: verId
-    }
+    };
     validBidRequests.forEach(originalBid => {
       originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
@@ -832,7 +816,7 @@ export const spec = {
       if (acat) {
         allowedIabCategories = allowedIabCategories.concat(acat);
       }
-    })
+    });
     const data = converter.toORTB({ validBidRequests, bidderRequest });
 
     const serverRequest = {

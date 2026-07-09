@@ -4,7 +4,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { Renderer } from '../src/Renderer.js';
 import {
   deepAccess,
   deepSetValue,
@@ -23,6 +22,7 @@ import {
 } from '../src/utils.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
+import { outstreamRenderer } from '../libraries/magniteUtils/outstream.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,8 +30,6 @@ import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
-const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.3.7.js';
-// renderer code at https://github.com/rubicon-project/apex2
 
 let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
@@ -241,7 +239,7 @@ export const converter = ortbConverter({
     bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = outstreamRenderer(bidResponse);
+      bidResponse.renderer = outstreamRenderer(bidResponse, rubiConf.rendererUrl, rubiConf.rendererConfig);
     }
 
     if (deepAccess(bid, 'ext.bidder.rp.advid')) {
@@ -271,10 +269,10 @@ export const spec = {
     }
     // validate account, site, zone have numeric values
     for (let i = 0, props = ['accountId', 'siteId', 'zoneId']; i < props.length; i++) {
-      bid.params[props[i]] = parseInt(bid.params[props[i]])
+      bid.params[props[i]] = parseInt(bid.params[props[i]]);
       if (isNaN(bid.params[props[i]])) {
-        logError('Rubicon: wrong format of accountId or siteId or zoneId.')
-        return false
+        logError('Rubicon: wrong format of accountId or siteId or zoneId.');
+        return false;
       }
     }
     const bidFormats = bidType(bid, true);
@@ -295,12 +293,12 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
-    let requests = [];
+    let requests;
     const filteredHttpRequest = [];
     let filteredRequests;
 
     filteredRequests = bidRequests.filter(req => {
-      const mediaTypes = bidType(req) || [];
+      const mediaTypes = bidType(req);
       const { length } = mediaTypes;
       const { bidonmultiformat, video } = req.params || {};
 
@@ -313,7 +311,7 @@ export const spec = {
         (video && mediaTypes.includes(VIDEO)) ||
         // if bidonmultiformat is on, send everything to PBS
         (bidonmultiformat && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE)))
-      )
+      );
     });
 
     if (filteredRequests && filteredRequests.length) {
@@ -329,7 +327,7 @@ export const spec = {
     }
 
     const bannerBidRequests = bidRequests.filter((req) => {
-      const mediaTypes = bidType(req) || [];
+      const mediaTypes = bidType(req);
       const { bidonmultiformat, video } = req.params || {};
       return (
         // Send to fastlane if: it must include BANNER and...
@@ -338,10 +336,8 @@ export const spec = {
           (mediaTypes.length === 1) ||
           // if bidonmultiformat is true
           bidonmultiformat ||
-          // if bidonmultiformat is false and there's no video parameter
-          (!bidonmultiformat && !video) ||
-          // if there's video parameter, but there's no video mediatype
-          (!bidonmultiformat && video && !mediaTypes.includes(VIDEO))
+          // if there's no video parameter, or there's video parameter but no video mediaType
+          !video || !mediaTypes.includes(VIDEO)
         )
       );
     });
@@ -396,9 +392,9 @@ export const spec = {
   },
 
   getOrderedParams: function(params) {
-    const containsTgV = /^tg_v/
-    const containsTgI = /^tg_i/
-    const containsUId = /^eid_|^tpid_/
+    const containsTgV = /^tg_v/;
+    const containsTgI = /^tg_i/;
+    const containsUId = /^eid_|^tpid_/;
 
     const orderedParams = [
       'account_id',
@@ -428,7 +424,6 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
-        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -502,7 +497,6 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
-      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'ip': bidRequest.ortb2?.device?.ip,
       'ipv6': bidRequest.ortb2?.device?.ipv6,
       'p_screen_res': _getScreenResolution(),
@@ -547,7 +541,7 @@ export const spec = {
 
     // If the bid request contains a 'mobile' property under 'ortb2.site', add it to 'data' as 'p_site.mobile'.
     if (typeof bidRequest?.ortb2?.site?.mobile === 'number') {
-      data['p_site.mobile'] = bidRequest.ortb2.site.mobile
+      data['p_site.mobile'] = bidRequest.ortb2.site.mobile;
     }
 
     // loop through userIds and add to request
@@ -810,71 +804,6 @@ function _renderCreative(script, impId) {
 </html>`;
 }
 
-function hideGoogleAdsDiv(adUnit) {
-  const el = adUnit.querySelector("div[id^='google_ads']");
-  if (el) {
-    el.style.setProperty('display', 'none');
-  }
-}
-
-function hideSmartAdServerIframe(adUnit) {
-  const el = adUnit.querySelector("script[id^='sas_script']");
-  const nextSibling = el && el.nextSibling;
-  if (nextSibling && nextSibling.localName === 'iframe') {
-    nextSibling.style.setProperty('display', 'none');
-  }
-}
-
-function renderBid(bid) {
-  // hide existing ad units
-  const adUnitElement = document.getElementById(bid.adUnitCode);
-  hideGoogleAdsDiv(adUnitElement);
-  hideSmartAdServerIframe(adUnitElement);
-
-  // configure renderer
-  const defaultConfig = {
-    align: 'center',
-    position: 'append',
-    closeButton: false,
-    label: undefined,
-    collapse: true
-  };
-  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
-  bid.renderer.push(() => {
-    window.MagniteApex.renderAd({
-      width: bid.width,
-      height: bid.height,
-      vastUrl: bid.vastUrl,
-      placement: {
-        attachTo: `#${bid.adUnitCode}`,
-        align: config.align,
-        position: config.position
-      },
-      closeButton: config.closeButton,
-      label: config.label,
-      collapse: config.collapse
-    });
-  });
-}
-
-function outstreamRenderer(rtbBid) {
-  const renderer = Renderer.install({
-    id: rtbBid.adId,
-    url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
-    config: rubiConf.rendererConfig || {},
-    loaded: false,
-    adUnitCode: rtbBid.adUnitCode
-  });
-
-  try {
-    renderer.setRender(renderBid);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
-}
-
 function parseSizes(bid, mediaType) {
   const params = bid.params;
   if (mediaType === VIDEO) {
@@ -968,7 +897,7 @@ function applyFPD(bidRequest, mediaType, data) {
       if (key !== 'adserver') {
         addBannerData(impExtData[key], 'site', key);
       } else if (impExtData[key].name === 'gam') {
-        addBannerData(impExtData[key].adslot, name, key)
+        addBannerData(impExtData[key].adslot, name, key);
       }
     });
 
@@ -1001,7 +930,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
               // finally we will add this one, if param has been added already, add our separator
               if (param) {
-                param += '~~'
+                param += '~~';
               }
 
               param += `${domain}~${dsaParamArray.join('_')}`;
@@ -1009,7 +938,7 @@ function applyFPD(bidRequest, mediaType, data) {
             }, '');
           }
         }
-      ])
+      ]);
     }
 
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
@@ -1044,7 +973,7 @@ function applyFPD(bidRequest, mediaType, data) {
           data.m_ch_platform = platform?.brand;
           data.m_ch_platform_ver = platform?.version?.join?.('.');
         }
-      ])
+      ]);
     }
   } else {
     if (Object.keys(impExt).length) {
@@ -1233,14 +1162,14 @@ export function hasValidVideoParams(bid) {
     mimes: arrayType,
     protocols: arrayType,
     linearity: numberType
-  }
+  };
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
     if (Object.prototype.toString.call(deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
       isValid = false;
       logError('Rubicon: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
     }
-  })
+  });
   return isValid;
 }
 
@@ -1310,7 +1239,7 @@ function setBidFloors(bidRequest, imp) {
 
 function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
   let fpd = {};
-  const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
+  const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords));
   nonBannerRequests.forEach(bidRequest => {
     const bidFirstPartyData = {
       user: { ext: { data: { ...bidRequest.params.visitor } } },
@@ -1322,7 +1251,7 @@ function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
     if (impThatHasVideoLanguage) {
       bidFirstPartyData.site.content = {
         language: impThatHasVideoLanguage.ext?.prebid?.bidder?.rubicon?.video?.language
-      }
+      };
     }
 
     fpd = mergeDeep(fpd, bidRequest.ortb2 || {}, bidFirstPartyData);

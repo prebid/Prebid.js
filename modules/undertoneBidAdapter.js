@@ -7,6 +7,7 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -38,8 +39,8 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
-function getBannerCoords(id) {
-  const element = document.getElementById(id);
+function getBannerCoords(bidRequest) {
+  const element = getAdUnitElement(bidRequest);
   if (element) {
     const { left, top } = getBoundingClientRect(element);
     const viewport = getViewportCoordinates();
@@ -109,7 +110,7 @@ export const spec = {
     validBidRequests.forEach(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
-        coordinates: getBannerCoords(bidReq.adUnitCode),
+        coordinates: getBannerCoords(bidReq),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
@@ -166,7 +167,7 @@ export const spec = {
             bid.vastXml = bidRes.ad;
             bid.mediaType = bidRes.mediaType;
           } else {
-            bid.ad = bidRes.ad
+            bid.ad = bidRes.ad;
           }
           bids.push(bid);
         }
@@ -188,9 +189,9 @@ export const spec = {
 
     if (usPrivacy) {
       if (iframePrivacyParams !== '') {
-        iframePrivacyParams += '&'
+        iframePrivacyParams += '&';
       } else {
-        iframePrivacyParams += '?'
+        iframePrivacyParams += '?';
       }
       iframePrivacyParams += `ccpa=${usPrivacy}`;
       pixelPrivacyParams += `&ccpa=${usPrivacy}`;

@@ -11,13 +11,9 @@ on:
         required: false
         type: number
         default: 1
-      build-cmd:
-        description: Build command, run once
-        required: false
-        type: string
       built-key:
         description: Artifact name for built source
-        required: false
+        required: true
         type: string
       test-cmd:
         description: Test command, run once per chunk
@@ -52,11 +48,6 @@ on:
         description: Chrome version to install via @puppeteer/browsers
         type: string
         required: false
-      run-npm-install:
-        description: Run npm install before tests
-        type: boolean
-        required: false
-        default: false
       install-deb:
         description: URL to deb to install before tests
         type: string
@@ -77,7 +68,7 @@ permissions:
   actions: read
 
 jobs:
-  checkout:
+  define:
     name: "Define chunks"
     runs-on: ubuntu-latest
     outputs:
@@ -91,19 +82,13 @@ jobs:
           echo 'id='"$(uuidgen)" >> out;
           cat out >> "$GITHUB_OUTPUT";
         
-  build:
-    uses: ./.github/workflows/build.yml
-    with:
-      build-cmd: ${{ !inputs.built-key && inputs.build-cmd || '' }}
-      source-key: ${{ inputs.built-key || 'source' }}
-
   run-tests:
-    needs: [checkout, build]
+    needs: [define]
     strategy:
       fail-fast: false
       max-parallel: ${{ inputs.browserstack && 1 || inputs.chunks }}
       matrix:
-        chunk-no: ${{ fromJSON(needs.checkout.outputs.chunks) }}
+        chunk-no: ${{ fromJSON(needs.define.outputs.chunks) }}
 
     name: Test${{ inputs.chunks > 1 && format(' chunk {0}', matrix.chunk-no) || '' }}
     env:
@@ -119,18 +104,18 @@ jobs:
       # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
       # (cfr. https://github.com/orgs/community/discussions/12835)
       # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.checkout.outputs.id, matrix.chunk-no) }}
+      group: ${{ inputs.browserstack && format('browserstack-{0}', github.run_id) || format('{0}-{1}', needs.define.outputs.id, matrix.chunk-no) }}
       cancel-in-progress: false
 
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.built-key }}
+          name: ${{ inputs.built-key }}
 
       - name: Install safari
         if: ${{ inputs.install-safari }}
@@ -156,11 +141,6 @@ jobs:
         with:
           url: ${{ inputs.install-deb }}
 
-      - name: Run npm install
-        if: ${{ inputs.run-npm-install }}
-        run: |
-          npm install
-
       - name: 'BrowserStack Env Setup'
         if: ${{ inputs.browserstack }}
         uses: 'browserstack/github-actions/setup-env@master'
@@ -183,7 +163,7 @@ jobs:
           sessions: ${{ inputs.browserstack-sessions }}
 
       - name: Run tests
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: ${{ inputs.timeout }}
           max_attempts: 3
@@ -208,35 +188,36 @@ jobs:
         if: ${{ steps.coverage.outputs.coverage }}
         uses: actions/upload-artifact@v7
         with:
-          name: coverage-partial-${{inputs.test-cmd}}-${{ matrix.chunk-no }}
+          name: coverage-partial-${{needs.define.outputs.id}}-${{ matrix.chunk-no }}
           path: ./build/coverage
           overwrite: true
 
   collect-coverage:
     if: ${{ needs.run-tests.outputs.coverage }}
-    needs: [build, run-tests]
+    needs: [define, run-tests]
     name: 'Collect coverage results'
     runs-on: ubuntu-latest
     outputs:
-      coverage: coverage-complete-${{ inputs.test-cmd }}
+      coverage: ${{ steps.save.outputs.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore source
         uses: ./.github/actions/load
         with:
-          name: ${{ needs.build.outputs.built-key }}
+          name: ${{ inputs.built-key }}
 
       - name: Download coverage results
         uses: actions/download-artifact@v8
         with:
           path: ./build/coverage
-          pattern: coverage-partial-${{ inputs.test-cmd }}-*
+          pattern: coverage-partial-${{ needs.define.outputs.id }}-*
           merge-multiple: true
 
       - name: 'Save working directory'
+        id: save
         uses: ./.github/actions/save
         with:
-          name: coverage-complete-${{ inputs.test-cmd }}
+          name: coverage-complete-${{ needs.define.outputs.id }}
 

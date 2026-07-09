@@ -6,13 +6,13 @@ export const DEFAULT_DFP_PARAMS = {
   gdfp_req: 1,
   output: 'vast',
   unviewed_position_start: 1,
-}
+};
 
 export const DFP_ENDPOINT = {
   protocol: 'https',
   host: 'securepubads.g.doubleclick.net',
   pathname: '/gampad/ads'
-}
+};
 
 export function gdprParams() {
   const gdprConsent = gdprDataHandler.getConsentData();

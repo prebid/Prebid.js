@@ -27,7 +27,7 @@ describe('AppNexusAdapter', function () {
       } else {
         expect(match.value).to.not.exist;
       }
-    })
+    });
   }
 
   describe('isBidRequestValid', function () {
@@ -51,7 +51,7 @@ describe('AppNexusAdapter', function () {
       const bid1 = deepClone(bid);
       bid1.params = {
         'placement_id': 123423
-      }
+      };
       expect(spec.isBidRequestValid(bid1)).to.equal(true);
     });
 
@@ -374,7 +374,7 @@ describe('AppNexusAdapter', function () {
           skippable: true,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should include ORTB video values when video params is empty - case 1', function () {
@@ -401,7 +401,7 @@ describe('AppNexusAdapter', function () {
           skippable: false,
           context: 4
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should include ORTB video values when video params is empty - case 2', function () {
@@ -429,7 +429,7 @@ describe('AppNexusAdapter', function () {
           skippable: true,
           context: 8
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should include ORTB video values when video params is empty - case 1', function () {
@@ -456,7 +456,7 @@ describe('AppNexusAdapter', function () {
           skippable: false,
           context: 1
         });
-        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4]);
       });
 
       it('should convert and include ORTB2 device data when available', function () {
@@ -536,185 +536,6 @@ describe('AppNexusAdapter', function () {
           playback_method: 2
         });
       });
-
-      it('should duplicate adpod placements into batches and set correct maxduration', function () {
-        const bidRequest = Object.assign({},
-          bidRequests[0],
-          {
-            params: { placementId: '14542875' }
-          },
-          {
-            mediaTypes: {
-              video: {
-                context: 'adpod',
-                playerSize: [640, 480],
-                adPodDurationSec: 300,
-                durationRangeSec: [15, 30],
-              }
-            }
-          }
-        );
-
-        const request = spec.buildRequests([bidRequest]);
-        const payload1 = JSON.parse(request[0].data);
-        const payload2 = JSON.parse(request[1].data);
-
-        // 300 / 15 = 20 total
-        expect(payload1.tags.length).to.equal(15);
-        expect(payload2.tags.length).to.equal(5);
-
-        expect(payload1.tags[0]).to.deep.equal(payload1.tags[1]);
-        expect(payload1.tags[0].video.maxduration).to.equal(30);
-
-        expect(payload2.tags[0]).to.deep.equal(payload1.tags[1]);
-        expect(payload2.tags[0].video.maxduration).to.equal(30);
-      });
-
-      it('should round down adpod placements when numbers are uneven', function () {
-        const bidRequest = Object.assign({},
-          bidRequests[0],
-          {
-            params: { placementId: '14542875' }
-          },
-          {
-            mediaTypes: {
-              video: {
-                context: 'adpod',
-                playerSize: [640, 480],
-                adPodDurationSec: 123,
-                durationRangeSec: [45],
-              }
-            }
-          }
-        );
-
-        const request = spec.buildRequests([bidRequest]);
-        const payload = JSON.parse(request.data);
-        expect(payload.tags.length).to.equal(2);
-      });
-
-      it('should duplicate adpod placements when requireExactDuration is set', function () {
-        const bidRequest = Object.assign({},
-          bidRequests[0],
-          {
-            params: { placementId: '14542875' }
-          },
-          {
-            mediaTypes: {
-              video: {
-                context: 'adpod',
-                playerSize: [640, 480],
-                adPodDurationSec: 300,
-                durationRangeSec: [15, 30],
-                requireExactDuration: true,
-              }
-            }
-          }
-        );
-
-        // 20 total placements with 15 max impressions = 2 requests
-        const request = spec.buildRequests([bidRequest]);
-        expect(request.length).to.equal(2);
-
-        // 20 spread over 2 requests = 15 in first request, 5 in second
-        const payload1 = JSON.parse(request[0].data);
-        const payload2 = JSON.parse(request[1].data);
-        expect(payload1.tags.length).to.equal(15);
-        expect(payload2.tags.length).to.equal(5);
-
-        // 10 placements should have max/min at 15
-        // 10 placemenst should have max/min at 30
-        const payload1tagsWith15 = payload1.tags.filter(tag => tag.video.maxduration === 15);
-        const payload1tagsWith30 = payload1.tags.filter(tag => tag.video.maxduration === 30);
-        expect(payload1tagsWith15.length).to.equal(10);
-        expect(payload1tagsWith30.length).to.equal(5);
-
-        // 5 placemenst with min/max at 30 were in the first request
-        // so 5 remaining should be in the second
-        const payload2tagsWith30 = payload2.tags.filter(tag => tag.video.maxduration === 30);
-        expect(payload2tagsWith30.length).to.equal(5);
-      });
-
-      it('should set durations for placements when requireExactDuration is set and numbers are uneven', function () {
-        const bidRequest = Object.assign({},
-          bidRequests[0],
-          {
-            params: { placementId: '14542875' }
-          },
-          {
-            mediaTypes: {
-              video: {
-                context: 'adpod',
-                playerSize: [640, 480],
-                adPodDurationSec: 105,
-                durationRangeSec: [15, 30, 60],
-                requireExactDuration: true,
-              }
-            }
-          }
-        );
-
-        const request = spec.buildRequests([bidRequest]);
-        const payload = JSON.parse(request.data);
-        expect(payload.tags.length).to.equal(7);
-
-        const tagsWith15 = payload.tags.filter(tag => tag.video.maxduration === 15);
-        const tagsWith30 = payload.tags.filter(tag => tag.video.maxduration === 30);
-        const tagsWith60 = payload.tags.filter(tag => tag.video.maxduration === 60);
-        expect(tagsWith15.length).to.equal(3);
-        expect(tagsWith30.length).to.equal(3);
-        expect(tagsWith60.length).to.equal(1);
-      });
-
-      it('should break adpod request into batches', function () {
-        const bidRequest = Object.assign({},
-          bidRequests[0],
-          {
-            params: { placementId: '14542875' }
-          },
-          {
-            mediaTypes: {
-              video: {
-                context: 'adpod',
-                playerSize: [640, 480],
-                adPodDurationSec: 225,
-                durationRangeSec: [5],
-              }
-            }
-          }
-        );
-
-        const request = spec.buildRequests([bidRequest]);
-        const payload1 = JSON.parse(request[0].data);
-        const payload2 = JSON.parse(request[1].data);
-        const payload3 = JSON.parse(request[2].data);
-
-        expect(payload1.tags.length).to.equal(15);
-        expect(payload2.tags.length).to.equal(15);
-        expect(payload3.tags.length).to.equal(15);
-      });
-
-      it('should contain hb_source value for adpod', function () {
-        const bidRequest = Object.assign({},
-          bidRequests[0],
-          {
-            params: { placementId: '14542875' }
-          },
-          {
-            mediaTypes: {
-              video: {
-                context: 'adpod',
-                playerSize: [640, 480],
-                adPodDurationSec: 300,
-                durationRangeSec: [15, 30],
-              }
-            }
-          }
-        );
-        const request = spec.buildRequests([bidRequest])[0];
-        const payload = JSON.parse(request.data);
-        expect(payload.tags[0].hb_source).to.deep.equal(7);
-      });
     } // VIDEO
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -773,7 +594,7 @@ describe('AppNexusAdapter', function () {
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
       const getFloorResponse = { currency: 'USD', floor: 3 };
-      let request; let payload = null;
+      let request; let payload;
       const bidRequest = deepClone(bidRequests[0]);
 
       // 1 -> reserve not defined, getFloor not defined > empty
@@ -815,21 +636,6 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].hb_source).to.deep.equal(1);
-    });
-
-    it('adds brand_category_exclusion to request when set', function () {
-      const bidRequest = Object.assign({}, bidRequests[0]);
-      sinon
-        .stub(config, 'getConfig')
-        .withArgs('adpod.brandCategoryExclusion')
-        .returns(true);
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.brand_category_uniqueness).to.equal(true);
-
-      config.getConfig.restore();
     });
 
     it('adds auction level keywords and ortb2 keywords to request when set', function () {
@@ -1086,7 +892,7 @@ describe('AppNexusAdapter', function () {
         }, {
           'key': 'emptyArr'
         }
-      ])
+      ]);
     });
 
     it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
@@ -1445,7 +1251,7 @@ describe('AppNexusAdapter', function () {
             'https://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -1473,7 +1279,7 @@ describe('AppNexusAdapter', function () {
             'https://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -1593,7 +1399,7 @@ describe('AppNexusAdapter', function () {
         getParamStub.callsFake(function(par) {
           if (par === 'ast_override_div') return 'adunit-code;adUnit_code_2:5678';
           return '';
-        }); ;
+        });
 
         const request = spec.buildRequests([bidRequest, bidRequest2]);
         const payload = JSON.parse(request.data);
@@ -1605,7 +1411,7 @@ describe('AppNexusAdapter', function () {
       it('should not set forced creative id if `ast_override_div` is missing', function () {
         getParamStub.callsFake(function(par) {
           return '';
-        }); ;
+        });
 
         const request = spec.buildRequests([bidRequest, bidRequest2]);
         const payload = JSON.parse(request.data);
@@ -1784,7 +1590,7 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].video_frameworks).to.not.exist;
       }
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     let bidderSettingsStorage;
@@ -1982,11 +1788,12 @@ describe('AppNexusAdapter', function () {
               }
             }
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).to.have.property('vastXml');
-        expect(result[0]).to.have.property('vastImpUrl');
+        expect(result[0]).to.have.property('vastTrackers');
+        expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
         expect(result[0]).to.have.property('mediaType', 'video');
       });
 
@@ -2017,52 +1824,13 @@ describe('AppNexusAdapter', function () {
               }
             }
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).to.have.property('vastUrl');
-        expect(result[0]).to.have.property('vastImpUrl');
+        expect(result[0]).to.have.property('vastTrackers');
+        expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
         expect(result[0]).to.have.property('mediaType', 'video');
-      });
-
-      it('handles adpod responses', function () {
-        const response = {
-          'tags': [{
-            'uuid': '84ab500420319d',
-            'ads': [{
-              'ad_type': 'video',
-              'brand_category_id': 10,
-              'cpm': 0.500000,
-              'notify_url': 'imptracker.com',
-              'rtb': {
-                'video': {
-                  'asset_url': 'https://sample.vastURL.com/here/adpod',
-                  'duration_ms': 30000,
-                }
-              },
-              'viewability': {
-                'config': '<script type=\'text/javascript\' async=\'true\' src=\'https://adsdk.bing.net/viewability/banner.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
-              }
-            }]
-          }]
-        };
-
-        const bidderRequest = {
-          bids: [{
-            bidId: '84ab500420319d',
-            adUnitCode: 'code',
-            mediaTypes: {
-              video: {
-                context: 'adpod'
-              }
-            }
-          }]
-        };
-
-        const result = spec.interpretResponse({ body: response }, { bidderRequest });
-        expect(result[0]).to.have.property('vastUrl');
-        expect(result[0].video.context).to.equal('adpod');
-        expect(result[0].video.durationSeconds).to.equal(30);
       });
     }
 
@@ -2113,7 +1881,7 @@ describe('AppNexusAdapter', function () {
             bidId: '3db3773286ee59',
             adUnitCode: 'code'
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
         expect(result[0].native.title).to.equal('Native Creative');
@@ -2239,7 +2007,7 @@ describe('AppNexusAdapter', function () {
             bidId: '3db3773286ee59',
             adUnitCode: 'code'
           }]
-        }
+        };
 
         const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
         expect(result[0].native.ext).to.deep.equal({
@@ -2377,33 +2145,6 @@ describe('AppNexusAdapter', function () {
           bidderRequest.bids[0].renderer.options
         );
       });
-
-      it('should add deal_priority and deal_code', function () {
-        const responseWithDeal = deepClone(response);
-        responseWithDeal.tags[0].ads[0].ad_type = 'video';
-        responseWithDeal.tags[0].ads[0].deal_priority = 5;
-        responseWithDeal.tags[0].ads[0].deal_code = '123';
-        responseWithDeal.tags[0].ads[0].rtb.video = {
-          duration_ms: 1500,
-          player_width: 640,
-          player_height: 340,
-        };
-
-        const bidderRequest = {
-          bids: [{
-            bidId: '3db3773286ee59',
-            adUnitCode: 'code',
-            mediaTypes: {
-              video: {
-                context: 'adpod'
-              }
-            }
-          }]
-        }
-        const result = spec.interpretResponse({ body: responseWithDeal }, { bidderRequest });
-        expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
-        expect(result[0].video.dealTier).to.equal(5);
-      });
     }
 
     it('should add advertiser id', function () {
@@ -2415,7 +2156,7 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
@@ -2429,7 +2170,7 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseBrandId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
@@ -2443,7 +2184,7 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
       const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
       expect(result[0].meta.advertiserDomains).to.deep.equal(['123']);
@@ -2464,7 +2205,7 @@ describe('AppNexusAdapter', function () {
             }
           }
         }
-      }
+      };
     });
 
     describe('pixel', function () {
@@ -2499,7 +2240,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('iframeEnabled on with gdpr purpose1 off', function () {
-        gdprConsent.vendorData.purpose.consents['1'] = false
+        gdprConsent.vendorData.purpose.consents['1'] = false;
 
         const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
         expect(result).to.be.undefined;

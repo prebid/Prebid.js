@@ -80,10 +80,10 @@ export const spec = {
     const imps = validBidRequests.map((bid, id) => {
       const imp = {
         id: id + 1 + ''
-      }
+      };
 
       if (bid.params.tagid) {
-        imp.tagid = bid.params.tagid
+        imp.tagid = bid.params.tagid;
       }
 
       if (bid.nativeParams) {
@@ -91,13 +91,13 @@ export const spec = {
           request: JSON.stringify({
             assets: getNativeAssets(bid)
           })
-        }
+        };
       } else if (isVideoRequest(bid)) {
         imp.video = getVideoAsset(bid);
       } else {
         imp.banner = {
           format: bid.sizes?.map((size) => parseGPTSingleSizeArrayToRtbSize(size))
-        }
+        };
       }
 
       if (typeof bid.getFloor === 'function') {
@@ -136,27 +136,27 @@ export const spec = {
       request.test = 1;
     }
 
-    const obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
+    const obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY);
     if (obUserToken) {
-      deepSetValue(request, 'user.ext.obusertoken', obUserToken)
+      deepSetValue(request, 'user.ext.obusertoken', obUserToken);
     }
 
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
     }
     if (bidderRequest.uspConsent) {
-      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     if (config.getConfig('coppa') === true) {
-      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1);
     }
     if (bidderRequest.gppConsent) {
-      deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString)
-      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.gppConsent.applicableSections)
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.gppConsent.applicableSections);
     } else if (deepAccess(bidderRequest, 'ortb2.regs.gpp')) {
-      deepSetValue(request, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp)
-      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid)
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
     }
 
     if (eids) {
@@ -251,7 +251,7 @@ export const spec = {
     // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
     // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
     if (bid.nurl) {
-      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm))
+      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm));
     }
   }
 };
@@ -406,7 +406,7 @@ function createRenderer(bid) {
 }
 
 function isValidVideoRequest(bid) {
-  const videoAdUnit = deepAccess(bid, 'mediaTypes.video')
+  const videoAdUnit = deepAccess(bid, 'mediaTypes.video');
   if (!videoAdUnit) {
     return false;
   }

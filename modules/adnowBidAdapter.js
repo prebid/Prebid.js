@@ -5,7 +5,6 @@ import { deepAccess, parseQueryStringParameters, parseSizesInput } from '../src/
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adnow';
-const GVLID = 1210;
 const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
@@ -29,7 +28,6 @@ const ENDPOINT = 'https://n.nnowa.com/a';
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [NATIVE, BANNER],
 
   /**
@@ -183,6 +181,6 @@ export const spec = {
       native: bid.native || {}
     };
   }
-}
+};
 
 registerBidder(spec);

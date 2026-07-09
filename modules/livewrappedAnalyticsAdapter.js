@@ -4,6 +4,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';
@@ -17,7 +18,6 @@ const ADRENDERFAILEDSENT = 16;
 let initOptions;
 const prebidGlobal = getGlobal();
 export const BID_WON_TIMEOUT = 500;
-const CACHE_CLEANUP_DELAY = BID_WON_TIMEOUT * 3;
 
 const cache = {
   auctions: {}
@@ -41,7 +41,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICST
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
           let lwFloor;
-          const container = document.getElementById(bidRequest.adUnitCode);
+          const container = getAdUnitElement(bidRequest);
           let adUnitId = container ? container.getAttribute('data-adunitid') : undefined;
           adUnitId = adUnitId != null ? adUnitId : undefined;
 
@@ -159,6 +159,7 @@ const livewrappedAnalyticsAdapter = Object.assign(adapter({ EMPTYURL, ANALYTICST
 // save the base class function
 livewrappedAnalyticsAdapter.originEnableAnalytics = livewrappedAnalyticsAdapter.enableAnalytics;
 livewrappedAnalyticsAdapter.allRequestEvents = [];
+const baseClearAllAuctions = prebidGlobal.clearAllAuctions;
 
 // override enableAnalytics so we can get access to the config passed in from the page
 livewrappedAnalyticsAdapter.enableAnalytics = function (config) {
@@ -190,12 +191,6 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), { method: 'POST' });
-
-  setTimeout(() => {
-    sentRequests.auctionIds.forEach(id => {
-      delete cache.auctions[id];
-    });
-  }, CACHE_CLEANUP_DELAY);
 };
 
 function getMediaTypeEnum(mediaType) {
@@ -243,7 +238,7 @@ function getResponses(gdpr, auctionIds) {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       const auction = cache.auctions[auctionId];
       const gdprPos = getGdprPos(gdpr, auction);
-      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId)
+      const auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
       const bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
@@ -300,7 +295,7 @@ function getWins(gdpr, auctionIds) {
 }
 
 function getGdprPos(gdpr, auction) {
-  var gdprPos = 0;
+  var gdprPos;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
     if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
         gdpr[gdprPos].gdprConsent === auction.gdprConsent) {
@@ -316,7 +311,7 @@ function getGdprPos(gdpr, auction) {
 }
 
 function getAuctionIdPos(auctionIds, auctionId) {
-  var auctionIdPos = 0;
+  var auctionIdPos;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
     if (auctionIds[auctionIdPos] === auctionId) {
       break;
@@ -429,6 +424,11 @@ function getbidAdUnits() {
   return bidAdUnits;
 }
 
+prebidGlobal.clearAllAuctions = function() {
+  cache.auctions = {};
+  baseClearAllAuctions();
+};
+
 adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
@@ -437,7 +437,5 @@ adapterManager.registerAnalyticsAdapter({
 export function getAuctionCache() {
   return cache.auctions;
 }
-
-export { CACHE_CLEANUP_DELAY };
 
 export default livewrappedAnalyticsAdapter;

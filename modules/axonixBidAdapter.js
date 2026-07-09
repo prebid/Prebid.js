@@ -1,10 +1,10 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'axonix';
 const BIDDER_VERSION = '1.0.2';
@@ -54,7 +54,7 @@ function getURL(params, path) {
   } else if (region) {
     url = `https://openrtb-${region}.axonix.com/supply/${path}/${supplyId}`;
   } else {
-    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/${path}/${supplyId}`
+    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/${path}/${supplyId}`;
   }
 
   return url;
@@ -96,7 +96,7 @@ export const spec = {
       } else {
         site = {
           page: getPageUrl(validBidRequest, bidderRequest)
-        }
+        };
       }
 
       const data = {
@@ -171,6 +171,6 @@ export const spec = {
       triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
     };
   }
-}
+};
 
 registerBidder(spec);

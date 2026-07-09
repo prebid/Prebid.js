@@ -1,5 +1,4 @@
 import { getStorageDisclosureSummary } from '../../../libraries/storageDisclosure/summary.js';
-import { dynamicDisclosureCollector } from '../../../modules/storageControl.js';
 
 describe('storageDisclosure', () => {
   let moduleMeta;
@@ -27,10 +26,10 @@ describe('storageDisclosure', () => {
             }
           }
         }
-      }
+      };
       expect(getSummary()).to.eql([]);
-    })
-  })
+    });
+  });
 
   it('should list disclosures', () => {
     moduleMeta = {
@@ -52,7 +51,7 @@ describe('storageDisclosure', () => {
           }
         }
       }
-    }
+    };
     expect(getSummary()).to.eql([
       {
         disclosedIn: 'url1',
@@ -64,7 +63,7 @@ describe('storageDisclosure', () => {
         disclosedBy: ['module2'],
         identifier: 'bar'
       }
-    ])
+    ]);
   });
 
   it('should group by disclosure URL', () => {
@@ -74,7 +73,7 @@ describe('storageDisclosure', () => {
           { identifier: 'foo' }
         ]
       }
-    }
+    };
     moduleMeta = {
       module1: {
         disclosures
@@ -89,6 +88,6 @@ describe('storageDisclosure', () => {
         disclosedBy: ['module1', 'module2'],
         identifier: 'foo'
       }
-    ])
+    ]);
   });
 });

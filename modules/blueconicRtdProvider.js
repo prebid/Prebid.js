@@ -61,7 +61,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
       if (!parsedData) {
         return;
       }
-      const userData = { name: 'blueconic', ...parsedData }
+      const userData = { name: 'blueconic', ...parsedData };
       logMessage('blueconicRtdProvider: userData: ', userData);
       const data = {
         ortb2: {
@@ -71,7 +71,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
             ]
           }
         }
-      }
+      };
       addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data);
       onDone();
     }

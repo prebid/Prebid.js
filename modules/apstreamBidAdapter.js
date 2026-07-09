@@ -1,10 +1,10 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
@@ -343,7 +343,7 @@ function getBids(bids) {
   const bidArr = bids.map(bid => {
     const bidId = bid.bidId;
 
-    let mediaType = '';
+    let mediaType;
     const mediaTypes = Object.keys(bid.mediaTypes);
     switch (mediaTypes[0]) {
       case 'video':
@@ -392,7 +392,7 @@ function getEndpointsGroups(bidRequests) {
     }
 
     return `https://bapi.userreport.com/v2/${publisherId}/bid`;
-  }
+  };
   bidRequests.forEach(bid => {
     const endpoint = getEndpoint(bid);
     const exist = endpoints.filter(item => item.endpoint.indexOf(endpoint) > -1)[0];
@@ -490,6 +490,6 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse
-}
+};
 
 registerBidder(spec);

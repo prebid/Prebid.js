@@ -2,6 +2,8 @@ import { logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
+import { triggerBidViewable } from '../libraries/bidViewabilityPixels/index.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const MODULE_NAME = 'bidViewabilityIO';
 const CONFIG_ENABLED = 'enabled';
@@ -9,7 +11,7 @@ const CONFIG_ENABLED = 'enabled';
 // IAB numbers from: https://support.google.com/admanager/answer/4524488?hl=en
 const IAB_VIEWABLE_DISPLAY_TIME = 1000;
 const IAB_VIEWABLE_DISPLAY_LARGE_PX = 242000;
-export const IAB_VIEWABLE_DISPLAY_THRESHOLD = 0.5
+export const IAB_VIEWABLE_DISPLAY_THRESHOLD = 0.5;
 export const IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD = 0.3;
 
 const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObserverEntry && window.IntersectionObserverEntry.prototype &&
@@ -21,11 +23,11 @@ const supportedMediaTypes = [
 
 export const isSupportedMediaType = (bid) => {
   return supportedMediaTypes.indexOf(bid.mediaType) > -1;
-}
+};
 
 const _logMessage = (message) => {
   return logMessage(`${MODULE_NAME}: ${message}`);
-}
+};
 
 // returns options for the iO that detects if the ad is viewable
 export const getViewableOptions = (bid) => {
@@ -34,18 +36,18 @@ export const getViewableOptions = (bid) => {
       root: null,
       rootMargin: '0px',
       threshold: bid.width * bid.height > IAB_VIEWABLE_DISPLAY_LARGE_PX ? IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD : IAB_VIEWABLE_DISPLAY_THRESHOLD
-    }
+    };
   }
-}
+};
 
 // markViewed returns a function what will be executed when an ad satisifes the viewable iO
 export const markViewed = (bid, entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-    events.emit(EVENTS.BID_VIEWABLE, bid);
+    triggerBidViewable(bid);
     _logMessage(`id: ${entry.target.getAttribute('id')} code: ${bid.adUnitCode} was viewed`);
-  }
-}
+  };
+};
 
 // viewCallbackFactory creates the callback used by the viewable IntersectionObserver.
 // When an ad comes into view, it sets a timeout for a function to be executed
@@ -80,12 +82,12 @@ export const init = () => {
       events.on(EVENTS.AD_RENDER_SUCCEEDED, ({ doc, bid, id }) => {
         if (isSupportedMediaType(bid)) {
           const viewable = new IntersectionObserver(viewCallbackFactory(bid), getViewableOptions(bid));
-          const element = document.getElementById(bid.adUnitCode);
+          const element = getAdUnitElement(bid);
           viewable.observe(element);
         }
       });
     }
   });
-}
+};
 
-init()
+init();

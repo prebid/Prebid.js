@@ -1,6 +1,20 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapterManager.js').BidderRequest} BidderRequest
+ */
+
+/**
+ * @typedef {Object} ConceptxBidParams
+ * @property {string} adunit - Stored request ID used to look up the ad unit configuration on our PBS
+ * @property {string} [site] - Internal site identifier (e.g. "some_domain.com") used as site.id;
+ *   NOT the publisher domain. The actual domain/page are sourced from ortb2 or refererInfo.
+ */
+
 const BIDDER_CODE = 'conceptx';
 const ENDPOINT_URL = 'https://cxba-s2s.cncpt.dk/openrtb2/auction';
 const GVLID = 1340;
@@ -44,7 +58,7 @@ export const spec = {
           if (bidderRequest.gdprConsent.consentString) {
             query.push(
               'gdpr_consent=' +
-                encodeURIComponent(bidderRequest.gdprConsent.consentString)
+              encodeURIComponent(bidderRequest.gdprConsent.consentString)
             );
           }
         }
@@ -54,16 +68,20 @@ export const spec = {
         url += '?' + query.join('&');
       }
 
-      // site
+      // site – params.site is our internal stored-request key, NOT the publisher domain
       const page =
-        params.site || (ortb2.site && ortb2.site.page) || '';
+        (ortb2.site && ortb2.site.page) ||
+        (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) ||
+        '';
       const domain =
-        params.domain || (ortb2.site && ortb2.site.domain) || page;
+        (ortb2.site && ortb2.site.domain) ||
+        (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.domain) ||
+        '';
 
       const site = {
-        id: domain || page || adUnitCode,
-        domain: domain || '',
-        page: page || '',
+        id: params.site || domain || adUnitCode,
+        domain: domain,
+        page: page,
       };
 
       // banner sizes from mediaTypes.banner.sizes
@@ -213,7 +231,7 @@ export const spec = {
           referrer = originalReq.site.page;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     for (let i = 0; i < body.seatbid.length; i++) {
       const seatbid = body.seatbid[i];

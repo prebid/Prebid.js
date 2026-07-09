@@ -2,6 +2,8 @@
   "parentModules": {
     "userId": [
       "33acrossIdSystem",
+      "abtshieldIdSystem",
+      "acxiomRealIdSystem",
       "admixerIdSystem",
       "adqueryIdSystem",
       "adplusIdSystem",
@@ -14,7 +16,6 @@
       "czechAdIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
-      "dmdIdSystem",
       "euidIdSystem",
       "fabrickIdSystem",
       "freepassIdSystem",
@@ -50,9 +51,10 @@
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "pubmaticIdSystem",
-      "quantcastIdSystem",
+      "rediadsIdSystem",
       "rewardedInterestIdSystem",
       "sharedIdSystem",
+      "startioIdSystem",
       "taboolaIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
@@ -65,10 +67,6 @@
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
     ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "gamAdpod"
-    ],
     "rtdModule": [
       "1plusXRtdProvider",
       "51DegreesRtdProvider",
@@ -78,6 +76,7 @@
       "adlooxRtdProvider",
       "adlaneRtdProvider",
       "adnuntiusRtdProvider",
+      "agenticAudienceRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "anonymisedRtdProvider",
@@ -90,6 +89,7 @@
       "cleanioRtdProvider",
       "confiantRtdProvider",
       "contxtfulRtdProvider",
+      "datamageRtdProvider",
       "dgkeywordRtdProvider",
       "dynamicAdBoostRtdProvider",
       "experianRtdProvider",
@@ -102,6 +102,7 @@
       "hadronRtdProvider",
       "humansecurityRtdProvider",
       "iasRtdProvider",
+      "insuradsRtdProvider",
       "imRtdProvider",
       "intersectionRtdProvider",
       "jwplayerRtdProvider",
@@ -109,6 +110,7 @@
       "mediafilterRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mileRtdProvider",
       "mobianRtdProvider",
       "neuwoRtdProvider",
       "nodalsAiRtdProvider",
@@ -133,7 +135,9 @@
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider",
-      "wurflRtdProvider"
+      "wurflRtdProvider",
+      "encypherRtdProvider",
+      "stackupRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
@@ -143,10 +147,6 @@
       "jwplayerVideoProvider",
       "videojsVideoProvider",
       "adplayerproVideoProvider"
-    ],
-    "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
     ]
   }
 }

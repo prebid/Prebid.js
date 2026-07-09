@@ -1,9 +1,9 @@
-import { getDNT } from '../libraries/dnt/index.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { isArray, isFn, deepAccess, deepSetValue, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'jwplayer';
 const BASE_URL = 'https://vpb-server.jwplayer.com/';
@@ -66,7 +66,7 @@ function getBidAdapter() {
         method: 'POST',
         url: AUCTION_URL,
         data: payload
-      }
+      };
     });
   }
 
@@ -118,7 +118,7 @@ function getBidAdapter() {
 
     const userSyncs = [];
     const consentQueryParams = getUserSyncConsentQueryParams(gdprConsent);
-    const url = `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&f=i` + consentQueryParams
+    const url = `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&f=i` + consentQueryParams;
 
     if (syncOptions.iframeEnabled) {
       userSyncs.push({
@@ -145,7 +145,7 @@ function getBidAdapter() {
     buildRequests,
     interpretResponse,
     getUserSyncs
-  }
+  };
 
   function getUserSyncConsentQueryParams(gdprConsent) {
     if (!gdprConsent) {
@@ -160,7 +160,7 @@ function getBidAdapter() {
     let gdpr = 0;
     const gdprApplies = gdprConsent.gdprApplies;
     if (typeof gdprApplies === 'boolean') {
-      gdpr = Number(gdprApplies)
+      gdpr = Number(gdprApplies);
     }
 
     return `&gdpr=${gdpr}&gdpr_consent=${consentString}`;
@@ -169,7 +169,7 @@ function getBidAdapter() {
   function buildRequest(bidRequest, bidderRequest) {
     const openrtbRequest = {
       id: bidRequest.bidId,
-      imp: getRequestImpressions(bidRequest, bidderRequest),
+      imp: getRequestImpressions(bidRequest),
       site: getRequestSite(bidRequest, bidderRequest),
       device: getRequestDevice(bidderRequest.ortb2),
       user: getRequestUser(bidderRequest.ortb2),
@@ -327,7 +327,7 @@ function getBidAdapter() {
       ua: navigator.userAgent,
       dnt: getDNT() ? 1 : 0,
       js: 1
-    }, ortb2.device || {})
+    }, ortb2.device || {});
 
     const language = getLanguage();
     if (!device.language && language) {
@@ -386,7 +386,7 @@ function getBidAdapter() {
   }
 
   function getMissingFieldMessage(fieldName) {
-    return `Optional field ${fieldName} is not populated; we recommend populating for maximum performance.`
+    return `Optional field ${fieldName} is not populated; we recommend populating for maximum performance.`;
   }
 
   function logResponseWarnings(serverResponseBody) {

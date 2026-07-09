@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import * as navigatorDnt from 'libraries/dnt/index.js';
 import { NATIVE, BANNER, VIDEO } from 'src/mediaTypes';
 import { config } from 'src/config';
 import { parseDomain } from '../../../src/refererDetection.js';
@@ -341,11 +340,9 @@ describe('Adkernel adapter', function () {
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
-  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    const dntmock = sandbox.stub(navigatorDnt, 'getDNT').callsFake(() => dnt);
+  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST) {
     bidderRequest.bids = bidRequests;
     const pbRequests = spec.buildRequests(bidRequests, bidderRequest);
-    dntmock.restore();
     const rtbRequests = pbRequests.map(r => JSON.parse(r.data));
     return [pbRequests, rtbRequests];
   }
@@ -371,14 +368,14 @@ describe('Adkernel adapter', function () {
 
     it('valid native requests should pass', () => {
       expect(spec.isBidRequestValid(bid_native)).to.be.equal(true);
-    })
+    });
   });
 
   describe('banner request building', function () {
-    let bidRequest, bidRequests, _;
+    let bidRequest, bidRequests;
 
     before(function () {
-      [_, bidRequests] = buildRequest([bid1_zone1]);
+      [, bidRequests] = buildRequest([bid1_zone1]);
       bidRequest = bidRequests[0];
     });
 
@@ -418,7 +415,6 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
-      expect(bidRequest.device).to.have.property('dnt', 1);
     });
 
     it('should copy FPD to imp.banner', function() {
@@ -432,13 +428,13 @@ describe('Adkernel adapter', function () {
     });
 
     it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.not.have.property('regs');
       expect(bidRequests[0]).to.not.have.property('user');
     });
 
     it('should contain gdpr-related information if consent is configured', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1],
+      const [, bidRequests] = buildRequest([bid1_zone1],
         buildBidderRequest('https://example.com/index.html', {
           gdprConsent: { gdprApplies: true, consentString: 'test-consent-string', vendorData: {} },
           uspConsent: '1YNN',
@@ -456,27 +452,22 @@ describe('Adkernel adapter', function () {
 
     it('should contain coppa if configured', function () {
       config.setConfig({ coppa: true });
-      const [_, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       const bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs).to.have.property('coppa', 1);
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', { gdprConsent: { gdprApplies: false } }));
+      const [, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', { gdprConsent: { gdprApplies: false } }));
       const bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({ 'gdpr': 0 });
       expect(bidRequest).to.not.have.property('user');
     });
 
-    it('should\'t pass dnt if state is unknown', function () {
-      const [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST, false);
-      expect(bidRequests[0].device).to.not.have.property('dnt');
-    });
-
     it('should forward default bidder timeout', function() {
-      const [_, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.have.property('tmax', 3000);
     });
 
@@ -486,15 +477,15 @@ describe('Adkernel adapter', function () {
         return {
           currency: 'USD',
           floor: 0.145
-        }
+        };
       };
-      const [_, bidRequests] = buildRequest([bid]);
+      const [, bidRequests] = buildRequest([bid]);
       expect(bidRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
 
     it('should forward user ids if available', function() {
       const bid = Object.assign({}, bid2_zone2);
-      const [_, bidRequests] = buildRequest([bid]);
+      const [, bidRequests] = buildRequest([bid]);
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('ext');
       expect(bidRequests[0].user.ext).to.have.property('eids');
@@ -505,9 +496,9 @@ describe('Adkernel adapter', function () {
   });
 
   describe('video request building', function () {
-    let _, bidRequests;
+    let bidRequests;
     before(function () {
-      [_, bidRequests] = buildRequest([bid_video]);
+      [, bidRequests] = buildRequest([bid_video]);
     });
 
     it('should have video object', function () {
@@ -563,14 +554,14 @@ describe('Adkernel adapter', function () {
 
   describe('requests routing', function () {
     it('should issue a request for each host', function () {
-      const [pbRequests, _] = buildRequest([bid1_zone1, bid3_host2]);
+      const [pbRequests] = buildRequest([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].url).to.have.string(`https://${bid1_zone1.params.host}/`);
       expect(pbRequests[1].url).to.have.string(`https://${bid3_host2.params.host}/`);
     });
 
     it('should issue a request for each zone', function () {
-      const [pbRequests, _] = buildRequest([bid1_zone1, bid2_zone2]);
+      const [pbRequests] = buildRequest([bid1_zone1, bid2_zone2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].url).to.include(`zone=${bid1_zone1.params.zoneId}`);
       expect(pbRequests[1].url).to.include(`zone=${bid2_zone2.params.zoneId}`);
@@ -590,7 +581,7 @@ describe('Adkernel adapter', function () {
           }
         }
       });
-      const [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests).to.have.length(1);
       expect(bidRequests[0]).to.not.have.property('ext');
     });
@@ -607,7 +598,7 @@ describe('Adkernel adapter', function () {
           }
         }
       });
-      const [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests).to.have.length(1);
       expect(bidRequests[0].ext).to.have.property('adk_usersync', 1);
     });
@@ -628,7 +619,7 @@ describe('Adkernel adapter', function () {
           }
         }
       });
-      const [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests).to.have.length(1);
       expect(bidRequests[0].ext).to.have.property('adk_usersync', 2);
     });
@@ -649,7 +640,7 @@ describe('Adkernel adapter', function () {
           }
         }
       });
-      const [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      const [, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests).to.have.length(1);
       expect(bidRequests[0]).to.not.have.property('ext');
     });
@@ -657,7 +648,7 @@ describe('Adkernel adapter', function () {
 
   describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', function () {
-      const [pbRequests, _] = buildRequest([bid1_zone1]);
+      const [pbRequests] = buildRequest([bid1_zone1]);
       const resp = spec.interpretResponse({ body: bannerBidResponse }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 3.01);
@@ -674,7 +665,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('should return fully-initialized video bid-response', function () {
-      const [pbRequests, _] = buildRequest([bid_video]);
+      const [pbRequests] = buildRequest([bid_video]);
       const resp = spec.interpretResponse({ body: videoBidResponse }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_Video');
       expect(resp.mediaType).to.equal(VIDEO);
@@ -685,7 +676,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('should support vast xml in adm', function () {
-      const [pbRequests, _] = buildRequest([bid_video]);
+      const [pbRequests] = buildRequest([bid_video]);
       const resp = spec.interpretResponse({ body: videoBidResponseWithAdm }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_Video');
       expect(resp.mediaType).to.equal(VIDEO);
@@ -697,14 +688,14 @@ describe('Adkernel adapter', function () {
     });
 
     it('should add nurl as pixel for banner response', function () {
-      const [pbRequests, _] = buildRequest([bid1_zone1]);
+      const [pbRequests] = buildRequest([bid1_zone1]);
       const resp = spec.interpretResponse({ body: bannerBidResponse }, pbRequests[0])[0];
       const expectedNurl = bannerBidResponse.seatbid[0].bid[0].nurl + '&px=1';
       expect(resp.ad).to.have.string(expectedNurl);
     });
 
     it('should handle bidresponse with user-sync only', function () {
-      const [pbRequests, _] = buildRequest([bid1_zone1]);
+      const [pbRequests] = buildRequest([bid1_zone1]);
       const resp = spec.interpretResponse({ body: usersyncOnlyResponse }, pbRequests[0]);
       expect(resp).to.have.length(0);
     });
@@ -732,9 +723,9 @@ describe('Adkernel adapter', function () {
   });
 
   describe('native support', () => {
-    let _, bidRequests;
+    let bidRequests;
     before(function () {
-      [_, bidRequests] = buildRequest([bid_native]);
+      [, bidRequests] = buildRequest([bid_native]);
     });
 
     it('native request building', () => {
@@ -757,7 +748,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('native response processing', () => {
-      const [pbRequests, _] = buildRequest([bid_native]);
+      const [pbRequests] = buildRequest([bid_native]);
       const resp = spec.interpretResponse({ body: nativeResponse }, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 2.25);
@@ -796,7 +787,7 @@ describe('Adkernel adapter', function () {
       utils.triggerPixel.restore();
     });
     it('should trigger pixel for nurl', () => {
-      const [pbRequests, _] = buildRequest([bid_video]);
+      const [pbRequests] = buildRequest([bid_video]);
       const bid = spec.interpretResponse({ body: videoBidResponseWithAdm }, pbRequests[0])[0];
       spec.onBidWon(bid);
       expect(utils.triggerPixel.callCount).to.equal(1);

@@ -1,4 +1,4 @@
-import { addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import { isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -35,7 +35,7 @@ const MOCK_BIDS_REQUEST = {
       },
     }
   ]
-}
+};
 
 before(() => {
   hook.ready();
@@ -44,17 +44,18 @@ before(() => {
 const wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
+  let doneStub;
   let onTimelyResponseStub;
 
   beforeEach(() => {
+    doneStub = sinon.stub();
     onTimelyResponseStub = sinon.stub();
   });
 
   describe('bidders created by newBidder', function () {
     let spec;
-    let bidder;
+
     let addBidResponseStub;
-    let doneStub;
 
     beforeEach(function () {
       spec = {
@@ -67,13 +68,11 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sinon.stub();
       addBidResponseStub.reject = sinon.stub();
-      doneStub = sinon.stub();
     });
 
     describe('when the ajax response is irrelevant', function () {
       let sandbox;
       let ajaxStub;
-      let getConfigSpy;
       let aliasRegistryStub, aliasRegistry;
 
       beforeEach(function () {
@@ -81,7 +80,7 @@ describe('bidderFactory', () => {
         sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
         ajaxStub = sandbox.stub(ajax, 'ajax');
         addBidResponseStub.resetHistory();
-        getConfigSpy = sandbox.spy(config, 'getConfig');
+        sandbox.spy(config, 'getConfig');
         doneStub.resetHistory();
         aliasRegistry = {};
         aliasRegistryStub = sandbox.stub(adapterManager, 'aliasRegistry');
@@ -211,11 +210,11 @@ describe('bidderFactory', () => {
                   const bidder = newBidder(spec);
                   bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
                   sinon.assert.calledWith(spec.getUserSyncs, syncOptions);
-                })
-              })
-            })
-          })
-        })
+                });
+              });
+            });
+          });
+        });
       });
 
       describe('transaction IDs', () => {
@@ -231,7 +230,7 @@ describe('bidderFactory', () => {
               netRevenue: true,
               currency: 'USD'
             }
-          ])
+          ]);
         });
 
         Object.entries({
@@ -305,7 +304,7 @@ describe('bidderFactory', () => {
             sinon.assert.calledWithMatch(addBidResponseStub, sinon.match.any, {
               transactionId: 'tid',
               auctionId: 'aid'
-            })
+            });
           });
         });
 
@@ -313,7 +312,7 @@ describe('bidderFactory', () => {
           const bidderRequest = {
             bidderCode: 'mockBidder',
             auctionId: 'aid',
-            getAID() { return this.auctionId },
+            getAID() { return this.auctionId; },
             bids: [
               {
                 adUnitCode: 'mockAU',
@@ -321,7 +320,7 @@ describe('bidderFactory', () => {
                 transactionId: 'tid',
                 auctionId: 'aid',
                 getTIDs() {
-                  return [this.auctionId, this.transactionId]
+                  return [this.auctionId, this.transactionId];
                 }
               }
             ]
@@ -334,7 +333,7 @@ describe('bidderFactory', () => {
             done();
           });
           newBidder(spec).callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        })
+        });
       });
 
       it('should handle bad bid requests gracefully', function () {
@@ -449,7 +448,7 @@ describe('bidderFactory', () => {
           method: 'POST',
           contentType: 'application/json',
           withCredentials: true
-        })
+        });
       });
 
       it('should make the appropriate GET request', function () {
@@ -471,14 +470,14 @@ describe('bidderFactory', () => {
         sinon.assert.match(ajaxStub.firstCall.args[3], {
           method: 'GET',
           withCredentials: true
-        })
+        });
       });
 
       it('should make the appropriate GET request when options are passed', function () {
         const bidder = newBidder(spec);
         const url = 'test.url.com';
         const data = { arg: 2 };
-        const opt = { withCredentials: false }
+        const opt = { withCredentials: false };
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({
           method: 'GET',
@@ -495,7 +494,7 @@ describe('bidderFactory', () => {
         sinon.assert.match(ajaxStub.firstCall.args[3], {
           method: 'GET',
           withCredentials: false
-        })
+        });
       });
 
       it('should make multiple calls if the spec returns them', function () {
@@ -525,7 +524,7 @@ describe('bidderFactory', () => {
         let transmitUfpdAllowed, bidder, origBS;
         before(() => {
           origBS = getGlobal().bidderSettings;
-        })
+        });
 
         after(() => {
           getGlobal().bidderSettings = origBS;
@@ -567,7 +566,7 @@ describe('bidderFactory', () => {
                 [CODE]: {
                   topicsHeader: topicsHeader
                 }
-              }
+              };
             });
 
             afterEach(() => {
@@ -620,8 +619,8 @@ describe('bidderFactory', () => {
                 });
               });
             });
-          })
-        })
+          });
+        });
       });
 
       it('should not add bids for each placement code if no requests are given', function () {
@@ -673,7 +672,7 @@ describe('bidderFactory', () => {
         });
         addBidResponseStub.resetHistory();
         doneStub.resetBehavior();
-        userSyncStub = sinon.stub(userSync, 'registerSync')
+        userSyncStub = sinon.stub(userSync, 'registerSync');
         logErrorSpy = sinon.spy(utils, 'logError');
       });
 
@@ -689,7 +688,7 @@ describe('bidderFactory', () => {
         spec.buildRequests.returns({ method: 'POST', url: 'test', data: {} });
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         sinon.assert.called(onTimelyResponseStub);
-      })
+      });
 
       it('should call spec.interpretResponse() with the response content', function () {
         const bidder = newBidder(spec);
@@ -705,8 +704,8 @@ describe('bidderFactory', () => {
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.interpretResponse.calledOnce).to.equal(true);
-        const response = spec.interpretResponse.firstCall.args[0]
-        expect(response.body).to.equal('response body')
+        const response = spec.interpretResponse.firstCall.args[0];
+        expect(response.body).to.equal('response body');
         expect(response.headers.get('some-header')).to.equal('headerContent');
         expect(spec.interpretResponse.firstCall.args[1]).to.deep.equal({
           method: 'POST',
@@ -756,10 +755,10 @@ describe('bidderFactory', () => {
             ttl: 300,
             bidderCode: 'sampleBidder',
             sampleBidder: { advertiserId: '12345', networkId: '111222' }
-          }
+          };
           bidderRequest = utils.deepClone(MOCK_BIDS_REQUEST);
           bidderRequest.bids[0].bidder = 'sampleBidder';
-        })
+        });
 
         function getAuctionBid() {
           const bidder = newBidder(spec);
@@ -776,7 +775,7 @@ describe('bidderFactory', () => {
         }
 
         function setDeferredBilling(deferredBilling = true) {
-          bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling });
+          bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling; });
         }
 
         it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
@@ -824,7 +823,7 @@ describe('bidderFactory', () => {
               bid.deferRendering = deferRendering;
               expect(getAuctionBid().deferRendering).to.equal(shouldDefer);
             });
-          })
+          });
         });
 
         describe('if request has deferBilling = false', () => {
@@ -836,7 +835,7 @@ describe('bidderFactory', () => {
             });
           });
         });
-      })
+      });
 
       it('should call spec.getUserSyncs() with the response', function () {
         const bidder = newBidder(spec);
@@ -997,8 +996,8 @@ describe('bidderFactory', () => {
           spec.buildRequests.returns({ method: 'POST', url: 'test', data: {} });
           bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
           sinon.assert[timedOut ? 'notCalled' : 'called'](onTimelyResponseStub);
-        })
-      })
+        });
+      });
 
       it('should not spec.interpretResponse()', function () {
         const bidder = newBidder(spec);
@@ -1153,12 +1152,12 @@ describe('bidderFactory', () => {
 
       // Make sure our later calls don't override the bidder code from previous calls.
       expect(registerBidAdapterStub.firstCall.args[0].getBidderCode()).to.equal(CODE);
-      expect(registerBidAdapterStub.secondCall.args[0].getBidderCode()).to.equal('foo')
-      expect(registerBidAdapterStub.thirdCall.args[0].getBidderCode()).to.equal('bar')
+      expect(registerBidAdapterStub.secondCall.args[0].getBidderCode()).to.equal('foo');
+      expect(registerBidAdapterStub.thirdCall.args[0].getBidderCode()).to.equal('bar');
 
       expect(registerBidAdapterStub.firstCall.args[1]).to.equal(CODE);
-      expect(registerBidAdapterStub.secondCall.args[1]).to.equal('foo')
-      expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
+      expect(registerBidAdapterStub.secondCall.args[1]).to.equal('foo');
+      expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar');
     });
 
     it('should register alias with their gvlid', function() {
@@ -1174,14 +1173,14 @@ describe('bidderFactory', () => {
         {
           code: 'baz'
         }
-      ]
+      ];
       const thisSpec = Object.assign(newEmptySpec(), { aliases: aliases });
       registerBidder(thisSpec);
 
       expect(registerBidAdapterStub.getCall(1).args[0].getSpec().gvlid).to.equal(1);
       expect(registerBidAdapterStub.getCall(2).args[0].getSpec().gvlid).to.equal(2);
       expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
-    })
+    });
 
     it('should register alias with skipPbsAliasing', function() {
       const aliases = [
@@ -1196,21 +1195,20 @@ describe('bidderFactory', () => {
         {
           code: 'baz'
         }
-      ]
+      ];
       const thisSpec = Object.assign(newEmptySpec(), { aliases: aliases });
       registerBidder(thisSpec);
 
       expect(registerBidAdapterStub.getCall(1).args[0].getSpec().skipPbsAliasing).to.equal(true);
       expect(registerBidAdapterStub.getCall(2).args[0].getSpec().skipPbsAliasing).to.equal(false);
       expect(registerBidAdapterStub.getCall(3).args[0].getSpec().skipPbsAliasing).to.equal(undefined);
-    })
-  })
+    });
+  });
 
   describe('validate bid response: ', function () {
     let spec;
     let indexStub, adUnits, bidderRequests;
     let addBidResponseStub;
-    let doneStub;
     let ajaxStub;
     let logErrorSpy;
 
@@ -1243,7 +1241,6 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sinon.stub();
       addBidResponseStub.reject = sinon.stub();
-      doneStub = sinon.stub();
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
@@ -1253,7 +1250,7 @@ describe('bidderFactory', () => {
       indexStub = sinon.stub(auctionManager, 'index');
       adUnits = [];
       bidderRequests = [];
-      indexStub.get(() => stubAuctionIndex({ adUnits: adUnits, bidderRequests: bidderRequests }))
+      indexStub.get(() => stubAuctionIndex({ adUnits: adUnits, bidderRequests: bidderRequests }));
     });
 
     afterEach(function () {
@@ -1269,7 +1266,7 @@ describe('bidderFactory', () => {
           nativeParams: {
             title: { 'required': true },
           }
-        }]
+        }];
         decorateAdUnitsWithNativeParams(adUnits);
         const bidRequest = {
           bids: [{
@@ -1353,7 +1350,7 @@ describe('bidderFactory', () => {
         mediaTypes: {
           video: { context: 'outstream' }
         }
-      }]
+      }];
       const bidRequest = {
         bids: [{
           bidId: '1',
@@ -1434,7 +1431,7 @@ describe('bidderFactory', () => {
         transactionId: 'tid',
         auctionId: 'aid'
       }));
-    })
+    });
 
     describe(' Check for alternateBiddersList ', function() {
       let bidRequest;
@@ -1612,15 +1609,6 @@ describe('bidderFactory', () => {
           transactionId: 'au',
         }]
       };
-      const paapiConfig = {
-        bidId: '1',
-        config: {
-          foo: 'bar'
-        },
-        igb: {
-          foo: 'bar'
-        }
-      }
 
       it('should unwrap bids', function() {
         const bidder = newBidder(spec);
@@ -1639,66 +1627,13 @@ describe('bidderFactory', () => {
         spec.interpretResponse.returns(bid);
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
-      })
-
-      describe('when response has PAAPI config', function() {
-        let paapiStub;
-
-        function paapiHook(next, ...args) {
-          paapiStub(...args);
-        }
-
-        function runBidder(response) {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns(response);
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        }
-
-        before(() => {
-          addPaapiConfig.before(paapiHook);
-        });
-
-        after(() => {
-          addPaapiConfig.getHooks({ hook: paapiHook }).remove();
-        })
-
-        beforeEach(function () {
-          paapiStub = sinon.stub();
-        });
-
-        describe(`when response has paapi`, () => {
-          it('should call paapi config hook with auction configs', function () {
-            runBidder({
-              bids: bids,
-              paapi: [paapiConfig]
-            });
-            expect(paapiStub.calledOnce).to.equal(true);
-            sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-            sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
-          });
-
-          Object.entries({
-            'missing': undefined,
-            'an empty array': []
-          }).forEach(([t, bids]) => {
-            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function () {
-              runBidder({
-                bids,
-                paapi: [paapiConfig]
-              });
-              expect(paapiStub.calledOnce).to.be.true;
-              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-              expect(addBidResponseStub.calledOnce).to.equal(false);
-            });
-          });
-        });
       });
     });
   });
 
   describe('bid response isValid', () => {
     describe('size check', () => {
-      let req, index;
+      let req;
 
       beforeEach(() => {
         req = {
@@ -1708,7 +1643,7 @@ describe('bidderFactory', () => {
               sizes: [[1, 2], [3, 4]]
             }
           }
-        }
+        };
       });
 
       function mkResponse(props) {
@@ -1720,7 +1655,7 @@ describe('bidderFactory', () => {
           netRevenue: true,
           currency: 'USD',
           mediaType: 'banner',
-        }, props)
+        }, props);
       }
 
       function checkValid(bid) {
@@ -1737,13 +1672,121 @@ describe('bidderFactory', () => {
             banner: {
               format: [{ wratio: 1, hratio: 2 }]
             }
-          }
-        })
+          };
+        });
         it('should accept wratio/hratio', () => {
           expect(checkValid(mkResponse({ wratio: 1, hratio: 2 }))).to.be.true;
         });
       });
-    })
+    });
+
+    describe('media type validation', () => {
+      let req;
+
+      function mkResponse(props) {
+        return Object.assign({
+          requestId: req.bidId,
+          cpm: 1,
+          ttl: 60,
+          creativeId: '123',
+          netRevenue: true,
+          currency: 'USD',
+          width: 1,
+          height: 2,
+          mediaType: 'banner',
+        }, props);
+      }
+
+      function checkValid(bid, opts = {}) {
+        return isValid('au', bid, {
+          index: stubAuctionIndex({ bidRequests: [req] }),
+          ...opts,
+        });
+      }
+
+      beforeEach(() => {
+        req = {
+          ...MOCK_BIDS_REQUEST.bids[0],
+          mediaTypes: {
+            banner: {
+              sizes: [[1, 2]]
+            }
+          }
+        };
+      });
+
+      it('should reject video bid when ad unit only has banner', () => {
+        expect(checkValid(mkResponse({ mediaType: 'video' }))).to.be.false;
+      });
+
+      it('should accept video bid when ad unit has both banner and video', () => {
+        req.mediaTypes = {
+          banner: { sizes: [[1, 2]] },
+          video: { context: 'instream' }
+        };
+        expect(checkValid(mkResponse({ mediaType: 'video', vastUrl: 'http://vast.xml' }))).to.be.true;
+      });
+
+      it('should skip media type check when adapter omits mediaType', () => {
+        req.mediaTypes = {
+          video: { context: 'instream' }
+        };
+
+        expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.true;
+      });
+
+      it('should reject unknown media type when configured and adapter omits mediaType', () => {
+        req.mediaTypes = {
+          video: { context: 'instream' }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectUnknownMediaTypes: true
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.false;
+      });
+
+      it('should keep legacy behavior when rejectUnknownMediaTypes is disabled', () => {
+        req.mediaTypes = {
+          video: { context: 'instream' }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectUnknownMediaTypes: false
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'banner' }), { responseMediaType: null })).to.be.true;
+      });
+
+      it('should allow mismatched media type when rejectInvalidMediaTypes is disabled', () => {
+        req.mediaTypes = {
+          banner: { sizes: [[1, 2]] }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectInvalidMediaTypes: false
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'video' }))).to.be.true;
+      });
+
+      it('should reject mismatched media type when rejectInvalidMediaTypes is enabled', () => {
+        req.mediaTypes = {
+          banner: { sizes: [[1, 2]] }
+        };
+        config.setConfig({
+          auctionOptions: {
+            rejectInvalidMediaTypes: true
+          }
+        });
+
+        expect(checkValid(mkResponse({ mediaType: 'video' }))).to.be.false;
+      });
+    });
   });
 
   describe('gzip compression', () => {
@@ -1753,7 +1796,6 @@ describe('bidderFactory', () => {
     let spec;
     let ajaxStub;
     let addBidResponseStub;
-    let doneStub;
     let origBS;
     let getParameterByNameStub;
     let debugTurnedOnStub;
@@ -1786,7 +1828,7 @@ describe('bidderFactory', () => {
 
       addBidResponseStub = sandbox.stub();
       addBidResponseStub.reject = sandbox.stub();
-      doneStub = sandbox.stub();
+      sandbox.stub();
       getParameterByNameStub = sandbox.stub(utils, 'getParameterByName');
       debugTurnedOnStub = sandbox.stub(utils, 'debugTurnedOn');
       bidder = newBidder(spec);
@@ -1814,7 +1856,7 @@ describe('bidderFactory', () => {
         bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, () => {
           resolve();
         }, ajaxStub, onTimelyResponseStub, wrappedCallback);
-      })
+      });
     }
 
     it('should send a gzip compressed payload when gzip is supported and enabled', async function () {
@@ -1867,4 +1909,4 @@ describe('bidderFactory', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
     });
   });
-})
+});

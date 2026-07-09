@@ -8,6 +8,7 @@ import { mergeDeep } from '../../../src/utils.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as adUnits from 'src/utils/adUnits';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -74,7 +75,7 @@ describe('VisxAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(videoBid)).to.equal(true);
-    })
+    });
   });
 
   describe('buildRequests', function () {
@@ -122,9 +123,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         site: {
           'domain': 'localhost:9999',
@@ -135,7 +133,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const schainObject = {
       ver: '1.0',
       nodes: [
@@ -288,9 +286,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -343,9 +338,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -358,7 +350,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
-      config.setConfig({ currency: { bidderCurrencyDefault: { visx: 'GBP' } } })
+      config.setConfig({ currency: { bidderCurrencyDefault: { visx: 'GBP' } } });
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -399,9 +391,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -416,7 +405,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should add currency from currency.adServerCurrency', function () {
-      setCurrencyConfig({ adServerCurrency: 'USD' })
+      setCurrencyConfig({ adServerCurrency: 'USD' });
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const request = spec.buildRequests(bidRequests, res);
         const payload = parseRequest(request.url);
@@ -426,7 +415,7 @@ describe('VisxAdapter', function () {
         const postData = request.data;
         expect(postData).to.be.an('object');
         expect(postData.cur).to.deep.equal(['USD']);
-        setCurrencyConfig({})
+        setCurrencyConfig({});
       });
     });
 
@@ -468,9 +457,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'regs': {
           'ext': {
@@ -526,9 +512,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -580,9 +563,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -648,9 +628,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -736,9 +713,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -794,9 +768,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -810,7 +781,7 @@ describe('VisxAdapter', function () {
 
     it('if gpid is present payload must have gpid param', function () {
       const firstBid = Object.assign({}, bidRequests[0]);
-      firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } }
+      firstBid.ortb2Imp = { ext: { gpid: 'adunit-gpid-1' } };
       const bids = [firstBid];
       const request = spec.buildRequests(bids, bidderRequest);
       const postData = request.data;
@@ -863,9 +834,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -876,7 +844,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -977,9 +945,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         }
       });
     });
@@ -1028,9 +993,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         site: {
           'domain': 'localhost:9999',
@@ -1041,7 +1003,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1067,16 +1029,11 @@ describe('VisxAdapter', function () {
       }
     ];
     let sandbox;
-    let documentStub;
 
     before(function() {
       sandbox = sinon.createSandbox();
-      documentStub = sandbox.stub(document, 'getElementById');
-      documentStub.withArgs('visx-adunit-code-1').returns({
-        id: 'visx-adunit-code-1'
-      });
-      documentStub.withArgs('visx-adunit-element-2').returns({
-        id: 'visx-adunit-element-2'
+      sandbox.stub(adUnits, 'getAdUnitElement').callsFake(({ adUnitCode }) => {
+        return ['visx-adunit-code-1', 'visx-adunit-code-2'].includes(adUnitCode);
       });
 
       getGlobal().bidderSettings = {
@@ -1147,9 +1104,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -1213,9 +1167,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -2052,9 +2003,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -2185,9 +2133,6 @@ describe('VisxAdapter', function () {
             ],
             'mobile': 0
           },
-          'ext': {
-            'cdep': 'treatment_1.1'
-          }
         },
         'site': {
           'domain': 'localhost:9999',
@@ -2311,7 +2256,7 @@ describe('VisxAdapter', function () {
             ]
           }
         }
-      }
+      };
       const userReq = mergeDeep(user, userOrtb2);
       expect(userReq.ext.vads).not.to.be.undefined;
     });

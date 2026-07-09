@@ -6,6 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -60,7 +61,7 @@ const getNativeAssetType = id => {
       return assetName;
     }
   }
-}
+};
 
 /**
  * Get preferred language of browser (i.e. user)
@@ -102,7 +103,7 @@ const getTopHost = () => {
 const unpackParams = (bidParams) => {
   const result = isArray(bidParams) ? bidParams[0] : bidParams;
   return result || {};
-}
+};
 
 /**
  * Get bid parameters for notification
@@ -116,7 +117,7 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
-      }
+      };
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
         const { platform = 'wpartner' } = meta;
@@ -128,8 +129,8 @@ const getNotificationPayload = bidData => {
           timeout: timeout || result.timeout,
           pvid: pageView.id,
           platform
-        }
-        result = { ...result, ...bidBasicData }
+        };
+        result = { ...result, ...bidBasicData };
 
         result.tagid.push(adUnitCode);
 
@@ -155,14 +156,14 @@ const getNotificationPayload = bidData => {
             adomain: advertiserDomains[0],
             adtype: mediaType,
             networkName,
-          }
-          result = { ...result, ...bidNonEmptyData }
+          };
+          result = { ...result, ...bidNonEmptyData };
         }
-      })
+      });
       return result;
     }
   }
-}
+};
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
@@ -258,7 +259,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
     ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
     ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
-}
+};
 
 /**
  * Get highest floorprice for a given adslot
@@ -269,7 +270,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
-  const currency = requestCurrency
+  const currency = requestCurrency;
   const result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
@@ -321,7 +322,7 @@ const sendNotification = payload => {
     method: 'POST',
     crossOrigin: true
   });
-}
+};
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
@@ -341,7 +342,7 @@ const mapBanner = slot => {
       id: slot.bidId,
     };
   }
-}
+};
 
 /**
  * @param {string} paramName Native parameter name
@@ -453,7 +454,7 @@ const mapNative = (slot) => {
       })
     };
   }
-}
+};
 
 var mapVideo = (slot, videoFromBid) => {
   var videoFromSlot = deepAccess(slot, 'mediaTypes.video');
@@ -513,7 +514,7 @@ const mapImpression = slot => {
   const imp = {
     id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
-    native: mapNative(slot, bidId),
+    native: mapNative(slot),
     video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
@@ -527,23 +528,23 @@ const mapImpression = slot => {
   imp.bidfloorcur = currency;
 
   return imp;
-}
+};
 
 const isVideoAd = bid => {
   const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
-}
+};
 
 const isNativeAd = bid => {
   const xmlTester = new RegExp(/^{['"]native['"]/);
 
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
-}
+};
 
 const isHTML = bid => {
   const xmlTester = new RegExp(/^<html|<iframe/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
-}
+};
 
 const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
@@ -596,7 +597,7 @@ const parseNative = (nativeData, adUnitCode) => {
   });
 
   return result;
-}
+};
 
 const spec = {
   code: BIDDER_CODE,
@@ -671,8 +672,7 @@ const spec = {
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
     const { body: response = {} } = serverResponse;
-    const { seatbid: responseSeat, ext: responseExt = {} } = response;
-    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
+    const { seatbid: responseSeat } = response;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
@@ -738,6 +738,7 @@ const spec = {
               },
               netRevenue: true,
               vurls,
+              eventtrackers: vurls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url })),
             };
 
             // mediaType and ad data for instream / native / banner
@@ -788,7 +789,7 @@ const spec = {
       });
     }
 
-    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
+    return bids;
   },
 
   getUserSyncs(syncOptions, _, gdprConsent = {}) {

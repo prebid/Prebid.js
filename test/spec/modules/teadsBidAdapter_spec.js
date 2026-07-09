@@ -125,11 +125,11 @@ describe('teadsBidAdapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
-      expect(payload.data[0].auctionId).to.not.exist
+      expect(payload.data[0].auctionId).to.not.exist;
     });
 
     it('should send US Privacy to endpoint', function() {
-      const usPrivacy = 'OHHHFCP1'
+      const usPrivacy = 'OHHHFCP1';
       const bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -272,19 +272,19 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.referrer).to.exist;
-      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html');
     });
 
     it('should add networkBandwidth info to payload', function () {
@@ -315,7 +315,7 @@ describe('teadsBidAdapter', () => {
       } else {
         expect(payload.networkQuality).to.deep.equal('');
       }
-    })
+    });
 
     it('should add domComplexity info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
@@ -330,7 +330,7 @@ describe('teadsBidAdapter', () => {
       } else {
         expect(payload.domComplexity).to.deep.equal(-1);
       }
-    })
+    });
 
     it('should add pageReferrer info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
@@ -343,7 +343,7 @@ describe('teadsBidAdapter', () => {
     it('should add width info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const deviceWidth = screen.width
+      const deviceWidth = screen.width;
 
       expect(payload.deviceWidth).to.exist;
       expect(payload.deviceWidth).to.deep.equal(deviceWidth);
@@ -352,7 +352,7 @@ describe('teadsBidAdapter', () => {
     it('should add height info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const deviceHeight = screen.height
+      const deviceHeight = screen.height;
 
       expect(payload.deviceHeight).to.exist;
       expect(payload.deviceHeight).to.deep.equal(deviceHeight);
@@ -864,7 +864,7 @@ describe('teadsBidAdapter', () => {
     const toEid = (sourceId, value) => ({
       source: sourceId,
       uids: [{ id: value }]
-    })
+    });
 
     describe('User IDs', function () {
       const baseBidRequest = {
@@ -889,7 +889,6 @@ describe('teadsBidAdapter', () => {
         id5Id: toEid('id5-sync.com', 'id5Id-id'),
         criteoId: toEid('criteo.com', 'criteoId-id'),
         yahooConnectId: toEid('yahoo.com', 'yahooConnectId-id'),
-        quantcastId: toEid('quantcast.com', 'quantcastId-id'),
         epsilonPublisherLinkId: toEid('epsilon.com', 'epsilonPublisherLinkId-id'),
         publisherFirstPartyViewerId: toEid('pubcid.org', 'publisherFirstPartyViewerId-id'),
         merkleId: toEid('merkleinc.com', 'merkleId-id'),
@@ -909,7 +908,7 @@ describe('teadsBidAdapter', () => {
           for (const userId in userIdModules) {
             expect(payload, userId).not.to.have.property(userId);
           }
-          expect(payload['eids']).to.deep.equal([])
+          expect(payload['eids']).to.deep.equal([]);
         });
 
         it(`should not add param to payload if user id field is absent`, function () {
@@ -919,14 +918,14 @@ describe('teadsBidAdapter', () => {
           for (const userId in userIdModules) {
             expect(payload, userId).not.to.have.property(userId);
           }
-          expect(payload['eids']).to.deep.equal([])
+          expect(payload['eids']).to.deep.equal([]);
         });
 
         it(`should not add param to payload if user id is enabled but there is no value`, function () {
           const userIdAsEids = [
             toEid('idl_env', ''),
             toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
-          ]
+          ];
           const bidRequest = {
             ...baseBidRequest,
             userIdAsEids
@@ -937,7 +936,7 @@ describe('teadsBidAdapter', () => {
 
           expect(payload).not.to.have.property('liveRampId');
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
-          expect(payload['eids']).to.deep.equal(userIdAsEids)
+          expect(payload['eids']).to.deep.equal(userIdAsEids);
         });
 
         it(`should add userId param to payload for each enabled user id system`, function () {
@@ -957,14 +956,13 @@ describe('teadsBidAdapter', () => {
           expect(payload['id5Id']).to.equal('id5Id-id');
           expect(payload['criteoId']).to.equal('criteoId-id');
           expect(payload['yahooConnectId']).to.equal('yahooConnectId-id');
-          expect(payload['quantcastId']).to.equal('quantcastId-id');
           expect(payload['epsilonPublisherLinkId']).to.equal('epsilonPublisherLinkId-id');
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
           expect(payload['merkleId']).to.equal('merkleId-id');
           expect(payload['kinessoId']).to.equal('kinessoId-id');
-          expect(payload['eids']).to.deep.equal(Object.values(userIdModules))
+          expect(payload['eids']).to.deep.equal(Object.values(userIdModules));
         });
-      })
+      });
 
       describe('First-party cookie Teads ID', function () {
         it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled' +
@@ -1308,8 +1306,7 @@ describe('teadsBidAdapter', () => {
           'placementId': 34,
           'dealId': 'ABC_123'
         }
-      ]
-      ;
+      ];
 
       const result = spec.interpretResponse(bids);
       expect(result).to.eql(expectedResponse);
@@ -1369,8 +1366,7 @@ describe('teadsBidAdapter', () => {
         'creativeId': 'fs3ff',
         'placementId': 34
       }
-      ]
-      ;
+      ];
 
       const isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled');
       isAutoplayEnabledStub.returns(false);

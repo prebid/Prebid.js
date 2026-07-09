@@ -56,14 +56,12 @@ const converter = ortbConverter({
         bc: `${bidderConfig}_${bidderVersion}`,
         pv: '$prebid.version$'
       }
-    })
+    });
     const bid = context.bidRequests[0];
     if (bid.params.coppa) {
       utils.deepSetValue(req, 'regs.coppa', 1);
     }
-    if (bid.params.doNotTrack) {
-      utils.deepSetValue(req, 'device.dnt', 1);
-    }
+    utils.deepSetValue(req, 'device.dnt', 0);
     if (bid.params.platform) {
       utils.deepSetValue(req, 'ext.platform', bid.params.platform);
     }
@@ -74,7 +72,7 @@ const converter = ortbConverter({
       utils.deepSetValue(req, 'ext.response_template_name', bid.params.response_template_name);
     }
     if (bid.params.test) {
-      req.test = 1
+      req.test = 1;
     }
     return req;
   },
@@ -98,27 +96,7 @@ const converter = ortbConverter({
         utils.deepSetValue(ortbResponse, 'ext.platform', ortbRequest.ext.platform);
       }
     }
-    const response = buildResponse(bidResponses, ortbResponse, context);
-    // TODO: we may want to standardize this and move fledge logic to ortbConverter
-    let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
-    if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return {
-          bidId,
-          config: mergeDeep(Object.assign({}, cfg), {
-            auctionSignals: {
-              ortb2Imp: context.impContext[bidId]?.imp,
-            },
-          }),
-        }
-      });
-      return {
-        bids: response.bids,
-        paapi: fledgeAuctionConfigs,
-      }
-    } else {
-      return response
-    }
+    return buildResponse(bidResponses, ortbResponse, context);
   },
   overrides: {
     imp: {
@@ -139,7 +117,7 @@ const converter = ortbConverter({
           let videoParams = bidRequest.mediaTypes[VIDEO];
           if (videoParams) {
             videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } }
+            bidRequest = { ...bidRequest, mediaTypes: { [VIDEO]: videoParams } };
           }
           orig(imp, bidRequest, context);
         }
@@ -162,37 +140,11 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bidRequests, bidderRequest) {
-  const videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
-  const bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
-    // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
-    .map(bid => ({ ...bid, mediaTypes: { ...bid.mediaTypes, video: undefined } }));
-
-  const requests = bannerAndNativeRequests.length ? [createRequest(bannerAndNativeRequests, bidderRequest, null)] : [];
-  videoRequests.forEach(bid => {
-    requests.push(createRequest([bid], bidderRequest, VIDEO));
-  });
-  return requests;
-}
-
-function createRequest(bidRequests, bidderRequest, mediaType) {
-  return {
+  return [{
     method: 'POST',
     url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
-    data: converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
-  }
-}
-
-function isVideoBidRequest(bidRequest) {
-  return utils.deepAccess(bidRequest, 'mediaTypes.video');
-}
-
-function isNativeBidRequest(bidRequest) {
-  return utils.deepAccess(bidRequest, 'mediaTypes.native');
-}
-
-function isBannerBidRequest(bidRequest) {
-  const isNotVideoOrNativeBid = !isVideoBidRequest(bidRequest) && !isNativeBidRequest(bidRequest)
-  return utils.deepAccess(bidRequest, 'mediaTypes.banner') || isNotVideoOrNativeBid;
+    data: converter.toORTB({ bidRequests, bidderRequest })
+  }];
 }
 
 function interpretResponse(resp, req) {
@@ -229,12 +181,12 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsen
     if (responses.length > 0 && responses[0].body && responses[0].body.ext) {
       const ext = responses[0].body.ext;
       if (ext.delDomain) {
-        syncUrl = `https://${ext.delDomain}/w/1.0/pd`
+        syncUrl = `https://${ext.delDomain}/w/1.0/pd`;
       } else if (ext.platform) {
-        queryParamStrings.push('ph=' + ext.platform)
+        queryParamStrings.push('ph=' + ext.platform);
       }
     } else {
-      queryParamStrings.push('ph=' + DEFAULT_PH)
+      queryParamStrings.push('ph=' + DEFAULT_PH);
     }
     return [{
       type: pixelType,

@@ -20,7 +20,9 @@ const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
 const PUB_COMMON_ID = 'PublisherCommonId';
 
-type SharedIdParams = {
+export type SharedIdSystemModuleName = 'sharedId' | 'pubCommonId';
+
+export type SharedIdParams = {
   /**
    * If true, then an id is created automatically if it’s missing.
    * Default is true. If your server has a component that generates the id instead, then this should be set to false
@@ -39,7 +41,7 @@ type SharedIdParams = {
    * The value to use for `inserter` in EIDs.
    */
   inserter?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -72,7 +74,7 @@ function readValue(name, type) {
       if (!expValue) {
         return storage.getDataFromLocalStorage(name);
       } else if ((new Date(expValue)).getTime() - Date.now() > 0) {
-        return storage.getDataFromLocalStorage(name)
+        return storage.getDataFromLocalStorage(name);
       }
     }
   }
@@ -87,7 +89,7 @@ function getIdCallback(pubcid, pixelUrl) {
     } else {
       callback(pubcid);
     }
-  }
+  };
 }
 
 function queuePixelCallback(pixelUrl, id = '', callback?) {
@@ -196,7 +198,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       const eid: any = {
         source: 'pubcid.org',
         uids: values.map(id => ({ id, atype: 1 }))
-      }
+      };
       if (config?.params?.inserter != null) {
         eid.inserter = config.params.inserter;
       }

@@ -5,18 +5,22 @@ import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { toOrtbNativeRequest } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {BidRequest & { timeout: number }} TimedOutBid A bid request that exceeded the auction timeout.
  */
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
+const TIMEOUT_ENDPOINT = 'https://onetag-sys.com/ptimeout';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 const NATIVE_SUFFIX = 'Ad';
@@ -83,11 +87,11 @@ export function isValid(type, bid) {
 }
 
 const isValidEventTracker = function (et) {
-  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
+  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length <= 0) {
     return false;
   }
   return true;
-}
+};
 
 const isValidAsset = function (asset) {
   if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
@@ -97,7 +101,7 @@ const isValidAsset = function (asset) {
   if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) return false;
   if (asset.video && (!asset.video.mimes || !asset.video.minduration || !asset.video.maxduration || !asset.video.protocols)) return false;
   return true;
-}
+};
 
 /**
  * Make a server request from the list of BidRequests.
@@ -122,7 +126,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     payload.gppConsent = {
       consentString: bidderRequest.gppConsent.gppString,
       applicableSections: bidderRequest.gppConsent.applicableSections
-    }
+    };
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
@@ -145,12 +149,12 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = getConnectionInfo();
   payload.networkConnectionType = connection?.type || null;
   payload.networkEffectiveConnectionType = connection?.effectiveType || null;
-  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
+  payload.fledgeEnabled = false;
   return {
     method: 'POST',
     url: ENDPOINT,
     data: JSON.stringify(payload)
-  }
+  };
 }
 
 function interpretResponse(serverResponse, bidderRequest) {
@@ -160,7 +164,7 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
+  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
     return bids;
   }
   Array.isArray(body.bids) && body.bids.forEach(bid => {
@@ -170,13 +174,17 @@ function interpretResponse(serverResponse, bidderRequest) {
       width: bid.width,
       height: bid.height,
       creativeId: bid.creativeId,
-      dealId: bid.dealId == null ? bid.dealId : '',
+      dealId: bid.dealId != null ? bid.dealId : undefined,
       currency: bid.currency,
       netRevenue: bid.netRevenue || false,
       mediaType: (bid.mediaType === NATIVE + NATIVE_SUFFIX) ? NATIVE : bid.mediaType,
       meta: {
         mediaType: bid.mediaType,
-        advertiserDomains: bid.adomain
+        advertiserDomains: bid.adomain,
+        primaryCatId: bid.primaryCatId,
+        secondaryCatIds: bid.secondaryCatIds,
+        attr: bid.attr,
+        cattax: bid.cattax
       },
       ttl: bid.ttl || 300
     };
@@ -206,15 +214,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     bids.push(responseBid);
   });
 
-  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
-    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
-    return {
-      bids,
-      paapi: fledgeAuctionConfigs
-    }
-  } else {
-    return bids;
-  }
+  return bids;
 }
 
 function createRenderer(bid, rendererOptions = {}) {
@@ -246,12 +246,10 @@ function createRenderer(bid, rendererOptions = {}) {
 
 function getFrameNesting() {
   let topmostFrame = window;
-  let parent = window.parent;
   try {
     while (topmostFrame !== topmostFrame.parent) {
-      parent = topmostFrame.parent;
       // eslint-disable-next-line no-unused-expressions
-      parent.location.href;
+      topmostFrame.parent.location.href;
       topmostFrame = topmostFrame.parent;
     }
   } catch (e) { }
@@ -298,7 +296,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.6'
+      adapter: '1.1.8'
     }
   };
 }
@@ -308,7 +306,7 @@ function requestsToBids(bidRequests) {
     const videoObj = {};
     setGeneralInfo.call(videoObj, bidRequest);
     // Pass parameters
-    // Context: instream - outstream - adpod
+    // Context: instream - outstream
     videoObj['context'] = bidRequest.mediaTypes.video.context;
     // Sizes
     videoObj['playerSize'] = parseVideoSize(bidRequest);
@@ -366,14 +364,14 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
-  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  const coords = getSpaceCoords(bidRequest);
   if (coords) {
     this['coords'] = coords;
   }
 }
 
-function getSpaceCoords(id) {
-  const space = document.getElementById(id);
+function getSpaceCoords(bidRequest) {
+  const space = getAdUnitElement(bidRequest);
   try {
     const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;
@@ -411,7 +409,7 @@ function getTiming() {
 function parseVideoSize(bid) {
   const playerSize = bid.mediaTypes.video.playerSize;
   if (typeof playerSize !== 'undefined' && Array.isArray(playerSize) && playerSize.length > 0) {
-    return getSizes(playerSize)
+    return getSizes(playerSize);
   }
   return [];
 }
@@ -419,7 +417,7 @@ function parseVideoSize(bid) {
 function parseSizes(bid) {
   const ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
-    return getSizes(bid.mediaTypes.banner.sizes)
+    return getSizes(bid.mediaTypes.banner.sizes);
   }
   const isVideoBidRequest = hasTypeVideo(bid);
   if (!isVideoBidRequest && bid.sizes && Array.isArray(bid.sizes)) {
@@ -432,7 +430,7 @@ function getSizes(sizes) {
   const ret = [];
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i];
-    ret.push({ width: size[0], height: size[1] })
+    ret.push({ width: size[0], height: size[1] });
   }
   return ret;
 }
@@ -506,6 +504,33 @@ export function isSchainValid(schain) {
   return isValid;
 }
 
+/**
+ * Notifies the OneTag server that one or more of our bids timed out.
+ * @param {Array<TimedOutBid>} timeoutData One entry per timed-out bid.
+ */
+function onTimeout(timeoutData) {
+  if (!Array.isArray(timeoutData) || timeoutData.length === 0) {
+    return;
+  }
+  const onetagTimeouts = timeoutData.filter(bid => bid && bid.bidder === BIDDER_CODE);
+  if (onetagTimeouts.length === 0) {
+    return;
+  }
+  dep.ajax(TIMEOUT_ENDPOINT, null, JSON.stringify(onetagTimeouts), {
+    method: 'POST',
+    contentType: 'text/plain',
+    keepalive: true,
+    withCredentials: false
+  });
+}
+
+// Container for the external dependencies used internally by the adapter.
+// Kept separate from `spec` (the interface exposed to Prebid) so these
+// dependencies can be stubbed in unit tests through a mutable reference.
+export const dep = {
+  ajax
+};
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -513,8 +538,8 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs
-
+  getUserSyncs: getUserSyncs,
+  onTimeout: onTimeout
 };
 
 registerBidder(spec);

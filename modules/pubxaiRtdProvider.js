@@ -86,7 +86,7 @@ export const getUrl = (provider) => {
   if (!endpoint) {
     return null; // Indicate that no endpoint is provided
   }
-  return `${endpoint || FLOORS_END_POINT}?pubxId=${pubxId}&page=${window.location.href}`;
+  return `${endpoint}?pubxId=${pubxId}&page=${window.location.href}`;
 };
 
 export const fetchFloorRules = async (provider) => {

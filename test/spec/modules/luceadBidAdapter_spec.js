@@ -1,9 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/luceadBidAdapter.js';
+import { dep, spec } from 'modules/luceadBidAdapter.js';
 import sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
-import * as ajax from 'src/ajax.js';
 
 describe('Lucead Adapter', () => {
   describe('inherited functions', function () {
@@ -49,11 +47,11 @@ describe('Lucead Adapter', () => {
     });
 
     it('should trigger impression pixel', function () {
-      sandbox.spy(ajax, 'fetch');
+      sandbox.spy(dep, 'fetch');
 
       for (const bid of bids) {
         spec.onBidWon(bid);
-        expect(ajax?.fetch?.args[0][0]).to.match(/report\/impression$/);
+        expect(dep?.fetch?.args[0][0]).to.match(/report\/impression$/);
       }
     });
 
@@ -173,13 +171,6 @@ describe('Lucead Adapter', () => {
 
       const result = spec.interpretResponse(serverResponse, bidRequest);
       expect(Object.keys(result.bids[0].meta)).to.include.members(['advertiserDomains']);
-    });
-
-    it('should support enable_pa = false', function () {
-      serverResponse.body.enable_pa = false;
-      const result = spec.interpretResponse(serverResponse, bidRequest);
-      expect(result).to.be.an('array');
-      expect(result[0].cpm).to.be.greaterThan(0);
     });
   });
 });

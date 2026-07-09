@@ -58,10 +58,6 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest?.paapi?.enabled) {
-      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.paapi.enabled);
-    }
-
     if (config.getConfig('coppa') === true) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
@@ -81,26 +77,8 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function(serverResponse, { bidderRequest }) {
     let bids = serverResponse.body.bids || [];
-    const paapi = serverResponse.body.paapi || [];
 
-    bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
-
-    if (paapi.length > 0) {
-      const fledgeAuctionConfigs = paapi.map(config => {
-        return {
-          bidId: bidderRequest.bids[config.imp_id].bidId,
-          config: config.auctionConfig
-        };
-      });
-
-      logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
-      return {
-        bids,
-        paapi: fledgeAuctionConfigs
-      };
-    } else {
-      return bids;
-    }
+    return bids.map(bid => _buildResponseObject(bidderRequest, bid));
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
@@ -185,10 +163,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     return imp;
   });
 
-  let eids = [];
-
   if (bidRequests[0].userIdAsEids) {
-    eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
+    const eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
     data.user = {
       ext: { eids }
     };
@@ -268,7 +244,7 @@ function _getFloor (bid) {
 
 function _getGlobalFpd(bidderRequest) {
   const fpd = {};
-  const context = {}
+  const context = {};
   const user = {};
   const ortbData = bidderRequest.ortb2 || {};
   const opeCloudStorage = _fetchOpeCloud();
@@ -277,12 +253,12 @@ function _getGlobalFpd(bidderRequest) {
   const fpdUser = Object.assign({}, ortbData.user);
 
   if (opeCloudStorage) {
-    fpdUser.data = fpdUser.data || []
+    fpdUser.data = fpdUser.data || [];
     try {
       fpdUser.data.push({
         name: 'www.1plusx.com',
         ext: opeCloudStorage
-      })
+      });
     } catch (err) {
       logError('Triplelift: error adding 1plusX segments: ', err);
     }
@@ -305,10 +281,10 @@ function _fetchOpeCloud() {
   if (!opeCloud) return null;
   try {
     const parsedJson = JSON.parse(opeCloud);
-    return parsedJson
+    return parsedJson;
   } catch (err) {
     logError('Triplelift: error parsing JSON: ', err);
-    return null
+    return null;
   }
 }
 
@@ -400,9 +376,9 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source === 'hdx') {
       if (_isVideoBidRequest(breq) && bid.media_type === 'video') {
-        bidResponse.meta.mediaType = 'video'
+        bidResponse.meta.mediaType = 'video';
       } else {
-        bidResponse.meta.mediaType = 'banner'
+        bidResponse.meta.mediaType = 'banner';
       }
     }
 

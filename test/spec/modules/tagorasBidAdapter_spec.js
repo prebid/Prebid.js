@@ -93,7 +93,7 @@ const VIDEO_BID = {
       'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -441,6 +441,17 @@ describe('TagorasBidAdapter', function () {
       });
     });
 
+    it('should build video request with right url domain despite params.host', function () {
+      const videoBidWithHost = VIDEO_BID;
+      videoBidWithHost.params.host = "example7.com";
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([videoBidWithHost], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`);
+    });
+
     after(function () {
       getGlobal().bidderSettings = {};
       sandbox.restore();
@@ -493,7 +504,7 @@ describe('TagorasBidAdapter', function () {
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
       const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
@@ -614,10 +625,10 @@ describe('TagorasBidAdapter', function () {
           "source": "audigent.com",
           "uids": [{ "id": "fakeidi6j6dlc6e" }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
+    });
     it("should include user ids from bid.userIdAsEids (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.userIdAsEids = [
@@ -629,11 +640,11 @@ describe('TagorasBidAdapter', function () {
           "source": "rwdcntrl.net",
           "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
         }
-      ]
+      ];
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
       expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
+    });
     // testing user.ext.eid handling
     it("should include user ids from user.ext.eid (length=1)", function() {
       const bid = utils.deepClone(BID);
@@ -646,10 +657,10 @@ describe('TagorasBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
+    });
     it("should include user ids from user.ext.eid (length=2)", function() {
       const bid = utils.deepClone(BID);
       bid.user = {
@@ -665,11 +676,11 @@ describe('TagorasBidAdapter', function () {
             }
           ]
         }
-      }
+      };
       const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
       expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
       expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
+    });
   });
 
   describe('alternate param names extractors', function () {
@@ -707,7 +718,7 @@ describe('TagorasBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -723,7 +734,7 @@ describe('TagorasBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
@@ -754,7 +765,7 @@ describe('TagorasBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);

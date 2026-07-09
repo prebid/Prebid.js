@@ -1,8 +1,9 @@
 import {
   wurflSubmodule,
-  storage
+  storage,
+  __testing__,
+  dep
 } from 'modules/wurflRtdProvider';
-import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as prebidGlobalModule from 'src/prebidGlobal.js';
 import { guardOrtb2Fragments } from 'libraries/objectGuard/ortbGuard.js';
@@ -37,7 +38,7 @@ describe('wurflRtdProvider', function () {
           cap_indices: [12, 13, 14, 19, 20, 21, 22]
         }
       }
-    }
+    };
     const WURFL = {
       advertised_browser: 'Chrome Mobile',
       advertised_browser_version: '130.0.0.0',
@@ -76,19 +77,15 @@ describe('wurflRtdProvider', function () {
 
     // expected analytics values
     const expectedStatsURL = 'https://stats.prebid.wurflcloud.com/v2/prebid/stats';
-    const expectedData = JSON.stringify({ bidders: ['bidder1', 'bidder2'] });
 
     let sandbox;
-    // originalUserAgentData to restore after tests
-    let originalUAData;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       window.WURFLPromises = {
-        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
-        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
+        init: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
+        complete: new Promise(function (resolve, reject) { resolve({ WURFL, wurfl_pbjs }); }),
       };
-      originalUAData = window.navigator.userAgentData;
       // Initialize module with clean state for each test
       wurflSubmodule.init({ params: {} });
     });
@@ -97,10 +94,6 @@ describe('wurflRtdProvider', function () {
       // Restore the original functions
       sandbox.restore();
       window.WURFLPromises = undefined;
-      Object.defineProperty(window.navigator, 'userAgentData', {
-        value: originalUAData,
-        configurable: true,
-      });
     });
 
     // Bid request config
@@ -120,98 +113,95 @@ describe('wurflRtdProvider', function () {
       }
     };
 
-    // Client Hints tests
-    describe('Client Hints support', () => {
-      it('should collect and send client hints when available', (done) => {
-        const clock = sinon.useFakeTimers();
+    // SUA (Structured User Agent) tests
+    describe('SUA support', () => {
+      const mockSUA = {
+        source: 2,
+        platform: { brand: 'Android', version: ['13', '0', '0'] },
+        browsers: [{ brand: 'Chromium', version: ['130', '0', '6723', '58'] }],
+        mobile: 1,
+        model: 'Pixel 5',
+        architecture: 'arm',
+        bitness: '64'
+      };
+
+      afterEach(() => {
+        __testing__.setSuaPromise(null);
+        __testing__.setResolvedSUA(null);
+      });
+
+      it('should collect SUA via sua.js and send it in WURFL.js URL', (done) => {
+        // Pre-seed suaPromise to simulate getHighEntropySUA() having resolved.
+        // This bypasses the real navigator.userAgentData call path.
+        __testing__.setSuaPromise(Promise.resolve(mockSUA));
+
         reqBidsConfigObj.ortb2Fragments.global.device = {};
         reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-        // Mock Client Hints
-        const mockClientHints = {
-          architecture: 'arm',
-          bitness: '64',
-          model: 'Pixel 5',
-          platformVersion: '13.0.0',
-          uaFullVersion: '130.0.6723.58',
-          fullVersionList: [
-            { brand: 'Chromium', version: '130.0.6723.58' }
-          ]
-        };
-
-        const getHighEntropyValuesStub = sandbox.stub().resolves(mockClientHints);
-        Object.defineProperty(navigator, 'userAgentData', {
-          value: { getHighEntropyValues: getHighEntropyValuesStub },
-          configurable: true,
-          writable: true
-        });
 
         // Empty cache to trigger async load
         sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const callback = async () => {
-          // Verify client hints were requested
-          expect(getHighEntropyValuesStub.calledOnce).to.be.true;
-          expect(getHighEntropyValuesStub.calledWith(
-            ['architecture', 'bitness', 'model', 'platformVersion', 'uaFullVersion', 'fullVersionList']
-          )).to.be.true;
-
-          try {
-            // Use tickAsync to properly handle promise microtasks
-            await clock.tickAsync(1);
-
-            // Now verify WURFL.js was loaded with client hints in URL
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+          // loadWurflJsAsync chains on suaPromise, so fire assertions after microtasks flush.
+          setTimeout(() => {
             expect(loadExternalScriptStub.called).to.be.true;
             const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
-
             const url = new URL(scriptUrl);
-            const uachParam = url.searchParams.get('uach');
-            expect(uachParam).to.not.be.null;
-
-            const parsedHints = JSON.parse(uachParam);
-            expect(parsedHints).to.deep.equal(mockClientHints);
-
-            clock.restore();
+            const suaParam = url.searchParams.get('sua');
+            expect(suaParam).to.not.be.null;
+            expect(JSON.parse(suaParam)).to.deep.equal(mockSUA);
             done();
-          } catch (err) {
-            clock.restore();
-            done(err);
-          }
-        };
+          }, 0);
+        }, { params: {} }, {});
+      });
 
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
-      })
-      it('should load WURFL.js without client hints when not available', (done) => {
+      it('should load WURFL.js without SUA when sua.js resolves null', (done) => {
+        __testing__.setSuaPromise(Promise.resolve(null));
+
         reqBidsConfigObj.ortb2Fragments.global.device = {};
         reqBidsConfigObj.ortb2Fragments.bidder = {};
 
-        // No client hints available
-        Object.defineProperty(navigator, 'userAgentData', {
-          value: undefined,
-          configurable: true,
-          writable: true
-        });
-
-        // Empty cache to trigger async load
         sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const callback = () => {
-          // Verify WURFL.js was loaded without uach parameter
-          expect(loadExternalScriptStub.calledOnce).to.be.true;
-          const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+          setTimeout(() => {
+            expect(loadExternalScriptStub.calledOnce).to.be.true;
+            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            const url = new URL(scriptUrl);
+            expect(url.searchParams.get('sua')).to.be.null;
+            done();
+          }, 0);
+        }, { params: {} }, {});
+      });
 
-          const url = new URL(scriptUrl);
-          const uachParam = url.searchParams.get('uach');
-          expect(uachParam).to.be.null;
+      it('should NOT modify ortb2Fragments.global.device.sua (tier-2 guard)', (done) => {
+        // Whatever the publisher / Prebid enrichment put in the bid request
+        // must remain untouched: the bid-request SUA is gated by firstPartyData.uaHints
+        // and we don't override publisher policy for bidder-facing data.
+        const publisherSUA = { source: 1, platform: { brand: 'Windows' } };
+        reqBidsConfigObj.ortb2Fragments.global.device = { sua: publisherSUA };
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
 
-          done();
-        };
+        __testing__.setSuaPromise(Promise.resolve(mockSUA));
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+          setTimeout(() => {
+            // Tier 2: bid-request SUA unchanged
+            expect(reqBidsConfigObj.ortb2Fragments.global.device.sua).to.deep.equal(publisherSUA);
+            // Tier 1: wurfl.js URL carries our own high-entropy SUA
+            const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
+            const url = new URL(scriptUrl);
+            expect(JSON.parse(url.searchParams.get('sua'))).to.deep.equal(mockSUA);
+            done();
+          }, 0);
+        }, { params: {} }, {});
       });
     });
 
@@ -249,15 +239,9 @@ describe('wurflRtdProvider', function () {
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
 
-      it('should use expired cached data and trigger async refresh (without Client Hints)', (done) => {
+      it('should use expired cached data and trigger async refresh (without SUA)', (done) => {
         reqBidsConfigObj.ortb2Fragments.global.device = {};
         reqBidsConfigObj.ortb2Fragments.bidder = {};
-
-        Object.defineProperty(navigator, 'userAgentData', {
-          value: undefined,
-          configurable: true,
-          writable: true
-        });
         // Setup cache with expired TTL
         const pastExpiry = Date.now() - 1000; // expired 1 second ago
         const cachedData = {
@@ -281,10 +265,12 @@ describe('wurflRtdProvider', function () {
           expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1).to.exist;
           expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder2).to.exist;
 
-          // Verify async load WAS triggered for refresh (cache expired)
-          expect(loadExternalScriptStub.calledOnce).to.be.true;
-
-          done();
+          // loadWurflJsAsync chains on suaPromise; wait for microtasks to flush.
+          setTimeout(() => {
+            // Verify async load WAS triggered for refresh (cache expired)
+            expect(loadExternalScriptStub.calledOnce).to.be.true;
+            done();
+          }, 0);
         };
 
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
@@ -401,7 +387,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -448,7 +434,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -546,7 +532,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -588,7 +574,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -637,7 +623,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -690,7 +676,7 @@ describe('wurflRtdProvider', function () {
           sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
           sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-          const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
           sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
             getHighestCpmBids: () => []
           });
@@ -815,6 +801,11 @@ describe('wurflRtdProvider', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
+      // Force SUA to null for this test so the URL assertion stays deterministic.
+      // (Chrome Headless exposes navigator.userAgentData, which would otherwise append
+      // a ?sua= param to the expected URL.)
+      __testing__.setSuaPromise(Promise.resolve(null));
+
       // Set global debug flag
       config.setConfig({ debug: true });
 
@@ -836,7 +827,14 @@ describe('wurflRtdProvider', function () {
         // No bidder enrichment should occur without cached WURFL data
         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({});
 
-        done();
+        // loadWurflJsAsync chains on suaPromise; wait for microtasks.
+        setTimeout(() => {
+          expect(loadExternalScriptStub.calledOnce).to.be.true;
+          const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
+          expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
+          expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
+          done();
+        }, 0);
       };
 
       const moduleConfig = {
@@ -847,12 +845,6 @@ describe('wurflRtdProvider', function () {
       const userConsent = {};
 
       wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
-
-      // Verify WURFL.js is loaded async for future requests
-      expect(loadExternalScriptStub.calledOnce).to.be.true;
-      const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
-      expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
-      expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
     });
 
     it('should not include device.w and device.h in LCE enrichment (removed in v2.3.0 - fingerprinting APIs)', (done) => {
@@ -1615,8 +1607,8 @@ describe('wurflRtdProvider', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-      const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(false);
-      const fetchAjaxStub = sandbox.stub(ajaxModule, 'fetch').returns(Promise.resolve());
+      const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(false);
+      const fetchAjaxStub = sandbox.stub(dep, 'fetch').returns(Promise.resolve());
 
       // Mock getGlobal().getHighestCpmBids()
       const mockHighestCpmBids = [
@@ -1698,7 +1690,7 @@ describe('wurflRtdProvider', function () {
       });
 
       const testConsentClass = (description, userConsent, expectedClass, done) => {
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const callback = () => {
           const auctionDetails = {
@@ -1853,8 +1845,8 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon');
-        const fetchStub = sandbox.stub(ajaxModule, 'fetch').returns(Promise.resolve());
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon');
+        const fetchStub = sandbox.stub(dep, 'fetch').returns(Promise.resolve());
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -1898,7 +1890,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -1942,7 +1934,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
@@ -2006,7 +1998,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const callback = () => {
           const auctionDetails = {
@@ -2081,7 +2073,7 @@ describe('wurflRtdProvider', function () {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
         sandbox.stub(storage, 'hasLocalStorage').returns(true);
 
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         const callback = () => {
           const auctionDetails = {
@@ -2357,14 +2349,11 @@ describe('wurflRtdProvider', function () {
       });
 
       it('should set LCE_ERROR enrichment type when LCE device detection throws error', (done) => {
-        const sendBeaconStub = sandbox.stub(ajaxModule, 'sendBeacon').returns(true);
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
 
         sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
           getHighestCpmBids: () => []
         });
-
-        // Import the WurflLCEDevice to stub it
-        const wurflRtdProvider = require('modules/wurflRtdProvider.js');
 
         const callback = () => {
           const device = reqBidsConfigObj.ortb2Fragments.global.device;
@@ -2416,6 +2405,81 @@ describe('wurflRtdProvider', function () {
           value: originalGetDeviceInfo,
           configurable: true
         });
+      });
+    });
+
+    describe('onAuctionEndEvent: SUA in beacon payload', () => {
+      const mockSUA = {
+        source: 2,
+        platform: { brand: 'Android', version: ['13', '0', '0'] },
+        browsers: [{ brand: 'Chromium', version: ['130', '0', '6723', '58'] }],
+        mobile: 1,
+        model: 'Pixel 5',
+        architecture: 'arm',
+        bitness: '64'
+      };
+
+      beforeEach(() => {
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+
+        sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
+          getHighestCpmBids: () => []
+        });
+      });
+
+      afterEach(() => {
+        __testing__.setResolvedSUA(null);
+        __testing__.setSuaPromise(null);
+      });
+
+      it('should include SUA in beacon payload when resolvedSUA is populated', () => {
+        // The beacon path is synchronous: it reads resolvedSUA, which is primed by
+        // the suaPromise chain started in getBidRequestData. For this unit test we
+        // seed it directly to exercise the beacon code path without timing concerns.
+        __testing__.setResolvedSUA(mockSUA);
+
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const auctionDetails = {
+          bidsReceived: [],
+          adUnits: [{ code: 'ad1', bids: [{ bidder: 'bidder1' }] }]
+        };
+
+        wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+        expect(sendBeaconStub.calledOnce).to.be.true;
+        const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+        expect(payload).to.have.property('sua');
+        expect(payload.sua).to.deep.equal(mockSUA);
+      });
+
+      it('should set sua to null in beacon payload when resolvedSUA is unavailable', () => {
+        // resolvedSUA is null by default (reset by init()). This also covers the
+        // pathological case where the suaPromise has not resolved before auction end.
+
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const auctionDetails = {
+          bidsReceived: [],
+          adUnits: [{ code: 'ad1', bids: [{ bidder: 'bidder1' }] }]
+        };
+
+        wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+
+        expect(sendBeaconStub.calledOnce).to.be.true;
+        const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+        expect(payload).to.have.property('sua', null);
       });
     });
   });
