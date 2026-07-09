@@ -638,7 +638,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       utils.triggerPixel.restore();
     });
 
-    it('should append ? when veiwableUrl has no existing query string', function () {
+    it('should append ? when renderSuccessUrl has no existing query string', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
@@ -665,7 +665,7 @@ describe('Vidazoo Bidder Utils Tests', function () {
       expect(url).to.match(/^https:\/\/test\.com\/renderSuccessUrl\?adId=/);
     });
 
-    it('should not call triggerPixel when veiwableUrl not passed in bid', function () {
+    it('should not call triggerPixel when renderSuccessUrl not passed in bid', function () {
       const bid = {
         adUnitCode: 'div-gpt-ad-12345-0',
         adId: '2d52001cabd527',
