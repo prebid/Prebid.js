@@ -112,8 +112,8 @@
           googletag.pubads().disableInitialLoad();
           googletag.pubads().enableSingleRequest();
 
-          var slot1 = googletag.defineSlot('/19968336/header-bid-tag-0', [300, 250], 'ad-div-1').addService(googletag.pubads());
-          var slot2 = googletag.defineSlot('/19968336/header-bid-tag-1', [728, 90], 'ad-div-2').addService(googletag.pubads());
+          googletag.defineSlot('/19968336/header-bid-tag-0', [300, 250], 'ad-div-1').addService(googletag.pubads());
+          googletag.defineSlot('/19968336/header-bid-tag-1', [728, 90], 'ad-div-2').addService(googletag.pubads());
           googletag.enableServices();
 
           pbjs.setTargetingForGPTAsync();
