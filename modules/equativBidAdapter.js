@@ -210,8 +210,9 @@ export const converter = ortbConverter({
     // `placementuuid` is the preferred way to identify inventory. When it is
     // provided it takes precedence over the <deprecated> `siteId`, `pageId` and
     // `formatId` </deprecated> parameters, which are kept only to support the ramp-up period.
+    // SSB expects this value in the OpenRTB extension as `plcmtuuid`.
     const bidder = placementuuid
-      ? { placementuuid }
+      ? { plcmtuuid: placementuuid }
       : { ...(siteId && { siteId }), ...(pageId && { pageId }), ...(formatId && { formatId }) };
     if (Object.keys(bidder).length) {
       mergeDeep(imp.ext, { bidder });
