@@ -18,7 +18,7 @@ const BIDDER_CODE = 'copper6ssp';
 const BIDDER_VERSION = '1.0.0';
 const GVLID = 1356;
 const DEFAULT_CID = "600000000000000000000cc6";
-const DEFAULT_PID = "600000000000000000000dc6"
+const DEFAULT_PID = "600000000000000000000dc6";
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
@@ -49,13 +49,13 @@ function legacySupport(createDomain, createUniqueRequestData, storage, BIDDER_CO
         if (request.params?.endpointId) {
           request.params.pId = request.params.endpointId;
         } else {
-          request.params.pId = DEFAULT_PID
+          request.params.pId = DEFAULT_PID;
         }
       }
       return request;
-    })
+    });
     return buildFunction(modifiedRequests, bidderRequest);
-  }
+  };
 }
 
 const buildRequests = legacySupport(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false);

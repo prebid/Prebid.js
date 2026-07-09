@@ -368,7 +368,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   };
 
   if (bidFloor) {
-    data.bidFloor = bidFloor
+    data.bidFloor = bidFloor;
   }
   // backward compatible userId generators
   if (bid.userIdAsEids?.length > 0) {
