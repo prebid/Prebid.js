@@ -115,7 +115,7 @@ jobs:
   e2e-tests:
     needs: [setup, build]
     if: ${{ !inputs.coverage-only }}
-    name: "E2E (browser: ${{ matrix.browser.wdioName }})"
+    name: "E2E (browser: ${{ matrix.browser.wdioName }} ${{ matrix.browser.version }})"
     strategy:
       fail-fast: false
       matrix:
@@ -129,6 +129,7 @@ jobs:
       chunks: 1
       runs-on: ${{ matrix.browser.runsOn || 'ubuntu-latest' }}
       install-safari: ${{ matrix.browser.os == 'macos' }}
+      install-chrome: ${{ matrix.browser.chrome }}
       browserstack: false
 
   unit-tests:

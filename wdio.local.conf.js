@@ -8,6 +8,7 @@ exports.config = {
       browserName: 'chrome',
       'goog:chromeOptions': {
         args: ['headless', 'disable-gpu'],
+        binary: process.env.CHROME_BIN
       },
     },
     {
