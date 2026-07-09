@@ -843,9 +843,9 @@ describe('trustxBidAdapter', function() {
         expect(bids).to.be.an('array').that.is.not.empty;
         // burl is directly mapped to bidResponse.burl by ortbConverter
         expect(bids[0].burl).to.equal(burl);
-        // nurl is processed by banner processor: if adm exists, nurl is embedded as tracking pixel in ad
+        // nurl is processed by banner processor: if adm exists, nurl is embedded as an escaped tracking pixel in ad
         // if no adm, nurl becomes adUrl. In this case, we have adm, so nurl is in ad as tracking pixel
-        expect(bids[0].ad).to.include(nurl); // nurl should be embedded in ad as tracking pixel
+        expect(bids[0].ad).to.include('https://trackers.trustx.org/event?brid=xxx&amp;e=nurl&amp;cpm=${AUCTION_PRICE}');
         expect(bids[0].ad).to.include('<div>Test Ad</div>'); // original adm should still be there
       });
 
