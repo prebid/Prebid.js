@@ -6,9 +6,9 @@ exports.config = {
   capabilities: [
     {
       browserName: 'chrome',
+      browserVersion: process.env.BROWSER_VERSION !== 'latest' ? process.env.BROWSER_VERSION : undefined,
       'goog:chromeOptions': {
         args: ['headless', 'disable-gpu'],
-        binary: process.env.CHROME_BIN
       },
     },
     {
