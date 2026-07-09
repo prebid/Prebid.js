@@ -25,7 +25,7 @@ jobs:
       - name: Calculate diff
         if: ${{ steps.update.outcome == 'success' }}
         run: |
-          git fetch "origin/${{ github.event.pull_request.base.ref }}"
+          git fetch origin ${{ github.event.pull_request.base.ref }}
           git diff --name-only $(git merge-base HEAD "origin/${{ github.event.pull_request.base.ref }}")..HEAD > ${{runner.temp}}/changed_files.txt
       - name: Check naming
         if: ${{ steps.update.outcome == 'success' }}
