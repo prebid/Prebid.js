@@ -2819,7 +2819,7 @@ describe('adapterManager tests', function () {
       });
 
       it(
-        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'should suppress client side bids if no ad unit bidSources are set, ' +
         'but bidderControl resolves to server',
         () => {
           const ads = removeAdUnitsBidSource(getServerTestingsAds());
