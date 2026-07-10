@@ -29,7 +29,7 @@ export function gppParams() {
   const gppConsent = gppDataHandler.getConsentData();
   const params = {};
   if (gppConsent) {
-    if (gppConsent.gppString) { params.gpp_string = gppConsent.gppString; }
+    if (gppConsent.gppString) { params.gpp = gppConsent.gppString; }
     if (gppConsent.applicableSections) { params.gpp_sid = gppConsent.applicableSections.join(','); }
   }
   return params;
