@@ -54,6 +54,19 @@ describe('Dianomi adapter', () => {
       assert.ok(request.data);
     });
 
+    it('should set the top-level request id from bidderRequestId', () => {
+      const validBidRequests = [
+        {
+          bidId: 'bidId',
+          params: { smartadId: 1234 },
+        },
+      ];
+      const bidderRequest = { bidderRequestId: 'bidderRequestId', refererInfo: { page: 'page' } };
+      const request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+      assert.equal(request.id, 'bidderRequestId');
+    });
+
     describe('user privacy', () => {
       it('should send GDPR Consent data to Dianomi if gdprApplies', () => {
         const validBidRequests = [{ bidId: 'bidId', params: { smartadId: 1234 } }];

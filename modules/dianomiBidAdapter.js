@@ -222,7 +222,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site,
       app,
       user,
