@@ -927,7 +927,7 @@ describe('The DFP video support module', function () {
 
     describe('GPP information is included when available', () => {
       it('gpp string is included in the URL when present', async () => {
-        const gppConsentData = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] }
+        const gppConsentData = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] };
         mockGpp(gppConsentData);
 
         const gppFromRequest = await obtainGPPInVastXmlRequest();
