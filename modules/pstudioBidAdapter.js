@@ -10,7 +10,7 @@ import {
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';
-const ENDPOINT = 'http://localhost:8080/prebid-bid';
+const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid';
 const TIME_TO_LIVE = 300;
 const UNOMI_URL = 'https://revamp-unomi.techgadgetforus.com/context.json';
 const BIMAX_URL = 'https://bimax.telkomsel.com/oc/';
@@ -219,6 +219,7 @@ function tmaPrime(bidderRequest) {
 // User syncs config
 // ---------------------------------------------------------------------------
 const USER_SYNCS = [
+  // PARTNER_UID is a partner user id
   {
     type: 'img',
     url: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=%PARTNER_UID%&dsp=ttd',
