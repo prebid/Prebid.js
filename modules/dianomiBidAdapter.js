@@ -4,7 +4,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
-  mergeDeep,
   _map,
   deepAccess,
   parseSizesInput,
@@ -13,13 +12,10 @@ import {
   setOnAny,
   getWinDimensions
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
-
-const { getConfig } = config;
 
 const BIDDER_CODE = 'dianomi';
 const GVLID = 885;
@@ -86,23 +82,17 @@ export const spec = {
     const commonFpd = bidderRequest.ortb2 || {};
     const { user } = commonFpd;
 
-    if (typeof getConfig('app') === 'object') {
-      app = getConfig('app') || {};
-      if (commonFpd.app) {
-        mergeDeep(app, commonFpd.app);
-      }
+    if (typeof commonFpd.app === 'object') {
+      app = { ...commonFpd.app };
     } else {
-      site = getConfig('site') || {};
-      if (commonFpd.site) {
-        mergeDeep(site, commonFpd.site);
-      }
+      site = { ...commonFpd.site };
 
       if (!site.page) {
         site.page = bidderRequest.refererInfo.page;
       }
     }
 
-    const device = getConfig('device') || {};
+    const device = { ...commonFpd.device };
     const { innerWidth, innerHeight } = getWinDimensions();
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;

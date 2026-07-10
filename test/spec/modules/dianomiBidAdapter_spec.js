@@ -50,7 +50,7 @@ describe('Dianomi adapter', () => {
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
 
       assert.equal(request.method, 'POST');
-      assert.equal(request.url, 'https://www-prebid.dianomi.com/cgi-bin/smartads_prebid.pl');
+      assert.equal(request.url, 'https://dianomi-bidder-proxy.dianomi.com/traffic_proxy');
       assert.ok(request.data);
     });
 
@@ -185,17 +185,16 @@ describe('Dianomi adapter', () => {
     });
 
     it('should send info about device', () => {
-      config.setConfig({
-        device: { w: 100, h: 100 },
-      });
+      const ortb2 = { device: { w: 100, h: 100 } };
       const validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
+          ortb2,
         },
       ];
       const request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data
       );
 
       assert.equal(request.device.ua, navigator.userAgent);
@@ -204,10 +203,7 @@ describe('Dianomi adapter', () => {
     });
 
     it('should send app info', () => {
-      config.setConfig({
-        app: { id: 'appid' },
-      });
-      const ortb2 = { app: { name: 'appname' } };
+      const ortb2 = { app: { id: 'appid', name: 'appname' } };
       const validBidRequests = [
         {
           bidId: 'bidId',
@@ -225,17 +221,11 @@ describe('Dianomi adapter', () => {
     });
 
     it('should send info about the site', () => {
-      config.setConfig({
+      const ortb2 = {
         site: {
           id: '123123',
           publisher: {
             domain: 'publisher.domain.com',
-          },
-        },
-      });
-      const ortb2 = {
-        site: {
-          publisher: {
             name: "publisher's name",
           },
         },
