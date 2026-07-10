@@ -185,7 +185,9 @@ describe('Dianomi adapter', () => {
     });
 
     it('should send info about device', () => {
-      const ortb2 = { device: { w: 100, h: 100 } };
+      // device data (including ua) is supplied via ortb2; core FPD enrichment
+      // populates these fields in production, so the adapter no longer reads navigator.
+      const ortb2 = { device: { w: 100, h: 100, ua: navigator.userAgent } };
       const validBidRequests = [
         {
           bidId: 'bidId',

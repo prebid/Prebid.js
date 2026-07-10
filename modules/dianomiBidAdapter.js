@@ -59,8 +59,8 @@ const NATIVE_PARAMS = {
     name: 'data',
   },
 };
-let endpoint = 'www-prebid.dianomi.com';
-const defaultBidderURL = "https://dianomi-bidder-proxy.dianomi.com/traffic_proxy";
+const DEFAULT_ENDPOINT = 'www-prebid.dianomi.com';
+const defaultBidderURL = 'https://dianomi-bidder-proxy.dianomi.com/traffic_proxy';
 
 const OUTSTREAM_RENDERER_URL = (hostname) => `https://${hostname}/prebid/outstream/renderer.js`;
 
@@ -96,15 +96,12 @@ export const spec = {
     const { innerWidth, innerHeight } = getWinDimensions();
     device.w = device.w || innerWidth;
     device.h = device.h || innerHeight;
-    device.ua = device.ua || navigator.userAgent;
 
-    const paramsEndpoint = setOnAny(validBidRequests, 'params.endpoint');
+    // endpoint hostname is resolved per-request; core FPD enrichment populates
+    // device fields (including ua) on ortb2, so navigator is not accessed here.
+    const endpoint = setOnAny(validBidRequests, 'params.endpoint') || DEFAULT_ENDPOINT;
 
-    if (paramsEndpoint) {
-      endpoint = paramsEndpoint;
-    }
-
-    const paramsBidderURL = setOnAny(validBidRequests, "params.bidderURL");
+    const paramsBidderURL = setOnAny(validBidRequests, 'params.bidderURL');
 
     let bidderURL = defaultBidderURL;
 
@@ -244,11 +241,12 @@ export const spec = {
       method: 'POST',
       url: bidderURL,
       data: JSON.stringify(request),
-      bids: validBidRequests
+      bids: validBidRequests,
+      endpoint
     };
   },
-  interpretResponse: function (serverResponse, { bids }) {
-    if (!serverResponse.body || serverResponse?.body?.nbr) {
+  interpretResponse: function (serverResponse, { bids, endpoint = DEFAULT_ENDPOINT }) {
+    if (!serverResponse.body || serverResponse?.body?.nbr || !serverResponse.body.seatbid) {
       return;
     }
     const { seatbid, cur } = serverResponse.body;
@@ -312,12 +310,12 @@ export const spec = {
       // data is only assigned if params are available to pass to syncEndpoint
       return {
         type: 'iframe',
-        url: `https://${endpoint}/prebid/usersync/index.html?${formatQS(params)}`,
+        url: `https://${DEFAULT_ENDPOINT}/prebid/usersync/index.html?${formatQS(params)}`,
       };
     } else if (syncOptions.pixelEnabled) {
       return {
         type: 'image',
-        url: `https://${endpoint.includes('dev') ? 'dev-' : ''}data.dianomi.com/frontend/usync?${formatQS(params)}`,
+        url: `https://data.dianomi.com/frontend/usync?${formatQS(params)}`,
       };
     }
   },
