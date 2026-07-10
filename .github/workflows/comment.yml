@@ -5,6 +5,7 @@ on:
       - Check for Duplicated Code
       - Check for linter warnings / exceptions
       - Check adapter naming conventions
+      - Build metadata
     types:
       - completed
 

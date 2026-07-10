@@ -1,0 +1,141 @@
+name: Build metadata
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build metadata
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Build
+        run: |
+          npx gulp build --polyfills
+      - name: Upload dependencies.json
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dependencies.json
+          path: ./build/dist/dependencies.json
+      - name: Cache polyfills.json
+        uses: ./.github/actions/polyfills
+        with:
+          sha: ${{ github.sha }}
+          input: ./build/dist/polyfills.json
+      - name: Generate PR info
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo '{ "prNo": ${{ github.event.pull_request.number }} }' >> ${{ runner.temp}}/prInfo.json
+      - name: Upload PR info
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: prInfo
+          path: ${{ runner.temp}}/prInfo.json
+
+  polyfills:
+    needs: [build]
+    if: ${{ github.event_name == 'pull_request' }}
+    name: Check polyfill diff
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.base.outputs.base }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Calculate base SHA and diff
+        id: base
+        run:  |
+          base=$(git merge-base HEAD ${{ github.event.pull_request.base.sha }})          
+          git diff --name-only $base..HEAD  > ${{runner.temp}}/changed_files.txt || true
+          echo "base=$base" >> $GITHUB_OUTPUT
+      - name: Restore from cache
+        id: restore
+        uses: ./.github/actions/polyfills
+        with:
+          sha: ${{ steps.base.outputs.base }}
+          output: ${{ runner.temp }}/base-polyfills.json
+      - name: Check out base branch
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        run: |
+          git checkout ${{ steps.base.outputs.base }}
+      - name: Install dependencies for base branch
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/npm-ci
+      - name: Build base branch
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        run: |
+          npx gulp build --polyfills
+      - name: Cache base branch polyfills.json
+        if: ${{ steps.restore.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/polyfills
+        with:
+          sha: ${{ steps.base.outputs.base }}
+          input: './build/dist/polyfills.json'
+          output: ${{ runner.temp }}/base-polyfills.json
+      - name: Retrieve head branch polyfills.json
+        uses: ./.github/actions/polyfills
+        with:
+          sha: ${{ github.sha }}
+          output: ${{ runner.temp }}/head-polyfills.json
+          fail-on-cache-miss: true
+      - name: Compare and post comment
+        uses: actions/github-script@v9
+        id: comment
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const process = require('process');
+            
+            const base = JSON.parse(fs.readFileSync('${{ runner.temp }}/base-polyfills.json').toString());
+            const head = JSON.parse(fs.readFileSync('${{ runner.temp }}/head-polyfills.json').toString());
+            const files = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(f => f.trim());
+            
+            const diff = files.reduce((memo, file) => {
+              const fileBase = new Set(base.files[file] ?? []);
+              const fileHead = new Set(head.files[file] ?? []);
+              const fileDiff = fileHead.difference(fileBase);
+              if (fileDiff.size > 0) {
+                memo[file] = Array.from(fileDiff).toSorted();
+              }
+              return  memo;
+            }, {});
+            
+            if (Object.keys(diff).length > 0) {
+              const cm = ['This PR introduces changes that may not work on all browsers. According to Babel, the following polyfills may be needed, and they are *not* automatically included:\n'];
+              Object.entries(diff).forEach(([filename, polys]) => { 
+                 cm.push(`* Changes to \`${filename}\` may need:`);
+                 polys.forEach(poly => cm.push(`    * \`${poly}\``))
+              })
+              cm.push(`\nThe best way to address this is to provide good test coverage, as normal PR checks run unit tests on older browsers.`)
+              fs.writeFileSync("${{ runner.temp }}/comment.json", JSON.stringify({
+                issue_number: context.issue.number,
+                body: cm.join('\n')
+              }))
+              return "true";
+            }
+            return "false";
+      - name: Upload comment data
+        if: ${{ steps.comment.outputs.result == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: comment
+          path: ${{ runner.temp }}/comment.json
+
+
+
