@@ -870,21 +870,8 @@ describe('The DFP video support module', function () {
     server.respond();
   });
 
-  describe('Retrieve US Privacy string from GPP when using the IMA player', () => {
-    beforeEach(() => {
-      config.setConfig({ cache: { useLocal: true } });
-      // Install a fake IMA object, because the us_privacy is only set when IMA is available
-      window.google = {
-        ima: {
-          VERSION: '2.3.37'
-        }
-      };
-    });
-    afterEach(() => {
-      config.resetConfig();
-    });
-
-    async function obtainUsPrivacyInVastXmlRequest() {
+  describe('UsPrivacy/GPP', () => {
+    async function getSearchParamInVastXmlRequest(searchParam) {
       const url = 'https://pubads.g.doubleclick.net/gampad/ads';
       const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=4536229c-eddb-45b3-a919-89d889e925aa';
       const gamWrapper = (
@@ -902,16 +889,28 @@ describe('The DFP video support module', function () {
       const result = getVastXml({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } }, []).then(() => {
         const request = server.requests[0];
         const url = new URL(request.url);
-        return url.searchParams.get('us_privacy');
+        return url.searchParams.get(searchParam);
       });
       server.respond();
 
       return result;
     }
+    async function obtainUsPrivacyInVastXmlRequest() {
+      return getSearchParamInVastXmlRequest('us_privacy');
+    }
+
+    async function obtainGPPInVastXmlRequest() {
+      return getSearchParamInVastXmlRequest('gpp');
+    }
 
     function obtainUsPrivacyInGamVideoUrl() {
       const url = 'https://pubads.g.doubleclick.net/gampad/ads';
       return new URLSearchParams(buildDfpVideoUrl({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } })).get('us_privacy');
+    }
+
+    function obtainGppInGamVideoUrl() {
+      const url = 'https://pubads.g.doubleclick.net/gampad/ads';
+      return new URLSearchParams(buildDfpVideoUrl({ url, adUnit: {}, bid: {}, params: { iu: '/19968336/prebid_cache_video_adunit' } })).get('gpp');
     }
 
     function mockGpp(gpp) {
@@ -926,275 +925,311 @@ describe('The DFP video support module', function () {
       };
     }
 
-    it('should use usp when available, even when gpp is available', async () => {
-      const usPrivacy = '1YYY';
-      sandbox.stub(uspDataHandler, 'getConsentData').returns(usPrivacy);
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "uspv1": {
-          "Version": 1,
-          "Notice": "Y",
-          "OptOutSale": "N",
-          "LspaCovered": "Y"
-        }
-      }));
+    describe('GPP information is included when available', () => {
+      it('gpp string is included in the URL when present', async () => {
+        const gppConsentData = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] }
+        mockGpp(gppConsentData);
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal(usPrivacy);
+        const gppFromRequest = await obtainGPPInVastXmlRequest();
+        expect(gppFromRequest).to.equal(gppConsentData.gppString);
 
-      // In this case, the IMA player will add the us_privacy string
-      // It is not included in the URL returned by Prebid
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
+        const gppFromUrl = await obtainGppInGamVideoUrl();
+        expect(gppFromUrl).to.equal(gppConsentData.gppString);
+      });
+
+      it('gpp property is not present when there is no gpp info available', async () => {
+        const gppFromRequest = await obtainGPPInVastXmlRequest();
+        expect(gppFromRequest).to.be.null;
+
+        const gppFromUrl = await obtainGppInGamVideoUrl();
+        expect(gppFromUrl).to.be.null;
+      });
     });
 
-    it('no us_privacy when neither usp nor gpp is present', async () => {
-      const usPrivacyFromRequqest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequqest).to.be.null;
+    describe('Retrieve US Privacy string from GPP when using the IMA player', () => {
+      beforeEach(() => {
+        config.setConfig({ cache: { useLocal: true } });
+        // Install a fake IMA object, because the us_privacy is only set when IMA is available
+        window.google = {
+          ima: {
+            VERSION: '2.3.37'
+          }
+        };
+      });
+      afterEach(() => {
+        config.resetConfig();
+      });
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
-    });
+      it('should use usp when available, even when gpp is available', async () => {
+        const usPrivacy = '1YYY';
+        sandbox.stub(uspDataHandler, 'getConsentData').returns(usPrivacy);
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "uspv1": {
+            "Version": 1,
+            "Notice": "Y",
+            "OptOutSale": "N",
+            "LspaCovered": "Y"
+          }
+        }));
 
-    it('can retrieve from usp section in gpp', async () => {
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "uspv1": {
-          "Version": 1,
-          "Notice": "Y",
-          "OptOutSale": "N",
-          "LspaCovered": "Y"
-        }
-      }));
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.equal(usPrivacy);
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY');
+        // In this case, the IMA player will add the us_privacy string
+        // It is not included in the URL returned by Prebid
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.be.null;
+      });
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YNY');
-    });
-    it('can retrieve from usnat section in gpp', async () => {
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "usnat": {
-          "Version": 1,
-          "SharingNotice": 2,
-          "SaleOptOutNotice": 1,
-          "SharingOptOutNotice": 0,
-          "TargetedAdvertisingOptOutNotice": 2,
-          "SensitiveDataProcessingOptOutNotice": 1,
-          "SensitiveDataLimitUseNotice": 1,
-          "SaleOptOut": 1,
-          "SharingOptOut": 2,
-          "TargetedAdvertisingOptOut": 2,
-          "SensitiveDataProcessing": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "KnownChildSensitiveDataConsents": [
-            0,
-            0,
-            0
-          ],
-          "PersonalDataConsents": 0,
-          "MspaCoveredTransaction": 1,
-          "MspaOptOutOptionMode": 0,
-          "MspaServiceProviderMode": 0,
-          "GpcSegmentType": 1,
-          "Gpc": false
-        }
-      }));
+      it('no us_privacy when neither usp nor gpp is present', async () => {
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.be.null;
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YYY');
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.be.null;
+      });
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YYY');
-    });
-    it('can retrieve from usnat section in gpp when usnat is an array', async() => {
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "usnat": [
-          {
+      it('can retrieve from usp section in gpp', async () => {
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "uspv1": {
+            "Version": 1,
+            "Notice": "Y",
+            "OptOutSale": "N",
+            "LspaCovered": "Y"
+          }
+        }));
+
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.equal('1YNY');
+
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.equal('1YNY');
+      });
+      it('can retrieve from usnat section in gpp', async () => {
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "usnat": {
             "Version": 1,
             "SharingNotice": 2,
             "SaleOptOutNotice": 1,
-            "SharingOptOutNotice": 1,
-            "TargetedAdvertisingOptOutNotice": 1,
+            "SharingOptOutNotice": 0,
+            "TargetedAdvertisingOptOutNotice": 2,
             "SensitiveDataProcessingOptOutNotice": 1,
-            "SensitiveDataLimitUseNotice": 0,
-            "SaleOptOut": 2,
+            "SensitiveDataLimitUseNotice": 1,
+            "SaleOptOut": 1,
             "SharingOptOut": 2,
             "TargetedAdvertisingOptOut": 2,
+            "SensitiveDataProcessing": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "KnownChildSensitiveDataConsents": [
+              0,
+              0,
+              0
+            ],
             "PersonalDataConsents": 0,
-            "MspaCoveredTransaction": 0,
+            "MspaCoveredTransaction": 1,
             "MspaOptOutOptionMode": 0,
             "MspaServiceProviderMode": 0,
-          }, {
             "GpcSegmentType": 1,
             "Gpc": false
           }
-        ]
-      }));
+        }));
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY');
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.equal('1YYY');
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YNY');
-    });
-    it('no us_privacy when either SaleOptOutNotice or SaleOptOut is missing', async () => {
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.equal('1YYY');
+      });
+      it('can retrieve from usnat section in gpp when usnat is an array', async() => {
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "usnat": [
+            {
+              "Version": 1,
+              "SharingNotice": 2,
+              "SaleOptOutNotice": 1,
+              "SharingOptOutNotice": 1,
+              "TargetedAdvertisingOptOutNotice": 1,
+              "SensitiveDataProcessingOptOutNotice": 1,
+              "SensitiveDataLimitUseNotice": 0,
+              "SaleOptOut": 2,
+              "SharingOptOut": 2,
+              "TargetedAdvertisingOptOut": 2,
+              "PersonalDataConsents": 0,
+              "MspaCoveredTransaction": 0,
+              "MspaOptOutOptionMode": 0,
+              "MspaServiceProviderMode": 0,
+            }, {
+              "GpcSegmentType": 1,
+              "Gpc": false
+            }
+          ]
+        }));
+
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.equal('1YNY');
+
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.equal('1YNY');
+      });
+      it('no us_privacy when either SaleOptOutNotice or SaleOptOut is missing', async () => {
       // Missing SaleOptOutNotice
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "usnat": {
-          "Version": 1,
-          "SharingNotice": 2,
-          "SharingOptOutNotice": 0,
-          "TargetedAdvertisingOptOutNotice": 2,
-          "SensitiveDataProcessingOptOutNotice": 1,
-          "SensitiveDataLimitUseNotice": 1,
-          "SaleOptOut": 1,
-          "SharingOptOut": 2,
-          "TargetedAdvertisingOptOut": 2,
-          "SensitiveDataProcessing": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "KnownChildSensitiveDataConsents": [
-            0,
-            0,
-            0
-          ],
-          "PersonalDataConsents": 0,
-          "MspaCoveredTransaction": 1,
-          "MspaOptOutOptionMode": 0,
-          "MspaServiceProviderMode": 0,
-          "GpcSegmentType": 1,
-          "Gpc": false
-        }
-      }));
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "usnat": {
+            "Version": 1,
+            "SharingNotice": 2,
+            "SharingOptOutNotice": 0,
+            "TargetedAdvertisingOptOutNotice": 2,
+            "SensitiveDataProcessingOptOutNotice": 1,
+            "SensitiveDataLimitUseNotice": 1,
+            "SaleOptOut": 1,
+            "SharingOptOut": 2,
+            "TargetedAdvertisingOptOut": 2,
+            "SensitiveDataProcessing": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "KnownChildSensitiveDataConsents": [
+              0,
+              0,
+              0
+            ],
+            "PersonalDataConsents": 0,
+            "MspaCoveredTransaction": 1,
+            "MspaOptOutOptionMode": 0,
+            "MspaServiceProviderMode": 0,
+            "GpcSegmentType": 1,
+            "Gpc": false
+          }
+        }));
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.be.null;
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.be.null;
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
-    });
-    it('no us_privacy when either SaleOptOutNotice or SaleOptOut is null', async () => {
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.be.null;
+      });
+      it('no us_privacy when either SaleOptOutNotice or SaleOptOut is null', async () => {
       // null SaleOptOut
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "usnat": {
-          "Version": 1,
-          "SharingNotice": 2,
-          "SaleOptOutNotice": 1,
-          "SharingOptOutNotice": 0,
-          "TargetedAdvertisingOptOutNotice": 2,
-          "SensitiveDataProcessingOptOutNotice": 1,
-          "SensitiveDataLimitUseNotice": 1,
-          "SaleOptOut": null,
-          "SharingOptOut": 2,
-          "TargetedAdvertisingOptOut": 2,
-          "SensitiveDataProcessing": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "KnownChildSensitiveDataConsents": [
-            0,
-            0,
-            0
-          ],
-          "PersonalDataConsents": 0,
-          "MspaCoveredTransaction": 1,
-          "MspaOptOutOptionMode": 0,
-          "MspaServiceProviderMode": 0,
-          "GpcSegmentType": 1,
-          "Gpc": false
-        }
-      }));
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "usnat": {
+            "Version": 1,
+            "SharingNotice": 2,
+            "SaleOptOutNotice": 1,
+            "SharingOptOutNotice": 0,
+            "TargetedAdvertisingOptOutNotice": 2,
+            "SensitiveDataProcessingOptOutNotice": 1,
+            "SensitiveDataLimitUseNotice": 1,
+            "SaleOptOut": null,
+            "SharingOptOut": 2,
+            "TargetedAdvertisingOptOut": 2,
+            "SensitiveDataProcessing": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "KnownChildSensitiveDataConsents": [
+              0,
+              0,
+              0
+            ],
+            "PersonalDataConsents": 0,
+            "MspaCoveredTransaction": 1,
+            "MspaOptOutOptionMode": 0,
+            "MspaServiceProviderMode": 0,
+            "GpcSegmentType": 1,
+            "Gpc": false
+          }
+        }));
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.be.null;
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.be.null;
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.be.null;
-    });
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.be.null;
+      });
 
-    it('can retrieve from usca section in gpp', async () => {
-      mockGpp(wrapParsedSectionsIntoGPPData({
-        "usca": {
-          "Version": 1,
-          "SaleOptOutNotice": 1,
-          "SharingOptOutNotice": 1,
-          "SensitiveDataLimitUseNotice": 1,
-          "SaleOptOut": 2,
-          "SharingOptOut": 2,
-          "SensitiveDataProcessing": [
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          "KnownChildSensitiveDataConsents": [
-            0,
-            0
-          ],
-          "PersonalDataConsents": 0,
-          "MspaCoveredTransaction": 2,
-          "MspaOptOutOptionMode": 0,
-          "MspaServiceProviderMode": 0,
-          "GpcSegmentType": 1,
-          "Gpc": false
-        }
-      }));
+      it('can retrieve from usca section in gpp', async () => {
+        mockGpp(wrapParsedSectionsIntoGPPData({
+          "usca": {
+            "Version": 1,
+            "SaleOptOutNotice": 1,
+            "SharingOptOutNotice": 1,
+            "SensitiveDataLimitUseNotice": 1,
+            "SaleOptOut": 2,
+            "SharingOptOut": 2,
+            "SensitiveDataProcessing": [
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "KnownChildSensitiveDataConsents": [
+              0,
+              0
+            ],
+            "PersonalDataConsents": 0,
+            "MspaCoveredTransaction": 2,
+            "MspaOptOutOptionMode": 0,
+            "MspaServiceProviderMode": 0,
+            "GpcSegmentType": 1,
+            "Gpc": false
+          }
+        }));
 
-      const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
-      expect(usPrivacyFromRequest).to.equal('1YNY');
+        const usPrivacyFromRequest = await obtainUsPrivacyInVastXmlRequest();
+        expect(usPrivacyFromRequest).to.equal('1YNY');
 
-      const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
-      expect(usPrivacyFromUrl).to.equal('1YNY');
+        const usPrivacyFromUrl = obtainUsPrivacyInGamVideoUrl();
+        expect(usPrivacyFromUrl).to.equal('1YNY');
+      });
     });
   });
 });
