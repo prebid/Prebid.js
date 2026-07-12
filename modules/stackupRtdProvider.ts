@@ -42,10 +42,15 @@ const MAX_SNAPSHOTS = 10;
 // any other taxonomy are ignored (filtered out) rather than rejected, so an
 // unexpected segtax never discards the whole enrichment payload.
 //   4   = IAB Audience Taxonomy
+//   7   = IAB Content Taxonomy 3.0
 //   501 = StackUP Audience Taxonomy 1.0 (legacy audience signals)
 //   502 = StackUP Content Taxonomy 1.0
 //   600 = StackUP Publisher FPD (private)
-const ALLOWED_SEGTAX = new Set<number>([4, 501, 502, 600]);
+const ALLOWED_SEGTAX = new Set<number>([4, 7, 501, 502, 600]);
+
+// segtax value used to mirror IAB Content Taxonomy 3.0 segment ids into the
+// standard content.cat[]/site.pagecat[] fields (see mergeSiteContent/mergeSitePagecat).
+const CT3_SEGTAX = 7;
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -95,6 +100,10 @@ export interface StackupRtdParams {
   };
   debug?: boolean;
   debugDomain?: string; // overrides the domain sent to the API when debug: true
+  // default: false — the CT3.0 category mirror (content.cat/content.cattax,
+  // site.pagecat/site.cattax) never overwrites a value the publisher already
+  // set. Set true to let StackUp's classification take priority instead.
+  overwritePublisherCategories?: boolean;
 }
 
 declare module "./rtdModule/spec.ts" {
@@ -111,9 +120,10 @@ type EmotionBlock = unknown; // TODO: define properly when we have real data
 // types/stackup.ts — shared between RTD and analytics modules
 
 // segtax values StackUP emits across content, audience and publisher-FPD blocks.
-// Content segments use segtax 502; IAB Audience segments use segtax 4; legacy
-// StackUp audience signals remain segtax 501; publisher FPD uses private segtax 600.
-export type StackupSegtax = 4 | 501 | 502 | 600;
+// Content segments use segtax 502 or 7 (IAB Content Taxonomy 3.0); IAB Audience
+// segments use segtax 4; legacy StackUp audience signals remain segtax 501;
+// publisher FPD uses private segtax 600.
+export type StackupSegtax = 4 | 7 | 501 | 502 | 600;
 
 export interface EnrichmentSnapshot {
   articleId: string;
@@ -584,11 +594,13 @@ function getBidRequestData(
     release();
   }, effectiveTimeout);
 
+  const allowCategoryOverwrite = config.params?.overwritePublisherCategories === true;
+
   const onReady = () => {
     clearTimeout(timeoutId);
     if (state.enrichment) {
       try {
-        mergeIntoOrtb2(reqBidsConfigObj, state.enrichment);
+        mergeIntoOrtb2(reqBidsConfigObj, state.enrichment, allowCategoryOverwrite);
         // Stash snapshot keyed by auctionId so analytics adapter can retrieve it
         if (reqBidsConfigObj.auctionId) {
           storeSnapshot(reqBidsConfigObj.auctionId, state.enrichment);
@@ -624,17 +636,23 @@ function storeSnapshot(auctionId: string, snapshot: EnrichmentSnapshot): void {
 
 function mergeIntoOrtb2(
   reqBidsConfigObj: StartAuctionOptions,
-  enrichment: EnrichmentSnapshot
+  enrichment: EnrichmentSnapshot,
+  allowCategoryOverwrite: boolean
 ): void {
   const global = reqBidsConfigObj.ortb2Fragments?.global ?? {};
   reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments ?? {};
   reqBidsConfigObj.ortb2Fragments.global = global;
 
-  mergeSiteContent(global, enrichment.site.content);
+  mergeSiteContent(global, enrichment.site.content, allowCategoryOverwrite);
   mergeUserData(global, enrichment.user.data);
+  mergeSitePagecat(global, allowCategoryOverwrite);
 }
 
-function mergeSiteContent(global: any, ours: any): void {
+function mergeSiteContent(
+  global: any,
+  ours: any,
+  allowCategoryOverwrite: boolean
+): void {
   global.site = global.site ?? {};
   global.site.content = global.site.content ?? { data: [] };
   const target = global.site.content;
@@ -666,6 +684,48 @@ function mergeSiteContent(global: any, ours: any): void {
   if (!target.ext.emotion && ours.ext?.emotion) {
     target.ext.emotion = ours.ext.emotion;
   }
+
+  // Mirror IAB Content Taxonomy 3.0 (segtax 7) segment ids into the standard
+  // content.cat[]/content.cattax field so buyers reading either content.data[]
+  // or content.cat[] see the same signal. Never invents or maps ids — only
+  // copies what the API already returned. By default (allowCategoryOverwrite
+  // false) this is skipped entirely if the publisher already declared
+  // content.cat, or declared a cattax that isn't CT3.0, so it never conflates
+  // taxonomies or clobbers publisher-set FPD unless explicitly opted in via
+  // params.overwritePublisherCategories.
+  const ct3Ids = collectSegtaxIds(target.data, CT3_SEGTAX);
+  const catIsFree = allowCategoryOverwrite || !(isArray(target.cat) && target.cat.length);
+  const cattaxIsFree =
+    allowCategoryOverwrite || !target.cattax || target.cattax === CT3_SEGTAX;
+  if (ct3Ids.length && catIsFree && cattaxIsFree) {
+    target.cattax = CT3_SEGTAX;
+    target.cat = ct3Ids;
+  }
+}
+
+// Mirrors IAB Content Taxonomy 3.0 (segtax 7) segment ids already merged into
+// site.content.data into the standard site.pagecat[]/site.cattax field, with
+// the same publisher-wins guards as the content.cat mirror above.
+function mergeSitePagecat(global: any, allowCategoryOverwrite: boolean): void {
+  const ct3Ids = collectSegtaxIds(global.site?.content?.data, CT3_SEGTAX);
+  if (!ct3Ids.length) return;
+  global.site = global.site ?? {};
+  if (
+    !allowCategoryOverwrite &&
+    isArray(global.site.pagecat) &&
+    global.site.pagecat.length
+  ) {
+    return;
+  }
+  if (
+    !allowCategoryOverwrite &&
+    global.site.cattax &&
+    global.site.cattax !== CT3_SEGTAX
+  ) {
+    return;
+  }
+  global.site.cattax = CT3_SEGTAX;
+  global.site.pagecat = ct3Ids;
 }
 
 function mergeUserData(global: any, ours: any[]): void {
@@ -702,6 +762,18 @@ function blockKey(block: any): string {
   const segtax = block?.ext?.segtax ?? "";
   const dimension = block?.ext?.stackup?.dimension ?? "";
   return `${name}|${segtax}|${dimension}`;
+}
+
+// Collects deduped segment ids from data blocks tagged with the given segtax.
+// Used to mirror already backend-classified categories into flat cat/pagecat
+// fields — never computes or guesses an id itself.
+function collectSegtaxIds(blocks: any[] | undefined, segtax: number): string[] {
+  const ids = new Set<string>();
+  for (const block of blocks ?? []) {
+    if (block?.ext?.segtax !== segtax) continue;
+    for (const seg of block.segment ?? []) ids.add(seg.id);
+  }
+  return Array.from(ids);
 }
 
 function dedupeSegments(block: any): any {
