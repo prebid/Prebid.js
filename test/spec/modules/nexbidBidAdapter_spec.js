@@ -67,8 +67,20 @@ describe('nexbidBidAdapter', function () {
     it('should accept the documented test flag', function () {
       expect(spec.isBidRequestValid({
         ...bid,
-        params: { ...bid.params, test: true }
+        params: {
+          publisherId: 'nexbid-test',
+          placementId: 'banner-300x250',
+          configId: 'prebid-review',
+          test: true
+        }
       })).to.equal(true);
+    });
+
+    it('should reject test mode for a production placement', function () {
+      expect(spec.isBidRequestValid({
+        ...bid,
+        params: { ...bid.params, test: true }
+      })).to.equal(false);
     });
 
     ['publisherId', 'placementId'].forEach((field) => {
@@ -151,6 +163,42 @@ describe('nexbidBidAdapter', function () {
       expect(request.bids[0]).not.to.have.property('endpoint');
       expect(request.bids[0]).not.to.have.property('floorCpm');
       expect(request.bids[0]).not.to.have.property('testCpm');
+    });
+
+    it('should read schain from normalized impression ORTB data', function () {
+      const normalizedSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'nexbid.uk', sid: 'normalized-bid', hp: 1 }]
+      };
+      const request = JSON.parse(spec.buildRequests([{
+        ...bid,
+        schain: undefined,
+        ortb2: { source: { ext: { schain: normalizedSchain } } }
+      }], bidderRequest).data);
+
+      expect(request.bids[0].schain).to.deep.equal(normalizedSchain);
+    });
+
+    it('should fall back to normalized bidder-request schain', function () {
+      const normalizedSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'nexbid.uk', sid: 'normalized-request', hp: 1 }]
+      };
+      const request = JSON.parse(spec.buildRequests([{
+        ...bid,
+        schain: undefined,
+        ortb2: undefined
+      }], {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          source: { ext: { schain: normalizedSchain } }
+        }
+      }).data);
+
+      expect(request.bids[0].schain).to.deep.equal(normalizedSchain);
     });
 
     it('should tolerate a floor module error', function () {

@@ -3,6 +3,8 @@ import { BANNER } from '../src/mediaTypes.js';
 
 export const BIDDER_CODE = 'nexbid';
 export const ENDPOINT = 'https://nexbid.uk/api/v1/prebid/bid';
+const TEST_PUBLISHER_ID = 'nexbid-test';
+const TEST_PLACEMENT_ID = 'banner-300x250';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -15,7 +17,8 @@ export const spec = {
       isNonEmptyString(params.publisherId) &&
       isNonEmptyString(params.placementId) &&
       (params.configId === undefined || isNonEmptyString(params.configId)) &&
-      (params.test === undefined || typeof params.test === 'boolean')
+      (params.test === undefined || typeof params.test === 'boolean') &&
+      (params.test !== true || isApprovedTestPlacement(params))
     );
   },
 
@@ -31,7 +34,7 @@ export const spec = {
         refererInfo: bidderRequest.refererInfo,
         ortb2: bidderRequest.ortb2,
         privacy: privacyFrom(bidderRequest),
-        bids: validBidRequests.map(toNexBidRequest)
+        bids: validBidRequests.map((bid) => toNexBidRequest(bid, bidderRequest))
       }),
       options: {
         withCredentials: false
@@ -47,7 +50,7 @@ export const spec = {
   }
 };
 
-function toNexBidRequest(bid) {
+function toNexBidRequest(bid, bidderRequest) {
   const params = bid.params;
   const sizes = bannerSizes(bid);
 
@@ -60,11 +63,23 @@ function toNexBidRequest(bid) {
     publisherId: params.publisherId,
     placementId: params.placementId,
     configId: params.configId || '',
-    test: params.test === true,
-    schain: bid.schain || null,
+    test: params.test === true && isApprovedTestPlacement(params),
+    schain: schainFrom(bid, bidderRequest),
     ortb2Imp: bid.ortb2Imp || null,
     floor: floorForBid(bid, sizes)
   };
+}
+
+function isApprovedTestPlacement(params) {
+  return params.publisherId === TEST_PUBLISHER_ID && params.placementId === TEST_PLACEMENT_ID;
+}
+
+function schainFrom(bid, bidderRequest) {
+  return bid.schain || schainFromOrtb(bid.ortb2) || schainFromOrtb(bidderRequest.ortb2) || null;
+}
+
+function schainFromOrtb(ortb2) {
+  return ortb2 && ortb2.source && ortb2.source.ext && ortb2.source.ext.schain;
 }
 
 function toPrebidResponse(bid) {
