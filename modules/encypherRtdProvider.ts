@@ -16,6 +16,7 @@ const DEFAULT_TIMEOUT_MS = 300;
 const MAX_EXTENSION_BYTES = 1024;
 const CLOCK_SKEW_SECONDS = 60;
 const JWKS_CACHE_TTL_MS = 60_000;
+const RECORD_STATUS_CACHE_TTL_MS = 30_000;
 const SHA256_K = [
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
   0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -54,6 +55,7 @@ type DiagnosticEvent = 'injected' | 'miss' | 'stale' | 'revoked' | 'invalid' | '
 interface RecordCacheEntry {
   record: C2paSignalV1;
   datasetVersion: number;
+  statusExpiresAt: number;
 }
 
 interface JwkCacheEntry {
@@ -480,7 +482,7 @@ const getBidRequestData = (
   const urlHash = base64url(sha256(canonicalUrl));
   const publisherDomain = new URL(canonicalUrl).hostname.toLowerCase();
   const cacheKey = signalBase + '|' + urlHash;
-  const acceptVerified = (record: C2paSignalV1, datasetVersion: number): void => {
+  const acceptVerified = (record: C2paSignalV1, datasetVersion: number, statusExpiresAt: number): void => {
     verifyWithTrustedJwks(record, publisherDomain, urlHash, remainingTime, (valid, timedOut) => {
       if (completed) return;
       if (!valid) {
@@ -488,7 +490,7 @@ const getBidRequestData = (
         finish(timedOut ? 'timeout' : 'invalid', datasetVersion);
         return;
       }
-      recordCache.set(cacheKey, { record, datasetVersion });
+      recordCache.set(cacheKey, { record, datasetVersion, statusExpiresAt });
       finish('injected', datasetVersion, record);
     });
   };
@@ -496,16 +498,18 @@ const getBidRequestData = (
   const cached = recordCache.get(cacheKey);
   if (cached) {
     const expiresAt = recordExpiresAt(cached.record);
-    if (expiresAt === null || expiresAt <= Math.floor(Date.now() / 1000)) {
-      recordCache.delete(cacheKey);
-      finish('invalid', cached.datasetVersion);
+    if (
+      expiresAt !== null &&
+      expiresAt > Math.floor(Date.now() / 1000) &&
+      cached.statusExpiresAt > Date.now()
+    ) {
+      acceptVerified(cached.record, cached.datasetVersion, cached.statusExpiresAt);
       return;
     }
-    acceptVerified(cached.record, cached.datasetVersion);
-    return;
+    recordCache.delete(cacheKey);
   }
 
-  requestText(signalBase + '/v1/attestations/' + urlHash, Math.max(1, remainingTime()), {
+  requestText(signalBase + '/v1/attestations/' + urlHash + '?publisher_domain=' + encodeURIComponent(publisherDomain), Math.max(1, remainingTime()), {
     success(responseText, status) {
       if (completed) return;
       if (status === 204) {
@@ -542,12 +546,12 @@ const getBidRequestData = (
         finish('invalid');
         return;
       }
-      acceptVerified(record, envelope.dataset_version);
+      acceptVerified(record, envelope.dataset_version, Date.now() + RECORD_STATUS_CACHE_TTL_MS);
     },
     error(timedOut) {
       finish(timedOut ? 'timeout' : 'invalid');
     },
-  }, { 'X-Encypher-Publisher-Domain': publisherDomain });
+  });
 };
 
 /** Clear page-lifecycle memory between isolated module tests. */
