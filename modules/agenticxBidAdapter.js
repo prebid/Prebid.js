@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, AUDIO  } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, AUDIO } from '../src/mediaTypes.js';
 import {
   createConverter,
   isBidRequestValid as validateBidRequest,
