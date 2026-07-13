@@ -277,7 +277,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   it('registers one Encypher provider identity', () => {
     assert.strictEqual(MODULE_NAME, 'encypher');
     assert.strictEqual(encypherSubmodule.name, 'encypher');
-    assert.strictEqual(encypherSubmodule.init({ params: { signalBase: 'https://signal.test' } }), true);
+    assert.strictEqual(encypherSubmodule.init({ params: { signalBase: 'https://signals.encypher.com' } }), true);
   });
 
   it('matches the generated canonical URL and unpadded SHA-256 vectors', () => {
@@ -295,7 +295,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('performs a credentialless lookup, injects only the four-field carrier per impression, and leaves browser data untouched', (done) => {
-    const signalBase = 'https://signal.injection.test';
+    const signalBase = 'https://signals.encypher.com';
     addCanonical(STORY_URL, cleanups);
     addBrowserBait(cleanups);
     const storageGet = sandbox.spy(Storage.prototype, 'getItem');
@@ -334,7 +334,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('accepts exact signed claims from an authorized mirror while pinning issuer, JWKS, domain, URL hash, revision, and status', async () => {
-    const signalBase = 'https://operator-mirror.example';
+    const signalBase = 'https://partner.signals.encypher.com';
     addCanonical(PAGE_URL, cleanups);
     assert.deepStrictEqual(decodeClaims(PAGE_ATT), {
       content_hash: '7XACtDnprIRfIjV9giusFERzD722AW0-yUMil7nsn3M',
@@ -367,8 +367,8 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.strictEqual(server.requests.some(request => request.url === signalBase + '/.well-known/jwks.json'), false);
   });
 
-  it('rejects attacker-controlled transport trust even when the response carries an attacker signature', async () => {
-    const signalBase = 'https://attacker.example';
+  it('rejects an attacker-signed response from an allowed signal host', async () => {
+    const signalBase = 'https://attacker-signature.signals.encypher.com';
     addCanonical(PAGE_URL, cleanups);
     const auction = makeAuction();
     let callbackCount = 0;
@@ -388,7 +388,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('rejects a mirror-substituted ref on an otherwise valid signed record', async () => {
-    const signalBase = 'https://operator-mirror-ref.test';
+    const signalBase = 'https://partner.signals.encypher.com/approved/reverse-proxy';
     addCanonical(STORY_URL, cleanups);
     const auction = makeAuction();
     const substituted = Object.assign({}, STORY_SIGNAL, {
@@ -410,7 +410,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('bounds page-memory reuse to 30 seconds and refreshes when the canonical URL changes', async () => {
-    const signalBase = 'https://signal.lifecycle.test';
+    const signalBase = 'https://lifecycle.signals.encypher.com';
     const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
     const canonical = addCanonical(STORY_URL, cleanups);
     const firstAuction = makeAuction();
@@ -514,7 +514,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('refreshes an expired page-memory record and fails open on an edge miss', async () => {
-    const signalBase = 'https://signal.expiration.test';
+    const signalBase = 'https://expiration.signals.encypher.com';
     addCanonical(PAGE_URL, cleanups);
     const clock = sandbox.useFakeTimers({ now: 2000000000 * 1000 });
     const firstAuction = makeAuction();
@@ -588,7 +588,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
   ].forEach((testCase, index) => {
     it('fails open once on a ready response with ' + testCase.name, () => {
-      const signalBase = 'https://invalid-ready-' + index + '.test';
+      const signalBase = 'https://invalid-ready-' + index + '.signals.encypher.com';
       addCanonical(STORY_URL, cleanups);
       const auction = makeAuction();
       let callbackCount = 0;
@@ -614,15 +614,39 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
     {
       name: 'URL credentials',
-      signalBase: 'https://user:pass@signals.example',
+      signalBase: 'https://user:pass@signals.encypher.com',
     },
     {
       name: 'a query component',
-      signalBase: 'https://signals.example?tenant=publisher',
+      signalBase: 'https://signals.encypher.com?tenant=publisher',
     },
     {
       name: 'a fragment component',
-      signalBase: 'https://signals.example#publisher',
+      signalBase: 'https://signals.encypher.com#publisher',
+    },
+    {
+      name: 'an arbitrary host',
+      signalBase: 'https://attacker.example',
+    },
+    {
+      name: 'a hostname-prefix lookalike',
+      signalBase: 'https://signals.encypher.com.attacker.example',
+    },
+    {
+      name: 'the uncontrolled parent domain',
+      signalBase: 'https://encypher.com',
+    },
+    {
+      name: 'a hostname-suffix lookalike',
+      signalBase: 'https://evil-signals.encypher.com',
+    },
+    {
+      name: 'an explicit custom port',
+      signalBase: 'https://signals.encypher.com:8443',
+    },
+    {
+      name: 'a legacy arbitrary fixture host',
+      signalBase: 'https://signal.test',
     },
   ].forEach(({ name, signalBase }) => {
     it('fails open once without network activity for signalBase with ' + name, () => {
@@ -633,18 +657,18 @@ describe('encypherRtdProvider decision-network v1', () => {
 
       encypherSubmodule.getBidRequestData(auction, () => {
         callbackCount += 1;
-      }, { params: { signalBase, telemetry: false } });
+      }, { params: { signalBase, telemetry: true } });
 
-      assert.strictEqual(callbackCount, 1);
+      assert.strictEqual(callbackCount, 1, 'invalid signalBase must fail open synchronously exactly once');
       assert.deepStrictEqual(auction, original);
       assertNoInjection(auction);
       assert.strictEqual(server.requests.length, 0, 'invalid configuration must not request signals or JWKS');
-      assert.strictEqual(sendBeaconStub.callCount, 0);
+      assert.strictEqual(sendBeaconStub.callCount, 0, 'invalid signalBase must not emit telemetry');
     });
   });
 
   it('fails open once when request construction throws synchronously', () => {
-    const signalBase = 'https://synchronous-request-failure.test';
+    const signalBase = 'https://request-failure.signals.encypher.com';
     const clock = sandbox.useFakeTimers();
     sandbox.stub(window, 'Request').throws(new TypeError('request construction failed'));
     addCanonical(STORY_URL, cleanups);
@@ -666,7 +690,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('fails open without requesting keys when the total deadline expires after the edge response', async () => {
-    const signalBase = 'https://deadline-before-jwks.test';
+    const signalBase = 'https://deadline.signals.encypher.com';
     const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
     addCanonical(STORY_URL, cleanups);
     const auction = makeAuction();
@@ -696,7 +720,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     {
       name: 'an unsafe signal origin',
       startOnly: true,
-      signalBase: 'http://signal.test',
+      signalBase: 'http://signals.encypher.com',
     },
     {
       name: 'an HTTP 204 miss',
@@ -745,7 +769,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
   ].forEach((testCase, index) => {
     it('fails open and calls back exactly once on ' + testCase.name, (done) => {
-      const signalBase = testCase.signalBase || 'https://fail-open-' + index + '.test';
+      const signalBase = testCase.signalBase || 'https://fail-open-' + index + '.signals.encypher.com';
       addCanonical(STORY_URL, cleanups);
       const auction = makeAuction();
       const original = structuredClone(auction);
@@ -789,7 +813,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
   ].forEach((testCase, index) => {
     it('fails open once when key discovery returns ' + testCase.name, (done) => {
-      const signalBase = 'https://jwks-failure-' + index + '.test';
+      const signalBase = 'https://jwks-failure-' + index + '.signals.encypher.com';
       addCanonical(STORY_URL, cleanups);
       const auction = makeAuction();
       const original = structuredClone(auction);
@@ -831,7 +855,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
   ].forEach((testCase, index) => {
     it('fails open once when the attestation contains ' + testCase.name, (done) => {
-      const signalBase = 'https://invalid-claims-' + index + '.test';
+      const signalBase = 'https://invalid-claims-' + index + '.signals.encypher.com';
       const record = Object.assign({}, STORY_SIGNAL, {
         att: replaceClaims(STORY_ATT, testCase.mutate),
       });
@@ -871,7 +895,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
   ].forEach((testCase, index) => {
     it('fails open once when the pinned key set contains ' + testCase.name, (done) => {
-      const signalBase = 'https://unusable-jwk-' + index + '.test';
+      const signalBase = 'https://unusable-jwk-' + index + '.signals.encypher.com';
       addCanonical(STORY_URL, cleanups);
       const auction = makeAuction();
       const original = structuredClone(auction);
@@ -915,7 +939,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     },
   ].forEach((testCase, index) => {
     it('fails open once on ' + testCase.name, (done) => {
-      const signalBase = 'https://malformed-jws-' + index + '.test';
+      const signalBase = 'https://malformed-jws-' + index + '.signals.encypher.com';
       const segments = STORY_ATT.split('.');
       testCase.mutate(segments);
       const malformedRecord = Object.assign({}, STORY_SIGNAL, { att: segments.join('.') });
@@ -949,7 +973,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     ['signature verification', 'verify'],
   ].forEach(([operation, method], index) => {
     it('fails open once when WebCrypto ' + operation + ' rejects', (done) => {
-      const signalBase = 'https://webcrypto-failure-' + index + '.test';
+      const signalBase = 'https://webcrypto-failure-' + index + '.signals.encypher.com';
       sandbox.stub(window.crypto.subtle, method).rejects(new Error(operation + ' failed'));
       addCanonical(STORY_URL, cleanups);
       const auction = makeAuction();
@@ -977,7 +1001,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('fails open once on an invalid ES256 signature', (done) => {
-    const signalBase = 'https://invalid-signature.test';
+    const signalBase = 'https://invalid-signature.signals.encypher.com';
     addCanonical(STORY_URL, cleanups);
     const auction = makeAuction();
     const invalidSignature = Object.assign({}, STORY_SIGNAL, {
@@ -1003,7 +1027,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('uses one total timeout across signal and JWKS reads, then ignores a late response', () => {
-    const signalBase = 'https://signal.timeout.test';
+    const signalBase = 'https://timeout.signals.encypher.com';
     const clock = sandbox.useFakeTimers();
     server.autoTimeout = true;
     addCanonical(STORY_URL, cleanups);
@@ -1033,7 +1057,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('refreshes pinned JWKS immediately on an unknown kid before failing open once', (done) => {
-    const signalBase = 'https://unknown-kid.test';
+    const signalBase = 'https://unknown-kid.signals.encypher.com';
     const canonical = addCanonical(STORY_URL, cleanups);
     const firstAuction = makeAuction();
     let firstCallbackCount = 0;
@@ -1091,7 +1115,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('discards a cached record whose expiration claim can no longer be decoded', async () => {
-    const signalBase = 'https://cached-expiration-decode.test';
+    const signalBase = 'https://cached-expiration.signals.encypher.com';
     addCanonical(STORY_URL, cleanups);
     const firstAuction = makeAuction();
     let firstCallbackCount = 0;
@@ -1128,7 +1152,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('refreshes after cached verification rejects and fails open if refreshed verification also rejects', async () => {
-    const signalBase = 'https://verification-rejection-refresh.test';
+    const signalBase = 'https://verification-refresh.signals.encypher.com';
     const canonical = addCanonical(STORY_URL, cleanups);
     const firstAuction = makeAuction();
     let firstCallbackCount = 0;
@@ -1175,7 +1199,7 @@ describe('encypherRtdProvider decision-network v1', () => {
   });
 
   it('emits only diagnostic telemetry after callback and swallows telemetry transport failure', async () => {
-    const signalBase = 'https://signal.telemetry.test';
+    const signalBase = 'https://telemetry.signals.encypher.com';
     addCanonical(STORY_URL, cleanups);
     const auction = makeAuction();
     let callbackCount = 0;

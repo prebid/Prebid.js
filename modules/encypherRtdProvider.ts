@@ -6,7 +6,8 @@ import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
 const REAL_TIME_MODULE = 'realTimeData';
 export const MODULE_NAME = 'encypher';
-const DEFAULT_SIGNAL_BASE = 'https://signals.encypher.com';
+const DEFAULT_SIGNAL_HOST = 'signals.encypher.com';
+const DEFAULT_SIGNAL_BASE = 'https://' + DEFAULT_SIGNAL_HOST;
 export const TRUSTED_ISSUER = 'https://api.encypher.com';
 export const TRUSTED_JWKS_URL = TRUSTED_ISSUER + '/api/v1/public/provenance/jwks.json';
 const TRUSTED_ATTESTATION_BASE = TRUSTED_ISSUER + '/api/v1/public/provenance/attestations/';
@@ -344,8 +345,11 @@ function normalizedSignalBase(params: EncypherRtdParams): string | null {
   const value = String(params.signalBase || DEFAULT_SIGNAL_BASE).replace(/\/+$/, '');
   try {
     const parsed = new URL(value);
+    const signalHostAllowed = parsed.hostname === DEFAULT_SIGNAL_HOST || parsed.hostname.endsWith('.' + DEFAULT_SIGNAL_HOST);
     if (
       parsed.protocol !== 'https:' ||
+      !signalHostAllowed ||
+      parsed.port ||
       parsed.username ||
       parsed.password ||
       parsed.search ||
@@ -469,7 +473,7 @@ const getBidRequestData = (
     window.clearTimeout(deadlineTimer);
     const injectedCount = record ? injectPerImpression(auction, record) : totalImpressions;
     callback();
-    emitDiagnostic(signalBase || DEFAULT_SIGNAL_BASE, params, event, injectedCount, datasetVersion, startedAt);
+    if (signalBase) emitDiagnostic(signalBase, params, event, injectedCount, datasetVersion, startedAt);
   };
   if (!signalBase) {
     finish('invalid');

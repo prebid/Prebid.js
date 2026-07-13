@@ -28,7 +28,7 @@ pbjs.setConfig({
 });
 ```
 
-With no `params`, the provider reads from `https://signals.encypher.com` and uses a 300 ms total deadline. `realTimeData.auctionDelay` must be at least as large as `params.timeout` so Prebid waits for the asynchronous lookup before releasing the auction. Publishers operating an authorized HTTPS signal mirror may set `params.signalBase`. The mirror transports Encypher-issued records; it cannot replace the pinned `https://api.encypher.com` issuer, JWKS, or deterministic attestation reference. `params.timeout` changes the total lookup deadline in milliseconds. `params.telemetry: true` enables diagnostic telemetry; telemetry is disabled by default.
+With no `params`, the provider reads from `https://signals.encypher.com` and uses a 300 ms total deadline. `realTimeData.auctionDelay` must be at least as large as `params.timeout` so Prebid waits for the asynchronous lookup before releasing the auction. An approved mirror may set `params.signalBase` only to `https://signals.encypher.com` or an Encypher-controlled subdomain below `signals.encypher.com`; arbitrary hosts, credentials, query strings, fragments, and custom ports fail open without a request or telemetry. The mirror transports Encypher-issued records; it cannot replace the pinned `https://api.encypher.com` issuer, JWKS, or deterministic attestation reference. `params.timeout` changes the total lookup deadline in milliseconds. `params.telemetry: true` enables diagnostic telemetry; telemetry is disabled by default.
 
 # Compact carrier
 
