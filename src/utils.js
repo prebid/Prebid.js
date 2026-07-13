@@ -22,7 +22,6 @@ export const debugTurnedOn = debug.debugTurnedOn;
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
-  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   canAccessWindowTop,
@@ -60,7 +59,7 @@ var getIncrementalInteger = (function () {
 
 // generate a random string (to be used as a dynamic JSONP callback)
 export function getUniqueIdentifierStr() {
-  return getIncrementalInteger() + Math.random().toString(16).substr(2);
+  return getIncrementalInteger() + Math.random().toString(16).substring(2);
 }
 
 /**
@@ -438,10 +437,16 @@ export function insertHtmlIntoIframe(htmlCode) {
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
 export function insertUserSyncIframe(url, done, timeout) {
-  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
-  const div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  const iframe = div.firstChild;
+  if (!url) return;
+  const iframe = createIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+    style: {
+      width: '0px',
+      height: '0px',
+      display: 'none'
+    }
+  });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
@@ -475,35 +480,6 @@ export function encodeMacroURI(url) {
   return macros.reduce((str, macro) => {
     return str.replace('$' + encodeURIComponent(macro), '$' + macro);
   }, encodeURI(url));
-}
-
-/**
- * Creates a snippet of Iframe HTML that retrieves the specified `url`
- * @param  {string} url plain URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
- * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
- * @return {string}     HTML snippet that contains the iframe src = set to `url`
- */
-export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') {
-  if (!url) {
-    return '';
-  }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
-  if (sandbox) {
-    sandbox = `sandbox="${sandbox}"`;
-  }
-
-  return `<iframe ${sandbox} id="${getUniqueIdentifierStr()}"
-      frameborder="0"
-      allowtransparency="true"
-      marginheight="0" marginwidth="0"
-      width="0" hspace="0" vspace="0" height="0"
-      style="height:0px;width:0px;display:none;"
-      scrolling="no"
-      src="${url}">
-    </iframe>`;
 }
 
 export function uniques(value, index, arry) {
@@ -650,7 +626,7 @@ export function getPerformanceNow() {
 }
 
 /**
- * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * Returns the difference between `timing.domLoading` and `timing.navigationStart`.
  * This function uses the deprecated `Performance.timing` API and should be removed in future.
  * It has not been updated yet because it is still used in some modules.
  * @deprecated
@@ -1019,7 +995,7 @@ export function cyrb53Hash(str, seed = 0) {
     } else {
       opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
       // floating points give us 53 bits of precision to work with plus 1 sign bit
-      // automatically handled for our convienence:
+      // automatically handled for our convenience:
       // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
       //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
       var result = (opA & 0x003fffff) * opB;
@@ -1094,8 +1070,10 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
   if (acceptableUnits.indexOf(timeUnit) < 0) {
     return Date.now();
   }
-  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
-  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+  const millisecondsOffset = timeUnit === 'm'
+    ? timeValue * 60 * 1000
+    : timeValue * 24 * 60 * 60 * 1000;
+  return Date.now() + (timeValue && timeValue > 0 ? millisecondsOffset : 0);
 }
 
 /**
@@ -1168,7 +1146,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
       value instanceof Map ||
       value instanceof Set ||
       value instanceof Date ||
-      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+      (value !== null && type === 'object' && Object.prototype.hasOwnProperty.call(value, 'toJSON'))
     ) {
       return true;
     }
