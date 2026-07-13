@@ -191,6 +191,12 @@ function assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisher
   assert.strictEqual(lookup.requestBody, undefined);
   assert.strictEqual(lookup.withCredentials, false);
   assert.strictEqual(lookup.fetch.request.credentials, 'omit');
+  assert.strictEqual(lookup.fetch.request.redirect, 'error');
+  assert.deepStrictEqual(
+    Array.from(lookup.fetch.request.headers.entries()),
+    [['accept', 'application/json']],
+    'the browser Request must contain only the fixed CORS-safelisted Accept header',
+  );
   assert.strictEqual(lookup.fetch.request.headers.has('x-encypher-publisher-domain'), false);
   assert.strictEqual(lookup.fetch.request.headers.has('authorization'), false);
   assert.strictEqual(lookup.fetch.request.headers.has('x-api-key'), false);
@@ -327,7 +333,17 @@ describe('encypherRtdProvider decision-network v1', () => {
       } catch (error) {
         done(error);
       }
-    }, { params: { signalBase, telemetry: false } });
+    }, {
+      params: {
+        signalBase,
+        telemetry: false,
+        requestHeaders: {
+          Authorization: 'Bearer caller-controlled',
+          'X-Api-Key': 'caller-controlled',
+          'X-Encypher-Publisher-Domain': 'attacker.example',
+        },
+      },
+    });
 
     assert.strictEqual(callbackCount, 0, 'verification must complete before callback');
     respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 17);

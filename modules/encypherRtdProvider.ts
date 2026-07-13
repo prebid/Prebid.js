@@ -362,7 +362,7 @@ function normalizedSignalBase(params: EncypherRtdParams): string | null {
   }
 }
 
-function requestText(url: string, timeout: number, callbacks: RequestCallbacks, requestHeaders: Record<string, string> = {}): void {
+function requestText(url: string, timeout: number, callbacks: RequestCallbacks): void {
   const controller = new AbortController();
   let timedOut = false;
   let responseStatus = 0;
@@ -375,7 +375,7 @@ function requestText(url: string, timeout: number, callbacks: RequestCallbacks, 
       method: 'GET',
       credentials: 'omit',
       redirect: 'error',
-      headers: Object.assign({ Accept: 'application/json' }, requestHeaders),
+      headers: { Accept: 'application/json' },
       signal: controller.signal,
     }).then(response => {
       responseStatus = response.status;
