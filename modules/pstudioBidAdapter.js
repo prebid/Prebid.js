@@ -21,8 +21,14 @@ const SESSION_STORAGE_KEY = 'u_session_id';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 let _tmaLock = false;
-let _tmaPrimed = false; // NEW: ensure prime runs only once per page
+let _tmaPrimed = false;
 let _cachedUserId;
+
+export function __forTestingResetState() {
+  _tmaLock = false;
+  _tmaPrimed = false;
+  _cachedUserId = undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Hook-safety helpers
@@ -278,7 +284,7 @@ export const spec = {
     if (!serverResponse.body.bids) return [];
     const { id } = JSON.parse(bidRequest.data);
 
-    serverResponse.body.bids.map((bid) => {
+    serverResponse.body.bids.forEach((bid) => {
       const { cpm, width, height, currency, ad, meta } = bid;
       let bidResponse = {
         requestId: id,

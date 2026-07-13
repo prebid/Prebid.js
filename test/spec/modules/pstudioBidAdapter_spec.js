@@ -1,6 +1,10 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
-import { spec, storage } from 'modules/pstudioBidAdapter.js';
+import {
+  spec,
+  storage,
+  __forTestingResetState,
+} from 'modules/pstudioBidAdapter.js';
 import { deepClone } from '../../../src/utils.js';
 
 describe('PStudioAdapter', function () {
@@ -13,6 +17,7 @@ describe('PStudioAdapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+    __forTestingResetState();
   });
 
   const bannerBid = {
