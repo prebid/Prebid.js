@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "11.23.0-pre",
+  "version": "11.24.0-pre",
   "description": "Header Bidding Management Library",
   "main": "dist/src/prebid.public.ts",
   "exports": {
@@ -90,14 +90,12 @@
     "gulp-tap": "^2.0.0",
     "gulplog": "^2.2.0",
     "is-docker": "^2.2.1",
-    "istanbul": "^0.4.5",
     "karma": "^6.4.4",
     "karma-babel-preprocessor": "^8.0.1",
     "karma-browserstack-launcher": "1.6.0",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.1",
-    "karma-coverage-istanbul-reporter": "^3.0.3",
     "karma-firefox-launcher": "^2.1.0",
     "karma-mocha": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",

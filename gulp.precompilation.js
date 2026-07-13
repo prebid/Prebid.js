@@ -20,6 +20,8 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
   return {
     disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
     distUrlBase: distUrlBase ?? argv.distUrlBase,
+    dev,
+    polyfills: argv.polyfills
   }
 }
 
