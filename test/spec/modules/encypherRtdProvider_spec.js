@@ -689,6 +689,39 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
   });
 
+  it('rejects lookup redirects and fails open exactly once without carrier or key request when fetch rejects', async () => {
+    const signalBase = 'https://redirect-failure.signals.encypher.com';
+    const clock = sandbox.useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const auction = makeAuction();
+    const original = structuredClone(auction);
+    let callbackCount = 0;
+    const completion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(auction, () => {
+        callbackCount += 1;
+        resolve();
+      }, { params: { signalBase, telemetry: false, timeout: 100 } });
+    });
+
+    const lookup = pendingLookup(signalBase);
+    assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
+    assert.strictEqual(
+      lookup.fetch.request.redirect,
+      'error',
+      'the browser must reject redirects before publisher_domain and urlHash can reach another origin',
+    );
+    lookup.error(new TypeError('redirect rejected'));
+    await completion;
+
+    assert.strictEqual(callbackCount, 1);
+    assert.deepStrictEqual(auction, original);
+    assertNoInjection(auction);
+    assert.strictEqual(pendingRequest(PINNED_JWKS_URL), undefined);
+    assert.strictEqual(sendBeaconStub.callCount, 0);
+    clock.tick(100);
+    assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
+  });
+
   it('fails open without requesting keys when the total deadline expires after the edge response', async () => {
     const signalBase = 'https://deadline.signals.encypher.com';
     const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });

@@ -374,6 +374,7 @@ function requestText(url: string, timeout: number, callbacks: RequestCallbacks, 
     fetcherFactory(timeout)(url, {
       method: 'GET',
       credentials: 'omit',
+      redirect: 'error',
       headers: Object.assign({ Accept: 'application/json' }, requestHeaders),
       signal: controller.signal,
     }).then(response => {
