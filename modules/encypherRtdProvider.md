@@ -4,29 +4,17 @@ Module Name: Encypher RTD Provider
 Module Type: Rtd Provider
 Maintainer: engineering@encypher.com
 
-# Description
-
-This module injects C2PA content provenance signals into OpenRTB bid requests at `site.ext.data.c2pa`. It enables DSPs to factor verified publisher identity and content integrity into bidding decisions.
-
-The module runs once per page load through three paths in strict priority:
-
-1. **Manifest Shortcut (Path A):** If a `<meta name="c2pa-manifest-url">` tag or `params.manifestUrl` is present, fetches the manifest directly without calling the signing API. This is an optional optimization for publishers who already expose manifest URLs.
-
-2. **Cache (Path B):** Serves previously obtained provenance from localStorage (30-day TTL, keyed by canonical URL hash). No network call.
-
-3. **API Signing and Verification (Path C):** Extracts article text from the DOM and sends it to the Encypher API. The API detects whether the content already contains embedded C2PA provenance markers. If markers are present, it verifies them and returns the existing provenance data (including the original signer tier). If no markers are found, it signs the content fresh and returns a new manifest. The result is cached and injected into the bid request.
-
-**Key behavior:** Content signed at the CMS or CDN layer carries invisible provenance markers that survive DOM rendering. When the module sends this text to the API, the markers are detected and verified server-side. Publishers who sign at publish time receive their authenticated `signer_tier` (e.g., `connected` or `byok`) in the bid request, which is a stronger signal than the `encypher_free` tier assigned to auto-signed content.
-
-No external JavaScript is loaded. The module uses only Prebid.js core imports. Every code path, including all error branches, calls `callback()`. A 2-second safety timeout ensures the module never blocks an auction. Path C requires GDPR consent before transmitting page content and validates the API endpoint against an allowlist of permitted hosts.
-
-Free tier: 1,000 unique content signatures per publisher domain per month. Re-requests for the same content (deduped by content hash) do not count against quota. Verification of already-signed content does not count against quota. Quota exceeded returns gracefully with no provenance data (fail-open).
+The Encypher RTD provider adds a verified provenance reference to each OpenRTB impression. It performs a credentialless lookup for the canonical page, validates the returned ES256 attestation against Encypher's pinned issuer and public JWKS, and injects only the compact record at `ortb2Imp.ext.c2pa`.
 
 # Integration
 
+Build Prebid.js with the RTD core and this provider:
+
 ```bash
-gulp build -modules=rtdModule,encypherRtdProvider
+npx gulp build --modules=rtdModule,encypherRtdProvider
 ```
+
+Add one `realTimeData.dataProviders` setting:
 
 ```javascript
 pbjs.setConfig({
@@ -34,73 +22,50 @@ pbjs.setConfig({
     auctionDelay: 300,
     dataProviders: [{
       name: 'encypher',
-      waitForIt: true,
-      params: {
-        // All optional. Free tier works with zero config.
-        apiBase: 'https://api.encypher.com',  // override for staging/dev
-        manifestUrl: 'https://...'            // manual manifest URL (skips API call)
-      }
+      waitForIt: true
     }]
   }
 });
 ```
 
-No configuration is required. The module extracts article text from the page and sends it to the Encypher API, which handles both verification of existing provenance and fresh signing.
+With no `params`, the provider reads from `https://signals.encypher.com` and uses a 300 ms total deadline. `realTimeData.auctionDelay` must be at least as large as `params.timeout` so Prebid waits for the asynchronous lookup before releasing the auction. Publishers operating an authorized HTTPS signal mirror may set `params.signalBase`. The mirror transports Encypher-issued records; it cannot replace the pinned `https://api.encypher.com` issuer, JWKS, or deterministic attestation reference. `params.timeout` changes the total lookup deadline in milliseconds. `params.telemetry: true` enables diagnostic telemetry; telemetry is disabled by default.
 
-For publishers who prefer to skip the API call entirely, output a meta tag pointing to the manifest URL:
+# Compact carrier
 
-```html
-<meta name="c2pa-manifest-url" content="https://api.encypher.com/api/v1/public/prebid/manifest/abc123">
-```
-
-# Data Injected
-
-The following object is placed at `ortb2Fragments.global.site.ext.data.c2pa`:
+For every ad unit, the provider adds exactly these four fields at `ortb2Imp.ext.c2pa` while preserving all existing impression, GPID, supply-chain, and caller fields:
 
 ```json
 {
-  "manifest_url": "https://api.encypher.com/api/v1/public/prebid/manifest/abc123",
-  "verified": true,
-  "signer_tier": "connected",
-  "signed_at": "2026-04-01T10:00:00Z",
-  "content_hash": "a1b2c3d4e5f6",
-  "source": "auto",
-  "extraction_method": "json-ld"
+  "v": 1,
+  "id": "epa_01J...",
+  "ref": "https://api.encypher.com/api/v1/public/provenance/attestations/epa_01J...",
+  "att": "eyJhbGciOiJFUzI1NiIs..."
 }
 ```
 
 | Field | Type | Description |
-|-|-|-|
-| `manifest_url` | string | URL to retrieve the C2PA manifest |
-| `verified` | boolean | `true` if the content's provenance was successfully verified or signed |
-| `signer_tier` | string | Signing identity tier: `local`, `encypher_free`, `connected`, `byok`. Content signed at CMS/CDN level returns the publisher's authenticated tier. |
-| `signed_at` | string | ISO 8601 timestamp of signing |
-| `content_hash` | string | SHA-256 hash of article text |
-| `source` | string | How provenance was obtained: `cms` (Path A), `cache` (Path B), or `auto` (Path C) |
-| `extraction_method` | string | DOM extraction method used (Path C): `json-ld`, `article-element`, or `role-main` |
-| `action` | string | First C2PA action from manifest (Path A only, e.g., `c2pa.created`) |
+| --- | --- | --- |
+| `v` | integer | Protocol version, exactly `1`. |
+| `id` | string | Stable provenance record identifier. |
+| `ref` | HTTPS URL | Deterministic public attestation reference derived from, and signed as, the record ID. |
+| `att` | compact JWS | ES256 attestation binding the record ID to the canonical URL digest, exact publisher domain, policy version, revision, validation result, declaration, and expiration. |
 
-# Signer Tiers
+The serialized carrier is limited to 1 KiB. No page content, derived score, signing tier, compatibility payload, or global `site.ext.data.c2pa` value is emitted.
 
-The `signer_tier` field tells DSPs how the content was authenticated:
+# Validation, caching, and fail-open behavior
 
-| Tier | Meaning |
-|-|-|
-| `byok` | Publisher signed with their own key (strongest identity) |
-| `connected` | Publisher authenticated with Encypher and signed at publish time |
-| `encypher_free` | Content was auto-signed by Encypher at first pageview (no publisher authentication) |
-| `local` | Manifest fetched from a local/self-hosted endpoint (Path A) |
+Before injection, the provider requires:
 
-DSPs can use this field for differential bidding: content signed by authenticated publishers carries stronger brand-safety guarantees than content attested by a third party at pageview time.
+- a strict v1 `ready` envelope for the SHA-256 canonical URL digest;
+- exactly the `v`, `id`, `ref`, and `att` record fields;
+- a canonical ES256 JWS with a single matching signing key from the pinned credentialless JWKS at `https://api.encypher.com/api/v1/public/provenance/jwks.json`;
+- the pinned issuer, exact canonical URL digest and publisher domain, record ID, lifetime, policy version, revision, validation result, and declaration claims; and
+- exact equality between `ref` and `https://api.encypher.com/api/v1/public/provenance/attestations/{signed sub}`.
 
-# Content Extraction
+Validated records and JWKS are cached only in page memory. A cached record is checked for expiration and its signature and claims are revalidated before every reuse. JWKS entries expire after 60 seconds; a key or signature mismatch evicts the cached JWKS and forces one refresh within the original deadline. Cache keys include the signal origin and canonical URL digest, so records cannot cross canonical URLs or configured signal origins.
 
-The module extracts article text from the DOM in this priority order:
+The callback is invoked exactly once within the configured total deadline. HTTP 204, `stale`, `revoked`, missing records, timeout, network failure, malformed or non-canonical data, unknown versions or keys, invalid signatures or claims, substituted references, oversized carriers, and expired attestations all leave the auction unchanged. The provider never signs content, extracts page content, reads manifest meta tags, or uses localStorage.
 
-1. **JSON-LD structured data:** Looks for `application/ld+json` scripts containing schema.org types `Article`, `NewsArticle`, `BlogPosting`, or `Report`. Uses `articleBody` or `text` field. Handles `@graph` arrays.
-2. **`<article>` element:** Uses `textContent` of the first `<article>` element.
-3. **`[role="main"]` element:** Uses `textContent` of the first element with `role="main"`.
+# Diagnostic telemetry
 
-Content shorter than 50 characters is skipped. Content longer than 50,000 characters is truncated. If no usable content is found, the module calls callback without injecting provenance data.
-
-When extracting from JSON-LD, the module also collects article metadata (author, datePublished, dateModified, section, wordCount, keywords, publisher, language) and includes it in the signing request. This metadata is used for analytics only and is not injected into the bid request.
+Diagnostic telemetry is disabled by default. When `params.telemetry` is `true`, the provider sends a post-callback event to `{signalBase}/v1/telemetry/rtd`. The event contains only protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. It contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect or delay the auction callback.
