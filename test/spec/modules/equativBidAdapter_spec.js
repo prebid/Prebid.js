@@ -294,7 +294,7 @@ describe('Equativ bid adapter tests', () => {
 
     it('should add ext.bidder with plcmtuuid to imp object when placementuuid is defined', () => {
       const bidRequests = [
-        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { placementuuid: 'abc-123' } },
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { ...DEFAULT_BANNER_BID_REQUESTS[0].params, placementuuid: 'abc-123' } },
       ];
       const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -307,7 +307,7 @@ describe('Equativ bid adapter tests', () => {
       const bidRequests = [
         {
           ...DEFAULT_BANNER_BID_REQUESTS[0],
-          params: { placementuuid: 'abc-123', siteId: 123, pageId: 456, formatId: 789 },
+          params: { ...DEFAULT_BANNER_BID_REQUESTS[0].params, placementuuid: 'abc-123', siteId: 123, pageId: 456, formatId: 789 },
         },
       ];
       const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
@@ -322,7 +322,7 @@ describe('Equativ bid adapter tests', () => {
 
     it('should still add deprecated ext.bidder params when placementuuid is not provided', () => {
       const bidRequests = [
-        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { siteId: 123, pageId: 456, formatId: 789 } },
+        { ...DEFAULT_BANNER_BID_REQUESTS[0], params: { ...DEFAULT_BANNER_BID_REQUESTS[0].params, siteId: 123, pageId: 456, formatId: 789 } },
       ];
       const bidderRequest = { ...DEFAULT_BANNER_BIDDER_REQUEST, bids: bidRequests };
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
