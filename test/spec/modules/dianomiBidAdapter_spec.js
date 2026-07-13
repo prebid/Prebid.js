@@ -5,6 +5,7 @@ import { config } from 'src/config.js';
 
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getWinDimensions } from 'src/utils.js';
 
 describe('Dianomi adapter', () => {
   let bids = [];
@@ -34,6 +35,10 @@ describe('Dianomi adapter', () => {
       };
       assert.isFalse(spec.isBidRequestValid(bid));
     });
+
+    it('should return false when params property is missing', () => {
+      assert.isFalse(spec.isBidRequestValid({ bidder: 'dianomi' }));
+    });
   });
 
   describe('buildRequests', () => {
@@ -52,6 +57,34 @@ describe('Dianomi adapter', () => {
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://dianomi-bidder-proxy.dianomi.com/traffic_proxy');
       assert.ok(request.data);
+
+      const imp = JSON.parse(request.data).imp[0];
+      assert.equal(imp.tagid, '1234');
+      assert.equal(imp.ext.bidder.smartadId, 1234);
+    });
+
+    it('should use custom bidderURL when provided', () => {
+      const validBidRequests = [
+        {
+          bidId: 'bidId',
+          params: { smartadId: 1234, bidderURL: 'https://custom.example/proxy' },
+        },
+      ];
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
+
+      assert.equal(request.url, 'https://custom.example/proxy');
+    });
+
+    it('should return custom endpoint hostname when provided', () => {
+      const validBidRequests = [
+        {
+          bidId: 'bidId',
+          params: { smartadId: 1234, endpoint: 'custom.dianomi.com' },
+        },
+      ];
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } });
+
+      assert.equal(request.endpoint, 'custom.dianomi.com');
     });
 
     it('should set the top-level request id from bidderRequestId', () => {
@@ -204,6 +237,37 @@ describe('Dianomi adapter', () => {
       assert.equal(request.device.h, 100);
     });
 
+    it('should fall back to window dimensions when device w/h are not set', () => {
+      const expectedDimensions = getWinDimensions();
+      const validBidRequests = [
+        {
+          bidId: 'bidId',
+          params: { smartadId: 1234 },
+        },
+      ];
+      const request = JSON.parse(
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2: { device: {} } }).data
+      );
+
+      assert.equal(request.device.w, expectedDimensions.innerWidth);
+      assert.equal(request.device.h, expectedDimensions.innerHeight);
+    });
+
+    it('should pass ortb2 user through to the request', () => {
+      const ortb2 = { user: { id: 'uid' } };
+      const validBidRequests = [
+        {
+          bidId: 'bidId',
+          params: { smartadId: 1234 },
+        },
+      ];
+      const request = JSON.parse(
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ortb2 }).data
+      );
+
+      assert.equal(request.user.id, 'uid');
+    });
+
     it('should send app info', () => {
       const ortb2 = { app: { id: 'appid', name: 'appname' } };
       const validBidRequests = [
@@ -252,6 +316,25 @@ describe('Dianomi adapter', () => {
       });
     });
 
+    it('should preserve site.page from ortb2 when already set', () => {
+      const ortb2 = {
+        site: {
+          page: 'https://publisher.example/article',
+        },
+      };
+      const validBidRequests = [
+        {
+          bidId: 'bidId',
+          params: { smartadId: 1234 },
+        },
+      ];
+      const request = JSON.parse(
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'referer-page' }, ortb2 }).data
+      );
+
+      assert.equal(request.site.page, 'https://publisher.example/article');
+    });
+
     it('should pass extended ids', () => {
       const validBidRequests = [
         {
@@ -282,6 +365,16 @@ describe('Dianomi adapter', () => {
         assert.deepEqual(request.cur, ['EUR']);
         setCurrencyConfig({});
       });
+    });
+
+    it('should omit cur when currency is not configured', () => {
+      setCurrencyConfig({});
+      const validBidRequests = [{ params: { smartadId: 1234 } }];
+      const request = JSON.parse(
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
+      );
+
+      assert.equal(request.cur, undefined);
     });
 
     it('should pass supply chain object', () => {
@@ -329,11 +422,25 @@ describe('Dianomi adapter', () => {
 
         assert.equal(request.ext.pt, 'net');
       });
-      it('should send correct priceType value', () => {
+      it('should send priceType from params.pt and set bid netRevenue', () => {
         const validBidRequests = [
           {
             bidId: 'bidId',
-            params: { smartadId: 1234 },
+            params: { smartadId: 1234, pt: 'gross' },
+          },
+        ];
+        const request = JSON.parse(
+          spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
+        );
+
+        assert.equal(request.ext.pt, 'gross');
+        assert.equal(validBidRequests[0].netRevenue, 'gross');
+      });
+      it('should accept priceType as alias for pt', () => {
+        const validBidRequests = [
+          {
+            bidId: 'bidId',
+            params: { smartadId: 1234, priceType: 'net' },
           },
         ];
         const request = JSON.parse(
@@ -341,6 +448,7 @@ describe('Dianomi adapter', () => {
         );
 
         assert.equal(request.ext.pt, 'net');
+        assert.equal(validBidRequests[0].netRevenue, 'net');
       });
     });
 
@@ -563,6 +671,34 @@ describe('Dianomi adapter', () => {
       });
 
       describe('native', () => {
+        if (FEATURES.NATIVE) {
+          it('should build native assets from ortb native mediaTypes', () => {
+            const validBidRequests = [
+              {
+                bidId: 'bidId',
+                params: { smartadId: 1234 },
+                mediaTypes: {
+                  native: {
+                    ortb: {
+                      assets: [
+                        { id: 0, required: 1, title: { len: 140 } },
+                      ],
+                    },
+                  },
+                },
+              },
+            ];
+            const assets = JSON.parse(
+              spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
+            ).imp[0].native.assets;
+
+            assert.equal(assets.length, 1);
+            assert.equal(assets[0].id, 0);
+            assert.equal(assets[0].required, 1);
+            assert.equal(assets[0].title.len, 140);
+          });
+        }
+
         describe('assets', () => {
           it('should set correct asset id', () => {
             const validBidRequests = [
@@ -755,6 +891,20 @@ describe('Dianomi adapter', () => {
       const bidRequest = {};
 
       assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
+    });
+
+    it('should return undefined when response has nbr', () => {
+      const serverResponse = { body: { nbr: 1 } };
+      const bidRequest = { bids: [{ bidId: 'bidId1' }] };
+
+      assert.isUndefined(spec.interpretResponse(serverResponse, bidRequest));
+    });
+
+    it('should return undefined when seatbid is missing', () => {
+      const serverResponse = { body: { cur: 'USD' } };
+      const bidRequest = { bids: [{ bidId: 'bidId1' }] };
+
+      assert.isUndefined(spec.interpretResponse(serverResponse, bidRequest));
     });
     it('should return more than one bids', () => {
       const serverResponse = {
@@ -1020,6 +1170,64 @@ describe('Dianomi adapter', () => {
       assert.deepEqual(bids[0].meta.advertiserDomains, ['demo.com']);
       assert.deepEqual(bids[0].dealId, 'deal-id');
     });
+
+    it('should set netRevenue to true when bid netRevenue is net', () => {
+      const serverResponse = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  impid: '1',
+                  price: 1,
+                  crid: 'crid',
+                  adm: '<banner>',
+                  ext: { prebid: { type: 'banner' } },
+                },
+              ],
+            },
+          ],
+          cur: 'USD',
+        },
+      };
+      const bidRequest = {
+        bids: [{ bidId: 'bidId1', netRevenue: 'net' }],
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.equal(result[0].netRevenue, true);
+    });
+
+    it('should map width and height from the seatbid', () => {
+      const serverResponse = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  impid: '1',
+                  price: 1,
+                  crid: 'crid',
+                  w: 300,
+                  h: 250,
+                  adm: '<banner>',
+                  ext: { prebid: { type: 'banner' } },
+                },
+              ],
+            },
+          ],
+          cur: 'USD',
+        },
+      };
+      const bidRequest = {
+        bids: [{ bidId: 'bidId1' }],
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.equal(result[0].width, 300);
+      assert.equal(result[0].height, 250);
+    });
+
     it('should set correct native params', () => {
       const bid = [
         {
@@ -1120,6 +1328,43 @@ describe('Dianomi adapter', () => {
         result
       );
     });
+
+    it('should omit optional native trackers when not present', () => {
+      const serverResponse = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  impid: '1',
+                  native: {
+                    link: { url: 'clickUrl' },
+                    assets: [
+                      { id: 0, title: { text: 'title text' } },
+                      { id: 99, data: { value: 'ignored' } },
+                    ],
+                  },
+                  ext: { prebid: { type: 'native' } },
+                },
+              ],
+            },
+          ],
+          cur: 'USD',
+        },
+      };
+      const bidRequest = {
+        bids: [{ bidId: 'bidId1' }],
+      };
+
+      const result = spec.interpretResponse(serverResponse, bidRequest)[0].native;
+      assert.equal(result.clickUrl, 'clickUrl');
+      assert.equal(result.title, 'title text');
+      assert.isUndefined(result.clickTrackers);
+      assert.isUndefined(result.impressionTrackers);
+      assert.isUndefined(result.javascriptTrackers);
+      assert.isUndefined(result.unknown);
+    });
+
     it('should return empty when there is no bids in response', () => {
       const serverResponse = {
         body: {
@@ -1133,8 +1378,8 @@ describe('Dianomi adapter', () => {
         data: {},
         bids: [{ bidId: 'bidId1' }],
       };
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.ok(!result);
+      const result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.equal(result.length, 0);
     });
 
     describe('banner', () => {
@@ -1224,7 +1469,7 @@ describe('Dianomi adapter', () => {
               params: { smartadId: 1234 },
               mediaTypes: {
                 video: {
-                  constext: 'instream',
+                  context: 'instream',
                 },
               },
             },
@@ -1234,6 +1479,95 @@ describe('Dianomi adapter', () => {
         bids = spec.interpretResponse(serverResponse, bidRequest);
         assert.ok(bids[0].renderer);
         assert.equal(bids[1].renderer, undefined);
+      });
+
+      it('should use custom endpoint in outstream renderer url', () => {
+        const serverResponse = {
+          body: {
+            seatbid: [
+              {
+                bid: [{ impid: '1', adm: '<vast>', ext: { prebid: { type: 'video' } } }],
+              },
+            ],
+          },
+        };
+        const bidRequest = {
+          bids: [
+            {
+              bidId: 'bidId1',
+              adUnitCode: 'ad-unit',
+              mediaTypes: { video: { context: 'outstream' } },
+            },
+          ],
+          endpoint: 'custom.dianomi.com',
+        };
+
+        const result = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(result[0].renderer.url, 'https://custom.dianomi.com/prebid/outstream/renderer.js');
+      });
+
+      it('should not add renderer when bid already has one', () => {
+        const serverResponse = {
+          body: {
+            seatbid: [
+              {
+                bid: [{ impid: '1', adm: '<vast>', ext: { prebid: { type: 'video' } } }],
+              },
+            ],
+          },
+        };
+        const publisherRenderer = { url: 'https://publisher.example/renderer.js' };
+        const bidRequest = {
+          bids: [
+            {
+              bidId: 'bidId1',
+              renderer: publisherRenderer,
+              mediaTypes: { video: { context: 'outstream' } },
+            },
+          ],
+        };
+
+        const result = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(result[0].renderer, undefined);
+      });
+
+      it('should invoke Dianomi outstream renderer callback', () => {
+        const serverResponse = {
+          body: {
+            seatbid: [
+              {
+                bid: [{ impid: '1', adm: '<vast>', ext: { prebid: { type: 'video' } } }],
+              },
+            ],
+          },
+        };
+        const bidRequest = {
+          bids: [
+            {
+              bidId: 'bidId1',
+              adUnitCode: 'ad-unit',
+              mediaTypes: { video: { context: 'outstream' } },
+            },
+          ],
+        };
+
+        const originalDianomi = window.Dianomi;
+        const renderOutstreamSpy = sinon.spy();
+        window.Dianomi = { renderOutstream: renderOutstreamSpy };
+
+        try {
+          const result = spec.interpretResponse(serverResponse, bidRequest);
+          const installedRenderer = result[0].renderer;
+          installedRenderer.loaded = true;
+          installedRenderer._render({ renderer: installedRenderer });
+          sinon.assert.calledOnce(renderOutstreamSpy);
+        } finally {
+          if (originalDianomi) {
+            window.Dianomi = originalDianomi;
+          } else {
+            delete window.Dianomi;
+          }
+        }
       });
     });
   });
@@ -1255,6 +1589,17 @@ describe('Dianomi adapter', () => {
       });
 
       expect(syncs).to.deep.equal({ type: 'image', url: usersyncRedirectUrl });
+    });
+
+    it('should return undefined when no sync type is enabled', function () {
+      expect(spec.getUserSyncs({})).to.be.undefined;
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })).to.be.undefined;
+    });
+
+    it('should prefer iframe sync when both iframe and pixel are enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+
+      expect(syncs).to.deep.equal({ type: 'iframe', url: usersyncIframeUrl });
     });
 
     it('should pass gdpr params if consent is true', function () {
