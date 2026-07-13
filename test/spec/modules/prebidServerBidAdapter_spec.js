@@ -1104,6 +1104,86 @@ describe('S2S Adapter', function () {
       });
     });
 
+    describe('hostGvlid endpoint selection', function () {
+      const HOST_GVLID = '52';
+      const P1_ENDPOINT = 'https://pbs.example/p1-auction';
+      const NO_P1_ENDPOINT = 'https://pbs.example/no-p1-auction';
+
+      function mockHostConsent({ purposeConsent = true, vendorConsent = true, gdprApplies = true, restriction } = {}) {
+        const consent = {
+          vendorData: {
+            purpose: {
+              consents: { 1: purposeConsent },
+              legitimateInterests: { 1: false }
+            },
+            vendor: {
+              consents: { [HOST_GVLID]: vendorConsent },
+              legitimateInterests: { [HOST_GVLID]: false }
+            }
+          },
+          apiVersion: 2,
+          gdprApplies
+        };
+        if (restriction != null) {
+          consent.vendorData.publisher = {
+            restrictions: {
+              1: { [HOST_GVLID]: restriction }
+            }
+          };
+        }
+        return consent;
+      }
+
+      function bidRequestsWithConsent(consent) {
+        const bidRequests = utils.deepClone(BID_REQUESTS);
+        bidRequests[0].gdprConsent = consent;
+        return bidRequests;
+      }
+
+      function hostGvlidConfig(overrides = {}) {
+        return Object.assign({}, CONFIG, {
+          hostGvlid: HOST_GVLID,
+          endpoint: {
+            p1Consent: P1_ENDPOINT,
+            noP1Consent: NO_P1_ENDPOINT
+          }
+        }, overrides);
+      }
+
+      it('uses noP1Consent auction endpoint when purpose 1 consent is given but host vendor consent is not', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ purposeConsent: true, vendorConsent: false })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(NO_P1_ENDPOINT);
+      });
+
+      it('uses noP1Consent auction endpoint when publisher restriction disallows host vendor for purpose 1', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ purposeConsent: true, vendorConsent: true, restriction: 0 })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(NO_P1_ENDPOINT);
+      });
+
+      it('uses p1Consent auction endpoint when gdpr does not apply', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ gdprApplies: false, vendorConsent: false })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(P1_ENDPOINT);
+      });
+    });
+
     describe('us_privacy (ccpa) consent data', function () {
       afterEach(function () {
         requestBids.removeAll();

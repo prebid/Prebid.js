@@ -84,7 +84,7 @@ var rubiconAdapterMock = {
 };
 
 var pubmaticAdapterMock = {
-  bidder: 'rubicon',
+  bidder: 'pubmatic',
   callBids: sinon.stub()
 };
 
@@ -138,7 +138,6 @@ describe('adapterManager tests', function () {
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
-      adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
     });
 
     afterEach(function () {
@@ -153,7 +152,7 @@ describe('adapterManager tests', function () {
       let unregRule;
       beforeEach(() => {
         unregRule = registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'test',
-          ({ componentName, componentTypeType }) => {
+          ({ componentName, componentType }) => {
             if (componentType === 'bidder' && componentName === 'appnexus') {
               return { allow: false };
             }
@@ -2638,7 +2637,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
       });
 
-      it('should filter adUnits/bidders based on applid labels for s2s requests', function () {
+      it('should filter adUnits/bidders based on applied labels for s2s requests', function () {
         adUnits[0].labelAll = ['visitor-uk', 'mobile'];
         adUnits[1].labelAny = ['visitor-uk', 'desktop'];
         adUnits[1].bids[0].labelAny = ['mobile'];
@@ -2819,7 +2818,7 @@ describe('adapterManager tests', function () {
       });
 
       it(
-        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'should suppress client side bids if no ad unit bidSources are set, ' +
         'but bidderControl resolves to server',
         () => {
           const ads = removeAdUnitsBidSource(getServerTestingsAds());
@@ -3119,7 +3118,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should remove bids that have bidder not present in s2sConfig', () => {
-        s2sBidders = new Set('A', 'B');
+        s2sBidders = new Set(['A', 'B']);
         const s2sConfig = {};
         expect(filterBids(['A', 'C', 'D'].map((code) => ({ bidder: code })), s2sConfig)).to.eql([{ bidder: 'A' }]);
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
