@@ -17,7 +17,7 @@ module.exports = function (config) {
     config.module.rules = config.module.rules || [];
     config.module.rules.push({
       test: /\.[cm]?js$/,
-      exclude: path.resolve('./node_modules/core-js'),
+      exclude: path.resolve('./node_modules/core-js-pure'),
       type: 'javascript/auto',
       resolve: {
         fullySpecified: false,
@@ -28,14 +28,20 @@ module.exports = function (config) {
           options: {
             presets: [
               ['@babel/preset-env', {
-                useBuiltIns: 'usage',
-                corejs: require('core-js/package.json').version,
+                useBuiltIns: false,
                 modules: 'commonjs',
                 targets: { browsers }
               }]
             ],
             plugins: [
-              '@babel/plugin-transform-runtime'
+              ['polyfill-corejs3', {
+                'method': 'usage-pure',
+                'version': require('core-js-pure/package.json').version,
+                targets: { browsers }
+              }],
+              ['@babel/plugin-transform-runtime', {
+                absoluteRuntime: true,
+              }],
             ]
           }
         }
