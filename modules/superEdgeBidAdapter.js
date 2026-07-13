@@ -13,12 +13,14 @@
 
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizesOrtb, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getOsInfo } from '../libraries/nexverseUtils/index.js';
+import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js';
 
 // ---- Constants ----
 
@@ -47,6 +49,24 @@ let reqTimes = 0;
 
 /** Set of supported ad sizes recognized by the bidding server. */
 const supportedAdSize = normalAdSize;
+
+// ---- Navigator Helpers ----
+
+/**
+ * Read device properties from the ORTB2 first-party data object that Prebid core
+ * already populates. AGENTS.md requires vendor modules to route navigator reads
+ * through shared libraries rather than accessing navigator.* directly.
+ *
+ * @param {Object} bidderRequest
+ * @returns {{ua: string, language: string}}
+ */
+function getDeviceInfo(bidderRequest) {
+  const dev = bidderRequest.ortb2?.device || {};
+  return {
+    ua: dev.ua || '',
+    language: dev.language || 'en'
+  };
+}
 
 // ---- Impression Builder ----
 
@@ -103,43 +123,44 @@ function buildImp(validBidRequests, bidderRequest) {
       ...gdprConsent
     };
 
+    const imps = [];
+
     // ---- Banner impression ----
     if (mediaTypes?.banner) {
-      return [{
-        id,
+      imps.push({
+        id: `${id}-banner`,
         bidfloor: getBidFloor(req),
         banner: {
           h: matchSize.h,
           w: matchSize.w,
-          pos: 1,                   // above-the-fold by default
-          format: sizes             // full list of accepted sizes
+          pos: utils.deepAccess(req, 'mediaTypes.banner.pos') ?? 1,
+          format: sizes
         },
-        ext,
-        tagid: req.params?.tagid
-      }];
+        ext: { ...ext, _bidId: id },
+        tagid: req.params && req.params.tagid
+      });
     }
 
     // ---- Native impression ----
     if (mediaTypes?.native) {
       // Prebid.js core pre-builds the ORTB native request object from the
       // publisher's mediaTypes.native config. We just need to stringify it.
-      const nativeReq = req.nativeOrtbRequest;
-      if (nativeReq?.assets?.length) {
-        return [{
-          id,
+      const nativeOrtbRequest = req.nativeOrtbRequest;
+      if (nativeOrtbRequest && nativeOrtbRequest.assets?.length) {
+        imps.push({
+          id: `${id}-native`,
           bidfloor: getBidFloor(req),
           native: {
-            request: JSON.stringify(nativeReq),
-            ver: nativeReq.ver || '1.2'
+            request: JSON.stringify(nativeOrtbRequest),
+            ver: '1.2'
           },
-          ext,
-          tagid: req.params?.tagid
-        }];
+          ext: { ...ext, _bidId: id },
+          tagid: req.params && req.params.tagid
+        });
       }
     }
-
     // Media type not supported or incomplete — skip this bid request.
-    return [];
+    return imps;
   });
 }
 
@@ -189,12 +210,12 @@ function buildRequestData(validBidRequests, bidderRequest) {
 
       // ---- Device object (ORTB 2.5 §3.2.18) ----
       device: {
-        connectiontype: 0,          // unknown connection type
+        connectiontype: getConnectionType(),
         js: 1,                      // JavaScript is enabled
         os: getOsInfo().os || '',   // parsed from UA / platform hints
-        ua: navigator.userAgent,    // raw user-agent string
+        ua: getDeviceInfo(bidderRequest).ua,
         // Normalize all English variants to "en"; preserve other locales.
-        language: /^en/.test(navigator.language) ? 'en' : navigator.language
+        language: /^en/.test(getDeviceInfo(bidderRequest).language) ? 'en' : getDeviceInfo(bidderRequest).language
       },
 
       // ---- Request-level extension ----
@@ -235,7 +256,7 @@ function buildRequestData(validBidRequests, bidderRequest) {
         mobile: getDevice() ? 1 : 0,
         cat: [],
         publisher: {
-          id: globals[PUBLISHER]
+          id: validBidRequests[0].params.publisher || ''
         }
       },
 
@@ -262,7 +283,7 @@ export const spec = {
   code: BIDDER_CODE,
 
   /** Media types this adapter can handle. */
-  supportedMediaTypes: ['banner', 'native'],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Validate a bid request and cache publisher-supplied params.
@@ -295,10 +316,28 @@ export const spec = {
    * @returns {Object} An object with `method`, `url`, and `data` properties.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const payload = buildRequestData(validBidRequests, bidderRequest);
+
+    const mediaTypeMap = {};
+    const impIdToBidId = {};
+    if (payload && payload.imp) {
+      payload.imp.forEach(imp => {
+        impIdToBidId[imp.id] = imp.ext._bidId;
+        delete imp.ext._bidId;
+        if (imp.native) {
+          mediaTypeMap[imp.id] = NATIVE;
+        } else {
+          mediaTypeMap[imp.id] = BANNER;
+        }
+      });
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT_URL + globals[SK],
-      data: JSON.stringify(buildRequestData(validBidRequests, bidderRequest)),
+      data: JSON.stringify(payload),
+      _mediaTypeMap: mediaTypeMap,
+      _impIdToBidId: impIdToBidId,
     };
   },
 
@@ -317,6 +356,8 @@ export const spec = {
     // Default currency for all seats; individual seats can override with their own `cur`.
     const defaultCur = utils.deepAccess(serverResponse, 'body.cur', '');
     const seatbids = utils.deepAccess(serverResponse, 'body.seatbid') || [];
+    const mediaTypeMap = (bidRequest && bidRequest._mediaTypeMap) || {};
+    const impIdToBidId = (bidRequest && bidRequest._impIdToBidId) || {};
 
     const bidResponses = [];
     for (const seat of seatbids) {
@@ -327,19 +368,44 @@ export const spec = {
       for (const bid of bids) {
         // A bid without an impid cannot be matched to a request impression — skip it.
         if (bid.impid) {
-          bidResponses.push({
-            requestId: bid.impid || '',         // ties back to imp.id
-            cpm: bid.price,              // bid price
-            width: bid.w,                  // creative width
-            height: bid.h,                  // creative height
-            creativeId: bid.crid || '',         // creative ID
-            dealId: '',                     // not used (no PMP support)
-            currency: cur,                    // seat-level or default currency
-            netRevenue: true,                   // bid is net revenue
-            ttl: TIME_TO_LIVE,           // cache lifetime (seconds)
-            ad: bid.adm || '',          // ad markup (HTML / VAST / native JSON)
-            nurl: bid.nurl || ''          // win notice URL
-          });
+          // Map the imp id (which may include a -banner/-native suffix) back to
+          // the original Prebid bidId so the core can match it to the ad unit.
+          const requestId = impIdToBidId[bid.impid] || bid.impid || '';
+          const mediaType = mediaTypeMap[bid.impid] || BANNER;
+          const bidResponse = {
+            requestId: requestId,
+            cpm: bid.price,
+            creativeId: bid.crid || '',
+            dealId: '',
+            currency: cur,
+            netRevenue: true,
+            ttl: TIME_TO_LIVE,
+            nurl: bid.nurl || '',
+            meta: {
+              advertiserDomains: bid.adomain || []
+            }
+          };
+
+          if (mediaType === NATIVE) {
+            bidResponse.mediaType = NATIVE;
+            try {
+              const admObj = JSON.parse(bid.adm);
+              const nativeObj = admObj.native || admObj;
+              bidResponse.native = { ortb: nativeObj };
+            } catch (e) {
+              // Native adm must be valid JSON; skip this bid if parsing fails.
+              continue;
+            }
+            bidResponse.width = 1;
+            bidResponse.height = 1;
+          } else {
+            bidResponse.mediaType = BANNER;
+            bidResponse.ad = bid.adm || '';
+            bidResponse.width = bid.w;
+            bidResponse.height = bid.h;
+          }
+
+          bidResponses.push(bidResponse);
         }
       }
     }

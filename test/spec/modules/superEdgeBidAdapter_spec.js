@@ -68,7 +68,11 @@ describe('superEdge Bid Adapter', function () {
         ref: 'https://referrer.com'
       },
       ortb2: {
-        site: { content: 'test-content', cat: ['IAB-1'] }
+        site: { content: 'test-content', cat: ['IAB-1'] },
+        device: {
+          ua: 'Mozilla/5.0 TestBrowser',
+          language: 'ja'
+        }
       },
       gdprConsent: {
         consentString: 'consent-str',
@@ -209,6 +213,80 @@ describe('superEdge Bid Adapter', function () {
       const request = spec.buildRequests(validBidRequests, req);
       expect(request).to.exist;
     });
+
+    it('should build _mediaTypeMap and _impIdToBidId for banner imps', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request._mediaTypeMap).to.exist;
+      expect(request._mediaTypeMap['bid-001-banner']).to.equal('banner');
+      expect(request._impIdToBidId).to.exist;
+      expect(request._impIdToBidId['bid-001-banner']).to.equal('bid-001');
+    });
+
+    it('should build _mediaTypeMap for native imps', function () {
+      const nativeBids = [{
+        ...validBidRequests[0],
+        mediaTypes: {
+          native: { title: { required: true } }
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [{ id: 0, required: true, title: { len: 80 } }]
+        }
+      }];
+      spec.isBidRequestValid(nativeBids[0]);
+      const request = spec.buildRequests(nativeBids, bidderRequest);
+      expect(request._mediaTypeMap).to.exist;
+      expect(request._mediaTypeMap['bid-001-native']).to.equal('native');
+    });
+
+    it('should strip _bidId from imp ext before sending', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext._bidId).to.be.undefined;
+    });
+
+    it('should read banner pos from mediaTypes.banner.pos', function () {
+      const bids = [{
+        ...validBidRequests[0],
+        mediaTypes: {
+          banner: { sizes: [[300, 250]], pos: 3 }
+        }
+      }];
+      const request = spec.buildRequests(bids, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].banner.pos).to.equal(3);
+    });
+
+    it('should default banner pos to 1 when not set', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].banner.pos).to.equal(1);
+    });
+
+    it('should build both banner and native imps for multi-format units', function () {
+      const multiBids = [{
+        ...validBidRequests[0],
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          native: { title: { required: true } }
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [{ id: 0, required: true, title: { len: 80 } }]
+        }
+      }];
+      spec.isBidRequestValid(multiBids[0]);
+      const request = spec.buildRequests(multiBids, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp).to.be.an('array').with.lengthOf(2);
+      const bannerImp = data.imp.find(i => i.banner);
+      const nativeImp = data.imp.find(i => i.native);
+      expect(bannerImp).to.exist;
+      expect(nativeImp).to.exist;
+      // Both should map back to the same bidId
+      expect(request._impIdToBidId[bannerImp.id]).to.equal('bid-001');
+      expect(request._impIdToBidId[nativeImp.id]).to.equal('bid-001');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -297,6 +375,101 @@ describe('superEdge Bid Adapter', function () {
       };
       const bids = spec.interpretResponse(response);
       expect(bids[0].cpm).to.equal(0);
+    });
+
+    it('should set mediaType to BANNER and include meta.advertiserDomains', function () {
+      const bids = spec.interpretResponse(serverResponse);
+      const bid = bids[0];
+      expect(bid.mediaType).to.equal('banner');
+      expect(bid.meta).to.deep.equal({ advertiserDomains: [] });
+      expect(bid.ad).to.equal('<div>ad</div>');
+    });
+
+    it('should parse native bid with valid JSON adm', function () {
+      const nativeAdm = JSON.stringify({
+        native: {
+          assets: [
+            { id: 0, title: { text: 'Ad Title' } },
+            { id: 1, img: { url: 'https://example.com/img.png', w: 300, h: 250 } }
+          ],
+          link: { url: 'https://example.com' }
+        }
+      });
+      const response = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'native-bid',
+              impid: 'imp-native',
+              price: 1.5,
+              crid: 'native-creative',
+              adm: nativeAdm,
+              nurl: 'https://trace.example.com/win',
+              adomain: ['advertiser.com']
+            }]
+          }]
+        }
+      };
+      const bidRequest = {
+        _mediaTypeMap: { 'imp-native': 'native' },
+        _impIdToBidId: { 'imp-native': 'original-bid-id' }
+      };
+      const bids = spec.interpretResponse(response, bidRequest);
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.requestId).to.equal('original-bid-id');
+      expect(bid.mediaType).to.equal('native');
+      expect(bid.native).to.exist;
+      expect(bid.native.ortb).to.exist;
+      expect(bid.native.ortb.assets).to.be.an('array').with.lengthOf(2);
+      expect(bid.width).to.equal(1);
+      expect(bid.height).to.equal(1);
+      expect(bid.ad).to.be.undefined;
+      expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+    });
+
+    it('should fall back requestId to impid when not in impIdToBidId', function () {
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids[0].requestId).to.equal('bid-001');
+    });
+
+    it('should skip native bid with invalid JSON adm', function () {
+      const response = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 'bad-native',
+              impid: 'imp-bad',
+              price: 2.0,
+              adm: 'not-valid-json'
+            }]
+          }]
+        }
+      };
+      const bidRequest = {
+        _mediaTypeMap: { 'imp-bad': 'native' },
+        _impIdToBidId: { 'imp-bad': 'bad-bid-id' }
+      };
+      const bids = spec.interpretResponse(response, bidRequest);
+      expect(bids).to.be.empty;
+    });
+
+    it('should default to BANNER when impid is not in mediaTypeMap', function () {
+      const response = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{ id: 'b1', impid: 'unknown', price: 1.0, w: 320, h: 50, adm: '<banner/>' }]
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(response);
+      expect(bids[0].mediaType).to.equal('banner');
+      expect(bids[0].ad).to.equal('<banner/>');
+      expect(bids[0].width).to.equal(320);
+      expect(bids[0].height).to.equal(50);
     });
   });
 
