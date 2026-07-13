@@ -509,5 +509,78 @@ describe('PStudioAdapter', function () {
         url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=`,
       });
     });
+
+    it('should return iframe syncs if enabled', function () {
+      const syncOptions = {
+        pixelEnabled: false,
+        iframeEnabled: true,
+      };
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testid');
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should not return syncs if pixel and iframe are disabled', function () {
+      const syncOptions = {
+        pixelEnabled: false,
+        iframeEnabled: false,
+      };
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testid');
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
+      expect(result).to.deep.equal([]);
+    });
+  });
+
+  describe('Error Handling and Edge Cases', function () {
+    it('should handle storage errors gracefully', function () {
+      storage.localStorageIsEnabled.restore();
+      sandbox.stub(storage, 'localStorageIsEnabled').throws(new Error('Storage disabled'));
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload).not.to.haveOwnProperty('user');
+    });
+
+    it('should handle video object with w/h properties', function () {
+      const videoBidWithWH = deepClone(videoBid);
+      delete videoBidWithWH.mediaTypes.video.playerSize;
+      videoBidWithWH.mediaTypes.video.w = 640;
+      videoBidWithWH.mediaTypes.video.h = 480;
+      const request = spec.buildRequests([videoBidWithWH], baseBidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload.video_properties.w).to.equal(640);
+      expect(payload.video_properties.h).to.equal(480);
+    });
+
+    it('should handle vastXml in interpretResponse', function () {
+      const serverVideoResponseWithVastXml = deepClone(videoBid);
+      serverVideoResponseWithVastXml.body = {
+        id: '123141241231',
+        bids: [
+          {
+            vast_xml: '<VAST></VAST>',
+            cpm: 5,
+            width: 640,
+            height: 480,
+            currency: 'USD',
+            creative_id: 'crid12345',
+            net_revenue: true,
+            meta: {
+              advertiser_domains: ['https://advertiser.com'],
+            },
+          },
+        ],
+      };
+      const bidRequest = {
+        method: 'POST',
+        url: 'test-url',
+        data: JSON.stringify({
+          id: '12345',
+          pubid: 'somepubid',
+        }),
+      };
+      const parsedResponse = spec.interpretResponse(serverVideoResponseWithVastXml, bidRequest);
+      expect(parsedResponse[0].vastXml).to.equal('<VAST></VAST>');
+      expect(parsedResponse[0].mediaType).to.equal('video');
+    });
   });
 });
