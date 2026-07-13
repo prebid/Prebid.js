@@ -169,21 +169,21 @@ function pendingLookup(signalBase) {
 
 function assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisherDomain = 'publisher.example') {
   assert.ok(lookup, 'edge attestation lookup must be requested');
-  assert.deepStrictEqual({
-    url: lookup.url,
-    publisherDomain: lookup.fetch.request.headers.get('x-encypher-publisher-domain'),
-  }, {
-    url: signalBase + '/v1/attestations/' + hash,
-    publisherDomain,
-  });
+  const expectedPublisherDomain = publisherDomain.toLowerCase();
+  const expectedUrl = signalBase + '/v1/attestations/' + hash +
+    '?publisher_domain=' + encodeURIComponent(expectedPublisherDomain);
+  assert.strictEqual(lookup.url, expectedUrl);
   const parsed = new URL(lookup.url);
-  assert.strictEqual(parsed.search, '', 'the raw URL must not be disclosed in a query');
+  assert.deepStrictEqual(Array.from(parsed.searchParams), [
+    ['publisher_domain', expectedPublisherDomain],
+  ]);
   assert.strictEqual(parsed.hash, '');
   assert.strictEqual(lookup.url.includes(canonicalUrl), false, 'the raw canonical URL must not be disclosed');
   assert.strictEqual(lookup.method, 'GET');
   assert.strictEqual(lookup.requestBody, undefined);
   assert.strictEqual(lookup.withCredentials, false);
   assert.strictEqual(lookup.fetch.request.credentials, 'omit');
+  assert.strictEqual(lookup.fetch.request.headers.has('x-encypher-publisher-domain'), false);
   assert.strictEqual(lookup.fetch.request.headers.has('authorization'), false);
   assert.strictEqual(lookup.fetch.request.headers.has('x-api-key'), false);
   assert.strictEqual(lookup.fetch.request.headers.has('cookie'), false);
@@ -401,8 +401,9 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(auction);
   });
 
-  it('reuses page memory for the same canonical URL but performs a fresh lookup after canonical URL changes', async () => {
+  it('bounds page-memory reuse to 30 seconds and refreshes when the canonical URL changes', async () => {
     const signalBase = 'https://signal.lifecycle.test';
+    const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
     const canonical = addCanonical(STORY_URL, cleanups);
     const firstAuction = makeAuction();
     let firstCallbackCount = 0;
@@ -415,43 +416,99 @@ describe('encypherRtdProvider decision-network v1', () => {
     respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 31);
     await firstCompletion;
 
-    const refreshAuction = makeAuction();
-    let refreshCallbackCount = 0;
-    const refreshCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(refreshAuction, () => {
-        refreshCallbackCount += 1;
+    assert.strictEqual(firstCallbackCount, 1);
+    assert.deepStrictEqual(firstAuction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    const lookupCountAfterFirstAuction = server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length;
+
+    clock.tick(10000);
+    const reusedStoryAuction = makeAuction();
+    let reusedStoryCallbackCount = 0;
+    const reusedStoryCompletion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(reusedStoryAuction, () => {
+        reusedStoryCallbackCount += 1;
         resolve();
       }, { params: { signalBase, telemetry: false } });
     });
-    await refreshCompletion;
+    await reusedStoryCompletion;
 
-    assert.strictEqual(firstCallbackCount, 1);
-    assert.strictEqual(refreshCallbackCount, 1);
-    assert.deepStrictEqual(refreshAuction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.strictEqual(server.requests.filter(request => request.url === signalBase + '/v1/attestations/' + STORY_HASH).length, 1);
+    assert.strictEqual(reusedStoryCallbackCount, 1);
+    assert.deepStrictEqual(reusedStoryAuction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
+    assert.strictEqual(server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length, lookupCountAfterFirstAuction);
 
     canonical.href = PAGE_URL;
-    const nextAuction = makeAuction();
-    let nextCallbackCount = 0;
-    const nextCompletion = new Promise(resolve => {
-      encypherSubmodule.getBidRequestData(nextAuction, () => {
-        nextCallbackCount += 1;
+    const changedUrlAuction = makeAuction();
+    let changedUrlCallbackCount = 0;
+    const changedUrlCompletion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(changedUrlAuction, () => {
+        changedUrlCallbackCount += 1;
         resolve();
       }, { params: { signalBase, telemetry: false } });
     });
-    assert.strictEqual(nextCallbackCount, 0);
-    assertNoInjection(nextAuction);
+    assert.strictEqual(changedUrlCallbackCount, 0);
+    assertNoInjection(changedUrlAuction);
     respondReady(signalBase, PAGE_HASH, PAGE_URL, PAGE_SIGNAL, 32);
-    await nextCompletion;
+    await changedUrlCompletion;
 
-    assert.strictEqual(nextCallbackCount, 1);
-    assert.deepStrictEqual(nextAuction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+    assert.strictEqual(changedUrlCallbackCount, 1);
+    assert.deepStrictEqual(changedUrlAuction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+    const lookupCountAfterCanonicalChange = server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length;
+    assert.strictEqual(lookupCountAfterCanonicalChange, lookupCountAfterFirstAuction + 1);
+
+    clock.tick(29999);
+    const withinTtlAuction = makeAuction();
+    let withinTtlCallbackCount = 0;
+    const withinTtlCompletion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(withinTtlAuction, () => {
+        withinTtlCallbackCount += 1;
+        resolve();
+      }, { params: { signalBase, telemetry: false } });
+    });
+    await withinTtlCompletion;
+
+    assert.strictEqual(withinTtlCallbackCount, 1);
+    assert.deepStrictEqual(withinTtlAuction.adUnits[0].ortb2Imp.ext.c2pa, PAGE_SIGNAL);
+    assert.strictEqual(server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length, lookupCountAfterCanonicalChange);
+
+    clock.tick(1);
+    const staleAuction = makeAuction();
+    let staleCallbackCount = 0;
+    const staleCompletion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(staleAuction, () => {
+        staleCallbackCount += 1;
+        resolve();
+      }, { params: { signalBase, telemetry: false } });
+    });
+    assert.strictEqual(staleCallbackCount, 0, 'status refresh must complete before callback');
+    assertNoInjection(staleAuction);
+    const staleLookup = pendingLookup(signalBase);
+    assertCanonicalLookup(staleLookup, signalBase, PAGE_HASH, PAGE_URL);
+    staleLookup.respond(200, HEADERS, JSON.stringify({
+      v: 1,
+      status: 'stale',
+      dataset_version: 33,
+      record: null,
+    }));
+    await staleCompletion;
+
+    assert.strictEqual(staleCallbackCount, 1);
+    assertNoInjection(staleAuction);
+    assert.strictEqual(server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length, lookupCountAfterCanonicalChange + 1);
   });
 
-  it('does not replay a page-memory record after its signed expiration and performs no second lookup', async () => {
+  it('refreshes an expired page-memory record and fails open on an edge miss', async () => {
     const signalBase = 'https://signal.expiration.test';
     addCanonical(PAGE_URL, cleanups);
-    const now = sandbox.stub(Date, 'now').returns(2000000000 * 1000);
+    const clock = sandbox.useFakeTimers({ now: 2000000000 * 1000 });
     const firstAuction = makeAuction();
     let firstCallbackCount = 0;
     const firstCompletion = new Promise(resolve => {
@@ -464,18 +521,32 @@ describe('encypherRtdProvider decision-network v1', () => {
     await firstCompletion;
     assert.strictEqual(firstCallbackCount, 1);
     assert.deepStrictEqual(firstAuction.adUnits[0].ortb2Imp.ext.c2pa, CACHE_SIGNAL);
-    const requestCount = server.requests.length;
+    const lookupCountAfterFirstAuction = server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length;
 
-    now.returns(2000000011 * 1000);
+    clock.tick(11000);
     const expiredAuction = makeAuction();
     let expiredCallbackCount = 0;
-    encypherSubmodule.getBidRequestData(expiredAuction, () => {
-      expiredCallbackCount += 1;
-    }, { params: { signalBase, telemetry: false } });
+    const expiredCompletion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(expiredAuction, () => {
+        expiredCallbackCount += 1;
+        resolve();
+      }, { params: { signalBase, telemetry: false } });
+    });
+
+    assert.strictEqual(expiredCallbackCount, 0, 'fresh lookup must complete before callback');
+    assertNoInjection(expiredAuction);
+    const expiredLookup = pendingLookup(signalBase);
+    assertCanonicalLookup(expiredLookup, signalBase, PAGE_HASH, PAGE_URL);
+    expiredLookup.respond(204, HEADERS, null);
+    await expiredCompletion;
 
     assert.strictEqual(expiredCallbackCount, 1);
     assertNoInjection(expiredAuction);
-    assert.strictEqual(server.requests.length, requestCount);
+    assert.strictEqual(server.requests.filter(request => (
+      request.url.startsWith(signalBase + '/v1/attestations/')
+    )).length, lookupCountAfterFirstAuction + 1);
   });
 
   [
@@ -530,6 +601,10 @@ describe('encypherRtdProvider decision-network v1', () => {
 
   [
     {
+      name: 'an unparseable URL',
+      signalBase: 'https://[',
+    },
+    {
       name: 'URL credentials',
       signalBase: 'https://user:pass@signals.example',
     },
@@ -554,6 +629,7 @@ describe('encypherRtdProvider decision-network v1', () => {
 
       assert.strictEqual(callbackCount, 1);
       assert.deepStrictEqual(auction, original);
+      assertNoInjection(auction);
       assert.strictEqual(server.requests.length, 0, 'invalid configuration must not request signals or JWKS');
       assert.strictEqual(sendBeaconStub.callCount, 0);
     });
@@ -589,6 +665,17 @@ describe('encypherRtdProvider decision-network v1', () => {
       },
     },
     {
+      name: 'a stale tombstone carrying an unsigned record',
+      respond(request) {
+        request.respond(200, HEADERS, JSON.stringify({
+          v: 1,
+          status: 'stale',
+          dataset_version: 42,
+          record: STORY_SIGNAL,
+        }));
+      },
+    },
+    {
       name: 'a revoked tombstone',
       respond(request) {
         request.respond(200, HEADERS, JSON.stringify({
@@ -615,6 +702,7 @@ describe('encypherRtdProvider decision-network v1', () => {
         }
         try {
           assert.deepStrictEqual(auction, original);
+          assertNoInjection(auction);
           assert.strictEqual(sendBeaconStub.callCount, 0);
           done();
         } catch (error) {
@@ -630,6 +718,124 @@ describe('encypherRtdProvider decision-network v1', () => {
       const lookup = pendingLookup(signalBase);
       assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
       testCase.respond(lookup);
+    });
+  });
+
+  [
+    {
+      name: 'a non-200 pinned JWKS response',
+      respond(request) { request.respond(503, HEADERS, 'unavailable'); },
+    },
+    {
+      name: 'malformed pinned JWKS JSON',
+      respond(request) { request.respond(200, HEADERS, '{not-json'); },
+    },
+  ].forEach((testCase, index) => {
+    it('fails open once when key discovery returns ' + testCase.name, (done) => {
+      const signalBase = 'https://jwks-failure-' + index + '.test';
+      addCanonical(STORY_URL, cleanups);
+      const auction = makeAuction();
+      const original = structuredClone(auction);
+      let callbackCount = 0;
+
+      encypherSubmodule.getBidRequestData(auction, () => {
+        callbackCount += 1;
+        if (callbackCount > 1) {
+          done(new Error('auction callback invoked more than once'));
+          return;
+        }
+        try {
+          assert.deepStrictEqual(auction, original);
+          assertNoInjection(auction);
+          assert.strictEqual(sendBeaconStub.callCount, 0);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      }, { params: { signalBase, telemetry: false } });
+
+      const lookup = pendingLookup(signalBase);
+      assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
+      lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 49)));
+      const jwks = pendingRequest(PINNED_JWKS_URL);
+      assert.ok(jwks, 'the pinned JWKS must be requested before verification');
+      testCase.respond(jwks);
+    });
+  });
+
+  [
+    {
+      name: 'malformed protected-header encoding',
+      mutate(segments) { segments[0] = '*'; },
+    },
+    {
+      name: 'malformed payload encoding',
+      mutate(segments) { segments[1] = '*'; },
+    },
+    {
+      name: 'non-canonical signature encoding',
+      mutate(segments) { segments[2] = segments[2].slice(0, -1) + 'h'; },
+    },
+  ].forEach((testCase, index) => {
+    it('fails open once on ' + testCase.name, (done) => {
+      const signalBase = 'https://malformed-jws-' + index + '.test';
+      const segments = STORY_ATT.split('.');
+      testCase.mutate(segments);
+      const malformedRecord = Object.assign({}, STORY_SIGNAL, { att: segments.join('.') });
+      addCanonical(STORY_URL, cleanups);
+      const auction = makeAuction();
+      const original = structuredClone(auction);
+      let callbackCount = 0;
+
+      encypherSubmodule.getBidRequestData(auction, () => {
+        callbackCount += 1;
+        if (callbackCount > 1) {
+          done(new Error('auction callback invoked more than once'));
+          return;
+        }
+        try {
+          assert.deepStrictEqual(auction, original);
+          assertNoInjection(auction);
+          assert.strictEqual(sendBeaconStub.callCount, 0);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      }, { params: { signalBase, telemetry: false } });
+
+      respondReady(signalBase, STORY_HASH, STORY_URL, malformedRecord, 50 + index);
+    });
+  });
+
+  [
+    ['key import', 'importKey'],
+    ['signature verification', 'verify'],
+  ].forEach(([operation, method], index) => {
+    it('fails open once when WebCrypto ' + operation + ' rejects', (done) => {
+      const signalBase = 'https://webcrypto-failure-' + index + '.test';
+      sandbox.stub(window.crypto.subtle, method).rejects(new Error(operation + ' failed'));
+      addCanonical(STORY_URL, cleanups);
+      const auction = makeAuction();
+      const original = structuredClone(auction);
+      let callbackCount = 0;
+
+      encypherSubmodule.getBidRequestData(auction, () => {
+        callbackCount += 1;
+        if (callbackCount > 1) {
+          done(new Error('auction callback invoked more than once'));
+          return;
+        }
+        try {
+          assert.deepStrictEqual(auction, original);
+          assertNoInjection(auction);
+          assert.strictEqual(sendBeaconStub.callCount, 0);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      }, { params: { signalBase, telemetry: false } });
+
+      respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 53 + index);
     });
   });
 
