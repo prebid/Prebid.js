@@ -120,6 +120,51 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 
+  setup-es5:
+    needs: [checkout]
+    name: "Define ES5 testing strategy"
+    runs-on: ubuntu-latest
+    outputs:
+      sessions: ${{ fromJSON(steps.define.outputs.result).sessions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: "Define ES5 testing strategy"
+        uses: actions/github-script@v9
+        id: define
+        env:
+          browserstack: ${{ secrets.BROWSERSTACK_USER_NAME }}
+        with:
+          script: |
+            const browsers = require('./browsers-es5.json');            
+            return {
+              sessions: process.env.browserstack ? Object.keys(browsers).length : 0,
+            }
+
+  build-es5:
+    needs: [setup-es5]
+    if: ${{ needs.setup-es5.outputs.sessions > 0 }}
+    name: Build (ES5)
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp build --ES5
+
+  test-es5:
+    needs: [setup-es5, build-es5]
+    name: "ES5 E2E tests"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build-es5.outputs.linux }}
+      test-cmd: npx gulp e2e-test-nobuild --ES5
+      chunks: 1
+      browserstack: true
+      browserstack-sessions: ${{ fromJSON(needs.setup-es5.outputs.sessions) }}
+      browsers-json: 'browsers-es5.json'
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
   test:
     name: "Browser tests"
     needs: checkout

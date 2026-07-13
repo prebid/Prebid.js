@@ -27,7 +27,6 @@ jobs:
       source-key: ${{ inputs.source-key }}
       windows: ${{ !inputs.coverage-only }}
       macos: ${{ !inputs.coverage-only }}
-
   setup:
     needs: build
     name: "Define testing strategy"
@@ -163,3 +162,4 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
