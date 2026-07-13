@@ -207,13 +207,17 @@ export const converter = ortbConverter({
       mergeDeep(imp, { rwdd: bidRequest.mediaTypes.video.ext.rewarded });
     }
 
-    // `placementuuid` is the preferred way to identify inventory. When it is
-    // provided it takes precedence over the <deprecated> `siteId`, `pageId` and
-    // `formatId` </deprecated> parameters, which are kept only to support the ramp-up period.
-    // SSB expects this value in the OpenRTB extension as `plcmtuuid`.
-    const bidder = placementuuid
-      ? { plcmtuuid: placementuuid }
-      : { ...(siteId && { siteId }), ...(pageId && { pageId }), ...(formatId && { formatId }) };
+    // `placementuuid` is the preferred way to identify inventory. The
+    // <deprecated> `siteId`, `pageId` and `formatId` </deprecated> parameters
+    // are kept only to support the ramp-up period. Forward all provided fields
+    // and let the downstream receiver decide which to use.
+    // SSB expects the `placementuuid` value in the OpenRTB extension as `plcmtuuid`.
+    const bidder = {
+      ...(placementuuid && { plcmtuuid: placementuuid }),
+      ...(siteId && { siteId }),
+      ...(pageId && { pageId }),
+      ...(formatId && { formatId })
+    };
     if (Object.keys(bidder).length) {
       mergeDeep(imp.ext, { bidder });
     }

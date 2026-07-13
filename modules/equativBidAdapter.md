@@ -45,7 +45,7 @@ var adUnits = [
 | Name            | Scope    | Description                                                                                          | Type     |
 |-----------------|----------|------------------------------------------------------------------------------------------------------|----------|
 | `networkId`     | optional | Equativ network id. Mandatory unless `ortb2.(site\|app\|dooh).publisher.id` is set.                   | `number` |
-| `placementuuid` | optional | Placement identifier used to source inventory. Preferred way to identify inventory; forwarded as `imp.ext.bidder.plcmtuuid` and takes precedence over `siteId`/`pageId`/`formatId` when both are provided. | `string` |
+| `placementuuid` | optional | Placement identifier used to source inventory. Preferred way to identify inventory; forwarded as `imp.ext.bidder.plcmtuuid`. When legacy params are also supplied, all fields are forwarded and the downstream receiver decides which to use. | `string` |
 | `siteId`        | optional | **Deprecated.** Equativ site id. Use `placementuuid` instead. Kept only to support the ramp-up.      | `number` |
 | `pageId`        | optional | **Deprecated.** Equativ page id. Use `placementuuid` instead. Kept only to support the ramp-up.      | `number` |
 | `formatId`      | optional | **Deprecated.** Equativ format id. Use `placementuuid` instead. Kept only to support the ramp-up.    | `number` |
