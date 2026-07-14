@@ -17,6 +17,7 @@ type JSONSchema7 = {
   additionalProperties?: boolean | JSONSchema7;
   enum?: unknown[];
   default?: unknown;
+  minimum?: number;
 };
 
 export interface ToolDefinition {
@@ -155,10 +156,11 @@ function auctionSnapshot({ auctionId }: Record<string, unknown> = {}) {
 function eventSnapshot({ auctionId, eventType, limit = 100 }: Record<string, unknown> = {}) {
   auctionId = typeof auctionId === 'string' ? auctionId : undefined;
   eventType = typeof eventType === 'string' ? eventType : undefined;
-  limit = typeof limit === 'number' ? limit : 100;
+  limit = typeof limit === 'number' ? Math.max(0, Math.floor(limit)) : 100;
   let records = getEvents();
   if (auctionId != null) records = records.filter(record => (record.args as any)?.auctionId === auctionId || record.id === auctionId);
   if (eventType != null) records = records.filter(record => record.eventType === eventType);
+  if (limit === 0) return [];
   return records.slice(-limit).map(record => compactObject({
     eventType: record.eventType,
     id: record.id,
@@ -211,7 +213,7 @@ function summarySnapshot() {
 }
 
 function tool(name: string, description: string, inputSchema: JSONSchema7, execute: (input: Record<string, unknown>) => unknown): ToolDefinition {
-  return { name, description, inputSchema, execute };
+  return { name: `${getGlobalVarName()}_${name}`, description, inputSchema, execute };
 }
 
 export function getPrebidDevTools(): ToolGroup {
@@ -232,7 +234,7 @@ export function getPrebidDevTools(): ToolGroup {
         properties: {
           auctionId: { type: 'string', description: 'Optional auction id filter.' },
           eventType: { type: 'string', description: 'Optional Prebid event type filter, such as auctionInit, auctionEnd, bidResponse, or bidWon.' },
-          limit: { type: 'number', description: 'Maximum number of event records to return from the end of history.', default: 100 }
+          limit: { type: 'number', description: 'Maximum number of event records to return from the end of history. Use 0 to return no records.', default: 100, minimum: 0 }
         },
         additionalProperties: false
       }, eventSnapshot),

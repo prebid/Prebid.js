@@ -29,7 +29,7 @@ describe('devtoolsMcp', function () {
 
     expect(eventName).to.equal('devtoolstooldiscovery');
     expect(toolGroup.name).to.equal('Prebid.js DevTools');
-    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['prebid_summary', 'prebid_auctions', 'prebid_events']);
+    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['pbjs_prebid_summary', 'pbjs_prebid_auctions', 'pbjs_prebid_events']);
   });
 
   it('exposes auction, TTL, floor, and event timing details', function () {
@@ -66,9 +66,10 @@ describe('devtoolsMcp', function () {
     emit(EVENTS.AUCTION_INIT, auction.getProperties());
 
     const tools = Object.fromEntries(getPrebidDevTools().tools.map(tool => [tool.name, tool]));
-    const auctions = tools.prebid_auctions.execute({ auctionId: 'auction-1' });
-    const events = tools.prebid_events.execute({ auctionId: 'auction-1' });
-    const summary = tools.prebid_summary.execute({});
+    const auctions = tools.pbjs_prebid_auctions.execute({ auctionId: 'auction-1' });
+    const events = tools.pbjs_prebid_events.execute({ auctionId: 'auction-1' });
+    const noEvents = tools.pbjs_prebid_events.execute({ auctionId: 'auction-1', limit: 0 });
+    const summary = tools.pbjs_prebid_summary.execute({});
 
     expect(auctions).to.have.length(1);
     expect(auctions[0].eligibleBidRequests).to.eql([]);
@@ -77,6 +78,7 @@ describe('devtoolsMcp', function () {
     expect(auctions[0].metrics).to.include({ 'requestBids.total': 12 });
     expect(events[0]).to.include({ eventType: EVENTS.AUCTION_INIT });
     expect(events[0].args.auctionId).to.equal('auction-1');
+    expect(noEvents).to.eql([]);
     expect(summary.byBidder.bidderA).to.include({ bids: 1, wins: 1 });
     expect(summary.latestAuction.auctionId).to.equal('auction-1');
   });
