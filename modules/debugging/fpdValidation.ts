@@ -3,7 +3,7 @@ import { validateFpd } from '../../libraries/fpdUtils/validateFpd.js';
 
 let getPubcidOptout = () => false;
 
-export function configureFpdValidation({ getOptout } = {}) {
+export function configureFpdValidation({ getOptout }: { getOptout?: () => boolean } = {}) {
   if (getOptout) {
     getPubcidOptout = getOptout;
   }
