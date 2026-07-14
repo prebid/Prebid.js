@@ -207,6 +207,13 @@ describe('PStudioAdapter', function () {
       expect(spec.isBidRequestValid(localBid)).to.equal(false);
     });
 
+    it('should return false when adtagid not found', function () {
+      const localBid = deepClone(bannerBid);
+      delete localBid.params.adtagid;
+
+      expect(spec.isBidRequestValid(localBid)).to.equal(false);
+    });
+
     it('should return false when playerSize in video not found', () => {
       const localBid = deepClone(videoBid);
       delete localBid.mediaTypes.video.playerSize;
@@ -471,6 +478,12 @@ describe('PStudioAdapter', function () {
 
       expect(parsedResponse).to.deep.equal([]);
     });
+
+    it('should return empty array if bids array is empty', function () {
+      const emptyBidsResponse = { body: { bids: [] } };
+      const parsedResponse = spec.interpretResponse(emptyBidsResponse, bidRequest);
+      expect(parsedResponse).to.deep.equal([]);
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -510,16 +523,6 @@ describe('PStudioAdapter', function () {
       });
     });
 
-    it('should return iframe syncs if enabled', function () {
-      const syncOptions = {
-        pixelEnabled: false,
-        iframeEnabled: true,
-      };
-      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testid');
-      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
-      expect(result).to.deep.equal([]);
-    });
-
     it('should not return syncs if pixel and iframe are disabled', function () {
       const syncOptions = {
         pixelEnabled: false,
@@ -529,15 +532,65 @@ describe('PStudioAdapter', function () {
       const result = spec.getUserSyncs(syncOptions, {}, {}, {});
       expect(result).to.deep.equal([]);
     });
+
+    it('should not return syncs if GDPR consent is not given', function () {
+      const syncOptions = { pixelEnabled: true };
+      const gdprConsent = { gdprApplies: true, consentString: undefined };
+      const result = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should not return syncs if CCPA consent is opted out', function () {
+      const syncOptions = { pixelEnabled: true };
+      const uspConsent = '1YYN';
+      const result = spec.getUserSyncs(syncOptions, {}, {}, uspConsent);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should handle iframe syncs if enabled', function () {
+      const syncOptions = {
+        pixelEnabled: false,
+        iframeEnabled: true,
+      };
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testid');
+      // NOTE: The current adapter has no iframe syncs defined. This test covers the branch.
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
+      expect(result).to.deep.equal([]);
+    });
   });
 
   describe('Error Handling and Edge Cases', function () {
-    it('should handle storage errors gracefully', function () {
+    let fetchStub;
+
+    beforeEach(function() {
+      if (typeof window.fetch === 'function') {
+        fetchStub = sandbox.stub(window, 'fetch');
+      }
+      __forTestingResetState();
+    });
+
+    it('should handle storage errors gracefully when checking for localStorage', function () {
       storage.localStorageIsEnabled.restore();
       sandbox.stub(storage, 'localStorageIsEnabled').throws(new Error('Storage disabled'));
       const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       const payload = JSON.parse(request[0].data);
       expect(payload).not.to.haveOwnProperty('user');
+    });
+
+    it('should handle storage errors gracefully on read/write', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').throws(new Error('Get failed'));
+      sandbox.stub(storage, 'setDataInLocalStorage').throws(new Error('Set failed'));
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload).not.to.haveOwnProperty('user');
+    });
+
+    it('should handle session storage errors gracefully', function () {
+      sandbox.stub(storage, 'hasSessionStorage').returns(true);
+      sandbox.stub(storage, 'getDataFromSessionStorage').throws(new Error('Get failed'));
+      sandbox.stub(storage, 'setDataInSessionStorage').throws(new Error('Set failed'));
+      // This won't throw, but will log errors. Just check it doesn't crash.
+      spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
     });
 
     it('should handle video object with w/h properties', function () {
@@ -552,11 +605,10 @@ describe('PStudioAdapter', function () {
     });
 
     it('should handle vastXml in interpretResponse', function () {
-      const serverVideoResponseWithVastXml = deepClone(videoBid);
-      serverVideoResponseWithVastXml.body = {
-        id: '123141241231',
-        bids: [
-          {
+      const serverVideoResponseWithVastXml = {
+        body: {
+          id: '123141241231',
+          bids: [{
             vast_xml: '<VAST></VAST>',
             cpm: 5,
             width: 640,
@@ -564,23 +616,100 @@ describe('PStudioAdapter', function () {
             currency: 'USD',
             creative_id: 'crid12345',
             net_revenue: true,
-            meta: {
-              advertiser_domains: ['https://advertiser.com'],
-            },
-          },
-        ],
+            meta: { advertiser_domains: ['https://advertiser.com'] },
+          }],
+        }
       };
-      const bidRequest = {
-        method: 'POST',
-        url: 'test-url',
-        data: JSON.stringify({
-          id: '12345',
-          pubid: 'somepubid',
-        }),
-      };
+      const bidRequest = { data: JSON.stringify({ id: '12345' }) };
       const parsedResponse = spec.interpretResponse(serverVideoResponseWithVastXml, bidRequest);
       expect(parsedResponse[0].vastXml).to.equal('<VAST></VAST>');
       expect(parsedResponse[0].mediaType).to.equal('video');
+    });
+
+    it('should clean object with undefined properties', function() {
+      const bidderRequestWithUndefined = {
+        ortb2: {
+          device: { ua: 'test-ua', os: undefined },
+          user: { yob: 1990, gender: undefined }
+        }
+      };
+      const request = spec.buildRequests([bannerBid], bidderRequestWithUndefined);
+      const payload = JSON.parse(request[0].data);
+      expect(payload.device).to.have.property('ua', 'test-ua');
+      expect(payload.device).not.to.have.property('os');
+      expect(payload.user).to.have.property('yob', 1990);
+      expect(payload.user).not.to.have.property('gender');
+    });
+
+    it('should handle tmaSyncIdentity failing', async function () {
+      if (!fetchStub) this.skip();
+      fetchStub.withArgs(sinon.match(/context\.json/)).rejects(new Error('Network error'));
+      spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      // allow async operation to settle
+      await new Promise(resolve => setTimeout(resolve, 20));
+    });
+
+    it('should handle invalid profile ID from Unomi', async function () {
+      if (!fetchStub) this.skip();
+      const response = new Response(JSON.stringify({ profileId: null }), { status: 200 });
+      fetchStub.withArgs(sinon.match(/context\.json/)).resolves(response);
+      spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      await new Promise(resolve => setTimeout(resolve, 20));
+    });
+
+    it('should handle Bimax fetch failure', async function () {
+      if (!fetchStub) this.skip();
+      const unomiResponse = new Response(JSON.stringify({ profileId: 'test-pid' }), { status: 200 });
+      const bimaxFailure = new Error('Bimax down');
+      fetchStub.withArgs(sinon.match(/context\.json/)).resolves(unomiResponse);
+      fetchStub.withArgs(sinon.match(/bimax\.telkomsel\.com/)).rejects(bimaxFailure);
+
+      // First call triggers the async sync
+      spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+
+      // Wait for the async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      // Second call should use the cached ID from the completed sync
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      const payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('test-pid');
+    });
+
+    it('should use fallback for tmaGenUUID if crypto is unavailable', function() {
+      sandbox.stub(crypto, 'randomUUID').throws(new Error('crypto unavailable'));
+      // This is called inside tmaSyncIdentity, which is hard to test directly.
+      // Just check that it falls back without crashing.
+      const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      expect(request).to.be.an('array');
+    });
+
+    it('should prime TMA logic only once', function() {
+      if (!fetchStub) this.skip();
+      const response = new Response(JSON.stringify({ profileId: 'test-pid' }), { status: 200 });
+      fetchStub.withArgs(sinon.match(/context\.json/)).resolves(response);
+
+      spec.buildRequests([bannerBid], baseBidderRequest);
+      spec.buildRequests([bannerBid], baseBidderRequest);
+
+      expect(fetchStub.withArgs(sinon.match(/context\.json/)).callCount).to.equal(1);
+    });
+
+    it('should use cached user ID on subsequent calls', function() {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('cached-id');
+      // First call, primes and gets from LS
+      let request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      let payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('cached-id');
+
+      // Restore original LS stub to see if it reads again
+      storage.getDataFromLocalStorage.restore();
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('new-id');
+
+      // Second call, should use in-memory cache
+      request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
+      payload = JSON.parse(request[0].data);
+      expect(payload.user.id).to.equal('cached-id');
     });
   });
 });

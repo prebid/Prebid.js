@@ -6,6 +6,7 @@ import {
   isNumber,
   isEmpty,
   logError,
+  generateUUID,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -96,18 +97,6 @@ function tmaDetectPublisherDomain() {
   }
 }
 
-function tmaGenUUID() {
-  try {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) { return crypto.randomUUID(); }
-  } catch {
-    /* empty */
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
-    const r = (Math.random() * 16) | 0;
-    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
-
 async function tmaSyncIdentity({
   timeoutMs = 10000,
   gdprConsent,
@@ -132,7 +121,7 @@ async function tmaSyncIdentity({
     // session id
     let sid = ssGet(SESSION_STORAGE_KEY);
     if (!sid) {
-      sid = tmaGenUUID();
+      sid = generateUUID();
       ssSet(SESSION_STORAGE_KEY, sid);
     }
 
