@@ -738,6 +738,48 @@ describe('encypherRtdProvider decision-network v1', () => {
     assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
   });
 
+  it('rejects pinned JWKS redirects and fails open exactly once without a carrier when fetch rejects', async () => {
+    const signalBase = 'https://jwks-redirect-failure.signals.encypher.com';
+    const clock = sandbox.useFakeTimers();
+    addCanonical(STORY_URL, cleanups);
+    const auction = makeAuction();
+    const original = structuredClone(auction);
+    let callbackCount = 0;
+    const completion = new Promise(resolve => {
+      encypherSubmodule.getBidRequestData(auction, () => {
+        callbackCount += 1;
+        resolve();
+      }, { params: { signalBase, telemetry: false, timeout: 100 } });
+    });
+
+    const lookup = pendingLookup(signalBase);
+    assertCanonicalLookup(lookup, signalBase, STORY_HASH, STORY_URL);
+    lookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 47)));
+
+    const jwks = pendingRequest(PINNED_JWKS_URL);
+    assert.ok(jwks, 'the pinned JWKS must be requested before verification');
+    assert.strictEqual(jwks.fetch.request.credentials, 'omit');
+    assert.strictEqual(
+      jwks.fetch.request.redirect,
+      'error',
+      'the browser must reject redirects while fetching the pinned verification key set',
+    );
+    assert.deepStrictEqual(
+      Array.from(jwks.fetch.request.headers.entries()),
+      [['accept', 'application/json']],
+      'the pinned JWKS Request must contain only the fixed CORS-safelisted Accept header',
+    );
+    jwks.error(new TypeError('redirect rejected'));
+    await completion;
+
+    assert.strictEqual(callbackCount, 1);
+    assert.deepStrictEqual(auction, original);
+    assertNoInjection(auction);
+    assert.strictEqual(sendBeaconStub.callCount, 0);
+    clock.tick(100);
+    assert.strictEqual(callbackCount, 1, 'cleared request and deadline timers must not call back again');
+  });
+
   it('fails open without requesting keys when the total deadline expires after the edge response', async () => {
     const signalBase = 'https://deadline.signals.encypher.com';
     const clock = sandbox.useFakeTimers({ now: 1704067200 * 1000 });
