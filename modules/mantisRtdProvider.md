@@ -9,14 +9,13 @@ Maintainer: externalservices@mantis-intelligence.com
 ```
 
 ## Description
-
-The Mantis RTD module appends User and Contextual segments to the bidding object.
+The Mantis RTD provider module for Prebid.js enables publishers to enrich ad auction requests with contextual intelligence from the Mantis API. It runs client-side as part of the Prebid RTD framework and injects structured signals — brand safety ratings, sentiment, emotions, and content categories — into OpenRTB (`ortb2`) objects before bidding occurs, allowing demand partners to make more informed bidding decisions.
 
 ## Usage
 
 ### Build
 
-```
+```bash
 gulp build --modules="rtdModule,mantisRtdProvider,appnexusBidAdapter,..."
 ```
 
@@ -31,12 +30,12 @@ This module is configured as part of `realTimeData.dataProviders`.
 ```javascript
 pbjs.setConfig({
     realTimeData: {
-        auctionDelay: 300, // Maximum time (in ms) to pause the auction. Preferred to have with a lowest possible value because mantis api needs at least few milliseconds to respond with contextual data
+        auctionDelay: 1000, // Optional but recommended to set '1000'.
         dataProviders: [{
             name: 'mantis',
-            waitForIt: true, // Pauses the auction for mantis RTD provider. Optional but should be set true if 'auctionDelay' is provided
+            waitForIt: true, // Optional but should be set 'true' if 'auctionDelay' is provided
             params: {
-                endpoint: 'https://api.example.com/customer/example'
+                endpoint: 'https://example.com/api' // API url provided by Mantis
             }
         }]
     }
@@ -45,10 +44,16 @@ pbjs.setConfig({
 
 ### Parameters
 
-| Name              | Type    | Description                                                       | Default         |
-| :---------------- | :------ | :---------------------------------------------------------------- | :-------------- |
-| name              | String  | Real time data module name                                        | Always `mantis` |
-| waitForIt         | Boolean | Should be `true` if there's an `auctionDelay` defined (optional) | `false`         |
-| params            | Object  |                                                                   |                 |
-| params.endpoint   | String  | Your Mantis API endpoint                                          |                 |
-| auctionDelay      | Number  | Maximum time (ms) to wait for the Mantis API before the auction proceeds. This is optional but should be passed with a lowest possible value like 300 etc.     | `0`             |
+| Name              | Type    | Description                                                                                                                                                                       | Required | Notes                                                                    |
+| :---------------- | :------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- | :----------------------------------------------------------------------- |
+| `auctionDelay`    | Number  | Maximum time (ms) the auction will be delayed so that RTD providers can fetch the user/contextual data from their api and sets the values before triggering the ad server request | no       | This is optional but should be passed with an optimum value like `1000`  |
+| `name`            | String  | Real time data module name                                                                                                                                                        | yes      | Always `mantis`                                                          |
+| `waitForIt`       | Boolean | Should be `true` if there's an `auctionDelay` defined                                                                                                                            | no       | Default `false`                                                          |
+| `params`          | Object  | Defines parameter(s) used in Mantis RTD module                                                                                                                                    | yes      | Default `null`                                                           |
+| `params.endpoint` | String  | Mantis article classification API endpoint. Mantis team provides this url to each publisher after their account setup is completed by Mantis tech team                            | yes      | Default `empty`                                                          |
+
+---
+
+## Debugging
+
+Filter console logs by `mantisRtdProvider:` to see init, timeout, and error messages. Check the network tab for the GET request to the configured `endpoint`.
