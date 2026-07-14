@@ -8,6 +8,7 @@ import {
   setOrtb2FromResponse,
 } from 'modules/mantisRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
+import * as refererDetection from 'src/refererDetection.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -76,6 +77,17 @@ describe('mantisRtdProvider: cleanUrl', function () {
 // ---------------------------------------------------------------------------
 
 describe('mantisRtdProvider: buildApiUrl', function () {
+  let refererStub;
+
+  beforeEach(function () {
+    refererStub = sinon.stub(refererDetection, 'getRefererInfo');
+    refererStub.returns({ page: 'https://www.example.com/news/story?id=123' });
+  });
+
+  afterEach(function () {
+    refererStub.restore();
+  });
+
   it('builds a URL with required query params', function () {
     const url = buildApiUrl(ENDPOINT);
     expect(url).to.include(ENDPOINT);
@@ -87,6 +99,11 @@ describe('mantisRtdProvider: buildApiUrl', function () {
   it('prepends endpoint before query string', function () {
     const url = buildApiUrl(ENDPOINT);
     expect(url.startsWith(ENDPOINT + '?')).to.equal(true);
+  });
+
+  it('returns empty string when the page URL from getRefererInfo is not a valid URL', function () {
+    refererStub.returns({ page: 'not-a-valid-url' });
+    expect(buildApiUrl(ENDPOINT)).to.equal('');
   });
 });
 
@@ -313,6 +330,15 @@ describe('mantisRtdProvider: getBidRequestData', function () {
     getBidRequestData(makeReqBidsConfigObj(), onDone, { name: 'mantis', params: { endpoint: '' } }, {}, 1000);
     expect(onDone.calledOnce).to.equal(true);
     expect(server.requests).to.have.length(0);
+  });
+
+  it('calls onDone immediately when the page URL is invalid and buildApiUrl returns empty string', function () {
+    const refererStub = sinon.stub(refererDetection, 'getRefererInfo').returns({ page: 'not-a-valid-url' });
+    const onDone = sinon.spy();
+    getBidRequestData(makeReqBidsConfigObj(), onDone, makeConfig(), {}, 1000);
+    expect(onDone.calledOnce).to.equal(true);
+    expect(server.requests).to.have.length(0);
+    refererStub.restore();
   });
 
   it('makes a GET request to the correct URL', function () {

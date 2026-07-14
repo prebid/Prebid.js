@@ -74,12 +74,12 @@ interface Ortb2Segment {
 interface MantisSegmentGroup {
   name: string;
   segment: Ortb2Segment[];
-  ext: { segtax: number }
+  ext?: { segtax: number }
 }
 
 /** Structured data passed to {@link setOrtb2FromResponse}. */
 interface MantisOrtb2StructuredData {
-  site?: { content?: { data?: MantisSegmentGroup[] } };
+  site: { content: { data: MantisSegmentGroup[] } };
   user?: { data?: MantisSegmentGroup[] };
 }
 
@@ -145,11 +145,16 @@ export const getMantisKeysSegmentData = (
       .map((val: string) => val?.trim())
       .filter(Boolean)
       .map((id: string) => ({ id }));
-    segments.push({
+
+    const mantisSegment: MantisSegmentGroup = {
       name: mantisKey,
       segment: [...new Map(keySegments.map((s: Ortb2Segment) => [s.id, s])).values()],
-      ext: { segtax: 4 }  // https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Audience%20Taxonomies/Audience%20Taxonomy%201.1.tsv
-    });
+    };
+    // Assign IAB Audience Taxonomy 1.1 for iab_context group only. Other groups like mantis and mantis_context will be treated containing proprietary values
+    if (mantisKey === 'iab_context') {
+      mantisSegment.ext = { segtax: 4 }; // https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Audience%20Taxonomies/Audience%20Taxonomy%201.1.tsv
+    }
+    segments.push(mantisSegment);
   }
   return segments;
 };
