@@ -1,13 +1,12 @@
 import { expect } from 'chai';
 import { tripleliftAdapterSpec, storage } from 'modules/tripleliftBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
+
 import { config } from 'src/config.js';
 import prebid from 'package.json';
 import * as utils from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
 const GPP_CONSENT_STR = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
 

@@ -2803,6 +2803,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "jjtech",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "justpremium",
       "aliasOf": null,
       "gvlid": 62,
@@ -4651,6 +4658,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "adnex",
+      "aliasOf": "smarthub",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "smartico",
       "aliasOf": null,
       "gvlid": null,
@@ -5801,6 +5815,12 @@
       "componentType": "rtd",
       "componentName": "SirdataRTDModule",
       "gvlid": 53,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "stackupRtd",
+      "gvlid": null,
       "disclosureURL": null
     },
     {

@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs:
       browser:
-        description: values to set as the BROWSER env variable
+        description: value to set as the BROWSER env variable
         required: false
         type: string
       chunks:
@@ -97,6 +97,7 @@ jobs:
       TEST_CHUNKS: ${{ inputs.chunks }}
       TEST_CHUNK: ${{ matrix.chunk-no }}
       BROWSER: ${{ inputs.browser }}
+      BROWSER_VERSION: ${{ inputs.browser-version }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
     concurrency:
@@ -110,7 +111,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore source
         uses: ./.github/actions/load
@@ -201,7 +202,7 @@ jobs:
       coverage: ${{ steps.save.outputs.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Restore source
         uses: ./.github/actions/load

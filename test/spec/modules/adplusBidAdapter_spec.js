@@ -97,7 +97,13 @@ describe('AplusBidAdapter', function () {
           inventoryId: '-1',
           adUnitId: '-3',
         },
+        adUnitCode: 'adunit-1',
+        adUnitId: 'pb-adunit-id-1',
         bidId: '2bdcb0b203c17d',
+        transactionId: 'transaction-id-1',
+        userId: {
+          adplusId: 'adplus-user-id'
+        },
         userIdAsEids: [{
           source: 'ad-plus.com.tr',
           uids: [
@@ -111,8 +117,11 @@ describe('AplusBidAdapter', function () {
     ];
 
     const bidderRequest = {
+      auctionId: 'auction-id-1',
       refererInfo: {
-        referer: 'https://test.domain'
+        page: 'https://test.domain/page.html',
+        domain: 'test.domain',
+        ref: 'https://previous-google.com'
       }
     };
 
@@ -134,7 +143,17 @@ describe('AplusBidAdapter', function () {
       expect(request[0].data.adUnitId).to.equal(-3);
       expect(request[0].data.adUnitWidth).to.equal(300);
       expect(request[0].data.adUnitHeight).to.equal(250);
+      expect(request[0].data.pbAdUnitCode).to.equal('adunit-1');
+      expect(request[0].data.pbAdUnitId).to.equal('pb-adunit-id-1');
+      expect(request[0].data.pbAdUnitId).to.be.a('string');
+      expect(request[0].data.pbAuctionId).to.equal('auction-id-1');
+      expect(request[0].data.transactionId).to.equal('transaction-id-1');
+      expect(request[0].data.transactionId).to.be.a('string');
       expect(request[0].data.sdkVersion).to.equal('1');
+      expect(request[0].data.pageUrl).to.equal('https://test.domain/page.html');
+      expect(request[0].data.domain).to.equal('test.domain');
+      expect(request[0].data.referrer).to.equal('https://previous-google.com');
+      expect(request[0].data.adplusUid).to.equal('adplus-user-id');
       expect(request[0].data.eids).to.deep.equal([{
         source: 'ad-plus.com.tr',
         uids: [
@@ -151,6 +170,18 @@ describe('AplusBidAdapter', function () {
       expect(request[0].data).to.not.have.deep.property('categories');
       expect(request[0].data).to.not.have.deep.property('latitude');
       expect(request[0].data).to.not.have.deep.property('longitude');
+    });
+
+    it('does not fall back to the page URL when referrer is unavailable', function () {
+      const request = spec.buildRequests(validRequest, {
+        refererInfo: {
+          page: 'https://test.domain/page.html',
+          domain: 'test.domain',
+          ref: ''
+        }
+      });
+
+      expect(request[0].data.referrer).to.not.equal(request[0].data.pageUrl);
     });
   });
 
@@ -213,12 +244,13 @@ describe('AplusBidAdapter', function () {
     it('result is correct', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       expect(result[0].requestId).to.equal('2bdcb0b203c17d');
-      expect(result[0].cpm).to.equal(3.57);
+      expect(result[0].cpm).to.be.closeTo(3.57, 0.001);
       expect(result[0].width).to.equal(250);
       expect(result[0].height).to.equal(300);
       expect(result[0].creativeId).to.equal('1');
       expect(result[0].currency).to.equal('TRY');
       expect(result[0].dealId).to.equal('1');
+      expect(result[0].dealId).to.be.a('string');
       expect(result[0].mediaType).to.equal('banner');
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].ttl).to.equal(300);

@@ -34,7 +34,7 @@ const INTEG_SERVER_PORT = 4444;
 const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
-const {precompile, babelPrecomp} = require('./gulp.precompilation.js');
+const {precompile} = require('./gulp.precompilation.js');
 
 const TEST_CHUNKS = 8;
 
@@ -352,7 +352,7 @@ function e2eTestTaskMaker() {
     const integ = startIntegServer();
     startLocalServer();
     runWebdriver({})
-      .then(stdout => {
+      .then(() => {
         // kill fake server
         integ.kill('SIGINT');
         done();
@@ -578,3 +578,9 @@ gulp.task('compile-metadata', function (done) {
 });
 gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));
 module.exports = nodeBundle;
+
+gulp.task('validate-names', function (done) {
+  import('./metadata/validateNaming.mjs').then(({ validateNaming }) => {
+    validateNaming().then(done, done);
+  });
+});

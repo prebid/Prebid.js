@@ -4,14 +4,12 @@ const {
   getModuleName,
   getMetadata
 } = require('./utils.js');
-const { types: t } = require('@babel/core');
-
 function getPurposes(filename) {
   const metadata = getMetadata(getModuleName(filename));
   return Object.keys(metadata?.purposes ?? {}).length > 0 ? metadata.purposes : null;
 }
 
-module.exports = function (api, options) {
+module.exports = function (api) {
   return {
     visitor: {
       Program(path, state) {
