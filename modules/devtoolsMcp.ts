@@ -4,14 +4,15 @@ import { getEvents } from '../src/events.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getBufferedTTL, getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL } from '../src/bidTTL.js';
 import { isBidUsable } from '../src/targeting/filters.js';
+import { getGlobalVarName } from '../src/buildOptions.ts';
 
 const TOOL_GROUP_NAME = 'Prebid.js DevTools';
 
-function compactObject(obj) {
+function compactObject(obj: Record<string, any>) {
   return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
 }
 
-function sanitize(value) {
+function sanitize(value: any) {
   if (value == null || typeof value !== 'object') return value;
   try {
     return JSON.parse(JSON.stringify(value, (key, val) => typeof val === 'function' ? '[Function]' : val));
@@ -24,7 +25,7 @@ function getAuctions() {
   return auctionManager.getAuctions().map(auction => auction.getProperties());
 }
 
-function summarizeBid(bid) {
+function summarizeBid(bid: any) {
   const effectiveMinCacheTTL = getEffectiveMinBidCacheTTL(bid);
   const bufferedTTL = typeof bid.ttl === 'number' ? getBufferedTTL(bid) : undefined;
   const responseTimestamp = bid.responseTimestamp;
@@ -65,7 +66,7 @@ function summarizeBid(bid) {
   });
 }
 
-function summarizeRequest(bidRequest, bidderRequest) {
+function summarizeRequest(bidRequest: any, bidderRequest: any) {
   return compactObject({
     auctionId: bidderRequest.auctionId || bidRequest.auctionId,
     bidderRequestId: bidderRequest.bidderRequestId,
@@ -83,7 +84,7 @@ function summarizeRequest(bidRequest, bidderRequest) {
   });
 }
 
-function auctionSnapshot({ auctionId } = {}) {
+function auctionSnapshot({ auctionId }: { auctionId?: string } = {}) {
   return getAuctions()
     .filter(auction => auctionId == null || auction.auctionId === auctionId)
     .map(auction => {
@@ -122,9 +123,9 @@ function auctionSnapshot({ auctionId } = {}) {
     });
 }
 
-function eventSnapshot({ auctionId, eventType, limit = 100 } = {}) {
+function eventSnapshot({ auctionId, eventType, limit = 100 }: { auctionId?: string, eventType?: string, limit?: number } = {}) {
   let records = getEvents();
-  if (auctionId != null) records = records.filter(record => record.args?.auctionId === auctionId || record.id === auctionId);
+  if (auctionId != null) records = records.filter(record => (record.args as any)?.auctionId === auctionId || record.id === auctionId);
   if (eventType != null) records = records.filter(record => record.eventType === eventType);
   return records.slice(-limit).map(record => compactObject({
     eventType: record.eventType,
@@ -157,7 +158,12 @@ function summarySnapshot() {
       winningBids: auctionManager.getAllWinningBids().length,
       noBids: auctionManager.getNoBids().length,
     },
-    byBidder: noBids.reduce((acc, bid) => {
+    byBidder: auctions.flatMap(auction => auction.winningBids).reduce((acc, bid) => {
+      const bidder = bid.bidder || 'unknown';
+      acc[bidder] = acc[bidder] || { bids: 0, wins: 0, noBids: 0 };
+      acc[bidder].wins++;
+      return acc;
+    }, noBids.reduce((acc, bid) => {
       const bidder = bid.bidderCode || 'unknown';
       acc[bidder] = acc[bidder] || { bids: 0, wins: 0, noBids: 0 };
       acc[bidder].noBids++;
@@ -166,14 +172,13 @@ function summarySnapshot() {
       const bidder = bid.bidder || 'unknown';
       acc[bidder] = acc[bidder] || { bids: 0, wins: 0, noBids: 0 };
       acc[bidder].bids++;
-      if (bid.status === 'rendered' || bid.status === 'bidWon') acc[bidder].wins++;
       return acc;
-    }, {})),
+    }, {}))),
     latestAuction: auctions[auctions.length - 1],
   };
 }
 
-function tool(name, description, inputSchema, execute) {
+function tool(name: string, description: string, inputSchema: any, execute: (input?: any) => any) {
   return { name, description, inputSchema, execute };
 }
 
@@ -189,10 +194,12 @@ export function getPrebidDevTools() {
   };
 }
 
-export function installPrebidDevTools(win = window) {
-  if (win.__prebidDevToolsMcpInstalled) return;
-  win.__prebidDevToolsMcpInstalled = true;
-  win.addEventListener('devtoolstooldiscovery', (event) => {
+export function installPrebidDevTools(win: Window & { __prebidDevToolsMcpInstalled?: Record<string, boolean> } = window) {
+  const globalName = getGlobalVarName();
+  win.__prebidDevToolsMcpInstalled = win.__prebidDevToolsMcpInstalled || {};
+  if (win.__prebidDevToolsMcpInstalled[globalName]) return;
+  win.__prebidDevToolsMcpInstalled[globalName] = true;
+  win.addEventListener('devtoolstooldiscovery', (event: Event & { respondWith?: (toolGroup: ReturnType<typeof getPrebidDevTools>) => void }) => {
     if (event && typeof event.respondWith === 'function') {
       event.respondWith(getPrebidDevTools());
     }

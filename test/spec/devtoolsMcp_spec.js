@@ -1,9 +1,10 @@
 import { expect } from 'chai';
-import { getPrebidDevTools, installPrebidDevTools } from '../../modules/devtoolsMcp.js';
+import { getPrebidDevTools, installPrebidDevTools } from '../../modules/devtoolsMcp.ts';
 import { auctionManager } from '../../src/auctionManager.js';
 import { clearEvents, emit } from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { newMetrics } from '../../src/utils/perfMetrics.js';
+import adapterManager from '../../src/adapterManager.js';
 
 describe('devtoolsMcp', function () {
   afterEach(function () {
@@ -16,6 +17,7 @@ describe('devtoolsMcp', function () {
       addEventListener: sinon.stub()
     };
     installPrebidDevTools(win);
+    expect(win.__prebidDevToolsMcpInstalled).to.have.property('pbjs', true);
     const [eventName, handler] = win.addEventListener.firstCall.args;
     let toolGroup;
 
@@ -43,7 +45,7 @@ describe('devtoolsMcp', function () {
       ortb2Fragments: {},
       metrics
     });
-    auction.addBidReceived({
+    const bid = {
       auctionId: 'auction-1',
       adUnitCode: 'div-1',
       bidderCode: 'bidderA',
@@ -54,7 +56,13 @@ describe('devtoolsMcp', function () {
       responseTimestamp: Date.now(),
       floorData: { floorValue: 1.0 },
       metrics
-    });
+    };
+    const callBidWonBidder = sinon.stub(adapterManager, 'callBidWonBidder');
+    const triggerBilling = sinon.stub(adapterManager, 'triggerBilling');
+    auction.addBidReceived(bid);
+    auction.addWinningBid(bid);
+    callBidWonBidder.restore();
+    triggerBilling.restore();
     emit(EVENTS.AUCTION_INIT, auction.getProperties());
 
     const tools = Object.fromEntries(getPrebidDevTools().tools.map(tool => [tool.name, tool]));
@@ -69,6 +77,7 @@ describe('devtoolsMcp', function () {
     expect(auctions[0].metrics).to.include({ 'requestBids.total': 12 });
     expect(events[0]).to.include({ eventType: EVENTS.AUCTION_INIT });
     expect(events[0].args.auctionId).to.equal('auction-1');
+    expect(summary.byBidder.bidderA).to.include({ bids: 1, wins: 1 });
     expect(summary.latestAuction.auctionId).to.equal('auction-1');
   });
 });
