@@ -342,7 +342,8 @@ function emitDiagnostic(signalBase: string, params: EncypherRtdParams, event: Di
 }
 
 function normalizedSignalBase(params: EncypherRtdParams): string | null {
-  const value = String(params.signalBase || DEFAULT_SIGNAL_BASE).replace(/\/+$/, '');
+  const value = String(params.signalBase || DEFAULT_SIGNAL_BASE);
+  if (value.includes('?') || value.includes('#')) return null;
   try {
     const parsed = new URL(value);
     const signalHostAllowed = parsed.hostname === DEFAULT_SIGNAL_HOST || parsed.hostname.endsWith('.' + DEFAULT_SIGNAL_HOST);

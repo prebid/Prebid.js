@@ -633,8 +633,32 @@ describe('encypherRtdProvider decision-network v1', () => {
       signalBase: 'https://user:pass@signals.encypher.com',
     },
     {
+      name: 'an empty query component',
+      signalBase: 'https://signals.encypher.com?',
+    },
+    {
+      name: 'an empty query component on an allowed subdomain',
+      signalBase: 'https://partner.signals.encypher.com?',
+    },
+    {
       name: 'a query component',
       signalBase: 'https://signals.encypher.com?tenant=publisher',
+    },
+    {
+      name: 'an empty fragment component',
+      signalBase: 'https://signals.encypher.com#',
+    },
+    {
+      name: 'an empty fragment component on an allowed subdomain',
+      signalBase: 'https://partner.signals.encypher.com#',
+    },
+    {
+      name: 'a fragment delimiter followed only by a removable slash',
+      signalBase: 'https://signals.encypher.com#/',
+    },
+    {
+      name: 'a fragment delimiter followed only by a removable slash on an allowed subdomain',
+      signalBase: 'https://partner.signals.encypher.com#/',
     },
     {
       name: 'a fragment component',
