@@ -212,24 +212,24 @@ function summarySnapshot() {
   };
 }
 
-function tool(name: string, description: string, inputSchema: JSONSchema7, execute: (input: Record<string, unknown>) => unknown): ToolDefinition {
-  return { name: `${getGlobalVarName()}_${name}`, description, inputSchema, execute };
+function tool(globalName: string, name: string, description: string, inputSchema: JSONSchema7, execute: (input: Record<string, unknown>) => unknown): ToolDefinition {
+  return { name: `${globalName}_${name}`, description, inputSchema, execute };
 }
 
-export function getPrebidDevTools(): ToolGroup {
+export function getPrebidDevTools(globalName = getGlobalVarName()): ToolGroup {
   return {
     name: TOOL_GROUP_NAME,
     description: 'Inspect Prebid.js auctions, bid eligibility, TTL, floors, event timing, modules, and runtime configuration.',
     tools: [
-      tool('prebid_summary', 'Summarize the Prebid.js runtime, latest auction, installed modules, cache TTL settings, and bidder win/bid counts.', { type: 'object', properties: {}, additionalProperties: false }, summarySnapshot),
-      tool('prebid_auctions', 'Return auction-level detail including eligible requests, received bids, no-bids, rejected bids, winning bids, TTL/cache expiry, floors, and metrics.', {
+      tool(globalName, 'prebid_summary', 'Summarize the Prebid.js runtime, latest auction, installed modules, cache TTL settings, and bidder win/bid counts.', { type: 'object', properties: {}, additionalProperties: false }, summarySnapshot),
+      tool(globalName, 'prebid_auctions', 'Return auction-level detail including eligible requests, received bids, no-bids, rejected bids, winning bids, TTL/cache expiry, floors, and metrics.', {
         type: 'object',
         properties: {
           auctionId: { type: 'string', description: 'Optional auction id to inspect. When omitted, all tracked auctions are returned.' }
         },
         additionalProperties: false
       }, auctionSnapshot),
-      tool('prebid_events', 'Return Prebid event history with event timing. Optionally filter by auctionId or eventType and limit the number of records.', {
+      tool(globalName, 'prebid_events', 'Return Prebid event history with event timing. Optionally filter by auctionId or eventType and limit the number of records.', {
         type: 'object',
         properties: {
           auctionId: { type: 'string', description: 'Optional auction id filter.' },
@@ -242,15 +242,14 @@ export function getPrebidDevTools(): ToolGroup {
   };
 }
 
-export function installPrebidDevTools(win: Window & { __prebidDevToolsMcpInstalled?: Record<string, boolean> } = window) {
-  const globalName = getGlobalVarName();
+export function installPrebidDevTools(win: Window & { __prebidDevToolsMcpInstalled?: Record<string, boolean> } = window, globalName = getGlobalVarName()) {
   win.__prebidDevToolsMcpInstalled = win.__prebidDevToolsMcpInstalled || {};
   if (win.__prebidDevToolsMcpInstalled[globalName]) return;
   win.__prebidDevToolsMcpInstalled[globalName] = true;
   win.addEventListener('devtoolstooldiscovery', (event) => {
     const discoveryEvent = event as DevtoolsToolDiscoveryEvent;
     if (discoveryEvent && typeof discoveryEvent.respondWith === 'function') {
-      discoveryEvent.respondWith(getPrebidDevTools());
+      discoveryEvent.respondWith(getPrebidDevTools(globalName));
     }
   });
 }

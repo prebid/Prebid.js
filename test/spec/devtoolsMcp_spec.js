@@ -32,6 +32,24 @@ describe('devtoolsMcp', function () {
     expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['pbjs_prebid_summary', 'pbjs_prebid_auctions', 'pbjs_prebid_events']);
   });
 
+  it('namespaces tools for non-default Prebid globals', function () {
+    const win = {
+      addEventListener: sinon.stub()
+    };
+    installPrebidDevTools(win, 'customPbjs');
+    expect(win.__prebidDevToolsMcpInstalled).to.have.property('customPbjs', true);
+    const [, handler] = win.addEventListener.firstCall.args;
+    let toolGroup;
+
+    handler({
+      respondWith(group) {
+        toolGroup = group;
+      }
+    });
+
+    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['customPbjs_prebid_summary', 'customPbjs_prebid_auctions', 'customPbjs_prebid_events']);
+  });
+
   it('exposes auction, TTL, floor, and event timing details', function () {
     const metrics = newMetrics();
     metrics.setMetric('requestBids.total', 12);
