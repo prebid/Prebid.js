@@ -20,9 +20,7 @@ const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
 const bidderRequestsMap = {};
-const pageView = {
-  publisher: '',
-};
+const pageView = {};
 
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -94,8 +92,8 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const { adUnitCode, sizes, params = {} } = bidRequest;
-    const { id = '' } = params;
+    const { adUnitCode, bidId, sizes, params = {} } = bidRequest;
+    const { id = '', siteId = '' } = params;
     const slotSize = sizes.length ? sizes.reduce((prev, next) => prev[0] * prev[1] <= next[0] * next[1] ? next : prev).join('x') : '1x1';
 
     if (!adUnitsCalled[adUnitCode]) {
@@ -103,7 +101,7 @@ const converter = ortbConverter({
       adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`;
     }
 
-    imp.id = id;
+    imp.id = (id && siteId) ? id.padStart(3, '0') : `bidid-${bidId}`;
     imp.tagid = adUnitCode;
     imp.ext.data = { pbsize: adUnitsCalled[adUnitCode] } || {}
 
@@ -137,7 +135,7 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponse, ortbResponse, context) {
     const response = buildResponse(bidResponse, ortbResponse, context);
-
+    pageView.sn = ortbResponse.sn || 'mc_adapter';
     return response;
   },
   bidResponse(buildBidResponse, bidResponse, context) {
@@ -145,10 +143,14 @@ const converter = ortbConverter({
     const { seat } = seatbid;
     const { mediaTypes } = bidRequest
     const { adm, admNative, ext, burl } = bidResponse;
-    const { cache, pricepl, platform, publisherid = '', vurls = [] } = ext;
+    const { cache, pricepl, platform, publisherid = '', vurls = [], siteid, slotid } = ext;
 
     context.mediaType = Object.keys(mediaTypes)[0];
     pageView.publisher = publisherid;
+
+    if (siteid && slotid) {
+      oneCodeDetection[bidRequest.bidId] = [siteid, slotid];
+    }
 
     // for native ads, copy bid.admNative to bid.adm
     if (admNative && !adm) {
@@ -160,13 +162,16 @@ const converter = ortbConverter({
     bid.meta.networkName = seat;
     bid.meta.pricepl = pricepl;
     bid.meta.platform = platform;
-    bid.burl = burl;
-    bid.vurls = vurls;
+    if (burl) {
+      bid.burl = burl;
+    }
 
     // for video bids return creative cache as vastUrl
     if (bid.mediaType === 'video' && !bid.vastUrl && cache) {
       bid.vastUrl = cache;
     }
+
+    bid.vurls = vurls;
 
     return bid;
   },
@@ -220,7 +225,7 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
-        publisherId: pageView.publisher,
+        publisherId: pageView.publisher || '',
       }
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
@@ -392,7 +397,7 @@ const onBidViewable = (bid) => {
 
 const onBidBillable = (bid) => {
   // handle burl
-  const { burl } = bid;
+  const { burl } = bid || {};
   if (burl) {
     triggerPixel(burl);
   }
@@ -437,13 +442,7 @@ const onSetTargeting = (bid) => {
 const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [
-    'sspBC',
-    {
-      code: 'sspBC',
-      gvlid: 676
-    },
-  ],
+  aliases: ['sspBC'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid,
   buildRequests,

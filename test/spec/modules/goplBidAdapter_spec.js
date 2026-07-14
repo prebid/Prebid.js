@@ -1,7 +1,6 @@
 import { assert, expect } from 'chai';
 import { spec } from 'modules/goplBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
 // import 'modules/schain.js';
 
 const BIDDER_CODE = 'gopl';
@@ -726,16 +725,21 @@ describe('gopl adapter functionality', function () {
   });
 
   describe('buildRequests', function () {
-    const { bids, bid_native, bid_video, bidRequest, bidRequestSingle, bidRequestNative, bidRequestVideo } = prepareTestData();
-    const request = spec.buildRequests(bids, bidRequest);
+    let bids, bid_native, bid_video, bidRequest, bidRequestSingle, bidRequestNative, bidRequestVideo;
+    let request, requestSingle, requestNative, requestVideo;
+    let payload, payloadSingle, payloadNative, payloadVideo;
 
-    const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
-    const requestNative = spec.buildRequests([bid_native], bidRequestNative);
-    const requestVideo = spec.buildRequests([bid_video], bidRequestVideo);
-    const payload = request ? request.data : { site: false, imp: false };
-    const payloadSingle = requestSingle ? requestSingle.data : { site: false, imp: false };
-    const payloadNative = requestNative ? requestNative.data : { site: false, imp: false };
-    const payloadVideo = requestVideo ? requestVideo.data : { site: false, imp: false };
+    before(function () {
+      ({ bids, bid_native, bid_video, bidRequest, bidRequestSingle, bidRequestNative, bidRequestVideo } = prepareTestData());
+      request = spec.buildRequests(bids, bidRequest);
+      requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
+      requestNative = spec.buildRequests([bid_native], bidRequestNative);
+      requestVideo = spec.buildRequests([bid_video], bidRequestVideo);
+      payload = request ? request.data : { site: false, imp: false };
+      payloadSingle = requestSingle ? requestSingle.data : { site: false, imp: false };
+      payloadNative = requestNative ? requestNative.data : { site: false, imp: false };
+      payloadVideo = requestVideo ? requestVideo.data : { site: false, imp: false };
+    });
 
     it('should send bid request to endpoint via POST', function () {
       expect(request.url).to.contain(BIDDER_URL);
@@ -864,8 +868,14 @@ describe('gopl adapter functionality', function () {
           },
         ]
       }
-      const bidWithSupplyChain = Object.assign(bids[0], { schain: supplyChain });
-      const requestWithSupplyChain = spec.buildRequests(bidWithSupplyChain, syncAddFPDToBidderRequest(bidRequest));
+      const bidRequestWithChain = {
+        ...bidRequest,
+        ortb2: {
+          ...bidRequest.ortb2,
+          source: { ext: { schain: supplyChain } }
+        }
+      };
+      const requestWithSupplyChain = spec.buildRequests(bids, bidRequestWithChain);
       const payloadWithSupplyChain = requestWithSupplyChain ? requestWithSupplyChain.data : { site: false, imp: false };
 
       expect(payloadWithSupplyChain.source.ext).to.have.property('schain').that.has.keys('ver', 'complete', 'nodes');
@@ -873,12 +883,17 @@ describe('gopl adapter functionality', function () {
   });
 
   describe('interpretResponse', function () {
-    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
-    const request = spec.buildRequests(bids, bidRequest);
-    const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
-    const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);
-    const requestVideo = spec.buildRequests([bid_video], bidRequestVideo);
-    const requestNative = spec.buildRequests([bid_native], bidRequestNative);
+    let bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative;
+    let request, requestSingle, requestOneCode, requestVideo, requestNative;
+
+    before(function () {
+      ({ bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData());
+      request = spec.buildRequests(bids, bidRequest);
+      requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
+      requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);
+      requestVideo = spec.buildRequests([bid_video], bidRequestVideo);
+      requestNative = spec.buildRequests([bid_native], bidRequestNative);
+    });
 
     it('should handle nobid responses', function () {
       let result = spec.interpretResponse(emptyResponse, request);
@@ -964,9 +979,13 @@ describe('gopl adapter functionality', function () {
   });
 
   describe('getUserSyncs', function () {
-    let syncResultAll = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
-    let syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
-    let syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
+    let syncResultAll, syncResultImage, syncResultNone;
+
+    before(function () {
+      syncResultAll = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
+      syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
+    });
 
     it('should provide correct iframe url, if frame sync is allowed', function () {
       expect(syncResultAll).to.have.length(1);
@@ -1037,6 +1056,13 @@ describe('gopl adapter functionality', function () {
 
       expect(notificationPayload).to.have.property('event').that.equals('timeout');
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
+    });
+  });
+
+    describe('aliases', function () {
+    it('should declare sspBC as alias inheriting gvlid 690', function () {
+      expect(spec.aliases).to.include('sspBC');
+      expect(spec.gvlid).to.equal(690);
     });
   });
 });
