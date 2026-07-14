@@ -175,6 +175,59 @@ describe('ocmBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
+
+    it('returns false for a bid with no params object', function () {
+      expect(spec.isBidRequestValid({ bidder: 'ocm' })).to.equal(false);
+    });
+
+    // isValidAsset rejection paths, reached through the ORTB native validation branch.
+    it('rejects an ORTB native asset that has no valid integer id', function () {
+      const bid = {
+        ...nativeBid,
+        mediaTypes: { native: { ortb: { assets: [{ required: 1, title: { len: 80 } }] } } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('rejects an ORTB native asset with no content (title/img/data/video)', function () {
+      const bid = {
+        ...nativeBid,
+        mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1 }] } } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('rejects an ORTB native title asset that is missing a valid len', function () {
+      const bid = {
+        ...nativeBid,
+        mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1, title: {} }] } } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('rejects an ORTB native data asset that is missing a valid type', function () {
+      const bid = {
+        ...nativeBid,
+        mediaTypes: { native: { ortb: { assets: [{ id: 1, required: 1, data: {} }] } } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    // Legacy (non-ORTB) native path: mediaTypes.native carries no `ortb`, so the adapter converts
+    // bid.nativeParams via toOrtbNativeRequest and validates the resulting assets.
+    it('returns false for a legacy native bid with no nativeParams', function () {
+      const bid = { ...nativeBid, mediaTypes: { native: {} } };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('returns true for a legacy native bid whose nativeParams convert to a valid asset', function () {
+      const bid = {
+        ...nativeBid,
+        mediaTypes: { native: {} },
+        nativeParams: { title: { required: true, len: 80 } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
   });
 
   describe('buildRequests', function () {
