@@ -21,7 +21,7 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
-import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
+import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams, gppParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
 import { noCredsFetch as fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
@@ -91,7 +91,8 @@ export function buildGamVideoUrl(options) {
     derivedParams,
     options.params,
     { cust_params: encodedCustomParams },
-    gdprParams()
+    gdprParams(),
+    gppParams()
   );
 
   // The IMA player adds usp info, but not gpp info
