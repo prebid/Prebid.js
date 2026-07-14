@@ -3797,13 +3797,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "playstream",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "prebidServer",
       "aliasOf": null,
       "gvlid": null,
@@ -5591,7 +5584,7 @@
       "componentType": "rtd",
       "componentName": "wurfl",
       "gvlid": null,
-      "disclosureURL": "local://modules/wurflRtdProvider.json"
+      "disclosureURL": null
     },
     {
       "componentType": "userId",
