@@ -53,7 +53,7 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    let bid = null;
+    let bid;
 
     if (!serverResponse.hasOwnProperty('body') || !serverResponse.body.hasOwnProperty('seatbid')) {
       return bidResponses;

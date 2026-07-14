@@ -1,14 +1,13 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/omsBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import * as winDimensions from 'src/utils/winDimensions.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://rt.marphezis.com/hb';
 
 describe('omsBidAdapter', function () {
-  const adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;
