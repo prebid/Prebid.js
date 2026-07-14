@@ -175,16 +175,17 @@ function pendingLookup(signalBase) {
   ));
 }
 
-function assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisherDomain = 'publisher.example') {
+function assertCanonicalLookup(lookup, signalBase, hash, canonicalUrl, publisherDomain = 'publisher.example', adoptionReporting = true) {
   assert.ok(lookup, 'edge attestation lookup must be requested');
   const expectedPublisherDomain = publisherDomain.toLowerCase();
-  const expectedUrl = signalBase + '/v1/attestations/' + hash +
-    '?publisher_domain=' + encodeURIComponent(expectedPublisherDomain);
-  assert.strictEqual(lookup.url, expectedUrl);
   const parsed = new URL(lookup.url);
-  assert.deepStrictEqual(Array.from(parsed.searchParams), [
+  assert.strictEqual(parsed.origin + parsed.pathname, signalBase + '/v1/attestations/' + hash);
+  const expectedParameters = [
+    ['module_version', '1.1.0'],
     ['publisher_domain', expectedPublisherDomain],
-  ]);
+  ];
+  if (adoptionReporting === false) expectedParameters.push(['adoption_reporting', '0']);
+  assert.deepStrictEqual(Array.from(parsed.searchParams).sort(), expectedParameters.sort());
   assert.strictEqual(parsed.hash, '');
   assert.strictEqual(lookup.url.includes(canonicalUrl), false, 'the raw canonical URL must not be disclosed');
   assert.strictEqual(lookup.method, 'GET');
@@ -254,7 +255,7 @@ function assertDiagnostic(serializedBody, event, impressionCount, datasetVersion
   assert.deepStrictEqual(Object.keys(body).sort(), expectedKeys.sort());
   assert.strictEqual(body.v, 1);
   assert.strictEqual(body.schema_version, 1);
-  assert.strictEqual(body.module_version, '1.0.0');
+  assert.strictEqual(body.module_version, '1.1.0');
   assert.strictEqual(body.event, event);
   assert.strictEqual(body.impression_count, impressionCount);
   assert.strictEqual(Number.isFinite(body.duration_ms), true);
@@ -347,6 +348,55 @@ describe('encypherRtdProvider decision-network v1', () => {
 
     assert.strictEqual(callbackCount, 0, 'verification must complete before callback');
     respondReady(signalBase, STORY_HASH, STORY_URL, STORY_SIGNAL, 17);
+  });
+
+  [
+    {
+      name: 'reporting enabled without a separate reporting request',
+      params: {},
+      adoptionReporting: true,
+    },
+    {
+      name: 'the publisher opt-out on the lookup request',
+      params: { adoptionReporting: false },
+      adoptionReporting: false,
+    },
+  ].forEach((testCase, index) => {
+    it('fails open once on a miss with ' + testCase.name, async () => {
+      const signalBase = 'https://adoption-' + index + '.signals.encypher.com';
+      const clock = sandbox.useFakeTimers();
+      addCanonical(STORY_URL, cleanups);
+      const auction = makeAuction();
+      let callbackCount = 0;
+      const completion = new Promise(resolve => {
+        encypherSubmodule.getBidRequestData(auction, () => {
+          callbackCount += 1;
+          resolve();
+        }, {
+          params: Object.assign({ signalBase, telemetry: false, timeout: 100 }, testCase.params),
+        });
+      });
+
+      const lookup = pendingLookup(signalBase);
+      assertCanonicalLookup(
+        lookup,
+        signalBase,
+        STORY_HASH,
+        STORY_URL,
+        'publisher.example',
+        testCase.adoptionReporting,
+      );
+      assert.strictEqual(server.requests.length, 1, 'adoption reporting must ride on the lookup request');
+      lookup.respond(204, HEADERS, null);
+      await completion;
+      await Promise.resolve();
+      clock.tick(100);
+
+      assert.strictEqual(callbackCount, 1, 'a miss and its cleared deadline must call back exactly once');
+      assertNoInjection(auction);
+      assert.strictEqual(server.requests.length, 1, 'a miss must not trigger a second reporting request');
+      assert.strictEqual(sendBeaconStub.callCount, 0);
+    });
   });
 
   it('accepts exact signed claims from an authorized mirror while pinning issuer, JWKS, domain, URL hash, revision, and status', async () => {

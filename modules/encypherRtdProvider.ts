@@ -11,7 +11,7 @@ const DEFAULT_SIGNAL_BASE = 'https://' + DEFAULT_SIGNAL_HOST;
 export const TRUSTED_ISSUER = 'https://api.encypher.com';
 export const TRUSTED_JWKS_URL = TRUSTED_ISSUER + '/api/v1/public/provenance/jwks.json';
 const TRUSTED_ATTESTATION_BASE = TRUSTED_ISSUER + '/api/v1/public/provenance/attestations/';
-const MODULE_VERSION = '1.0.0';
+const MODULE_VERSION = '1.1.0';
 const SCHEMA_VERSION = 1;
 const DEFAULT_TIMEOUT_MS = 300;
 const MAX_EXTENSION_BYTES = 1024;
@@ -33,6 +33,7 @@ export interface EncypherRtdParams {
   signalBase?: string;
   timeout?: number;
   telemetry?: boolean;
+  adoptionReporting?: boolean;
 }
 
 declare module './rtdModule/spec.ts' {
@@ -515,7 +516,8 @@ const getBidRequestData = (
     recordCache.delete(cacheKey);
   }
 
-  requestText(signalBase + '/v1/attestations/' + urlHash + '?publisher_domain=' + encodeURIComponent(publisherDomain), Math.max(1, remainingTime()), {
+  const reportingQuery = params.adoptionReporting === false ? '&adoption_reporting=0' : '';
+  requestText(signalBase + '/v1/attestations/' + urlHash + '?publisher_domain=' + encodeURIComponent(publisherDomain) + '&module_version=' + encodeURIComponent(MODULE_VERSION) + reportingQuery, Math.max(1, remainingTime()), {
     success(responseText, status) {
       if (completed) return;
       if (status === 204) {
