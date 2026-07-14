@@ -1,20 +1,15 @@
 # Overview
 
-Module Name: Encypher RTD Provider
-Module Type: Rtd Provider
-Maintainer: engineering@encypher.com
 
-The Encypher RTD provider adds a verified provenance reference to each OpenRTB impression. It performs a credentialless lookup for the canonical page, validates the returned ES256 attestation against Encypher's pinned issuer and public JWKS, and injects only the compact record at `ortb2Imp.ext.c2pa`.
+The Encypher RTD module gives buyers a verified provenance reference inside the existing OpenRTB auction. The publisher adds one data-provider entry to Prebid. The module performs a credentialless read for the canonical page, validates the returned ES256 attestation against Encypher's pinned issuer and public JWKS, and injects the record per impression at `imp.ext.c2pa`.
 
-# Integration
+# Part 1: Free Bidstream Signal (This Module)
 
-Build Prebid.js with the RTD core and this provider:
+## Description
 
-```bash
-npx gulp build --modules=rtdModule,encypherRtdProvider
-```
+This module emits only the canonical v1 compact provenance record. It does not emit derived scores or compatibility payloads.
 
-Add one `realTimeData.dataProviders` setting:
+## Configuration
 
 ```javascript
 pbjs.setConfig({
@@ -22,50 +17,81 @@ pbjs.setConfig({
     auctionDelay: 300,
     dataProviders: [{
       name: 'encypher',
-      waitForIt: true
+      waitForIt: true,
+      params: {
+        signalBase: 'https://signals.encypher.com',
+        timeout: 300,
+        telemetry: true
+      }
     }]
   }
 });
 ```
 
-With no `params`, the provider reads from `https://signals.encypher.com` and uses a 300 ms total deadline. `realTimeData.auctionDelay` must be at least as large as `params.timeout` so Prebid waits for the asynchronous lookup before releasing the auction. An approved mirror may set `params.signalBase` only to `https://signals.encypher.com` or an Encypher-controlled subdomain below `signals.encypher.com`; arbitrary hosts, credentials, query strings, fragments, and custom ports fail open without a request or telemetry. The mirror transports Encypher-issued records; it cannot replace the pinned `https://api.encypher.com` issuer, JWKS, or deterministic attestation reference. `params.timeout` changes the total lookup deadline in milliseconds. `params.telemetry: true` enables diagnostic telemetry; telemetry is disabled by default.
+| Parameter | Default | Purpose |
+| --- | --- | --- |
+| `signalBase` | `https://signals.encypher.com` | HTTPS origin serving v1 attestation records. Only the exact default or an approved Encypher-controlled subdomain below `signals.encypher.com` is accepted; arbitrary hosts, lookalikes, credentials, query strings, fragments, and custom ports fail open before lookup or telemetry. A mirror transports Encypher-issued records but cannot choose the deterministic reference, issuer, or trust keys. |
+| `timeout` | `300` | Total lookup deadline in milliseconds across attestation and JWKS reads. |
+| `telemetry` | unset | Set to `true` to emit diagnostic-only delivery events after the auction callback. |
+| `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on the existing attestation lookup. Set to `false` to stop future adoption observations without changing auction behavior. |
 
-# Compact carrier
+## `imp.ext.c2pa` data injected
 
-For every ad unit, the provider adds exactly these four fields at `ortb2Imp.ext.c2pa` while preserving all existing impression, GPID, supply-chain, and caller fields:
+The module adds one compact object to each impression and preserves all existing impression, GPID, and supply-chain fields.
 
 ```json
 {
-  "v": 1,
-  "id": "epa_01J...",
-  "ref": "https://api.encypher.com/api/v1/public/provenance/attestations/epa_01J...",
-  "att": "eyJhbGciOiJFUzI1NiIs..."
+  "imp": [{
+    "ext": {
+      "c2pa": {
+        "v": 1,
+        "id": "epa_01J...",
+        "ref": "https://api.encypher.com/api/v1/public/provenance/attestations/epa_01J...",
+        "att": "eyJhbGciOiJFUzI1NiIs..."
+      }
+    }
+  }]
 }
 ```
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `v` | integer | Protocol version, exactly `1`. |
+| `v` | integer | Protocol version. Must be 1. |
+| `id` | string | Stable provenance record ID. |
+| `ref` | HTTPS URL | Deterministic public attestation resource derived from the signed record ID. |
+| `att` | compact JWS | ES256 attestation binding the record ID to the URL digest, exact publisher domain, policy version, revision, and expiration. |
+
+The serialized extension is limited to 1 KiB.
+
+## Data Injected
+
+The canonical v1 payload contains exactly these fields at `imp.ext.c2pa`:
+
+| Field | Type | Description |
+|---|---|---|
+| `v` | number | Compact protocol version, exactly `1`. |
 | `id` | string | Stable provenance record identifier. |
-| `ref` | HTTPS URL | Deterministic public attestation reference derived from, and signed as, the record ID. |
-| `att` | compact JWS | ES256 attestation binding the record ID to the canonical URL digest, exact publisher domain, policy version, revision, validation result, declaration, and expiration. |
+| `ref` | string | Deterministic HTTPS public attestation reference bound to `id` by signed `sub`. |
+| `att` | string | Compact ES256 JWS. |
 
-The serialized carrier is limited to 1 KiB. No page content, derived score, signing tier, compatibility payload, or global `site.ext.data.c2pa` value is emitted.
+## Validation and fail-open behavior
 
-# Validation, caching, and fail-open behavior
+Before injection, the module requires:
 
-Before injection, the provider requires:
+- A v1 `ready` edge response for the SHA-256 canonical URL digest.
+- Exactly the compact `v`, `id`, `ref`, and `att` record fields.
+- A valid ES256 signature from the selected `kid` in the pinned credentialless JWKS at `https://api.encypher.com/api/v1/public/provenance/jwks.json`.
+- Exact canonical claim fields plus the pinned `https://api.encypher.com` issuer, canonical URL digest, publisher domain, record ID, validation result, declaration, policy version, revision, and lifetime bindings.
+- Exact equality between `ref` and `https://api.encypher.com/api/v1/public/provenance/attestations/{signed sub}`.
+- A serialized extension no larger than 1 KiB.
 
-- a strict v1 `ready` envelope for the SHA-256 canonical URL digest;
-- exactly the `v`, `id`, `ref`, and `att` record fields;
-- a canonical ES256 JWS with a single matching signing key from the pinned credentialless JWKS at `https://api.encypher.com/api/v1/public/provenance/jwks.json`;
-- the pinned issuer, exact canonical URL digest and publisher domain, record ID, lifetime, policy version, revision, validation result, and declaration claims; and
-- exact equality between `ref` and `https://api.encypher.com/api/v1/public/provenance/attestations/{signed sub}`.
+The module invokes the callback exactly once within the configured total deadline. HTTP 204, `stale`, `revoked`, timeout, network error, malformed data, unknown version, invalid key, invalid signature, substituted reference, or expired attestation leaves the auction unchanged. Validated records and JWKS are retained only in page memory and never cross canonical URLs. A ready record's edge status is reused for at most 30 seconds; its JWS and lifetime are revalidated before reuse, and the next auction refreshes edge status at the TTL boundary. JWKS entries expire after 60 seconds and refresh immediately on a key or signature mismatch.
 
-Validated records and JWKS are cached only in page memory. A cached record is checked for expiration and its signature and claims are revalidated before every reuse. Record status is reused for at most 30 seconds; the next auction performs a fresh edge lookup so a new `stale` or `revoked` tombstone suppresses injection. Expired records are also refreshed from the edge instead of replayed. JWKS entries expire after 60 seconds; a key or signature mismatch evicts the cached JWKS and forces one refresh within the original deadline. Cache keys include the signal origin and canonical URL digest, so records cannot cross canonical URLs or configured signal origins.
+## Diagnostic telemetry
 
-The callback is invoked exactly once within the configured total deadline. HTTP 204, `stale`, `revoked`, missing records, timeout, network failure, malformed or non-canonical data, unknown versions or keys, invalid signatures or claims, substituted references, oversized carriers, and expired attestations all leave the auction unchanged. The provider never signs content, extracts page content, reads manifest meta tags, or uses localStorage.
+When `telemetry` is `true`, the module sends a post-callback event to `{signalBase}/v1/telemetry/rtd`. The event contains only its protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. It contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect the auction.
 
-# Diagnostic telemetry
+## Publisher adoption reporting
 
-Diagnostic telemetry is disabled by default. When `params.telemetry` is `true`, the provider sends a post-callback event to `{signalBase}/v1/telemetry/rtd`. The event contains only protocol version, telemetry schema version, module version, outcome, impression count, optional dataset version, and duration. It contains no URL, URL digest, page content, record, attestation, identity, pricing, deal, cookie, credential, or user data. Telemetry failure cannot affect or delay the auction callback.
+Version 1.1.0 includes `module_version` in the existing attestation lookup. When `adoptionReporting` is not `false`, the edge records an observation only if the browser `Origin` hostname exactly matches the requested publisher FQDN. It retains only that FQDN, first and last seen times, module version, aggregate lookup/hit/miss counts, and the current provenance dataset version for up to 24 months after the last observation. It does not retain a page URL, URL digest, IP address, page content, user or cookie ID, bid, price, or creative. Reporting adds no browser request and no additional module fee. Setting `adoptionReporting: false` adds `adoption_reporting=0` to the lookup and stops future adoption observations.
+These counts are operational observations of eligible same-origin lookups, not proof of installation, entitlement, or billable use.
