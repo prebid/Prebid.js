@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ocmBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { Renderer } from 'src/Renderer.js';
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 // Side-effect import: registers the price-floors ORTB processors the adapter relies on through
 // pbsExtensions, so the floor pass-through test below exercises the real conversion path.
@@ -703,6 +704,75 @@ describe('ocmBidAdapter', function () {
       expect(() => bid.renderer._render(bid)).to.not.throw();
       expect(stub.called).to.equal(true);
       stub.restore();
+    });
+
+    it('logs an error without throwing when setRender fails while installing the renderer', function () {
+      // Force the installed renderer's setRender to throw so createRenderer's defensive catch runs.
+      const logErr = sinon.stub(utils, 'logError');
+      const installStub = sinon.stub(Renderer, 'install').returns({
+        setRender() { throw new Error('setRender failed'); }
+      });
+      try {
+        const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+        expect(() => spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)).to.not.throw();
+        expect(logErr.called).to.equal(true);
+      } finally {
+        installStub.restore();
+        logErr.restore();
+      }
+    });
+
+    it('logs an error when the outstream container element cannot be found', function () {
+      const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      // Point the bid at an ad-slot id that is not present in the DOM.
+      bid.adUnitCode = 'ocm-missing-slot';
+      window.OcmPlayer = sinon.spy();
+      const logErr = sinon.stub(utils, 'logError');
+
+      bid.renderer.loaded = true;
+      expect(() => bid.renderer._render(bid)).to.not.throw();
+      // The player is never instantiated when its container is missing.
+      expect(window.OcmPlayer.called).to.equal(false);
+      expect(logErr.called).to.equal(true);
+      logErr.restore();
+    });
+
+    it('logs a ready message when the OCM player invokes its ready callback', function () {
+      const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      bid.adUnitCode = outstreamVideoBid.adUnitCode;
+      bid.adId = 'ad-id-ready';
+
+      const slot = document.createElement('div');
+      slot.id = outstreamVideoBid.adUnitCode;
+      document.body.appendChild(slot);
+      const logMsg = sinon.stub(utils, 'logMessage');
+      // Invoke the ready callback the adapter passes as the player's third argument.
+      window.OcmPlayer = (containerId, config, cb) => cb();
+
+      bid.renderer.loaded = true;
+      bid.renderer._render(bid);
+
+      expect(logMsg.called).to.equal(true);
+      logMsg.restore();
+    });
+
+    it('logs an error without throwing when the OCM player throws while rendering', function () {
+      const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+      const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
+      bid.adUnitCode = outstreamVideoBid.adUnitCode;
+
+      const slot = document.createElement('div');
+      slot.id = outstreamVideoBid.adUnitCode;
+      document.body.appendChild(slot);
+      const logErr = sinon.stub(utils, 'logError');
+      window.OcmPlayer = () => { throw new Error('player boom'); };
+
+      bid.renderer.loaded = true;
+      expect(() => bid.renderer._render(bid)).to.not.throw();
+      expect(logErr.called).to.equal(true);
+      logErr.restore();
     });
   });
 
