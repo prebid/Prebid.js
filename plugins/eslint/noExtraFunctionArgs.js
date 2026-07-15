@@ -32,6 +32,9 @@ function referencesArguments(functionNode) {
     if (!node || found) {
       return;
     }
+    if (node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration') {
+      return;
+    }
     if (node.type === 'Identifier' && node.name === 'arguments') {
       found = true;
       return;
@@ -43,7 +46,7 @@ function referencesArguments(functionNode) {
       }
       if (Array.isArray(child)) {
         child.forEach(traverse);
-      } else if (child.type) {
+      } else if (typeof child === 'object' && typeof child.type === 'string') {
         traverse(child);
       }
     }

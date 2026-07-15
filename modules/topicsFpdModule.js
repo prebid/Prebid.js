@@ -233,7 +233,7 @@ export function loadTopicsForBidders(doc = document) {
         ifrm.src = ''.concat(iframeURL, '?bidder=').concat(bidder);
         ifrm.style.display = 'none';
         setLoadedIframeURL(new URL(iframeURL).origin);
-        iframeURL && doc.documentElement.appendChild(ifrm);
+        doc.documentElement.appendChild(ifrm);
       }
 
       if (bidder && fetchUrl) {

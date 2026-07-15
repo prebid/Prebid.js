@@ -155,7 +155,7 @@ export const spec = {
         keyValues.loc = location;
       }
 
-      let playerSize = [];
+      let playerSize;
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
         if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
@@ -295,7 +295,7 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, request) {
     const bidrequest = request.bidRequest;
-    let playerSize = [];
+    let playerSize;
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
       if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {

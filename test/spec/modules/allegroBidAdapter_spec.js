@@ -31,8 +31,6 @@ function buildBidderRequest(bidRequests, ortb2Overrides = {}) {
 }
 
 describe('Allegro Bid Adapter', () => {
-  let configStub;
-
   afterEach(() => {
     sinon.restore();
   });
@@ -54,19 +52,19 @@ describe('Allegro Bid Adapter', () => {
 
   describe('buildRequests', () => {
     it('builds a POST request to default endpoint with ORTB data', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({})];
       const bidderRequest = buildBidderRequest(bidRequests);
       const req = spec.buildRequests(bidRequests, bidderRequest);
       expect(req.method).to.equal('POST');
-      expect(req.url).to.equal('https://prebid.rtb.allegrogroup.com/v1/rtb/prebid/bid');
+      expect(req.url).to.equal('https://prebid.rtb.allegro.pl/v1/rtb/prebid/bid');
       expect(req.options.contentType).to.equal('text/plain');
       expect(req.data).to.exist;
       expect(req.data.imp).to.be.an('array').with.lengthOf(1);
     });
 
     it('respects custom bidder URL from config', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+      sinon.stub(config, 'getConfig').callsFake((key) => {
         if (key === 'allegro.bidderUrl') return 'https://override.endpoint/prebid';
         return undefined;
       });
@@ -76,7 +74,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('converts extension fields by default', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({})];
       const ortb2 = {
         site: { ext: { siteCustom: 'val' }, publisher: { ext: { pubCustom: 'pub' } } },
@@ -104,7 +102,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('does not convert extension fields when allegro.convertExtensionFields = false', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+      sinon.stub(config, 'getConfig').callsFake((key) => {
         if (key === 'allegro.convertExtensionFields') return false;
         return undefined;
       });
@@ -116,7 +114,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('converts numeric flags to booleans (topframe, secure, test) when present', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({ mediaTypes: { banner: { sizes: [[300, 250]], topframe: 1 } }, params: { secure: 1 } })];
       const bidderRequest = buildBidderRequest(bidRequests);
       // add test flag via ortb2 without clobbering existing device object
@@ -139,7 +137,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('returns converted bids for a valid ORTB response', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
       const bidderRequest = buildBidderRequest(bidRequests);
       const built = spec.buildRequests(bidRequests, bidderRequest);
@@ -160,8 +158,64 @@ describe('Allegro Bid Adapter', () => {
       expect(bid.netRevenue).to.equal(true);
     });
 
+    it('maps adomain, advertiser id and product id onto bid.meta from proto-json extension key', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
+      const bidderRequest = buildBidderRequest(bidRequests);
+      const built = spec.buildRequests(bidRequests, bidderRequest);
+      const impId = built.data.imp[0].id;
+      const ortbResponse = {
+        id: 'resp1',
+        seatbid: [{
+          seat: 'seat1',
+          bid: [{
+            impid: impId,
+            price: 1.23,
+            crid: 'creative1',
+            w: 300,
+            h: 250,
+            adomain: ['advertiser.com'],
+            '[com.allegro.dsp.dsp_bid]': { clientId: '42', productId: 'prod-123' }
+          }]
+        }]
+      };
+      const result = spec.interpretResponse({ body: ortbResponse }, built);
+      expect(result).to.be.an('array').with.lengthOf(1);
+      const bid = result[0];
+      expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
+      expect(bid.meta.advertiserId).to.equal('42');
+      expect(bid.meta.productId).to.equal('prod-123');
+    });
+
+    it('maps advertiser id and product id from bid.ext extension key', () => {
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
+      const bidderRequest = buildBidderRequest(bidRequests);
+      const built = spec.buildRequests(bidRequests, bidderRequest);
+      const impId = built.data.imp[0].id;
+      const ortbResponse = {
+        id: 'resp1',
+        seatbid: [{
+          seat: 'seat1',
+          bid: [{
+            impid: impId,
+            price: 1.23,
+            crid: 'creative1',
+            w: 300,
+            h: 250,
+            ext: { '[com.allegro.dsp.dsp_bid]': { clientId: '42', productId: 'prod-123' } }
+          }]
+        }]
+      };
+      const result = spec.interpretResponse({ body: ortbResponse }, built);
+      expect(result).to.be.an('array').with.lengthOf(1);
+      const bid = result[0];
+      expect(bid.meta.advertiserId).to.equal('42');
+      expect(bid.meta.productId).to.equal('prod-123');
+    });
+
     it('ignores bids with impid not present in original request', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => undefined);
+      sinon.stub(config, 'getConfig').callsFake((key) => undefined);
       const bidRequests = [buildBidRequest({ bidId: 'imp-1' })];
       const bidderRequest = buildBidderRequest(bidRequests);
       const built = spec.buildRequests(bidRequests, bidderRequest);
@@ -175,7 +229,7 @@ describe('Allegro Bid Adapter', () => {
 
   describe('onBidWon', () => {
     it('does nothing if config flag disabled', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+      sinon.stub(config, 'getConfig').callsFake((key) => {
         if (key === 'allegro.triggerImpressionPixel') return false;
         return undefined;
       });
@@ -184,7 +238,7 @@ describe('Allegro Bid Adapter', () => {
     });
 
     it('does nothing when burl missing even if flag enabled', () => {
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+      sinon.stub(config, 'getConfig').callsFake((key) => {
         if (key === 'allegro.triggerImpressionPixel') return true;
         return undefined;
       });
@@ -194,7 +248,7 @@ describe('Allegro Bid Adapter', () => {
     it('fires impression pixel with provided burl when enabled', () => {
       const pixelSpy = sinon.spy();
       // stub config and utils.triggerPixel; need to stub imported triggerPixel via utils module
-      configStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+      sinon.stub(config, 'getConfig').callsFake((key) => {
         if (key === 'allegro.triggerImpressionPixel') return true;
         return undefined;
       });
