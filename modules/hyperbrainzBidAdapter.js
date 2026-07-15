@@ -95,7 +95,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: endpointUrl,
       data: JSON.stringify(ortbRequest),
       options: {
-        contentType: "application/json",
+        contentType: "text/plain",
         withCredentials: true,
       },
       bidderRequest,
@@ -260,16 +260,22 @@ function buildBid(bid, response, request) {
 }
 
 function getMediaType(bid, originalBid) {
-  // Check bid extension
   if (bid.ext?.prebid?.type) {
     return bid.ext.prebid.type;
   }
 
-  // Infer from original request
-  if (originalBid.mediaTypes?.video) return VIDEO;
-  if (originalBid.mediaTypes?.native) return NATIVE;
-  if (originalBid.mediaTypes?.banner) return BANNER;
-  // Default to banner
+  if (bid.mtype === 1) return BANNER;
+  if (bid.mtype === 2) return VIDEO;
+  if (bid.mtype === 4) return NATIVE;
+
+  const mt = originalBid.mediaTypes || {};
+  const formatCount = [mt.banner, mt.video, mt.native].filter(Boolean).length;
+  if (formatCount === 1) {
+    if (mt.video) return VIDEO;
+    if (mt.native) return NATIVE;
+    if (mt.banner) return BANNER;
+  }
+
   return BANNER;
 }
 
@@ -363,23 +369,15 @@ function buildSite(bidderRequest) {
 
 // Build device object
 function buildDevice(bidderRequest) {
-  const device = {
-    ua: navigator.userAgent,
-    language: navigator.language,
-    w: window.screen.width,
-    h: window.screen.height,
+  const d = bidderRequest?.ortb2?.device || {};
+  return {
+    ua: d.ua,
+    language: d.language,
+    w: d.w,
+    h: d.h,
+    dnt: d.dnt,
+    sua: d.sua,
   };
-
-  // Device type detection
-  if (/Mobile|Android|iPhone/i.test(navigator.userAgent)) {
-    device.devicetype = 1; // Mobile
-  } else if (/Tablet|iPad/i.test(navigator.userAgent)) {
-    device.devicetype = 5; // Tablet
-  } else {
-    device.devicetype = 2; // Desktop
-  }
-
-  return device;
 }
 
 // Build user object
@@ -517,6 +515,17 @@ function buildRegs(bidderRequest) {
     regs.ext.us_privacy = bidderRequest.uspConsent;
   }
 
+  // GPP
+  const gppString =
+    bidderRequest?.gppConsent?.gppString ||
+    deepAccess(bidderRequest, "ortb2.regs.gpp");
+  const gppSid =
+    bidderRequest?.gppConsent?.applicableSections ||
+    deepAccess(bidderRequest, "ortb2.regs.gpp_sid");
+
+  if (gppString) regs.gpp = gppString;
+  if (gppSid) regs.gpp_sid = gppSid;
+
   return regs;
 }
 
@@ -620,6 +629,16 @@ function onBidWon(bid) {
   }
 }
 
+function onBidBillable(bid) {
+  if (bid.burl) {
+    const url = bid.burl.replace(
+      /\$\{AUCTION_PRICE\}/g,
+      encodeURIComponent(bid.cpm)
+    );
+    triggerPixel(url);
+  }
+}
+
 function onTimeout(timeoutData) {
   logInfo("HyperBrainz: Bid timeout", timeoutData);
   if (timeoutData.ext && timeoutData.ext.timeoutPixel) {
@@ -643,6 +662,7 @@ export const spec = {
   onBidWon,
   onTimeout,
   onSetTargeting,
+  onBidBillable,
 };
 
 registerBidder(spec);
