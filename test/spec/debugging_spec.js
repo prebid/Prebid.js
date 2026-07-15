@@ -1,4 +1,4 @@
-import { ready, loadSession, getConfig, reset, debuggingModuleLoader, debuggingControls } from '../../src/debugging.js';
+import { debuggingControls, debuggingModuleLoader, reset } from '../../src/debugging.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import { defer } from '../../src/utils/promise.js';
 import funHooks from 'fun-hooks/no-eval/index.js';
@@ -25,7 +25,7 @@ describe('Debugging', () => {
 
     afterEach(() => {
       delete getGlobal()._installDebugging;
-    })
+    });
 
     it('should not attempt to load if debugging module is already installed', () => {
       alreadyInstalled.returns(true);
@@ -53,7 +53,8 @@ describe('Debugging', () => {
     it('should not call _installDebugging if load fails', () => {
       const error = new Error();
       alreadyInstalled.returns(false);
-      scriptResult = Promise.reject(error)
+      scriptResult = Promise.reject(error);
+      scriptResult.catch(() => null);
       return loader().then(() => {
         throw new Error('loader should not resolve');
       }).catch((err) => {
@@ -69,9 +70,9 @@ describe('Debugging', () => {
     beforeEach(() => {
       loader = defer();
       hookRan = false;
-      hook = funHooks()('sync', () => { hookRan = true });
+      hook = funHooks()('sync', () => { hookRan = true; });
       debugging = debuggingControls({ load: sinon.stub().returns(loader.promise), hook });
-    })
+    });
 
     it('should delay execution of hook until module is loaded', () => {
       debugging.enable();
@@ -100,7 +101,7 @@ describe('Debugging', () => {
         return Promise.resolve();
       }).then(() => {
         expect(hookRan).to.be.true;
-      })
-    })
+      });
+    });
   });
 });

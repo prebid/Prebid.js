@@ -143,7 +143,7 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData })
+      this.#addToCommandQueue('onBidResponseEvent', { config, bidResponse, userConsent, storedData });
       return;
     }
     try {
@@ -196,7 +196,7 @@ class NodalsAiRtdProvider {
     }
     try {
       engine.init(config);
-      return engine
+      return engine;
     } catch (error) {
       logError(`Error initialising engine: ${error}`);
       return null;
@@ -410,8 +410,7 @@ class NodalsAiRtdProvider {
   }
 
   #loadAdLibraries(deps) {
-    // eslint-disable-next-line no-unused-vars
-    for (const [key, value] of Object.entries(deps)) {
+    for (const value of Object.values(deps)) {
       if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
           // noop

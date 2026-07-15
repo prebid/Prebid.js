@@ -13,7 +13,7 @@ export const converter = ortbConverter({
     ttl: 360,
     netRevenue: true
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,17 +21,17 @@ export const spec = {
 
   // 1.
   isBidRequestValid: function (bid) {
-    const bidderDomain = deepAccess(bid, 'params.bidderDomain')
+    const bidderDomain = deepAccess(bid, 'params.bidderDomain');
     if (bidderDomain === undefined || bidderDomain === '') {
-      return false
+      return false;
     }
 
-    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes')
+    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     if (sizes === undefined || sizes.length < 1) {
-      return false
+      return false;
     }
 
-    return true
+    return true;
   },
 
   // 2.
@@ -54,9 +54,9 @@ export const spec = {
 
   // 4
   onBidWon: function (bid) {
-    logInfo('onBidWon', bid)
+    logInfo('onBidWon', bid);
   }
-}
+};
 
 function getKeyOnAny(collection, key) {
   for (let i = 0; i < collection.length; i++) {

@@ -4,6 +4,8 @@ import {
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
 import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 const sandbox = sinon.createSandbox();
 
 describe('Nexx360 bid adapter tests', () => {
@@ -33,9 +35,52 @@ describe('Nexx360 bid adapter tests', () => {
     },
   };
 
-  it('We test getGzipSettings', () => {
-    const output = getGzipSetting();
-    expect(output).to.be.a('boolean');
+  describe('getGzipSetting', () => {
+    let getParamStub;
+    beforeEach(() => {
+      config.resetConfig();
+      getParamStub = sandbox.stub(utils, 'getParameterByName').returns('');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('defaults to false when no config and no URL override', () => {
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns false when bidder config gzipEnabled is the string "false"', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'false' } });
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns true when bidder config gzipEnabled is the string "true"', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'true' } });
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns true when bidder config gzipEnabled is the boolean true', () => {
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: true } });
+      expect(getGzipSetting()).to.equal(true);
+    });
+
+    it('returns false when URL has nexx360_debug=1, even if config would enable gzip', () => {
+      getParamStub.withArgs('nexx360_debug').returns('1');
+      config.setBidderConfig({ bidders: ['nexx360'], config: { gzipEnabled: 'true' } });
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('returns false (the default) when URL has nexx360_debug with a value other than 1', () => {
+      getParamStub.withArgs('nexx360_debug').returns('0');
+      expect(getGzipSetting()).to.equal(false);
+    });
+
+    it('reads the config of the passed alias bidder code', () => {
+      config.setBidderConfig({ bidders: ['revenuemaker'], config: { gzipEnabled: true } });
+      expect(getGzipSetting('revenuemaker')).to.equal(true);
+      // the nexx360 bucket is untouched, so it falls back to the default
+      expect(getGzipSetting('nexx360')).to.equal(false);
+    });
   });
 
   describe('isBidRequestValid()', () => {
@@ -50,10 +95,10 @@ describe('Nexx360 bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
-    it('We verify isBidRequestValid with unvalid adUnitName', () => {
+    it('We verify isBidRequestValid with invalid adUnitName', () => {
       bannerBid.params = { adUnitName: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -68,17 +113,17 @@ describe('Nexx360 bid adapter tests', () => {
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with unvalid divId', () => {
+    it('We verify isBidRequestValid with invalid divId', () => {
       bannerBid.params = { divId: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid unvalid allBids', () => {
+    it('We verify isBidRequestValid invalid allBids', () => {
       bannerBid.params = { allBids: 1 };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
 
-    it('We verify isBidRequestValid with uncorrect tagid', () => {
+    it('We verify isBidRequestValid with incorrect tagid', () => {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
     });
@@ -103,7 +148,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -118,7 +163,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(typeof output.nexx360Id).to.be.eql('string');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -133,7 +178,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -148,7 +193,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -163,7 +208,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql(null);
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -178,7 +223,7 @@ describe('Nexx360 bid adapter tests', () => {
       expect(output).to.be.eql('abcdef');
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
@@ -344,10 +389,10 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '7.1',
+            bidderVersion: '8.0',
             localStorage: { amxId: 'abcdef' },
             sessionId: requestContent.ext.sessionId,
-            requestCounter: 0,
+            requestCounter: requestContent.ext.requestCounter,
           },
           cur: [
             'USD',
@@ -426,7 +471,7 @@ describe('Nexx360 bid adapter tests', () => {
       }
     });
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 

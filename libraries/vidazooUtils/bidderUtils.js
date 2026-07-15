@@ -7,10 +7,17 @@ import {
   parseUrl,
   triggerPixel,
   uniques,
-  getWinDimensions
+  getWinDimensions, deepClone
 } from '../../src/utils.js';
 import { chunk } from '../chunk/chunk.js';
-import { CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY } from './constants.js';
+import {
+  CURRENCY,
+  DEAL_ID_EXPIRY, IFRAME_SYNC_DEFAULT_URL, IMAGE_SYNC_DEFAULT_URL,
+  MULTI_REQ_LIST,
+  SESSION_ID_KEY,
+  TTL_SECONDS,
+  UNIQUE_DEAL_ID_EXPIRY
+} from './constants.js';
 import { bidderSettings } from '../../src/bidderSettings.js';
 import { config } from '../../src/config.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
@@ -26,6 +33,11 @@ export function getTopWindowQueryParams() {
   } catch (e) {
     return '';
   }
+}
+
+function isValidParamsHost(params) {
+  // valid is params:{host: 'twist.win'}
+  return params && params.host && typeof params.host === 'string' && params.host.split('.').length === 2;
 }
 
 export function extractCID(params) {
@@ -118,7 +130,7 @@ export function getNextDealId(storage, key, expiry = DEAL_ID_EXPIRY) {
 
 export function hashCode(s, prefix = '_') {
   const l = s.length;
-  let h = 0
+  let h = 0;
   let i = 0;
   if (l > 0) {
     while (i < l) {
@@ -152,6 +164,30 @@ export function onBidWon(bid) {
   triggerPixel(url);
 }
 
+export function onBidBillable(bid) {
+  if (!bid.burl) {
+    return;
+  }
+  const billBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(billBid);
+  const url = bid.burl + (bid.burl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
+}
+
 /**
  * Create the spec function for getting user syncs
  *
@@ -179,21 +215,46 @@ export function createUserSyncGetter(options = {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
     }
+    const UsBaseHeader = responses?.[0]?.headers?.get('x-us-base-url');
 
-    if (iframeEnabled && options.iframeSyncUrl) {
-      syncs.push({
-        type: 'iframe',
-        url: `${options.iframeSyncUrl}/${params}`
-      });
+    if (iframeEnabled) {
+      if (options.iframeSyncUrl) {
+        syncs.push({
+          type: 'iframe',
+          url: `${options.iframeSyncUrl}/${params}`
+        });
+      } else if (UsBaseHeader) {
+        syncs.push({
+          type: 'iframe',
+          url: `https://sync.${UsBaseHeader}/api/sync/iframe/${params}`
+        });
+      } else {
+        syncs.push({
+          type: 'iframe',
+          url: `${IFRAME_SYNC_DEFAULT_URL}/${params}`
+        });
+      }
     }
-    if (pixelEnabled && options.imageSyncUrl) {
-      syncs.push({
-        type: 'image',
-        url: `${options.imageSyncUrl}/${params}`
-      });
+    if (pixelEnabled) {
+      if (options.imageSyncUrl) {
+        syncs.push({
+          type: 'image',
+          url: `${options.imageSyncUrl}/${params}`
+        });
+      } else if (UsBaseHeader) {
+        syncs.push({
+          type: 'image',
+          url: `https://sync.${UsBaseHeader}/api/sync/image/${params}`
+        });
+      } else {
+        syncs.push({
+          type: 'image',
+          url: `${IMAGE_SYNC_DEFAULT_URL}/${params}`
+        });
+      }
     }
     return syncs;
-  }
+  };
 }
 
 export function appendUserIdsToRequestPayload(payloadRef, userIds) {
@@ -219,7 +280,7 @@ function appendUserIdsAsEidsToRequestPayload(payloadRef, userIds) {
   userIds.forEach((userIdObj) => {
     key = `uid.${userIdObj.source}`;
     payloadRef[key] = userIdObj.uids[0].id;
-  })
+  });
 }
 
 export function getVidazooSessionId(storage) {
@@ -254,7 +315,12 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const userData = bidderRequest?.ortb2?.user?.data || [];
   const contentLang = bidderRequest?.ortb2?.site?.content?.language || document.documentElement.lang;
   const coppa = bidderRequest?.ortb2?.regs?.coppa ?? 0;
-  const device = bidderRequest?.ortb2?.device || {};
+  const device = bidderRequest?.ortb2?.device ? deepClone(bidderRequest?.ortb2?.device) : {};
+
+  // delete device.devicetype if invalid
+  if (!Number.isInteger(device.devicetype)) {
+    delete device.devicetype;
+  }
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -362,8 +428,13 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     data['ext.' + key] = value;
   });
 
-  if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2
-  if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp
+  if (bidderRequest.ortb2) data.ortb2 = bidderRequest.ortb2;
+  if (bid.ortb2Imp) data.ortb2Imp = bid.ortb2Imp;
+  if (params?.host) {
+    data.params = {
+      host: params.host
+    };
+  }
 
   return data;
 }
@@ -373,7 +444,7 @@ function getScreenResolution() {
   const width = dimensions?.screen?.width;
   const height = dimensions?.screen?.height;
   if (width != null && height != null) {
-    return `${width}x${height}`
+    return `${width}x${height}`;
   }
 }
 
@@ -383,7 +454,8 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
       return [];
     }
 
-    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
+    const allowed = allowSingleRequest && MULTI_REQ_LIST.includes(bidderCode);
+    const singleRequestMode = allowed && config.getConfig(`${bidderCode}.singleRequest`);
     const reqBidId = request?.data?.bidId;
     const { results } = serverResponse.body;
 
@@ -401,6 +473,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
           currency,
           bidId,
           nurl,
+          burl,
           advertiserDomains,
           metaData,
           mediaType = BANNER
@@ -423,17 +496,20 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
         if (nurl) {
           response.nurl = nurl;
         }
+        if (burl) {
+          response.burl = burl;
+        }
 
         if (metaData) {
           Object.assign(response, {
             meta: metaData
-          })
+          });
         } else {
           Object.assign(response, {
             meta: {
               advertiserDomains: advertiserDomains || []
             }
-          })
+          });
         }
 
         if (mediaType === BANNER) {
@@ -453,7 +529,7 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
     } catch (e) {
       return [];
     }
-  }
+  };
 }
 
 export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
@@ -462,10 +538,20 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
     const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
-    const dto = {
-      method: 'POST', url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`, data: data
-    };
-    return dto;
+    // when params are populated with valid host (params: {host: "example.com"} try to add host to url
+    if (isValidParamsHost(params)) {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
+        data: data
+      };
+    } else {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+        data: data
+      };
+    }
   }
 
   function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
@@ -474,19 +560,33 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     const subDomain = extractSubDomain(params);
     const data = bidRequests.map(bid => {
       const sizes = parseSizesInput(bid.sizes);
-      return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData)
+      return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
     });
-    const chunkSize = Math.min(20, config.getConfig(`${bidderCode}.chunkSize`) || 10);
+    let chSize = 10;
+    if (config.getConfig(`${bidderCode}.chunkSize`) && typeof config.getConfig(`${bidderCode}.chunkSize`) === 'number') {
+      chSize = config.getConfig(`${bidderCode}.chunkSize`);
+    }
+    const chunkSize = Math.min(20, chSize);
 
     const chunkedData = chunk(data, chunkSize);
     return chunkedData.map(chunk => {
-      return {
-        method: 'POST',
-        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
-        data: {
-          bids: chunk
-        }
-      };
+      if (isValidParamsHost(params)) {
+        return {
+          method: 'POST',
+          url: `${createRequestDomain(subDomain, params.host)}/prebid/multi/${cId}`,
+          data: {
+            bids: chunk
+          }
+        };
+      } else {
+        return {
+          method: 'POST',
+          url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+          data: {
+            bids: chunk
+          }
+        };
+      }
     });
   }
 
@@ -495,8 +595,8 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
-
-    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
+    const allowed = allowSingleRequest && MULTI_REQ_LIST.includes(bidderCode);
+    const singleRequestMode = allowed && config.getConfig(`${bidderCode}.singleRequest`);
 
     const requests = [];
 
@@ -509,7 +609,6 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
       }
 
       // video bids are sent as a single request for each bid
-
       const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
       videoBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
@@ -517,6 +616,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
         requests.push(request);
       });
     } else {
+      // bulk bids request
       validBidRequests.forEach(validBidRequest => {
         const sizes = parseSizesInput(validBidRequest.sizes);
         const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
@@ -524,5 +624,5 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
       });
     }
     return requests;
-  }
+  };
 }

@@ -4,7 +4,7 @@ export function CachedApiWrapper(getTarget, props) {
   const children = [];
   Object.entries(props).forEach(([key, value]) => {
     if (value != null && typeof value === 'object') {
-      const child = new CachedApiWrapper(() => getTarget()?.[key], value)
+      const child = new CachedApiWrapper(() => getTarget()?.[key], value);
       wrapper[key] = child.obj;
       children.push(child.reset);
     } else if (value === true) {
@@ -15,9 +15,9 @@ export function CachedApiWrapper(getTarget, props) {
           }
           return data[key];
         }
-      })
+      });
     }
-  })
+  });
   this.obj = wrapper;
   this.reset = function () {
     children.forEach(reset => reset());

@@ -1,6 +1,6 @@
 import { spec } from '../../../modules/rhythmoneBidAdapter.js';
-import * as utils from '../../../src/utils.js';
-import * as sinon from 'sinon';
+import '../../../src/utils.js';
+import 'sinon';
 
 var r1adapter = spec;
 

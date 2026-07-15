@@ -16,7 +16,7 @@ describe('gopl adapter functionality', function () {
     const gdprConsent = {
       consentString: 'BOtq-3dOtq-30BIABCPLC4-AAAAthr_7__7-_9_-_f__9uj3Or_v_f__30ccL59v_h_7v-_7fi_20nV4u_1vft9yfk1-5ctDztp505iakivHmqNeb9v_mz1_5pRP78k89r7337Ew_v8_v-b7JCON_Ig',
       gdprApplies: true,
-    }
+    };
     const nativeOrtb2 = {
       ver: '1.2',
       assets: [
@@ -93,7 +93,7 @@ describe('gopl adapter functionality', function () {
           50
         ]
       }
-    }
+    };
 
     const bids = [{
       adUnitCode: 'test_wideboard',
@@ -679,7 +679,7 @@ describe('gopl adapter functionality', function () {
       'body': {
         'id': bidderRequestId,
       }
-    }
+    };
     return {
       bid_OneCode,
       bids,
@@ -852,8 +852,8 @@ describe('gopl adapter functionality', function () {
         note that payload comes from first, and payloadSingle from second auction in the test run
         also, since both have same adUnitName, value of pbsize property should be the same
       */
-      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
-      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
+      expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1');
+      expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1');
     });
 
     it('should send supply chain data', function () {
@@ -867,7 +867,7 @@ describe('gopl adapter functionality', function () {
             hp: 1
           },
         ]
-      }
+      };
       const bidRequestWithChain = {
         ...bidRequest,
         ortb2: {

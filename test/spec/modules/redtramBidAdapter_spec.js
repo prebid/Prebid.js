@@ -169,11 +169,11 @@ describe('RedtramBidAdapter', function () {
         gdprApplies: true
       }, {});
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://prebid.redtram.com/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal('https://prebid.redtram.com/sync/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0');
     });
   });
 
@@ -190,7 +190,6 @@ describe('RedtramBidAdapter', function () {
         'bidderCode': 'redtram',
         'width': 300,
         'height': 250,
-        'statusMessage': 'Bid available',
         'adId': '5691dd18ba6ab6',
         'requestId': '23dc19818e5293',
         'transactionId': '948c716b-bf64-4303-bcf4-395c2f6a9770',

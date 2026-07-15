@@ -478,7 +478,9 @@ const converter = ortbConverter({
     if (FEATURES.VIDEO && mediaType === VIDEO) {
       bidResponse.ttl = 3600;
       if (bid.nurl) {
-        bidResponse.vastImpUrl = bid.nurl;
+        bidResponse.vastTrackers = {
+          impression: [bid.nurl]
+        };
       }
 
       if (extANData?.renderer_url && extANData?.renderer_id) {

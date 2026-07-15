@@ -26,6 +26,6 @@ export const spec = {
   interpretResponse: (bidResponse, bidRequest) => {
     return getBannerResponse(bidResponse, BANNER);
   }
-}
+};
 
 registerBidder(spec);

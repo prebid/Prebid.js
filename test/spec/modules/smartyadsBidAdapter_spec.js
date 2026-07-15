@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/smartyadsBidAdapter.js';
 import { config } from '../../../src/config.js';
-import { server } from '../../mocks/xhr.js';
 
 describe('SmartyadsAdapter', function () {
   const bid = {
@@ -13,21 +12,6 @@ describe('SmartyadsAdapter', function () {
       accountid: '0',
       traffic: 'banner'
     }
-  };
-
-  const bidResponse = {
-    width: 300,
-    height: 250,
-    mediaType: 'banner',
-    ad: `<img src='https://dummyimage.com/300x250&text=Test+Mode' width=300 height=250 alt='test mode'>`,
-    requestId: '23fhj33i987f',
-    cpm: 0.1,
-    ttl: 120,
-    creativeId: '123',
-    netRevenue: true,
-    currency: 'USD',
-    dealId: 'HASH',
-    sid: 1234
   };
 
   describe('isBidRequestValid', function () {
@@ -182,7 +166,7 @@ describe('SmartyadsAdapter', function () {
 
       const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');

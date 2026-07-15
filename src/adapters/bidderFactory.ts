@@ -41,7 +41,7 @@ import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
 import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
 import type { AddBidResponse } from "../auction.ts";
 import type { MediaType } from "../mediaTypes.ts";
-import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData } from "../consentHandler.ts";
+import { CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentDataForKey } from "../consentHandler.ts";
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -98,7 +98,7 @@ const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'cur
 const TIDS = {
   auctionId: (request) => request.ortb2?.source?.tid,
   transactionId: (request) => request.ortb2Imp?.ext?.tid
-}
+};
 
 export interface AdapterRequest {
   url: string;
@@ -123,7 +123,7 @@ export type AdapterResponse = BidResponse | BidResponse[] | ExtendedResponse;
 export type BidderError<B extends BidderCode> = {
   error: XHR;
   bidderRequest: BidderRequest<B>;
-}
+};
 
 export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
   code: BIDDER;
@@ -153,16 +153,16 @@ export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure
       pixelEnabled: boolean;
     },
     responses: ServerResponse[],
-    gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
-    uspConsent: null | ConsentData[typeof CONSENT_USP],
-    gppConsent: null | ConsentData[typeof CONSENT_GPP]
+    gdprConsent: null | ConsentDataForKey<typeof CONSENT_GDPR>,
+    uspConsent: null | ConsentDataForKey<typeof CONSENT_USP>,
+    gppConsent: null | ConsentDataForKey<typeof CONSENT_GPP>
   ) => ({ type: SyncType, url: string })[];
   alwaysHasCapacity?: boolean;
 }
 
 export type BidAdapter = {
   callBids: ReturnType<typeof newBidder>['callBids']
-}
+};
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -189,7 +189,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       if (isPlainObject(alias)) {
         aliasCode = alias.code as string;
         gvlid = alias.gvlid;
-        skipPbsAliasing = alias.skipPbsAliasing
+        skipPbsAliasing = alias.skipPbsAliasing;
       }
       adapterManager.aliasRegistry[aliasCode] = spec.code;
       putBidder(Object.assign({}, spec, { code: aliasCode, gvlid, skipPbsAliasing }));
@@ -231,7 +231,7 @@ export const guardTids: any = memoize(({ bidderCode }) => {
         return get(target, prop, receiver);
       }
     })
-  }
+  };
 });
 
 declare module '../events' {
@@ -286,7 +286,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid, { responseMediaType }))) {
           addBidResponse(adUnitCode, bid);
         } else {
-          addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID)
+          addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID);
         }
       }
 
@@ -317,14 +317,14 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
         onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
-          responses.push(resp)
+          responses.push(resp);
         },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
           if (!error.timedOut) {
             onTimelyResponse(spec.code);
           }
-          adapterManager.callBidderError(spec.code, error, bidderRequest)
+          adapterManager.callBidderError(spec.code, error, bidderRequest);
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, { bidRequests: validBidRequests });
         },
@@ -335,7 +335,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bidResponse.bidderCode, bidRequest.bidder)) {
               logWarn(`${bidResponse.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
-              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED)
+              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED);
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -389,7 +389,7 @@ const RESPONSE_PROPS = [
   'bids',
   // allow bid adapters to still reply with paapi (which will be ignored).
   'paapi',
-]
+];
 
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
@@ -479,7 +479,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
       // an array of bids
       // a BidderAuctionResponse object
 
-      let bids
+      let bids;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
       } else {
@@ -522,7 +522,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         suppressTopicsEnrollmentWarning: ro?.hasOwnProperty('suppressTopicsEnrollmentWarning')
           ? ro.suppressTopicsEnrollmentWarning
           : !debugMode
-      })
+      });
     }
 
     switch (request.method) {
@@ -586,8 +586,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
 
       return '';
     }
-  })
-}, 'processBidderRequests')
+  });
+}, 'processBidderRequests');
 
 export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderCode>, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
@@ -601,12 +601,12 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
         syncs = [syncs];
       }
       syncs.forEach((sync) => {
-        userSync.registerSync(sync.type, spec.code, sync.url)
+        userSync.registerSync(sync.type, spec.code, sync.url);
       });
       userSync.bidderDone(spec.code);
     }
   }
-}, 'registerSyncs')
+}, 'registerSyncs');
 
 declare module '../bidfactory' {
   interface BannerBidProperties {
@@ -707,5 +707,5 @@ export function isValid(adUnitCode: string, bid: Bid, { index = auctionManager.i
 }
 
 export function adapterMetrics(bidderRequest) {
-  return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
+  return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`]);
 }

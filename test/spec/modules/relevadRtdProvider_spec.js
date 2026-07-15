@@ -1,7 +1,7 @@
 import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
-import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
@@ -161,7 +161,7 @@ describe('relevadRtdProvider', function() {
         },
         'metrics': {},
         'defer': { 'promise': {} }
-      }
+      };
 
       const data = {
         segments: ['segment1', 'segment2'],
@@ -341,7 +341,6 @@ describe('Process auction end data', function() {
             'bidderCode': 'appnexus',
             'width': 728,
             'height': 90,
-            'statusMessage': 'Bid available',
             'adId': '3222e6ead116f3',
             'requestId': '20f0b347b07f94',
             'transactionId': 'df8586ac-6476-4fbf-a727-eda99996dc39',

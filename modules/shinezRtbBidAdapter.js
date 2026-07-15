@@ -4,8 +4,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   createBuildRequestsFn,
-  createInterpretResponseFn, createUserSyncGetter
+  createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./shinezRtbBidAdapter.d.ts').ShinezRtbBidRequestParams} ShinezRtbBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'shinezRtb';
@@ -32,7 +36,9 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon,
+  onBidBillable,
 };
 
 registerBidder(spec);

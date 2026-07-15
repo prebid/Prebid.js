@@ -35,32 +35,6 @@ describe('the first party data validation module', function () {
     }
   };
 
-  const conf = {
-    device: {
-      h: 500,
-      w: 750
-    },
-    user: {
-      keywords: 'test1, test2',
-      gender: 'f',
-      data: [{
-        segment: [{
-          id: 'test'
-        }],
-        name: 'alt'
-      }]
-    },
-    site: {
-      ref: 'domain.com',
-      page: 'www.domain.com/test',
-      ext: {
-        data: {
-          inventory: ['first']
-        }
-      }
-    }
-  };
-
   describe('filtering first party array data', function () {
     it('returns empty array if no valid data', function () {
       const arr = [{}];
@@ -239,7 +213,7 @@ describe('the first party data validation module', function () {
       duplicate.device = {
         h: '1',
         w: '1'
-      }
+      };
 
       const expected = {
         user: {

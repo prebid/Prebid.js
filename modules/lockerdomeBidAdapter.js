@@ -41,7 +41,7 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         payload.us_privacy = {
           consent: bidderRequest.uspConsent
-        }
+        };
       }
     }
 
