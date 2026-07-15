@@ -36,6 +36,14 @@ export function render({ ad, adUrl, width, height, instl }, { mkFrame, sendMessa
       const style = win.frameElement.style;
       style.width = width ? `${width}px` : '100vw';
       style.height = height ? `${height}px` : '100vh';
+      const container = win.frameElement.parentElement;
+      const containerStyle = container?.ownerDocument?.defaultView?.getComputedStyle(container);
+      if (containerStyle?.marginTop && containerStyle?.marginTop !== '0px') {
+        // GAME_MANUAL_INTERSTITIAL uses different styling on mobile, which doesn't work with our resizing;
+        // this resets it to the same style used on desktop
+        container.style.marginTop = '0px';
+        container.parentElement.style.alignItems = 'center';
+      }
     }
   }
 }

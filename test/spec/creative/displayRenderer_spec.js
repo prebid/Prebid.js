@@ -91,6 +91,35 @@ describe('Creative renderer - display', () => {
     });
   });
 
+  it('changes styles for positioning if the container element has a margin', () => {
+    win.frameElement = {
+      style: {},
+      parentElement: {
+        style: {},
+        ownerDocument: {
+          defaultView: {
+            getComputedStyle() {
+              return {
+                marginTop: '10px'
+              };
+            }
+          }
+        },
+        parentElement: {
+          style: {}
+        }
+      }
+    };
+    runRenderer({
+      ad: 'mock',
+      width: 123,
+      height: 321,
+      instl: true
+    });
+    expect(win.frameElement.parentElement.parentElement.style.alignItems).to.eql('center');
+    expect(win.frameElement.parentElement.style.marginTop).to.eql('0px');
+  });
+
   it('does not choke if no frame element can be found', () => {
     runRenderer({
       ad: 'mock',
