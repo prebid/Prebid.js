@@ -398,12 +398,6 @@ describe('goadserverBidAdapter', function () {
   });
 
   describe('onBidWon', function () {
-    let triggerPixelStub;
-
-    beforeEach(function () {
-      triggerPixelStub = sinon.stub();
-    });
-
     it('does not throw on a bid without nurl', function () {
       expect(() => spec.onBidWon({})).to.not.throw();
     });

@@ -36,9 +36,8 @@ import { GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consen
 import { activityParams } from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
-  let nextFnSpy;
   let logWarnSpy;
-  let gdprDataHandlerStub;
+
   const staticConfig = {
     cmpApi: 'static',
     timeout: 7500,
@@ -1348,6 +1347,20 @@ describe('gdpr enforcement', function () {
       setEnforcementConfig({ gdpr: { rules } });
       expect(ACTIVE_RULES.purpose[1]).to.deep.equal(rules[0]);
       expect(ACTIVE_RULES.purpose[2]).to.deep.equal(rules[1]);
+    });
+
+    Object.entries({
+      'undefined': undefined,
+      'null': null,
+    }).forEach(([t, cfg]) => {
+      it(`should not throw when config is ${t} (e.g. for non-GDPR countries)`, function () {
+        expect(() => setEnforcementConfig(cfg)).to.not.throw();
+      });
+
+      it(`should fall back to the default purpose declaration when config is ${t}`, function () {
+        setEnforcementConfig(cfg);
+        expect(getPurposeDeclarations(null)).to.eql(DEFAULT_PURPOSE_DECLARATION);
+      });
     });
   });
 

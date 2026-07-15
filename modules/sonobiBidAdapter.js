@@ -507,7 +507,7 @@ function loadOrCreateFirstPartyData() {
   if (!firstPartyData || !firstPartyData.pcid) {
     var firstPartyId = generateGUID();
     firstPartyData = { pcid: firstPartyId, pcidDate: Date.now() };
-  } else if (firstPartyData && !firstPartyData.pcidDate) {
+  } else if (!firstPartyData.pcidDate) {
     firstPartyData.pcidDate = Date.now();
   }
   storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));

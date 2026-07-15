@@ -132,7 +132,7 @@ export function getCachedTopics() {
   const topics = config.getConfig('userSync.topics');
   const bidderList = topics?.bidders || [];
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
-  storedSegments && storedSegments.forEach((value, cachedBidder) => {
+  storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
     const bidderConfigObj = bidderList.find(({ bidder }) => cachedBidder === bidder);
     if (bidderConfigObj && isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_BIDDER, cachedBidder))) {
@@ -226,14 +226,14 @@ export function loadTopicsForBidders(doc = document) {
   if (topics) {
     listenMessagesFromTopicIframe();
     const randomBidders = getRandomAllowedConfigs(topics.bidders || [], topics.maxTopicCaller || 1);
-    randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
+    randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
         const ifrm = doc.createElement('iframe');
         ifrm.name = 'ifrm_'.concat(bidder);
         ifrm.src = ''.concat(iframeURL, '?bidder=').concat(bidder);
         ifrm.style.display = 'none';
         setLoadedIframeURL(new URL(iframeURL).origin);
-        iframeURL && doc.documentElement.appendChild(ifrm);
+        doc.documentElement.appendChild(ifrm);
       }
 
       if (bidder && fetchUrl) {

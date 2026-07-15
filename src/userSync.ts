@@ -82,6 +82,10 @@ config.setDefaults({
 
 const storage = getCoreStorageManager('usersync');
 
+export function browserSupportsUserSyncCookies() {
+  return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+}
+
 /**
  * Factory function which creates a new UserSyncPool.
  *
@@ -400,7 +404,7 @@ export const userSync = newUserSync(Object.defineProperties({
   browserSupportsCookies: {
     get: function() {
       // call storage lazily to give time for consent data to be available
-      return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+      return browserSupportsUserSyncCookies();
     }
   }
 }));

@@ -8,7 +8,7 @@ describe('RetailSpot Adapter', function () {
   const referrerUrl = 'http://referrer.url/?param=value';
   const pageUrl = 'http://page.url/?param=value';
   const domain = 'domain:123';
-  const env = 'preprod';
+
   const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
   const bidderRequest = {
     'auctionId': '1d1a030790a475',

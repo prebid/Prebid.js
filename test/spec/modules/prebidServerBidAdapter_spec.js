@@ -7,7 +7,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, { PBS_ADAPTER_NAME } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import { deepAccess, deepClone, getWinDimensions, mergeDeep } from 'src/utils.js';
+import { deepAccess, deepClone, getWinDimensions } from 'src/utils.js';
 import { ajax } from 'src/ajax.js';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
@@ -596,6 +596,7 @@ describe('s2s configuration', () => {
 
 describe('S2S Adapter', function () {
   let adapter;
+  let browserRestrictionStubs;
   let addBidResponse = sinon.spy();
   let done = sinon.spy();
 
@@ -614,6 +615,11 @@ describe('S2S Adapter', function () {
   });
 
   beforeEach(function () {
+    browserRestrictionStubs = sinon.createSandbox();
+    browserRestrictionStubs.stub(utils, 'isSafariBrowser').returns(false);
+    browserRestrictionStubs.stub(utils, 'isFirefoxBrowser').returns(false);
+    browserRestrictionStubs.stub(utils, 'isChromeIOSBrowser').returns(false);
+
     config.resetConfig();
     config.setConfig({ floors: { enabled: false } });
     adapter = new Adapter();
@@ -661,6 +667,7 @@ describe('S2S Adapter', function () {
   });
 
   afterEach(function () {
+    browserRestrictionStubs.restore();
     addBidResponse.resetHistory();
     addBidResponse.reject = sinon.spy();
     done.resetHistory();
@@ -1094,6 +1101,86 @@ describe('S2S Adapter', function () {
 
         expect(requestBid.regs).to.not.exist;
         expect(requestBid.user).to.not.exist;
+      });
+    });
+
+    describe('hostGvlid endpoint selection', function () {
+      const HOST_GVLID = '52';
+      const P1_ENDPOINT = 'https://pbs.example/p1-auction';
+      const NO_P1_ENDPOINT = 'https://pbs.example/no-p1-auction';
+
+      function mockHostConsent({ purposeConsent = true, vendorConsent = true, gdprApplies = true, restriction } = {}) {
+        const consent = {
+          vendorData: {
+            purpose: {
+              consents: { 1: purposeConsent },
+              legitimateInterests: { 1: false }
+            },
+            vendor: {
+              consents: { [HOST_GVLID]: vendorConsent },
+              legitimateInterests: { [HOST_GVLID]: false }
+            }
+          },
+          apiVersion: 2,
+          gdprApplies
+        };
+        if (restriction != null) {
+          consent.vendorData.publisher = {
+            restrictions: {
+              1: { [HOST_GVLID]: restriction }
+            }
+          };
+        }
+        return consent;
+      }
+
+      function bidRequestsWithConsent(consent) {
+        const bidRequests = utils.deepClone(BID_REQUESTS);
+        bidRequests[0].gdprConsent = consent;
+        return bidRequests;
+      }
+
+      function hostGvlidConfig(overrides = {}) {
+        return Object.assign({}, CONFIG, {
+          hostGvlid: HOST_GVLID,
+          endpoint: {
+            p1Consent: P1_ENDPOINT,
+            noP1Consent: NO_P1_ENDPOINT
+          }
+        }, overrides);
+      }
+
+      it('uses noP1Consent auction endpoint when purpose 1 consent is given but host vendor consent is not', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ purposeConsent: true, vendorConsent: false })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(NO_P1_ENDPOINT);
+      });
+
+      it('uses noP1Consent auction endpoint when publisher restriction disallows host vendor for purpose 1', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ purposeConsent: true, vendorConsent: true, restriction: 0 })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(NO_P1_ENDPOINT);
+      });
+
+      it('uses p1Consent auction endpoint when gdpr does not apply', function () {
+        const s2sConfig = hostGvlidConfig();
+        config.setConfig({ s2sConfig, consentManagement: { cmpApi: 'iab' } });
+
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sBidRequest, bidRequestsWithConsent(mockHostConsent({ gdprApplies: false, vendorConsent: false })), addBidResponse, done, ajax);
+        expect(server.requests[0].url).to.equal(P1_ENDPOINT);
       });
     });
 
@@ -1534,13 +1621,11 @@ describe('S2S Adapter', function () {
               }
             }).forEach(([t, { expectDesc, expectedFloor, expectedCur, conversionFn }]) => {
               describe(`and currency conversion ${t}`, () => {
-                let mockConvertCurrency;
                 const origConvertCurrency = getGlobal().convertCurrency;
                 beforeEach(() => {
                   if (conversionFn) {
-                    getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn);
+                    getGlobal().convertCurrency = sinon.stub().callsFake(conversionFn);
                   } else {
-                    mockConvertCurrency = null;
                     delete getGlobal().convertCurrency;
                   }
                 });
@@ -2964,7 +3049,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(await addFpdEnrichmentsToS2SRequest({
         ...s2sBidRequest,
         ortb2Fragments
-      }, bidRequests, cfg), bidRequests, addBidResponse, done, ajax);
+      }, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       // eslint-disable-next-line no-console
       console.log(parsedRequestBody);
@@ -3413,7 +3498,7 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledTwice(events.emit);
-      const event = events.emit.firstCall.args;
+
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('ttl', 30);
@@ -3755,6 +3840,19 @@ describe('S2S Adapter', function () {
           adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
           server.requests[0].respond(200, {}, JSON.stringify(csRes));
           expect(syncer().args[0]).to.include.members([123]);
+        });
+      });
+
+      Object.entries({
+        Safari: 'isSafariBrowser',
+        Firefox: 'isFirefoxBrowser',
+        'Chrome on iOS': 'isChromeIOSBrowser'
+      }).forEach(([browser, detector]) => {
+        it(`does not request PBS syncs on ${browser}`, () => {
+          utils[detector].returns(true);
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          expect(server.requests).to.have.length(1);
+          expect(server.requests[0].url).to.equal(cfg.endpoint.p1Consent);
         });
       });
     });

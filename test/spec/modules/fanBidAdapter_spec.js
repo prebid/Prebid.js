@@ -1,5 +1,5 @@
 import { spec } from 'modules/fanBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
@@ -8,7 +8,6 @@ import sinon from 'sinon';
 describe('freedomadnetworkAdapter', function() {
   const BIDDER_CODE = 'freedomadnetwork';
   const DEFAULT_CURRENCY = 'USD';
-  const DEFAULT_TTL = 300;
 
   let validBidRequestBanner;
   let validBidRequestVideo;
