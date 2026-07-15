@@ -369,7 +369,7 @@ describe('gopl adapter functionality', function () {
         },
         page: 'https://test.site.pl/',
       },
-    }
+    };
     const bidRequest = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -823,7 +823,6 @@ describe('gopl adapter functionality', function () {
 
     it('should build correct native payload', function () {
       const nativeAssets = payloadNative.imp && payloadNative.imp[0].native;
-      const nativeRequest = payloadNative.imp && payloadNative.imp[0].native.request;
 
       expect(payloadNative.imp.length).to.equal(1);
 
@@ -854,6 +853,23 @@ describe('gopl adapter functionality', function () {
       */
       expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1');
       expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1');
+    });
+
+    it('should merge generated pbsize into existing impression-level FPD instead of overwriting it', function () {
+      const bidWithFpd = {
+        ...bids[0],
+        ortb2Imp: {
+          ext: {
+            data: { customKey: 'customValue' }
+          }
+        },
+      };
+      const requestWithFpd = spec.buildRequests([bidWithFpd], { ...bidRequestSingle, bids: [bidWithFpd] });
+      const payloadWithFpd = requestWithFpd ? requestWithFpd.data : { imp: false };
+      const extData = payloadWithFpd.imp && payloadWithFpd.imp[0].ext.data;
+
+      expect(extData).to.have.property('customKey').that.equals('customValue');
+      expect(extData).to.have.property('pbsize');
     });
 
     it('should send supply chain data', function () {
@@ -964,6 +980,23 @@ describe('gopl adapter functionality', function () {
       expect(nativeBid.creative_id).to.equal('lxHWkB7OnZeso3QiN1N4');
     });
 
+    it('should derive mediaType from the actual response content, not from the declared mediaTypes key order', function () {
+      // banner declared before native: a mediaTypes-key-order-based detection would wrongly pick 'banner'
+      const bidMultiFormat = {
+        ...bid_native,
+        sizes: [[300, 250]],
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          native: bid_native.mediaTypes.native,
+        },
+      };
+      const requestMultiFormat = spec.buildRequests([bidMultiFormat], { ...bidRequestNative, bids: [bidMultiFormat] });
+      const resultMultiFormat = spec.interpretResponse(serverResponseNative, requestMultiFormat);
+
+      expect(resultMultiFormat.length).to.equal(1);
+      expect(resultMultiFormat[0].mediaType).to.equal('native');
+    });
+
     it('should reject responses that are not HTML, VATS/VPAID or native', function () {
       let resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle);
 
@@ -1059,7 +1092,7 @@ describe('gopl adapter functionality', function () {
     });
   });
 
-    describe('aliases', function () {
+  describe('aliases', function () {
     it('should declare sspBC as alias inheriting gvlid 690', function () {
       expect(spec.aliases).to.include('sspBC');
       expect(spec.gvlid).to.equal(690);

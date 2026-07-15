@@ -24,6 +24,21 @@ const pageView = {};
 
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
+const isVideoAd = ({ adm }) => /^<\?xml|<VAST/i.test(adm || '');
+
+const isNativeAd = ({ adm, admNative }) => {
+  if (admNative) {
+    return true;
+  }
+  try {
+    return Array.isArray(JSON.parse(adm).assets);
+  } catch (err) {
+    return false;
+  }
+};
+
+const isHTML = ({ adm }) => /^<html|<iframe/i.test(adm || '');
+
 const applyClientHints = ortbRequest => {
   const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
@@ -103,14 +118,14 @@ const converter = ortbConverter({
 
     imp.id = (id && siteId) ? id.padStart(3, '0') : `bidid-${bidId}`;
     imp.tagid = adUnitCode;
-    imp.ext.data = { pbsize: adUnitsCalled[adUnitCode] } || {}
+    imp.ext.data = { ...imp.ext.data, pbsize: adUnitsCalled[adUnitCode] };
 
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
-    const { site = {}, refererInfo = {} } = req;
-    const { bids } = bidderRequest;
+    const { site = {} } = req;
+    const { bids, refererInfo = {} } = bidderRequest;
     const { params = {} } = bids[0];
     const { siteId } = params;
     const { ref } = refererInfo;
@@ -141,11 +156,20 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bidResponse, context) {
     const { bidRequest, seatbid } = context;
     const { seat } = seatbid;
-    const { mediaTypes } = bidRequest
-    const { adm, admNative, ext, burl } = bidResponse;
+    const { adm, admNative, ext = {}, burl } = bidResponse;
     const { cache, pricepl, platform, publisherid = '', vurls = [], siteid, slotid } = ext;
 
-    context.mediaType = Object.keys(mediaTypes)[0];
+    // derive mediaType from the actual response content: the backend does not send ORTB `mtype`.
+    // context may be reused across bids/calls, so explicitly clear it when nothing matches.
+    if (isVideoAd(bidResponse)) {
+      context.mediaType = VIDEO;
+    } else if (isNativeAd(bidResponse)) {
+      context.mediaType = NATIVE;
+    } else if (isHTML(bidResponse)) {
+      context.mediaType = BANNER;
+    } else {
+      delete context.mediaType;
+    }
     pageView.publisher = publisherid;
 
     if (siteid && slotid) {
@@ -211,7 +235,7 @@ const getTopHost = () => {
 const unpackParams = (bidParams) => {
   const result = isArray(bidParams) ? bidParams[0] : bidParams;
   return result || {};
-}
+};
 
 /**
  * Get bid parameters for notification
@@ -226,7 +250,7 @@ const getNotificationPayload = bidData => {
         slotId: [],
         tagid: [],
         publisherId: pageView.publisher || '',
-      }
+      };
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
         const { platform = 'wpartner' } = meta;
@@ -238,8 +262,8 @@ const getNotificationPayload = bidData => {
           timeout: timeout || result.timeout,
           pvid: pageView.id,
           platform
-        }
-        result = { ...result, ...bidBasicData }
+        };
+        result = { ...result, ...bidBasicData };
 
         result.tagid.push(adUnitCode);
 
@@ -265,14 +289,14 @@ const getNotificationPayload = bidData => {
             adomain: advertiserDomains[0],
             adtype: mediaType,
             networkName,
-          }
-          result = { ...result, ...bidNonEmptyData }
+          };
+          result = { ...result, ...bidNonEmptyData };
         }
-      })
+      });
       return result;
     }
   }
-}
+};
 
 /**
  * Send payload to notification endpoint
@@ -284,7 +308,7 @@ const sendNotification = payload => {
     method: 'POST',
     crossOrigin: true
   });
-}
+};
 
 const isBidRequestValid = () => {
   // as per OneCode integration, bids without params are valid
