@@ -64,8 +64,8 @@ describe('JixieId  Submodule', () => {
             expect(completeCallback.calledOnceWithExactly(CLIENTID1)).to.be.true;
             storage.setCookie(STD_JXID_KEY, '', COOKIE_EXPIRATION_PAST);
             window.jixie_o = undefined;
-          })
-        })
+          });
+        });
         context('when there is no _jxx in the cookie', () => {
           it('should return callback with null', () => {
             window.jixie_o = {};
@@ -84,9 +84,9 @@ describe('JixieId  Submodule', () => {
             expect(request).to.be.undefined;
             expect(completeCallback.calledOnceWithExactly(null)).to.be.true;
             window.jixie_o = undefined;
-          })
-        })
-      })
+          });
+        });
+      });
 
       context('when there is no jixie_o in the window object', () => {
         context('when there is no pbjs jixie cookie', () => {
@@ -116,7 +116,7 @@ describe('JixieId  Submodule', () => {
           });
 
           it('should call the server and set the id. HERE we check all params to server in detail as more parameters since more was found in cookie', () => {
-            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE)
+            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE);
             storage.setDataInLocalStorage(EID_TYPE2_LSNAME, EID_TYPE2_SAMPLEVALUE);
 
             const completeCallback = sinon.spy();
@@ -149,7 +149,7 @@ describe('JixieId  Submodule', () => {
             expect(request.withCredentials).to.be.true;
 
             expect(completeCallback.calledOnceWithExactly(CLIENTID1)).to.be.true;
-            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_PAST)
+            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_PAST);
             storage.setDataInLocalStorage(EID_TYPE2_LSNAME, '');
           });
 
@@ -189,8 +189,8 @@ describe('JixieId  Submodule', () => {
         });
         context('when has rather fresh pbjs jixie cookie', () => {
           it('should not call the server ; just return the id', () => {
-            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
-            storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_VALID, COOKIE_EXPIRATION_FUTURE)
+            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE);
+            storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_VALID, COOKIE_EXPIRATION_FUTURE);
 
             const setCookieStub = sinon.stub(storage, 'setCookie');
             const completeCallback = sinon.spy();
@@ -209,16 +209,16 @@ describe('JixieId  Submodule', () => {
             expect(completeCallback.calledOnceWithExactly(CLIENTID1)).to.be.true;
             expect(request).to.be.undefined;
             setCookieStub.restore();
-            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_PAST)
-            storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_VALID, COOKIE_EXPIRATION_PAST)
-          })
+            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_PAST);
+            storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_VALID, COOKIE_EXPIRATION_PAST);
+          });
         });
         context('when has rather stale pbjs jixie cookie', () => {
           it('should call the server and set the id; send available extra info (e.g. esha,psha, consent if available)', () => {
             const consentData = { gdpr: { gdprApplies: 1, consentString: MOCK_CONSENT_STRING } };
-            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
-            storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_FUTURE)
-            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE)
+            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE);
+            storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_FUTURE);
+            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE);
             storage.setDataInLocalStorage(EID_TYPE2_LSNAME, EID_TYPE2_SAMPLEVALUE);
 
             const setCookieStub = sinon.stub(storage, 'setCookie');
@@ -263,15 +263,15 @@ describe('JixieId  Submodule', () => {
             setCookieStub.restore();
             storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_PAST);
             storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_PAST);
-            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_PAST)
+            storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_PAST);
             storage.setDataInLocalStorage(EID_TYPE2_LSNAME, '');
           });
         });
 
         context('when has corrupted idlog cookie', () => {
           it('should still call the server even though thre is a pbs jixie id', () => {
-            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
-            storage.setCookie(PBJS_IDLOGSTR_KEY, 'junk', COOKIE_EXPIRATION_FUTURE)
+            storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE);
+            storage.setCookie(PBJS_IDLOGSTR_KEY, 'junk', COOKIE_EXPIRATION_FUTURE);
             const completeCallback = sinon.spy();
             const { callback } = jixieIdSubmodule.getId({
               params: {

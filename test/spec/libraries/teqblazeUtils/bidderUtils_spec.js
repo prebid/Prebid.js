@@ -25,7 +25,8 @@ describe('TeqBlazeBidderUtils', function () {
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          battr: [1, 3]
         }
       },
       params: {
@@ -45,7 +46,8 @@ describe('TeqBlazeBidderUtils', function () {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
-          maxduration: 60
+          maxduration: 60,
+          battr: [1, 3]
         }
       },
       params: {
@@ -90,7 +92,7 @@ describe('TeqBlazeBidderUtils', function () {
     params: {
 
     }
-  }
+  };
 
   const bidderRequest = {
     uspConsent: '1---',
@@ -159,8 +161,7 @@ describe('TeqBlazeBidderUtils', function () {
         'tmax',
         'bcat',
         'badv',
-        'bapp',
-        'battr'
+        'bapp'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -187,18 +188,17 @@ describe('TeqBlazeBidderUtils', function () {
         expect(placement.type).to.exist.and.to.equal('publisher');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-          expect(placement.gpid).to.be.an('string');
-        }
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.gpid).to.be.an('string');
+            expect(placement.battr).to.exist.and.to.be.deep.equal([1, 3]);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.battr).to.exist.and.to.be.deep.equal([1, 3]);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -302,6 +302,98 @@ describe('TeqBlazeBidderUtils', function () {
     });
   });
 
+  describe('floor logic', function () {
+    const buildBidWithFloor = (mediaType, mediaTypeData, getFloor) => ({
+      bidId: getUniqueIdentifierStr(),
+      bidder,
+      mediaTypes: { [mediaType]: mediaTypeData },
+      params: { placementId: 'test' },
+      getFloor
+    });
+
+    it('returns bidfloor 0 and no floors map when getFloor is not defined', function () {
+      const bid = {
+        bidId: getUniqueIdentifierStr(),
+        bidder,
+        mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
+        params: { placementId: 'test' }
+      };
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0);
+      expect(placement.floors).to.be.undefined;
+    });
+
+    it('returns correct bidfloor and floors map for banner with single size', function () {
+      const bid = buildBidWithFloor(BANNER, { sizes: [[300, 250]] }, () => ({ currency: 'USD', floor: 1.5 }));
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(1.5);
+      expect(placement.floors).to.deep.equal({ '300x250': 1.5 });
+    });
+
+    it('returns floors map for all sizes and bidfloor from first size for banner with multiple sizes', function () {
+      const floorMap = { '300x250': 1.5, '728x90': 2.0 };
+      const bid = buildBidWithFloor(
+        BANNER,
+        { sizes: [[300, 250], [728, 90]] },
+        ({ size }) => ({ currency: 'USD', floor: floorMap[`${size[0]}x${size[1]}`] })
+      );
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.floors).to.deep.equal({ '300x250': 1.5, '728x90': 2.0 });
+      expect(placement.bidfloor).to.equal(1.5);
+    });
+
+    it('picks first size with a valid floor when earlier sizes return no floor', function () {
+      const bid = buildBidWithFloor(
+        BANNER,
+        { sizes: [[300, 250], [728, 90]] },
+        ({ size }) => size[0] === 300 ? { currency: 'USD', floor: 0 } : { currency: 'USD', floor: 2.0 }
+      );
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.floors).to.deep.equal({ '728x90': 2.0 });
+      expect(placement.bidfloor).to.equal(2.0);
+    });
+
+    it('returns bidfloor 0 and no floors map when all sizes return no floor', function () {
+      const bid = buildBidWithFloor(BANNER, { sizes: [[300, 250], [728, 90]] }, () => ({ currency: 'USD', floor: 0 }));
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0);
+      expect(placement.floors).to.be.undefined;
+    });
+
+    it('returns correct bidfloor and floors map for video', function () {
+      const bid = buildBidWithFloor(VIDEO, { playerSize: [[640, 480]] }, () => ({ currency: 'USD', floor: 3.0 }));
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(3.0);
+      expect(placement.floors).to.deep.equal({ '640x480': 3.0 });
+    });
+
+    it('returns correct bidfloor and no floors map for native', function () {
+      const bid = buildBidWithFloor(
+        NATIVE,
+        { native: { title: { required: true } } },
+        () => ({ currency: 'USD', floor: 0.5 })
+      );
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0.5);
+      expect(placement.floors).to.be.undefined;
+    });
+
+    it('returns bidfloor 0 and no floors map when getFloor throws', function () {
+      const bid = buildBidWithFloor(BANNER, { sizes: [[300, 250]] }, () => { throw new Error('floor error'); });
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0);
+      expect(placement.floors).to.be.undefined;
+    });
+  });
+
   describe('gpp consent', function () {
     it('bidderRequest.gppConsent', () => {
       bidderRequest.gppConsent = {
@@ -316,7 +408,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(data).to.have.property('gpp_sid');
 
       delete bidderRequest.gppConsent;
-    })
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
       bidderRequest.ortb2 = bidderRequest.ortb2 || {};
@@ -331,7 +423,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(data).to.have.property('gpp_sid');
 
       expect(bidderRequest).to.have.property('ortb2');
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -431,7 +523,7 @@ describe('TeqBlazeBidderUtils', function () {
 
       const dataItem = nativeResponses[0];
       expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.native.clickUrl).to.equal('test.com');
@@ -512,38 +604,46 @@ describe('TeqBlazeBidderUtils', function () {
   });
 
   describe('getUserSyncs', function () {
-    it('Should return array of objects with proper sync config , include GDPR', function () {
+    it('Should return an empty array if no sync enabled', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
       }, undefined);
+      expect(syncData).to.be.an('array');
+      expect(syncData).to.be.an.deep.equal([]);
+    });
+    it('Should return array of objects with proper sync config , include GDPR', function () {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, undefined);
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`)
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`);
     });
     it('Should return array of objects with proper sync config , include CCPA', function () {
-      const syncData = spec.getUserSyncs({}, {}, {}, '1---');
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1---');
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&ccpa_consent=1---&coppa=0`)
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&ccpa_consent=1---&coppa=0`);
     });
     it('Should return array of objects with proper sync config , include GPP', function () {
-      const syncData = spec.getUserSyncs({}, {}, {}, undefined, {
+      const syncData = spec.getUserSyncs({ pixelEnabled: true }, {}, {}, undefined, {
         gppString: 'abc123',
         applicableSections: [8]
       });
       expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0`)
+      expect(syncData[0]).to.be.an('object');
+      expect(syncData[0].type).to.be.a('string');
+      expect(syncData[0].type).to.equal('image');
+      expect(syncData[0].url).to.be.a('string');
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0`);
     });
   });
 });

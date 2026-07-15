@@ -1,7 +1,6 @@
 import { assert, expect } from 'chai';
-import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
+import { dep, NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import * as ajax from 'src/ajax.js';
 import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
@@ -219,7 +218,7 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
 
       expect(parsedRequestUrl.hostname).to.equal('yandex.tr');
-    })
+    });
 
     it('creates a valid banner request', function () {
       const bannerRequest = getBidRequest();
@@ -239,7 +238,7 @@ describe('Yandex adapter', function () {
       expect(method).to.equal('POST');
 
       const parsedRequestUrl = utils.parseUrl(url);
-      const { search: query } = parsedRequestUrl
+      const { search: query } = parsedRequestUrl;
 
       expect(parsedRequestUrl.hostname).to.equal('yandex.com');
       expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
@@ -268,7 +267,7 @@ describe('Yandex adapter', function () {
         const requests = spec.buildRequests([bannerRequest], res);
         const { url } = requests[0];
         const parsedRequestUrl = utils.parseUrl(url);
-        const { search: query } = parsedRequestUrl
+        const { search: query } = parsedRequestUrl;
 
         expect(query['ssp-cur']).to.equal('USD');
         setCurrencyConfig({});
@@ -932,8 +931,8 @@ describe('Yandex adapter', function () {
     it('Should not trigger pixel if bid does not contain nurl', function() {
       spec.onBidWon({});
 
-      expect(utils.triggerPixel.callCount).to.equal(0)
-    })
+      expect(utils.triggerPixel.callCount).to.equal(0);
+    });
 
     it('Should trigger pixel if bid has nurl', function() {
       spec.onBidWon({
@@ -941,9 +940,9 @@ describe('Yandex adapter', function () {
         timeToRespond: 378,
       });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378');
+    });
 
     it('Should trigger pixel if bid has nurl with path & params', function() {
       spec.onBidWon({
@@ -951,9 +950,9 @@ describe('Yandex adapter', function () {
         timeToRespond: 378,
       });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378');
+    });
 
     it('Should trigger pixel if bid has nurl with path & params and rtt macros', function() {
       spec.onBidWon({
@@ -961,23 +960,23 @@ describe('Yandex adapter', function () {
         timeToRespond: 378,
       });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378');
+    });
 
     it('Should trigger pixel if bid has nurl and there is no timeToRespond param, but has rtt macros in nurl', function() {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
       });
 
-      expect(utils.triggerPixel.callCount).to.equal(1)
-      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1')
-    })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1');
+    });
   });
 
   describe('onTimeout callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       expect(spec.onTimeout({ forTest: true })).to.not.throw;
       expect(ajaxStub.calledOnce).to.be.true;
     });
@@ -985,7 +984,7 @@ describe('Yandex adapter', function () {
 
   describe('on onBidderError callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       spec.onBidderError({ forTest: true });
       expect(ajaxStub.calledOnce).to.be.true;
     });
@@ -993,7 +992,7 @@ describe('Yandex adapter', function () {
 
   describe('on onBidBillable callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       spec.onBidBillable({ forTest: true });
       expect(ajaxStub.calledOnce).to.be.true;
     });
@@ -1001,7 +1000,7 @@ describe('Yandex adapter', function () {
 
   describe('on onAdRenderSucceeded callback', () => {
     it('will always call server', () => {
-      const ajaxStub = sandbox.stub(ajax, 'ajax');
+      const ajaxStub = sandbox.stub(dep, 'ajax');
       spec.onAdRenderSucceeded({ forTest: true });
       expect(ajaxStub.calledOnce).to.be.true;
     });

@@ -44,9 +44,9 @@ describe('LiveIntentMinimalId', function() {
     gdprConsentDataStub.returns({
       gdprApplies: true,
       consentString: 'consentDataString'
-    })
+    });
     liveIntentIdSubmodule.getId(defaultConfigParams);
-    expect(server.requests[0]).to.eql(undefined)
+    expect(server.requests[0]).to.eql(undefined);
   });
 
   it('should initialize LiveConnect and send no data', function() {
@@ -155,7 +155,7 @@ describe('LiveIntentMinimalId', function() {
   });
 
   it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
-    const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
+    const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000';
     getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
     const callBackSpy = sinon.spy();
     const submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
@@ -171,7 +171,7 @@ describe('LiveIntentMinimalId', function() {
   });
 
   it('should include the LiveConnect identifier and additional Identifiers to resolve', function() {
-    const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
+    const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000';
     getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
     getDataFromLocalStorageStub.withArgs('_thirdPC').returns('third-pc');
     const configParams = {
@@ -234,12 +234,12 @@ describe('LiveIntentMinimalId', function() {
     const submoduleCallback = liveIntentIdSubmodule.getId({
       params: {
         ...defaultConfigParams.params,
-        ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
+        ...{ requestedAttributesOverrides: { 'sovrn': true, 'openx': false } }
       }
     }).callback;
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
-    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=nonId&resolve=foo`);
+    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=nonId&resolve=sovrn`);
     request.respond(
       200,
       responseHeader,
@@ -299,8 +299,8 @@ describe('LiveIntentMinimalId', function() {
   });
 
   it('should decode a thetradedesk id to a separate object when present', function() {
-    const provider = 'liveintent.com'
-    refererInfoStub.returns({ domain: provider })
+    const provider = 'liveintent.com';
+    refererInfoStub.returns({ domain: provider });
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' });
     expect(result).to.eql({ 'lipb': { 'lipbid': 'foo', 'nonId': 'foo', 'tdid': 'bar' }, 'tdid': { 'id': 'bar', 'ext': { 'rtiPartner': 'TDID', 'provider': provider } } });
   });

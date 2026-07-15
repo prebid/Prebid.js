@@ -1,14 +1,13 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/omsBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import * as winDimensions from 'src/utils/winDimensions.js';
 import * as adUnits from 'src/utils/adUnits';
 
 const URL = 'https://rt.marphezis.com/hb';
 
 describe('omsBidAdapter', function () {
-  const adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;
@@ -182,7 +181,7 @@ describe('omsBidAdapter', function () {
             }
           },
         }
-      ]
+      ];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].video.context).to.equal('instream');
@@ -263,7 +262,7 @@ describe('omsBidAdapter', function () {
     });
 
     it('sends coppa', function () {
-      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } }).data)
+      const data = JSON.parse(spec.buildRequests(bidRequests, { ortb2: { regs: { coppa: 1 } } }).data);
       expect(data.regs).to.not.be.undefined;
       expect(data.regs.coppa).to.equal(1);
     });
@@ -333,7 +332,7 @@ describe('omsBidAdapter', function () {
             'pbadslot': '/1111/home-left'
           }
         }
-      }
+      };
 
       const data = JSON.parse(spec.buildRequests(bidRequests).data);
       expect(data.imp[0].ext).to.not.be.undefined;

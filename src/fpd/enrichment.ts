@@ -16,10 +16,6 @@ import { config } from '../config.js';
 import { getHighEntropySUA, getLowEntropySUA } from './sua.js';
 import { PbPromise } from '../utils/promise.js';
 import { CLIENT_SECTIONS, clientSectionChecker, hasSection } from './oneClient.js';
-import { isActivityAllowed } from '../activities/rules.js';
-import { activityParams } from '../activities/activityParams.js';
-import { ACTIVITY_ACCESS_DEVICE } from '../activities/activities.js';
-import { MODULE_TYPE_PREBID } from '../activities/modules.js';
 import { getViewportSize } from '../../libraries/viewport/viewport.js';
 
 export const dep = {
@@ -32,7 +28,7 @@ export const dep = {
   getDocument
 };
 
-const oneClient = clientSectionChecker('FPD')
+const oneClient = clientSectionChecker('FPD');
 
 export interface FirstPartyDataConfig {
   /**
@@ -67,10 +63,10 @@ declare module '../config' {
  * @returns {Promise<Object>} - A promise that resolves to an enriched ortb2 object.
  */
 export const enrichFPD = hook('sync', (fpd) => {
-  const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
+  const promArr = [fpd, getSUA().catch(() => null)];
 
   return PbPromise.all(promArr)
-    .then(([ortb2, sua, cdep]) => {
+    .then(([ortb2, sua]) => {
       const ri = dep.getRefererInfo();
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments(ortb2, ri);
@@ -81,13 +77,6 @@ export const enrichFPD = hook('sync', (fpd) => {
 
       if (sua) {
         deepSetValue(ortb2, 'device.sua', Object.assign({}, sua, ortb2.device.sua));
-      }
-
-      if (cdep) {
-        const ext = {
-          cdep
-        }
-        deepSetValue(ortb2, 'device.ext', Object.assign({}, ext, ortb2.device.ext));
       }
 
       const documentLang = dep.getDocument().documentElement.lang;
@@ -127,11 +116,7 @@ function getSUA() {
 }
 
 function removeUndef(obj) {
-  return getDefinedParams(obj, Object.keys(obj))
-}
-
-function tryToGetCdepLabel() {
-  return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && (navigator.cookieDeprecationLabel as any).getValue());
+  return getDefinedParams(obj, Object.keys(obj));
 }
 
 const ENRICHMENTS = {
@@ -166,7 +151,7 @@ const ENRICHMENTS = {
       };
 
       return device;
-    })
+    });
   },
   regs() {
     const regs = {} as any;
@@ -206,13 +191,13 @@ export const getJsonLdKeywords = memoize(() => {
       }
     }
     return keywords;
-  })
+  });
 });
 
 export const getMetaTagKeywords = memoize(() => {
   return winFallback((win) => {
     return win.document.querySelector('meta[name="keywords"]')?.content?.split(',').map(k => k.trim());
-  })
+  });
 });
 
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
@@ -232,5 +217,5 @@ function clientEnrichment(ortb2, ri) {
     publisher: removeUndef({
       domain: dep.findRootDomain(domain)
     })
-  })
+  });
 }

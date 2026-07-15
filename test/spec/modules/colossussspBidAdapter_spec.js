@@ -14,7 +14,8 @@ describe('ColossussspAdapter', function () {
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
     mediaTypes: {
       banner: {
-        sizes: [[300, 250]]
+        sizes: [[300, 250]],
+        battr: [1, 3]
       }
     },
     ortb2Imp: {
@@ -149,7 +150,7 @@ describe('ColossussspAdapter', function () {
       }
     },
     bids: [bid]
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('Should return true when placement_id can be cast to a number', function () {
@@ -177,8 +178,8 @@ describe('ColossussspAdapter', function () {
       expect(serverRequest.url).to.equal('https://colossusssp.com/?c=o&m=multi');
     });
     it('Should contain ccpa', function () {
-      expect(serverRequest.data.ccpa).to.be.an('string')
-    })
+      expect(serverRequest.data.ccpa).to.be.an('string');
+    });
 
     it('Returns valid data if array of bids is valid', function () {
       const data = serverRequest.data;
@@ -193,8 +194,8 @@ describe('ColossussspAdapter', function () {
       const placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         const placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid');
-        expect(placement.schain).to.be.an('object')
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid', 'battr');
+        expect(placement.schain).to.be.an('object');
         expect(placement.placementId).to.be.a('number');
         expect(placement.groupId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
@@ -203,6 +204,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.floor).to.be.an('object');
         expect(placement.gpid).to.be.an('string');
         expect(placement.tid).to.be.an('string');
+        expect(placement.battr).to.deep.equal([1, 3]);
       }
     });
 
@@ -216,10 +218,11 @@ describe('ColossussspAdapter', function () {
           video: {
             playerSize: [[300, 300]],
             minduration: 5,
-            maxduration: 60
+            maxduration: 60,
+            battr: [1, 3]
           }
         }
-      }
+      };
       const serverRequest = spec.buildRequests([videoBid], bidderRequest);
 
       const data = serverRequest.data;
@@ -236,9 +239,9 @@ describe('ColossussspAdapter', function () {
         const placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
-          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid'
+          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid', 'battr'
         );
-        expect(placement.schain).to.be.an('object')
+        expect(placement.schain).to.be.an('object');
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
@@ -261,7 +264,7 @@ describe('ColossussspAdapter', function () {
 
   describe('buildRequests with user ids', function () {
     var clonedBid = JSON.parse(JSON.stringify(bid));
-    clonedBid.userId = {}
+    clonedBid.userId = {};
     clonedBid.userId.idl_env = 'idl_env123';
     clonedBid.userId.tdid = 'tdid123';
     clonedBid.userId.id5id = { uid: 'id5id123' };
@@ -305,16 +308,16 @@ describe('ColossussspAdapter', function () {
       expect(data).to.be.an('object');
       for (let i = 0; i < placements.length; i++) {
         const placement = placements[i];
-        expect(placement).to.have.property('eids')
-        expect(placement.eids).to.be.an('array')
-        expect(placement.eids.length).to.be.equal(7)
+        expect(placement).to.have.property('eids');
+        expect(placement.eids).to.be.an('array');
+        expect(placement.eids.length).to.be.equal(7);
         for (const index in placement.eids) {
           const v = placement.eids[index];
-          expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
+          expect(v).to.have.all.keys('source', 'uids');
+          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com']);
           expect(v.uids).to.be.an('array');
-          expect(v.uids.length).to.be.equal(1)
-          expect(v.uids[0]).to.have.property('id')
+          expect(v.uids.length).to.be.equal(1);
+          expect(v.uids[0]).to.have.property('id');
         }
       }
     });
@@ -334,7 +337,7 @@ describe('ColossussspAdapter', function () {
       expect(data).to.have.property('gpp_sid');
 
       delete bidderRequest.gppConsent;
-    })
+    });
 
     it('bidderRequest.ortb2.regs.gpp', () => {
       bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
@@ -346,7 +349,7 @@ describe('ColossussspAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -444,10 +447,10 @@ describe('ColossussspAdapter', function () {
       };
       expect(spec.onBidWon(bid)).to.equals(undefined);
     });
-  })
+  });
 
   describe('getUserSyncs', function () {
-    const userSync = spec.getUserSyncs({}, {}, { consentString: 'xxx', gdprApplies: 1 }, '1YN-');
+    const userSync = spec.getUserSyncs({ pixelEnabled: true }, {}, { consentString: 'xxx', gdprApplies: 1 }, '1YN-');
     it('Returns valid URL and type', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;

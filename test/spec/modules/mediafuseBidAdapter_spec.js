@@ -342,7 +342,7 @@ describe('mediafuseBidAdapter', function () {
         expect(bids[0].vastUrl).to.equal('https://vast.example.com/vast.xml');
       });
 
-      it('should set vastImpUrl from nurl and vastUrl from asset_url when both present', function () {
+      it('should set vastTrackers with impression URL from nurl when present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
@@ -367,8 +367,36 @@ describe('mediafuseBidAdapter', function () {
         };
 
         const bids = spec.interpretResponse(serverResponse, req);
-        expect(bids[0].vastUrl).to.equal('https://vast.example.com/vast.xml');
-        expect(bids[0].vastImpUrl).to.equal('https://notify.example.com/win');
+        expect(bids[0].vastTrackers).to.exist;
+        expect(bids[0].vastTrackers.impression).to.be.an('array');
+        expect(bids[0].vastTrackers.impression).to.deep.equal(['https://notify.example.com/win']);
+      });
+
+      it('should not set vastTrackers when nurl is not present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
+
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 1,
+                    asset_url: 'https://vast.example.com/vast.xml'
+                  }
+                }
+              }]
+            }]
+          }
+        };
+
+        const bids = spec.interpretResponse(serverResponse, req);
+        expect(bids[0].vastTrackers).to.be.undefined;
       });
     });
   } // FEATURES.VIDEO
@@ -1600,42 +1628,6 @@ describe('mediafuseBidAdapter', function () {
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: 2 } };
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].video.playback_method).to.be.undefined;
-      });
-    }
-  });
-
-  // -------------------------------------------------------------------------
-  // interpretResponse — video nurl without asset_url
-  // -------------------------------------------------------------------------
-  describe('interpretResponse - video nurl without asset_url', function () {
-    if (FEATURES.VIDEO) {
-      it('should set vastImpUrl from nurl and not override vastUrl with redir pattern when asset_url is absent', function () {
-        const bid = deepClone(BASE_BID);
-        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
-        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-        const impId = req.data.imp[0].id;
-
-        const serverResponse = {
-          body: {
-            seatbid: [{
-              bid: [{
-                impid: impId,
-                price: 1.0,
-                nurl: 'https://notify.example.com/win',
-                ext: {
-                  appnexus: {
-                    bid_ad_type: 1
-                    // no asset_url, no renderer_url/renderer_id
-                  }
-                }
-              }]
-            }]
-          }
-        };
-        const bids = spec.interpretResponse(serverResponse, req);
-        expect(bids[0].vastImpUrl).to.equal('https://notify.example.com/win');
-        // ortbConverter sets vastUrl from nurl; our adapter does not override it with a redir pattern
-        expect(bids[0].vastUrl).to.equal('https://notify.example.com/win');
       });
     }
   });

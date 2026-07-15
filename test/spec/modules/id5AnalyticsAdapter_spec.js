@@ -17,7 +17,7 @@ describe('ID5 analytics adapter', () => {
 
   beforeEach(() => {
     // to enforce tcfControl initialization when running in single test mode
-    expect(enrichEidsRule).to.exist
+    expect(enrichEidsRule).to.exist;
     config = {
       options: {
         partnerId: 12349,
@@ -176,7 +176,7 @@ describe('ID5 analytics adapter', () => {
 
       const body3 = JSON.parse(server.requests[3].requestBody);
       expect(body3.event).to.equal('bidWon');
-    })
+    });
 
     it('filters unwanted IDs from the events it sends', () => {
       auction.adUnits[0].bids = [{
@@ -332,7 +332,6 @@ describe('ID5 analytics adapter', () => {
         'bidderCode': 'appnexus',
         'width': 728,
         'height': 90,
-        'statusMessage': 'Bid available',
         'adId': '99e7838aa7f1c4f',
         'requestId': '21e0b32208ee9a',
         'mediaType': 'banner',
@@ -426,7 +425,6 @@ describe('ID5 analytics adapter', () => {
         'bidderCode': 'appnexus',
         'width': 728,
         'height': 90,
-        'statusMessage': 'Bid available',
         'adId': '99e7838aa7f1c4f',
         'requestId': '21e0b32208ee9a',
         'mediaType': 'banner',
@@ -451,7 +449,6 @@ describe('ID5 analytics adapter', () => {
         'bidderCode': 'ix',
         'width': 728,
         'height': 90,
-        'statusMessage': 'Bid available',
         'adId': '228f725de4a9ff09',
         'requestId': '225a42b4a8ec7287',
         'mediaType': 'banner',
@@ -511,7 +508,7 @@ describe('ID5 analytics adapter', () => {
         'meta': {
           'advertiserId': 4388779
         }
-      }]
+      }];
       auction.adUnits[0].bids = [{
         'bidder': 'appnexus',
         'userId': {

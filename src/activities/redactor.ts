@@ -19,11 +19,11 @@ export const ORTB_UFPD_PATHS = [
   'id',
   'buyeruid',
   'customdata'
-].map(f => `user.${f}`).concat('device.ext.cdep', 'device.ifa');
+].map(f => `user.${f}`).concat('device.ifa');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
-export const ORTB_IPV4_PATHS = ['device.ip']
-export const ORTB_IPV6_PATHS = ['device.ipv6']
+export const ORTB_IPV4_PATHS = ['device.ip'];
+export const ORTB_IPV6_PATHS = ['device.ipv6'];
 
 /**
  * @typedef TransformationRuleDef
@@ -62,7 +62,7 @@ export function redactRule(ruleDef) {
         }
       }
     }
-  }, ruleDef)
+  }, ruleDef);
 }
 
 /**
@@ -88,9 +88,9 @@ export function objectTransformer(rules) {
     rule.paths = rule.paths.map((path) => {
       const parts = path.split('.');
       const tail = parts.pop();
-      return [parts.length > 0 ? parts.join('.') : null, tail]
-    })
-  })
+      return [parts.length > 0 ? parts.join('.') : null, tail];
+    });
+  });
   return function applyTransform(session, obj, ...args) {
     const result = [];
     const applies = sessionedApplies(session, ...args);
@@ -101,9 +101,9 @@ export function objectTransformer(rules) {
         result.push(rule.run(obj, head, parent, tail, applies.bind(null, rule)));
         if (session[rule.name] === false) return;
       }
-    })
+    });
     return result.filter(el => el != null);
-  }
+  };
 }
 
 export function sessionedApplies(session, ...args) {
@@ -112,11 +112,11 @@ export function sessionedApplies(session, ...args) {
       session[rule.name] = !!rule.applies(...args);
     }
     return session[rule.name];
-  }
+  };
 }
 
 export function isData(val) {
-  return val != null && (typeof val !== 'object' || Object.keys(val).length > 0)
+  return val != null && (typeof val !== 'object' || Object.keys(val).length > 0);
 }
 
 export function appliesWhenActivityDenied(activity, isAllowed = isActivityAllowed) {
@@ -137,7 +137,7 @@ function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
       paths: ['ortb2Imp.ext.tid', 'ortb2Imp.ext.tidSource'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed)
     }
-  ].map(redactRule)
+  ].map(redactRule);
 }
 
 export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
@@ -190,10 +190,10 @@ export function redactorFactory(isAllowed = isActivityAllowed) {
   return function redactor(params) {
     const session = {};
     return {
-      ortb2(obj) { redactOrtb2(session, obj, params); return obj },
-      bidRequest(obj) { redactBidRequest(session, obj, params); return obj }
-    }
-  }
+      ortb2(obj) { redactOrtb2(session, obj, params); return obj; },
+      bidRequest(obj) { redactBidRequest(session, obj, params); return obj; }
+    };
+  };
 }
 
 /**
@@ -224,6 +224,6 @@ declare module '../config' {
 // by default, TIDs are off since version 8
 registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {
   if (!config.getConfig('enableTIDs')) {
-    return { allow: false, reason: 'TIDs are disabled' }
+    return { allow: false, reason: 'TIDs are disabled' };
   }
 });

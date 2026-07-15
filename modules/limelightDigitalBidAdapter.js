@@ -1,7 +1,7 @@
 import { uniques, flatten, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 /**
@@ -88,7 +88,10 @@ export const spec = {
     { code: 'vaayaMedia' },
     { code: 'performist' },
     { code: 'oveeo' },
-    { code: 'embimedia' }
+    { code: 'embimedia' },
+    { code: 'pgamrtb' },
+    { code: 'nuclion' },
+    { code: 'datafusion' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -112,7 +115,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const normalizedBids = validBidRequests.map(bid => {
-      const adUnitType = bid.params.adUnitType || BANNER
+      const adUnitType = bid.params.adUnitType || BANNER;
       if (!bid.mediaTypes && bid.sizes) {
         if (adUnitType === BANNER) {
           return { ...bid, mediaTypes: { banner: { sizes: bid.sizes } } };
@@ -199,16 +202,16 @@ export const spec = {
     const imageSyncs = [];
     for (let i = 0; i < serverResponses.length; i++) {
       const serverResponseHeaders = serverResponses[i].headers;
-      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('x-pll-usersync-image') : null
-      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('x-pll-usersync-iframe') : null
+      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('x-pll-usersync-image') : null;
+      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('x-pll-usersync-iframe') : null;
       if (iframeSync != null) {
-        iframeSyncs.push(iframeSync)
+        iframeSyncs.push(iframeSync);
       } else if (imgSync != null) {
-        imageSyncs.push(imgSync)
+        imageSyncs.push(imgSync);
       }
     }
-    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
-      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques);
+    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it }; }),
+      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it }; })].reduce(flatten, []).filter(uniques);
   }
 };
 

@@ -236,7 +236,7 @@ describe('tpmnAdapterTests', function () {
       }
 
       if (FEATURES.VIDEO) {
-        it('should reutrn false if player size is not set', () => {
+        it('should return false if player size is not set', () => {
           const bid = utils.deepClone(VIDEO_BID);
           delete bid.mediaTypes.video.playerSize;
 
@@ -303,7 +303,7 @@ describe('tpmnAdapterTests', function () {
             startdelay: 0,
             skip: 1,
             plcmt: 4
-          }
+          };
 
           expect(spec.isBidRequestValid(NEW_VIDEO_BID)).to.equal(true);
           const requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);

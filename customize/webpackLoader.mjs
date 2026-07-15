@@ -1,8 +1,8 @@
-import { getBuildOptions, getBuildOptionsModule } from './buildOptions.mjs'
+import { getBuildOptionsVirtualModuleId, renderBuildOptionsVirtualModule } from './virtualBuildOptions.mjs'
 
 export default async function (source) {
-  if (this.resourcePath !== getBuildOptionsModule()) {
+  if (this.resourcePath !== getBuildOptionsVirtualModuleId()) {
     return source
   }
-  return `export default ${JSON.stringify(await getBuildOptions(this.getOptions()), null, 2)};`
+  return renderBuildOptionsVirtualModule(this.getOptions())
 }
