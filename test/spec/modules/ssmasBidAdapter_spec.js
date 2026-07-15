@@ -150,7 +150,7 @@ describe('ssmasBidAdapter', function () {
       'dealId': null,
       'creative_id': '3547894',
       'creativeId': '3547894',
-      'ttl': 30,
+      'ttl': 300,
       'netRevenue': true,
       'meta': {
         'advertiserDomains': [
@@ -158,71 +158,21 @@ describe('ssmasBidAdapter', function () {
         ]
       }
     };
-    const bidRequest = {
-      'imp': [
-        {
-          'ext': {
-            'tid': '937db9c3-c22d-4454-b786-fcad76a349e5',
-            'data': {
-              'pbadslot': 'test-div'
-            }
-          },
-          'id': '3919400af0b73e8',
-          'banner': {
-            'topframe': 1,
-            'format': [
-              {
-                'w': 300,
-                'h': 600
-              }
-            ]
-          }
-        },
-        {
-          'ext': {
-            'tid': '0c0d3d1b-0ad0-4786-896d-24c15fc6531d',
-            'data': {
-              'pbadslot': 'test-div2'
-            }
-          },
-          'id': '3919400af0b73e8',
-          'banner': {
-            'topframe': 1,
-            'format': [
-              {
-                'w': 300,
-                'h': 600
-              }
-            ]
-          }
-        }
-      ],
-      'site': {
-        'domain': 'localhost:9999',
-        'publisher': {
-          'domain': 'localhost:9999'
-        },
-        'page': 'http://localhost:9999/integrationExamples/noadserver/basic_noadserver.html',
-        'ref': 'http://localhost:9999/integrationExamples/noadserver/',
-        'id': 1,
-        'ext': {
-          'placementId': 13144370
-        }
-      },
-      'device': {
-        'w': 1536,
-        'h': 711,
-        'dnt': 0,
-        'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0',
-        'language': 'es'
-      },
-      'id': '8cc2f4b0-084d-4f40-acfa-5bec2023b1ab',
-      'test': 0,
-      'tmax': 20000,
-      'source': {
-        'tid': '8cc2f4b0-084d-4f40-acfa-5bec2023b1ab'
-      }
-    }
+    it('converts OpenRTB bids and filters non-positive CPM bids', function () {
+      const request = spec.buildRequests([bid], bidderRequest)[0];
+      bidOrtbResponse.seatbid[0].bid[0].impid = request.data.imp[0].id;
+      const result = spec.interpretResponse({ body: bidOrtbResponse }, request);
+
+      expect(result).to.have.length(1);
+      expect(result[0]).to.deep.include({
+        ...bidResponse,
+        meta: result[0].meta,
+        cpm: 7.01,
+        height: 600,
+        requestId: request.data.imp[0].id
+      });
+      expect(result[0].meta.advertiserDomains).to.deep.equal(bidResponse.meta.advertiserDomains);
+    });
   });
 
   describe('test onBidWon function', function () {
@@ -237,7 +187,7 @@ describe('ssmasBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(false);
     });
   });

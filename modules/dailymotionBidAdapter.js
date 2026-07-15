@@ -59,7 +59,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     ? deepAccess(bidderRequest, 'ortb2.site')
     : deepAccess(bidderRequest, 'ortb2.app');
   // Content object is either from Object: Site or Object: App
-  const contentObj = deepAccess(siteOrAppObj, 'content')
+  const contentObj = deepAccess(siteOrAppObj, 'content');
 
   const contentCattax = deepAccess(contentObj, 'cattax', 0);
   const isContentCattaxV1 = contentCattax === 1;

@@ -26,7 +26,7 @@ export function formatRequest({ payload, url, bidderRequest, bidId }) {
     options: {
       withCredentials: true,
     }
-  }
+  };
 
   if (bidderRequest) {
     request.bidderRequest = bidderRequest;
@@ -84,7 +84,9 @@ export function bannerBid(serverBid, rtbBid, bidderRequest, margin) {
 
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
-      vastImpUrl: rtbBid.notify_url,
+      vastTrackers: {
+        impression: [rtbBid.notify_url]
+      },
       ad: getBannerHtml(rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url)),
       ttl: 3600
     });
@@ -209,5 +211,5 @@ export function getSiteObj() {
     page: refInfo.page,
     ref: refInfo.ref,
     domain: refInfo.domain
-  }
+  };
 }

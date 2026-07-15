@@ -1,8 +1,6 @@
 import { oxxionSubmodule } from 'modules/oxxionRtdProvider.js';
 import 'src/prebid.js';
 
-const utils = require('src/utils.js');
-
 const moduleConfig = {
   params: {
     domain: 'test.endpoint',
@@ -107,7 +105,9 @@ const bids = [{
   'adUnitCode': 'msq_tag_200125_video',
   'timeToRespond': 146,
   'size': '640x480',
-  'vastImpUrl': 'https://some.tracking-url.com'
+  'vastTrackers': {
+    'impression': ['https://some.tracking-url.com']
+  }
 },
 ];
 
@@ -117,15 +117,6 @@ const bidInterests = [
   { 'id': 2, 'rate': 0.0, 'suggestion': true },
   { 'id': 3, 'rate': 0.0, 'suggestion': false },
 ];
-
-const userConsent = {
-  'gdpr': {
-    'consentString': 'consent_hash'
-  },
-  'usp': null,
-  'gpp': null,
-  'coppa': false
-};
 
 describe('oxxionRtdProvider', () => {
   describe('Oxxion RTD sub module', () => {

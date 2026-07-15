@@ -48,7 +48,7 @@ const request_banner = {
   params: {
     placementId: 'to0QI2aPgkbBZq6vgf0oHitouZduz0qw'
   }
-}
+};
 
 const bidRequest = {
   gdprConsent: {
@@ -61,7 +61,7 @@ const bidRequest = {
     referer: 'testdomain.com'
   },
   timeout: 700
-}
+};
 
 const request_video = {
   code: 'brave-video-prebid',
@@ -92,7 +92,7 @@ const request_video = {
     placementId: 'to0QI2aPgkbBZq6vgf0oHitouZduz0qw'
   }
 
-}
+};
 
 const response_banner = {
   id: 'request_id',
@@ -252,12 +252,12 @@ describe('BraveBidAdapter', function() {
       const response = spec.interpretResponse(emptyResponse);
 
       expect(response).to.be.an('array').that.is.empty;
-    })
+    });
 
     it('Should interpret banner response', function () {
       const bannerResponse = {
         body: response_banner
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_banner.seatbid[0].bid[0].impid,
@@ -271,7 +271,7 @@ describe('BraveBidAdapter', function() {
         dealId: response_banner.seatbid[0].bid[0].dealid,
         mediaType: 'banner',
         ad: response_banner.seatbid[0].bid[0].adm
-      }
+      };
 
       const bannerResponses = spec.interpretResponse(bannerResponse);
 
@@ -293,7 +293,7 @@ describe('BraveBidAdapter', function() {
     it('Should interpret video response', function () {
       const videoResponse = {
         body: response_video
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_video.seatbid[0].bid[0].impid,
@@ -307,7 +307,7 @@ describe('BraveBidAdapter', function() {
         dealId: response_video.seatbid[0].bid[0].dealid,
         mediaType: 'video',
         vastXml: response_video.seatbid[0].bid[0].adm
-      }
+      };
 
       const videoResponses = spec.interpretResponse(videoResponse);
 
@@ -317,7 +317,7 @@ describe('BraveBidAdapter', function() {
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
@@ -329,7 +329,7 @@ describe('BraveBidAdapter', function() {
     it('Should interpret native response', function () {
       const nativeResponse = {
         body: response_native
-      }
+      };
 
       const expectedBidResponse = {
         requestId: response_native.seatbid[0].bid[0].impid,
@@ -343,7 +343,7 @@ describe('BraveBidAdapter', function() {
         dealId: response_native.seatbid[0].bid[0].dealid,
         mediaType: 'native',
         native: { clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url }
-      }
+      };
 
       const nativeResponses = spec.interpretResponse(nativeResponse);
 
@@ -353,7 +353,7 @@ describe('BraveBidAdapter', function() {
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl)
+      expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl);
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
@@ -362,4 +362,4 @@ describe('BraveBidAdapter', function() {
       expect(dataItem.height).to.equal(expectedBidResponse.height);
     });
   });
-})
+});

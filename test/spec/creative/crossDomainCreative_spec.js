@@ -29,7 +29,7 @@ describe('cross-domain creative', () => {
         createElement: sinon.stub().callsFake(tagname => {
           switch (tagname.toLowerCase()) {
             case 'a':
-              return document.createElement('a')
+              return document.createElement('a');
             case 'iframe': {
               return mkIframe();
             }
@@ -45,36 +45,36 @@ describe('cross-domain creative', () => {
       }
     };
     renderAd = (...args) => renderer(win)(...args);
-  })
+  });
 
   afterEach(() => {
     consoleErrorStub.restore();
-  })
+  });
 
   function waitFor(predicate, timeout = 1000) {
     let timedOut = false;
     return new Promise((resolve, reject) => {
       const to = setTimeout(() => {
         timedOut = true;
-        reject(new Error('timeout'))
-      }, timeout)
-      resolve = (orig => () => { clearTimeout(to); orig() })(resolve);
+        reject(new Error('timeout'));
+      }, timeout);
+      resolve = (orig => () => { clearTimeout(to); orig(); })(resolve);
       function check() {
         if (!timedOut) {
           setTimeout(() => {
             if (predicate()) {
-              resolve()
+              resolve();
             } else check();
-          }, 50)
+          }, 50);
         }
       }
       check();
-    })
+    });
   }
 
   it('derives postMessage target origin from pubUrl ', () => {
     renderAd({ pubUrl: 'https://domain.com:123/path' });
-    expect(messages[0].targetOrigin).to.eql('https://domain.com:123')
+    expect(messages[0].targetOrigin).to.eql('https://domain.com:123');
   });
 
   describe('when there are multiple ancestors', () => {
@@ -95,22 +95,22 @@ describe('cross-domain creative', () => {
             },
           }
         }
-      }
-    })
+      };
+    });
     Object.entries({
-      'throws': () => { throw new DOMException() },
+      'throws': () => { throw new DOMException(); },
       'does not throw': () => ({})
     }).forEach(([t, getFrames]) => {
       describe(`when an ancestor ${t}`, () => {
         beforeEach(() => {
-          Object.defineProperty(win.parent.parent.parent.parent, 'frames', { get: getFrames })
-        })
+          Object.defineProperty(win.parent.parent.parent.parent, 'frames', { get: getFrames });
+        });
         it('posts message to the first ancestor with __pb_locator__ child', () => {
           renderAd({ pubUrl: 'https://www.example.com' });
           expect(messages.length).to.eql(1);
         });
-      })
-    })
+      });
+    });
     it('posts to first restricted parent, if __pb_locator__ cannot be found', () => {
       Object.defineProperty(win.parent.parent.parent, 'frames', {
         get() {
@@ -119,8 +119,8 @@ describe('cross-domain creative', () => {
       });
       renderAd({ pubUrl: 'https://www.example.com' });
       expect(messages.length).to.eql(1);
-    })
-  })
+    });
+  });
 
   it('generates request message with adId and clickUrl', () => {
     renderAd({ adId: '123', clickUrl: 'https://click-url.com', pubUrl: ORIGIN });
@@ -130,7 +130,7 @@ describe('cross-domain creative', () => {
       options: {
         clickUrl: 'https://click-url.com'
       }
-    })
+    });
   });
 
   it('runs scripts inserted through iframe srcdoc', (done) => {
@@ -139,9 +139,9 @@ describe('cross-domain creative', () => {
     iframe.onload = function () {
       expect(iframe.contentWindow.ran).to.be.true;
       done();
-    }
+    };
     document.body.appendChild(iframe);
-  })
+  });
 
   describe('listens and', () => {
     function reply(msg, index = 0) {
@@ -152,10 +152,10 @@ describe('cross-domain creative', () => {
       renderAd({ adId: '123', pubUrl: ORIGIN });
       reply({ adId: '123', ad: 'markup' });
       sinon.assert.notCalled(mkIframe);
-    })
+    });
 
     it('signals AD_RENDER_FAILED on exceptions', () => {
-      mkIframe.callsFake(() => { throw new Error('error message') });
+      mkIframe.callsFake(() => { throw new Error('error message'); });
       renderAd({ adId: '123', pubUrl: ORIGIN });
       reply({ message: MESSAGE_RESPONSE, adId: '123', ad: 'markup' });
       return waitFor(() => messages[1]?.payload).then(() => {
@@ -167,8 +167,8 @@ describe('cross-domain creative', () => {
             reason: ERROR_EXCEPTION,
             message: 'error message'
           }
-        })
-      })
+        });
+      });
     });
 
     describe('renderer', () => {
@@ -183,14 +183,14 @@ describe('cross-domain creative', () => {
           message: MESSAGE_RESPONSE,
           adId: '123',
           renderer: 'window.render = window.parent._render'
-        }
+        };
         renderAd({ adId: '123', pubUrl: ORIGIN });
         reply(data);
         return waitFor(() => window._render.args.length).then(() => {
           sinon.assert.calledWith(window._render, data, sinon.match.any, win);
         }).finally(() => {
           delete window._render;
-        })
+        });
       });
 
       Object.entries({
@@ -217,8 +217,8 @@ describe('cross-domain creative', () => {
                 message: sinon.match(val => message == null || message === val)
               }
             });
-          })
-        })
+          });
+        });
       });
 
       it('signals AD_RENDER_SUCCEEDED when renderer resolves', () => {
@@ -231,17 +231,17 @@ describe('cross-domain creative', () => {
         return waitFor(() => window._resolve).then(() => {
           expect(messages[1]).to.not.exist;
           window._resolve();
-          return waitFor(() => messages[1]?.payload)
+          return waitFor(() => messages[1]?.payload);
         }).then(() => {
           sinon.assert.match(messages[1].payload, {
             adId: '123',
             message: MESSAGE_EVENT,
             event: EVENT_AD_RENDER_SUCCEEDED
-          })
+          });
         }).finally(() => {
           delete window._resolve;
-        })
-      })
+        });
+      });
 
       it('is provided a sendMessage that accepts replies', () => {
         renderAd({ adId: '123', pubUrl: ORIGIN });
@@ -253,12 +253,12 @@ describe('cross-domain creative', () => {
         });
         return waitFor(() => messages[1]?.payload).then(() => {
           reply('response', 1);
-          return waitFor(() => window._reply.args.length)
+          return waitFor(() => window._reply.args.length);
         }).then(() => {
           sinon.assert.calledWith(window._reply, sinon.match({ data: JSON.stringify('response') }));
         }).finally(() => {
           delete window._reply;
-        })
+        });
       });
     });
   });

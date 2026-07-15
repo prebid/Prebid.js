@@ -75,7 +75,7 @@ describe('dvgroupBidAdapterTests', function () {
       }
     };
 
-    const bidRequest = deepClone(bidRequestData.bids)
+    const bidRequest = deepClone(bidRequestData.bids);
     bidRequest[0].mediaTypes = {
       banner: {
         sizes: [
@@ -83,7 +83,7 @@ describe('dvgroupBidAdapterTests', function () {
           [300, 600],
         ],
       }
-    }
+    };
 
     const request = spec.buildRequests(bidRequest);
     const bids = spec.interpretResponse(serverResponse, request[0]);
@@ -104,7 +104,7 @@ describe('dvgroupBidAdapterTests', function () {
       body: {}
     };
 
-    const bidRequest = deepClone(bidRequestData.bids)
+    const bidRequest = deepClone(bidRequestData.bids);
     bidRequest[0].mediaTypes = {
       banner: {
         sizes: [
@@ -112,12 +112,12 @@ describe('dvgroupBidAdapterTests', function () {
           [300, 600],
         ],
       }
-    }
+    };
 
     const request = spec.buildRequests(bidRequest);
     const bids = spec.interpretResponse(serverResponse, request[0]);
     expect(bids).to.have.lengthOf(0);
-  })
+  });
 
   if (FEATURES.VIDEO) {
     it('video_bid', function () {
@@ -185,11 +185,11 @@ describe('getUserSyncs', function() {
       pixelEnabled: true,
     }, {}, {}, '1---');
     expect(syncData).to.be.an('array').which.is.not.empty;
-    expect(syncData[0]).to.be.an('object')
-    expect(syncData[0].type).to.be.a('string')
-    expect(syncData[0].type).to.equal('image')
-    expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=1---&gdpr_consent=')
+    expect(syncData[0]).to.be.an('object');
+    expect(syncData[0].type).to.be.a('string');
+    expect(syncData[0].type).to.equal('image');
+    expect(syncData[0].url).to.be.a('string');
+    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=1---&gdpr_consent=');
   });
 
   it('Should return array of objects with proper sync config , include GDPR', function() {
@@ -207,11 +207,11 @@ describe('getUserSyncs', function() {
       }
     }, '');
     expect(syncData).to.be.an('array').which.is.not.empty;
-    expect(syncData[0]).to.be.an('object')
-    expect(syncData[0].type).to.be.a('string')
-    expect(syncData[0].type).to.equal('image')
-    expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1')
+    expect(syncData[0]).to.be.an('object');
+    expect(syncData[0].type).to.be.a('string');
+    expect(syncData[0].type).to.equal('image');
+    expect(syncData[0].url).to.be.a('string');
+    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1');
   });
 
   it('Should return array of objects with proper sync config , include GDPR, no purpose', function() {
@@ -239,10 +239,10 @@ describe('getUserSyncs', function() {
       consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     }, '');
     expect(syncData).to.be.an('array').which.is.not.empty;
-    expect(syncData[0]).to.be.an('object')
-    expect(syncData[0].type).to.be.a('string')
-    expect(syncData[0].type).to.equal('image')
-    expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=0')
+    expect(syncData[0]).to.be.an('object');
+    expect(syncData[0].type).to.be.a('string');
+    expect(syncData[0].type).to.equal('image');
+    expect(syncData[0].url).to.be.a('string');
+    expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=0');
   });
-})
+});

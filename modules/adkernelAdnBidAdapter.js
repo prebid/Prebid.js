@@ -2,7 +2,7 @@ import { deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizes
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js'
+import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -89,7 +89,7 @@ function buildSite(refInfo) {
     page: refInfo.page,
     secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
     ref: refInfo.ref
-  }
+  };
   const keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
     result.keywords = keywords.content;
@@ -178,7 +178,7 @@ export const spec = {
           method: 'POST',
           url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
-        })
+        });
       });
     });
     return requests;

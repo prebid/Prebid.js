@@ -9,6 +9,16 @@ pbjs.setConfig({
             uid2: ['uid2', 'liveIntentId']
         }
         userIds: [{
+            name: "acxiomRealId",
+            params: {
+                partnerId: "YOUR_PARTNER_ID" // Example Partner ID
+            },
+            storage: {
+                type: "html5",
+                name: "acxiomRealId",
+                expires: 7
+            }
+        }, {
             name: "33acrossId",
             storage: {
                 type: "cookie",
@@ -18,6 +28,17 @@ pbjs.setConfig({
             },
             params: {
                 pid: "0010b00002GYU4eBAH" // Example ID
+            }
+        }, {
+            name: "abtshieldId",
+            params: {
+                sid: "pb.your-service-id"
+            },
+            storage: {
+                type: "cookie",
+                name: "abtshieldId",
+                expires: 1,
+                refreshInSeconds: 86400
             }
         }, {
             name: "pubCommonId",
@@ -157,6 +178,18 @@ pbjs.setConfig({
         },
         {
             name: "mygaruId"
+        },
+        {
+            name: "rediadsId",
+            params: {
+                source: "rediads.com"
+            },
+            storage: {
+                type: "html5",
+                name: "rediads_id",
+                expires: 30,
+                refreshInSeconds: 3600
+            }
         },
         {
             name: "startioId"

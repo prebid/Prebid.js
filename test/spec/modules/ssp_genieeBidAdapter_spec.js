@@ -220,6 +220,57 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[1].data.cur).to.deep.equal('USD');
       });
 
+      it('should set UA client hints from bidderRequest.ortb2.device.sua', function () {
+        const request = spec.buildRequests([BANNER_BID], {
+          ortb2: {
+            device: {
+              sua: {
+                browsers: [{ brand: 'Chromium', version: ['123', '0', '6312', '86'] }],
+                platform: { brand: 'macOS', version: ['14', '4', '1'] },
+                architecture: 'arm',
+                bitness: '64',
+                mobile: 0,
+                model: 'MacBookPro'
+              }
+            }
+          }
+        });
+
+        expect(request[0].data.ucfvl).to.equal('"Chromium";v="123.0.6312.86"');
+        expect(request[0].data.ucp).to.equal('"macOS"');
+        expect(request[0].data.ucarch).to.equal('"arm"');
+        expect(request[0].data.ucpv).to.equal('"14.4.1"');
+        expect(request[0].data.ucbit).to.equal('"64"');
+        expect(request[0].data.ucmbl).to.equal('?0');
+        expect(request[0].data.ucmdl).to.equal('"MacBookPro"');
+      });
+
+      it('should prefer bid.ortb2.device.sua over bidderRequest.ortb2.device.sua', function () {
+        const request = spec.buildRequests([{
+          ...BANNER_BID,
+          ortb2: {
+            device: {
+              sua: {
+                platform: { brand: 'Android' },
+                mobile: 1
+              }
+            }
+          }
+        }], {
+          ortb2: {
+            device: {
+              sua: {
+                platform: { brand: 'macOS' },
+                mobile: 0
+              }
+            }
+          }
+        });
+
+        expect(request[0].data.ucp).to.equal('"Android"');
+        expect(request[0].data.ucmbl).to.equal('?1');
+      });
+
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('adtk');
@@ -386,6 +437,70 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[0].data).to.not.have.property('extuid');
       });
 
+      it('should include schain in data when schain exists', function () {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{ asi: 'example.com', sid: 'publisher-id', hp: 1 }]
+        };
+        const bidWithSchain = {
+          ...BANNER_BID,
+          ortb2: { source: { ext: { schain } } }
+        };
+        const request = spec.buildRequests([bidWithSchain]);
+        expect(request[0].data.schain).to.equal(JSON.stringify(schain));
+      });
+
+      it('should set schain to empty when schain not exists', function () {
+        const bidWithSchain = {
+          ...BANNER_BID,
+          ortb2: { source: { ext: {} } }
+        };
+        const request = spec.buildRequests([bidWithSchain]);
+        expect(request[0].data.schain).to.equal('');
+      });
+
+      it('should set schain to empty string when ortb2 is missing', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data.schain).to.equal('');
+      });
+
+      it('should set fl_pr when bid.getFloor returns a valid floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 10 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(10);
+      });
+
+      it('should not include fl_pr when bid.getFloor is not a function', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should not include fl_pr when getFloor returns NaN floor', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 'invalid' }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data).to.not.have.property('fl_pr');
+      });
+
+      it('should pass size * when bid has multiple sizes', function () {
+        const bidWithFloor = {
+          ...BANNER_BID,
+          sizes: [[300, 250], [728, 90]],
+          mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
+          getFloor: () => ({ currency: 'JPY', floor: 5.5 }),
+        };
+        const request = spec.buildRequests([bidWithFloor]);
+        expect(request[0].data.fl_pr).to.equal(5.5);
+      });
+
       describe('buildExtuidQuery', function() {
         it('should return tab-separated string when both id5 and imuId exist', function() {
           const result = buildExtuidQuery({ id5: 'test_id5', imuId: 'test_imu' });
@@ -505,7 +620,7 @@ describe('ssp_genieeBidAdapter', function () {
             adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d'
           }
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'image',
@@ -521,7 +636,7 @@ describe('ssp_genieeBidAdapter', function () {
             adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a%20none%3b%20visibility%3a%20hidden%3b%5c%22%20%5c%2f%3e%3cimg%20src%3d%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3drtbhouse%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a'
           }
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([{
         type: 'image',
@@ -537,7 +652,7 @@ describe('ssp_genieeBidAdapter', function () {
         body: {
           [ZONE_ID]: responseBase
         }
-      }]
+      }];
       const result = spec.getUserSyncs(syncOptions, response);
       expect(result).to.have.deep.equal([]);
     });

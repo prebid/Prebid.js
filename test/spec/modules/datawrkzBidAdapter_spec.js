@@ -43,18 +43,7 @@ describe('datawrkzAdapterTests', function () {
 
     it('should return false when required site_id param not found', function () {
       const invalidBid = Object.assign({}, bid);
-      invalidBid.params = { 'bidfloor': '1.0' }
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false when adunit is adpod video', function () {
-      const invalidBid = Object.assign({}, bid);
-      invalidBid.params = { 'bidfloor': '1.0', 'site_id': SITE_ID };
-      invalidBid.mediaTypes = {
-        'video': {
-          'context': 'adpod'
-        }
-      }
+      invalidBid.params = { 'bidfloor': '1.0' };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -283,7 +272,7 @@ describe('datawrkzAdapterTests', function () {
 
     it('instream video bidRequest with deals and slot size as 1 dimensional array', function () {
       const requests = spec.buildRequests(instreamVideoBidRequestsSingleArraySlotAndDeals, bidderRequest);
-      const payload = JSON.parse(requests[0].data);
+
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(FINAL_URL);
       expect(requests[0].bidRequest).to.exist;

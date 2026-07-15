@@ -41,9 +41,9 @@ describe('pairId', function () {
       params: {
         liveramp: {}
       }
-    })
-    expect(id).to.be.deep.equal({ id: pairIds })
-  })
+    });
+    expect(id).to.be.deep.equal({ id: pairIds });
+  });
 
   it('should read pairId from default liveramp envelope cookie entry if configured', function() {
     const pairIds = ['test-pair-id4', 'test-pair-id5', 'test-pair-id6'];
@@ -52,9 +52,9 @@ describe('pairId', function () {
       params: {
         liveramp: {}
       }
-    })
-    expect(id).to.be.deep.equal({ id: pairIds })
-  })
+    });
+    expect(id).to.be.deep.equal({ id: pairIds });
+  });
 
   it('should read pairId from specified liveramp envelope cookie entry if configured with storageKey', function() {
     const pairIds = ['test-pair-id7', 'test-pair-id8', 'test-pair-id9'];
@@ -65,9 +65,9 @@ describe('pairId', function () {
           storageKey: 'lr_pairId_custom'
         }
       }
-    })
-    expect(id).to.be.deep.equal({ id: pairIds })
-  })
+    });
+    expect(id).to.be.deep.equal({ id: pairIds });
+  });
 
   it('should not get data from storage if local storage and cookies are disabled', function () {
     sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
@@ -78,7 +78,7 @@ describe('pairId', function () {
           storageKey: 'lr_pairId_custom'
         }
       }
-    })
-    expect(id).to.equal(undefined)
-  })
+    });
+    expect(id).to.equal(undefined);
+  });
 });
