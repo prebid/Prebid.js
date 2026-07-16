@@ -91,34 +91,68 @@ describe('Creative renderer - display', () => {
     });
   });
 
-  it('changes styles for positioning if the container element has a margin', () => {
-    win.frameElement = {
-      style: {},
-      parentElement: {
+  describe('GAME_MANUAL_INTERSTITIAL position fix', () => {
+    let mockBox, mockContainer;
+    beforeEach(() => {
+      mockBox = {
         style: {},
-        ownerDocument: {
-          defaultView: {
-            getComputedStyle() {
-              return {
-                marginTop: '10px'
-              };
-            }
-          }
-        },
-        parentElement: {
-          style: {}
+        computedStyle: {
+          alignItems: 'flex-start'
         }
-      }
-    };
-    runRenderer({
-      ad: 'mock',
-      width: 123,
-      height: 321,
-      instl: true
+      };
+      mockContainer = {
+        parentElement: mockBox,
+        style: {},
+        computedStyle: {
+          marginTop: '123px'
+        }
+      };
+      Object.assign(win, {
+        frameElement: {
+          parentElement: mockContainer,
+          style: {}
+        },
+        parent: {
+          document: {
+            querySelector(selector) {
+              if (selector === 'div#creative') {
+                return mockContainer;
+              }
+              if (selector === 'div#ad_position_box') {
+                return mockBox;
+              }
+            }
+          },
+          getComputedStyle(el) {
+            return el.computedStyle;
+          }
+        }
+      });
     });
-    expect(win.frameElement.parentElement.parentElement.style.alignItems).to.eql('center');
-    expect(win.frameElement.parentElement.style.marginTop).to.eql('0px');
+
+    it('changes styles for positioning if the container looks like a GPT and uses margins for positioning', () => {
+      runRenderer({
+        ad: 'mock',
+        width: 123,
+        height: 321,
+        instl: true
+      });
+      expect(win.frameElement.parentElement.parentElement.style.alignItems).to.eql('center');
+      expect(win.frameElement.parentElement.style.marginTop).to.eql('0px');
+    });
+    it('does not choke if GPT containers cannot be found', () => {
+      win.parent.document.querySelector = () => null;
+      runRenderer({
+        ad: 'mock',
+        width: 123,
+        height: 321,
+        instl: true
+      });
+      expect(mockBox.style).to.eql({});
+      expect(mockContainer.style).to.eql({});
+    });
   });
+
 
   it('does not choke if no frame element can be found', () => {
     runRenderer({
