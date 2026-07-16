@@ -408,7 +408,7 @@ describe('SparteoAdapter', function () {
       });
 
       if (FEATURES.VIDEO) {
-        it('should fallback to nurl as vastUrl when no cache URL is present', function () {
+        it('should not use nurl as vastUrl when no cache URL is present', function () {
           const response = {
             body: {
               'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
@@ -442,7 +442,7 @@ describe('SparteoAdapter', function () {
           const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
           const bids = adapter.interpretResponse(response, request);
 
-          expect(bids[0].vastUrl).to.equal('https://t.bidder.sparteo.com/vast');
+          expect(bids[0].vastUrl).to.equal(null);
           expect(bids[0].nurl).to.equal('https://t.bidder.sparteo.com/vast');
         });
 
@@ -497,7 +497,11 @@ describe('SparteoAdapter', function () {
           let formattedReponse = adapter.interpretResponse(response, request);
 
           expect(formattedReponse[0].renderer.url).to.equal(response.body.seatbid[0].bid[0].ext.prebid.renderer.url);
-          expect(formattedReponse[0].renderer.config).to.deep.equal(response.body.seatbid[0].bid[0].ext.prebid.renderer);
+          // config now carries a documentResolver callback (for iframe render support) in addition
+          // to the server-provided renderer config, so assert the server config is included rather
+          // than an exact match.
+          expect(formattedReponse[0].renderer.config).to.deep.include(response.body.seatbid[0].bid[0].ext.prebid.renderer);
+          expect(formattedReponse[0].renderer.config.documentResolver).to.be.a('function');
         });
       }
     });
