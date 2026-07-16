@@ -8,6 +8,11 @@ import {
 } from '../../../modules/debugging/debugging.js';
 import '../../../modules/debugging/index.js';
 import { makePbsInterceptor } from '../../../modules/debugging/pbsInterceptor.js';
+import {
+  configureFpdValidation,
+  validateConfiguredFpd,
+  validateOrtb2ForDebug,
+} from '../../../modules/debugging/fpdValidation.js';
 import { config } from '../../../src/config.js';
 import { hook } from '../../../src/hook.js';
 import {
@@ -296,6 +301,42 @@ describe('Debugging config', () => {
     const getStorage = () => { throw new Error(); };
     getConfig({ enabled: false }, { getStorage, logger: { logError }, hook, utils });
     expect(logError.called).to.be.true;
+  });
+});
+
+describe('fpdValidation', () => {
+  const invalidOrtb2 = {
+    imp: { id: 'invalid-top-level-property' },
+    user: { yob: 'not-a-number' },
+  };
+
+  it('should validate a clone and keep original ortb2 untouched', () => {
+    const warn = sinon.stub(console, 'warn');
+    const result = validateOrtb2ForDebug(invalidOrtb2, { deepClone: utils.deepClone });
+    expect(result).to.equal(invalidOrtb2);
+    expect(result.imp).to.deep.equal({ id: 'invalid-top-level-property' });
+    expect(result.user).to.deep.equal({ yob: 'not-a-number' });
+    expect(warn.firstCall.args[0]).to.match(/^Filtered /);
+    warn.restore();
+  });
+
+  it('should validate global and bidder ortb2 when debugging is enabled', () => {
+    const bidderOrtb2 = { user: { yob: 'bidder-not-a-number' } };
+    const mockConfig = {
+      getAnyConfig: sinon.stub().withArgs('ortb2').returns(invalidOrtb2),
+      getBidderConfig: sinon.stub().returns({
+        testBidder: { ortb2: bidderOrtb2 }
+      })
+    };
+    configureFpdValidation({ config: mockConfig, utils });
+    const warn = sinon.stub(console, 'warn');
+
+    validateConfiguredFpd();
+    expect(warn.callCount).to.be.at.least(2);
+    expect(invalidOrtb2.imp).to.deep.equal({ id: 'invalid-top-level-property' });
+    expect(bidderOrtb2.user.yob).to.equal('bidder-not-a-number');
+
+    warn.restore();
   });
 });
 

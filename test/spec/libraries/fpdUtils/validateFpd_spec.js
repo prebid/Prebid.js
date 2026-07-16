@@ -51,4 +51,13 @@ describe('validateFpd library', () => {
       },
     });
   });
+
+  it('should log Filtered warnings when filtering', () => {
+    const warn = sinon.stub(console, 'warn');
+
+    validateFpd({ imp: { id: '1' } });
+
+    expect(warn.firstCall.args[0]).to.match(/^Filtered /);
+    warn.restore();
+  });
 });

@@ -1,7 +1,7 @@
 import { makebidInterceptor } from './bidInterceptor.js';
 import { makePbsInterceptor } from './pbsInterceptor.js';
 import { addHooks, removeHooks } from './legacy.js';
-import { configureFpdValidation } from './fpdValidation.js';
+import { configureFpdValidation, validateConfiguredFpd } from './fpdValidation.js';
 
 /**
  * @typedef {import('./debuggingModule.d.ts').DebugModuleConfiguration} DebugModuleConfiguration
@@ -17,6 +17,7 @@ let enabled = false;
 function enableDebugging(debugConfig, { fromSession = false, config, hook, logger }) {
   config.setConfig({ debug: true });
   bidInterceptor.updateConfig(debugConfig);
+  validateConfiguredFpd();
   resetHooks(true);
   // also enable "legacy" overrides
   removeHooks({ hook });
@@ -128,7 +129,7 @@ export function makeBidderBidInterceptor({ utils }) {
 }
 
 export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer, getPubcidOptout = () => false }) {
-  configureFpdValidation({ getOptout: getPubcidOptout });
+  configureFpdValidation({ getOptout: getPubcidOptout, config, utils });
   const BidInterceptor = makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer });
   bidInterceptor = new BidInterceptor({ logger });
   const pbsBidInterceptor = makePbsInterceptor({ createBid, utils });

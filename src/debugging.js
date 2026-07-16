@@ -14,7 +14,7 @@ import { hasPubcidOptout } from '../libraries/fpdUtils/pubcidOptout.js';
 
 import { getDistUrlBase, getGlobalVarName } from './buildOptions.js';
 
-const STORAGE = getCoreStorageManager('debugFpdValidation');
+const STORAGE = getCoreStorageManager('debugging');
 
 export function getPubcidOptout() {
   return hasPubcidOptout(STORAGE);

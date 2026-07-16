@@ -393,7 +393,7 @@ export function newConfig() {
     const conf = _getConfig();
     Object.defineProperty(conf, 'ortb2', {
       get: function () {
-        throw new Error('invalid access to \'orbt2\' config - use request parameters instead');
+        throw new Error('invalid access to \'ortb2\' config - use request parameters instead');
       }
     });
     return conf;
