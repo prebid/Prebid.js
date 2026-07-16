@@ -153,7 +153,6 @@ describe('Creative renderer - display', () => {
     });
   });
 
-
   it('does not choke if no frame element can be found', () => {
     runRenderer({
       ad: 'mock',
