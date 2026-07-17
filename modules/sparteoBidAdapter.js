@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
-import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -83,7 +82,12 @@ function createRenderer(rendererConfig) {
     loaded: false,
     config: {
       ...rendererConfig,
-      documentResolver: (_bid, _sourceDocument, renderDocument) => renderDocument
+      // Prebid loads the renderer script (ANOutstreamVideo) into the document this callback
+      // returns, and the player can only resolve a targetId that exists in that same document.
+      // Prefer the render document (e.g. a GAM friendly iframe whose slot only lives inside it),
+      // and fall back to the source (parent) document when the slot is not in the render document.
+      documentResolver: (bid, sourceDocument, renderDocument) =>
+        (renderDocument?.getElementById(bid.adUnitCode) ? renderDocument : sourceDocument) || renderDocument
     }
   });
   try {
@@ -95,8 +99,10 @@ function createRenderer(rendererConfig) {
 }
 
 function outstreamRender(bid, doc) {
+  // `doc` is the document Prebid loaded the renderer script into (see documentResolver above),
+  // so ANOutstreamVideo lives on its defaultView and can only resolve a slot that exists in it.
   const renderDoc = doc || document;
-  const slot = renderDoc.getElementById(bid.adUnitCode) || getAdUnitElement(bid);
+  const slot = renderDoc.getElementById(bid.adUnitCode);
 
   if (!slot) {
     logError(`Sparteo Bid Adapter: outstream renderer could not find the ad slot for adUnitCode '${bid.adUnitCode}'.`);
