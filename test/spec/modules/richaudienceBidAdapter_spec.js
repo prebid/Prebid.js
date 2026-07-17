@@ -5,6 +5,7 @@ import {
 } from 'modules/richaudienceBidAdapter.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as refererDetection from 'src/refererDetection.js';
 import sinon from 'sinon';
 
 describe('Richaudience adapter tests', function () {
@@ -1576,15 +1577,31 @@ describe('Richaudience adapter tests', function () {
     });
 
     it('Verifies user syncs URL image include with GPP', function () {
+      const refererStub = sinon.stub(refererDetection, 'getRefererInfo').returns({ page: 'http://domain.com' });
       const gppConsent = {
         gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA',
         applicableSections: [0]
       };
       const result = spec.getUserSyncs({ pixelEnabled: true }, undefined, undefined, undefined, gppConsent);
+      refererStub.restore();
       expect(result).to.deep.equal([{
         type: 'image',
         url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
       }]);
+    });
+
+    it('Verifies image sync is skipped when the page referer is unavailable', function () {
+      config.setConfig({
+        'userSync': { filterSettings: { image: { bidders: '*', filter: 'include' } } }
+      });
+
+      const refererStub = sinon.stub(refererDetection, 'getRefererInfo').returns({ page: null });
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [BID_RESPONSE], {
+        consentString: '',
+        gdprApplies: false
+      });
+      refererStub.restore();
+      expect(syncs).to.have.lengthOf(0);
     });
   });
 });

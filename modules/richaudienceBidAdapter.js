@@ -4,9 +4,9 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'richaudience';
-let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,6 +30,8 @@ export const spec = {
    * @returns {ServerRequest} Info describing the request to the server
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const referer = raiGetReferer(bidderRequest.refererInfo);
+
     return validBidRequests.map(bid => {
       const floor = raiGetFloor(bid, bidderRequest);
       var payload = {
@@ -40,7 +42,7 @@ export const spec = {
         auctionId: bid.auctionId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        referer: (typeof bidderRequest.refererInfo.page !== 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
+        referer: referer,
         transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: bidderRequest.timeout || 600,
         eids: deepAccess(bid, 'userIdAsEids') ? bid.userIdAsEids : [],
@@ -52,8 +54,6 @@ export const spec = {
         dsa: setDSA(bid),
         userData: deepAccess(bid, 'ortb2.user.data')
       };
-
-      REFERER = (typeof bidderRequest.refererInfo.page !== 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null);
 
       payload.gdpr_consent = '';
       payload.gdpr = false;
@@ -189,8 +189,10 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && REFERER != null && syncs.length === 0 && raiSync.raiImage !== 'exclude') {
-      let syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+    const referer = raiGetReferer(getRefererInfo());
+
+    if (syncOptions.pixelEnabled && referer != null && syncs.length === 0 && raiSync.raiImage !== 'exclude') {
+      let syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${referer}`;
       if (consent !== '') {
         syncUrl += `&${consent}`;
       }
@@ -214,6 +216,10 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+function raiGetReferer(refererInfo) {
+  return refererInfo?.page != null ? encodeURIComponent(refererInfo.page) : null;
+}
 
 function raiGetSizes(bid) {
   let raiNewSizes;
