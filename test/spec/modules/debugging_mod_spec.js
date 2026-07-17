@@ -320,6 +320,14 @@ describe('fpdValidation', () => {
     warn.restore();
   });
 
+  it('should skip validation when deepClone is not available', () => {
+    const warn = sinon.stub(console, 'warn');
+    const result = validateOrtb2ForDebug(invalidOrtb2);
+    expect(result).to.equal(invalidOrtb2);
+    expect(warn.called).to.be.false;
+    warn.restore();
+  });
+
   it('should validate global and bidder ortb2 when debugging is enabled', () => {
     const bidderOrtb2 = { user: { yob: 'bidder-not-a-number' } };
     const mockConfig = {

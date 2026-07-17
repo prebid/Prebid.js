@@ -22,9 +22,8 @@ export function configureFpdValidation({ getOptout, config, utils }: {
 }
 
 export function validateOrtb2ForDebug(ortb2, { deepClone }: { deepClone?: <T>(obj: T) => T } = {}) {
-  if (ortb2 == null) return ortb2;
-  const clonedOrtb2 = deepClone ? deepClone(ortb2) : ortb2;
-  validateFpd(clonedOrtb2, '', '', getPubcidOptout());
+  if (ortb2 == null || deepClone == null) return ortb2;
+  validateFpd(deepClone(ortb2), '', '', getPubcidOptout());
   return ortb2;
 }
 
