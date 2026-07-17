@@ -474,6 +474,145 @@ describe('Richaudience adapter tests', function () {
     expect(request[0].adUnitCode).to.equal('test-div');
   });
 
+  describe('floors', function () {
+    const bidderRequestEUR = {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: { page: 'https://domain.com', numIframes: 0 },
+      ortb2: { ext: { prebid: { adServerCurrency: 'EUR' } } }
+    };
+
+    function bannerBid(overrides) {
+      return Object.assign({
+        adUnitCode: 'test-div',
+        bidId: '2c7c8e9c900244',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bidder: 'richaudience',
+        params: { pid: 'ADb1f40rmi', supplyType: 'site' },
+        auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563'
+      }, overrides);
+    }
+
+    it('falls back to params.bidfloor when the floors module is absent', function () {
+      const bid = bannerBid({ params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.5 } });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.5);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('queries getFloor() in the currency announced in currencyCode', function () {
+      const calls = [];
+      const bid = bannerBid({
+        getFloor: (args) => {
+          calls.push(args);
+          return { currency: args.currency, floor: 1.2 };
+        }
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(1.2);
+      expect(requestContent.currencyCode).to.equal('EUR');
+      expect(calls).to.have.lengthOf(1);
+      expect(calls[0]).to.deep.equal({ currency: 'EUR', mediaType: '*', size: '*' });
+    });
+
+    it('lets the core resolve the media type instead of picking one', function () {
+      const calls = [];
+      const bid = bannerBid({
+        mediaTypes: { video: { context: 'outstream', playerSize: [640, 480], mimes: ['video/mp4'] } },
+        getFloor: (args) => {
+          calls.push(args);
+          return { currency: args.currency, floor: 0.8 };
+        }
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      expect(JSON.parse(request[0].data).bidfloor).to.equal(0.8);
+      expect(calls.map(c => c.mediaType)).to.deep.equal(['*']);
+    });
+
+    it('sends the higher of params.bidfloor and the floors module value', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.5 },
+        getFloor: ({ currency }) => ({ currency, floor: 1.2 })
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(1.2);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('keeps params.bidfloor when it is the higher of the two', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 2.5 },
+        getFloor: ({ currency }) => ({ currency, floor: 1.2 })
+      });
+      const requestContent = JSON.parse(spec.buildRequests([bid], bidderRequestEUR)[0].data);
+      expect(requestContent.bidfloor).to.equal(2.5);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('omits bidfloor and currencyCode when getFloor() yields no usable floor and there is no param', function () {
+      const bid = bannerBid({ getFloor: () => null });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.not.have.property('bidfloor');
+      expect(requestContent).to.not.have.property('currencyCode');
+    });
+
+    it('announces a floor the module could not convert in its own currency', function () {
+      const bid = bannerBid({
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        getFloor: () => ({ currency: 'USD', floor: 0.9 })
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      expect(request).to.have.lengthOf(1);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.9);
+      expect(requestContent.currencyCode).to.equal('USD');
+    });
+
+    it('leaves params.bidfloor out when it cannot be compared with the module floor', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 2.5 },
+        getFloor: () => ({ currency: 'USD', floor: 0.9 })
+      });
+      const requestContent = JSON.parse(spec.buildRequests([bid], bidderRequestEUR)[0].data);
+      expect(requestContent.bidfloor).to.equal(0.9);
+      expect(requestContent.currencyCode).to.equal('USD');
+    });
+
+    it('falls back to params.bidfloor when getFloor() throws', function () {
+      const bid = bannerBid({
+        params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.33 },
+        getFloor: () => { throw new Error('no floor'); }
+      });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.33);
+      expect(requestContent.currencyCode).to.equal('EUR');
+    });
+
+    it('omits bidfloor when getFloor() throws and there is no param', function () {
+      const bid = bannerBid({ getFloor: () => { throw new Error('no floor'); } });
+      const request = spec.buildRequests([bid], bidderRequestEUR);
+      expect(JSON.parse(request[0].data)).to.not.have.property('bidfloor');
+    });
+
+    it('defaults the announced currency to USD when no ad server currency is set', function () {
+      const bid = bannerBid({ params: { pid: 'ADb1f40rmi', supplyType: 'site', bidfloor: 0.5 } });
+      const request = spec.buildRequests([bid], {
+        gdprConsent: { consentString: '', gdprApplies: false },
+        refererInfo: { page: 'https://domain.com', numIframes: 0 }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent.bidfloor).to.equal(0.5);
+      expect(requestContent.currencyCode).to.equal('USD');
+    });
+  });
+
   describe('gdpr test', function () {
     it('Verify build request with GDPR', function () {
       config.setConfig({

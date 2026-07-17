@@ -1,4 +1,4 @@
-import { deepAccess, triggerPixel } from '../src/utils.js';
+import { deepAccess, isFn, logWarn, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -31,11 +31,12 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
+      const floor = raiGetFloor(bid, bidderRequest);
       var payload = {
-        bidfloor: raiGetFloor(bid, config),
+        bidfloor: floor?.value,
         ifa: bid.params.ifa,
         pid: bid.params.pid,
-        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
+        currencyCode: floor?.currency,
         auctionId: bid.auctionId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
@@ -295,24 +296,28 @@ function raiGetSyncInclude(config) {
   }
 }
 
-function raiGetFloor(bid, config) {
-  try {
-    let raiFloor;
-    if (bid.params.bidfloor != null) {
-      raiFloor = bid.params.bidfloor;
-    } else if (typeof bid.getFloor === 'function') {
-      const floorSpec = bid.getFloor({
-        currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
-        mediaType: typeof bid.mediaTypes['banner'] === 'object' ? 'banner' : 'video',
-        size: '*'
-      });
+function raiGetFloor(bid, bidderRequest) {
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || 'USD';
+  const paramFloor = parseFloat(bid.params.bidfloor);
 
-      raiFloor = floorSpec.floor;
+  if (isFn(bid.getFloor)) {
+    let floorInfo;
+    try {
+      floorInfo = bid.getFloor({ currency, mediaType: '*', size: '*' });
+    } catch (e) {
+      logWarn(`${BIDDER_CODE}: cannot compute floor for bid`, bid, e);
     }
-    return raiFloor;
-  } catch (e) {
-    return 0;
+    const moduleFloor = parseFloat(floorInfo?.floor);
+    if (moduleFloor && !isNaN(moduleFloor)) {
+      if (floorInfo.currency !== currency) {
+        logWarn(`${BIDDER_CODE}: announcing a ${floorInfo.currency} floor, ${currency} could not be delivered`);
+        return { value: moduleFloor, currency: floorInfo.currency };
+      }
+      return { value: isNaN(paramFloor) ? moduleFloor : Math.max(paramFloor, moduleFloor), currency };
+    }
   }
+
+  return isNaN(paramFloor) ? undefined : { value: paramFloor, currency };
 }
 
 function raiGetTimeoutURL(data) {
