@@ -100,49 +100,51 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // try catch
     const response = serverResponse.body;
-    if (response) {
-      const bidResponse = {
-        requestId: bidRequest.bidId,
-        cpm: response.cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: response.creative_id,
-        mediaType: response.media_type,
-        netRevenue: response.netRevenue,
-        currency: response.currency,
-        ttl: response.ttl,
-        meta: {
-          advertiserDomains: response.adomain?.length ? [response.adomain[0]] : []
-        },
-        dealId: response.dealId
-      };
 
-      if (response.media_type === 'video') {
-        bidResponse.vastXml = response.vastXML;
-        try {
-          if (bidResponse.vastXml != null) {
-            if (bidRequest.videoData.format === 'outstream' || bidRequest.videoData.format === 'banner') {
-              bidResponse.renderer = Renderer.install({
-                id: bidRequest.bidId,
-                adUnitCode: bidRequest.adUnitCode,
-                loaded: false,
-                config: response.media_type,
-                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-              });
-              bidResponse.renderer.setRender(renderer);
-            }
-          }
-        } catch (e) {
-          bidResponse.ad = response.adm;
-        }
-      } else {
-        bidResponse.ad = response.adm;
-      }
-
-      bidResponses.push(bidResponse);
+    if (!response) {
+      return bidResponses;
     }
+
+    const isVideo = response.media_type === 'video';
+    const creative = isVideo ? response.vastXML : response.adm;
+    if (!(response.cpm > 0) || !creative) {
+      return bidResponses;
+    }
+
+    const bidResponse = {
+      requestId: bidRequest.bidId,
+      cpm: response.cpm,
+      width: response.width,
+      height: response.height,
+      creativeId: response.creative_id,
+      mediaType: response.media_type,
+      netRevenue: response.netRevenue,
+      currency: response.currency,
+      ttl: response.ttl,
+      meta: {
+        advertiserDomains: response.adomain?.length ? [response.adomain[0]] : []
+      },
+      dealId: response.dealId
+    };
+
+    if (isVideo) {
+      bidResponse.vastXml = response.vastXML;
+      if (bidRequest.videoData?.format === 'outstream' || bidRequest.videoData?.format === 'banner') {
+        bidResponse.renderer = Renderer.install({
+          id: bidRequest.bidId,
+          adUnitCode: bidRequest.adUnitCode,
+          loaded: false,
+          config: response.media_type,
+          url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+        });
+        bidResponse.renderer.setRender(renderer);
+      }
+    } else {
+      bidResponse.ad = response.adm;
+    }
+
+    bidResponses.push(bidResponse);
     return bidResponses;
   },
   /***
