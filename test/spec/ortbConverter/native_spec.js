@@ -85,18 +85,18 @@ describe('ortb -> ortb native response', () => {
         const bidResponse = {
           mediaType: NATIVE
         };
-        fillNativeResponse(bidResponse, bid, {});
+        fillNativeResponse(bidResponse, bid);
         expect(bidResponse.native).to.eql({ ortb: MOCK_NATIVE_RESPONSE });
       });
     });
     it('should throw if response has no assets', () => {
-      expect(() => fillNativeResponse({ mediaType: NATIVE }, { adm: { ...MOCK_NATIVE_RESPONSE, assets: null } }, {})).to.throw;
+      expect(() => fillNativeResponse({ mediaType: NATIVE }, { adm: { ...MOCK_NATIVE_RESPONSE, assets: null } })).to.throw;
     });
     it('should do nothing if bidResponse.mediaType is not NATIVE', () => {
       const bidResponse = {
         mediaType: BANNER
       };
-      fillNativeResponse(bidResponse, { adm: MOCK_NATIVE_RESPONSE }, {});
+      fillNativeResponse(bidResponse, { adm: MOCK_NATIVE_RESPONSE });
       expect(bidResponse).to.eql({
         mediaType: BANNER
       });
