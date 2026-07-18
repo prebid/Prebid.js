@@ -39,10 +39,6 @@ export interface BidderSettings<B extends BidderCode> {
    * undefined or ['*'] will allow adapter to bid with any bidder code.
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
-  /**
-   * If true (the default), allow the `Sec-Browsing-Topics` header in requests to their exchange.
-   */
-  topicsHeader?: boolean;
 }
 
 export interface BidderScopedSettings<B extends BidderCode> extends BidderSettings<B> {

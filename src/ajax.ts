@@ -50,14 +50,6 @@ export interface AjaxOptions {
    * Fetch keepalive flag.
    */
   keepalive?: boolean
-  /**
-   * Whether chrome's `Sec-Browing-Topics` header should be sent
-   */
-  browsingTopics?: boolean
-  /**
-   * If true, suppress warnings
-   */
-  suppressTopicsEnrollmentWarning?: boolean;
 }
 
 /**
@@ -82,18 +74,6 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   }
   if (options.withCredentials) {
     rqOpts.credentials = 'include';
-  }
-  if (isSecureContext) {
-    ['browsingTopics'].forEach(opt => {
-      // the Request constructor will throw an exception if the browser supports topics
-      // but we're not in a secure context
-      if (options[opt]) {
-        rqOpts[opt] = true;
-      }
-    });
-    if (options.suppressTopicsEnrollmentWarning != null) {
-      rqOpts.suppressTopicsEnrollmentWarning = options.suppressTopicsEnrollmentWarning;
-    }
   }
   const request = dep.makeRequest(url, rqOpts);
   if (options.keepalive) {
