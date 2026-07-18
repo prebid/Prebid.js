@@ -3286,6 +3286,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "mgtechnology",
+      "aliasOf": "mediago",
+      "gvlid": 1575,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "mediaimpact",
       "aliasOf": null,
       "gvlid": null,
