@@ -4,6 +4,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'aso';
+const BIDDER_GVLID = 1621;
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
 const DEFAULT_SERVER_PATH = '/prebid/bidder';
 const DEFAULT_CURRENCY = 'USD';
@@ -13,11 +14,12 @@ const TTL = 300;
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: BIDDER_GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   aliases: [
     { code: 'bcmint' },
-    { code: 'bidgency' },
-    { code: 'kuantyx' },
+    { code: 'bidgency', gvlid: 1403 },
+    { code: 'kuantyx', gvlid: 1374 },
     { code: 'cordless' },
     { code: 'adklip' }
   ],
