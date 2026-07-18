@@ -255,6 +255,11 @@ describe('ajax', () => {
               toFetchRequest(EXAMPLE_URL, null, opts);
               sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: undefined });
             });
+            it('should not be set when secure context API is unavailable', () => {
+              sandbox.stub(window, 'isSecureContext').get(() => undefined);
+              toFetchRequest(EXAMPLE_URL, null, opts);
+              sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: undefined });
+            });
           });
         });
       });

@@ -83,7 +83,7 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   if (options.withCredentials) {
     rqOpts.credentials = 'include';
   }
-  if (isSecureContext) {
+  if (typeof isSecureContext !== 'undefined' && isSecureContext) {
     ['browsingTopics'].forEach(opt => {
       // the Request constructor will throw an exception if the browser supports topics
       // but we're not in a secure context
