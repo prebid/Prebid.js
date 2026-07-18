@@ -1,6 +1,5 @@
-import { deepAccess, deepSetValue } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
@@ -53,28 +52,10 @@ export const spec = {
     return [];
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const urls = [];
 
     if (serverResponses && serverResponses.length !== 0) {
-      let query = '';
-      if (gdprConsent) {
-        query = tryAppendQueryString(query, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
-        query = tryAppendQueryString(query, 'consents_str', gdprConsent.consentString);
-        const consentsIds = getConsentsIds(gdprConsent);
-        if (consentsIds) {
-          query = tryAppendQueryString(query, 'consents', consentsIds);
-        }
-      }
-
-      if (uspConsent) {
-        query = tryAppendQueryString(query, 'us_privacy', uspConsent);
-      }
-
-      if (query.slice(-1) === '&') {
-        query = query.slice(0, -1);
-      }
-
       serverResponses.forEach(resp => {
         const userSyncs = deepAccess(resp, 'body.ext.user_syncs');
         if (!userSyncs) {
@@ -83,9 +64,6 @@ export const spec = {
 
         userSyncs.forEach(us => {
           let url = us.url;
-          if (query) {
-            url = url + (url.indexOf('?') === -1 ? '?' : '&') + query;
-          }
 
           urls.push({
             type: us.type,
@@ -116,13 +94,6 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    if (bidderRequest.gdprConsent) {
-      const consentsIds = getConsentsIds(bidderRequest.gdprConsent);
-      if (consentsIds) {
-        deepSetValue(request, 'user.ext.consents', consentsIds);
-      }
-    }
-
     if (!request.cur) {
       request.cur = [DEFAULT_CURRENCY];
     }
@@ -133,33 +104,12 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
     return buildBidResponse(bid, context);
-  },
-
-  overrides: {
-    request: {
-      // We don't need extra data
-      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
-      }
-    }
   }
 });
 
 function getEndpoint(bidRequest) {
   const serverUrl = bidRequest.params.server || DEFAULT_SERVER_URL;
   return serverUrl + DEFAULT_SERVER_PATH + '?zid=' + bidRequest.params.zone + '&pbjs=' + VERSION;
-}
-
-function getConsentsIds(gdprConsent) {
-  const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
-  const consentsIds = [];
-
-  Object.keys(consents).forEach(key => {
-    if (consents[key] === true) {
-      consentsIds.push(key);
-    }
-  });
-
-  return consentsIds.join(',');
 }
 
 registerBidder(spec);
