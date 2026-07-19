@@ -151,7 +151,7 @@ describe('HyperBrainz Bid Adapter', function () {
       expect(requests).to.be.an('array').with.lengthOf(1);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(ENDPOINT);
-      expect(requests[0].options.contentType).to.equal('application/json');
+      expect(requests[0].options.contentType).to.equal('text/plain');
       expect(requests[0].options.withCredentials).to.equal(true);
     });
 
