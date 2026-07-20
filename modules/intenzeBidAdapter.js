@@ -100,7 +100,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return Boolean(bid.params?.placementId);
+    return Boolean(bid.params?.accountId) || Boolean(bid.params?.placementId);
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
