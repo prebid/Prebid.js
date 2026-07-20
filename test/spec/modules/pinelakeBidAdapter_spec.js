@@ -1,29 +1,29 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/dochaseBidAdapter.js';
+import { spec } from '../../../modules/pinelakeBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
-describe('dochase adapter', function () {
+describe('pinelake adapter', function () {
   let bannerRequest, nativeRequest;
-  let bannerResponse, nativeResponse, invalidBannerResponse, invalidNativeResponse;
+  let bannerResponse, nativeResponse, invalidBannerResponse;
 
   beforeEach(function () {
     bannerRequest = [
       {
-        bidder: 'dochase',
+        bidder: 'pinelake',
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]
           }
         },
         params: {
-          placement_id: 5550,
+          placement_id: 110002,
           bid_floor: 0.5
         }
       }
     ];
     nativeRequest = [
       {
-        bidder: 'dochase',
+        bidder: 'pinelake',
         mediaTypes: {
           native: {
             title: { required: true, len: 100 },
@@ -36,7 +36,7 @@ describe('dochase adapter', function () {
           }
         },
         params: {
-          placement_id: 5551,
+          placement_id: 110003,
           bid_floor: 1
         }
       }
@@ -50,16 +50,16 @@ describe('dochase adapter', function () {
             'impid': '286e606ac84a09',
             'price': 0.11,
             'adid': '368853',
-            'adm': "<a href=\"https://r.dochase.com/adx-rtb-d/servlet/WebF_AdManager.AdLinkManager?qs=H4sIAAAAAAAAAxWUyRXAIAhEW2JVKAdZ+i8h5JCXuOH4ZwyWj1LlcaPrlC7ZESfZfHB702ZU7q3e79PvoSVSieGlC9Q9JyPCX1HhBZ8kwcOUjKbZ7+wrEkNH3XT7S+857vcODtxtJlS4tFpvPXx6m7luUcLR9ooTU1DF9N48K+9ehTDvBemBNAs8EZeFAfP59twnGYayWirQoV4YqA1L1dneSY5fEz6Gu2P5yKSbZCclmB70pCnxO68OTWReuauHQyDm5h0d2j10gU2FnLGQArTDZxxMMOodxmqjt3qqW5BhDMc7pH2MWzEXxXQfTJm4roAiWplnK+5UDCKJp4sJiTR45ECvX5mJ91ytPbFB9Vuq7Q1LCrgbo+V2g6f64sRd/hD79wloSFddYPYIMYmSp9TrpIuXh4kZuc56LK7PABdmx9CCO1z0xB1dSiR6DUMxedFlN0Xdp3hng29warPBNICYfP+VSIfqXjqSOe5RQrvv4D7hiGsSEWC/lTdelnvsaV4Jev3SOn6EtDdNdSMVKSrIOWG5cxdOzaZHKduFlXGjQev9qbRls7aY092oMPORq5qaeNYIKJWTGW/Obx7gmsSY5bLb4ZpGketfNeIedGhFkTnCVvgjwrL598d/Bjagz+s+3nzeNHdVi5WhMpaLr7MYm0BgI55cXK+exnljYMuxt96StZL9uHMI4GEsumj4hyAsKuFVpz23mj3kcpCjAbBt8w3R62eM6x2uvHetiuAtcdusOCg9GNnb5bJOhoquAfQUaJHMdJGd0KIVnDVVEuaroaklUGVhq+xdbQDhvfLr3Lq14nU1cMuD1/srwaRccmoY8gGc9u0bYAQAAA==\" target=\"_blank\"><img src=\"https://cdn.dochase.com/1_368853_1.png\" height=\"250\" width=\"300\"></img></a><img width=\"1px\" height=\"1px\" style=\"display:none;\" src=\"https://rtb-east.dochase.com:9001/beacon?uid=b2f492b77992aa7ea67960f7af5b0fff&cc=468133&fccap=5&nid=1\"></img><script async src='https://i.dochase.com/adx-rtb-d/servlet/WebF_AdManager.ImpTracker?price=${AUCTION_PRICE}&ids=5550,16703,468133,368853,211356,11,2,16704,1&cb=1728399490&ap=5.00000&vd=223.233.85.189,14,8&nm=0.00&GUIDs=[adx_guid],049d07ed-c07e-4890-9f19-5cf41406a42d,049d07ed-c07e-4890-9f19-5cf41406a42d,,-1_&info=2,-1,IN&adx_custom=&adx_custom_ex=~~~-1~~~0&cat=-1&ref='></script>",
+            'adm': "<a href=\"https://r.pinelake.com/adx-rtb-d/servlet/WebF_AdManager.AdLinkManager?qs=H4sIAAAAAAAAAxWUyRXAIAhEW2JVKAdZ+i8h5JCXuOH4ZwyWj1LlcaPrlC7ZESfZfHB702ZU7q3e79PvoSVSieGlC9Q9JyPCX1HhBZ8kwcOUjKbZ7+wrEkNH3XT7S+857vcODtxtJlS4tFpvPXx6m7luUcLR9ooTU1DF9N48K+9ehTDvBemBNAs8EZeFAfP59twnGYayWirQoV4YqA1L1dneSY5fEz6Gu2P5yKSbZCclmB70pCnxO68OTWReuauHQyDm5h0d2j10gU2FnLGQArTDZxxMMOodxmqjt3qqW5BhDMc7pH2MWzEXxXQfTJm4roAiWplnK+5UDCKJp4sJiTR45ECvX5mJ91ytPbFB9Vuq7Q1LCrgbo+V2g6f64sRd/hD79wloSFddYPYIMYmSp9TrpIuXh4kZuc56LK7PABdmx9CCO1z0xB1dSiR6DUMxedFlN0Xdp3hng29warPBNICYfP+VSIfqXjqSOe5RQrvv4D7hiGsSEWC/lTdelnvsaV4Jev3SOn6EtDdNdSMVKSrIOWG5cxdOzaZHKduFlXGjQev9qbRls7aY092oMPORq5qaeNYIKJWTGW/Obx7gmsSY5bLb4ZpGketfNeIedGhFkTnCVvgjwrL598d/Bjagz+s+3nzeNHdVi5WhMpaLr7MYm0BgI55cXK+exnljYMuxt96StZL9uHMI4GEsumj4hyAsKuFVpz23mj3kcpCjAbBt8w3R62eM6x2uvHetiuAtcdusOCg9GNnb5bJOhoquAfQUaJHMdJGd0KIVnDVVEuaroaklUGVhq+xdbQDhvfLr3Lq14nU1cMuD1/srwaRccmoY8gGc9u0bYAQAAA==\" target=\"_blank\"><img src=\"https://cdn.pinelake.com/1_368853_1.png\" height=\"250\" width=\"300\"></img></a><img width=\"1px\" height=\"1px\" style=\"display:none;\" src=\"https://rtb-east.pinelake.com:9001/beacon?uid=b2f492b77992aa7ea67960f7af5b0fff&cc=468133&fccap=5&nid=1\"></img><script async src='https://i.pinelake.com/adx-rtb-d/servlet/WebF_AdManager.ImpTracker?price=${AUCTION_PRICE}&ids=110002,16703,468133,368853,211356,11,2,16704,1&cb=1728399490&ap=5.00000&vd=223.233.85.189,14,8&nm=0.00&GUIDs=[adx_guid],049d07ed-c07e-4890-9f19-5cf41406a42d,049d07ed-c07e-4890-9f19-5cf41406a42d,,-1_&info=2,-1,IN&adx_custom=&adx_custom_ex=~~~-1~~~0&cat=-1&ref='></script>",
             'adomain': ['google.com'],
-            'iurl': 'https://cdn.dochase.com/1_368853_1.png',
+            'iurl': 'https://cdn.pinelake.com/1_368853_1.png',
             'cid': '468133/368853',
             'crid': '368853',
             'w': 300,
             'h': 250,
             'cat': ['IAB7-19']
           }],
-          'seat': 'dochase',
+          'seat': 'pinelake',
           'group': 0
         }],
         'cur': 'USD',
@@ -75,14 +75,14 @@ describe('dochase adapter', function () {
             'impid': '2c3875bdbb1893',
             'price': 1.1,
             'adid': '368852',
-            'adm': '{\"native\":{\"ver\":\"1.1\",\"assets\": [{\"id\":1,\"required\":1,\"title\":{\"text\":\"Integrative Approaches: Merging Traditional and Alternative \"}},{\"id\":2,\"required\":1,\"img\":{\"url\":\"https://cdn.dochase.com/1_368852_0.png\",\"w\":500,\"h\":300,\"type\":\"3\"}},{\"id\":3,\"required\":0,\"data\":{\"value\":\"Diabetes In Control. A free weekly diabetes newsletter for Medical Professionals.\"}},{\"id\":4,\"required\":1,\"data\":{\"value\":\"Integrative Approaches: Merging Traditional and Alternative \"}},{\"id\":6,\"required\":1,\"data\":{\"value\":\"URL\"}}],\"link\":{\"url\":\"https://r.dochase.com/adx-rtb-d/servlet/WebF_AdManager.AdLinkManager?qs=H4sIAAAAAAAAAx2U2QHDIAxDVwKDr3F84P1HqNLPtMSRpSeG9RiPXH+5a474KzO/47YX7UoP50m61fLujlNjb76/8ZiblkimHq5nL/ZRedp3031x1tnk55LjSNN6h9/Zq+qmaLLuWTl74m1ZJKnb+m2OtQm/3L4sb933pM92qMOgjJ41MYmPXKnndRVKs+9bfSEumoZIFpTXuXbCP+WXuzl725E3O+9odi5OJrnBzhwjx9+UnFN3nTNt1/HY5aeljKtvZYpoJHNXr8BWa8ysKQY7ZmNA3DHK2qRwY7+zLu+xm9z5eheJ4Pv2usSptvO3p7JHrnXn0T5yVWdccp9Yz7hhoz2iu2zqsXsGFZ9hh14J6yU4TkJ0BgnOY8tY3tS+n2qsw7xZfKuanSNbAo+9nkJ83i20+FwhfbJeDVOllXsdxmDWauYcSRgS9+yG5qHwUDjAxxA0iZnOjlsnI+y09+ATeTEwbAVGgp0Qu/ceP0kjUvpu1Ty7O9MoegfrmLPxdjUh3mJL+XhARby+Ax8iBckf6BQdn9W+DMlvmlzYLuLlIy7YociFOIvXvEiYYCMboVk8BLHbnw3Zmr5us3xbjtXL67L96F15acJXkM5BOmTaUbBkYGdCI+Et8XmlpbuE3xVQwmxryc2y4wP3ByuuP8GogPZz8OpPaBv8diWWUTrC2nnLhdNUrJRTKc9FepDvwHTDwfbbMCTSb4LhUIFkyFrw/i7GtkPi6NCCai6N47TgNsTnzZWRoVtOSLq7FsLiF29y0Gj0GHVPVYG3QOPS7Swc3UuiFAQZJx3YvpHA2geUgVBASMEL4vcDi2Dw3NPtBSC4EQEvH/uMILu6WyUwraywTeVpoqoHTqOoD84FzReKoWemJy6jyuiBieGlQIe6wY2elTaMOwEUFF5NagzPj6nauc0+aXzQN3Q72hxFAgtfORK60RRAHYZLYymIzSJcXLgRFsqrb1UoD+5Atq7TWojaLTfOyUvH9EeJvZEOilQAXrf/ALoI8ZhABQAA\"},\"imptrackers\":[\"https://i.dochase.com/adx-rtb-d/servlet/WebF_AdManager.ImpCounter?price=${AUCTION_PRICE}&ids=5551,16703,468132,368852,211356,233,13,16704,1&cb=1728409547&ap=5.00000&vd=223.233.85.189,14,8&nm=0.00&GUIDs=[adx_guid],652c9a4c-66ea-4579-998b-cefe7b4cfecd,652c9a4c-66ea-4579-998b-cefe7b4cfecd,999999,-1_&info=2,-1,IN&adx_custom=&adx_custom_ex=~~~-1~~~0&cat=-1&ref=https%3A%2F%2Fqa-jboss.audiencelogy.com%2Ftn_native_prod.html\",\"https://i.dochase.com/adx-rtb-d/servlet/WebF_AdManager.ImpTracker?price=${AUCTION_PRICE}&ids=5551,16703,468132,368852,211356,233,13,16704,1&cb=1728409547&ap=5.00000&vd=223.233.85.189,14,8&nm=0.00&GUIDs=[adx_guid],652c9a4c-66ea-4579-998b-cefe7b4cfecd,652c9a4c-66ea-4579-998b-cefe7b4cfecd,999999,-1_&info=2,-1,IN&adx_custom=&adx_custom_ex=~~~-1~~~0&cat=-1&ref=\",\"https://rtb-east.dochase.com:9001/beacon?uid=44636f6605b06ec6d4389d6efb7e5054&cc=468132&fccap=5&nid=1\"]}}',
+            'adm': '{\"native\":{\"ver\":\"1.1\",\"assets\": [{\"id\":1,\"required\":1,\"title\":{\"text\":\"Integrative Approaches: Merging Traditional and Alternative \"}},{\"id\":2,\"required\":1,\"img\":{\"url\":\"https://cdn.pinelake.com/1_368852_0.png\",\"w\":500,\"h\":300,\"type\":\"3\"}},{\"id\":3,\"required\":0,\"data\":{\"value\":\"Diabetes In Control. A free weekly diabetes newsletter for Medical Professionals.\"}},{\"id\":4,\"required\":1,\"data\":{\"value\":\"Integrative Approaches: Merging Traditional and Alternative \"}},{\"id\":6,\"required\":1,\"data\":{\"value\":\"URL\"}}],\"link\":{\"url\":\"https://r.pinelake.com/adx-rtb-d/servlet/WebF_AdManager.AdLinkManager?qs=H4sIAAAAAAAAAx2U2QHDIAxDVwKDr3F84P1HqNLPtMSRpSeG9RiPXH+5a474KzO/47YX7UoP50m61fLujlNjb76/8ZiblkimHq5nL/ZRedp3031x1tnk55LjSNN6h9/Zq+qmaLLuWTl74m1ZJKnb+m2OtQm/3L4sb933pM92qMOgjJ41MYmPXKnndRVKs+9bfSEumoZIFpTXuXbCP+WXuzl725E3O+9odi5OJrnBzhwjx9+UnFN3nTNt1/HY5aeljKtvZYpoJHNXr8BWa8ysKQY7ZmNA3DHK2qRwY7+zLu+xm9z5eheJ4Pv2usSptvO3p7JHrnXn0T5yVWdccp9Yz7hhoz2iu2zqsXsGFZ9hh14J6yU4TkJ0BgnOY8tY3tS+n2qsw7xZfKuanSNbAo+9nkJ83i20+FwhfbJeDVOllXsdxmDWauYcSRgS9+yG5qHwUDjAxxA0iZnOjlsnI+y09+ATeTEwbAVGgp0Qu/ceP0kjUvpu1Ty7O9MoegfrmLPxdjUh3mJL+XhARby+Ax8iBckf6BQdn9W+DMlvmlzYLuLlIy7YociFOIvXvEiYYCMboVk8BLHbnw3Zmr5us3xbjtXL67L96F15acJXkM5BOmTaUbBkYGdCI+Et8XmlpbuE3xVQwmxryc2y4wP3ByuuP8GogPZz8OpPaBv8diWWUTrC2nnLhdNUrJRTKc9FepDvwHTDwfbbMCTSb4LhUIFkyFrw/i7GtkPi6NCCai6N47TgNsTnzZWRoVtOSLq7FsLiF29y0Gj0GHVPVYG3QOPS7Swc3UuiFAQZJx3YvpHA2geUgVBASMEL4vcDi2Dw3NPtBSC4EQEvH/uMILu6WyUwraywTeVpoqoHTqOoD84FzReKoWemJy6jyuiBieGlQIe6wY2elTaMOwEUFF5NagzPj6nauc0+aXzQN3Q72hxFAgtfORK60RRAHYZLYymIzSJcXLgRFsqrb1UoD+5Atq7TWojaLTfOyUvH9EeJvZEOilQAXrf/ALoI8ZhABQAA\"},\"imptrackers\":[\"https://i.pinelake.com/adx-rtb-d/servlet/WebF_AdManager.ImpCounter?price=${AUCTION_PRICE}&ids=110003,16703,468132,368852,211356,233,13,16704,1&cb=1728409547&ap=5.00000&vd=223.233.85.189,14,8&nm=0.00&GUIDs=[adx_guid],652c9a4c-66ea-4579-998b-cefe7b4cfecd,652c9a4c-66ea-4579-998b-cefe7b4cfecd,999999,-1_&info=2,-1,IN&adx_custom=&adx_custom_ex=~~~-1~~~0&cat=-1&ref=https%3A%2F%2Fqa-jboss.audiencelogy.com%2Ftn_native_prod.html\",\"https://i.pinelake.com/adx-rtb-d/servlet/WebF_AdManager.ImpTracker?price=${AUCTION_PRICE}&ids=110003,16703,468132,368852,211356,233,13,16704,1&cb=1728409547&ap=5.00000&vd=223.233.85.189,14,8&nm=0.00&GUIDs=[adx_guid],652c9a4c-66ea-4579-998b-cefe7b4cfecd,652c9a4c-66ea-4579-998b-cefe7b4cfecd,999999,-1_&info=2,-1,IN&adx_custom=&adx_custom_ex=~~~-1~~~0&cat=-1&ref=\",\"https://rtb-east.pinelake.com:9001/beacon?uid=44636f6605b06ec6d4389d6efb7e5054&cc=468132&fccap=5&nid=1\"]}}',
             'adomain': ['www.diabetesincontrol.com'],
-            'iurl': 'https://cdn.dochase.com/1_368852_0.png',
+            'iurl': 'https://cdn.pinelake.com/1_368852_0.png',
             'cid': '468132/368852',
             'crid': '368852',
             'cat': ['IAB7']
           }],
-          'seat': 'dochase',
+          'seat': 'pinelake',
           'group': 0
         }],
         'cur': 'USD',
@@ -100,37 +100,14 @@ describe('dochase adapter', function () {
             'adid': '368853',
             'adm': 'invalid response',
             'adomain': ['google.com'],
-            'iurl': 'https://cdn.dochase.com/1_368853_1.png',
+            'iurl': 'https://cdn.pinelake.com/1_368853_1.png',
             'cid': '468133/368853',
             'crid': '368853',
             'w': 300,
             'h': 250,
             'cat': ['IAB7-19']
           }],
-          'seat': 'dochase',
-          'group': 0
-        }],
-        'cur': 'USD',
-        'bidid': 'BIDDER_-1'
-      }
-    };
-    invalidNativeResponse = {
-      'body': {
-        'id': '453ade66-9113-4944-a674-5bbdcb9808ac',
-        'seatbid': [{
-          'bid': [{
-            'id': '652c9a4c-66ea-4579-998b-cefe7b4cfecd',
-            'impid': '2c3875bdbb1893',
-            'price': 1.1,
-            'adid': '368852',
-            'adm': 'invalid response',
-            'adomain': ['www.diabetesincontrol.com'],
-            'iurl': 'https://cdn.dochase.com/1_368852_0.png',
-            'cid': '468132/368852',
-            'crid': '368852',
-            'cat': ['IAB7']
-          }],
-          'seat': 'dochase',
+          'seat': 'pinelake',
           'group': 0
         }],
         'cur': 'USD',
@@ -142,9 +119,9 @@ describe('dochase adapter', function () {
   describe('validations', function () {
     it('isBidValid : placement_id is passed', function () {
       const bid = {
-        bidder: 'dochase',
+        bidder: 'pinelake',
         params: {
-          placement_id: 5550
+          placement_id: 110002
         }
       };
       const isValid = spec.isBidRequestValid(bid);
@@ -152,7 +129,7 @@ describe('dochase adapter', function () {
     });
     it('isBidValid : placement_id is not passed', function () {
       const bid = {
-        bidder: 'dochase',
+        bidder: 'pinelake',
         params: {
           width: 300,
           height: 250,
@@ -168,12 +145,11 @@ describe('dochase adapter', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
       spec.buildRequests(bannerRequest);
-
       expect(bannerRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
       const _Request = spec.buildRequests(bannerRequest);
-      expect(_Request.url).to.equal('https://rtb.dochaseadx.com/hb');
+      expect(_Request.url).to.equal('https://rtb.pinelake.media/hb');
       expect(_Request.method).to.equal('POST');
       expect(_Request.options.contentType).to.equal('text/plain');
     });
@@ -182,7 +158,7 @@ describe('dochase adapter', function () {
       const data = JSON.parse(_Request.data);
       // expect(data.at).to.equal(1); // auction type
       expect(data[0].imp[0].id).to.equal(bannerRequest[0].bidId);
-      expect(data[0].placementId).to.equal(5550);
+      expect(data[0].placementId).to.equal(110002);
     });
     it('Validate bid request : ad size', function () {
       const _Request = spec.buildRequests(bannerRequest);
@@ -236,12 +212,11 @@ describe('dochase adapter', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
       spec.buildRequests(nativeRequest);
-
       expect(nativeRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
       const _Request = spec.buildRequests(nativeRequest);
-      expect(_Request.url).to.equal('https://rtb.dochaseadx.com/hb');
+      expect(_Request.url).to.equal('https://rtb.pinelake.media/hb');
       expect(_Request.method).to.equal('POST');
       expect(_Request.options.contentType).to.equal('text/plain');
     });
@@ -250,7 +225,7 @@ describe('dochase adapter', function () {
       const data = JSON.parse(_Request.data);
       // expect(data.at).to.equal(1); // auction type
       expect(data[0].imp[0].id).to.equal(nativeRequest[0].bidId);
-      expect(data[0].placementId).to.equal(5551);
+      expect(data[0].placementId).to.equal(110003);
     });
     it('Validate bid request : user object', function () {
       const _Request = spec.buildRequests(nativeRequest);
@@ -272,12 +247,6 @@ describe('dochase adapter', function () {
     });
   });
   describe('Validate native response ', function () {
-    it('Validate bid response : invalid bid response', function () {
-      const bRequest = spec.buildRequests(nativeRequest);
-      const response = spec.interpretResponse(invalidNativeResponse, bRequest);
-      expect(response).to.be.an('array').that.is.empty;
-    });
-
     it('Validate bid response : valid bid response', function () {
       const _Request = spec.buildRequests(nativeRequest);
       const bResponse = spec.interpretResponse(nativeResponse, _Request);
