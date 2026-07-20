@@ -74,8 +74,10 @@ interface Ortb2Segment {
 interface MantisSegmentGroup {
   name: string;
   segment: Ortb2Segment[];
-  ext?: { segtax: number }
+  ext: { segtax: number };
 }
+/** Mantis taxonomies for each segment group */
+type SegmentTaxonomies = { [key in keyof MantisStandardTargeting]: number; };
 
 /** Structured data passed to {@link setOrtb2FromResponse}. */
 interface MantisOrtb2StructuredData {
@@ -117,11 +119,12 @@ declare module './rtdModule/spec' {
 
 const SUBMODULE_NAME = 'mantis' as const;
 const LOG_PREFIX = 'mantisRtdProvider:';
-const BASIC_MANTIS_KEYS: ReadonlyArray<keyof MantisStandardTargeting> = [
-  'mantis',
-  'mantis_context',
-  'iab_context',
-];
+// Assign IAB Tech Lab Content Taxonomy 3.0 to mantis segment groups.
+const SEGMENT_TAXONOMIES: SegmentTaxonomies = {
+  mantis: 778,
+  mantis_context: 777,
+  iab_context: 7,
+};
 
 // ---------------------------------------------------------------------------
 // Exported functions
@@ -129,7 +132,7 @@ const BASIC_MANTIS_KEYS: ReadonlyArray<keyof MantisStandardTargeting> = [
 
 /**
  * Build an array of oRTB2 segment objects from processed Mantis targeting data.
- * One segment group is returned for each key in {@link BASIC_MANTIS_KEYS}.
+ * One segment group is returned for each key in {@link SEGMENT_TAXONOMIES}.
  */
 export const getMantisKeysSegmentData = (
   targetingData: ProcessedMantisData | null | undefined
@@ -139,8 +142,8 @@ export const getMantisKeysSegmentData = (
     return [];
   }
   const segments: MantisSegmentGroup[] = [];
-  for (const mantisKey of BASIC_MANTIS_KEYS) {
-    const keySegments = (targetingData.standard[mantisKey] || '')
+  for (const mantisKey in SEGMENT_TAXONOMIES) {
+    const keySegments: Ortb2Segment[] = (targetingData.standard[mantisKey] || '')
       .split(',')
       .map((val: string) => val?.trim())
       .filter(Boolean)
@@ -149,11 +152,8 @@ export const getMantisKeysSegmentData = (
     const mantisSegment: MantisSegmentGroup = {
       name: mantisKey,
       segment: [...new Map(keySegments.map((s: Ortb2Segment) => [s.id, s])).values()],
+      ext: { segtax: SEGMENT_TAXONOMIES[mantisKey] }
     };
-    // Assign IAB Audience Taxonomy 1.1 for iab_context group only. Other groups like mantis and mantis_context will be treated containing proprietary values
-    if (mantisKey === 'iab_context') {
-      mantisSegment.ext = { segtax: 4 }; // https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Audience%20Taxonomies/Audience%20Taxonomy%201.1.tsv
-    }
     segments.push(mantisSegment);
   }
   return segments;
