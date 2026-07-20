@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/cortexBidAdapter.ts';
+import sinon from 'sinon';
+import { spec, createDomain } from '../../../modules/cortexBidAdapter.ts';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
@@ -505,6 +506,93 @@ describe('CortexBidAdapter', function () {
       expect(syncData[0].type).to.equal('image');
       expect(syncData[0].url).to.be.a('string');
       expect(syncData[0].url).to.equal('https://sync.targetadserver.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0');
+    });
+  });
+
+  describe('region detection by timezone', function () {
+    let dtfStub;
+
+    afterEach(function () {
+      if (dtfStub) {
+        dtfStub.restore();
+        dtfStub = null;
+      }
+    });
+
+    function stubTimeZone(timeZone) {
+      dtfStub = sinon.stub(Intl, 'DateTimeFormat').returns({
+        resolvedOptions: () => ({ timeZone })
+      });
+    }
+
+    it('Should return EU domain for Europe timezone', function () {
+      stubTimeZone('Europe/London');
+      expect(createDomain()).to.equal('https://eu.targetadserver.com');
+    });
+
+    it('Should return EU domain for Africa timezone', function () {
+      stubTimeZone('Africa/Cairo');
+      expect(createDomain()).to.equal('https://eu.targetadserver.com');
+    });
+
+    it('Should return EU domain for Atlantic timezone', function () {
+      stubTimeZone('Atlantic/Reykjavik');
+      expect(createDomain()).to.equal('https://eu.targetadserver.com');
+    });
+
+    it('Should return EU domain for Arctic timezone', function () {
+      stubTimeZone('Arctic/Longyearbyen');
+      expect(createDomain()).to.equal('https://eu.targetadserver.com');
+    });
+
+    it('Should return APAC domain for Asia timezone', function () {
+      stubTimeZone('Asia/Tokyo');
+      expect(createDomain()).to.equal('https://apac.targetadserver.com');
+    });
+
+    it('Should return APAC domain for Australia timezone', function () {
+      stubTimeZone('Australia/Sydney');
+      expect(createDomain()).to.equal('https://apac.targetadserver.com');
+    });
+
+    it('Should return APAC domain for Indian timezone', function () {
+      stubTimeZone('Indian/Maldives');
+      expect(createDomain()).to.equal('https://apac.targetadserver.com');
+    });
+
+    it('Should return APAC domain for Pacific timezone', function () {
+      stubTimeZone('Pacific/Auckland');
+      expect(createDomain()).to.equal('https://apac.targetadserver.com');
+    });
+
+    it('Should return APAC domain for Antarctica timezone', function () {
+      stubTimeZone('Antarctica/McMurdo');
+      expect(createDomain()).to.equal('https://apac.targetadserver.com');
+    });
+
+    it('Should return US East domain for America timezone', function () {
+      stubTimeZone('America/New_York');
+      expect(createDomain()).to.equal('https://us-east.targetadserver.com');
+    });
+
+    it('Should return US East domain for US/ prefixed timezone', function () {
+      stubTimeZone('US/Eastern');
+      expect(createDomain()).to.equal('https://us-east.targetadserver.com');
+    });
+
+    it('Should return US East domain for Canada/ prefixed timezone', function () {
+      stubTimeZone('Canada/Eastern');
+      expect(createDomain()).to.equal('https://us-east.targetadserver.com');
+    });
+
+    it('Should fall back to EU domain for unknown timezone', function () {
+      stubTimeZone('Unknown/Region');
+      expect(createDomain()).to.equal('https://eu.targetadserver.com');
+    });
+
+    it('Should fall back to EU domain when timezone resolution throws', function () {
+      dtfStub = sinon.stub(Intl, 'DateTimeFormat').throws(new Error('boom'));
+      expect(createDomain()).to.equal('https://eu.targetadserver.com');
     });
   });
 });
