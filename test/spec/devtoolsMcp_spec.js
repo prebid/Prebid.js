@@ -29,7 +29,7 @@ describe('devtoolsMcp', function () {
 
     expect(eventName).to.equal('devtoolstooldiscovery');
     expect(toolGroup.name).to.equal('Prebid.js DevTools');
-    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['pbjs_prebid_summary', 'pbjs_prebid_auctions', 'pbjs_prebid_events']);
+    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['pbjs_summary', 'pbjs_auctions', 'pbjs_events']);
   });
 
   it('namespaces tools for non-default Prebid globals', function () {
@@ -47,7 +47,7 @@ describe('devtoolsMcp', function () {
       }
     });
 
-    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['customPbjs_prebid_summary', 'customPbjs_prebid_auctions', 'customPbjs_prebid_events']);
+    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['customPbjs_summary', 'customPbjs_auctions', 'customPbjs_events']);
   });
 
   it('exposes auction, TTL, floor, and event timing details', function () {
@@ -84,10 +84,10 @@ describe('devtoolsMcp', function () {
     emit(EVENTS.AUCTION_INIT, auction.getProperties());
 
     const tools = Object.fromEntries(getPrebidDevTools().tools.map(tool => [tool.name, tool]));
-    const auctions = tools.pbjs_prebid_auctions.execute({ auctionId: 'auction-1' });
-    const events = tools.pbjs_prebid_events.execute({ auctionId: 'auction-1' });
-    const noEvents = tools.pbjs_prebid_events.execute({ auctionId: 'auction-1', limit: 0 });
-    const summary = tools.pbjs_prebid_summary.execute({});
+    const auctions = tools.pbjs_auctions.execute({ auctionId: 'auction-1' });
+    const events = tools.pbjs_events.execute({ auctionId: 'auction-1' });
+    const noEvents = tools.pbjs_events.execute({ auctionId: 'auction-1', limit: 0 });
+    const summary = tools.pbjs_summary.execute({});
 
     expect(auctions).to.have.length(1);
     expect(auctions[0].eligibleBidRequests).to.eql([]);

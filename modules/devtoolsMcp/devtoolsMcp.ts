@@ -251,15 +251,15 @@ export function makeDevTools(deps: DevToolsDeps): DevTools {
       name: TOOL_GROUP_NAME,
       description: 'Inspect Prebid.js auctions, bid eligibility, TTL, floors, event timing, modules, and runtime configuration.',
       tools: [
-        tool(globalName, 'prebid_summary', 'Summarize the Prebid.js runtime, latest auction, installed modules, cache TTL settings, and bidder win/bid counts.', { type: 'object', properties: {}, additionalProperties: false }, summarySnapshot),
-        tool(globalName, 'prebid_auctions', 'Return auction-level detail including eligible requests, received bids, no-bids, rejected bids, winning bids, TTL/cache expiry, floors, and metrics.', {
+        tool(globalName, 'summary', 'Summarize the Prebid.js runtime, latest auction, installed modules, cache TTL settings, and bidder win/bid counts.', { type: 'object', properties: {}, additionalProperties: false }, summarySnapshot),
+        tool(globalName, 'auctions', 'Return auction-level detail including eligible requests, received bids, no-bids, rejected bids, winning bids, TTL/cache expiry, floors, and metrics.', {
           type: 'object',
           properties: {
             auctionId: { type: 'string', description: 'Optional auction id to inspect. When omitted, all tracked auctions are returned.' }
           },
           additionalProperties: false
         }, auctionSnapshot),
-        tool(globalName, 'prebid_events', 'Return Prebid event history with event timing. Optionally filter by auctionId or eventType and limit the number of records.', {
+        tool(globalName, 'events', 'Return Prebid event history with event timing. Optionally filter by auctionId or eventType and limit the number of records.', {
           type: 'object',
           properties: {
             auctionId: { type: 'string', description: 'Optional auction id filter.' },

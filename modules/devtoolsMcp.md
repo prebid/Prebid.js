@@ -10,11 +10,11 @@ Build Prebid.js with the module included, then load that build on a page:
 gulp build --modules=devtoolsMcp
 ```
 
-When the build runs in the browser, the module listens for Chrome's `devtoolstooldiscovery` event and responds with a `ToolGroup` named `Prebid.js DevTools`. Tool names are prefixed with the Prebid global name, for example `pbjs_prebid_summary`, so pages with more than one Prebid global do not register ambiguous tool identifiers.
+When the build runs in the browser, the module listens for Chrome's `devtoolstooldiscovery` event and responds with a `ToolGroup` named `Prebid.js DevTools`. Tool names are prefixed with the Prebid global name, for example `pbjs_summary`, so pages with more than one Prebid global do not register ambiguous tool identifiers.
 
 ## Tools
 
-### `<global>_prebid_summary`
+### `<global>_summary`
 
 Returns a runtime summary containing:
 
@@ -27,7 +27,7 @@ Returns a runtime summary containing:
 
 Input schema: an empty object.
 
-### `<global>_prebid_auctions`
+### `<global>_auctions`
 
 Returns auction snapshots. Pass `auctionId` to filter to one auction, or omit it to return all tracked auctions.
 
@@ -50,7 +50,7 @@ Input schema:
 }
 ```
 
-### `<global>_prebid_events`
+### `<global>_events`
 
 Returns Prebid event history with event type, event id, elapsed time, sequence number, and sanitized event args. A `limit` of `0` returns an empty list; positive values are floored to an integer before slicing history.
 
