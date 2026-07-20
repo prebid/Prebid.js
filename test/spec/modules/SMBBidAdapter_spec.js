@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/SMBBidAdapter.ts';
+import { spec } from '../../../modules/smbBidAdapter.ts';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'SMB';
+const bidder = 'smb';
 
-describe('SMBBidAdapter', function () {
+describe('smbBidAdapter', function () {
   const userIdAsEids = [{
     source: 'test.org',
     uids: [{

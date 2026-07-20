@@ -24,7 +24,7 @@ SMB bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'SMB',
+                            bidder: 'smb',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ SMB bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'SMB',
+                            bidder: 'smb',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ SMB bid adapter supports Banner, Video (instream and outstream) and Native.
                     },
                     bids: [
                         {
-                            bidder: 'SMB',
+                            bidder: 'smb',
                             params: {
                                 placementId: 'testNative',
                             }
