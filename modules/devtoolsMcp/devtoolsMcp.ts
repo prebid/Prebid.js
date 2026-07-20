@@ -42,6 +42,8 @@ export interface DevToolsDeps {
   getMinBidCacheTTL: typeof import('../../src/bidTTL.js').getMinBidCacheTTL;
   getMinTargetedBidCacheTTL: typeof import('../../src/bidTTL.js').getMinTargetedBidCacheTTL;
   isBidUsable: typeof import('../../src/targeting/filters.js').isBidUsable;
+  getGlobalVarName: typeof import('../../src/buildOptions.js').getGlobalVarName;
+  shouldDefineGlobal: typeof import('../../src/buildOptions.js').shouldDefineGlobal;
 }
 
 /**
@@ -49,23 +51,35 @@ export interface DevToolsDeps {
  * `makeDevTools`. `install` registers one of these per Prebid instance in the
  * `__prebidDevToolsMcp` array on the page (see `DevToolsWindow`) so the tools
  * can resolve it at run time rather than closing over a specific instance's
- * dependencies.
+ * dependencies. Each handler returns rows keyed by field; the aggregation layer
+ * tags every row with the source instance id.
  */
 export interface DevToolsHandlers {
-  summary: (args?: Record<string, unknown>) => unknown;
-  auctions: (args?: Record<string, unknown>) => unknown[];
-  events: (args?: Record<string, unknown>) => unknown[];
+  summary: (args?: Record<string, unknown>) => Record<string, unknown>;
+  auctions: (args?: Record<string, unknown>) => Record<string, unknown>[];
+  events: (args?: Record<string, unknown>) => Record<string, unknown>[];
+}
+
+/**
+ * A Prebid instance registered on the page: an identifier (its global variable
+ * name, or a synthetic `unnamed-<n>` when the build defines no global) and the
+ * handlers that read from it.
+ */
+export interface RegisteredInstance {
+  instance: string;
+  handlers: DevToolsHandlers;
 }
 
 /**
  * The single global this module adds to the page. The `__prebidDevToolsMcp`
  * array tracks the registered Prebid instances and doubles as the flag for
  * whether the discovery listener has been installed (its presence means yes).
- * It holds exactly one instance for now.
  */
 type DevToolsWindow = Window & {
-  __prebidDevToolsMcp?: DevToolsHandlers[];
+  __prebidDevToolsMcp?: RegisteredInstance[];
 };
+
+const UNNAMED_INSTANCE_PREFIX = 'unnamed-';
 
 function compactObject(obj: Record<string, any>) {
   return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
@@ -276,56 +290,76 @@ export function makeDevTools(deps: DevToolsDeps): DevToolsHandlers {
  */
 /**
  * Aggregations across every registered Prebid instance. Each is a pure function
- * of the instance list so the tool wiring in `getPrebidDevTools` stays terse.
+ * of the registration list so the tool wiring in `getPrebidDevTools` stays
+ * terse. All accept an optional `instance` filter and tag every returned row
+ * with the source instance id.
  */
 
-/** One summary per instance (simple concatenation). */
-function aggregateSummary(instances: DevToolsHandlers[]) {
-  return instances.map(handlers => handlers.summary());
+/** Select the registrations to read from, honouring an optional `instance` filter. */
+function selectInstances(registrations: RegisteredInstance[], instance: unknown) {
+  const id = typeof instance === 'string' ? instance : undefined;
+  return id == null ? registrations : registrations.filter(registration => registration.instance === id);
 }
 
-/** Flattened list of auction snapshots across all instances. */
-function aggregateAuctions(instances: DevToolsHandlers[], args: Record<string, unknown>) {
-  return instances.flatMap(handlers => handlers.auctions(args));
+/** One summary per instance (simple concatenation), each tagged with its instance. */
+function aggregateSummary(registrations: RegisteredInstance[], { instance }: Record<string, unknown> = {}) {
+  return selectInstances(registrations, instance)
+    .map(({ instance: id, handlers }) => ({ instance: id, ...handlers.summary() }));
+}
+
+/** Flattened list of auction snapshots across all instances, each tagged with its instance. */
+function aggregateAuctions(registrations: RegisteredInstance[], { instance, ...filters }: Record<string, unknown> = {}) {
+  return selectInstances(registrations, instance)
+    .flatMap(({ instance: id, handlers }) => handlers.auctions(filters).map(auction => ({ instance: id, ...auction })));
 }
 
 /**
- * The `limit` most recent events across all instances, ordered chronologically
- * by `elapsedTime`. The limit is applied to the combined history rather than to
- * each instance individually.
+ * The `limit` most recent events across the selected instances, ordered
+ * chronologically by `elapsedTime` and each tagged with its instance. The limit
+ * is applied to the combined history rather than to each instance individually.
  */
-function aggregateEvents(instances: DevToolsHandlers[], { limit, ...filters }: Record<string, unknown> = {}) {
+function aggregateEvents(registrations: RegisteredInstance[], { instance, limit, ...filters }: Record<string, unknown> = {}) {
   const max = typeof limit === 'number' ? Math.max(0, Math.floor(limit)) : 100;
   if (max === 0) return [];
-  return instances
-    .flatMap(handlers => handlers.events(filters))
+  return selectInstances(registrations, instance)
+    .flatMap(({ instance: id, handlers }) => handlers.events(filters).map(event => ({ instance: id, ...event })))
     .sort((a: any, b: any) => (a.elapsedTime ?? 0) - (b.elapsedTime ?? 0))
     .slice(-max);
 }
 
+const INSTANCE_FILTER = { type: 'string', description: 'Optional Prebid instance id to filter to. Matches the `instance` field present on every result; when omitted, all instances are included.' } as const;
+
 export function getPrebidDevTools(win: DevToolsWindow = window): ToolGroup {
-  const instances = () => win.__prebidDevToolsMcp ?? [];
+  const registrations = () => win.__prebidDevToolsMcp ?? [];
   return {
     name: TOOL_GROUP_NAME,
     description: 'Inspect Prebid.js auctions, bid eligibility, TTL, floors, event timing, modules, and runtime configuration.',
     tools: [
-      tool('summary', 'Summarize each Prebid.js instance on the page: runtime, latest auction, installed modules, cache TTL settings, and bidder win/bid counts. Returns one summary per instance.', { type: 'object', properties: {}, additionalProperties: false }, () => aggregateSummary(instances())),
-      tool('auctions', 'Return auction-level detail across all Prebid.js instances, including eligible requests, received bids, no-bids, rejected bids, winning bids, TTL/cache expiry, floors, and metrics.', {
+      tool('summary', 'Summarize each Prebid.js instance on the page: runtime, latest auction, installed modules, cache TTL settings, and bidder win/bid counts. Returns one summary per instance, tagged with its instance id.', {
         type: 'object',
         properties: {
+          instance: INSTANCE_FILTER
+        },
+        additionalProperties: false
+      }, (args) => aggregateSummary(registrations(), args)),
+      tool('auctions', 'Return auction-level detail across all Prebid.js instances, including eligible requests, received bids, no-bids, rejected bids, winning bids, TTL/cache expiry, floors, and metrics. Each row is tagged with its instance id.', {
+        type: 'object',
+        properties: {
+          instance: INSTANCE_FILTER,
           auctionId: { type: 'string', description: 'Optional auction id to inspect. When omitted, all tracked auctions are returned.' }
         },
         additionalProperties: false
-      }, (args) => aggregateAuctions(instances(), args)),
-      tool('events', 'Return Prebid event history with event timing across all Prebid.js instances. Optionally filter by auctionId or eventType and limit the number of records; the limit selects the most recent records across the combined history.', {
+      }, (args) => aggregateAuctions(registrations(), args)),
+      tool('events', 'Return Prebid event history with event timing across all Prebid.js instances. Optionally filter by auctionId or eventType and limit the number of records; the limit selects the most recent records across the combined history. Each row is tagged with its instance id.', {
         type: 'object',
         properties: {
+          instance: INSTANCE_FILTER,
           auctionId: { type: 'string', description: 'Optional auction id filter.' },
           eventType: { type: 'string', description: 'Optional Prebid event type filter, such as auctionInit, auctionEnd, bidResponse, or bidWon.' },
           limit: { type: 'number', description: 'Maximum number of the most recent event records to return from the combined history. Use 0 to return no records.', default: 100, minimum: 0 }
         },
         additionalProperties: false
-      }, (args) => aggregateEvents(instances(), args)),
+      }, (args) => aggregateEvents(registrations(), args)),
     ]
   };
 }
@@ -348,12 +382,16 @@ export function installPrebidDevTools(win: DevToolsWindow = window) {
 
 /**
  * Register this instance's handlers on the page and ensure the discovery
- * listener is installed. Every Prebid instance that loads devtoolsMcp appends
- * its handlers to the `__prebidDevToolsMcp` array, and the tools aggregate
- * results across all of them.
+ * listener is installed. Every Prebid instance that loads devtoolsMcp appends a
+ * registration to the `__prebidDevToolsMcp` array, and the tools aggregate
+ * results across all of them. The instance id is the Prebid global variable
+ * name when the build defines a global, otherwise a synthetic `unnamed-<n>`.
  */
-export function install(deps: DevToolsDeps, win: DevToolsWindow = window): DevToolsHandlers[] {
+export function install(deps: DevToolsDeps, win: DevToolsWindow = window): RegisteredInstance[] {
   installPrebidDevTools(win);
-  win.__prebidDevToolsMcp!.push(makeDevTools(deps));
-  return win.__prebidDevToolsMcp!;
+  const registrations = win.__prebidDevToolsMcp!;
+  const unnamedCount = registrations.filter(registration => registration.instance.startsWith(UNNAMED_INSTANCE_PREFIX)).length;
+  const instance = deps.shouldDefineGlobal() ? deps.getGlobalVarName() : `${UNNAMED_INSTANCE_PREFIX}${unnamedCount}`;
+  registrations.push({ instance, handlers: makeDevTools(deps) });
+  return registrations;
 }

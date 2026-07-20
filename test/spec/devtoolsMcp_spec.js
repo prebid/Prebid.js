@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { getPrebidDevTools, installPrebidDevTools } from '../../modules/devtoolsMcp/index.ts';
+import { install } from '../../modules/devtoolsMcp/devtoolsMcp.ts';
 import { auctionManager } from '../../src/auctionManager.js';
 import { clearEvents, emit } from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
@@ -69,27 +70,31 @@ describe('devtoolsMcp', function () {
     expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['summary', 'auctions', 'events']);
   });
 
-  it('aggregates tool results across all registered instances via the window global', function () {
+  it('aggregates tool results across all registered instances, tagging each row with its instance', function () {
     const a = {
-      summary: sinon.stub().returns('SUMMARY_A'),
+      summary: sinon.stub().returns({ v: 'A' }),
       auctions: sinon.stub().returns([{ auctionId: 'a1' }]),
       events: sinon.stub().returns([{ id: 'ea1', elapsedTime: 1 }, { id: 'ea2', elapsedTime: 2 }])
     };
     const b = {
-      summary: sinon.stub().returns('SUMMARY_B'),
+      summary: sinon.stub().returns({ v: 'B' }),
       auctions: sinon.stub().returns([{ auctionId: 'b1' }, { auctionId: 'b2' }]),
       events: sinon.stub().returns([{ id: 'eb1', elapsedTime: 3 }])
     };
-    const win = { __prebidDevToolsMcp: [a, b] };
+    const win = { __prebidDevToolsMcp: [{ instance: 'inst-a', handlers: a }, { instance: 'inst-b', handlers: b }] };
     const tools = Object.fromEntries(getPrebidDevTools(win).tools.map(tool => [tool.name, tool]));
 
-    // summary: one entry per instance (simple concatenation)
-    expect(tools.summary.execute({})).to.eql(['SUMMARY_A', 'SUMMARY_B']);
-    // auctions: flattened list across instances
-    expect(tools.auctions.execute({ auctionId: 'x' })).to.eql([{ auctionId: 'a1' }, { auctionId: 'b1' }, { auctionId: 'b2' }]);
+    // summary: one entry per instance (concatenation), each tagged with its instance
+    expect(tools.summary.execute({})).to.eql([{ instance: 'inst-a', v: 'A' }, { instance: 'inst-b', v: 'B' }]);
+    // auctions: flattened list across instances, each tagged
+    expect(tools.auctions.execute({ auctionId: 'x' })).to.eql([
+      { instance: 'inst-a', auctionId: 'a1' },
+      { instance: 'inst-b', auctionId: 'b1' },
+      { instance: 'inst-b', auctionId: 'b2' }
+    ]);
     expect(a.auctions.calledWith({ auctionId: 'x' })).to.equal(true);
-    // events: flattened history across instances, ordered by elapsedTime
-    expect(tools.events.execute({}).map(event => event.id)).to.eql(['ea1', 'ea2', 'eb1']);
+    // events: flattened history across instances, tagged and ordered by elapsedTime
+    expect(tools.events.execute({}).map(event => `${event.instance}:${event.id}`)).to.eql(['inst-a:ea1', 'inst-a:ea2', 'inst-b:eb1']);
   });
 
   it('returns the most recent events by elapsedTime across instances', function () {
@@ -103,7 +108,7 @@ describe('devtoolsMcp', function () {
       auctions: sinon.stub().returns([]),
       events: sinon.stub().returns([{ id: 'b1', elapsedTime: 20 }, { id: 'b2', elapsedTime: 30 }])
     };
-    const win = { __prebidDevToolsMcp: [a, b] };
+    const win = { __prebidDevToolsMcp: [{ instance: 'inst-a', handlers: a }, { instance: 'inst-b', handlers: b }] };
     const tools = Object.fromEntries(getPrebidDevTools(win).tools.map(tool => [tool.name, tool]));
 
     // combined order by elapsedTime is a1(10), b1(20), b2(30), a2(40);
@@ -113,6 +118,47 @@ describe('devtoolsMcp', function () {
     expect(a.events.firstCall.args[0]).to.not.have.property('limit');
     // a limit of 0 returns nothing
     expect(tools.events.execute({ limit: 0 })).to.eql([]);
+  });
+
+  it('filters each tool to the requested instance', function () {
+    const a = {
+      summary: sinon.stub().returns({ v: 'A' }),
+      auctions: sinon.stub().returns([{ auctionId: 'a1' }]),
+      events: sinon.stub().returns([{ id: 'ea1', elapsedTime: 1 }])
+    };
+    const b = {
+      summary: sinon.stub().returns({ v: 'B' }),
+      auctions: sinon.stub().returns([{ auctionId: 'b1' }]),
+      events: sinon.stub().returns([{ id: 'eb1', elapsedTime: 2 }])
+    };
+    const win = { __prebidDevToolsMcp: [{ instance: 'inst-a', handlers: a }, { instance: 'inst-b', handlers: b }] };
+    const tools = Object.fromEntries(getPrebidDevTools(win).tools.map(tool => [tool.name, tool]));
+
+    expect(tools.summary.execute({ instance: 'inst-b' })).to.eql([{ instance: 'inst-b', v: 'B' }]);
+    expect(tools.auctions.execute({ instance: 'inst-a' })).to.eql([{ instance: 'inst-a', auctionId: 'a1' }]);
+    expect(tools.events.execute({ instance: 'inst-a' }).map(event => event.id)).to.eql(['ea1']);
+    // the non-selected instance's handlers are not consulted
+    expect(b.auctions.called).to.equal(false);
+    // `instance` is not passed down to the per-instance handlers
+    expect(a.auctions.firstCall.args[0]).to.not.have.property('instance');
+  });
+
+  it('identifies each instance by its global var name, or a synthetic id when no global is defined', function () {
+    const win = { addEventListener: sinon.stub() };
+    const baseDeps = {
+      auctionManager: {},
+      getGlobal: () => ({}),
+      getBufferedTTL: () => undefined,
+      getEffectiveMinBidCacheTTL: () => undefined,
+      getMinBidCacheTTL: () => undefined,
+      getMinTargetedBidCacheTTL: () => undefined,
+      isBidUsable: () => undefined
+    };
+    install({ ...baseDeps, shouldDefineGlobal: () => true, getGlobalVarName: () => 'myPbjs' }, win);
+    install({ ...baseDeps, shouldDefineGlobal: () => false, getGlobalVarName: () => 'ignored' }, win);
+    install({ ...baseDeps, shouldDefineGlobal: () => false, getGlobalVarName: () => 'ignored' }, win);
+
+    expect(win.__prebidDevToolsMcp.map(registration => registration.instance)).to.eql(['myPbjs', 'unnamed-0', 'unnamed-1']);
   });
 
   it('exposes auction, TTL, floor, and event timing details', function () {
