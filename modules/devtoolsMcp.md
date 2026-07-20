@@ -21,8 +21,7 @@ Every result row carries an `instance` field identifying the Prebid instance it 
 Returns a list with one runtime summary per Prebid instance on the page (or just the instance named by `instance`). Each summary is tagged with its `instance` and contains:
 
 - Prebid version and installed module names.
-- Current Prebid config snapshot.
-- Bid cache TTL settings.
+- Current Prebid config snapshot (which includes the `minBidCacheTTL` / `minTargetedBidCacheTTL` settings).
 - Aggregate counts for auctions, events, ad units, bid requests, bids received, no-bids, and winning bids.
 - Bidder-level bid, no-bid, and winning-bid counts.
 - The latest auction snapshot.

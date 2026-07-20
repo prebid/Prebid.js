@@ -150,8 +150,6 @@ describe('devtoolsMcp', function () {
       getGlobal: () => ({}),
       getBufferedTTL: () => undefined,
       getEffectiveMinBidCacheTTL: () => undefined,
-      getMinBidCacheTTL: () => undefined,
-      getMinTargetedBidCacheTTL: () => undefined,
       isBidUsable: () => undefined
     };
     install({ ...baseDeps, shouldDefineGlobal: () => true, getGlobalVarName: () => 'myPbjs' }, win);

@@ -2,7 +2,7 @@
 
 import { auctionManager } from '../../src/auctionManager.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import { getBufferedTTL, getEffectiveMinBidCacheTTL, getMinBidCacheTTL, getMinTargetedBidCacheTTL } from '../../src/bidTTL.js';
+import { getBufferedTTL, getEffectiveMinBidCacheTTL } from '../../src/bidTTL.js';
 import { isBidUsable } from '../../src/targeting/filters.js';
 import { getGlobalVarName, shouldDefineGlobal } from '../../src/buildOptions.js';
 import { install } from './devtoolsMcp.ts';
@@ -15,8 +15,6 @@ install({
   getGlobal,
   getBufferedTTL,
   getEffectiveMinBidCacheTTL,
-  getMinBidCacheTTL,
-  getMinTargetedBidCacheTTL,
   isBidUsable,
   getGlobalVarName,
   shouldDefineGlobal,

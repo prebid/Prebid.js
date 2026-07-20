@@ -39,8 +39,6 @@ export interface DevToolsDeps {
   getGlobal: typeof import('../../src/prebidGlobal.js').getGlobal;
   getBufferedTTL: typeof import('../../src/bidTTL.js').getBufferedTTL;
   getEffectiveMinBidCacheTTL: typeof import('../../src/bidTTL.js').getEffectiveMinBidCacheTTL;
-  getMinBidCacheTTL: typeof import('../../src/bidTTL.js').getMinBidCacheTTL;
-  getMinTargetedBidCacheTTL: typeof import('../../src/bidTTL.js').getMinTargetedBidCacheTTL;
   isBidUsable: typeof import('../../src/targeting/filters.js').isBidUsable;
   getGlobalVarName: typeof import('../../src/buildOptions.js').getGlobalVarName;
   shouldDefineGlobal: typeof import('../../src/buildOptions.js').shouldDefineGlobal;
@@ -126,8 +124,6 @@ export function makeDevTools(deps: DevToolsDeps): DevToolsHandlers {
     getGlobal,
     getBufferedTTL,
     getEffectiveMinBidCacheTTL,
-    getMinBidCacheTTL,
-    getMinTargetedBidCacheTTL,
     isBidUsable,
   } = deps;
 
@@ -243,10 +239,6 @@ export function makeDevTools(deps: DevToolsDeps): DevToolsHandlers {
       version: pbjs.version,
       installedModules: pbjs.installedModules.slice(),
       config: sanitize(pbjs.getConfig()),
-      cacheTTL: {
-        minBidCacheTTL: getMinBidCacheTTL(),
-        minTargetedBidCacheTTL: getMinTargetedBidCacheTTL(),
-      },
       counts: {
         auctions: auctions.length,
         events: events.length,
