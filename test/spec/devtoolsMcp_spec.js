@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getPrebidDevTools, installPrebidDevTools } from '../../modules/devtoolsMcp.ts';
+import { getPrebidDevTools, installPrebidDevTools } from '../../modules/devtoolsMcp/index.ts';
 import { auctionManager } from '../../src/auctionManager.js';
 import { clearEvents, emit } from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
