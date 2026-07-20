@@ -17,7 +17,7 @@ describe('devtoolsMcp', function () {
       addEventListener: sinon.stub()
     };
     installPrebidDevTools(win);
-    expect(win.__prebidDevToolsMcpInstalled).to.have.property('pbjs', true);
+    expect(win.__prebidDevToolsMcp).to.be.an('array');
     const [eventName, handler] = win.addEventListener.firstCall.args;
     let toolGroup;
 
@@ -29,15 +29,14 @@ describe('devtoolsMcp', function () {
 
     expect(eventName).to.equal('devtoolstooldiscovery');
     expect(toolGroup.name).to.equal('Prebid.js DevTools');
-    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['pbjs_summary', 'pbjs_auctions', 'pbjs_events']);
+    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['summary', 'auctions', 'events']);
   });
 
-  it('namespaces tools for non-default Prebid globals', function () {
+  it('exposes a single, un-namespaced set of tools regardless of the Prebid global name', function () {
     const win = {
       addEventListener: sinon.stub()
     };
-    installPrebidDevTools(win, 'customPbjs');
-    expect(win.__prebidDevToolsMcpInstalled).to.have.property('customPbjs', true);
+    installPrebidDevTools(win);
     const [, handler] = win.addEventListener.firstCall.args;
     let toolGroup;
 
@@ -47,7 +46,73 @@ describe('devtoolsMcp', function () {
       }
     });
 
-    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['customPbjs_summary', 'customPbjs_auctions', 'customPbjs_events']);
+    const names = toolGroup.tools.map(tool => tool.name);
+    expect(names).to.include.members(['summary', 'auctions', 'events']);
+    expect(names.some(name => name.includes('pbjs') || name.includes('_'))).to.equal(false);
+  });
+
+  it('installs the discovery listener only once per page, by the first instance', function () {
+    const win = {
+      addEventListener: sinon.stub()
+    };
+    installPrebidDevTools(win);
+    installPrebidDevTools(win);
+
+    expect(win.addEventListener.callCount).to.equal(1);
+    const [, handler] = win.addEventListener.firstCall.args;
+    let toolGroup;
+    handler({
+      respondWith(group) {
+        toolGroup = group;
+      }
+    });
+    expect(toolGroup.tools.map(tool => tool.name)).to.include.members(['summary', 'auctions', 'events']);
+  });
+
+  it('aggregates tool results across all registered instances via the window global', function () {
+    const a = {
+      summary: sinon.stub().returns('SUMMARY_A'),
+      auctions: sinon.stub().returns([{ auctionId: 'a1' }]),
+      events: sinon.stub().returns([{ id: 'ea1', elapsedTime: 1 }, { id: 'ea2', elapsedTime: 2 }])
+    };
+    const b = {
+      summary: sinon.stub().returns('SUMMARY_B'),
+      auctions: sinon.stub().returns([{ auctionId: 'b1' }, { auctionId: 'b2' }]),
+      events: sinon.stub().returns([{ id: 'eb1', elapsedTime: 3 }])
+    };
+    const win = { __prebidDevToolsMcp: [a, b] };
+    const tools = Object.fromEntries(getPrebidDevTools(win).tools.map(tool => [tool.name, tool]));
+
+    // summary: one entry per instance (simple concatenation)
+    expect(tools.summary.execute({})).to.eql(['SUMMARY_A', 'SUMMARY_B']);
+    // auctions: flattened list across instances
+    expect(tools.auctions.execute({ auctionId: 'x' })).to.eql([{ auctionId: 'a1' }, { auctionId: 'b1' }, { auctionId: 'b2' }]);
+    expect(a.auctions.calledWith({ auctionId: 'x' })).to.equal(true);
+    // events: flattened history across instances, ordered by elapsedTime
+    expect(tools.events.execute({}).map(event => event.id)).to.eql(['ea1', 'ea2', 'eb1']);
+  });
+
+  it('returns the most recent events by elapsedTime across instances', function () {
+    const a = {
+      summary: sinon.stub(),
+      auctions: sinon.stub().returns([]),
+      events: sinon.stub().returns([{ id: 'a1', elapsedTime: 10 }, { id: 'a2', elapsedTime: 40 }])
+    };
+    const b = {
+      summary: sinon.stub(),
+      auctions: sinon.stub().returns([]),
+      events: sinon.stub().returns([{ id: 'b1', elapsedTime: 20 }, { id: 'b2', elapsedTime: 30 }])
+    };
+    const win = { __prebidDevToolsMcp: [a, b] };
+    const tools = Object.fromEntries(getPrebidDevTools(win).tools.map(tool => [tool.name, tool]));
+
+    // combined order by elapsedTime is a1(10), b1(20), b2(30), a2(40);
+    // the 3 most recent are b1, b2, a2 (interleaved across instances)
+    expect(tools.events.execute({ limit: 3 }).map(event => event.id)).to.eql(['b1', 'b2', 'a2']);
+    // the limit is handled at the aggregation layer, not passed down to each instance
+    expect(a.events.firstCall.args[0]).to.not.have.property('limit');
+    // a limit of 0 returns nothing
+    expect(tools.events.execute({ limit: 0 })).to.eql([]);
   });
 
   it('exposes auction, TTL, floor, and event timing details', function () {
@@ -84,10 +149,10 @@ describe('devtoolsMcp', function () {
     emit(EVENTS.AUCTION_INIT, auction.getProperties());
 
     const tools = Object.fromEntries(getPrebidDevTools().tools.map(tool => [tool.name, tool]));
-    const auctions = tools.pbjs_auctions.execute({ auctionId: 'auction-1' });
-    const events = tools.pbjs_events.execute({ auctionId: 'auction-1' });
-    const noEvents = tools.pbjs_events.execute({ auctionId: 'auction-1', limit: 0 });
-    const summary = tools.pbjs_summary.execute({});
+    const auctions = tools.auctions.execute({ auctionId: 'auction-1' });
+    const events = tools.events.execute({ auctionId: 'auction-1' });
+    const noEvents = tools.events.execute({ auctionId: 'auction-1', limit: 0 });
+    const summary = tools.summary.execute({});
 
     expect(auctions).to.have.length(1);
     expect(auctions[0].eligibleBidRequests).to.eql([]);
@@ -97,7 +162,8 @@ describe('devtoolsMcp', function () {
     expect(events[0]).to.include({ eventType: EVENTS.AUCTION_INIT });
     expect(events[0].args.auctionId).to.equal('auction-1');
     expect(noEvents).to.eql([]);
-    expect(summary.byBidder.bidderA).to.include({ bids: 1, wins: 1 });
-    expect(summary.latestAuction.auctionId).to.equal('auction-1');
+    expect(summary).to.have.length(1);
+    expect(summary[0].byBidder.bidderA).to.include({ bids: 1, wins: 1 });
+    expect(summary[0].latestAuction.auctionId).to.equal('auction-1');
   });
 });

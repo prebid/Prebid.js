@@ -10,13 +10,13 @@ Build Prebid.js with the module included, then load that build on a page:
 gulp build --modules=devtoolsMcp
 ```
 
-When the build runs in the browser, the module listens for Chrome's `devtoolstooldiscovery` event and responds with a `ToolGroup` named `Prebid.js DevTools`. Tool names are prefixed with the Prebid global name, for example `pbjs_summary`, so pages with more than one Prebid global do not register ambiguous tool identifiers.
+When the build runs in the browser, the module listens for Chrome's `devtoolstooldiscovery` event and responds with a `ToolGroup` named `Prebid.js DevTools`. A single, un-namespaced set of tools (`summary`, `auctions`, `events`) is registered regardless of how many Prebid instances are present on the page or how they are named; the first instance to load `devtoolsMcp` installs the listener, and every instance registers itself so the tools aggregate results across all of them.
 
 ## Tools
 
-### `<global>_summary`
+### `summary`
 
-Returns a runtime summary containing:
+Returns a list with one runtime summary per Prebid instance on the page. Each summary contains:
 
 - Prebid version and installed module names.
 - Current Prebid config snapshot.
@@ -27,9 +27,9 @@ Returns a runtime summary containing:
 
 Input schema: an empty object.
 
-### `<global>_auctions`
+### `auctions`
 
-Returns auction snapshots. Pass `auctionId` to filter to one auction, or omit it to return all tracked auctions.
+Returns a flattened list of auction snapshots across all Prebid instances. Pass `auctionId` to filter to one auction, or omit it to return all tracked auctions.
 
 Each auction snapshot includes:
 
@@ -50,9 +50,9 @@ Input schema:
 }
 ```
 
-### `<global>_events`
+### `events`
 
-Returns Prebid event history with event type, event id, elapsed time, sequence number, and sanitized event args. A `limit` of `0` returns an empty list; positive values are floored to an integer before slicing history.
+Returns the Prebid event history across all instances, flattened and ordered chronologically by `elapsedTime`, with event type, event id, elapsed time, sequence number, and sanitized event args. The `limit` selects the most recent records across the combined history rather than applying to each instance: a `limit` of `0` returns an empty list; positive values are floored to an integer.
 
 Input schema:
 
