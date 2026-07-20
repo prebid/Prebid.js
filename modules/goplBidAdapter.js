@@ -303,10 +303,11 @@ const getNotificationPayload = bidData => {
  */
 const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
-    contentType: 'application/json',
+    contentType: 'text/plain',
     withCredentials: false,
     method: 'POST',
-    crossOrigin: true
+    crossOrigin: true,
+    keepalive: true,
   });
 };
 
