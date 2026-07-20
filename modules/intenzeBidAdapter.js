@@ -4,11 +4,6 @@ import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
 import { config } from "../src/config.js";
 import { getTimeZone } from "../libraries/timezone/timezone.js";
 
-/**
- * @typedef { import('../src/adapters/bidderFactory.js').BidRequest } BidRequest
- * @typedef { import('../src/adapters/bidderFactory.js').Bid } Bid
- */
-
 const BIDDER_CODE = "intenze";
 const DEFAULT_CURRENCY = "USD";
 const DEFAULT_REGION = "America";
@@ -92,13 +87,6 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param { object } bid The bid to validate.
-   *
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
   isBidRequestValid: (bid) => {
     return Boolean(bid.params?.accountId) || Boolean(bid.params?.placementId);
   },
@@ -125,12 +113,6 @@ export const spec = {
     }
   },
 
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param { * } serverResponse A successful response from the server.
-   * @return { Bid[] } An array of bids which were nested inside the server.
-   */
   interpretResponse: (response, request) => {
     if (response?.body) {
       try {
