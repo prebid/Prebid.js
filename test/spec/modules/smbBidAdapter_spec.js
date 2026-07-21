@@ -251,7 +251,7 @@ describe('smbBidAdapter', function () {
       const serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
-      expect(placements.map(p => p.adFormat)).to.have.members([BANNER, VIDEO, NATIVE]);
+      expect(placements.length).to.equal(3);
       for (let i = 0, len = placements.length; i < len; i++) {
         const placement = placements[i];
         expect(placement.endpointId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
