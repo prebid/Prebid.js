@@ -102,16 +102,22 @@ describe('web bundler load utils', () => {
 
     it('should not run load if the global is loaded already', () => {
       window.pbGlobal.libLoaded = true;
+      window.pbGlobal.getConfig = () => null;
       checkAndRun('pbGlobal', load);
       sinon.assert.notCalled(load);
       sinon.assert.notCalled(consoleWarn);
     });
 
-    it('should log a warning if debug is enabled', () => {
-      window.pbGlobal.libLoaded = true;
-      window.pbGlobal.getConfig = () => true;
-      checkAndRun('pbGlobal', load);
-      sinon.assert.called(consoleWarn);
+    Object.entries({
+      'debug is enabled': () => true,
+      'debug flag cannot be determined': () => { throw new Error() }
+    }).forEach(([t, getConfig]) => {
+      it(`should log a warning if ${t}`, () => {
+        window.pbGlobal.libLoaded = true;
+        window.pbGlobal.getConfig = getConfig;
+        checkAndRun('pbGlobal', load);
+        sinon.assert.called(consoleWarn);
+      });
     });
   });
 });

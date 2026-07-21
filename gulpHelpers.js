@@ -66,7 +66,9 @@ module.exports = {
     }
 
     // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
-    modules.map(getParentModule).filter(module => module != null && !modules.includes(module)).forEach((module => modules.unshift(module)));
+    new Set(
+      modules.map(getParentModule).filter(module => module != null && !modules.includes(module))
+    ).forEach((module => modules.unshift(module)));
     return modules;
   },
   getParentModule,

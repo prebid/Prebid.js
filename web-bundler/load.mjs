@@ -45,11 +45,13 @@ export async function loadModules(loader, manifest, modules, resolveDeps = resol
 
 export function checkAndRun(globalVarName, load) {
   if (window[globalVarName]?.libLoaded) {
+    let debugEnabled = true;
     try {
-      if (window[globalVarName].getConfig('debug')) {
-        console.warn(`Attempted to load a copy of Prebid.js that clashes with the existing '${globalVarName}' instance. Load aborted.`);
-      }
+      debugEnabled = window[globalVarName].getConfig('debug');
     } catch (e) {}
+    if (debugEnabled) {
+      console.warn(`Attempted to load a copy of Prebid.js that clashes with the existing '${globalVarName}' instance. Load aborted.`);
+    }
   } else {
     load().then(() => {
       window[globalVarName].processQueue();
