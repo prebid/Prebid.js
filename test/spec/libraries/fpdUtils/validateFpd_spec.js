@@ -92,14 +92,12 @@ describe('validateFpd library', () => {
     expect(input).to.deep.equal(snapshot);
   });
 
-  it('should skip validation entirely when filter is false and no deepClone is provided', () => {
+  it('should throw when filter is false and no deepClone is provided', () => {
     const logWarn = sinon.spy();
     const { validateFpd } = fpdValidator({ ...utils, logWarn, deepClone: undefined }, { filter: false });
     const input = { imp: { id: '1' } };
 
-    const result = validateFpd(input);
-
-    expect(result).to.equal(input);
+    expect(() => validateFpd(input)).to.throw();
     expect(logWarn.called).to.be.false;
   });
 });

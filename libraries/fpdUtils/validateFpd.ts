@@ -186,12 +186,15 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess, deepClone
    * Validate ortb2 first-party data.
    * When `filter` is true, returns a copy with invalid data removed.
    * When `filter` is false, the input is left untouched (validation runs against a
-   * clone purely to emit warnings) and the original object is returned unchanged; if
-   * no `deepClone` was provided, validation is skipped to avoid mutating the input.
+   * clone purely to emit warnings) and the original object is returned unchanged.
+   * @throws when `filter` is false but no `deepClone` was provided, as the input
+   * cannot be inspected without risking mutation.
    */
   function validateFpd(fpd, path = '', parent = '', optout = false) {
     if (!filter) {
-      if (deepClone == null) return fpd;
+      if (deepClone == null) {
+        throw new Error('fpdValidator: a deepClone dependency is required when filter is false');
+      }
       validate(deepClone(fpd), path, parent, optout);
       return fpd;
     }

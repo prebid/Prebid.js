@@ -321,11 +321,10 @@ describe('fpdValidation', () => {
     expect(logWarn.firstCall.args[0]).to.match(/^Invalid /);
   });
 
-  it('should skip validation when deepClone is not available', () => {
+  it('should throw when deepClone is not available', () => {
     const logWarn = sinon.spy();
     configureFpdValidation({ utils: { ...utils, deepClone: undefined }, logger: { logWarn } });
-    const result = validateOrtb2ForDebug(invalidOrtb2);
-    expect(result).to.equal(invalidOrtb2);
+    expect(() => validateOrtb2ForDebug(invalidOrtb2)).to.throw();
     expect(logWarn.called).to.be.false;
   });
 
