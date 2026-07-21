@@ -1391,7 +1391,7 @@
       "componentType": "bidder",
       "componentName": "aso",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1621,
       "disclosureURL": null
     },
     {
@@ -1405,14 +1405,14 @@
       "componentType": "bidder",
       "componentName": "bidgency",
       "aliasOf": "aso",
-      "gvlid": null,
+      "gvlid": 1403,
       "disclosureURL": null
     },
     {
       "componentType": "bidder",
       "componentName": "kuantyx",
       "aliasOf": "aso",
-      "gvlid": null,
+      "gvlid": 1374,
       "disclosureURL": null
     },
     {
@@ -3692,6 +3692,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "ocm",
+      "aliasOf": null,
+      "gvlid": 1148,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "ogury",
       "aliasOf": null,
       "gvlid": 31,
@@ -3939,6 +3946,13 @@
       "componentType": "bidder",
       "componentName": "pilotx",
       "aliasOf": "pilotx",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pinelake",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
