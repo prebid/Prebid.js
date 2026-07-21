@@ -110,7 +110,7 @@ describe('web bundler load utils', () => {
 
     Object.entries({
       'debug is enabled': () => true,
-      'debug flag cannot be determined': () => { throw new Error() }
+      'debug flag cannot be determined': () => { throw new Error(); }
     }).forEach(([t, getConfig]) => {
       it(`should log a warning if ${t}`, () => {
         window.pbGlobal.libLoaded = true;
