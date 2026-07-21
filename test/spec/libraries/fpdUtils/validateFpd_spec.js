@@ -1,7 +1,10 @@
 import { expect } from 'chai';
-import { validateFpd } from 'libraries/fpdUtils/validateFpd.js';
+import * as utils from 'src/utils.js';
+import { fpdValidator } from 'libraries/fpdUtils/validateFpd.js';
 
 describe('validateFpd library', () => {
+  const { validateFpd } = fpdValidator(utils);
+
   it('should filter invalid ortb2 fields', () => {
     const validated = validateFpd({
       imp: { id: '1' },
@@ -52,12 +55,12 @@ describe('validateFpd library', () => {
     });
   });
 
-  it('should log Filtered warnings when filtering', () => {
-    const warn = sinon.stub(console, 'warn');
+  it('should log Filtered warnings through the injected logWarn', () => {
+    const logWarn = sinon.spy();
+    const { validateFpd } = fpdValidator({ ...utils, logWarn });
 
     validateFpd({ imp: { id: '1' } });
 
-    expect(warn.firstCall.args[0]).to.match(/^Filtered /);
-    warn.restore();
+    expect(logWarn.firstCall.args[0]).to.match(/^Filtered /);
   });
 });

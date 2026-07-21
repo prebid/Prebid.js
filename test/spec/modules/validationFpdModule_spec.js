@@ -1,9 +1,8 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import {
-  filterArrayData,
-  validateFpd
-} from '../../../libraries/fpdUtils/validateFpd.js';
+import { fpdValidator } from '../../../libraries/fpdUtils/validateFpd.js';
+
+const { filterArrayData, validateFpd } = fpdValidator(utils);
 
 describe('the first party data validation module', function () {
   const ortb2 = {

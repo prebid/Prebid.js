@@ -1,23 +1,27 @@
 // eslint-disable-next-line prebid/validate-imports
-import { validateFpd } from '../../libraries/fpdUtils/validateFpd.js';
+import { fpdValidator } from '../../libraries/fpdUtils/validateFpd.js';
 
 let getPubcidOptout = () => false;
 let utilsRef;
+let validateFpd;
 
-export function configureFpdValidation({ getOptout, utils }: {
+export function configureFpdValidation({ getOptout, utils, logger }: {
   getOptout?: () => boolean;
   utils?: any;
+  logger?: { logWarn: (...args: any[]) => void };
 } = {}) {
   if (getOptout) {
     getPubcidOptout = getOptout;
   }
-  if (utils) {
+  if (utils && logger) {
     utilsRef = utils;
+    const { isNumber, isEmpty, deepAccess } = utils;
+    ({ validateFpd } = fpdValidator({ logWarn: logger.logWarn, isNumber, isEmpty, deepAccess }));
   }
 }
 
 export function validateOrtb2ForDebug(ortb2, { deepClone }: { deepClone?: <T>(obj: T) => T } = {}) {
-  if (ortb2 == null || deepClone == null) return ortb2;
+  if (ortb2 == null || deepClone == null || validateFpd == null) return ortb2;
   validateFpd(deepClone(ortb2), '', '', getPubcidOptout());
   return ortb2;
 }

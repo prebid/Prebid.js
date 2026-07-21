@@ -2,13 +2,16 @@
  * This module sets default values and validates ortb2 first part data
  * @module modules/firstPartyData
  */
+import { deepAccess, isEmpty, isNumber, logWarn } from '../../src/utils.js';
 import { hasPubcidOptout } from '../../libraries/fpdUtils/pubcidOptout.js';
-import { validateFpd } from '../../libraries/fpdUtils/validateFpd.js';
+import { fpdValidator } from '../../libraries/fpdUtils/validateFpd.js';
 import { submodule } from '../../src/hook.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
 
 // TODO: do FPD modules need their own namespace?
 const STORAGE = getCoreStorageManager('FPDValidation');
+
+const { validateFpd } = fpdValidator({ logWarn, isNumber, isEmpty, deepAccess });
 
 declare module '../../src/fpd/enrichment' {
   interface FirstPartyDataConfig {

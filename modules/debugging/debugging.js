@@ -128,7 +128,7 @@ export function makeBidderBidInterceptor({ utils }) {
 }
 
 export function install({ DEBUG_KEY, config, hook, createBid, logger, utils, BANNER, NATIVE, VIDEO, Renderer, getPubcidOptout = () => false }) {
-  configureFpdValidation({ getOptout: getPubcidOptout, utils });
+  configureFpdValidation({ getOptout: getPubcidOptout, utils, logger });
   const BidInterceptor = makebidInterceptor({ utils, BANNER, NATIVE, VIDEO, Renderer });
   bidInterceptor = new BidInterceptor({ logger });
   const pbsBidInterceptor = makePbsInterceptor({ createBid, utils });

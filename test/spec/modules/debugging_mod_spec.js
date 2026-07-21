@@ -311,28 +311,28 @@ describe('fpdValidation', () => {
   };
 
   it('should validate a clone and keep original ortb2 untouched', () => {
-    const warn = sinon.stub(console, 'warn');
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
     const result = validateOrtb2ForDebug(invalidOrtb2, { deepClone: utils.deepClone });
     expect(result).to.equal(invalidOrtb2);
     expect(result.imp).to.deep.equal({ id: 'invalid-top-level-property' });
     expect(result.user).to.deep.equal({ yob: 'not-a-number' });
-    expect(warn.firstCall.args[0]).to.match(/^Filtered /);
-    warn.restore();
+    expect(logWarn.firstCall.args[0]).to.match(/^Filtered /);
   });
 
   it('should skip validation when deepClone is not available', () => {
-    const warn = sinon.stub(console, 'warn');
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
     const result = validateOrtb2ForDebug(invalidOrtb2);
     expect(result).to.equal(invalidOrtb2);
-    expect(warn.called).to.be.false;
-    warn.restore();
+    expect(logWarn.called).to.be.false;
   });
 
   it('should validate global and bidder ortb2 on startAuction', () => {
     const bidderOrtb2 = { user: { yob: 'bidder-not-a-number' } };
     const globalOrtb2 = { ...invalidOrtb2 };
-    configureFpdValidation({ utils });
-    const warn = sinon.stub(console, 'warn');
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
     const next = sinon.stub();
 
     startAuctionFpdValidationHook(next, {
@@ -343,11 +343,9 @@ describe('fpdValidation', () => {
     });
 
     expect(next.calledOnce).to.be.true;
-    expect(warn.callCount).to.be.at.least(2);
+    expect(logWarn.callCount).to.be.at.least(2);
     expect(globalOrtb2.imp).to.deep.equal({ id: 'invalid-top-level-property' });
     expect(bidderOrtb2.user.yob).to.equal('bidder-not-a-number');
-
-    warn.restore();
   });
 });
 
