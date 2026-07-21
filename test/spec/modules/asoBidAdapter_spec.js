@@ -339,7 +339,7 @@ describe('Adserver.Online bidding adapter', function () {
         ext: {
           user_syncs: [
             {
-              url: 'sync_url',
+              url: 'sync_url?gdpr=1&gdpr_consent=consentString&us_privacy=usp_consent',
               type: 'iframe'
             }
           ]
@@ -394,7 +394,15 @@ describe('Adserver.Online bidding adapter', function () {
             }
           ]
         }],
-        cur: 'USD'
+        cur: 'USD',
+        ext: {
+          user_syncs: [
+            {
+              url: 'sync_url?us_privacy=usp_consent',
+              type: 'iframe'
+            }
+          ]
+        }
       },
     };
 
@@ -471,12 +479,12 @@ describe('Adserver.Online bidding adapter', function () {
         expect(syncs).to.have.lengthOf(1);
         expect(syncs[0].type).to.equal('iframe');
         expect(syncs[0].url).to.equal(
-          'sync_url?gdpr=1&consents_str=consentString&consents=1%2C2&us_privacy=usp_consent'
+          'sync_url?gdpr=1&gdpr_consent=consentString&us_privacy=usp_consent'
         );
       });
 
       it('should return iframe sync option - gdpr not applies', function () {
-        const syncs = spec.getUserSyncs(syncOptions, [bannerResponse], gdprNotApplies, uspConsent);
+        const syncs = spec.getUserSyncs(syncOptions, [nativeResponse], gdprNotApplies, uspConsent);
         expect(syncs).to.have.lengthOf(1);
 
         expect(syncs[0].url).to.equal(
