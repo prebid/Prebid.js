@@ -1,15 +1,16 @@
 // eslint-disable-next-line prebid/validate-imports
 import { fpdValidator } from '../../libraries/fpdUtils/validateFpd.js';
+import type { Logger } from "../../src/utils/logging.ts";
 
 let getPubcidOptout = () => false;
 let utilsRef;
-let warn: (...args: any[]) => void = () => {};
+let warn: Logger['logWarn'];
 let validateFpd;
 
 export function configureFpdValidation({ getOptout, utils, logger }: {
   getOptout?: () => boolean;
   utils?: any;
-  logger?: { logWarn: (...args: any[]) => void };
+  logger?: Logger;
 } = {}) {
   if (getOptout) {
     getPubcidOptout = getOptout;
