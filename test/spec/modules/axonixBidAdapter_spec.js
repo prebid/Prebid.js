@@ -430,7 +430,7 @@ describe('Axonix Bid Adapter', function () {
       expect(server.requests).to.have.lengthOf(1);
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(DATA_DELETION_URL);
-      expect(server.requests[0].requestBody).to.deep.equal({ bidderRequests });
+      expect(server.requests[0].requestBody).to.equal(JSON.stringify({ bidderRequests }));
     });
 
     it('should not send data deletion request when supplyId is missing', function () {

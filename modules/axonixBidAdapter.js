@@ -45,7 +45,7 @@ function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function getBidderURL(params, path) {
+function getBidderURL(params) {
   const { supplyId, region, endpoint } = params;
   let url;
 
@@ -202,7 +202,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: getBidderURL(validBidRequest.params, 'prebid'),
+        url: getBidderURL(validBidRequest.params),
         options: {
           withCredentials: false,
           contentType: 'application/json'
@@ -259,12 +259,10 @@ export const spec = {
       return;
     }
 
-    ajax(getSignalURL(params, 'data-deletion/v2'), null, { bidderRequests }, {
+    ajax(getSignalURL(params, 'data-deletion/v2'), null, JSON.stringify({ bidderRequests }), {
       method: 'POST',
-      options: {
-        withCredentials: false,
-        contentType: 'application/json'
-      }
+      withCredentials: false,
+      contentType: 'application/json',
     });
   }
 };
