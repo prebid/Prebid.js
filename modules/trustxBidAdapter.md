@@ -70,7 +70,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 
 ## Instream Video adUnit using mediaTypes.video
 
-*Note:* By default, the adapter will read the mandatory parameters from mediaTypes.video. Values in `params.video` override matching values from `mediaTypes.video`.
+*Note:* By default, the adapter will read the mandatory parameters from mediaTypes.video. Values in `params.video` override matching values from `mediaTypes.video`, except `pos`, which is always sourced from `mediaTypes.video.pos`.
 *Note:* The TRUSTX ad server will respond with a VAST XML to load into your defined player.
 
 ```

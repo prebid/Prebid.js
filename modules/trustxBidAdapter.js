@@ -35,10 +35,12 @@ const ortbAdapterConverter = ortbConverter({
     imp: {
       video(fillVideoImp, impression, bidRequest, context) {
         if (containsVideoRequest(bidRequest)) {
+          const bidderVideoParams = Object.assign({}, bidRequest.params?.video);
+          delete bidderVideoParams.pos;
           const videoParams = Object.assign(
             {},
             bidRequest.mediaTypes[VIDEO],
-            bidRequest.params?.video
+            bidderVideoParams
           );
           bidRequest = {
             ...bidRequest,

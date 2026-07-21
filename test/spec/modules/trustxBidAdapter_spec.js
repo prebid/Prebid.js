@@ -575,6 +575,17 @@ describe('trustxBidAdapter', function() {
           });
         });
 
+        it('should source video pos from mediaTypes when bidder-specific params also set pos', function () {
+          const bidderRequest = getVideoRequest();
+          const videoBid = bidderRequest.bids[0];
+          videoBid.params.uid = 'trustx-placement-1';
+          videoBid.mediaTypes.video.pos = 1;
+          videoBid.params.video.pos = 3;
+
+          const request = spec.buildRequests([videoBid], { ...bidderRequest, bids: [videoBid] });
+          expect(request.data.imp[0].video.pos).to.equal(videoBid.mediaTypes.video.pos);
+        });
+
         it('should attach End 2 End test data', function () {
           bidRequestsWithMediaTypes[1].params.test = true;
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
