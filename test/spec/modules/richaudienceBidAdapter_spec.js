@@ -471,6 +471,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.not.have.property('demand');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
     expect(request[0].videoData).to.have.property('format').and.to.equal('outstream');
+    expect(request[0].adUnitCode).to.equal('test-div');
   });
 
   describe('gdpr test', function () {
@@ -713,6 +714,7 @@ describe('Richaudience adapter tests', function () {
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal('<VAST></VAST>');
     expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
+    expect(bid.renderer.adUnitCode).to.equal('test-div');
     expect(bid.cpm).to.equal(1.50);
     expect(bid.width).to.equal(1);
     expect(bid.height).to.equal(1);

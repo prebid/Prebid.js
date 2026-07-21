@@ -88,6 +88,7 @@ export const spec = {
         data: payloadString,
         bidId: bid.bidId,
         videoData: payload.videoData,
+        adUnitCode: bid.adUnitCode,
       };
     });
   },
@@ -125,7 +126,7 @@ export const spec = {
             if (bidRequest.videoData.format === 'outstream' || bidRequest.videoData.format === 'banner') {
               bidResponse.renderer = Renderer.install({
                 id: bidRequest.bidId,
-                adunitcode: bidRequest.tagId,
+                adUnitCode: bidRequest.adUnitCode,
                 loaded: false,
                 config: response.media_type,
                 url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
