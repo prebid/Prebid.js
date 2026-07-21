@@ -310,10 +310,10 @@ describe('fpdValidation', () => {
     user: { yob: 'not-a-number' },
   };
 
-  it('should validate a clone and keep original ortb2 untouched', () => {
+  it('should validate against a clone and keep original ortb2 untouched', () => {
     const logWarn = sinon.spy();
     configureFpdValidation({ utils, logger: { logWarn } });
-    const result = validateOrtb2ForDebug(invalidOrtb2, { deepClone: utils.deepClone });
+    const result = validateOrtb2ForDebug(invalidOrtb2);
     expect(result).to.equal(invalidOrtb2);
     expect(result.imp).to.deep.equal({ id: 'invalid-top-level-property' });
     expect(result.user).to.deep.equal({ yob: 'not-a-number' });
@@ -323,7 +323,7 @@ describe('fpdValidation', () => {
 
   it('should skip validation when deepClone is not available', () => {
     const logWarn = sinon.spy();
-    configureFpdValidation({ utils, logger: { logWarn } });
+    configureFpdValidation({ utils: { ...utils, deepClone: undefined }, logger: { logWarn } });
     const result = validateOrtb2ForDebug(invalidOrtb2);
     expect(result).to.equal(invalidOrtb2);
     expect(logWarn.called).to.be.false;

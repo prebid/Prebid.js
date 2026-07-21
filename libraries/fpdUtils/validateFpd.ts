@@ -10,6 +10,11 @@ export type FpdValidatorDeps = {
   isNumber: (val: unknown) => val is number;
   isEmpty: (val: unknown) => boolean;
   deepAccess: (obj: any, path: string) => any;
+  /**
+   * Deep clone, used to avoid mutating the caller's data when `filtered` is false.
+   * Required when `filtered` is false; unused otherwise.
+   */
+  deepClone?: <T>(obj: T) => T;
 };
 
 export type FpdValidatorOptions = {
@@ -28,11 +33,12 @@ export type FpdValidatorOptions = {
  * @param deps.isNumber number type guard
  * @param deps.isEmpty empty-value check
  * @param deps.deepAccess dotted-path accessor
+ * @param deps.deepClone deep clone (used only when `filtered` is false)
  * @param options validator options
- * @param options.filtered whether invalid data is removed (controls warning wording)
+ * @param options.filtered whether invalid data is removed (controls warning wording and whether the input is modified)
  * @returns `validateFpd` and `filterArrayData` bound to the injected utilities
  */
-export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdValidatorDeps, { filtered = true }: FpdValidatorOptions = {}) {
+export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess, deepClone }: FpdValidatorDeps, { filtered = true }: FpdValidatorOptions = {}) {
   const label = filtered ? 'Filtered' : 'Invalid';
   function isEmptyData(data) {
     let check = true;
@@ -108,7 +114,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
           break;
         case 'object':
           if (mapping && mapping.children) {
-            const validObject = validateFpd(value, path + '.children.', parent + '.', optout);
+            const validObject = validate(value, path + '.children.', parent + '.', optout);
             if (Object.keys(validObject).length) {
               const requiredCheck = getRequiredData(validObject, mapping.required, parent, i);
 
@@ -132,7 +138,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
     return arr;
   }
 
-  function validateFpd(fpd, path = '', parent = '', optout = false) {
+  function validate(fpd, path = '', parent = '', optout = false) {
     if (!fpd) return {};
 
     const validObject = Object.assign({}, Object.keys(fpd).filter(key => {
@@ -160,7 +166,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
         }
 
         const modified = (mapping.type === 'object' && !mapping.isArray)
-          ? validateFpd(fpd[key], path + key + '.children.', parent + key + '.', optout)
+          ? validate(fpd[key], path + key + '.children.', parent + key + '.', optout)
           : (mapping.isArray && mapping.childType)
               ? filterArrayData(fpd[key], { type: mapping.childType, isArray: mapping.childisArray }, path + key, parent + key, optout) : fpd[key];
 
@@ -174,6 +180,22 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
     }, {}));
 
     return validObject;
+  }
+
+  /**
+   * Validate ortb2 first-party data.
+   * When `filtered` is true, returns a copy with invalid data removed.
+   * When `filtered` is false, the input is left untouched (validation runs against a
+   * clone purely to emit warnings) and the original object is returned unchanged; if
+   * no `deepClone` was provided, validation is skipped to avoid mutating the input.
+   */
+  function validateFpd(fpd, path = '', parent = '', optout = false) {
+    if (!filtered) {
+      if (deepClone == null) return fpd;
+      validate(deepClone(fpd), path, parent, optout);
+      return fpd;
+    }
+    return validate(fpd, path, parent, optout);
   }
 
   return { validateFpd, filterArrayData };

@@ -3,7 +3,6 @@ import { fpdValidator } from '../../libraries/fpdUtils/validateFpd.js';
 import type { Logger } from "../../src/utils/logging.ts";
 
 let getPubcidOptout = () => false;
-let utilsRef;
 let warn: Logger['logWarn'];
 let validateFpd;
 
@@ -16,26 +15,24 @@ export function configureFpdValidation({ getOptout, utils, logger }: {
     getPubcidOptout = getOptout;
   }
   if (utils && logger) {
-    utilsRef = utils;
     warn = logger.logWarn;
-    const { isNumber, isEmpty, deepAccess } = utils;
-    // debugging inspects a clone and never alters the request, so report data as "Invalid" rather than "Filtered"
-    ({ validateFpd } = fpdValidator({ logWarn: logger.logWarn, isNumber, isEmpty, deepAccess }, { filtered: false }));
+    const { isNumber, isEmpty, deepAccess, deepClone } = utils;
+    // debugging inspects the data without altering it, so validate against a clone and
+    // report invalid data as "Invalid" rather than "Filtered"
+    ({ validateFpd } = fpdValidator({ logWarn: logger.logWarn, isNumber, isEmpty, deepAccess, deepClone }, { filtered: false }));
   }
 }
 
-export function validateOrtb2ForDebug(ortb2, { deepClone }: { deepClone?: <T>(obj: T) => T } = {}) {
-  if (ortb2 == null || deepClone == null || validateFpd == null) return ortb2;
-  validateFpd(deepClone(ortb2), '', '', getPubcidOptout());
-  return ortb2;
+export function validateOrtb2ForDebug(ortb2) {
+  if (ortb2 == null || validateFpd == null) return ortb2;
+  return validateFpd(ortb2, '', '', getPubcidOptout());
 }
 
 export function validateOrtb2Fragments(ortb2Fragments) {
   if (ortb2Fragments == null) return;
-  const deepClone = utilsRef?.deepClone;
-  validateOrtb2ForDebug(ortb2Fragments.global, { deepClone });
+  validateOrtb2ForDebug(ortb2Fragments.global);
   Object.values(ortb2Fragments.bidder || {}).forEach((ortb2) => {
-    validateOrtb2ForDebug(ortb2, { deepClone });
+    validateOrtb2ForDebug(ortb2);
   });
 }
 

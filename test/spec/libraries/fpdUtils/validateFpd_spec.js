@@ -73,4 +73,33 @@ describe('validateFpd library', () => {
     expect(logWarn.firstCall.args[0]).to.match(/^Invalid /);
     expect(logWarn.firstCall.args[0]).to.not.match(/^Filtered /);
   });
+
+  it('should return the input unchanged and not mutate it when filtered is false', () => {
+    const logWarn = sinon.spy();
+    const { validateFpd } = fpdValidator({ ...utils, logWarn }, { filtered: false });
+    const input = {
+      imp: { id: '1' },
+      device: { w: 1920, h: 1080 },
+      user: { yob: 'not-a-number' },
+    };
+    const snapshot = utils.deepClone(input);
+
+    const result = validateFpd(input);
+
+    // validation ran (invalid fields present) but the input is untouched and returned as-is
+    expect(logWarn.called).to.be.true;
+    expect(result).to.equal(input);
+    expect(input).to.deep.equal(snapshot);
+  });
+
+  it('should skip validation entirely when filtered is false and no deepClone is provided', () => {
+    const logWarn = sinon.spy();
+    const { validateFpd } = fpdValidator({ ...utils, logWarn, deepClone: undefined }, { filtered: false });
+    const input = { imp: { id: '1' } };
+
+    const result = validateFpd(input);
+
+    expect(result).to.equal(input);
+    expect(logWarn.called).to.be.false;
+  });
 });
