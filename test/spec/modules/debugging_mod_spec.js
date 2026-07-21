@@ -317,7 +317,8 @@ describe('fpdValidation', () => {
     expect(result).to.equal(invalidOrtb2);
     expect(result.imp).to.deep.equal({ id: 'invalid-top-level-property' });
     expect(result.user).to.deep.equal({ yob: 'not-a-number' });
-    expect(logWarn.firstCall.args[0]).to.match(/^Filtered /);
+    // debugging does not alter data, so warnings read "Invalid" rather than "Filtered"
+    expect(logWarn.firstCall.args[0]).to.match(/^Invalid /);
   });
 
   it('should skip validation when deepClone is not available', () => {

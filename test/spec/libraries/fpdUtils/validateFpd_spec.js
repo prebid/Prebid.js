@@ -63,4 +63,14 @@ describe('validateFpd library', () => {
 
     expect(logWarn.firstCall.args[0]).to.match(/^Filtered /);
   });
+
+  it('should log Invalid (not Filtered) warnings when filtered option is false', () => {
+    const logWarn = sinon.spy();
+    const { validateFpd } = fpdValidator({ ...utils, logWarn }, { filtered: false });
+
+    validateFpd({ imp: { id: '1' } });
+
+    expect(logWarn.firstCall.args[0]).to.match(/^Invalid /);
+    expect(logWarn.firstCall.args[0]).to.not.match(/^Filtered /);
+  });
 });

@@ -12,6 +12,15 @@ export type FpdValidatorDeps = {
   deepAccess: (obj: any, path: string) => any;
 };
 
+export type FpdValidatorOptions = {
+  /**
+   * Whether the validator removes invalid data from its input. This only affects
+   * the wording of the warnings: `true` (the default) reports data as "Filtered";
+   * `false` reports it as "Invalid", for callers that inspect without altering the data.
+   */
+  filtered?: boolean;
+};
+
 /**
  * Build an ortb2 first-party-data validator.
  * @param deps utility functions from `src/utils.js`
@@ -19,9 +28,12 @@ export type FpdValidatorDeps = {
  * @param deps.isNumber number type guard
  * @param deps.isEmpty empty-value check
  * @param deps.deepAccess dotted-path accessor
+ * @param options validator options
+ * @param options.filtered whether invalid data is removed (controls warning wording)
  * @returns `validateFpd` and `filterArrayData` bound to the injected utilities
  */
-export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdValidatorDeps) {
+export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdValidatorDeps, { filtered = true }: FpdValidatorOptions = {}) {
+  const label = filtered ? 'Filtered' : 'Invalid';
   function isEmptyData(data) {
     let check = true;
 
@@ -40,7 +52,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
     required.forEach(key => {
       if (!obj[key] || isEmptyData(obj[key])) {
         check = false;
-        logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: missing required property ${key}`);
+        logWarn(`${label} ${parent}[] value at index ${i} in ortb2 data: missing required property ${key}`);
       }
     });
 
@@ -75,7 +87,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
         return true;
       }
 
-      logWarn(`Filtered ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
+      logWarn(`${label} ${parent}[] value at index ${i} in ortb2 data: expected type ${child.type}`);
       return false;
     }).filter((index, i) => {
       let requiredCheck = true;
@@ -112,7 +124,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
           break;
       }
 
-      if (!typeBool) logWarn(`Filtered ${parent}[] value at index ${i}  in ortb2 data: expected type ${child.type}`);
+      if (!typeBool) logWarn(`${label} ${parent}[] value at index ${i}  in ortb2 data: expected type ${child.type}`);
 
       return result;
     }, []);
@@ -128,7 +140,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
 
       if (!mapping || !mapping.invalid) return key;
 
-      logWarn(`Filtered ${parent}${key} property in ortb2 data: invalid property`);
+      logWarn(`${label} ${parent}${key} property in ortb2 data: invalid property`);
       return false;
     }).filter(key => {
       const mapping = deepAccess(ORTB_MAP, path + key);
@@ -136,14 +148,14 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
 
       if (typeBool || !mapping) return key;
 
-      logWarn(`Filtered ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
+      logWarn(`${label} ${parent}${key} property in ortb2 data: expected type ${(mapping.isArray) ? 'array' : mapping.type}`);
       return false;
     }).reduce((result, key) => {
       const mapping = deepAccess(ORTB_MAP, path + key);
 
       if (mapping) {
         if (mapping.optoutApplies && optout) {
-          logWarn(`Filtered ${parent}${key} data: pubcid optout found`);
+          logWarn(`${label} ${parent}${key} data: pubcid optout found`);
           return result;
         }
 
@@ -153,7 +165,7 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess }: FpdVali
               ? filterArrayData(fpd[key], { type: mapping.childType, isArray: mapping.childisArray }, path + key, parent + key, optout) : fpd[key];
 
         (!isEmptyData(modified)) ? result[key] = modified
-          : logWarn(`Filtered ${parent}${key} property in ortb2 data: empty data found`);
+          : logWarn(`${label} ${parent}${key} property in ortb2 data: empty data found`);
       } else {
         result[key] = fpd[key];
       }

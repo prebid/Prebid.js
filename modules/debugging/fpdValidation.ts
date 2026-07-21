@@ -19,7 +19,8 @@ export function configureFpdValidation({ getOptout, utils, logger }: {
     utilsRef = utils;
     warn = logger.logWarn;
     const { isNumber, isEmpty, deepAccess } = utils;
-    ({ validateFpd } = fpdValidator({ logWarn: logger.logWarn, isNumber, isEmpty, deepAccess }));
+    // debugging inspects a clone and never alters the request, so report data as "Invalid" rather than "Filtered"
+    ({ validateFpd } = fpdValidator({ logWarn: logger.logWarn, isNumber, isEmpty, deepAccess }, { filtered: false }));
   }
 }
 
