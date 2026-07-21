@@ -2,19 +2,14 @@
 import { validateFpd } from '../../libraries/fpdUtils/validateFpd.js';
 
 let getPubcidOptout = () => false;
-let configRef;
 let utilsRef;
 
-export function configureFpdValidation({ getOptout, config, utils }: {
+export function configureFpdValidation({ getOptout, utils }: {
   getOptout?: () => boolean;
-  config?: any;
   utils?: any;
 } = {}) {
   if (getOptout) {
     getPubcidOptout = getOptout;
-  }
-  if (config) {
-    configRef = config;
   }
   if (utils) {
     utilsRef = utils;
@@ -27,13 +22,16 @@ export function validateOrtb2ForDebug(ortb2, { deepClone }: { deepClone?: <T>(ob
   return ortb2;
 }
 
-export function validateConfiguredFpd() {
-  if (configRef == null) return;
+export function validateOrtb2Fragments(ortb2Fragments) {
+  if (ortb2Fragments == null) return;
   const deepClone = utilsRef?.deepClone;
-  // Assumption: enable debugging after ortb2 is already configured for global and bidders.
-  validateOrtb2ForDebug(configRef.getAnyConfig('ortb2'), { deepClone });
-  const bidderConfigs = configRef.getBidderConfig?.() || {};
-  Object.values(bidderConfigs).forEach((cfg: any) => {
-    validateOrtb2ForDebug(cfg?.ortb2, { deepClone });
+  validateOrtb2ForDebug(ortb2Fragments.global, { deepClone });
+  Object.values(ortb2Fragments.bidder || {}).forEach((ortb2) => {
+    validateOrtb2ForDebug(ortb2, { deepClone });
   });
+}
+
+export function startAuctionFpdValidationHook(next, req) {
+  validateOrtb2Fragments(req.ortb2Fragments);
+  next.call(this, req);
 }

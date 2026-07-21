@@ -10,7 +10,7 @@ import '../../../modules/debugging/index.js';
 import { makePbsInterceptor } from '../../../modules/debugging/pbsInterceptor.js';
 import {
   configureFpdValidation,
-  validateConfiguredFpd,
+  startAuctionFpdValidationHook,
   validateOrtb2ForDebug,
 } from '../../../modules/debugging/fpdValidation.js';
 import { config } from '../../../src/config.js';
@@ -328,20 +328,23 @@ describe('fpdValidation', () => {
     warn.restore();
   });
 
-  it('should validate global and bidder ortb2 when debugging is enabled', () => {
+  it('should validate global and bidder ortb2 on startAuction', () => {
     const bidderOrtb2 = { user: { yob: 'bidder-not-a-number' } };
-    const mockConfig = {
-      getAnyConfig: sinon.stub().withArgs('ortb2').returns(invalidOrtb2),
-      getBidderConfig: sinon.stub().returns({
-        testBidder: { ortb2: bidderOrtb2 }
-      })
-    };
-    configureFpdValidation({ config: mockConfig, utils });
+    const globalOrtb2 = { ...invalidOrtb2 };
+    configureFpdValidation({ utils });
     const warn = sinon.stub(console, 'warn');
+    const next = sinon.stub();
 
-    validateConfiguredFpd();
+    startAuctionFpdValidationHook(next, {
+      ortb2Fragments: {
+        global: globalOrtb2,
+        bidder: { testBidder: bidderOrtb2 }
+      }
+    });
+
+    expect(next.calledOnce).to.be.true;
     expect(warn.callCount).to.be.at.least(2);
-    expect(invalidOrtb2.imp).to.deep.equal({ id: 'invalid-top-level-property' });
+    expect(globalOrtb2.imp).to.deep.equal({ id: 'invalid-top-level-property' });
     expect(bidderOrtb2.user.yob).to.equal('bidder-not-a-number');
 
     warn.restore();
