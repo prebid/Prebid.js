@@ -3,6 +3,7 @@ import { fpdValidator } from '../../libraries/fpdUtils/validateFpd.js';
 
 let getPubcidOptout = () => false;
 let utilsRef;
+let warn: (...args: any[]) => void = () => {};
 let validateFpd;
 
 export function configureFpdValidation({ getOptout, utils, logger }: {
@@ -15,6 +16,7 @@ export function configureFpdValidation({ getOptout, utils, logger }: {
   }
   if (utils && logger) {
     utilsRef = utils;
+    warn = logger.logWarn;
     const { isNumber, isEmpty, deepAccess } = utils;
     ({ validateFpd } = fpdValidator({ logWarn: logger.logWarn, isNumber, isEmpty, deepAccess }));
   }
@@ -36,6 +38,11 @@ export function validateOrtb2Fragments(ortb2Fragments) {
 }
 
 export function startAuctionFpdValidationHook(next, req) {
-  validateOrtb2Fragments(req.ortb2Fragments);
+  // FPD validation is a debugging aid; never let it break the auction.
+  try {
+    validateOrtb2Fragments(req.ortb2Fragments);
+  } catch (e) {
+    warn('Error validating ortb2 first-party data', e);
+  }
   next.call(this, req);
 }

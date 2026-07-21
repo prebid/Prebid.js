@@ -347,6 +347,67 @@ describe('fpdValidation', () => {
     expect(globalOrtb2.imp).to.deep.equal({ id: 'invalid-top-level-property' });
     expect(bidderOrtb2.user.yob).to.equal('bidder-not-a-number');
   });
+
+  it('should never mutate req.ortb2Fragments, even when validation filters data', () => {
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
+    const req = {
+      ortb2Fragments: {
+        global: {
+          imp: { id: 'invalid-top-level-property' },
+          user: { yob: 'not-a-number' },
+          device: { w: 1920, h: 1080 },
+        },
+        bidder: {
+          bidderA: { user: { yob: 'bidder-not-a-number' }, site: { domain: 'example.com' } },
+        },
+      },
+    };
+    const snapshot = utils.deepClone(req.ortb2Fragments);
+
+    startAuctionFpdValidationHook(sinon.stub(), req);
+
+    // validation actually ran against the invalid data...
+    expect(logWarn.called).to.be.true;
+    // ...but the request fragments are left untouched
+    expect(req.ortb2Fragments).to.deep.equal(snapshot);
+  });
+
+  it('should always call next passing it the original request', () => {
+    configureFpdValidation({ utils, logger: { logWarn: sinon.spy() } });
+    const next = sinon.stub();
+    const req = { ortb2Fragments: { global: { user: { yob: 'not-a-number' } }, bidder: {} } };
+
+    startAuctionFpdValidationHook(next, req);
+
+    expect(next.calledOnce).to.be.true;
+    expect(next.firstCall.args[0]).to.equal(req);
+  });
+
+  it('should call next passing it the original request when there is nothing to validate', () => {
+    configureFpdValidation({ utils, logger: { logWarn: sinon.spy() } });
+    const next = sinon.stub();
+    const req = {};
+
+    startAuctionFpdValidationHook(next, req);
+
+    expect(next.calledOnce).to.be.true;
+    expect(next.firstCall.args[0]).to.equal(req);
+  });
+
+  it('should call next passing it the original request even if validation throws', () => {
+    const logWarn = sinon.spy();
+    configureFpdValidation({ utils, logger: { logWarn } });
+    const next = sinon.stub();
+    const req = {};
+    Object.defineProperty(req, 'ortb2Fragments', {
+      get() { throw new Error('boom'); }
+    });
+
+    expect(() => startAuctionFpdValidationHook(next, req)).to.not.throw();
+    expect(next.calledOnce).to.be.true;
+    expect(next.firstCall.args[0]).to.equal(req);
+  });
 });
 
 describe('bidderBidInterceptor', () => {
