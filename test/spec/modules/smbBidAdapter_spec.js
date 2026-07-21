@@ -206,12 +206,52 @@ describe('smbBidAdapter', function () {
             endpointId: 'testBanner',
           },
           userIdAsEids
+        },
+        {
+          bidId: getUniqueIdentifierStr(),
+          bidder: bidder,
+          mediaTypes: {
+            [VIDEO]: {
+              playerSize: [[300, 300]],
+              minduration: 5,
+              maxduration: 60
+            }
+          },
+          params: {
+            endpointId: 'testVideo',
+          },
+          userIdAsEids
+        },
+        {
+          bidId: getUniqueIdentifierStr(),
+          bidder: bidder,
+          mediaTypes: {
+            [NATIVE]: {
+              native: {
+                title: {
+                  required: true
+                },
+                body: {
+                  required: true
+                },
+                icon: {
+                  required: true,
+                  size: [64, 64]
+                }
+              }
+            }
+          },
+          params: {
+            endpointId: 'testNative',
+          },
+          userIdAsEids
         }
       ];
 
       const serverRequest = spec.buildRequests(bids, bidderRequest);
 
       const { placements } = serverRequest.data;
+      expect(placements.map(p => p.adFormat)).to.have.members([BANNER, VIDEO, NATIVE]);
       for (let i = 0, len = placements.length; i < len; i++) {
         const placement = placements[i];
         expect(placement.endpointId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
