@@ -64,9 +64,9 @@ describe('validateFpd library', () => {
     expect(logWarn.firstCall.args[0]).to.match(/^Filtered /);
   });
 
-  it('should log Invalid (not Filtered) warnings when filtered option is false', () => {
+  it('should log Invalid (not Filtered) warnings when filter option is false', () => {
     const logWarn = sinon.spy();
-    const { validateFpd } = fpdValidator({ ...utils, logWarn }, { filtered: false });
+    const { validateFpd } = fpdValidator({ ...utils, logWarn }, { filter: false });
 
     validateFpd({ imp: { id: '1' } });
 
@@ -74,9 +74,9 @@ describe('validateFpd library', () => {
     expect(logWarn.firstCall.args[0]).to.not.match(/^Filtered /);
   });
 
-  it('should return the input unchanged and not mutate it when filtered is false', () => {
+  it('should return the input unchanged and not mutate it when filter is false', () => {
     const logWarn = sinon.spy();
-    const { validateFpd } = fpdValidator({ ...utils, logWarn }, { filtered: false });
+    const { validateFpd } = fpdValidator({ ...utils, logWarn }, { filter: false });
     const input = {
       imp: { id: '1' },
       device: { w: 1920, h: 1080 },
@@ -92,9 +92,9 @@ describe('validateFpd library', () => {
     expect(input).to.deep.equal(snapshot);
   });
 
-  it('should skip validation entirely when filtered is false and no deepClone is provided', () => {
+  it('should skip validation entirely when filter is false and no deepClone is provided', () => {
     const logWarn = sinon.spy();
-    const { validateFpd } = fpdValidator({ ...utils, logWarn, deepClone: undefined }, { filtered: false });
+    const { validateFpd } = fpdValidator({ ...utils, logWarn, deepClone: undefined }, { filter: false });
     const input = { imp: { id: '1' } };
 
     const result = validateFpd(input);

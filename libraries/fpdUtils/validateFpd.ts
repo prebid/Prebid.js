@@ -11,8 +11,8 @@ export type FpdValidatorDeps = {
   isEmpty: (val: unknown) => boolean;
   deepAccess: (obj: any, path: string) => any;
   /**
-   * Deep clone, used to avoid mutating the caller's data when `filtered` is false.
-   * Required when `filtered` is false; unused otherwise.
+   * Deep clone, used to avoid mutating the caller's data when `filter` is false.
+   * Required when `filter` is false; unused otherwise.
    */
   deepClone?: <T>(obj: T) => T;
 };
@@ -23,7 +23,7 @@ export type FpdValidatorOptions = {
    * the wording of the warnings: `true` (the default) reports data as "Filtered";
    * `false` reports it as "Invalid", for callers that inspect without altering the data.
    */
-  filtered?: boolean;
+  filter?: boolean;
 };
 
 /**
@@ -33,13 +33,13 @@ export type FpdValidatorOptions = {
  * @param deps.isNumber number type guard
  * @param deps.isEmpty empty-value check
  * @param deps.deepAccess dotted-path accessor
- * @param deps.deepClone deep clone (used only when `filtered` is false)
+ * @param deps.deepClone deep clone (used only when `filter` is false)
  * @param options validator options
- * @param options.filtered whether invalid data is removed (controls warning wording and whether the input is modified)
+ * @param options.filter whether invalid data is removed (controls warning wording and whether the input is modified)
  * @returns `validateFpd` and `filterArrayData` bound to the injected utilities
  */
-export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess, deepClone }: FpdValidatorDeps, { filtered = true }: FpdValidatorOptions = {}) {
-  const label = filtered ? 'Filtered' : 'Invalid';
+export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess, deepClone }: FpdValidatorDeps, { filter = true }: FpdValidatorOptions = {}) {
+  const label = filter ? 'Filtered' : 'Invalid';
   function isEmptyData(data) {
     let check = true;
 
@@ -184,13 +184,13 @@ export function fpdValidator({ logWarn, isNumber, isEmpty, deepAccess, deepClone
 
   /**
    * Validate ortb2 first-party data.
-   * When `filtered` is true, returns a copy with invalid data removed.
-   * When `filtered` is false, the input is left untouched (validation runs against a
+   * When `filter` is true, returns a copy with invalid data removed.
+   * When `filter` is false, the input is left untouched (validation runs against a
    * clone purely to emit warnings) and the original object is returned unchanged; if
    * no `deepClone` was provided, validation is skipped to avoid mutating the input.
    */
   function validateFpd(fpd, path = '', parent = '', optout = false) {
-    if (!filtered) {
+    if (!filter) {
       if (deepClone == null) return fpd;
       validate(deepClone(fpd), path, parent, optout);
       return fpd;
