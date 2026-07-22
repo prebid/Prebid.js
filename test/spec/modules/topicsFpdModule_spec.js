@@ -61,7 +61,7 @@ describe('topics', () => {
 
   it('stubs bidder side effects', () => {
     expect(getCachedTopics()).to.eql([]);
-    receiveMessage({ data: '{}' });
+    receiveMessage();
     storeInLocalStorage('bidder', []);
     loadTopicsForBidders({});
     sinon.assert.calledOnce(utils.logWarn);
