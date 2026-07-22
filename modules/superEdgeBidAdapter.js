@@ -25,10 +25,7 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
 // ---- Constants ----
 
 /** Bidder code registered with Prebid.js. Used to match the bidder in ad unit configs. */
-const BIDDER_CODE = 'superEdge';
-
-/** Endpoint of the superEdge bidding server. The secret key (sk) is appended as a query parameter. */
-const ENDPOINT_URL = 'https://rtb-us.superedge.co.jp/bid?sk=';
+const BIDDER_CODE = 'superedge';
 
 /** Default time-to-live (seconds) for cached bid responses. */
 const TIME_TO_LIVE = 500;
@@ -36,6 +33,24 @@ const TIME_TO_LIVE = 500;
 /** Key names for params and globals lookups. */
 const SK = 'sk';
 const PUBLISHER = 'publisher';
+const REGION = 'region';
+
+/**
+ * Map a region code to the corresponding SuperEdge host subdomain.
+ *
+ * @param {string} region - The region code (US, EU, APAC).
+ * @returns {string} The host subdomain for the endpoint URL.
+ */
+function getRegionHost(region) {
+  switch (region) {
+    case 'EU':
+      return 'rtb-eu';
+    case 'APAC':
+      return 'rtb-sg';
+    default:
+      return 'rtb-us';
+  }
+}
 
 /**
  * Module-level globals populated by isBidRequestValid and consumed by buildRequests.
@@ -302,6 +317,9 @@ export const spec = {
     if (bid.params.publisher) {
       globals[PUBLISHER] = bid.params.publisher;
     }
+    if (bid.params.region) {
+      globals[REGION] = bid.params.region;
+    }
     return !!bid.params.sk;
   },
 
@@ -332,9 +350,10 @@ export const spec = {
       });
     }
 
+    const host = getRegionHost(globals[REGION]);
     return {
       method: 'POST',
-      url: ENDPOINT_URL + globals[SK],
+      url: `https://${host}.superedge.co.jp/bid?sk=${globals[SK]}`,
       data: JSON.stringify(payload),
       _mediaTypeMap: mediaTypeMap,
       _impIdToBidId: impIdToBidId,
