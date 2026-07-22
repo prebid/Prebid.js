@@ -1163,6 +1163,12 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   // Start module execution timing
   WurflDebugger.moduleExecutionStart();
 
+  // Reset per-auction beacon state so a later cache-less (LCE) auction on the same page
+  // cannot report the WURFL id/caps captured by an earlier cached auction. Each branch below
+  // repopulates these only when it actually has WURFL data, matching what bidders received.
+  wurflId = '';
+  wurflCaps = null;
+
   // Extract bidders from request configuration and set default enrichment
   const bidders = new Set();
   reqBidsConfigObj.adUnits.forEach(adUnit => {

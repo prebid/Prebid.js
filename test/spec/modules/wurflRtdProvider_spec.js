@@ -2219,6 +2219,43 @@ describe('wurflRtdProvider', function () {
         wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
       });
 
+      it('does not leak wurfl_caps from a cached auction into a later cache-less (LCE) auction', (done) => {
+        // Same page, two auctions: the first hits the cache and reports wurfl_caps; the second
+        // finds the cache gone (e.g. cleared or corrupted -> getObjectFromStorage returns null)
+        // and falls back to LCE. The LCE beacon must reflect that auction only: no stale caps,
+        // no stale wurfl_id carried over from the earlier cached auction.
+        const cachedData = { WURFL, wurfl_pbjs };
+        const getDataStub = sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        getDataStub.onFirstCall().returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+        __testing__.setSuaPromise(Promise.resolve(null));
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const secondAuctionCallback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(1).args[1]);
+          expect(payload).to.have.property('enrichment', 'lce');
+          expect(payload).to.not.have.property('wurfl_caps');
+          expect(payload).to.have.property('wurfl_id', '');
+          done();
+        };
+
+        const firstAuctionCallback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+
+          // Second auction on the same page, now without cache.
+          reqBidsConfigObj.ortb2Fragments.global.device = {};
+          reqBidsConfigObj.ortb2Fragments.bidder = {};
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, secondAuctionCallback, { params: {} }, {});
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, firstAuctionCallback, { params: {} }, {});
+      });
+
       it('preserves complex (array-valued) cap values intact', (done) => {
         // pointing_method (index 30) is reused here with an array value purely to exercise the
         // type-agnostic plumbing: a complex value must reach the beacon untouched.
