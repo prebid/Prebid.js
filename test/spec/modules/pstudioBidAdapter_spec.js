@@ -664,13 +664,19 @@ describe('PStudioAdapter', function () {
       fetchStub.withArgs(sinon.match(/context\.json/)).resolves(unomiResponse);
       fetchStub.withArgs(sinon.match(/bimax\.telkomsel\.com/)).rejects(bimaxFailure);
 
+      let storedId = null;
+      sandbox.stub(storage, 'setDataInLocalStorage').callsFake((key, value) => {
+        storedId = value;
+      });
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => storedId);
+
       // First call triggers the async sync
       spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
 
       // Wait for the async operations to complete
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      // Second call should use the cached ID from the completed sync
+      // Second call should use the ID from the completed sync
       const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       const payload = JSON.parse(request[0].data);
       expect(payload.user.id).to.equal('test-pid');
@@ -696,20 +702,21 @@ describe('PStudioAdapter', function () {
     });
 
     it('should use cached user ID on subsequent calls', function() {
-      sandbox.stub(storage, 'getDataFromLocalStorage').returns('cached-id');
+      const ls = sandbox.stub(storage, 'getDataFromLocalStorage');
+      ls.returns('cached-id');
+
       // First call, primes and gets from LS
       let request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       let payload = JSON.parse(request[0].data);
       expect(payload.user.id).to.equal('cached-id');
 
-      // Restore original LS stub to see if it reads again
-      storage.getDataFromLocalStorage.restore();
-      sandbox.stub(storage, 'getDataFromLocalStorage').returns('new-id');
+      // Update LS value
+      ls.returns('new-id');
 
-      // Second call, should use in-memory cache
+      // Second call, should re-read from LS due to new tmaGetIdCached behavior
       request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       payload = JSON.parse(request[0].data);
-      expect(payload.user.id).to.equal('cached-id');
+      expect(payload.user.id).to.equal('new-id');
     });
   });
 });
