@@ -47,17 +47,28 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   logInfo('[UNICORN] buildOpenRtbBidRequestPayload.validBidRequests:', validBidRequests);
   logInfo('[UNICORN] buildOpenRtbBidRequestPayload.bidderRequest:', bidderRequest);
   const imp = validBidRequests.map(br => {
-    return {
+    const adslotSignal = deepAccess(br, 'ortb2Imp.ext.data.adslot');
+    const pos = deepAccess(br, 'ortb2Imp.banner.pos');
+    const banner = {
+      format: makeFormat(br.sizes),
+      w: br.sizes[0][0],
+      h: br.sizes[0][1]
+    };
+    if (pos != null) {
+      banner.pos = pos;
+    }
+    const impObj = {
       id: br.bidId,
-      banner: {
-        format: makeFormat(br.sizes),
-        w: br.sizes[0][0],
-        h: br.sizes[0][1]
-      },
+      banner,
       tagid: deepAccess(br, 'params.placementId') || br.adUnitCode,
       secure: 1,
       bidfloor: parseFloat(0)
     };
+    if (adslotSignal) {
+      // wire contract: imp.ext.adslot (flat key, received like skadn) — see spec
+      impObj.ext = { adslot: adslotSignal };
+    }
+    return impObj;
   });
   const request = {
     id: bidderRequest.bidderRequestId,
