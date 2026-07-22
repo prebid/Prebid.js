@@ -215,7 +215,7 @@ export const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const { siteId, pageId, formatId } = bidRequest.params || {};
+    const { siteId, pageId, formatId, placementuuid } = bidRequest.params || {};
 
     delete imp.dt;
 
@@ -228,7 +228,16 @@ export const converter = ortbConverter({
       mergeDeep(imp, { rwdd: bidRequest.mediaTypes.video.ext.rewarded });
     }
 
-    const bidder = { ...(siteId && { siteId }), ...(pageId && { pageId }), ...(formatId && { formatId }) };
+    // `placementuuid` is the preferred way to identify inventory. The deprecated
+    // `siteId`, `pageId` and `formatId` parameters are kept only to support the ramp-up period.
+    // Forward all provided fields and let the downstream receiver decide which to use.
+    // SSB expects the `placementuuid` value in the OpenRTB extension as `plcmtuuid`.
+    const bidder = {
+      ...(placementuuid && { plcmtuuid: placementuuid }),
+      ...(siteId && { siteId }),
+      ...(pageId && { pageId }),
+      ...(formatId && { formatId })
+    };
     if (Object.keys(bidder).length) {
       mergeDeep(imp.ext, { bidder });
     }
