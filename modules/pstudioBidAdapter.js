@@ -107,7 +107,10 @@ async function tmaSyncIdentity({
       ? gdprConsent.gdprApplies
       : undefined;
   const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
-  const ccpaOptOut = typeof uspConsent === 'string' && /^1Y/.test(uspConsent);
+  const ccpaOptOut =
+    typeof uspConsent === 'string' &&
+    uspConsent.length > 2 &&
+    uspConsent[2].toUpperCase() === 'Y';
 
   // Bail cleanly on consent/storage gates
   if (!storageReady() || (gdprApplies && !hasGdprConsent) || ccpaOptOut) {
@@ -186,10 +189,13 @@ async function tmaSyncIdentity({
 }
 
 function tmaGetIdCached() {
-  if (_cachedUserId) return _cachedUserId;
   const v = lsGet(LOCAL_STORAGE_KEY);
-  if (v) _cachedUserId = v;
-  return _cachedUserId || undefined;
+  if (v) {
+    _cachedUserId = v;
+  } else {
+    _cachedUserId = undefined;
+  }
+  return _cachedUserId;
 }
 
 // Primes _cachedUserId from LS and triggers a background sync, but ONLY when
@@ -238,6 +244,7 @@ const VIDEO_PARAMS = [
   'protocols',
   'startdelay',
   'placement',
+  'plcmt',
   'skip',
   'skipafter',
   'minbitrate',
@@ -307,7 +314,10 @@ export const spec = {
         ? gdprConsent.gdprApplies
         : undefined;
     const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
-    const ccpaOptOut = typeof uspConsent === 'string' && /^1Y/.test(uspConsent);
+    const ccpaOptOut =
+      typeof uspConsent === 'string' &&
+      uspConsent.length > 2 &&
+      uspConsent[2].toUpperCase() === 'Y';
 
     if ((gdprApplies && !hasGdprConsent) || ccpaOptOut) return syncs;
 
