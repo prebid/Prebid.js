@@ -22,8 +22,8 @@ import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'adbix';
 const ENDPOINT = 'https://adbix.net/api/prebid-auction.php';
 
-// Replace this only if Adbix has a different confirmed user-sync endpoint.
-const SYNC_URL = 'https://adbix.net/sync';
+// Confirmed Adbix image user-sync endpoint.
+const SYNC_URL = 'https://adbix.net/sync/index.php';
 
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 
