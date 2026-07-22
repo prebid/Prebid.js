@@ -39,12 +39,7 @@ describe('topics', () => {
   });
 
   it('resolves getTopics with an empty result', () => {
-    return getTopics({
-      browsingTopics: sinon.stub().rejects(new Error('should not be called')),
-      featurePolicy: {
-        allowsFeature: sinon.stub().returns(true)
-      }
-    }).then((topics) => {
+    return getTopics().then((topics) => {
       expect(topics).to.eql([]);
       expectWarning();
     });
