@@ -63,7 +63,7 @@ describe('topics', () => {
     expect(getCachedTopics()).to.eql([]);
     receiveMessage();
     storeInLocalStorage('bidder', []);
-    loadTopicsForBidders({});
+    loadTopicsForBidders();
     sinon.assert.calledOnce(utils.logWarn);
   });
 });
