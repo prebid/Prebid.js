@@ -34,7 +34,7 @@ describe('topics', () => {
   });
 
   it('does not return Topics API data', () => {
-    expect(getTopicsData('example.com', [{ topic: 123, taxonomyVersion: '1', modelVersion: 'm1' }])).to.eql([]);
+    expect(getTopicsData()).to.eql([]);
     expectWarning();
   });
 
