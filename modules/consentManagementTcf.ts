@@ -9,7 +9,7 @@ import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
 import { registerOrtbProcessor, REQUEST } from '../src/pbjsORTB.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import { configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
 import { CONSENT_GDPR } from "../src/consentHandler.ts";
@@ -83,30 +83,30 @@ function lookupIabConsent(setProvisionalConsent) {
       }
     }
 
-    const cmp = cmpClient({
-      apiName: '__tcfapi',
-      apiVersion: CMP_VERSION,
-      apiArgs: ['command', 'version', 'callback', 'parameter'],
-    });
-
-    if (!cmp) {
-      reject(new Error('TCF2 CMP not found.'));
-    }
-    if ((cmp as any).isDirect) {
-      logInfo('Detected CMP API is directly accessible, calling it now...');
-    } else {
-      logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
+    function subscribe(cmp) {
+      if ((cmp as any).isDirect) {
+        logInfo('Detected CMP API is directly accessible, calling it now...');
+      } else {
+        logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
+      }
+      if (!tcfCmpEventManager) {
+        tcfCmpEventManager = createCmpEventManager('tcf', () => gdprDataHandler.getConsentData());
+      }
+      tcfCmpEventManager.setCmpApi(cmp);
+      cmp({ command: 'addEventListener', callback: cmpResponseCallback });
     }
 
-    // Initialize CMP event manager and set CMP API
-    if (!tcfCmpEventManager) {
-      tcfCmpEventManager = createCmpEventManager('tcf', () => gdprDataHandler.getConsentData());
-    }
-    tcfCmpEventManager.setCmpApi(cmp);
+    const cmpApiConfig = { apiName: '__tcfapi', apiVersion: CMP_VERSION, apiArgs: ['command', 'version', 'callback', 'parameter'] };
+    const cmp = cmpClient(cmpApiConfig);
 
-    cmp({
-      command: 'addEventListener',
-      callback: cmpResponseCallback
+    if (cmp) {
+      subscribe(cmp);
+      return;
+    }
+
+    const timeout = config.getConfig('consentManagement.gdpr.timeout') ?? 10000;
+    pollForCmp(cmpApiConfig, Date.now() + timeout).then((found: any) => {
+      if (found) { subscribe(found); }
     });
   });
 }
