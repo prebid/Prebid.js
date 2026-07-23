@@ -35,7 +35,7 @@ import { useMetrics } from '../utils/perfMetrics.js';
 import { isActivityAllowed } from '../activities/rules.js';
 import { activityParams } from '../activities/activityParams.js';
 import { MODULE_TYPE_BIDDER } from '../activities/modules.js';
-import { ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD } from '../activities/activities.js';
+import { ACTIVITY_TRANSMIT_TID } from '../activities/activities.js';
 import type { AnyFunction, Wraps } from "../types/functions.d.ts";
 import type { BidderCode, StorageDisclosure } from "../types/common.d.ts";
 import type { Ajax, AjaxOptions, XHR } from "../ajax.ts";
@@ -514,15 +514,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
 
     function getOptions(defaults) {
-      const ro = request.options;
-      return Object.assign(defaults, ro, {
-        browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
-          ? false
-          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code)),
-        suppressTopicsEnrollmentWarning: ro?.hasOwnProperty('suppressTopicsEnrollmentWarning')
-          ? ro.suppressTopicsEnrollmentWarning
-          : !debugMode
-      });
+      return Object.assign(defaults, request.options);
     }
 
     switch (request.method) {
