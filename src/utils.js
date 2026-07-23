@@ -431,6 +431,12 @@ export function insertHtmlIntoIframe(htmlCode) {
 }
 
 /**
+ * Attribute set on every user sync iframe inserted by Prebid, so that they can be told apart from
+ * other iframes on the page and removed later on.
+ */
+export const USERSYNC_ATTR = 'data-pb-usersync';
+
+/**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
@@ -446,10 +452,21 @@ export function insertUserSyncIframe(url, done, timeout) {
     height: '0px',
     display: 'none'
   });
+  iframe.setAttribute(USERSYNC_ATTR, '');
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
   internal.insertElement(iframe, document, 'html', true);
+}
+
+/**
+ * Removes every user sync iframe currently in the document.
+ * @return {Number} the number of iframes that were removed
+ */
+export function removeUserSyncIframes() {
+  const iframes = document.querySelectorAll(`iframe[${USERSYNC_ATTR}]`);
+  iframes.forEach(iframe => iframe.parentNode?.removeChild(iframe));
+  return iframes.length;
 }
 
 /**

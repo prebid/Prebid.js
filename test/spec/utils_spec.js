@@ -1583,3 +1583,51 @@ describe('polite sync helpers', () => {
     expect(window.scheduler.postTask.calledOnce).to.equal(true);
   });
 });
+
+describe('user sync iframes', () => {
+  const SELECTOR = `iframe[${utils.USERSYNC_ATTR}]`;
+  const syncIframes = () => Array.from(document.querySelectorAll(SELECTOR));
+
+  // other specs may leave sync iframes behind
+  beforeEach(() => utils.removeUserSyncIframes());
+  afterEach(() => utils.removeUserSyncIframes());
+
+  it('marks the iframes it inserts', () => {
+    utils.insertUserSyncIframe('about:blank');
+    expect(syncIframes().length).to.equal(1);
+    expect(syncIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+
+  it('removes every sync iframe and returns how many were removed', () => {
+    [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
+    const iframes = syncIframes();
+    expect(iframes.length).to.equal(3);
+    expect(utils.removeUserSyncIframes()).to.equal(3);
+    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
+    expect(syncIframes().length).to.equal(0);
+  });
+
+  it('leaves other iframes alone', () => {
+    const other = document.createElement('iframe');
+    document.body.appendChild(other);
+    try {
+      utils.insertUserSyncIframe('about:blank');
+      expect(utils.removeUserSyncIframes()).to.equal(1);
+      expect(other.parentNode).to.equal(document.body);
+    } finally {
+      other.parentNode.removeChild(other);
+    }
+  });
+
+  it('does nothing when there is no sync iframe', () => {
+    expect(utils.removeUserSyncIframes()).to.equal(0);
+  });
+
+  it('does not stop later syncs from inserting new iframes', () => {
+    utils.insertUserSyncIframe('about:blank');
+    utils.removeUserSyncIframes();
+    utils.insertUserSyncIframe('about:blank');
+    expect(syncIframes().length).to.equal(1);
+    expect(syncIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+});
