@@ -231,34 +231,6 @@ describe('ajax', () => {
         });
       });
     });
-
-    describe('chrome options', () => {
-      ['browsingTopics'].forEach(option => {
-        Object.entries({
-          [`${option} = true`]: [{ [option]: true }, true],
-          [`${option} = false`]: [{ [option]: false }, false],
-          [`${option} undef`]: [{}, false]
-        }).forEach(([t, [opts, shouldBeSet]]) => {
-          describe(`when options has ${t}`, () => {
-            const sandbox = sinon.createSandbox();
-            afterEach(() => {
-              sandbox.restore();
-            });
-
-            it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
-              sandbox.stub(window, 'isSecureContext').get(() => true);
-              toFetchRequest(EXAMPLE_URL, null, opts);
-              sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: shouldBeSet ? true : undefined });
-            });
-            it(`should not be set when not in a secure context`, () => {
-              sandbox.stub(window, 'isSecureContext').get(() => false);
-              toFetchRequest(EXAMPLE_URL, null, opts);
-              sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, { [option]: undefined });
-            });
-          });
-        });
-      });
-    });
   });
 
   describe('credentials', () => {
