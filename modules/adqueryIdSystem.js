@@ -54,6 +54,12 @@ export const adqueryIdSubmodule = {
 
     let qid = storage.getDataFromLocalStorage('qid');
 
+    if (qid && qid.length > 36) {
+      logInfo('adqueryIdSubmodule ID QID invalid length, removing:', qid.length);
+      storage.removeDataFromLocalStorage('qid');
+      qid = null;
+    }
+
     if (!qid) {
       if (window.crypto && window.crypto.getRandomValues) {
         const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));

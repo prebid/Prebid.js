@@ -18,15 +18,18 @@ describe('AdqueryIdSystem', function () {
   describe('getId', function () {
     let getDataFromLocalStorageStub;
     let setDataInLocalStorageStub;
+    let removeDataFromLocalStorageStub;
 
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+      removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     });
 
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
       setDataInLocalStorageStub.restore();
+      removeDataFromLocalStorageStub.restore();
     });
 
     it('returns the persisted qid synchronously when one already exists', function () {
@@ -71,6 +74,18 @@ describe('AdqueryIdSystem', function () {
       }
 
       expect(result.id).to.be.a('string').that.is.not.empty;
+      expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
+    });
+
+    it('discards a stored qid longer than 36 characters and generates a fresh one', function () {
+      const oversizedQid = 'a'.repeat(37);
+      getDataFromLocalStorageStub.withArgs('qid').returns(oversizedQid);
+
+      const result = adqueryIdSubmodule.getId();
+
+      expect(removeDataFromLocalStorageStub.calledWith('qid')).to.be.true;
+      expect(result.id).to.not.equal(oversizedQid);
+      expect(result.id.length).to.be.at.most(36);
       expect(setDataInLocalStorageStub.calledWith('qid', result.id)).to.be.true;
     });
   });
