@@ -28,6 +28,12 @@ var plugins = [
           .filter(chunk => chunk.name !== name)
           .flatMap(chunk => [...chunk.files])
           .filter(Boolean);
+        const parent = helpers.getParentModule(name.replace(/\.js$/, ''));
+        if (parent != null) {
+          // include parent module as a dependency so that the web bundler doesn't need
+          // to worry about .submodules.json
+          files.push(parent + '.js');
+        }
         return name && files.length ? {...acc, [`${name}.js`]: files} : acc
       }, seed)
     }
@@ -183,6 +189,13 @@ module.exports = {
         const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, renderers,{
+          buildOptions: {
+            // isolate build options so that the web bundler can easily swap them out
+            name: 'buildOptions',
+            test: (module) => {
+              return module.resource === helpers.getPrecompiledPath('buildOptions.mjs');
+            }
+          },
           core: {
             name: 'chunk-core',
             test: (module) => {
@@ -194,7 +207,7 @@ module.exports = {
                 }
                 return resource.startsWith(core);
               }
-            }
+            },
           },
         }, {
           default: false,
