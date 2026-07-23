@@ -53,7 +53,7 @@ export let wrapper;
 /** @type {boolean} */
 let wrapperReady;
 /** @type {boolean} */
-let preloaded;
+let clientLoaded;
 /** @type {object} */
 const refererInfo = getRefererInfo();
 /** @type {object} */
@@ -71,7 +71,7 @@ export function fetchWrapper(success) {
 }
 
 /**
- * sets the wrapper and calls preload client
+ * sets the wrapper response
  * @param {string} responseText
  */
 export function setWrapper(responseText) {
@@ -95,21 +95,21 @@ export function getInitialParams(key) {
   return params;
 }
 
-export function markAsLoaded() {
-  preloaded = true;
+export function markClientAsLoaded() {
+  clientLoaded = true;
 }
 
 /**
- * preloads the client
+ * loads the monitoring client in an invisible iframe
  * @param {string} key
  */
-export function preloadClient(key) {
+export function loadClientInIframe(key) {
   const iframe = createInvisibleIframe();
   iframe.id = 'grumiFrame';
   insertElement(iframe);
   iframe.contentWindow.grumi = getInitialParams(key);
   const url = getClientUrl(key);
-  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
+  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markClientAsLoaded, iframe.contentDocument);
 }
 
 /**
@@ -214,9 +214,9 @@ function isSupportedBidder(bidder, paramsBidders) {
  */
 function shouldWrap(bid, params) {
   const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
-  const donePreload = params.wap ? preloaded : true;
+  const clientReady = params.wap ? clientLoaded : true;
   const isGPT = params.gpt;
-  return wrapperReady && supportedBidder && donePreload && !isGPT;
+  return wrapperReady && supportedBidder && clientReady && !isGPT;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
@@ -273,7 +273,7 @@ function init(config, userConsent) {
     setupInPage(params);
   } else {
     fetchWrapper(setWrapper);
-    preloadClient(params.key);
+    loadClientInIframe(params.key);
   }
   fireBillableEventsForApplicableBids(params);
   return true;
