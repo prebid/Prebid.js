@@ -1,5 +1,5 @@
-  # Overview
-  
+# Overview
+
   ```
 Module Name:  Adspirit Bid Adapter
 Module Type:  Bidder Adapter
@@ -47,18 +47,19 @@ Each adunit with `adspirit` adapter has to have `placementId` and `host`.
         code: 'native-div',
         mediaTypes: {
             native: {
+                // Note: assets must be defined DIRECTLY under "ortb"
+                // (no "request" wrapper), otherwise Prebid rejects the
+                // native configuration and no native bid can be rendered.
                 ortb: {
-                    request: {
-                        ver: "1.2",
-                        assets: [
-                            { id: 1, required: 1, title: { len: 100 } }, // Title
-                            { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ["image/png", "image/gif", "image/jpeg"] } }, // Main Image
-                            { id: 4, required: 1, data: { type: 2, len: 150 } }, // Body Text
-                            { id: 3, required: 0, data: { type: 12, len:50 } }, // CTA Text
-                            { id: 6, required: 0, data: { type: 1, len:50 } }, // Sponsored By
-                            { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ["image/png", "image/gif", "image/jpeg"] } } // Icon Image
-                        ]
-                    }
+                    ver: "1.2",
+                    assets: [
+                        { id: 1, required: 1, title: { len: 100 } }, // Title
+                        { id: 2, required: 1, img: { type: 3, wmin: 1200, hmin: 627, mimes: ["image/png", "image/gif", "image/jpeg"] } }, // Main Image
+                        { id: 4, required: 1, data: { type: 2, len: 150 } }, // Body Text
+                        { id: 3, required: 0, data: { type: 12, len:50 } }, // CTA Text
+                        { id: 6, required: 0, data: { type: 1, len:50 } }, // Sponsored By
+                        { id: 5, required: 0, img: { type: 1, wmin: 50, hmin: 50, mimes: ["image/png", "image/gif", "image/jpeg"] } } // Icon Image
+                    ]
                 }
             }
         },
