@@ -42,7 +42,7 @@ export interface BidderSettings<B extends BidderCode> {
   /**
    * @deprecated Prebid no longer supports browsing topics and this option has no effect.
    */
-  topicsHeader?: boolean;  
+  topicsHeader?: boolean;
 }
 
 export interface BidderScopedSettings<B extends BidderCode> extends BidderSettings<B> {
