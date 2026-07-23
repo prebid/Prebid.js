@@ -39,6 +39,10 @@ export interface BidderSettings<B extends BidderCode> {
    * undefined or ['*'] will allow adapter to bid with any bidder code.
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
+  /**
+   * @deprecated Prebid no longer supports browsing topics and this option has no effect.
+   */
+  topicsHeader?: boolean;  
 }
 
 export interface BidderScopedSettings<B extends BidderCode> extends BidderSettings<B> {
