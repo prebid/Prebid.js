@@ -32,6 +32,7 @@ import { isBidUsable } from './targeting/filters.js';
 import { targeting } from './targeting.js';
 import { hook, wrapHook } from './hook.js';
 import { loadSession } from './debugging.js';
+import { initDevtoolsMcp } from './devtoolsMcp.js';
 import { storageCallbacks } from './storageManager.js';
 import adapterManager, { type AliasBidderOptions, type BidRequest, getS2SBidderSet } from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
@@ -76,6 +77,9 @@ const { REQUEST_BIDS, SET_TARGETING } = EVENTS;
 
 // initialize existing debugging sessions if present
 loadSession();
+
+// load the DevTools MCP module on demand when debugging is turned on
+initDevtoolsMcp();
 
 declare module './prebidGlobal' {
   interface PrebidJS {
