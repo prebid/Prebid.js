@@ -4,18 +4,23 @@ Runtime Prebid.js diagnostics exposed as Chrome DevTools third-party developer t
 
 ## Quick start (through an agent)
 
-You usually don't have to build or install anything. Point your agent's Chrome DevTools session at a page that runs Prebid, and Prebid pulls in these tools on demand when both of the following hold:
+You usually don't have to build or install anything. Point your agent's Chrome DevTools session at a page that runs Prebid, and Prebid pulls in these tools on demand whenever debugging is on — the page URL has `?pbjs_debug=true`, or the page calls `pbjs.setConfig({ debug: true })`.
 
-- **Debugging is on** — the page URL has `?pbjs_debug=true`, or the page calls `pbjs.setConfig({ debug: true })`.
-- **The browser is automated** — `navigator.webdriver` is `true`, which is the case for an agent-controlled Chrome.
+Once loaded, the tools appear under a group named **Prebid.js DevTools**, and the agent can discover and call them.
 
-The Chrome DevTools MCP server must also have third-party developer tools enabled (start it with `--categoryExperimentalThirdParty=true`). Once loaded, the tools appear under a group named **Prebid.js DevTools**, and the agent can discover and call them.
+> **Chrome third-party developer tools are still experimental.** Two things are needed today, and both are expected to become unnecessary once the feature is generally available:
+>
+> 1. **Start the Chrome DevTools MCP server with `--categoryExperimentalThirdParty=true`.** Without it, the server neither injects the page bridge nor exposes the `list_3p_developer_tools` / `execute_3p_developer_tool` tools, so page-provided tools are invisible.
+> 2. **Tell your agent the feature exists.** Because it is experimental, an agent generally will not look for page-provided tools on its own — point it at the [Chrome DevTools third-party developer tools guide](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/docs/third-party-developer-tools.md) (for example, include the link in your prompt) so it knows to call `list_3p_developer_tools` and `execute_3p_developer_tool`.
 
 ### Example prompts
 
-Assuming your agent is connected to Chrome DevTools on the target page:
+Assuming your agent is connected to Chrome DevTools on the target page. While the feature is experimental, first make sure the agent knows to look for page-provided tools — for example:
 
-- "Use the Prebid DevTools tools to summarize the Prebid setup on this page."
+- "This page exposes Chrome DevTools third-party developer tools (see https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/docs/third-party-developer-tools.md). List them and use the Prebid ones to summarize the Prebid setup on this page."
+
+Then ask questions like:
+
 - "Which bidders won the last auction, and at what CPM?"
 - "Show the eligible bid requests and any no-bids for the most recent auction."
 - "Were any bids rejected? If so, why?"
@@ -24,7 +29,7 @@ Assuming your agent is connected to Chrome DevTools on the target page:
 - "Which Prebid modules are installed, and what does the current config look like?"
 - "This page has two Prebid instances — compare their winning bids." (every result is tagged with the instance it came from)
 
-The agent maps these to the three tools below and fills in parameters as needed. If the agent reports it can't find any Prebid tools, re-check the two conditions above (debug on, automated browser) and that the MCP server was started with `--categoryExperimentalThirdParty=true`.
+The agent maps these to the three tools below and fills in parameters as needed. If the agent reports it can't find any Prebid tools: (1) confirm debugging is on; (2) confirm the MCP server was started with `--categoryExperimentalThirdParty=true`; and (3) point the agent at the [third-party developer tools guide](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/docs/third-party-developer-tools.md) so it knows to call `list_3p_developer_tools` / `execute_3p_developer_tool` — an agent unaware of the experimental feature will not look for page-provided tools on its own.
 
 ## The tools
 
@@ -46,7 +51,7 @@ The on-demand path above does not require the module to be part of the page's Pr
 gulp build --modules=devtoolsMcp
 ```
 
-When compiled in, it registers the tools as soon as Prebid loads, without the debug/automation conditions.
+When compiled in, it registers the tools as soon as Prebid loads, regardless of the debug setting.
 
 ## Notes
 
