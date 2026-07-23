@@ -30,6 +30,14 @@ function isPrebidWindow(win) {
   return !!win.frames[PB_LOCATOR];
 }
 
+function parseRenderArgs(args) {
+  if (args.length === 1 && typeof args[0] === 'object') {
+    return args[0];
+  }
+  const [adId, pubUrl, clickUrl, viewUrl] = args;
+  return { adId, pubUrl, clickUrl, viewUrl };
+}
+
 export function renderer(win) {
   let target = win.parent;
   try {
@@ -40,7 +48,8 @@ export function renderer(win) {
   } catch (e) {
   }
 
-  return function ({ adId, pubUrl, clickUrl }) {
+  return function (...args) {
+    const { adId, pubUrl, clickUrl, viewUrl } = parseRenderArgs(args);
     const pubDomain = new URL(pubUrl, window.location).origin;
 
     function sendMessage(type, payload, responseListener) {
@@ -101,7 +110,7 @@ export function renderer(win) {
     }
 
     sendMessage(MESSAGE_REQUEST, {
-      options: { clickUrl }
+      options: { clickUrl, viewUrl }
     }, onMessage);
   };
 }

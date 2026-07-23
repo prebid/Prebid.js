@@ -329,6 +329,12 @@ describe('adRendering', () => {
         sandbox.stub(auctionManager, 'addWinningBid');
         doRenderStub = sinon.stub();
       });
+      it('stores viewUrl on the bid response before rendering hooks run', () => {
+        handleRender({ adId, bidResponse, options: { viewUrl: 'https://view.example.com' } });
+        expect(bidResponse.viewUrl).to.eql('https://view.example.com');
+        sinon.assert.called(doRenderStub);
+      });
+
       describe('should emit AD_RENDER_FAILED', () => {
         it('when bidResponse is missing', () => {
           handleRender({ adId });

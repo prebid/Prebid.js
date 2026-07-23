@@ -640,6 +640,10 @@ type RenderAdOptions = {
    * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
    */
   clickThrough?: string;
+  /**
+   * GAM view URL to store on the rendered bid for later firing.
+   */
+  viewUrl?: string;
 };
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.

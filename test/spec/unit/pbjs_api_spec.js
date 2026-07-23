@@ -1424,6 +1424,18 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
+    it('stores the GAM view URL on the winning bid', function () {
+      const viewUrl = 'http://www.example.com/view';
+      pushBidResponseToAuction({
+        ad: '<div>ad</div>'
+      });
+
+      return renderAd(doc, bidId, { viewUrl }).then(() => {
+        const winningBid = pbjs.getAllWinningBids().find(el => el.adId === adResponse.adId);
+        expect(winningBid.viewUrl).to.equal(viewUrl);
+      });
+    });
+
     it('should call addWinningBid', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
