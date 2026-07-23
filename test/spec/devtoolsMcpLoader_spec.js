@@ -62,14 +62,12 @@ describe('devtoolsMcp loader', () => {
       config.setConfig({ debug: false });
     });
 
-    it('is true only when debug is on and running under automation', () => {
+    it('is true when debug is on, regardless of automation', () => {
       config.setConfig({ debug: true });
-      expect(shouldLoadDevtoolsMcp({ nav: { webdriver: true } })).to.equal(true);
-      expect(shouldLoadDevtoolsMcp({ nav: { webdriver: false } })).to.equal(false);
-      expect(shouldLoadDevtoolsMcp({ nav: {} })).to.equal(false);
+      expect(shouldLoadDevtoolsMcp()).to.equal(true);
 
       config.setConfig({ debug: false });
-      expect(shouldLoadDevtoolsMcp({ nav: { webdriver: true } })).to.equal(false);
+      expect(shouldLoadDevtoolsMcp()).to.equal(false);
     });
   });
 

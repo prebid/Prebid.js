@@ -78,7 +78,7 @@ const { REQUEST_BIDS, SET_TARGETING } = EVENTS;
 // initialize existing debugging sessions if present
 loadSession();
 
-// load the DevTools MCP module on demand when running under automation with debug on
+// load the DevTools MCP module on demand when debugging is turned on
 initDevtoolsMcp();
 
 declare module './prebidGlobal' {

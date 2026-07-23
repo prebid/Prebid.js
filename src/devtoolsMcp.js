@@ -38,13 +38,13 @@ export function devtoolsMcpLoader({ alreadyInstalled, script, deps = DEPS } = {}
   });
 }
 
-export function shouldLoadDevtoolsMcp({ nav = window.navigator } = {}) {
-  return debugTurnedOn() && !!(nav && nav.webdriver);
+export function shouldLoadDevtoolsMcp() {
+  return debugTurnedOn();
 }
 
 /**
- * Watch for the load condition (debug on AND running under automation) and pull
- * in the module the first time it is met.
+ * Watch for the load condition (debug turned on) and pull in the module the
+ * first time it is met.
  */
 export function initDevtoolsMcp({ load = devtoolsMcpLoader(), shouldLoad = shouldLoadDevtoolsMcp } = {}) {
   let requested = false;
