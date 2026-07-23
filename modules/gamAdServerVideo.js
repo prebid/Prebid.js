@@ -11,16 +11,7 @@ import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
-import {
-  buildUrl,
-  formatQS,
-  isEmpty,
-  isNumber,
-  logError,
-  logWarn,
-  parseSizesInput,
-  parseUrl
-} from '../src/utils.js';
+import { buildUrl, isEmpty, isNumber, logError, logWarn, parseSizesInput, parseUrl } from '../src/utils.js';
 import { DEFAULT_GAM_PARAMS, GAM_ENDPOINT, gdprParams } from '../libraries/gamUtils/gamUtils.js';
 import { vastLocalCache } from '../src/videoCache.js';
 import { noCredsFetch as fetch } from '../src/ajax.js';
@@ -235,7 +226,13 @@ function getCustParams(bid, options, urlCustParams) {
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = options?.params?.cust_params;
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  let encodedParams = encodeURIComponent(
+    Object.entries(targetingSet)
+      // arrays should be comma separated - https://support.google.com/admanager/answer/1080597?sjid=507182241587626931-NC
+      .map(([key, value]) => `${key}=${Array.isArray(value) ? value.join(',') : value}`)
+      .join('&')
+  );
+
   if (urlCustParams) {
     encodedParams = urlCustParams + '%26' + encodedParams;
   }
