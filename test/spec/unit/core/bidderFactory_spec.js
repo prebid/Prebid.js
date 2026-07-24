@@ -1,4 +1,4 @@
-import { isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import { guardTids, isValid, newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -390,6 +390,32 @@ describe('bidderFactory', () => {
         expect(spec.isBidRequestValid.calledTwice).to.equal(true);
         expect(spec.buildRequests.calledOnce).to.equal(true);
         expect(spec.buildRequests.firstCall.args[0]).to.deep.equal([MOCK_BIDS_REQUEST.bids[0]]);
+      });
+
+      it('can clear cached guarded bid request proxies', () => {
+        const tidGuard = guardTids({ bidderCode: 'mockBidder' });
+        const bidRequest = {
+          adUnitCode: 'mockAU',
+          bidId: 'bid',
+          auctionId: 'aid',
+          ortb2: {
+            source: {
+              tid: 'bidder-tid'
+            }
+          }
+        };
+        const firstProxy = tidGuard.bidRequest(bidRequest);
+
+        expect(tidGuard.bidRequest(bidRequest)).to.equal(firstProxy);
+
+        tidGuard.clear();
+
+        const secondProxy = tidGuard.bidRequest(bidRequest);
+        expect(secondProxy).to.not.equal(firstProxy);
+        expect(secondProxy.auctionId).to.equal('bidder-tid');
+        expect(guardTids({ bidderCode: 'mockBidder' })).to.not.equal(tidGuard);
+
+        tidGuard.clear();
       });
 
       it('should make no server requests if the spec doesn\'t return any', function () {

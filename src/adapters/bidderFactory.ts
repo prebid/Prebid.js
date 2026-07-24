@@ -197,7 +197,7 @@ export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   }
 }
 
-export const guardTids: any = memoize(({ bidderCode }) => {
+export const guardTids: any = ({ bidderCode }) => {
   const tidsAllowed = isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode));
   function get(target, prop, receiver) {
     if (TIDS.hasOwnProperty(prop)) {
@@ -225,6 +225,7 @@ export const guardTids: any = memoize(({ bidderCode }) => {
    */
   return {
     bidRequest,
+    clear: () => bidRequest.clear(),
     bidderRequest: (br) => privateAccessProxy(br, {
       get(target, prop, receiver) {
         if (prop === 'bids') return br.bids.map(bidRequest);
@@ -232,7 +233,7 @@ export const guardTids: any = memoize(({ bidderCode }) => {
       }
     })
   };
-});
+};
 
 declare module '../events' {
   interface Events {
@@ -276,8 +277,6 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
-      const tidGuard = guardTids(bidderRequest);
-
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode: string, bid: Bid, responseMediaType = null) {
         const metrics = useMetrics(bid.metrics);
@@ -302,7 +301,14 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
       }
 
       const validBidRequests = adapterMetrics(bidderRequest)
-        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
+        .measureTime('validate', () => {
+          const tidGuard = guardTids(bidderRequest);
+          try {
+            return bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br)));
+          } finally {
+            tidGuard.clear();
+          }
+        });
 
       if (validBidRequests.length === 0) {
         afterAllResponses();
@@ -391,6 +397,19 @@ const RESPONSE_PROPS = [
   'paapi',
 ];
 
+function buildRequestsWithTidsGuard<B extends BidderCode>(
+  spec: BidderSpec<B>,
+  bids: BidRequest<B>[],
+  bidderRequest: ClientBidderRequest<B>
+) {
+  const tidGuard = guardTids(bidderRequest);
+  try {
+    return spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest));
+  } finally {
+    tidGuard.clear();
+  }
+}
+
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
@@ -431,8 +450,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
   }) {
   const metrics = adapterMetrics(bidderRequest);
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
-  const tidGuard = guardTids(bidderRequest);
-  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))) as AdapterRequest[];
+  let requests = metrics.measureTime('buildRequests', () => buildRequestsWithTidsGuard(spec, bids, bidderRequest)) as AdapterRequest[];
   if (!Array.isArray(requests)) {
     requests = [requests];
   }

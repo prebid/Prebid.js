@@ -12,6 +12,7 @@ import { config } from 'src/config.js';
 
 const BID_WON = EVENTS.BID_WON;
 const NO_BID = EVENTS.NO_BID;
+const BID_RESPONSE = EVENTS.BID_RESPONSE;
 
 const AnalyticsAdapter = require('libraries/analyticsAdapter/AnalyticsAdapter.js').default;
 const adapterConfig = {
@@ -291,7 +292,9 @@ describe('Analytics asynchronous event tracking', () => {
   });
 
   afterEach(() => {
+    adapter.disableAnalytics();
     clock.restore();
+    clearEvents();
   });
 
   it('does not call track as long as events are coming', () => {
@@ -306,5 +309,71 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.calledTwice(adapter.track);
     sinon.assert.calledWith(adapter.track.firstCall, sinon.match({ eventType: BID_WON, args: { i: 0 } }));
     sinon.assert.calledWith(adapter.track.secondCall, sinon.match({ eventType: BID_WON, args: { i: 1 } }));
+  });
+
+  it('snapshots mutable auction fields before the debounce flush', () => {
+    const metrics = { getMetrics: sinon.stub() };
+    const args = {
+      auctionId: 'auction-1',
+      metrics,
+      bidderRequests: [{
+        bids: [{
+          userId: { id5id: { uid: 'id5' } },
+          params: { placementId: '123' }
+        }],
+        ortb2: { user: { ext: { eids: [{ source: 'id5-sync.com' }] } } }
+      }],
+      adUnits: [{
+        bids: [{ userIdAsEids: [{ source: 'id5-sync.com' }] }]
+      }]
+    };
+
+    events.emit(EVENTS.AUCTION_INIT, args);
+    delete args.bidderRequests[0].bids[0].userId;
+    delete args.bidderRequests[0].bids[0].params;
+    delete args.bidderRequests[0].ortb2;
+    delete args.adUnits[0].bids[0].userIdAsEids;
+
+    clock.tick(100);
+
+    sinon.assert.calledOnce(adapter.track);
+    const queuedArgs = adapter.track.firstCall.args[0].args;
+    expect(queuedArgs.metrics).to.equal(metrics);
+    expect(queuedArgs.bidderRequests[0].bids[0].userId).to.eql({ id5id: { uid: 'id5' } });
+    expect(queuedArgs.bidderRequests[0].bids[0].params).to.eql({ placementId: '123' });
+    expect(queuedArgs.bidderRequests[0].ortb2.user.ext.eids).to.eql([{ source: 'id5-sync.com' }]);
+    expect(queuedArgs.adUnits[0].bids[0].userIdAsEids).to.eql([{ source: 'id5-sync.com' }]);
+  });
+
+  [BID_RESPONSE, NO_BID].forEach(eventType => {
+    it(`snapshots mutable ${eventType} payloads before the debounce flush`, () => {
+      const args = {
+        requestId: 'bid-id',
+        bidder: 'bidder',
+        adUnitCode: 'ad-unit',
+        userId: { id5id: { uid: 'id5' } },
+        userIdAsEids: [{ source: 'id5-sync.com' }],
+        ortb2Imp: { ext: { gpid: 'gpid' } },
+        params: { placementId: '123' },
+        mediaTypes: { banner: { sizes: [[300, 250]] } }
+      };
+
+      events.emit(eventType, args);
+      delete args.userId;
+      delete args.userIdAsEids;
+      delete args.ortb2Imp;
+      delete args.params;
+      delete args.mediaTypes;
+
+      clock.tick(100);
+
+      sinon.assert.calledOnce(adapter.track);
+      const queuedArgs = adapter.track.firstCall.args[0].args;
+      expect(queuedArgs.userId).to.eql({ id5id: { uid: 'id5' } });
+      expect(queuedArgs.userIdAsEids).to.eql([{ source: 'id5-sync.com' }]);
+      expect(queuedArgs.ortb2Imp).to.eql({ ext: { gpid: 'gpid' } });
+      expect(queuedArgs.params).to.eql({ placementId: '123' });
+      expect(queuedArgs.mediaTypes).to.eql({ banner: { sizes: [[300, 250]] } });
+    });
   });
 });

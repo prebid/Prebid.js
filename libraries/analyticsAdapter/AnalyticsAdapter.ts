@@ -1,6 +1,6 @@
 import { EVENTS } from '../../src/constants.js';
 import { noCredsAjax as ajax } from '../../src/ajax.js';
-import { logError, logMessage } from '../../src/utils.js';
+import { deepClone, logError, logMessage } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { config } from '../../src/config.js';
 
@@ -34,6 +34,41 @@ const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({ ...ac
 
 export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
   .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
+
+const AUCTION_PAYLOAD_FIELDS = ['adUnits', 'bidderRequests', 'noBids', 'bidsReceived'];
+const BID_PAYLOAD_FIELDS = [
+  'ortb2',
+  'ortb2Imp',
+  'userId',
+  'userIdAsEids',
+  'params',
+  'mediaTypes',
+  'rtd',
+  'floorData',
+  'getFloor',
+  'labelAll'
+];
+
+function isBidPayload(args) {
+  return (args.bidId || args.requestId || args.bidderRequestId) &&
+    (args.bidder || args.bidderCode || args.adUnitCode) &&
+    BID_PAYLOAD_FIELDS.some(field => args[field] != null);
+}
+
+function snapshotAnalyticsArgs(args) {
+  if (args == null || typeof args !== 'object' || Array.isArray(args)) {
+    return args;
+  }
+
+  let snapshot;
+  AUCTION_PAYLOAD_FIELDS.forEach((field) => {
+    if (Array.isArray(args[field])) {
+      snapshot ??= { ...args };
+      snapshot[field] = deepClone(args[field]);
+    }
+  });
+  return snapshot ?? (isBidPayload(args) ? deepClone(args) : args);
+}
 
 let debounceDelay = 100;
 
@@ -193,17 +228,18 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
   }
 
   function _enqueue({ eventType, args, sequence }) {
+    const queuedArgs = snapshotAnalyticsArgs(args);
     queue.push(() => {
-      if (Object.keys(allLabels || []).length > 0) {
-        args = {
-          [LABELS_KEY]: allLabels,
-          ...args,
-        };
-      }
+      const eventArgs = Object.keys(allLabels || []).length > 0
+        ? {
+            [LABELS_KEY]: allLabels,
+            ...queuedArgs,
+          }
+        : queuedArgs;
       if (lastTrackedEvent == null || sequence > lastTrackedEvent) {
         lastTrackedEvent = sequence;
       }
-      this.track({ eventType, labels: allLabels, args });
+      this.track({ eventType, labels: allLabels, args: eventArgs });
     });
     emptyQueue();
   }
