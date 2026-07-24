@@ -28,9 +28,8 @@ function flush(auctionId, useBeacon = false) {
   const auction = pendingAuctions.get(auctionId);
   if (!auction) return;
   clearTimeout(auction.timer);
-  const pageUrl = getWindowLocation().href;
-  const isFirst = pageUrl !== lastPageUrl;
-  if (auction.bids.length) lastPageUrl = pageUrl;
+  const isFirst = auction.pageUrl !== lastPageUrl;
+  if (auction.bids.length) lastPageUrl = auction.pageUrl;
   auction.bids.forEach((bid, i) => {
     bid.is_pl = isFirst && i === 0;
   });
@@ -65,7 +64,8 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         pendingAuctions.set(auctionId, {
           auctionInit,
           bids: [],
-          timer: null
+          timer: null,
+          pageUrl: getWindowLocation().href
         });
       } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(bid => {

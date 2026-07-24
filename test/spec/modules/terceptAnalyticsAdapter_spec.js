@@ -636,6 +636,47 @@ describe('tercept analytics adapter', function () {
       stub.restore();
     });
 
+    it('captures the page URL at auction start, so a delayed flush is still attributed to the correct page', function () {
+      terceptAnalyticsAdapter.disableAnalytics();
+      adapterManager.enableAnalytics({ provider: 'tercept', options: { ...initOptions, analyticsBatchTimeout: 2000 } });
+
+      let href = 'https://example.com/article-1';
+      const stub = sinon.stub(utils, 'getWindowLocation').callsFake(() => ({
+        href,
+        hostname: 'example.com',
+        pathname: '/article-1',
+        search: ''
+      }));
+
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-1' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested,
+        auctionId: 'auction-1',
+        bids: [{ ...bidRequested.bids[0], auctionId: 'auction-1' }]
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-1' });
+
+      // in-page navigation while auction-1's batch delay is still pending
+      href = 'https://example.com/article-2';
+
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-2' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested,
+        auctionId: 'auction-2',
+        bids: [{ ...bidRequested.bids[0], auctionId: 'auction-2' }]
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-2' });
+
+      clock.tick(2000);
+
+      const p1 = JSON.parse(server.requests[0].requestBody);
+      const p2 = JSON.parse(server.requests[1].requestBody);
+      expect(p1.bids[0].is_pl).to.equal(true);
+      expect(p2.bids[0].is_pl).to.equal(true);
+
+      stub.restore();
+    });
+
     it('does not consume the page-load flag when an auction flushes with zero bids', function () {
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'empty-auction' });
       events.emit(EVENTS.AUCTION_END, { auctionId: 'empty-auction' });
