@@ -1,4 +1,4 @@
-import { deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { deepAccess, isArray, logError, logWarn, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -7,8 +7,8 @@ import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.j
 import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'axonix';
-const BIDDER_VERSION = '1.0.2';
-
+const BIDDER_VERSION = '2.1.0';
+const GVLID = 141;
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
 
@@ -27,14 +27,14 @@ function getBidFloor(bidRequest) {
 }
 
 function getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl;
-  if (bidRequest.params.referrer) {
-    pageUrl = bidRequest.params.referrer;
-  } else {
-    pageUrl = bidderRequest.refererInfo.page;
-  }
+  const refererPage = deepAccess(bidderRequest, 'refererInfo.page');
+  const fallbackPage = deepAccess(bidderRequest, 'ortb2.site.page');
+  let pageUrl = bidRequest?.params?.referrer || refererPage || fallbackPage || '';
 
-  return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
+  if (/^http:/i.test(pageUrl)) {
+    pageUrl = pageUrl.replace(/^http:/i, 'https:');
+  }
+  return pageUrl;
 }
 
 function isMobile() {
@@ -45,64 +45,133 @@ function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function getURL(params, path) {
+function getBidderURL(params) {
   const { supplyId, region, endpoint } = params;
   let url;
 
   if (endpoint) {
     url = endpoint;
   } else if (region) {
-    url = `https://openrtb-${region}.axonix.com/supply/${path}/${supplyId}`;
+    url = `https://openrtb-${region}.axonix.com/supply/prebid-js/v2/${supplyId}`;
   } else {
-    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/${path}/${supplyId}`;
+    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/prebid-js/v2/${supplyId}`;
   }
 
   return url;
 }
 
+function getSignalURL(params, path) {
+  const { supplyId, region } = params;
+  let url;
+
+  if (region) {
+    url = `https://openrtb-${region}.axonix.com/supply/prebid-js/${path}/${supplyId}`;
+  } else {
+    url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/prebid-js/${path}/${supplyId}`;
+  }
+
+  return url;
+}
+
+function getSchain(validBidRequest, bidderRequest) {
+  return deepAccess(validBidRequest, 'ortb2.source.ext.schain') ||
+    deepAccess(validBidRequest, 'ortb2.source.schain') ||
+    deepAccess(bidderRequest, 'ortb2.source.ext.schain') ||
+    deepAccess(bidderRequest, 'ortb2.source.schain') ||
+    validBidRequest.schain;
+}
+
+function getTid(validBidRequest, bidderRequest) {
+  const sourceTid = deepAccess(validBidRequest, 'ortb2.source.tid') ||
+    deepAccess(bidderRequest, 'ortb2.source.tid') ||
+    bidderRequest.auctionId ||
+    null;
+  const impTid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid') ||
+    validBidRequest.transactionId ||
+    null;
+
+  return { sourceTid, impTid };
+}
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
-    // video bid request validation
-    if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-      if (!bid.mediaTypes[VIDEO].hasOwnProperty('mimes') ||
-        !isArray(bid.mediaTypes[VIDEO].mimes) ||
-        bid.mediaTypes[VIDEO].mimes.length === 0) {
-        logError('mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
-
+    if (!bid?.params?.supplyId) {
+      return false;
+    }
+    const mediaTypes = bid.mediaTypes || {};
+    const hasBanner = !!mediaTypes[BANNER];
+    const hasVideo = !!mediaTypes[VIDEO];
+    if (!hasBanner && !hasVideo) {
+      return false;
+    }
+    if (hasVideo) {
+      const video = mediaTypes[VIDEO];
+      if (!isArray(video.mimes) || video.mimes.length === 0) {
+        logError('Video MIME types are required for video bid requests. Ad Unit: ', JSON.stringify(bid));
         return false;
       }
     }
-
-    return !!(bid.params && bid.params.supplyId);
+    return true;
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    // device.connectiontype
     const connection = getConnectionInfo();
     const connectionType = connection?.type ?? 'unknown';
     const effectiveType = connection?.effectiveType ?? '';
 
     const requests = validBidRequests.map(validBidRequest => {
-      // app/site
       let app;
       let site;
 
+      const ortb2 = bidderRequest?.ortb2 || {};
+      const ortb2Imp = validBidRequest?.ortb2Imp || {};
+      const ortb2Site = deepAccess(ortb2, 'site');
+      const ortb2App = deepAccess(ortb2, 'app');
+
+      // Backward-compatible behavior: keep legacy app/site logic, then enrich.
       if (typeof config.getConfig('app') === 'object') {
         app = config.getConfig('app');
+      } else if (ortb2App && typeof ortb2App === 'object') {
+        app = ortb2App;
       } else {
         site = {
-          page: getPageUrl(validBidRequest, bidderRequest)
+          ...(ortb2Site || {}),
+          page: getPageUrl(validBidRequest, bidderRequest) || ortb2Site?.page,
         };
       }
 
+      const { sourceTid, impTid } = getTid(validBidRequest, bidderRequest);
+      const gdprConsent = bidderRequest?.gdprConsent || null;
+      const uspConsent = bidderRequest?.uspConsent || null;
+      const gppConsent = bidderRequest?.gppConsent || null;
+      const schain = getSchain(validBidRequest, bidderRequest);
+      const userIdAsEids = validBidRequest?.userIdAsEids ||
+        deepAccess(validBidRequest, 'user.ext.eids') ||
+        [];
+
+      const bidForPayload = validBidRequest.mediaTypes?.[BANNER]
+        ? {
+            ...validBidRequest,
+            mediaTypes: {
+              ...validBidRequest.mediaTypes,
+              [BANNER]: {
+                ...validBidRequest.mediaTypes[BANNER],
+                mimes: ['image/jpeg', 'image/png', 'image/gif'],
+              },
+            },
+          }
+        : validBidRequest;
+
       const data = {
+        // Existing payload fields preserved for server backward compatibility
         app,
         site,
-        validBidRequest,
+        validBidRequest: bidForPayload,
         connectionType,
         effectiveType,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
@@ -114,11 +183,26 @@ export const spec = {
         screenWidth: screen.width,
         tmax: bidderRequest.timeout,
         ua: navigator.userAgent,
+
+        // Added modern Prebid/ORTB data fields
+        ortb2,
+        ortb2Imp,
+        refererInfo: bidderRequest?.refererInfo,
+        schain,
+        userIdAsEids,
+        sourceTid,
+        impTid,
+        gdprConsent,
+        uspConsent,
+        gppConsent,
+        regs: deepAccess(ortb2, 'regs') || {},
+        user: deepAccess(ortb2, 'user') || {},
+        device: deepAccess(ortb2, 'device') || {}
       };
 
       return {
         method: 'POST',
-        url: getURL(validBidRequest.params, 'prebid'),
+        url: getBidderURL(validBidRequest.params),
         options: {
           withCredentials: false,
           contentType: 'application/json'
@@ -130,31 +214,25 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
-    const response = serverResponse ? serverResponse.body : [];
-
+  interpretResponse: function(serverResponse, request) {
+    const response = serverResponse?.body;
     if (!isArray(response)) {
       return [];
     }
-
-    const responses = [];
-
-    for (const resp of response) {
-      if (resp.requestId) {
-        responses.push(Object.assign(resp, {
-          ttl: 60
-        }));
-      }
-    }
-
-    return responses;
+    return response
+      .filter(resp => resp?.requestId && resp.cpm != null && resp.creativeId)
+      .map(resp => ({
+        ...resp,
+        ttl: resp.ttl ?? 60,
+        currency: resp.currency ?? CURRENCY,
+        netRevenue: typeof resp.netRevenue === 'boolean' ? resp.netRevenue : true,
+      }));
   },
 
   onTimeout: function(timeoutData) {
     const params = deepAccess(timeoutData, '0.params.0');
-
-    if (!isEmpty(params)) {
-      ajax(getURL(params, 'prebid/timeout'), null, timeoutData[0], {
+    if (params && Object.keys(params).length > 0) {
+      ajax(getSignalURL(params, 'timeout/v2'), null, timeoutData[0], {
         method: 'POST',
         options: {
           withCredentials: false,
@@ -166,10 +244,26 @@ export const spec = {
 
   onBidWon: function(bid) {
     const { nurl } = bid || {};
-
-    if (bid.nurl) {
+    if (nurl) {
       triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
-    };
+    }
+  },
+
+  onBidderError: function({ error, bidderRequest }) {
+    logWarn(`${BIDDER_CODE}: bidder endpoint error`, error?.status, deepAccess(bidderRequest, 'auctionId'));
+  },
+
+  onDataDeletionRequest: function(bidderRequests) {
+    const params = deepAccess(bidderRequests, '0.bids.0.params');
+    if (!params?.supplyId) {
+      return;
+    }
+
+    ajax(getSignalURL(params, 'data-deletion/v2'), null, JSON.stringify({ bidderRequests }), {
+      method: 'POST',
+      withCredentials: false,
+      contentType: 'application/json',
+    });
   }
 };
 
