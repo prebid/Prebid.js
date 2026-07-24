@@ -12,6 +12,30 @@ Module that connects to The Trade Desk's demand sources to fetch bids.
 
 The Trade Desk bid adapter supports Banner and Video.
 
+# Configuration
+
+## Endpoint compression (GZIP)
+
+GZIP compression of the outgoing bid request is **disabled by default**. Publishers can opt in
+via bidder-specific configuration:
+
+```js
+pbjs.setBidderConfig({
+    bidders: ['ttd'],
+    config: {
+        gzipEnabled: true
+    }
+});
+```
+
+`gzipEnabled` accepts a boolean (`true`/`false`) or the equivalent string. Any other/invalid value
+falls back to the default (disabled). Compression is automatically skipped when Prebid debug mode is
+enabled or when the browser does not support GZIP.
+
+When enabled, the adapter sends a `Content-Encoding: gzip` request header alongside the compressed
+payload so the endpoint knows to decompress the body. The header is omitted in Prebid debug mode,
+where core skips compression, so the header always matches the actual payload encoding.
+
 # Test Parameters
 
 ```js
