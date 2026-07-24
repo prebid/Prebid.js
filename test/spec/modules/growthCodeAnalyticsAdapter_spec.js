@@ -7,7 +7,7 @@ import { generateUUID } from '../../../src/utils.js';
 import { server } from '../../mocks/xhr.js';
 
 // Matches the adapter's default ENDPOINT_URL (no options.url override is used in these tests).
-const ENDPOINT_HOST = 'analytics.gcprivacy.com';
+const ENDPOINT_HOST = 'gcprivacy.id';
 
 describe('growthCode analytics adapter', () => {
   let requestCountBefore;
