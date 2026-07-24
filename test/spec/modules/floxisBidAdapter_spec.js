@@ -756,6 +756,97 @@ describe('floxisBidAdapter', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
       expect(syncs).to.have.lengthOf(1);
     });
+
+    describe('body.ext.sync (primary channel)', function () {
+      const BODY_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&gdpr=1';
+      const IFRAME_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&type=iframe';
+      const IMAGE_URL = 'https://px-us-e.floxis.tech/sync?seat=aBfL&type=image';
+      function bodySync(url, type) { return { type, url }; }
+      function bodyResponse(syncArray, headerValue = null) {
+        return { body: { id: 'r', seatbid: [], ext: { sync: syncArray } }, headers: { get: (n) => (n === 'x-floxis-sync' && headerValue ? headerValue : null) } };
+      }
+
+      it('should emit the server-baked sync URL from body.ext.sync with no header present', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe'), bodySync(BODY_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should use image type from the body channel when only pixels are enabled', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe'), bodySync(BODY_URL, 'image')])]);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should select the iframe entry by enabled type when iframe and image urls differ', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IFRAME_URL, 'iframe'), bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal(IFRAME_URL);
+      });
+
+      it('should select the image entry by enabled type when only pixels are enabled and urls differ', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(IFRAME_URL, 'iframe'), bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(IMAGE_URL);
+      });
+
+      it('should pick the correct entry by type regardless of array order', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image'), bodySync(IFRAME_URL, 'iframe')])]);
+        expect(syncs[0].type).to.equal('image');
+        expect(syncs[0].url).to.equal(IMAGE_URL);
+      });
+
+      it('should ignore a disabled-type body entry and fall through to the header', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')], 'seat=Gmtb&region=us-e')]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal('https://px-us-e.floxis.tech/sync?seat=Gmtb');
+      });
+
+      it('should emit no sync when the body carries only a disabled-type entry and no header', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')])]);
+        expect(syncs).to.have.lengthOf(0);
+      });
+
+      it('should prefer the body channel over the header when both are present', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe')], 'seat=Gmtb&region=us-e')]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].url).to.equal(BODY_URL);
+      });
+
+      it('should fall back to the header when body.ext.sync is an empty array', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([], 'seat=Gmtb&region=us-e')]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].url).to.equal('https://px-us-e.floxis.tech/sync?seat=Gmtb');
+      });
+
+      it('should dedupe identical body sync URLs across responses', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(BODY_URL, 'iframe')]), bodyResponse([bodySync(BODY_URL, 'iframe')])]);
+        expect(syncs).to.have.lengthOf(1);
+      });
+
+      it('should dedupe a body sync against a header sync that resolves to the same URL', function () {
+        const SHARED_URL = 'https://px-us-e.floxis.tech/sync?seat=Gmtb';
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
+          bodyResponse([bodySync(SHARED_URL, 'iframe')]),
+          bodyResponse([], 'seat=Gmtb&region=us-e')
+        ]);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].url).to.equal(SHARED_URL);
+      });
+
+      it('should dedupe a header sync against a body sync regardless of response order', function () {
+        const SHARED_URL = 'https://px-us-e.floxis.tech/sync?seat=Gmtb';
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
+          bodyResponse([], 'seat=Gmtb&region=us-e'),
+          bodyResponse([bodySync(SHARED_URL, 'iframe')])
+        ]);
+        expect(syncs).to.have.lengthOf(1);
+      });
+    });
   });
 
   describe('onBidBillable', function () {

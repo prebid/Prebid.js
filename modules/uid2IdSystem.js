@@ -33,8 +33,6 @@ const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}
 const LOG_PRE_FIX = 'UID2: ';
 const ADVERTISING_COOKIE = '__uid2_advertising_token';
 
-// eslint-disable-next-line no-unused-vars
-const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
 const UID2_PROD_URL = 'https://prod.uidapi.com';
 const UID2_BASE_URL = UID2_PROD_URL;
 

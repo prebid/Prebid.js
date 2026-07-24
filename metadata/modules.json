@@ -3048,6 +3048,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "datafusion",
+      "aliasOf": "limelightDigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "livewrapped",
       "aliasOf": null,
       "gvlid": 919,

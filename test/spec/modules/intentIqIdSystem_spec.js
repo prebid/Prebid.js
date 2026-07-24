@@ -808,7 +808,7 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, FPD);
       const callBackSpy = sinon.spy();
       const submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } }).callback;
       submoduleCallback(callBackSpy);
@@ -830,7 +830,7 @@ describe('IntentIQ tests', function () {
         uspString: null
       };
 
-      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, FPD);
       const returnedObject = intentIqIdSubmodule.getId({ ...allConfigParams, params: { ...allConfigParams.params, partner: newPartnerId } });
       await waitForClientHints();
       expect(returnedObject.callback).to.be.undefined;

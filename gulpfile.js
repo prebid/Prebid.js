@@ -17,7 +17,7 @@ const execaTask = helpers.execaTask;
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 const execaCmd = require('execa');
-var through = require('through2');
+const { Transform, PassThrough } = require('node:stream');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
@@ -179,11 +179,14 @@ function nodeBundle(modules, dev = false) {
       .on('error', (err) => {
         reject(err);
       })
-      .pipe(through.obj(function (file, enc, done) {
-        if (file.path.endsWith('.js')) {
-          resolve(file.contents.toString(enc));
+      .pipe(new Transform({
+        objectMode: true,
+        transform(file, enc, done) {
+          if (file.path.endsWith('.js')) {
+            resolve(file.contents.toString(enc));
+          }
+          done();
         }
-        done();
       }));
   });
 }
@@ -211,7 +214,7 @@ function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
   // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
   // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
   return function wrap(stream) {
-    const wrapped = through.obj();
+    const wrapped = new PassThrough({ objectMode: true });
     const placeholder = '$$PREBID_SOURCE$$';
     const tpl = _.template(fs.readFileSync('./bundle-template.txt'))({
       prebid,
@@ -241,7 +244,7 @@ function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
 }
 
 function disclosureSummary(modules, summaryFileName) {
-  const stream = through.obj();
+  const stream = new PassThrough({ objectMode: true });
   import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
     const summary = getStorageDisclosureSummary(modules, (moduleName) => {
       const metadataPath = `./metadata/modules/${moduleName}.json`;

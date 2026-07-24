@@ -33,8 +33,6 @@ const GVLID_TTD = 21; // The Trade Desk
 const LOG_PRE_FIX = 'EUID: ';
 const ADVERTISING_COOKIE = '__euid_advertising_token';
 
-// eslint-disable-next-line no-unused-vars
-const EUID_TEST_URL = 'https://integ.euid.eu';
 const EUID_PROD_URL = 'https://prod.euid.eu';
 const EUID_BASE_URL = EUID_PROD_URL;
 

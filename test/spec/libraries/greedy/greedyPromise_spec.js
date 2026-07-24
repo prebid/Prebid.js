@@ -1,5 +1,4 @@
 import { GreedyPromise, greedySetTimeout } from '../../../../libraries/greedy/greedyPromise.js';
-import { delay } from '../../../../src/utils/promise.js';
 
 describe('GreedyPromise', () => {
   it('throws when resolver is not a function', () => {
