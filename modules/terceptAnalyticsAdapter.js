@@ -10,7 +10,7 @@ import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v2.3.0';
+const terceptAnalyticsVersion = 'v2.3.1';
 const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 0;
