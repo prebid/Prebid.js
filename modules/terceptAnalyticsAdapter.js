@@ -22,14 +22,15 @@ const pendingAuctions = new Map();
 
 let adUnitMap = new Map();
 
-let firstSent = false;
+let lastPageUrl = null;
 
 function flush(auctionId, useBeacon = false) {
   const auction = pendingAuctions.get(auctionId);
   if (!auction) return;
   clearTimeout(auction.timer);
-  const isFirst = !firstSent;
-  firstSent = true;
+  const pageUrl = getWindowLocation().href;
+  const isFirst = pageUrl !== lastPageUrl;
+  if (auction.bids.length) lastPageUrl = pageUrl;
   auction.bids.forEach((bid, i) => {
     bid.is_pl = isFirst && i === 0;
   });
@@ -304,7 +305,7 @@ terceptAnalyticsAdapter.disableAnalytics = function () {
   pendingAuctions.forEach(auction => clearTimeout(auction.timer));
   pendingAuctions.clear();
   adUnitMap.clear();
-  firstSent = false;
+  lastPageUrl = null;
   terceptAnalyticsAdapter.originDisableAnalytics();
 };
 

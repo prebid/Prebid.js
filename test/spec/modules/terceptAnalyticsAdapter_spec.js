@@ -6,6 +6,7 @@ import { EVENTS } from 'src/constants.js';
 import * as ajax from 'src/ajax.js';
 
 const events = require('src/events');
+const utils = require('src/utils.js');
 
 describe('tercept analytics adapter', function () {
   let clock;
@@ -587,6 +588,66 @@ describe('tercept analytics adapter', function () {
       const p2 = JSON.parse(server.requests[1].requestBody);
       p2.bids.forEach(bid => expect(bid.is_pl).to.equal(false));
     });
+
+    it('sets is_pl true again after an in-page navigation changes the URL', function () {
+      let href = 'https://example.com/article';
+      const stub = sinon.stub(utils, 'getWindowLocation').callsFake(() => ({
+        href,
+        hostname: 'example.com',
+        pathname: '/article',
+        search: ''
+      }));
+
+      emitFullAuction();
+      clock.tick(0);
+      const p1 = JSON.parse(server.requests[0].requestBody);
+      expect(p1.bids[0].is_pl).to.equal(true);
+
+      href = 'https://example.com/article?slide=2';
+      emitFullAuction('auction-2');
+      clock.tick(0);
+      const p2 = JSON.parse(server.requests[1].requestBody);
+      expect(p2.bids[0].is_pl).to.equal(true);
+
+      stub.restore();
+    });
+
+    it('does not set is_pl false for a second auction on the same URL after a navigation was already counted', function () {
+      let href = 'https://example.com/article';
+      const stub = sinon.stub(utils, 'getWindowLocation').callsFake(() => ({
+        href,
+        hostname: 'example.com',
+        pathname: '/article',
+        search: ''
+      }));
+
+      emitFullAuction();
+      clock.tick(0);
+
+      href = 'https://example.com/article?slide=2';
+      emitFullAuction('auction-2');
+      clock.tick(0);
+
+      emitFullAuction('auction-3');
+      clock.tick(0);
+      const p3 = JSON.parse(server.requests[2].requestBody);
+      expect(p3.bids[0].is_pl).to.equal(false);
+
+      stub.restore();
+    });
+
+    it('does not consume the page-load flag when an auction flushes with zero bids', function () {
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'empty-auction' });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'empty-auction' });
+      clock.tick(0);
+      const p1 = JSON.parse(server.requests[0].requestBody);
+      expect(p1.bids).to.have.length(0);
+
+      emitFullAuction('auction-with-bids');
+      clock.tick(0);
+      const p2 = JSON.parse(server.requests[1].requestBody);
+      expect(p2.bids[0].is_pl).to.equal(true);
+    });
   });
 
   // ─── Concurrent auction isolation ─────────────────────────────────────────
@@ -712,7 +773,7 @@ describe('tercept analytics adapter', function () {
       expect(server.requests.length).to.equal(1);
     });
 
-    it('resets firstSent so re-enabled adapter marks first auction as page load', function () {
+    it('resets the page-load tracker so re-enabled adapter marks first auction as page load', function () {
       emitFullAuction();
       clock.tick(0);
       const p1 = JSON.parse(server.requests[0].requestBody);
