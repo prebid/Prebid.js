@@ -8,6 +8,7 @@ import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
 import { StorageManager } from '../../src/storageManager.js';
 import { BidRequest, ORTBImp, ORTBRequest, ORTBResponse } from '../../src/prebid.public.js';
 import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { Nexx360ServerAuction } from './types.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -213,10 +214,38 @@ export function createResponse(bid:any, ortbResponse:any): BidResponse {
   return response as BidResponse;
 }
 
+// --- Server auction data extraction ---
+
+let lastServerAuctionData: Nexx360ServerAuction | null = null;
+
+function extractServerAuction(responseBody: any): void {
+  const serverAuction = deepAccess(responseBody, 'ext.serverAuction');
+  if (serverAuction && typeof serverAuction === 'object' && serverAuction.auctionId) {
+    lastServerAuctionData = serverAuction as Nexx360ServerAuction;
+  }
+}
+
+export function getLastServerAuctionData(): Nexx360ServerAuction | null {
+  return lastServerAuctionData;
+}
+
+export function clearLastServerAuctionData(): void {
+  lastServerAuctionData = null;
+}
+
 export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
   if (!serverResponse.body) return [];
   const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
+
+  if (!respBody.seatbid || respBody.seatbid.length === 0) {
+    // No bid responses will be produced, so no analytics `bidResponse` will
+    // consume server-auction data. Clear it rather than let a stale value leak
+    // into a later, unrelated auction.
+    clearLastServerAuctionData();
+    return [];
+  }
+
+  extractServerAuction(respBody);
 
   const responses: BidResponse[] = [];
   for (let i = 0; i < respBody.seatbid.length; i++) {

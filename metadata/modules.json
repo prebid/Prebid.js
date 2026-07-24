@@ -6534,6 +6534,11 @@
     },
     {
       "componentType": "analytics",
+      "componentName": "nexx360",
+      "gvlid": null
+    },
+    {
+      "componentType": "analytics",
       "componentName": "nobid",
       "gvlid": null
     },
