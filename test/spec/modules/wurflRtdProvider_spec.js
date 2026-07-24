@@ -37,6 +37,10 @@ describe('wurflRtdProvider', function () {
         bidder2: {
           cap_indices: [12, 13, 14, 19, 20, 21, 22]
         }
+      },
+      beacon: {
+        // wurfl_id (0), complete_device_name (7), form_factor (9)
+        cap_indices: [0, 7, 9]
       }
     };
     const WURFL = {
@@ -604,8 +608,10 @@ describe('wurflRtdProvider', function () {
             expect(payload).to.have.property('ab_name', 'test_wurfl');
             expect(payload).to.have.property('ab_variant', 'control');
             expect(payload).to.have.property('enrichment', 'none');
-            // Beacon metadata should be read from cache even in control group
-            expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+            // Beacon metadata should be read from cache even in control group.
+            // New format active → wurfl_id lives inside wurfl_caps, not at top-level.
+            expect(payload).to.not.have.property('wurfl_id');
+            expect(payload.wurfl_caps).to.have.property('wurfl_id', 'lg_nexus5_ver1');
             expect(payload).to.have.property('sampling_rate', 100);
             done();
           };
@@ -653,7 +659,8 @@ describe('wurflRtdProvider', function () {
             expect(payload).to.have.property('ab_name', 'test_none_lce');
             expect(payload).to.have.property('ab_variant', 'control');
             expect(payload).to.have.property('enrichment', 'none_lce');
-            // No cache → beacon metadata stays at defaults
+            // No cache → no wurfl_caps; legacy top-level wurfl_id stays at its default
+            expect(payload).to.not.have.property('wurfl_caps');
             expect(payload).to.have.property('wurfl_id', '');
             expect(payload).to.have.property('sampling_rate', 100);
 
@@ -1564,7 +1571,8 @@ describe('wurflRtdProvider', function () {
         expect(payload).to.have.property('path');
         expect(payload).to.have.property('sampling_rate', 100);
         expect(payload).to.have.property('enrichment', 'wurfl_pub');
-        expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+        expect(payload).to.not.have.property('wurfl_id');
+        expect(payload.wurfl_caps).to.have.property('wurfl_id', 'lg_nexus5_ver1');
         expect(payload).to.have.property('over_quota', 0);
         expect(payload).to.have.property('consent_class', 0);
         expect(payload).to.have.property('ad_units');
@@ -1655,7 +1663,8 @@ describe('wurflRtdProvider', function () {
         expect(payload).to.have.property('path');
         expect(payload).to.have.property('sampling_rate', 100);
         expect(payload).to.have.property('enrichment', 'wurfl_pub');
-        expect(payload).to.have.property('wurfl_id', 'lg_nexus5_ver1');
+        expect(payload).to.not.have.property('wurfl_id');
+        expect(payload.wurfl_caps).to.have.property('wurfl_id', 'lg_nexus5_ver1');
         expect(payload).to.have.property('over_quota', 0);
         expect(payload).to.have.property('consent_class', 0);
         expect(payload).to.have.property('ad_units');
@@ -2136,6 +2145,173 @@ describe('wurflRtdProvider', function () {
       });
     });
 
+    describe('beacon wurfl_caps', () => {
+      // The set of caps reported in the beacon is declared in wurfl_pbjs.beacon.cap_indices.
+      // Values are read from window.WURFL like any other cap; the plumbing is type-agnostic.
+      const expectedBeaconCaps = {
+        wurfl_id: 'lg_nexus5_ver1',
+        complete_device_name: 'Google Nexus 5',
+        form_factor: 'Feature Phone'
+      };
+
+      beforeEach(() => {
+        sandbox.stub(prebidGlobalModule, 'getGlobal').returns({
+          getHighestCpmBids: () => []
+        });
+        reqBidsConfigObj.ortb2Fragments.global.device = {};
+        reqBidsConfigObj.ortb2Fragments.bidder = {};
+      });
+
+      it('reports the configured beacon caps in wurfl_caps and drops the top-level wurfl_id', (done) => {
+        const cachedData = { WURFL, wurfl_pbjs };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.not.have.property('wurfl_id');
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('still reports wurfl_caps when over quota', (done) => {
+        const cachedData = { WURFL, wurfl_pbjs: { ...wurfl_pbjs, over_quota: 1 } };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.have.property('over_quota', 1);
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('does not emit wurfl_caps when there is no cached WURFL data (LCE)', (done) => {
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+        __testing__.setSuaPromise(Promise.resolve(null));
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.not.have.property('wurfl_caps');
+          expect(payload).to.have.property('wurfl_id', '');
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('does not leak wurfl_caps from a cached auction into a later cache-less (LCE) auction', (done) => {
+        // Same page, two auctions: the first hits the cache and reports wurfl_caps; the second
+        // finds the cache gone (e.g. cleared or corrupted -> getObjectFromStorage returns null)
+        // and falls back to LCE. The LCE beacon must reflect that auction only: no stale caps,
+        // no stale wurfl_id carried over from the earlier cached auction.
+        const cachedData = { WURFL, wurfl_pbjs };
+        const getDataStub = sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+        getDataStub.onFirstCall().returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+        __testing__.setSuaPromise(Promise.resolve(null));
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const secondAuctionCallback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(1).args[1]);
+          expect(payload).to.have.property('enrichment', 'lce');
+          expect(payload).to.not.have.property('wurfl_caps');
+          expect(payload).to.have.property('wurfl_id', '');
+          done();
+        };
+
+        const firstAuctionCallback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+
+          // Second auction on the same page, now without cache.
+          reqBidsConfigObj.ortb2Fragments.global.device = {};
+          reqBidsConfigObj.ortb2Fragments.bidder = {};
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, secondAuctionCallback, { params: {} }, {});
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, firstAuctionCallback, { params: {} }, {});
+      });
+
+      it('preserves complex (array-valued) cap values intact', (done) => {
+        // pointing_method (index 30) is reused here with an array value purely to exercise the
+        // type-agnostic plumbing: a complex value must reach the beacon untouched.
+        const complexValue = [
+          { a: 1, b: 'x' },
+          { a: -2, b: 'y' }
+        ];
+        const cachedData = {
+          WURFL: { ...WURFL, pointing_method: complexValue },
+          wurfl_pbjs: { ...wurfl_pbjs, beacon: { cap_indices: [0, 30] } }
+        };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload.wurfl_caps).to.deep.equal({
+            wurfl_id: 'lg_nexus5_ver1',
+            pointing_method: complexValue
+          });
+          expect(payload.wurfl_caps.pointing_method).to.be.an('array').with.lengthOf(2);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+
+      it('injects wurfl_id into wurfl_caps when beacon.cap_indices omits it', (done) => {
+        // beacon.cap_indices without index 0 (wurfl_id): the identifier must still reach the
+        // beacon, carried inside wurfl_caps, so the payload is never left without a WURFL id.
+        const cachedData = {
+          WURFL,
+          wurfl_pbjs: { ...wurfl_pbjs, beacon: { cap_indices: [7, 9] } }
+        };
+        sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+        const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+        const callback = () => {
+          wurflSubmodule.onAuctionEndEvent({ bidsReceived: [], adUnits: [] }, { params: {} }, {});
+          const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+          expect(payload).to.not.have.property('wurfl_id');
+          expect(payload.wurfl_caps).to.deep.equal(expectedBeaconCaps);
+          done();
+        };
+
+        wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: {} }, {});
+      });
+    });
+
     describe('device type mapping', () => {
       it('should map is_ott priority over form_factor', (done) => {
         const wurflWithOtt = { ...WURFL, is_ott: true, form_factor: 'Desktop' };
@@ -2480,6 +2656,379 @@ describe('wurflRtdProvider', function () {
         expect(sendBeaconStub.calledOnce).to.be.true;
         const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
         expect(payload).to.have.property('sua', null);
+      });
+    });
+
+    // Targeted tests for defensive/edge branches flagged as uncovered by the PR's
+    // coverage report. Grouped here to keep the additions easy to review.
+    describe('branch coverage', () => {
+      afterEach(() => {
+        __testing__.setSuaPromise(null);
+        __testing__.setResolvedSUA(null);
+      });
+
+      describe('storage and async load fallbacks', () => {
+        beforeEach(() => {
+          // Deterministic async load: SUA already resolved (no navigator.userAgentData call).
+          __testing__.setSuaPromise(Promise.resolve(null));
+          reqBidsConfigObj.ortb2Fragments.global.device = {};
+          reqBidsConfigObj.ortb2Fragments.bidder = {};
+        });
+
+        it('uses LCE and skips the cache write when localStorage is unavailable', (done) => {
+          sandbox.stub(storage, 'hasLocalStorage').returns(false);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+          const setStub = sandbox.stub(storage, 'setDataInLocalStorage');
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            setTimeout(() => {
+              // getObjectFromStorage short-circuits (no storage) and setObjectToStorage
+              // never reaches setDataInLocalStorage.
+              expect(setStub.called).to.be.false;
+              done();
+            }, 0);
+          }, { params: {} }, {});
+        });
+
+        it('falls back to LCE when the cached payload is not valid JSON', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns('{ not-valid-json');
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          sandbox.stub(storage, 'setDataInLocalStorage');
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            // Parse error is swallowed and LCE enrichment still runs.
+            expect(reqBidsConfigObj.ortb2Fragments.global.device.js).to.equal(1);
+            setTimeout(done, 0);
+          }, { params: {} }, {});
+        });
+
+        it('swallows errors raised while writing the WURFL cache', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          const setStub = sandbox.stub(storage, 'setDataInLocalStorage').throws(new Error('quota exceeded'));
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            setTimeout(() => {
+              expect(setStub.called).to.be.true;
+              done();
+            }, 0);
+          }, { params: {} }, {});
+        });
+
+        it('logs an error when the async WURFL.js response has no wurfl_pbjs', (done) => {
+          window.WURFLPromises = { complete: Promise.resolve({ WURFL }) };
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          const setStub = sandbox.stub(storage, 'setDataInLocalStorage');
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            setTimeout(() => {
+              // Missing wurfl_pbjs → the response is rejected and no cache write happens.
+              expect(setStub.called).to.be.false;
+              done();
+            }, 0);
+          }, { params: {} }, {});
+        });
+
+        it('handles a rejected async WURFL.js completion promise', (done) => {
+          window.WURFLPromises = { complete: Promise.reject(new Error('network error')) };
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          sandbox.stub(storage, 'setDataInLocalStorage');
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            setTimeout(done, 0);
+          }, { params: {} }, {});
+        });
+
+        it('loads WURFL.js without SUA when the SUA promise rejects', (done) => {
+          __testing__.setSuaPromise(Promise.reject(new Error('sua unavailable')));
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          sandbox.stub(storage, 'setDataInLocalStorage');
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            setTimeout(() => {
+              // The rejected SUA promise is swallowed and the script still loads.
+              expect(loadExternalScriptStub.called).to.be.true;
+              done();
+            }, 0);
+          }, { params: {} }, {});
+        });
+
+        it('swallows synchronous errors thrown while loading WURFL.js', (done) => {
+          // Removing WURFLPromises makes the load callback throw synchronously.
+          window.WURFLPromises = undefined;
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            setTimeout(done, 0);
+          }, { params: {} }, {});
+        });
+      });
+
+      describe('enrichment edge cases', () => {
+        beforeEach(() => {
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          reqBidsConfigObj.ortb2Fragments.global.device = {};
+          reqBidsConfigObj.ortb2Fragments.bidder = {};
+        });
+
+        it('does not overwrite device fields already set by the publisher', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          reqBidsConfigObj.ortb2Fragments.global.device = { make: 'PublisherMake' };
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            expect(reqBidsConfigObj.ortb2Fragments.global.device.make).to.equal('PublisherMake');
+            done();
+          }, { params: {} }, {});
+        });
+
+        it('skips FPD enrichment when the global ortb2 fragment is missing', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          const req = {
+            adUnits: [{ bids: [{ bidder: 'bidder1' }] }],
+            ortb2Fragments: { bidder: {} }
+          };
+
+          wurflSubmodule.getBidRequestData(req, () => {
+            // No global fragment to enrich: nothing thrown, bidder still processed.
+            expect(req.ortb2Fragments.global).to.be.undefined;
+            expect(req.ortb2Fragments.bidder.bidder1).to.exist;
+            done();
+          }, { params: {} }, {});
+        });
+
+        it('coerces empty WURFL numeric capabilities to undefined', (done) => {
+          const cachedData = {
+            WURFL: { ...WURFL, density_class: '', ajax_support_javascript: '' },
+            wurfl_pbjs
+          };
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify(cachedData));
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            const device = reqBidsConfigObj.ortb2Fragments.global.device;
+            expect(device).to.not.have.property('pxratio');
+            expect(device).to.not.have.property('js');
+            done();
+          }, { params: {} }, {});
+        });
+
+        it('handles a cached response with no caps array', (done) => {
+          const { caps, ...pbjsNoCaps } = wurfl_pbjs;
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs: pbjsNoCaps }));
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            const device = reqBidsConfigObj.ortb2Fragments.global.device;
+            // No caps to resolve → empty ext.wurfl, and the bidder still gets a device object.
+            expect(device.ext.wurfl).to.deep.equal({});
+            expect(reqBidsConfigObj.ortb2Fragments.bidder.bidder1.device).to.exist;
+            done();
+          }, { params: {} }, {});
+        });
+      });
+
+      describe('LCE device detection for additional user agents', () => {
+        let originalUserAgent;
+
+        const setUA = (value) => {
+          Object.defineProperty(navigator, 'userAgent', { value, configurable: true, writable: true });
+        };
+
+        beforeEach(() => {
+          __testing__.setSuaPromise(Promise.resolve(null));
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          sandbox.stub(storage, 'setDataInLocalStorage');
+          reqBidsConfigObj.ortb2Fragments.global.device = {};
+          reqBidsConfigObj.ortb2Fragments.bidder = {};
+          originalUserAgent = navigator.userAgent;
+        });
+
+        afterEach(() => {
+          setUA(originalUserAgent);
+        });
+
+        const expectDevice = (ua, assertions) => (done) => {
+          setUA(ua);
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            assertions(reqBidsConfigObj.ortb2Fragments.global.device);
+            setTimeout(done, 0);
+          }, { params: {} }, {});
+        };
+
+        it('parses iOS 26 iPhone user agents', expectDevice(
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+          (device) => {
+            expect(device.os).to.equal('iOS');
+            expect(device.osv).to.equal('26.0');
+          }
+        ));
+
+        it('parses iPadOS 26 user agents', expectDevice(
+          'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+          (device) => {
+            expect(device.os).to.equal('iPadOS');
+            expect(device.osv).to.equal('26.0');
+          }
+        ));
+
+        it('handles Android user agents without a version number', expectDevice(
+          'Mozilla/5.0 (Linux; Android) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+          (device) => {
+            expect(device.os).to.equal('Android');
+            expect(device.devicetype).to.equal(4); // PHONE
+            expect(device.osv).to.equal('');
+          }
+        ));
+
+        it('detects Android tablets (no "Mobile" token)', expectDevice(
+          'Mozilla/5.0 (Linux; Android 12; SM-T500) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          (device) => {
+            expect(device.os).to.equal('Android');
+            expect(device.devicetype).to.equal(5); // TABLET
+          }
+        ));
+
+        it('parses ChromeOS user agents', expectDevice(
+          'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          (device) => {
+            expect(device.os).to.equal('ChromeOS');
+            expect(device.osv).to.equal('14541.0.0');
+          }
+        ));
+
+        it('parses Tizen smart-TV user agents', expectDevice(
+          'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) 76.0.3809.146 TV Safari/537.36',
+          (device) => {
+            expect(device.os).to.equal('Tizen');
+            expect(device.osv).to.equal('6.0');
+            expect(device.devicetype).to.equal(3); // CONNECTED_TV
+          }
+        ));
+
+        it('parses Roku set-top-box user agents', expectDevice(
+          // Synthetic UA crafted to exercise the Roku OS version regex.
+          'Roku/DVP 9C 1.2.3/4.5.6',
+          (device) => {
+            expect(device.os).to.equal('Roku OS');
+            expect(device.osv).to.equal('4.5.6');
+          }
+        ));
+
+        it('parses PlayStation 4 user agents', expectDevice(
+          'Mozilla/5.0 (PlayStation 4/8.03) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+          (device) => {
+            expect(device.os).to.equal('PlayStation OS');
+            expect(device.osv).to.equal('8.03');
+          }
+        ));
+
+        it('parses PlayStation 3 user agents', expectDevice(
+          // Synthetic UA crafted to exercise the PS3 version regex fallback.
+          'Mozilla/5.0 (PLAYSTATION 3 4.80)',
+          (device) => {
+            expect(device.os).to.equal('PlayStation OS');
+            expect(device.osv).to.equal('4.80');
+          }
+        ));
+      });
+
+      describe('beacon edge cases', () => {
+        beforeEach(() => {
+          sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+          sandbox.stub(storage, 'hasLocalStorage').returns(true);
+          sandbox.stub(prebidGlobalModule, 'getGlobal').returns({ getHighestCpmBids: () => [] });
+          reqBidsConfigObj.ortb2Fragments.global.device = {};
+          reqBidsConfigObj.ortb2Fragments.bidder = {};
+        });
+
+        const auctionDetails = { bidsReceived: [], adUnits: [] };
+
+        it('applies probabilistic sampling when the rate is between 0 and 100', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs: { ...wurfl_pbjs, sampling_rate: 50 } }));
+          sandbox.stub(Math, 'random').returns(0.1); // 10 < 50 → beacon sent
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+            expect(sendBeaconStub.calledOnce).to.be.true;
+            done();
+          }, { params: {} }, {});
+        });
+
+        it('returns NO consent when GDPR applies but vendorData carries no purpose', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+          const userConsent = { gdpr: { gdprApplies: true, vendorData: {} } };
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, userConsent);
+            const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+            expect(payload).to.have.property('consent_class', 0);
+            done();
+          }, { params: {} }, {});
+        });
+
+        it('sets the error consent class when consent evaluation throws', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+          // Enumerable getter that throws, forcing getConsentClass into its catch.
+          const userConsent = {};
+          Object.defineProperty(userConsent, 'coppa', { enumerable: true, get() { throw new Error('boom'); } });
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, userConsent);
+            const payload = JSON.parse(sendBeaconStub.getCall(0).args[1]);
+            expect(payload).to.have.property('consent_class', -1); // CONSENT_CLASS.ERROR
+            done();
+          }, { params: {} }, {});
+        });
+
+        it('uses the configured statsHost override for the beacon URL', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+          const cfg = { params: { statsHost: 'https://custom-stats.example.com' } };
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            wurflSubmodule.onAuctionEndEvent(auctionDetails, cfg, {});
+            expect(sendBeaconStub.getCall(0).args[0]).to.equal('https://custom-stats.example.com/v2/prebid/stats');
+            done();
+          }, cfg, {});
+        });
+
+        it('aborts the beacon when the statsHost is not a valid URL', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          const sendBeaconStub = sandbox.stub(dep, 'sendBeacon').returns(true);
+          const cfg = { params: { statsHost: 'not a valid url' } };
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            wurflSubmodule.onAuctionEndEvent(auctionDetails, cfg, {});
+            expect(sendBeaconStub.called).to.be.false;
+            done();
+          }, cfg, {});
+        });
+
+        it('logs when the fetch fallback beacon rejects', (done) => {
+          sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({ WURFL, wurfl_pbjs }));
+          sandbox.stub(dep, 'sendBeacon').returns(false);
+          const fetchStub = sandbox.stub(dep, 'fetch').returns(Promise.reject(new Error('offline')));
+
+          wurflSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+            wurflSubmodule.onAuctionEndEvent(auctionDetails, { params: {} }, {});
+            expect(fetchStub.calledOnce).to.be.true;
+            setTimeout(done, 0); // let the rejected promise's .catch run
+          }, { params: {} }, {});
+        });
       });
     });
   });
