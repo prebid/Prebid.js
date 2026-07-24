@@ -26,7 +26,7 @@ const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
-const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com'];
+const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com', 'growthcode.io'];
 
 const invalidRequestIds = {};
 let pageViewId = null;
