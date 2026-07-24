@@ -12,6 +12,8 @@ import {
   createBuildRequestsFn,
   createInterpretResponseFn,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable,
 } from '../libraries/vidazooUtils/bidderUtils.js';
 import { OPT_CACHE_KEY, OPT_TIME_KEY, ALIASES } from '../libraries/vidazooUtils/constants.js';
 
@@ -58,6 +60,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

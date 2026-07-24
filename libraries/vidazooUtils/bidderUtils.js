@@ -188,6 +188,54 @@ export function onBidBillable(bid) {
   triggerPixel(url);
 }
 
+export function onBidViewable(bid) {
+  if (!bid.viewableUrl) {
+    return;
+  }
+  const viewablePayload = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(viewablePayload);
+  const url = bid.viewableUrl + (bid.viewableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
+}
+
+export function onAdRenderSucceeded(bid) {
+  if (!bid.renderSuccessUrl) {
+    return;
+  }
+  const renderSuccessPayload = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(renderSuccessPayload);
+  const url = bid.renderSuccessUrl + (bid.viewableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
+}
+
 /**
  * Create the spec function for getting user syncs
  *
@@ -257,24 +305,6 @@ export function createUserSyncGetter(options = {
   };
 }
 
-export function appendUserIdsToRequestPayload(payloadRef, userIds) {
-  let key;
-  _each(userIds, (userId, idSystemProviderName) => {
-    key = `uid.${idSystemProviderName}`;
-
-    switch (idSystemProviderName) {
-      case 'lipb':
-        payloadRef[key] = userId.lipbid;
-        break;
-      case 'id5id':
-        payloadRef[key] = userId.uid;
-        break;
-      default:
-        payloadRef[key] = userId;
-    }
-  });
-}
-
 function appendUserIdsAsEidsToRequestPayload(payloadRef, userIds) {
   let key;
   userIds.forEach((userIdObj) => {
@@ -292,7 +322,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     params,
     bidId,
     adUnitCode,
-    schain,
     mediaTypes,
     ortb2Imp,
     bidderRequestId,
@@ -316,6 +345,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const contentLang = bidderRequest?.ortb2?.site?.content?.language || document.documentElement.lang;
   const coppa = bidderRequest?.ortb2?.regs?.coppa ?? 0;
   const device = bidderRequest?.ortb2?.device ? deepClone(bidderRequest?.ortb2?.device) : {};
+  const schain = bid?.ortb2?.source?.ext?.schain ||
+    bidderRequest?.ortb2?.source?.ext?.schain ||
+    bid.schain; // legacy fallback only
 
   // delete device.devicetype if invalid
   if (!Number.isInteger(device.devicetype)) {
@@ -374,9 +406,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   }
   if (bid.user?.ext?.eids?.length > 0) {
     appendUserIdsAsEidsToRequestPayload(data, bid.user.ext.eids);
-  }
-  if (bid.userId) {
-    appendUserIdsToRequestPayload(data, bid.userId);
   }
 
   const sua = bidderRequest?.ortb2?.device?.sua;
@@ -476,7 +505,9 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
           burl,
           advertiserDomains,
           metaData,
-          mediaType = BANNER
+          mediaType = BANNER,
+          viewableUrl,
+          renderSuccessUrl,
         } = result;
         if (!ad || !price) {
           return;
@@ -498,6 +529,12 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
         }
         if (burl) {
           response.burl = burl;
+        }
+        if (viewableUrl) {
+          response.viewableUrl = viewableUrl;
+        }
+        if (renderSuccessUrl) {
+          response.renderSuccessUrl = renderSuccessUrl;
         }
 
         if (metaData) {

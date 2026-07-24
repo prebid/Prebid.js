@@ -4,7 +4,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   createBuildRequestsFn,
-  createInterpretResponseFn, createUserSyncGetter, onBidWon, onBidBillable
+  createInterpretResponseFn,
+  createUserSyncGetter,
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
@@ -39,6 +44,8 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);
