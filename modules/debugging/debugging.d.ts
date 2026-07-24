@@ -7,7 +7,7 @@ export type DebugModuleConfiguration = {
   /**
    * Rules are evaluated on each bid in the order they are provided: the first one that has a matching when definition takes the bid out of the normal auction flow and replaces it according to its then definition.
    */
-  intercept?: InterceptRule[]
+  intercept?: InterceptRule[];
 };
 
 export type InterceptRule = {
