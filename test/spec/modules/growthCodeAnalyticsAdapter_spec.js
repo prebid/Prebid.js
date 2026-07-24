@@ -4,24 +4,16 @@ import { expect } from 'chai';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
-import * as ajax from '../../../src/ajax.js';
+import { server } from '../../mocks/xhr.js';
+
+// Matches the adapter's default ENDPOINT_URL (no options.url override is used in these tests).
+const ENDPOINT_HOST = 'analytics.gcprivacy.com';
 
 describe('growthCode analytics adapter', () => {
-  let sandbox;
-  let ajaxCalls;
-
-  before(() => {
-    sandbox = sinon.createSandbox();
-    ajaxCalls = [];
-    sandbox.stub(ajax, 'ajax').callsFake((...args) => ajaxCalls.push(args));
-  });
-
-  after(() => {
-    sandbox.restore();
-  });
+  let requestCountBefore;
 
   beforeEach(() => {
-    ajaxCalls = [];
+    requestCountBefore = server.requests.length;
     sinon.stub(events, 'getEvents').returns([]);
     storage.setDataInLocalStorage('gcid', 'test-gcid-123');
     growthCodeAnalyticsAdapter.enableAnalytics({
@@ -31,13 +23,23 @@ describe('growthCode analytics adapter', () => {
   });
 
   afterEach(() => {
-    ['gcid', 'gcABbucket', 'gc_h1', 'gc_h3', 'gc_hs'].forEach(k => storage.removeDataFromLocalStorage(k));
+    ['gcid', 'gcABbucket', 'gc_bucket', 'gc_test', 'gc_h1', 'gc_h3', 'gc_hs'].forEach(k => storage.removeDataFromLocalStorage(k));
+    storage.setCookie('gc_session_id', '', 'Thu, 01 Jan 1970 00:00:01 GMT');
     growthCodeAnalyticsAdapter.disableAnalytics();
     events.getEvents.restore();
   });
 
-  function lastCall() {
-    return ajaxCalls[ajaxCalls.length - 1];
+  // Requests made by *this* test only, scoped to the growthCode analytics endpoint.
+  // server.requests is a single array shared across the whole karma run (populated via
+  // the global dep.fetch mock in test/mocks/xhr.js), so we diff against the count
+  // captured in beforeEach rather than asserting on the raw array.
+  function ownRequests() {
+    return server.requests.slice(requestCountBefore).filter(r => r.url.indexOf(ENDPOINT_HOST) > -1);
+  }
+
+  function lastRequest() {
+    const reqs = ownRequests();
+    return reqs[reqs.length - 1];
   }
 
   it('registers itself with the adapter manager', () => {
@@ -66,13 +68,13 @@ describe('growthCode analytics adapter', () => {
 
     events.emit(EVENTS.BID_WON, bid);
 
-    expect(ajaxCalls.length).to.be.greaterThan(0);
+    expect(ownRequests().length).to.be.greaterThan(0);
 
-    const [url, , bodyStr] = lastCall();
-    const body = JSON.parse(bodyStr);
+    const req = lastRequest();
+    const body = JSON.parse(req.requestBody);
 
-    expect(url).to.include('gcid=test-gcid-123');
-    expect(url).to.include('pid=TEST01');
+    expect(req.url).to.include('gcid=test-gcid-123');
+    expect(req.url).to.include('pid=TEST01');
 
     expect(body.analytics_source).to.equal('prebid_module');
     expect(body.gc_session_id).to.be.a('string');
@@ -106,7 +108,7 @@ describe('growthCode analytics adapter', () => {
       adId: 'ad0',
       meta: {}
     });
-    expect(ajaxCalls.length).to.equal(1);
+    expect(ownRequests().length).to.equal(1);
   });
 
   it('sets live_intent true when liveintent.com is in eids', () => {
@@ -121,7 +123,7 @@ describe('growthCode analytics adapter', () => {
       meta: {}
     });
 
-    const body = JSON.parse(lastCall()[2]);
+    const body = JSON.parse(lastRequest().requestBody);
     expect(body.live_intent).to.equal(true);
     expect(body.ssp_count).to.equal(2);
   });
@@ -140,7 +142,7 @@ describe('growthCode analytics adapter', () => {
       meta: {}
     });
 
-    const body = JSON.parse(lastCall()[2]);
+    const body = JSON.parse(lastRequest().requestBody);
     expect(body.have_hem).to.equal(true);
   });
 
@@ -157,8 +159,107 @@ describe('growthCode analytics adapter', () => {
       meta: {}
     });
 
-    const body = JSON.parse(lastCall()[2]);
+    const body = JSON.parse(lastRequest().requestBody);
     expect(body.bucket_id).to.equal('bucket-D');
+  });
+
+  it('prefers gc_bucket over the legacy gcABbucket key', () => {
+    storage.setDataInLocalStorage('gcABbucket', 'legacy-bucket');
+    storage.setDataInLocalStorage('gc_bucket', 'S_active');
+
+    events.emit(EVENTS.BID_WON, {
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: 'ad-bucket',
+      meta: {}
+    });
+
+    const body = JSON.parse(lastRequest().requestBody);
+    expect(body.bucket_id).to.equal('S_active');
+  });
+
+  it('falls back to the legacy gcABbucket key when gc_bucket is absent', () => {
+    storage.setDataInLocalStorage('gcABbucket', 'legacy-bucket');
+
+    events.emit(EVENTS.BID_WON, {
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: 'ad-bucket-legacy',
+      meta: {}
+    });
+
+    const body = JSON.parse(lastRequest().requestBody);
+    expect(body.bucket_id).to.equal('legacy-bucket');
+  });
+
+  it('reads gctest from localStorage instead of always sending false', () => {
+    storage.setDataInLocalStorage('gc_test', 'true');
+
+    events.emit(EVENTS.BID_WON, {
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: 'ad-gctest',
+      meta: {}
+    });
+
+    const body = JSON.parse(lastRequest().requestBody);
+    expect(body.gctest).to.equal(true);
+  });
+
+  it('defaults gctest to false when gc_test is not set', () => {
+    events.emit(EVENTS.BID_WON, {
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: 'ad-gctest-default',
+      meta: {}
+    });
+
+    const body = JSON.parse(lastRequest().requestBody);
+    expect(body.gctest).to.equal(false);
+  });
+
+  it('uses the gc_session_id cookie set by the sync pixel when present', () => {
+    storage.setCookie('gc_session_id', 'pixel-session-abc');
+
+    events.emit(EVENTS.BID_WON, {
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: 'ad-session',
+      meta: {}
+    });
+
+    const body = JSON.parse(lastRequest().requestBody);
+    expect(body.gc_session_id).to.equal('pixel-session-abc');
+  });
+
+  it('falls back to a generated session id when the gc_session_id cookie is absent', () => {
+    events.emit(EVENTS.BID_WON, {
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: 'ad-session-fallback',
+      meta: {}
+    });
+
+    const body = JSON.parse(lastRequest().requestBody);
+    expect(body.gc_session_id).to.be.a('string').with.length.greaterThan(0);
   });
 
   it('does not send a request when gcid is missing', () => {
@@ -174,7 +275,7 @@ describe('growthCode analytics adapter', () => {
       meta: {}
     });
 
-    expect(ajaxCalls.length).to.equal(0);
+    expect(ownRequests().length).to.equal(0);
   });
 
   it('also sends legacy batch when bidWon is included in trackEvents config', () => {
@@ -195,10 +296,11 @@ describe('growthCode analytics adapter', () => {
     });
 
     // enriched call (logBidWonToServer) + legacy batch call (logToServer)
-    expect(ajaxCalls.length).to.equal(2);
-    const legacyCall = ajaxCalls.find(c => !c[0].includes('?gcid='));
+    const reqs = ownRequests();
+    expect(reqs.length).to.equal(2);
+    const legacyCall = reqs.find(r => !r.url.includes('?gcid='));
     expect(legacyCall).to.exist;
-    const legacyBody = JSON.parse(legacyCall[2]);
+    const legacyBody = JSON.parse(legacyCall.requestBody);
     expect(legacyBody.events).to.be.an('array').with.lengthOf(1);
   });
 
@@ -206,7 +308,7 @@ describe('growthCode analytics adapter', () => {
     events.emit(EVENTS.AUCTION_END, { auctionId: generateUUID() });
     events.emit(EVENTS.BID_RESPONSE, { bidderCode: 'appnexus', cpm: 1.0 });
     events.emit(EVENTS.AUCTION_INIT, { auctionId: generateUUID() });
-    expect(ajaxCalls.length).to.equal(0);
+    expect(ownRequests().length).to.equal(0);
   });
 
   it('handles missing meta.advertiserDomains gracefully', () => {
@@ -220,7 +322,7 @@ describe('growthCode analytics adapter', () => {
       meta: null
     });
 
-    const body = JSON.parse(lastCall()[2]);
+    const body = JSON.parse(lastRequest().requestBody);
     expect(body.events[0].advertiser_domains).to.deep.equal([]);
   });
 });

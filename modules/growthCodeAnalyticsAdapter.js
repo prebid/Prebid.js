@@ -18,7 +18,17 @@ const ANALYTICS_SOURCE = 'prebid_module';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
 
-const sessionId = utils.generateUUID();
+const fallbackSessionId = utils.generateUUID();
+
+// The GrowthCode pixel (gcid_s.js) already establishes a session id in a
+// `gc_session_id` cookie and uses it server-side to make the A/B test bucket
+// decision (see ABTestingSessionFeature in gc_pixel). Read that same cookie
+// here so Prebid-reported events use the same session id as the sync pixel,
+// instead of minting an unrelated UUID that never matches. Fall back to a
+// generated UUID if the cookie isn't present (e.g. pixel not yet loaded).
+function getGCSessionId() {
+  return storage.getCookie('gc_session_id') || fallbackSessionId;
+}
 
 let trackEvents = [];
 let pid = DEFAULT_PID;
@@ -143,7 +153,7 @@ function logToServer() {
     const gcid = storage.getDataFromLocalStorage('gcid');
 
     const data = {
-      session: sessionId,
+      session: getGCSessionId(),
       pid: pid,
       gcid: gcid,
       timestamp: Date.now(),
@@ -206,12 +216,15 @@ function logBidWonToServer() {
   const events = bidWonQueue.map(({ _eids, ...entry }) => entry);
 
   const payload = {
-    bucket_id: storage.getDataFromLocalStorage('gcABbucket') || '',
-    gctest: false,
+    // gc_bucket/gc_test are written by the sync pixel from the server's A/B
+    // test decision (see ABTestingSessionFeature in gc_pixel). gcABbucket is
+    // the legacy key kept as a fallback for pixel versions that predate it.
+    bucket_id: storage.getDataFromLocalStorage('gc_bucket') || storage.getDataFromLocalStorage('gcABbucket') || '',
+    gctest: storage.getDataFromLocalStorage('gc_test') === 'true',
     ssp_count: allEids.length,
     live_intent: allEids.includes('liveintent.com'),
     pbjs_name: 'pbjs',
-    gc_session_id: sessionId,
+    gc_session_id: getGCSessionId(),
     gc_event_id: utils.generateUUID(),
     have_hem: !!(storage.getDataFromLocalStorage('gc_h1') && storage.getDataFromLocalStorage('gc_h3')),
     hem_source: storage.getDataFromLocalStorage('gc_hs') || '',
