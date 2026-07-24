@@ -10,7 +10,7 @@ import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const terceptAnalyticsVersion = 'v2.3.0';
+const terceptAnalyticsVersion = 'v2.3.1';
 const defaultHostName = 'b-s.tercept.com';
 const defaultPathName = '/prebid-analytics';
 const DEFAULT_ANALYTICS_BATCH_TIMEOUT = 0;
@@ -22,14 +22,14 @@ const pendingAuctions = new Map();
 
 let adUnitMap = new Map();
 
-let firstSent = false;
+let lastPageUrl = null;
 
 function flush(auctionId, useBeacon = false) {
   const auction = pendingAuctions.get(auctionId);
   if (!auction) return;
   clearTimeout(auction.timer);
-  const isFirst = !firstSent;
-  firstSent = true;
+  const isFirst = auction.pageUrl !== lastPageUrl;
+  if (auction.bids.length) lastPageUrl = auction.pageUrl;
   auction.bids.forEach((bid, i) => {
     bid.is_pl = isFirst && i === 0;
   });
@@ -64,7 +64,8 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
         pendingAuctions.set(auctionId, {
           auctionInit,
           bids: [],
-          timer: null
+          timer: null,
+          pageUrl: getWindowLocation().href
         });
       } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(bid => {
@@ -304,7 +305,7 @@ terceptAnalyticsAdapter.disableAnalytics = function () {
   pendingAuctions.forEach(auction => clearTimeout(auction.timer));
   pendingAuctions.clear();
   adUnitMap.clear();
-  firstSent = false;
+  lastPageUrl = null;
   terceptAnalyticsAdapter.originDisableAnalytics();
 };
 
