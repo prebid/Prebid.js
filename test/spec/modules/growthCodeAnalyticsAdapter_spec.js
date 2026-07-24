@@ -29,6 +29,18 @@ describe('growthCode analytics adapter', () => {
     events.getEvents.restore();
   });
 
+  function bidWon(overrides = {}) {
+    events.emit(EVENTS.BID_WON, Object.assign({
+      auctionId: generateUUID(),
+      bidderCode: 'appnexus',
+      cpm: 1.0,
+      currency: 'USD',
+      adUnitCode: 'div-1',
+      adId: generateUUID(),
+      meta: {}
+    }, overrides));
+  }
+
   // Requests made by *this* test only, scoped to the growthCode analytics endpoint.
   // server.requests is a single array shared across the whole karma run (populated via
   // the global dep.fetch mock in test/mocks/xhr.js), so we diff against the count
@@ -37,9 +49,9 @@ describe('growthCode analytics adapter', () => {
     return server.requests.slice(requestCountBefore).filter(r => r.url.indexOf(ENDPOINT_HOST) > -1);
   }
 
-  function lastRequest() {
+  function lastBody() {
     const reqs = ownRequests();
-    return reqs[reqs.length - 1];
+    return JSON.parse(reqs[reqs.length - 1].requestBody);
   }
 
   it('registers itself with the adapter manager', () => {
@@ -65,12 +77,10 @@ describe('growthCode analytics adapter', () => {
       userIdAsEids: [{ source: 'growthcode.io', uids: [{ id: 'gc-uid-1' }] }],
       meta: { advertiserDomains: ['example.com'] }
     };
-
-    events.emit(EVENTS.BID_WON, bid);
+    bidWon(bid);
 
     expect(ownRequests().length).to.be.greaterThan(0);
-
-    const req = lastRequest();
+    const req = ownRequests().pop();
     const body = JSON.parse(req.requestBody);
 
     expect(req.url).to.include('gcid=test-gcid-123');
@@ -99,31 +109,13 @@ describe('growthCode analytics adapter', () => {
   });
 
   it('fires bid won even when trackEvents is not configured', () => {
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad0',
-      meta: {}
-    });
+    bidWon();
     expect(ownRequests().length).to.equal(1);
   });
 
   it('sets live_intent true when liveintent.com is in eids', () => {
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad1',
-      userIdAsEids: [{ source: 'liveintent.com' }, { source: 'growthcode.io' }],
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
+    bidWon({ userIdAsEids: [{ source: 'liveintent.com' }, { source: 'growthcode.io' }] });
+    const body = lastBody();
     expect(body.live_intent).to.equal(true);
     expect(body.ssp_count).to.equal(2);
   });
@@ -131,150 +123,41 @@ describe('growthCode analytics adapter', () => {
   it('sets have_hem true when HEM keys are in localStorage', () => {
     storage.setDataInLocalStorage('gc_h1', 'md5hash');
     storage.setDataInLocalStorage('gc_h3', 'sha256hash');
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'rubicon',
-      cpm: 2.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad2',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.have_hem).to.equal(true);
+    bidWon({ bidderCode: 'rubicon', cpm: 2.0 });
+    expect(lastBody().have_hem).to.equal(true);
   });
 
-  it('includes bucket_id from localStorage', () => {
-    storage.setDataInLocalStorage('gcABbucket', 'bucket-D');
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad3',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.bucket_id).to.equal('bucket-D');
-  });
-
-  it('prefers gc_bucket over the legacy gcABbucket key', () => {
+  it('resolves bucket_id: prefers gc_bucket, falls back to legacy gcABbucket', () => {
     storage.setDataInLocalStorage('gcABbucket', 'legacy-bucket');
+    bidWon();
+    expect(lastBody().bucket_id).to.equal('legacy-bucket');
+
     storage.setDataInLocalStorage('gc_bucket', 'S_active');
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-bucket',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.bucket_id).to.equal('S_active');
+    bidWon();
+    expect(lastBody().bucket_id).to.equal('S_active');
   });
 
-  it('falls back to the legacy gcABbucket key when gc_bucket is absent', () => {
-    storage.setDataInLocalStorage('gcABbucket', 'legacy-bucket');
+  it('resolves gctest from the gc_test localStorage key, defaulting to false', () => {
+    bidWon();
+    expect(lastBody().gctest).to.equal(false);
 
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-bucket-legacy',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.bucket_id).to.equal('legacy-bucket');
-  });
-
-  it('reads gctest from localStorage instead of always sending false', () => {
     storage.setDataInLocalStorage('gc_test', 'true');
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-gctest',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.gctest).to.equal(true);
+    bidWon();
+    expect(lastBody().gctest).to.equal(true);
   });
 
-  it('defaults gctest to false when gc_test is not set', () => {
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-gctest-default',
-      meta: {}
-    });
+  it('resolves gc_session_id from the sync pixel cookie, falling back to a generated id', () => {
+    bidWon();
+    expect(lastBody().gc_session_id).to.be.a('string').with.length.greaterThan(0);
 
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.gctest).to.equal(false);
-  });
-
-  it('uses the gc_session_id cookie set by the sync pixel when present', () => {
     storage.setCookie('gc_session_id', 'pixel-session-abc');
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-session',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.gc_session_id).to.equal('pixel-session-abc');
-  });
-
-  it('falls back to a generated session id when the gc_session_id cookie is absent', () => {
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-session-fallback',
-      meta: {}
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.gc_session_id).to.be.a('string').with.length.greaterThan(0);
+    bidWon();
+    expect(lastBody().gc_session_id).to.equal('pixel-session-abc');
   });
 
   it('does not send a request when gcid is missing', () => {
     storage.removeDataFromLocalStorage('gcid');
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad4',
-      meta: {}
-    });
-
+    bidWon();
     expect(ownRequests().length).to.equal(0);
   });
 
@@ -284,24 +167,14 @@ describe('growthCode analytics adapter', () => {
       provider: 'growthCodeAnalytics',
       options: { pid: 'TEST01', trackEvents: ['bidWon'] }
     });
-
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad-legacy',
-      meta: {}
-    });
+    bidWon();
 
     // enriched call (logBidWonToServer) + legacy batch call (logToServer)
     const reqs = ownRequests();
     expect(reqs.length).to.equal(2);
     const legacyCall = reqs.find(r => !r.url.includes('?gcid='));
     expect(legacyCall).to.exist;
-    const legacyBody = JSON.parse(legacyCall.requestBody);
-    expect(legacyBody.events).to.be.an('array').with.lengthOf(1);
+    expect(JSON.parse(legacyCall.requestBody).events).to.be.an('array').with.lengthOf(1);
   });
 
   it('does not send requests for non-bidWon events when trackEvents is empty', () => {
@@ -312,17 +185,7 @@ describe('growthCode analytics adapter', () => {
   });
 
   it('handles missing meta.advertiserDomains gracefully', () => {
-    events.emit(EVENTS.BID_WON, {
-      auctionId: generateUUID(),
-      bidderCode: 'appnexus',
-      cpm: 1.0,
-      currency: 'USD',
-      adUnitCode: 'div-1',
-      adId: 'ad5',
-      meta: null
-    });
-
-    const body = JSON.parse(lastRequest().requestBody);
-    expect(body.events[0].advertiser_domains).to.deep.equal([]);
+    bidWon({ meta: null });
+    expect(lastBody().events[0].advertiser_domains).to.deep.equal([]);
   });
 });
