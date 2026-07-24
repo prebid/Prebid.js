@@ -324,7 +324,7 @@ describe('PrecisoAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';
+    const syncUrl = 'https://ban.2trk.info/rtb/p2/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';
     const syncOptions = {
       iframeEnabled: true,
       spec: true
