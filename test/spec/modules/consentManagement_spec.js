@@ -382,6 +382,24 @@ describe('consentManagement', function () {
         expect(gdprDataHandler.ready).to.be.true;
       });
 
+      it('should wait for a late CMP only when configured', async function () {
+        const configPromise = setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 500,
+          waitForCmp: true,
+        });
+        setTimeout(() => {
+          window.__tcfapi = mockCMP({ gdprApplies: true, tcString: 'late-consent' });
+        }, 10);
+        try {
+          await configPromise;
+          expect(await runHook()).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('late-consent');
+        } finally {
+          delete window.__tcfapi;
+        }
+      });
+
       it('should poll again to check if it appears later', async () => {
         await setConsentConfig({
           cmpApi: 'iab',

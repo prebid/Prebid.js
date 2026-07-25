@@ -8,7 +8,7 @@ import { deepSetValue, isEmpty, isPlainObject, isStr, logInfo, logWarn } from '.
 import { config } from '../src/config.js';
 import { gppDataHandler } from '../src/adapterManager.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
-import { cmpClient, MODE_CALLBACK } from '../libraries/cmp/cmpClient.js';
+import { cmpClient, MODE_CALLBACK, pollForCmp } from '../libraries/cmp/cmpClient.js';
 import { PbPromise, defer } from '../src/utils/promise.js';
 import { type CMConfig, configParser } from '../libraries/consentManagement/cmUtils.js';
 import { createCmpEventManager, type CmpEventManager } from '../libraries/cmp/cmpEventUtils.js';
@@ -190,8 +190,15 @@ export class GPPClient {
   }
 }
 
-function lookupIabConsent() {
-  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()));
+function lookupIabConsent(_setProvisionalConsent, { waitForCmp = false, timeout = 0 }: { waitForCmp?: boolean; timeout?: number } = {}) {
+  if (!waitForCmp) {
+    return new PbPromise((resolve) => resolve(GPPClient.get().refresh()));
+  }
+  const apiConfig = { apiName: '__gpp', apiArgs: ['command', 'callback', 'parameter'], mode: MODE_CALLBACK };
+  return pollForCmp(apiConfig, timeout).then(cmp => {
+    if (!cmp) throw new GPPError('GPP CMP not found');
+    return GPPClient.get(() => cmp).refresh();
+  });
 }
 
 // add new CMPs here, with their dedicated lookup function

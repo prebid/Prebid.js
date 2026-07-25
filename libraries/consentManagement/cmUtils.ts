@@ -49,6 +49,7 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {Number?} options.cmpTimeout timeout (in ms) after which the auction should continue without consent data.
  * @param {Number?} options.actionTimeout timeout (in ms) from when provisional consent is available to when the auction should continue with it
  * @param {() => {}} options.getNullConsent consent data to use on timeout
+ * @param {boolean} options.waitForCmp whether to wait for a CMP API that is loaded late
  * @returns {Promise<{error: Error, consentData: {}}>}
  */
 export function lookupConsentData(
@@ -58,7 +59,8 @@ export function lookupConsentData(
     setupCmp,
     cmpTimeout,
     actionTimeout,
-    getNullConsent
+    getNullConsent,
+    waitForCmp
   }
 ) {
   consentDataHandler.enable();
@@ -89,7 +91,7 @@ export function lookupConsentData(
         timeoutHandle = null;
       }
     }
-    setupCmp(setProvisionalConsent)
+    setupCmp(setProvisionalConsent, { waitForCmp, timeout: cmpTimeout })
       .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
     cmpTimeout != null && resetTimeout(cmpTimeout);
   }).finally(() => {
@@ -101,6 +103,11 @@ export function lookupConsentData(
 }
 
 export interface BaseCMConfig {
+  /**
+   * Wait for a CMP API that is not present when consent lookup begins.
+   * This supports non-compliant integrations that load the CMP stub late and defaults to false.
+   */
+  waitForCmp?: boolean;
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
    * Default is 10,000.
@@ -244,6 +251,7 @@ export function configParser(
       cmpTimeout,
       actionTimeout,
       getNullConsent,
+      waitForCmp: cmConfig.waitForCmp === true,
     });
 
     cdLoader = (() => {
