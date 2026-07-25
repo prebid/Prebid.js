@@ -252,6 +252,15 @@ export function getTrackersFromBidResponse(bid) {
 }
 
 /**
+ * Validates that a URL uses an HTTP or HTTPS scheme
+ * @param {string} url - The URL to validate
+ * @returns {boolean} - True if the URL is a valid HTTP(S) URL
+ */
+function isValidHttpUrl(url) {
+  return isStr(url) && /^https?:\/\//i.test(url);
+}
+
+/**
  * Validates a tracking event object
  * @param {Object} tracker - The tracker object to validate
  * @returns {boolean} - True if valid, false otherwise
@@ -259,5 +268,5 @@ export function getTrackersFromBidResponse(bid) {
 function isValidTrackingEvent(tracker) {
   return isPlainObject(tracker) &&
          isStr(tracker.event) && !isEmptyStr(tracker.event) &&
-         isStr(tracker.url) && !isEmptyStr(tracker.url);
+         isValidHttpUrl(tracker.url);
 }
