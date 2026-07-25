@@ -151,6 +151,14 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
   });
 
+  it('cust_params should use comma separation for arrays', () => {
+    bid.adserverTargeting = Object.assign(bid.adserverTargeting, {
+      arr: ['a', 'b']
+    });
+    const customPrams = getCustomParams();
+    expect(customPrams.arr).to.equal('a,b');
+  });
+
   it('should include the GDPR keys when GDPR Consent is available', function () {
     sandbox.stub(gdprDataHandler, 'getConsentData').returns({
       gdprApplies: true,
