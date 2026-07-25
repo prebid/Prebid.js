@@ -844,10 +844,15 @@ describe('Utils', function () {
     });
 
     describe('createTrackPixelHtml', () => {
-      it('escapes url entities that can break the src attribute', () => {
+      it('keeps an encoded quote inside the src attribute', () => {
         const url = 'https://www.example.com/?x=&quot;onerror=alert(1)//';
+        const container = document.createElement('div');
 
-        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=&amp;quot;onerror=alert(1)//"');
+        // This browser-level assertion, added by a bot, documents that character references do not create attributes.
+        container.innerHTML = utils.createTrackPixelHtml(url);
+        const pixel = container.querySelector('img');
+        expect(pixel.getAttribute('src')).to.equal('https://www.example.com/?x="onerror=alert(1)//');
+        expect(pixel.hasAttribute('onerror')).to.be.false;
       });
 
       it('escapes encoded quotes in the url', () => {
@@ -856,15 +861,22 @@ describe('Utils', function () {
         expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=%22test%22"');
       });
 
-      it('does not double-escape html-encoded query separators', () => {
+      it('lets the browser decode character references in tracker URLs', () => {
         const cases = [
-          ['https://www.example.com/?a=1&amp;b=2&amp;c=3', 'https://www.example.com/?a=1&amp;b=2&amp;c=3'],
-          ['https://www.example.com/?a=1&#38;b=2', 'https://www.example.com/?a=1&amp;b=2'],
-          ['https://www.example.com/?a=1&#x26;b=2', 'https://www.example.com/?a=1&amp;b=2']
+          ['&', '&'],
+          ['&amp;', '&'],
+          ['&#38;', '&'],
+          ['&#038;', '&'],
+          ['&#x26;', '&'],
+          ['&#x026;', '&'],
+          ['&quot;', '"'],
+          ['&#34;', '"']
         ];
 
-        cases.forEach(([url, expected]) => {
-          expect(utils.createTrackPixelHtml(url)).to.contain(`src="${expected}"`);
+        cases.forEach(([entity, expected]) => {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(`https://www.example.com/?x=${entity}`);
+          expect(container.querySelector('img').getAttribute('src')).to.equal(`https://www.example.com/?x=${expected}`);
         });
       });
     });
