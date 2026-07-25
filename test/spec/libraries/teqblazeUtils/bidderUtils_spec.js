@@ -302,6 +302,98 @@ describe('TeqBlazeBidderUtils', function () {
     });
   });
 
+  describe('floor logic', function () {
+    const buildBidWithFloor = (mediaType, mediaTypeData, getFloor) => ({
+      bidId: getUniqueIdentifierStr(),
+      bidder,
+      mediaTypes: { [mediaType]: mediaTypeData },
+      params: { placementId: 'test' },
+      getFloor
+    });
+
+    it('returns bidfloor 0 and no floors map when getFloor is not defined', function () {
+      const bid = {
+        bidId: getUniqueIdentifierStr(),
+        bidder,
+        mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
+        params: { placementId: 'test' }
+      };
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0);
+      expect(placement.floors).to.be.undefined;
+    });
+
+    it('returns correct bidfloor and floors map for banner with single size', function () {
+      const bid = buildBidWithFloor(BANNER, { sizes: [[300, 250]] }, () => ({ currency: 'USD', floor: 1.5 }));
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(1.5);
+      expect(placement.floors).to.deep.equal({ '300x250': 1.5 });
+    });
+
+    it('returns floors map for all sizes and bidfloor from first size for banner with multiple sizes', function () {
+      const floorMap = { '300x250': 1.5, '728x90': 2.0 };
+      const bid = buildBidWithFloor(
+        BANNER,
+        { sizes: [[300, 250], [728, 90]] },
+        ({ size }) => ({ currency: 'USD', floor: floorMap[`${size[0]}x${size[1]}`] })
+      );
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.floors).to.deep.equal({ '300x250': 1.5, '728x90': 2.0 });
+      expect(placement.bidfloor).to.equal(1.5);
+    });
+
+    it('picks first size with a valid floor when earlier sizes return no floor', function () {
+      const bid = buildBidWithFloor(
+        BANNER,
+        { sizes: [[300, 250], [728, 90]] },
+        ({ size }) => size[0] === 300 ? { currency: 'USD', floor: 0 } : { currency: 'USD', floor: 2.0 }
+      );
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.floors).to.deep.equal({ '728x90': 2.0 });
+      expect(placement.bidfloor).to.equal(2.0);
+    });
+
+    it('returns bidfloor 0 and no floors map when all sizes return no floor', function () {
+      const bid = buildBidWithFloor(BANNER, { sizes: [[300, 250], [728, 90]] }, () => ({ currency: 'USD', floor: 0 }));
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0);
+      expect(placement.floors).to.be.undefined;
+    });
+
+    it('returns correct bidfloor and floors map for video', function () {
+      const bid = buildBidWithFloor(VIDEO, { playerSize: [[640, 480]] }, () => ({ currency: 'USD', floor: 3.0 }));
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(3.0);
+      expect(placement.floors).to.deep.equal({ '640x480': 3.0 });
+    });
+
+    it('returns correct bidfloor and no floors map for native', function () {
+      const bid = buildBidWithFloor(
+        NATIVE,
+        { native: { title: { required: true } } },
+        () => ({ currency: 'USD', floor: 0.5 })
+      );
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0.5);
+      expect(placement.floors).to.be.undefined;
+    });
+
+    it('returns bidfloor 0 and no floors map when getFloor throws', function () {
+      const bid = buildBidWithFloor(BANNER, { sizes: [[300, 250]] }, () => { throw new Error('floor error'); });
+      const req = spec.buildRequests([bid], bidderRequest);
+      const placement = req.data.placements[0];
+      expect(placement.bidfloor).to.equal(0);
+      expect(placement.floors).to.be.undefined;
+    });
+  });
+
   describe('gpp consent', function () {
     it('bidderRequest.gppConsent', () => {
       bidderRequest.gppConsent = {

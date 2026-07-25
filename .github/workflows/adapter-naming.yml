@@ -1,0 +1,60 @@
+name: Check adapter naming conventions
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  check-names:
+    name: Check adapter naming conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Update metadata
+        id: update
+        continue-on-error: true
+        run: |
+          npx gulp update-metadata --no-fetch
+      - name: Adapter code does not match file name
+        if: ${{ steps.update.outcome != 'success' }}
+        run: |
+          echo '{"issue_number": ${{ github.event.pull_request.number }}, "body": "This PR includes an adapter whose code does not match its file name. Bid adapter modules should be named `<bidderCode>BidAdapter`, userId `<userIdCode>IdSystem`, RTD `<rtdCode>RtdProvider`, and analytics `<analyticsCode>AnalyticsAdapter`."}' > ${{ runner.temp }}/comment.json
+      - name: Calculate diff
+        if: ${{ steps.update.outcome == 'success' }}
+        run: |
+          git diff --name-only $(git merge-base HEAD "origin/${{ github.event.pull_request.base.ref }}")..HEAD > ${{runner.temp}}/changed_files.txt
+      - name: Check naming
+        if: ${{ steps.update.outcome == 'success' }}
+        uses: actions/github-script@v9
+        id: check
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            const { getViolationsSummary, formatViolationsSummary } = require('./metadata/validateNaming.mjs');
+            const diff = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(s => s.trim());
+            const modules = new Set(diff.map(filename => /^modules\/([^\/.]+)/.exec(filename)?.[1]).filter(fn => fn != null));
+            const violations = Object.fromEntries(
+              Object.entries(await getViolationsSummary())
+              .filter(([moduleName]) => modules.has(moduleName))
+            );
+            if (Object.keys(violations).length > 0) {
+              fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
+                issue_number: ${{ github.event.pull_request.number }},
+                body: `Some adapters in this PR do not follow Prebid naming conventions.\n${formatViolationsSummary(violations)}`
+              }));
+              return 'true';
+            }
+            return 'false';
+
+      - name: Upload comment data
+        if: ${{ steps.update.outcome != 'success' || steps.check.outputs.result == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: comment
+          path: ${{ runner.temp }}/comment.json
