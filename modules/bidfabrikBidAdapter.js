@@ -4,7 +4,7 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { deepSetValue, replaceAuctionPrice, triggerPixel, isStr, isArray, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'bidfabrik';
-const GVLID = 1588; // TODO: confirm this is the GVL ID registered for BidFabrik
+const GVLID = 1588;
 const DEFAULT_HOST = 'bid.bidfabrik.com';
 const BID_PATH = '/bid';
 const DEFAULT_TTL = 300;
@@ -71,7 +71,7 @@ export const spec = {
   gvlid: GVLID,
   aliases: [
     { code: 'revbid', gvlid: GVLID },
-    { code: 'revantagex', gvlid: GVLID },
+    { code: 'xrevantage', gvlid: GVLID },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

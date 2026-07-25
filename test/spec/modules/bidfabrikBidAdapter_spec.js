@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec } from 'modules/bidfabrikBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -75,9 +76,9 @@ describe('BidFabrik bid adapter', function () {
   describe('aliases', function () {
     it('exposes revbid and revantage aliases sharing the gvlid', function () {
       const aliasFor = (code) => spec.aliases.find((a) => a.code === code);
-      expect(spec.aliases.map((a) => a.code)).to.have.members(['revbid', 'revantagex']);
+      expect(spec.aliases.map((a) => a.code)).to.have.members(['revbid', 'xrevantage']);
       expect(aliasFor('revbid').gvlid).to.equal(spec.gvlid);
-      expect(aliasFor('revantagex').gvlid).to.equal(spec.gvlid);
+      expect(aliasFor('xrevantage').gvlid).to.equal(spec.gvlid);
     });
   });
 
