@@ -256,8 +256,28 @@ export function getTrackersFromBidResponse(bid) {
  * @param {string} url - The URL to validate
  * @returns {boolean} - True if the URL is a valid HTTP(S) URL
  */
+
+/**
+ * Validates a tracking event object
+/**
+ * Validates that a URL uses an HTTP or HTTPS scheme, or is protocol-relative
+ * @param {string} url - The URL to validate
+ * @returns {boolean} - True if the URL is a valid HTTP(S) URL or protocol-relative
+ */
 function isValidHttpUrl(url) {
   if (!isStr(url) || isEmptyStr(url)) return false;
+  
+  // Allow protocol-relative URLs (//example.com/path)
+  if (url.startsWith('//')) {
+    try {
+      // Validate by prepending https: to check URL structure
+      new URL('https:' + url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
   try {
     const { protocol } = new URL(url);
     return protocol === 'http:' || protocol === 'https:';
@@ -265,9 +285,6 @@ function isValidHttpUrl(url) {
     return false;
   }
 }
-
-/**
- * Validates a tracking event object
  * @param {Object} tracker - The tracker object to validate
  * @returns {boolean} - True if valid, false otherwise
  */

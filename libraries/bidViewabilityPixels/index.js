@@ -4,15 +4,36 @@ import { triggerPixel, insertHtmlIntoIframe } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import adapterManager from '../../src/adapterManager.js';
-
 function safeHttpUrl(url) {
   try {
+    // Allow protocol-relative URLs
+    if (url.startsWith('//')) {
+      new URL('https:' + url); // Validate structure
+      return url;
+    }
     const parsed = new URL(url);
     return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : null;
   } catch (e) {
     return null;
   }
 }
+
+/**
+ * HTML-encodes a URL to prevent attribute breakout attacks
+ * @param {string} url - The URL to encode
+ * @returns {string} - HTML-encoded URL safe for use in attributes
+ */
+function htmlEncodeUrl(url) {
+  return url
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+
+
 
 /**
  * Collects viewable tracking URLs from bid.eventtrackers for EVENT_TYPE_VIEWABLE (IMG and JS methods).
@@ -54,7 +75,7 @@ export function fireViewabilityPixels(bid) {
   img.map(safeHttpUrl).filter(Boolean).forEach(triggerPixel);
   const safeJs = js.map(safeHttpUrl).filter(Boolean);
   if (safeJs.length > 0) {
-    const markup = safeJs.map(url => `<script async src="${url}"></script>`).join('\n');
+    const markup = safeJs.map(url => `<script async src="${htmlEncodeUrl(url)}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);
   }
 }
