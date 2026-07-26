@@ -188,7 +188,7 @@ function mergeTrackersInto(target, source) {
 
   if (isArray(source.impression)) {
     source.impression.forEach(url => {
-      if (isStr(url) && !isEmptyStr(url)) {
+      if (isValidHttpUrl(url)) {
         target.impression.push(url);
       }
     });
@@ -196,7 +196,7 @@ function mergeTrackersInto(target, source) {
 
   if (isArray(source.error)) {
     source.error.forEach(url => {
-      if (isStr(url) && !isEmptyStr(url)) {
+      if (isValidHttpUrl(url)) {
         target.error.push(url);
       }
     });
@@ -227,10 +227,10 @@ export function getTrackersFromBidResponse(bid) {
   // Extract from bid.vastTrackers if present
   if (bid.vastTrackers && isPlainObject(bid.vastTrackers)) {
     if (isArray(bid.vastTrackers.impression)) {
-      trackers.impression = bid.vastTrackers.impression;
+      trackers.impression = bid.vastTrackers.impression.filter(isValidHttpUrl);
     }
     if (isArray(bid.vastTrackers.error)) {
-      trackers.error = bid.vastTrackers.error;
+      trackers.error = bid.vastTrackers.error.filter(isValidHttpUrl);
     }
     if (isArray(bid.vastTrackers.trackingEvents)) {
       trackers.trackingEvents = bid.vastTrackers.trackingEvents;
@@ -240,7 +240,7 @@ export function getTrackersFromBidResponse(bid) {
   // Extract from bid.vastImpUrl (legacy fallback)
   if (bid.vastImpUrl) {
     logWarn('vastImpUrl is deprecated; use vastTrackers.impression instead');
-    const impUrls = isArray(bid.vastImpUrl) ? bid.vastImpUrl : [bid.vastImpUrl];
+    const impUrls = (isArray(bid.vastImpUrl) ? bid.vastImpUrl : [bid.vastImpUrl]).filter(isValidHttpUrl);
     trackers.impression = trackers.impression.concat(impUrls);
   }
 
@@ -257,7 +257,13 @@ export function getTrackersFromBidResponse(bid) {
  * @returns {boolean} - True if the URL is a valid HTTP(S) URL
  */
 function isValidHttpUrl(url) {
-  return isStr(url) && /^https?:\/\//i.test(url);
+  if (!isStr(url) || isEmptyStr(url)) return false;
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
 }
 
 /**

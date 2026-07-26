@@ -119,6 +119,40 @@ describe('bidViewabilityPixels library', function () {
       expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.include('script async src="https://viewable-js.com"');
     });
 
+    it('should not fire insertHtmlIntoIframe for JS tracker with javascript: scheme', function () {
+      const bid = {
+        eventtrackers: [
+          { event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_JS, url: 'javascript:alert(1)' }
+        ]
+      };
+      fireViewabilityPixels(bid);
+      expect(insertHtmlIntoIframeSpy.callCount).to.equal(0);
+    });
+
+    it('should not call triggerPixel for IMG tracker with javascript: scheme', function () {
+      const bid = {
+        eventtrackers: [
+          { event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_IMG, url: 'javascript:alert(1)' }
+        ]
+      };
+      fireViewabilityPixels(bid);
+      expect(triggerPixelSpy.callCount).to.equal(0);
+    });
+
+    it('should encode special characters in JS tracker URL so they cannot break the script src attribute', function () {
+      const injectionUrl = 'https://example.com/track?a=1"></script><script>alert(1)</script><script src="';
+      const bid = {
+        eventtrackers: [
+          { event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_JS, url: injectionUrl }
+        ]
+      };
+      fireViewabilityPixels(bid);
+      expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+      const markup = insertHtmlIntoIframeSpy.getCall(0).args[0];
+      expect(markup).to.not.include('"></script>');
+      expect(markup).to.include('%22');
+    });
+
     it('should fire both img (triggerPixel) and js (insertHtmlIntoIframe) viewable trackers', function () {
       const bid = {
         eventtrackers: [

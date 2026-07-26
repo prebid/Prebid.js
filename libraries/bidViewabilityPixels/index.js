@@ -5,6 +5,15 @@ import * as events from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import adapterManager from '../../src/adapterManager.js';
 
+function safeHttpUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? parsed.href : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 /**
  * Collects viewable tracking URLs from bid.eventtrackers for EVENT_TYPE_VIEWABLE (IMG and JS methods).
  * @param {Object} bid - bid object that may have eventtrackers array
@@ -42,9 +51,10 @@ export function fireViewabilityPixels(bid) {
     js = js.concat(Array.isArray(nativeJs) ? nativeJs : []);
   }
 
-  img.forEach(triggerPixel);
-  if (js.length > 0) {
-    const markup = js.map(url => `<script async src="${url}"></script>`).join('\n');
+  img.map(safeHttpUrl).filter(Boolean).forEach(triggerPixel);
+  const safeJs = js.map(safeHttpUrl).filter(Boolean);
+  if (safeJs.length > 0) {
+    const markup = safeJs.map(url => `<script async src="${url}"></script>`).join('\n');
     insertHtmlIntoIframe(markup);
   }
 }

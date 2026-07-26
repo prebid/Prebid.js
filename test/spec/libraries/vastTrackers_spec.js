@@ -221,7 +221,10 @@ describe('vast trackers', () => {
             { event: 'midpoint' }, // missing url
             { url: 'https://tracking.mydomain.com/invalid' }, // missing event
             { event: '', url: 'https://tracking.mydomain.com/empty' }, // empty event
-            { event: 'complete', url: '' } // empty url
+            { event: 'complete', url: '' }, // empty url
+            { event: 'complete', url: 'javascript:alert(1)' }, // non-http scheme
+            { event: 'complete', url: 'data:text/html,<script>alert(1)</script>' }, // data scheme
+            { event: 'complete', url: '//protocol-relative.com/pixel' } // protocol-relative
           ]
         };
       });
@@ -231,6 +234,68 @@ describe('vast trackers', () => {
       // Only the valid tracker should be included
       expect(trackers.trackingEvents).to.have.lengthOf(1);
       expect(trackers.trackingEvents[0].event).to.equal('start');
+    });
+  });
+
+  describe('URL scheme validation', () => {
+    beforeEach(() => {
+      reset();
+    });
+
+    it('should reject non-http(s) impression URLs from tracker functions', function () {
+      const badTracker = sinon.stub().callsFake(function () {
+        return {
+          impression: ['javascript:alert(1)', 'data:text/html,x', '//relative.com/pixel', 'https://valid.com/pixel'],
+          error: [],
+          trackingEvents: []
+        };
+      });
+      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'schemeTest', badTracker);
+
+      const trackers = getVastTrackers(bid, { index });
+      expect(trackers.impression).to.have.lengthOf(1);
+      expect(trackers.impression[0]).to.equal('https://valid.com/pixel');
+    });
+
+    it('should reject non-http(s) error URLs from tracker functions', function () {
+      const badTracker = sinon.stub().callsFake(function () {
+        return {
+          impression: [],
+          error: ['javascript:alert(1)', 'https://valid.com/error'],
+          trackingEvents: []
+        };
+      });
+      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'schemeErrorTest', badTracker);
+
+      const trackers = getVastTrackers(bid, { index });
+      expect(trackers.error).to.have.lengthOf(1);
+      expect(trackers.error[0]).to.equal('https://valid.com/error');
+    });
+
+    it('getTrackersFromBidResponse should filter non-http(s) impression URLs from bid.vastTrackers', function () {
+      const trackers = getTrackersFromBidResponse({
+        vastTrackers: {
+          impression: ['javascript:alert(1)', 'https://valid.com/imp'],
+          error: ['data:text/html,x', 'https://valid.com/error'],
+          trackingEvents: []
+        }
+      });
+
+      expect(trackers.impression).to.deep.equal(['https://valid.com/imp']);
+      expect(trackers.error).to.deep.equal(['https://valid.com/error']);
+    });
+
+    it('getTrackersFromBidResponse should filter non-http(s) vastImpUrl values', function () {
+      const trackers = getTrackersFromBidResponse({
+        vastImpUrl: ['javascript:alert(1)', 'https://valid.com/imp']
+      });
+
+      expect(trackers.impression).to.deep.equal(['https://valid.com/imp']);
+    });
+
+    it('getTrackersFromBidResponse should reject a non-http(s) string vastImpUrl', function () {
+      const trackers = getTrackersFromBidResponse({ vastImpUrl: 'javascript:alert(1)' });
+      expect(trackers).to.be.null;
     });
   });
 
