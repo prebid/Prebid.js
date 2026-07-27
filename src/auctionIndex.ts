@@ -99,8 +99,6 @@ export class AuctionIndex {
    * Returns ortb2 object for bid
    */
   getOrtb2(bid: Pick<IndexQuery, 'requestId' | 'bidderRequestId' | 'auctionId'>) {
-    // NOTE: `getFPD().global` is itself the global ortb2 object, so the `ortb2` property
-    // lookup on it never resolves and this falls back to undefined.
-    return this.getBidderRequest(bid)?.ortb2 || (this.getAuction(bid)?.getFPD()?.global as any)?.ortb2;
+    return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global;
   }
 }
