@@ -48,8 +48,7 @@ const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 30
-  },
-  translator: toOrtb26
+  }
 });
 
 function getBidFloor(bid) {
@@ -87,13 +86,13 @@ export const spec = {
   isBidRequestValid: (bid) => !!bid && isValidParams(bid) && isValidBidFloorCurrency(bid),
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const data = converter.toORTB({ bidRequests, bidderRequest });
+    const data = toOrtb26(converter.toORTB({ bidRequests, bidderRequest }));
 
     return [{
       method: METHOD,
       url: makeUrl(bidRequests),
       options: {
-        contentType: 'application/json',
+        contentType: 'text/plain',
         withCredentials: true,
         crossOrigin: true
       },
@@ -105,10 +104,11 @@ export const spec = {
     if (!body || !body.seatbid || body.seatbid.length === 0) {
       return [];
     }
+    body.cur ??= "USD";
     return converter.fromORTB({
       response: body,
       request: req.data
-    });
+    }).bids;
   },
 
   onTimeout: (data) => { },
