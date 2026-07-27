@@ -58,7 +58,7 @@ declare global {
 
 ### TypeScript configuration
 
-Prebid's type definitions require the following `tsconfig.json` options:
+Prebid's type definitions require TypeScript 5.6 or later, and the following `tsconfig.json` options:
 
 | Option | Value |
 | ------ | ----- |
