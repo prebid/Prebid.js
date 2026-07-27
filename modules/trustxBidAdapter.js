@@ -31,6 +31,29 @@ const ortbAdapterConverter = ortbConverter({
     netRevenue: NET_REVENUE,
     ttl: BID_TTL
   },
+  overrides: {
+    imp: {
+      video(fillVideoImp, impression, bidRequest, context) {
+        if (containsVideoRequest(bidRequest)) {
+          const bidderVideoParams = Object.assign({}, bidRequest.params?.video);
+          delete bidderVideoParams.pos;
+          const videoParams = Object.assign(
+            {},
+            bidRequest.mediaTypes[VIDEO],
+            bidderVideoParams
+          );
+          bidRequest = {
+            ...bidRequest,
+            mediaTypes: {
+              ...bidRequest.mediaTypes,
+              [VIDEO]: videoParams
+            }
+          };
+        }
+        fillVideoImp(impression, bidRequest, context);
+      }
+    }
+  },
   imp(buildImp, bidRequest, context) {
     const impression = buildImp(bidRequest, context);
     const params = bidRequest.params || {};
