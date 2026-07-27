@@ -195,6 +195,20 @@ module.exports = [
       'prebid/declaration-filename': 'error'
     }
   },
+  {
+    files: getSourceFolders().flatMap(tsPattern),
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/augmentation-reachable': ['error', {
+        roots: getSourceFolders(),
+        entryDirs: ['modules'],
+        // an import that only happens in a test does not make a type reachable for consumers
+        ignore: ['test']
+      }]
+    }
+  },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
     const {globals, props} = noGlobals({
       require: 'use import instead',

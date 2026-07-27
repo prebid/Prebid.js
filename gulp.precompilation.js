@@ -169,6 +169,34 @@ const publicModules = gulp.parallel(Object.entries({
 }).map(args => generatePublicModules.apply(null, args)));
 
 
+/**
+ * Apply the `prebid/augmentation-reachable` policy to the generated declarations.
+ *
+ * The same check runs on the sources as a lint rule, but only the generated declarations show
+ * which imports survived declaration emit - and it is those that decide whether an augmentation
+ * reaches a consumer.
+ */
+function checkDeclarations(done) {
+  const {checkFiles, listFiles} = require('./plugins/augmentationReachable.js');
+  const root = helpers.getPrecompiledPath();
+  // compiled test code is not part of the types consumers see, and an import that only happens
+  // in a test does not make a type reachable for them
+  const ignore = [helpers.getPrecompiledPath('test')];
+  const declarations = listFiles(root, ['.d.ts'], ignore);
+  if (declarations.length === 0) {
+    done(new Error(`no declaration files under '${root}', run 'gulp build' first`));
+    return;
+  }
+  const problems = checkFiles(declarations, {roots: [root], ignore});
+  if (problems.length > 0) {
+    done(new Error(['', ...problems.map(
+      ({file, line, column, message}) => `${path.relative(__dirname, file)}(${line},${column}): ${message}`
+    )].join('\n')));
+    return;
+  }
+  done();
+}
+
 const globalTemplate = _.template(`<% if (defineGlobal) {%>
 import type {PrebidJS} from "../../prebidGlobal.ts";
 declare global {
@@ -236,7 +264,7 @@ function precompile(options = {}) {
       generateGlobalDef(options),
     ]),
   ].concat(options.dev ? [] : [
-    'ts-strict'
+    gulp.parallel(['ts-strict', 'check-declarations'])
   ]));
 }
 
@@ -244,6 +272,7 @@ function precompile(options = {}) {
 gulp.task('ts', helpers.execaTask('tsc'));
 gulp.task('ts-dev', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
+gulp.task('check-declarations', checkDeclarations);
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
