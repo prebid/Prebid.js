@@ -37,26 +37,35 @@ let _userConsent;
  * @param {Object} submodule The RTD submodule to register.
  * @param {string} submodule.name The name of the RTD submodule.
  * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
- * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   if (registeredSubModules.some((sm) => sm.name === submodule.name)) {
     logWarn(`RTD provider '${submodule.name}' is already registered, ignoring duplicate registration`);
-    return function detach() {};
+    return;
   }
   registeredSubModules.push(submodule);
   GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
   // providers may be loaded after the module was configured (and therefore already initialized);
   // pick them up now, since `realTimeData` configuration is accepted only once.
   initSubModules();
-  return function detach() {
-    const idx = registeredSubModules.indexOf(submodule);
-    if (idx >= 0) {
-      registeredSubModules.splice(idx, 1);
-      initializedSubModules.delete(submodule);
-      initSubModules();
-    }
-  };
+}
+
+/**
+ * Unregister a Real-Time Data (RTD) submodule, disabling it for subsequent auctions.
+ *
+ * FOR TESTS ONLY. Nothing in production unregisters a provider; this exists so that test suites can
+ * undo their registrations. Keeping it a standalone export - rather than something handed out by
+ * `attachRealTimeDataProvider` - means builds that never reference it can leave it out.
+ *
+ * @param {Object} submodule the submodule to unregister, as passed to `attachRealTimeDataProvider`.
+ */
+export function detachRealTimeDataProvider(submodule) {
+  const idx = registeredSubModules.indexOf(submodule);
+  if (idx >= 0) {
+    registeredSubModules.splice(idx, 1);
+    initializedSubModules.delete(submodule);
+    initSubModules();
+  }
 }
 
 /**

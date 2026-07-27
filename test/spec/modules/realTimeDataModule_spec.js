@@ -4,7 +4,7 @@ import * as sinon from 'sinon';
 import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
-import { attachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
+import { attachRealTimeDataProvider, detachRealTimeDataProvider, onDataDeletionRequest } from 'modules/rtdModule/index.js';
 import { submodule } from 'src/hook.js';
 import * as utils from 'src/utils.js';
 import { GDPR_GVLIDS } from '../../../src/consentHandler.js';
@@ -104,24 +104,22 @@ describe('Real time module', function () {
     });
 
     it('are registered when RTD module is registered', () => {
-      let mod;
+      const mod = { name: 'mockRtd', gvlid: 123 };
       try {
-        mod = attachRealTimeDataProvider({ name: 'mockRtd', gvlid: 123 });
+        attachRealTimeDataProvider(mod);
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
       } finally {
-        if (mod) {
-          mod();
-        }
+        detachRealTimeDataProvider(mod);
       }
     });
   });
 
   describe('', () => {
-    let PROVIDERS, _detachers, rules;
+    let PROVIDERS, rules;
 
     beforeEach(function () {
       PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
-      _detachers = PROVIDERS.map(rtdModule.attachRealTimeDataProvider);
+      PROVIDERS.forEach((provider) => rtdModule.attachRealTimeDataProvider(provider));
       rtdModule.init(config);
       config.setConfig(conf);
       rules = [
@@ -135,7 +133,7 @@ describe('Real time module', function () {
     });
 
     afterEach(function () {
-      _detachers.forEach((f) => f());
+      PROVIDERS.forEach((provider) => rtdModule.detachRealTimeDataProvider(provider));
       config.resetConfig();
       rules.forEach(rule => rule());
     });
@@ -323,7 +321,6 @@ describe('Real time module', function () {
       }
     };
     let providers;
-    let _detachers;
 
     function eventHandlingProvider(name) {
       const provider = {
@@ -336,13 +333,13 @@ describe('Real time module', function () {
 
     beforeEach(() => {
       providers = [eventHandlingProvider('tp1'), eventHandlingProvider('tp2')];
-      _detachers = providers.map(rtdModule.attachRealTimeDataProvider);
+      providers.forEach((provider) => rtdModule.attachRealTimeDataProvider(provider));
       rtdModule.init(config);
       config.setConfig(conf);
     });
 
     afterEach(() => {
-      _detachers.forEach((d) => d());
+      providers.forEach((provider) => rtdModule.detachRealTimeDataProvider(provider));
       config.resetConfig();
     });
 
@@ -387,12 +384,10 @@ describe('Real time module', function () {
         init: () => true,
         onDataDeletionRequest: sinon.stub()
       };
-      detach = ((orig) => {
-        const smDetach = attachRealTimeDataProvider(mod);
-        return function () {
-          orig();
-          smDetach();
-        };
+      attachRealTimeDataProvider(mod);
+      detach = ((orig) => function () {
+        orig();
+        detachRealTimeDataProvider(mod);
       })(detach);
       return mod;
     }
@@ -443,7 +438,7 @@ describe('Real time module', function () {
   });
 
   describe('provider registration', () => {
-    let detachers;
+    let attached;
 
     function mockProvider(name, initResponse = true) {
       return {
@@ -454,7 +449,8 @@ describe('Real time module', function () {
     }
 
     function attach(provider) {
-      detachers.push(rtdModule.attachRealTimeDataProvider(provider));
+      rtdModule.attachRealTimeDataProvider(provider);
+      attached.push(provider);
       return provider;
     }
 
@@ -468,11 +464,11 @@ describe('Real time module', function () {
     }
 
     beforeEach(() => {
-      detachers = [];
+      attached = [];
     });
 
     afterEach(() => {
-      detachers.forEach((d) => d());
+      attached.forEach((provider) => rtdModule.detachRealTimeDataProvider(provider));
       config.resetConfig();
       // `dataProviders` is kept in module scope and is not cleared by resetConfig; blank it out
       // so that it does not leak into unrelated tests
@@ -555,7 +551,8 @@ describe('Real time module', function () {
     it('re-initializes a provider that is registered again after detaching', () => {
       configure('reattach');
       const provider = mockProvider('reattach');
-      rtdModule.attachRealTimeDataProvider(provider)();
+      rtdModule.attachRealTimeDataProvider(provider);
+      rtdModule.detachRealTimeDataProvider(provider);
       expect(rtdModule.subModules).to.not.include(provider);
       attach(provider);
       sinon.assert.calledTwice(provider.init);
@@ -642,9 +639,8 @@ describe('Real time module', function () {
     it('installs a provider submitted through `submodule` after hooks are ready', () => {
       configure('viaSubmodule');
       const provider = mockProvider('viaSubmodule');
-      const detach = submodule('realTimeData', provider);
-      expect(detach).to.be.a('function');
-      detachers.push(detach);
+      submodule('realTimeData', provider);
+      attached.push(provider);
       expect(rtdModule.subModules).to.include(provider);
     });
   });
