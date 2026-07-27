@@ -3,6 +3,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "strict": true,
+    // the base config turns this off, which also disables it here since explicit options
+    // take precedence over "strict"; consumers compiling in strict mode do get it
+    "noImplicitAny": true,
     "noEmit": true,
   },
   "include": ["src/types/local/**/*.ts", "./dist/src/**/*.ts"],
