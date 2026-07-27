@@ -232,7 +232,7 @@ export function onAdRenderSucceeded(bid) {
     status: bid.status,
   };
   const qs = formatQS(renderSuccessPayload);
-  const url = bid.renderSuccessUrl + (bid.viewableUrl.indexOf('?') === -1 ? '?' : '&') + qs;
+  const url = bid.renderSuccessUrl + (bid.renderSuccessUrl.indexOf('?') === -1 ? '?' : '&') + qs;
   triggerPixel(url);
 }
 
