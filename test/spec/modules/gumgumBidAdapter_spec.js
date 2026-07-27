@@ -283,6 +283,30 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([filteredRequest])[0];
       expect(bidRequest.data.pubProvidedId).to.equal(undefined);
     });
+    it('should include growthcode.io in pubProvidedId when stype is present', function () {
+      const request = {
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'growthcode.io',
+          uids: [{ id: 'gcid-1', atype: 1, ext: { stype: 'ppuid' } }]
+        }]
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      const pubProvidedIds = JSON.parse(bidRequest.data.pubProvidedId);
+      expect(pubProvidedIds.length).to.equal(1);
+      expect(pubProvidedIds[0].source).to.equal('growthcode.io');
+    });
+    it('should not include growthcode.io in pubProvidedId when stype is missing', function () {
+      const request = {
+        ...bidRequests[0],
+        userIdAsEids: [{
+          source: 'growthcode.io',
+          uids: [{ id: 'gcid-1', atype: 1 }]
+        }]
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pubProvidedId).to.equal(undefined);
+    });
     it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
