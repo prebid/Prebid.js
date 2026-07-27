@@ -20,6 +20,12 @@ const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const registeredSubModules = [];
+/**
+ * `init()` result, by registered submodule. Providers are initialized at most once - some of them do
+ * not expect to be initialized again - so this keeps track of the ones that were already given a
+ * chance to run, and of whether they accepted it.
+ */
+const initializedSubModules = new Map<any, boolean>();
 export let subModules = [];
 let _moduleConfig: RealTimeDataConfig;
 let _dataProviders = [];
@@ -34,12 +40,20 @@ let _userConsent;
  * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
+  if (registeredSubModules.some((sm) => sm.name === submodule.name)) {
+    logWarn(`RTD provider '${submodule.name}' is already registered, ignoring duplicate registration`);
+    return function detach() {};
+  }
   registeredSubModules.push(submodule);
   GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid);
+  // providers may be loaded after the module was configured (and therefore already initialized);
+  // pick them up now, since `realTimeData` configuration is accepted only once.
+  initSubModules();
   return function detach() {
     const idx = registeredSubModules.indexOf(submodule);
     if (idx >= 0) {
       registeredSubModules.splice(idx, 1);
+      initializedSubModules.delete(submodule);
       initSubModules();
     }
   };
@@ -98,10 +112,13 @@ export function init(config) {
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
+    initializedSubModules.clear();
     setEventsListeners();
     getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
     adapterManager.callDataDeletionRequest.before(onDataDeletionRequest);
-    initSubModules();
+    // the providers available at this point are logged as a list below, rather than one by one
+    initSubModules(false);
+    logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
   });
 }
 
@@ -117,19 +134,38 @@ function getConsentData() {
 /**
  * call each sub module init function by config order
  * if no init function / init return failure / module not configured - remove it from submodules list
+ *
+ * this runs every time a provider is registered or unregistered; providers that were already
+ * initialized keep their previous `init` result instead of running again.
+ *
+ * @param logNewlyEnabled log a message for each provider that is enabled by this pass. Providers can
+ *        be registered at any time and independently from one another, so each one is reported as it
+ *        becomes available.
  */
-function initSubModules() {
+function initSubModules(logNewlyEnabled = true) {
+  if (!_dataProviders.length) {
+    subModules = [];
+    return;
+  }
   _userConsent = getConsentData();
   const subModulesByOrder = [];
   _dataProviders.forEach(provider => {
     const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
-    const initResponse = sm && sm.init && sm.init(provider, _userConsent);
-    if (initResponse) {
+    if (!sm) {
+      return;
+    }
+    if (!initializedSubModules.has(sm)) {
+      const enabled = !!(sm.init && sm.init(provider, _userConsent));
+      initializedSubModules.set(sm, enabled);
+      if (enabled && logNewlyEnabled) {
+        logInfo(`Real time data module: enabling submodule ${sm.name}`);
+      }
+    }
+    if (initializedSubModules.get(sm)) {
       subModulesByOrder.push(Object.assign(sm, { config: provider }));
     }
   });
   subModules = subModulesByOrder;
-  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
 }
 
 /**
@@ -268,5 +304,7 @@ export function onDataDeletionRequest(next, ...args) {
   next.apply(this, args);
 }
 
+// `postInstallAllowed` lets provider bundles register through `submodule('realTimeData', ...)` after
+// Prebid has booted; `attachRealTimeDataProvider` initializes them on the spot when that happens.
 module('realTimeData', attachRealTimeDataProvider, { postInstallAllowed: true });
 init(config);
