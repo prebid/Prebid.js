@@ -652,10 +652,11 @@ describe("StackUp RTD Provider", function () {
       expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
 
-    it("should drop content blocks with an unrecognised segtax", async function () {
+    it("should accept and merge a content block with any well-formed segtax", async function () {
       const resp = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
-      // Foreign taxonomy block alongside the valid segtax:502 block — the
-      // foreign block must be filtered out without discarding the whole payload.
+      // A taxonomy this module has no special handling for — still passed
+      // through as-is provided the block itself is shape-valid, so the
+      // backend can introduce new taxonomies without a client-side change.
       resp.site.content.data.push({
         name: "foreign.example.com",
         ext: { segtax: 999 },
@@ -663,8 +664,15 @@ describe("StackUp RTD Provider", function () {
       });
       const req = await runAndGetReq(resp);
       const data = req.ortb2Fragments.global.site.content.data;
-      expect(data).to.have.length(1);
-      expect(data[0].ext.segtax).to.equal(502);
+      expect(data).to.have.length(2);
+      expect(data.map((b) => b.ext.segtax)).to.include(999);
+    });
+
+    it("should reject content segments with a missing or non-numeric segtax", async function () {
+      const bad = JSON.parse(JSON.stringify(VALID_API_RESPONSE));
+      delete bad.site.content.data[0].ext.segtax;
+      const req = await runAndGetReq(bad);
+      expect(req.ortb2Fragments.global.site).to.be.undefined;
     });
 
     it("should accept publisher-FPD blocks (segtax 600)", async function () {

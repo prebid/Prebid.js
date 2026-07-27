@@ -13,7 +13,7 @@ The Stack Up RTD module enriches Prebid.js bid requests with contextual and audi
 - **`site.content.data`** — Content segments (`segtax 502`, or `segtax 7` for IAB Content Taxonomy 3.0) such as topics, brand-safety and emotion signals attached to the article, plus publisher first-party signals (`segtax 600`).
 - **`user.data`** — Audience segments inferred from contextual signals: IAB Audience (`segtax 4`) and legacy Stack Up Audience Taxonomy 1.0 (`segtax 501`).
 
-Only blocks carrying a recognised taxonomy (`segtax` 4, 7, 501, 502 or 600) are merged; blocks with any other taxonomy are ignored rather than rejected, so an unexpected `segtax` never discards the rest of the enrichment. Multiple blocks sharing a provider `name` are kept as distinct entries — they are de-duplicated by `name` + `segtax` + `dimension`, not by `name` alone.
+Any block with a valid shape (string `name`, a numeric `segtax`, and well-formed `segment[]` entries) is merged regardless of its taxonomy — StackUp can introduce new taxonomies from the backend alone, without a client update. A malformed block causes the whole enrichment response to be rejected. Multiple blocks sharing a provider `name` are kept as distinct entries — they are de-duplicated by `name` + `segtax` + `dimension`, not by `name` alone.
 
 When the API returns an IAB Content Taxonomy 3.0 (`segtax 7`) block, its category ids are also mirrored into the standard `site.content.cat`/`site.content.cattax` and `site.pagecat`/`site.cattax` fields, so buyers reading either the flat category fields or `content.data[]` see the same signal. By default the mirror never overwrites a value the publisher already set — see `params.overwritePublisherCategories` below.
 
