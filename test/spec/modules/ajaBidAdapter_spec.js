@@ -1,11 +1,8 @@
 import { spec } from 'modules/ajaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 
 describe('AjaAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'aja',

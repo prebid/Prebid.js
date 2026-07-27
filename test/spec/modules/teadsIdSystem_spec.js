@@ -178,7 +178,7 @@ describe('TeadsIdSystem', function () {
   });
 
   describe('getId', function () {
-    let setCookieStub, setLocalStorageStub, removeFromLocalStorageStub, logErrorStub, logInfoStub, timeStampStub;
+    let setCookieStub, logErrorStub, logInfoStub, timeStampStub;
     const teadsUrl = 'https://at.teads.tv/fpc';
     const timestampNow = new Date().getTime();
 

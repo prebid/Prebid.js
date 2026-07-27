@@ -1203,20 +1203,17 @@ describe('targeting tests', function () {
 
   describe('getAllTargeting will work correctly when a hook raises has modified flag in getHighestCpmBidsFromBidPool', function () {
     let bidsReceived;
-    let amGetAdUnitsStub;
-    let amBidsReceivedStub;
-    let bidExpiryStub;
 
     beforeEach(function () {
       bidsReceived = [bid2, bid1].map(deepClone);
 
-      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return bidsReceived;
       });
-      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
+      sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
 
       setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, function (fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
         fn.call(this, bidsReceived, highestCpmCallback, adUnitBidLimit, true);
@@ -1236,19 +1233,15 @@ describe('targeting tests', function () {
   });
 
   describe('getAllTargeting without bids return empty object', function () {
-    let amBidsReceivedStub;
-    let amGetAdUnitsStub;
-    let bidExpiryStub;
-
     beforeEach(function () {
       enableSendAllBids = false;
-      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return [];
       });
-      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
+      sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
     });
 
     it('returns targetingSet correctly', function () {
@@ -1261,11 +1254,10 @@ describe('targeting tests', function () {
 
   describe('Targeting in concurrent auctions', function () {
     describe('check getOldestBid', function () {
-      let bidExpiryStub;
       let auctionManagerStub;
       beforeEach(function () {
         enableSendAllBids = false;
-        bidExpiryStub = sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
+        sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
         auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
       });
 

@@ -12,7 +12,7 @@ const BIDDER_ALIASES = [
   { code: 'yahoossp', gvlid: GVLID },
   { code: 'yahooAdvertising', gvlid: GVLID }
 ];
-const ADAPTER_VERSION = '2.1.0';
+const ADAPTER_VERSION = '2.2.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -716,10 +716,7 @@ export const spec = {
     };
 
     const requestOptions = {
-      contentType: 'application/json',
-      customHeaders: {
-        'x-openrtb-version': '2.6'
-      }
+      contentType: 'text/plain'
     };
 
     requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);

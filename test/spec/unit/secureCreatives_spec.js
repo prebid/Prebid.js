@@ -4,13 +4,13 @@ import { getAdUnits, getBidRequests, getBidResponses } from 'test/fixtures/fixtu
 import { auctionManager } from 'src/auctionManager.js';
 import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
-import { fireNativeTrackers, getAllAssetsMessage } from 'src/native.js';
+
 import * as events from 'src/events.js';
 import { config as configObj } from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 import 'modules/nativeRendering.js';
-import * as adUnits from 'src/utils/adUnits';
+import 'src/utils/adUnits';
 
 import { expect } from 'chai';
 
@@ -117,7 +117,7 @@ describe('secureCreatives', () => {
         stubEmit
       ].forEach(s => s.resetHistory());
 
-      if (others && others.length > 0) { others.forEach(s => s.resetHistory()); }
+      if (others.length > 0) { others.forEach(s => s.resetHistory()); }
     }
 
     before(function() {

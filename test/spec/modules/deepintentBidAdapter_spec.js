@@ -203,7 +203,9 @@ describe('Deepintent adapter', function () {
   describe('request check', function () {
     it('unmutaable bid request check', function () {
       const oRequest = utils.deepClone(request);
-      const bidRequest = spec.buildRequests(request);
+
+      spec.buildRequests(request);
+
       expect(request).to.deep.equal(oRequest);
     });
     it('bidder connection check', function () {
@@ -342,8 +344,6 @@ describe('Deepintent adapter', function () {
   });
   describe('response check', function () {
     it('bid response check: valid bid response', function () {
-      const bRequest = spec.buildRequests(request);
-      const data = JSON.parse(bRequest.data);
       const bResponse = spec.interpretResponse(bannerResponse, request);
       expect(bResponse).to.be.an('array').with.length.above(0);
       expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);

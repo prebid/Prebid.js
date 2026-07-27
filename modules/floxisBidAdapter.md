@@ -30,7 +30,7 @@ The Floxis Bid Adapter supports the Prebid.js [Floors Module](https://docs.prebi
 `user.ext.eids` from the Prebid [User ID module](https://docs.prebid.org/dev-docs/modules/userId.html) and `source.ext.schain` (set via `pbjs.setConfig({ schain })` or `ortb2`) are forwarded automatically through first-party-data passthrough — no adapter-specific configuration is required.
 
 ## Privacy
-GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and automatically included in the OpenRTB request; consent strings are also appended to user-sync calls. Note: a Floxis IAB Europe GVL (Global Vendor List) ID registration is in progress — until it is assigned and added to the adapter, Floxis is not yet an independently listed TCF vendor.
+GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and automatically included in the OpenRTB request; consent strings are also appended to user-sync calls. Floxis is registered with IAB Europe TCF as Vendor ID **1609**, declared via the adapter's `gvlid`.
 
 ## Example Usage
 

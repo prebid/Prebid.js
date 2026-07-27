@@ -60,6 +60,13 @@ Browser-side calls to the bid endpoint require CORS on the Billowlink server if 
 
 # Bid Parameters
 
+## User identification (`user.buyeruid`)
+
+- The adapter will set OpenRTB `user.buyeruid` automatically when a Prebid User ID (Shared ID / PubCommonId) is available.
+- Source precedence:
+  1. `ortb2.user.ext.eids` entries with `source: sharedid.org` or `source: pubcid.org`. If both sources are present in the EIDs array, the adapter uses whichever appears first (array order wins).
+  2. (legacy fallback) `crumbs.pubcid` if no matching EID is found.
+
 | Name           | Scope    | Type   | Description |
 |----------------|----------|--------|-------------|
 | `placementId`  | Required | String or Number | Placement ID on the Billowlink side; sent as OpenRTB `imp.tagid`. |

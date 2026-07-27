@@ -162,13 +162,10 @@ export const spec = {
     const syncs = [];
 
     var rand = Math.floor(Math.random() * 9999999999);
-    var syncUrl = '';
     var consent = '';
     var consentGPP = '';
 
-    var raiSync = {};
-
-    raiSync = raiGetSyncInclude(config);
+    const raiSync = raiGetSyncInclude(config);
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString !== 'undefined') {
       consent = `consentString=${gdprConsent.consentString}`;
@@ -181,7 +178,7 @@ export const spec = {
     }
 
     if (syncOptions.iframeEnabled && raiSync.raiIframe !== 'exclude') {
-      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand;
+      let syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand;
       if (consent !== '') {
         syncUrl += `&${consent}`;
       }
@@ -195,7 +192,7 @@ export const spec = {
     }
 
     if (syncOptions.pixelEnabled && REFERER != null && syncs.length === 0 && raiSync.raiImage !== 'exclude') {
-      syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+      let syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       if (consent !== '') {
         syncUrl += `&${consent}`;
       }

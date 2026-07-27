@@ -102,7 +102,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       return null;
     };
     var topLocation = function(bidderRequest) {
-      var ret = '';
+      let ret;
       if (bidderRequest?.refererInfo?.page) {
         ret = bidderRequest.refererInfo.page;
       } else {

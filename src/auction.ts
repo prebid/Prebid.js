@@ -771,8 +771,8 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
 
   // a publisher-defined renderer can be used to render bids
   const bidRequest = index.getBidRequest(bid);
-  const bidRenderer = bidRequest?.renderer || adUnit.renderer;
-  const bidSafeRenderer = bidRequest?.safeRenderer || adUnit.safeRenderer;
+  const bidRenderer = bidRequest?.renderer || adUnit?.renderer;
+  const bidSafeRenderer = bidRequest?.safeRenderer || adUnit?.safeRenderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;

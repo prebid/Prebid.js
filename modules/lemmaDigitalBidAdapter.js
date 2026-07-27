@@ -168,7 +168,7 @@ export var spec = {
    * create IAB standard OpenRTB bid request
    */
   _createoRTBRequest: (bidRequests, conf) => {
-    var oRTBObject = {};
+    var oRTBObject;
     try {
       oRTBObject = {
         id: spec._createUUID(),
@@ -231,14 +231,13 @@ export var spec = {
    * create impression (single) object
    */
   _getImpressionObject: (bid) => {
-    var impression = {};
     var bObj;
     var vObj;
     var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
     var mediaTypes = '';
     var format = [];
     var params = bid && bid.params ? bid.params : null;
-    impression = {
+    const impression = {
       id: bid.bidId,
       tagid: params.adunitId ? params.adunitId.toString() : undefined,
       secure: DEFAULT_SECURE,

@@ -150,6 +150,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       id: bid.params.id,
       adtype: adType,
       auc: bid.adUnitCode,
+      gpid: deepAccess(bid, 'ortb2Imp.ext.gpid') || '',
       w: widths,
       h: heights,
       pos: parseInt(bid.params.position) || 1,

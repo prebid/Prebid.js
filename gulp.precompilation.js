@@ -10,6 +10,8 @@ const _ = require('lodash');
 const fs = require('fs');
 const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
+const { toModulePath }  = require('./plugins/utils.js');
+
 
 function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) {
   if (dev && distUrlBase == null) {
@@ -18,7 +20,9 @@ function getDefaults({distUrlBase = null, disableFeatures = null, dev = false}) 
   return {
     disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
     distUrlBase: distUrlBase ?? argv.distUrlBase,
-    ES5: argv.ES5
+    ES5: argv.ES5,
+    dev,
+    polyfills: argv.polyfills
   }
 }
 
@@ -128,7 +132,7 @@ const generatePublicModules = _.memoize(
           .pipe(filter(publicVersionDoesNotExist))
           .pipe(tap((file) => {
             const {modulePath, publicPath} = getNames(file);
-            file.contents = Buffer.from(template({modulePath}));
+            file.contents = Buffer.from(template({modulePath: toModulePath(modulePath)}));
             file.path = publicPath;
           }))
           .pipe(gulp.dest(publicDir))
@@ -148,7 +152,7 @@ function generateTypeSummary(folder, dest, ignore = dest) {
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, {recursive: true});
       }
-      fs.writeFile(dest, template({files}), done);
+      fs.writeFile(dest, template({files: files.map(toModulePath)}), done);
     })
   }
 }

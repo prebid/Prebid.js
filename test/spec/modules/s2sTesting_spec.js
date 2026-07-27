@@ -180,8 +180,6 @@ describe('s2sTesting', function () {
     });
 
     describe('setting source through adUnits', function () {
-      const s2sConfig3 = { testing: true };
-
       beforeEach(function () {
         // set random number for testing
         s2sTestgingMod.globalRand = 0.7;

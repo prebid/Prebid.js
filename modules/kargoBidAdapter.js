@@ -113,10 +113,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   // Add user data object if available
   krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
 
-  const reqCount = getRequestCount();
-  if (reqCount !== null && reqCount !== undefined) {
-    krakenParams.requestCount = reqCount;
-  }
+  krakenParams.requestCount = getRequestCount();
 
   // Add currency if not USD
   if ((currency !== null && currency !== undefined) && currency !== CURRENCY.US_DOLLAR) {

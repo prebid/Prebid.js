@@ -25,7 +25,7 @@ const QX_OUT_MESSAGE = {
  * @returns {Boolean}
  */
 function init (config) {
-  if (!config?.params?.groupId?.length > 0) {
+  if (!(config?.params?.groupId?.length > 0)) {
     logWarn('Qortex RTD module config does not contain valid groupId parameter. Config params: ' + JSON.stringify(config.params));
     return false;
   } else {

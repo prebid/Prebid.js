@@ -230,12 +230,12 @@ describe('consent management utils', () => {
 
   describe('configParser', () => {
     let namespace, displayName, consentDataHandler, parseConsentData, getNullConsent, cmpHandlers, cmpEventCleanup;
-    let getConsentConfig, resetConsentDataHandler;
+    let getConsentConfig;
 
     beforeEach(() => {
       namespace = 'test';
       displayName = 'TEST';
-      resetConsentDataHandler = sinon.stub();
+      sinon.stub();
       consentDataHandler = {
         reset: sinon.stub(),
         removeCmpEventListener: sinon.stub(),

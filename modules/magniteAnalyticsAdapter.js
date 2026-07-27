@@ -53,7 +53,6 @@ let pageReferer;
 let auctionIndex = 0; // count of auctions on page
 let accountId;
 let endpoint;
-let cookieless;
 
 const prebidGlobal = getGlobal();
 const {
@@ -336,7 +335,8 @@ const getTopLevelDetails = () => {
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
     let rule = rubiConf.rule_name;
-    if (cookieless) {
+    const isCookieless = !!(rubiConf.cookieless || deepAccess(cache, 'sessionData.cookieless'));
+    if (isCookieless) {
       rule = rule ? rule.concat('_cookieless') : 'cookieless';
     }
     payload.wrapper = {
@@ -704,7 +704,6 @@ magniteAdapter.disableAnalytics = function () {
   magniteAdapter._oldEnable = enableMgniAnalytics;
   endpoint = undefined;
   accountId = undefined;
-  cookieless = undefined;
   auctionIndex = 0;
   resetConfs();
   getHook('callPrebidCache').getHooks({ hook: callPrebidCacheHook }).remove();

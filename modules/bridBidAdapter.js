@@ -38,8 +38,6 @@ export const spec = {
     _each(bidRequests, function(bid) {
       const placementId = bid.params.placementId;
       const bidId = bid.bidId;
-      let sizes = bid.sizes;
-      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
       const site = getSiteObj();
 

@@ -16,7 +16,6 @@ import {
   PREBID,
   VERSION,
   WITHOUT_IIQ,
-  WITH_IIQ,
   AB_CONFIG_SOURCE,
 } from "../../../libraries/intentIqConstants/intentIqConstants.js";
 import * as detectBrowserUtils from "../../../libraries/intentIqUtils/detectBrowserUtils.js";
@@ -91,7 +90,7 @@ const regionCases = [
 ];
 const version = VERSION;
 const REPORT_ENDPOINT = "https://reports.intentiq.com/report";
-const REPORT_ENDPOINT_GDPR = "https://reports-gdpr.intentiq.com/report";
+
 const REPORT_SERVER_ADDRESS = "https://test-reports.intentiq.com/report";
 
 const randomVal = () => Math.floor(Math.random() * 100000) + 1;

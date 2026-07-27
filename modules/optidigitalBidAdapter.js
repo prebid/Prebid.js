@@ -81,7 +81,7 @@ export const spec = {
     }
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
-    if (bidderRequest && gdpr) {
+    if (gdpr) {
       const isConsentString = typeof gdpr.consentString === 'string';
       const isGdprApplies = typeof gdpr.gdprApplies === 'boolean';
       payload.gdpr = {
@@ -92,7 +92,7 @@ export const spec = {
         payload.gdpr.addtlConsent = gdpr.addtlConsent;
       }
     }
-    if (bidderRequest && !gdpr) {
+    if (!gdpr) {
       payload.gdpr = {
         consent: '',
         required: false
@@ -115,7 +115,7 @@ export const spec = {
       payload.testMode = true;
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
@@ -206,7 +206,7 @@ export const spec = {
 };
 
 function buildImp(bidRequest, ortb2) {
-  let imp = {};
+  let imp;
   imp = {
     sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
     bidId: deepAccess(bidRequest, 'bidId'),

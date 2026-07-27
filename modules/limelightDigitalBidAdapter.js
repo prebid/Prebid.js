@@ -90,7 +90,8 @@ export const spec = {
     { code: 'oveeo' },
     { code: 'embimedia' },
     { code: 'pgamrtb' },
-    { code: 'nuclion' }
+    { code: 'nuclion' },
+    { code: 'datafusion' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
 

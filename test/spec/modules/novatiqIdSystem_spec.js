@@ -1,6 +1,5 @@
 import { novatiqIdSubmodule } from 'modules/novatiqIdSystem.js';
-import * as utils from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
+import 'src/utils.js';
 
 describe('novatiqIdSystem', function () {
   const urlParams = {

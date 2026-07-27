@@ -6,12 +6,11 @@ import { config } from '../../../src/config.js';
 
 describe('Mgid bid adapter', function () {
   let sandbox;
-  let logErrorSpy;
-  let logWarnSpy;
+
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    logErrorSpy = sinon.spy(utils, 'logError');
-    logWarnSpy = sinon.spy(utils, 'logWarn');
+    sinon.spy(utils, 'logError');
+    sinon.spy(utils, 'logWarn');
   });
 
   afterEach(function () {

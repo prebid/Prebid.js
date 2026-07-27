@@ -22,7 +22,8 @@ const refreshedToken = 'refreshed-advertising-token';
 const auctionDelayMs = 10;
 
 const makeEuidIdentityContainer = (token) => ({ euid: { id: token } });
-const makeEuidOptoutContainer = (token) => ({ euid: { optout: true } });
+const makeEuidOptoutContainer = () => ({ euid: { optout: true } });
+
 const useLocalStorage = true;
 
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
@@ -165,7 +166,7 @@ describe('EUID module', function() {
       apiHelpers.respondAfterDelay(1, server);
 
       const bid = await runAuction();
-      expectOptout(bid, optoutToken);
+      expectOptout(bid);
     });
   }
 
@@ -186,6 +187,11 @@ describe('EUID module', function() {
           atype: 3
         }]
       });
+    });
+
+    it('does not create an eid for optout values', function() {
+      const newEids = createEidsArray(makeEuidOptoutContainer());
+      expect(newEids.length).to.equal(0);
     });
   });
 });

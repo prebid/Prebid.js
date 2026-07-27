@@ -147,15 +147,11 @@ export const spec = {
         serverRequest.eids = JSON.stringify(eids);
       };
 
-      // Blocklists (request-level): merge ortb2 + params, send as comma-delimited
-      // params per the ad server's prebid-js endpoint (AS-5349). Omitted when empty.
+      // bcat (request-level): merge ortb2 + params, send as comma-delimited
+      // param per the ad server's prebid-js endpoint (AS-5349). Omitted when empty.
       const bcat = getBlocklist(bidderRequest, bannerBidRequests[0], 'bcat');
       if (bcat.length) {
         serverRequest.bcat = bcat.join(',');
-      }
-      const badv = getBlocklist(bidderRequest, bannerBidRequests[0], 'badv');
-      if (badv.length) {
-        serverRequest.badv = badv.join(',');
       }
 
       // check if url exceeded max length
@@ -453,7 +449,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
     device: deepAccess(bidderRequest, 'ortb2.device'),
-    badv: getBlocklist(bidderRequest, bidRequests[0], 'badv'),
+    badv: bidRequests[0].params.badv || [],
     bcat: getBlocklist(bidderRequest, bidRequests[0], 'bcat'),
     ext: {
       prebid: '$prebid.version$',
@@ -721,6 +717,8 @@ function validateVideoParams(bid) {
     validate('video.skippable', val => !isDefined(val) || isBoolean(val), paramInvalid);
     validate('video.skipafter', val => !isDefined(val) || isNumber(val), paramInvalid);
     validate('video.pos', val => !isDefined(val) || isNumber(val), paramInvalid);
+    validate('params.badv', val => !isDefined(val) || isArray(val), paramInvalid,
+      'array of strings, ex: ["ford.com","pepsi.com"]');
     return true;
   } catch (e) {
     logError(e.message);
@@ -729,10 +727,10 @@ function validateVideoParams(bid) {
 }
 
 /**
- * Validate the publisher-set blocklist params (`bcat`/`badv`) for all media types
- * (banner and video). A missing value is allowed; a value that is present but is
- * not an array is rejected (drops the bid) — the agreed middle ground between
- * dropping nothing and dropping over an absent optional field. See FS-12403.
+ * Validate the publisher-set `bcat` param for all media types (banner and video).
+ * A missing value is allowed; a value that is present but is not an array is
+ * rejected (drops the bid) — the agreed middle ground between dropping nothing and
+ * dropping over an absent optional field. See FS-12403.
  * @param {BidRequest} bid bid request
  * @return {boolean} true if valid (or absent), false if present but malformed
  */
@@ -741,8 +739,6 @@ function validateBlocklistParams(bid) {
   try {
     validate('params.bcat', val => !isDefined(val) || isArray(val), paramInvalid,
       'array of strings, ex: ["IAB1-5","IAB1-6"]');
-    validate('params.badv', val => !isDefined(val) || isArray(val), paramInvalid,
-      'array of strings, ex: ["ford.com","pepsi.com"]');
     return true;
   } catch (e) {
     logError(e.message);

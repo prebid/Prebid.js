@@ -14,7 +14,7 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 
 import { hook } from '../../../src/hook.js';
-import * as ajax from 'src/ajax.js';
+import 'src/ajax.js';
 
 const ENDPOINT = 'https://pbs.bidelerate.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://pbs.bidelerate.com/cookie_sync';

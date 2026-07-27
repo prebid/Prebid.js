@@ -1,10 +1,10 @@
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { spec } from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
 
 describe('etarget adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
+  let serverResponse, bidRequest;
   let bids = [];
   describe('isBidRequestValid', function () {
     const bid = {
@@ -44,11 +44,10 @@ describe('etarget adapter', function () {
 
     it('should attach floor param when either bid param or getFloor function exists', function () {
       // let getFloorResponse = { currency: 'EUR', floor: 5 };
-      let request = null;
       const bidRequest = deepClone(bids[0]);
 
       // floor param has to be NULL
-      request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest]);
       assert.equal(typeof request.floors, 'undefined');
     });
 
@@ -105,13 +104,13 @@ describe('etarget adapter', function () {
 
     it('should not change original validBidRequests object', function () {
       var resultBids = JSON.parse(JSON.stringify(bids[0]));
-      const request = spec.buildRequests([bids[0]]);
+      spec.buildRequests([bids[0]]);
+
       assert.deepEqual(resultBids, bids[0]);
     });
 
     describe('gdpr', function () {
       it('should send GDPR Consent data to etarget if gdprApplies', function () {
-        const resultBids = JSON.parse(JSON.stringify(bids[0]));
         const request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: true, consentString: 'concentDataString' } });
         const parsedUrl = parseUrl(request.url).query;
 
@@ -119,17 +118,14 @@ describe('etarget adapter', function () {
         assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
       });
 
-      it('should not send GDPR Consent data to etarget if gdprApplies is false or undefined', function () {
-        const resultBids = JSON.parse(JSON.stringify(bids[0]));
-        let request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: false, consentString: 'concentDataString' } });
-        const parsedUrl = parseUrl(request.url).query;
+      [false, undefined].forEach(value => {
+        it(`should not send GDPR Consent data to etarget if gdprApplies is ${value}`, function () {
+          const request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: value, consentString: 'concentDataString' } });
+          const parsedUrl = parseUrl(request.url).query;
 
-        assert.ok(!parsedUrl.gdpr);
-        assert.ok(!parsedUrl.gdpr_consent);
-
-        request = spec.buildRequests([bids[0]], { gdprConsent: { gdprApplies: undefined, consentString: 'concentDataString' } });
-        assert.ok(!parsedUrl.gdpr);
-        assert.ok(!parsedUrl.gdpr_consent);
+          assert.ok(!parsedUrl.gdpr);
+          assert.ok(!parsedUrl.gdpr_consent);
+        });
       });
 
       it('should return GDPR Consent data with request data', function () {
@@ -281,7 +277,6 @@ describe('etarget adapter', function () {
   });
 
   beforeEach(function () {
-    const sizes = [[250, 300], [300, 250], [300, 600]];
     const placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
     const params = [{ refid: 1, country: 1, url: 'some// there' }, { refid: 2, country: 1, someVar: 'someValue', pt: 'gross' }, { refid: 3, country: 1, pdom: 'home' }, { refid: 5, country: 1, pt: 'net' }, { refid: 6, country: 1, pt: 'gross' }];
     bids = [

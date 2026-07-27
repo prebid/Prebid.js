@@ -133,7 +133,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const schainObject = {
       ver: '1.0',
       nodes: [
@@ -844,7 +844,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1003,7 +1003,7 @@ describe('VisxAdapter', function () {
         }
       }
     };
-    const referrer = bidderRequest.refererInfo.page;
+
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1029,7 +1029,6 @@ describe('VisxAdapter', function () {
       }
     ];
     let sandbox;
-    let documentStub;
 
     before(function() {
       sandbox = sinon.createSandbox();

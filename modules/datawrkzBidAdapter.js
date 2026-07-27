@@ -179,7 +179,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
   }
   const body = deepAccess(bidRequest, 'mediaTypes.native.body');
   if (body) {
-    assets.push(generateNativeDataObj(body, 'desc', ++counter));
+    assets.push(generateNativeDataObj(body, 'desc', counter + 1));
   }
 
   const request = JSON.stringify({ assets: assets });

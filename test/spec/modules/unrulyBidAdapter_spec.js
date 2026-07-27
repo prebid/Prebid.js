@@ -726,7 +726,7 @@ describe('UnrulyAdapter', function () {
 
       const mockReturnedBid = createOutStreamExchangeBid({ adUnitCode: 'video1', requestId: 'mockBidId' });
       const mockRenderer = {
-        url: 'value: mockRendererURL',
+        url: 'https://video.unrulymedia.com/native/prebid-loader.js',
         config: {
           siteId: 123456,
           targetingUUID: 'xxx-yyy-zzz'
@@ -794,6 +794,22 @@ describe('UnrulyAdapter', function () {
 
       expect(siteIdErrorCall.args.length).to.equal(1);
       expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
+    });
+
+    it('should return [] and log if renderer URL is invalid', function () {
+      sinon.assert.notCalled(utils.logError);
+      expect(Renderer.install.called).to.be.false;
+
+      const mockReturnedBid = createOutStreamExchangeBid({ adUnitCode: 'video1', requestId: 'mockBidId' });
+      mockReturnedBid.ext.renderer.url = 'https://attacker.example/malicious-renderer.js';
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+      sinon.assert.notCalled(Renderer.install);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(1);
+      expect(logErrorCalls[0].args[0].message).to.equal('UnrulyBidAdapter: Invalid renderer URL.');
     });
 
     it('bid is placed on the bid queue when render is called', function () {

@@ -179,9 +179,6 @@ exports.matchOnPlacementCode = function(expected, prebid) {
 };
 
 exports.matchBidsOnSID = function(lhs, rhs) {
-  var lonly = [];
-  var ronly = [];
-
   var configured = [];
   for (var i = 0; i < lhs.length; i++) {
     var group = lhs[i];
@@ -208,9 +205,6 @@ exports.matchBidsOnSID = function(lhs, rhs) {
 };
 
 exports.matchBidsOnSize = function(lhs, rhs) {
-  var lonly = [];
-  var ronly = [];
-
   var configured = [];
   for (var i = 0; i < lhs.length; i++) {
     var group = lhs[i];
@@ -248,7 +242,6 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
     bidObj.bid = [];
 
     var sizes = configuredBids[i].sizes;
-    var impressionID = 1;
     for (var j = 0; j < sizes.length; j++) {
       if (typeof optionalPassOnBid[i] !== 'undefined' && typeof optionalPassOnBid[i][j] !== 'undefined' && optionalPassOnBid[i][j]) continue;
 

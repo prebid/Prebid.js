@@ -4,6 +4,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice } from '../src/utils.js';
 
 const BIDDER_CODE = 'floxis';
+const GVLID = 1609;
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
@@ -167,6 +168,7 @@ const CONVERTER = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid(bid) {
@@ -222,22 +224,37 @@ export const spec = {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
     if (!serverResponses || !serverResponses.length) return [];
     const pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    // Only honor a body sync whose type is enabled here — core userSync drops a disabled-type sync.
+    const isEnabledSync = (e) => e && typeof e.url === 'string' && e.url &&
+      ((e.type === 'iframe' && syncOptions.iframeEnabled) || (e.type === 'image' && syncOptions.pixelEnabled));
     const query = buildConsentQuery(gdprConsent, uspConsent, gppConsent);
     const consentSuffix = query.length ? '&' + query.join('&') : '';
     const seen = {};
     const syncs = [];
     serverResponses.forEach((serverResponse) => {
+      // body.ext.sync is primary; serverResponse.headers is not a real Headers object in every Prebid build.
+      const bodySyncs = serverResponse?.body?.ext?.sync;
+      if (Array.isArray(bodySyncs) && bodySyncs.length) {
+        const entry = bodySyncs.find((e) => isEnabledSync(e) && e.type === pixelType) || bodySyncs.find(isEnabledSync);
+        if (entry) {
+          if (!seen[entry.url]) {
+            seen[entry.url] = true;
+            syncs.push({ type: entry.type, url: entry.url });
+          }
+          return;
+        }
+        // body carried no entry of an enabled sync type — fall through to the header path below
+      }
       const target = parseSyncHeader(serverResponse?.headers?.get?.(SYNC_HEADER));
       if (!target) return;
       const { seat, region } = target;
       const host = getSyncHost(region);
-      const key = `${seat}|${region}`;
-      if (!host || seen[key]) return;
-      seen[key] = true;
-      syncs.push({
-        type: pixelType,
-        url: `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`
-      });
+      if (!host) return;
+      // Dedupe on the final URL so a header sync collapses with a same-URL body.ext.sync entry in a mixed rollout.
+      const url = `${host}${SYNC_PATH}?seat=${encodeURIComponent(seat)}${consentSuffix}`;
+      if (seen[url]) return;
+      seen[url] = true;
+      syncs.push({ type: pixelType, url });
     });
     return syncs;
   },
