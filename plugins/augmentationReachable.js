@@ -6,8 +6,10 @@
  * that nothing imports is silently inert - the types it declares never reach a consumer.
  *
  * This is the policy shared by the `prebid/augmentation-reachable` lint rule (which runs on the
- * sources) and `gulp lint-declarations` (which runs on generated declarations, where the imports
+ * sources) and `gulp check-declarations` (which runs on generated declarations, where the imports
  * that survived declaration emit can finally be seen).
+ *
+ * Written by a bot.
  */
 const fs = require('fs');
 const path = require('path');
