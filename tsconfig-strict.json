@@ -8,6 +8,8 @@
     "noImplicitAny": true,
     "noEmit": true,
   },
-  "include": ["src/types/local/**/*.ts", "./dist/src/**/*.ts"],
+  // only the generated output: this should see what a consumer sees, and `src/types/local` is
+  // deliberately not published
+  "include": ["./dist/src/**/*.ts"],
   "exclude": []
 }
