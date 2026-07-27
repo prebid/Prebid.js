@@ -233,30 +233,53 @@ var adUnits = [
 ## User Syncing
 
 OCM's Prebid Server `cookie_sync` endpoint is POST-only, so it cannot be loaded directly from an
-iframe/pixel. Syncing is therefore routed through a small GET-renderable **loader page** that the
-adapter renders in a hidden iframe; the loader POSTs to `cookie_sync` (with credentials) and drops
-the per-bidder sync pixels it returns.
+iframe or pixel. Syncing is therefore routed through a GET endpoint on the OCM origin that performs
+the POST on the client's behalf. There are two, and the adapter picks one based on the sync types the
+publisher has enabled for `ocm`:
+
+| Publisher enables | Sync emitted | Endpoint | Behaviour |
+|---|---|---|---|
+| iframe (with or without image) | `iframe` | `/static/cookie_sync.html` | Loader page: POSTs to `cookie_sync` and drops each returned `usersync` (an `iframe` type becomes a hidden iframe, a `redirect` type an image pixel) |
+| image only | `image` | `/cookie_sync/redirect` | POSTs to `cookie_sync` server-side and 302-chains the `redirect`-type syncs it returns |
+
+The iframe loader is preferred when available because it can drop both iframe and redirect syncs. The
+image path matters because Prebid core's **default** `userSync.filterSettings` enables image syncs
+only — without it, every publisher who has not explicitly turned iframe syncing on for `ocm` would
+sync nothing at all.
 
 Flow:
 
 1. `getUserSyncs` reads the bidders PBS actually invoked from the auction response
    (`ext.responsetimemillis` keys, plus any `seatbid[].seat`).
-2. It renders an iframe to the loader page with those bidders, the publisher `account`
-   (the `publisherId`), the sync `limit`, and all consent signals
-   (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`).
-3. The loader POSTs `{ bidders, account, limit, gdpr, ... }` to
-   `https://pbam.orangeclickmedia.com/cookie_sync` and drops each returned `usersync` (an `iframe`
-   type becomes a hidden iframe; a `redirect` type becomes an image pixel).
+2. It emits a sync to the endpoint above with those bidders, the publisher `account` (echoed by PBS
+   at `ext.account`), the sync `limit`, `coopSync=0`, the publisher's `filterSettings` (see below),
+   and all consent signals (`gdpr`, `gdpr_consent`, `us_privacy`, `gpp`, `gpp_sid`).
+3. The endpoint POSTs `{ bidders, account, limit, coopSync, filterSettings, gdpr, ... }` to
+   `https://pbam.orangeclickmedia.com/cookie_sync` and delivers the syncs it returns.
 
-**Deployment requirement:** the loader page must be reachable at
-`https://pbam.orangeclickmedia.com/static/cookie_sync.html`. On PBS-Go, drop the file into the
-server's `./static/` directory (served via `ServeFiles("/static/*filepath", http.Dir("static"))`),
-which keeps it same-origin with `/cookie_sync` (no CORS) and with the PBS `uids` cookie
-(first-party).
+**Deployment requirement:** both endpoints must be reachable on the PBS origin, which keeps them
+same-origin with `/cookie_sync` (no CORS) and with the PBS `uids` cookie (first-party):
 
-User syncing only runs if the publisher enables iframe syncing and allows the `ocm` bidder
-(the adapter returns an iframe sync only — the loader handles the per-bidder image/iframe pixels
-itself). For example:
+- the loader page at `https://pbam.orangeclickmedia.com/static/cookie_sync.html` — on PBS-Go, drop
+  the file into the server's `./static/` directory (served via
+  `ServeFiles("/static/*filepath", http.Dir("static"))`);
+- the redirect endpoint at `https://pbam.orangeclickmedia.com/cookie_sync/redirect`, which must
+  answer a GET with a 302 chain rather than a document.
+
+### Consent and filter settings
+
+Syncing is skipped entirely — no endpoint is called — when COPPA is enabled
+(`pbjs.setConfig({coppa: true})`) or when GDPR applies without consent for TCF **purpose 1** ("store
+and/or access information on a device"), since every sync the endpoint drops exists to read or write
+a device identifier.
+
+The publisher's own `userSync.filterSettings` is forwarded to `cookie_sync` as its `filterSettings`
+object, so the per-bidder rules apply to the downstream syncs too instead of only to the `ocm` sync
+itself. A sync type Prebid did not authorise for `ocm` is explicitly blocked (`{bidders: '*', filter:
+'exclude'}`), because PBS treats an absent per-type filter as "allowed for everyone". `ocm` itself is
+dropped from a `bidders` list before forwarding: it names the client-side adapter (which is what
+authorises the sync in the first place), while the remaining names are PBS-side bidders. So the
+recommended config below authorises all of OCM's server-side bidders for iframe syncing:
 
 ```javascript
 pbjs.setConfig({
@@ -271,7 +294,17 @@ pbjs.setConfig({
 });
 ```
 
-Without iframe syncing enabled for `ocm`, `getUserSyncs` returns no syncs (it is a no-op).
+To restrict which PBS-side bidders may sync, name them instead:
+
+```javascript
+pbjs.setConfig({
+    userSync: {
+        filterSettings: {
+            iframe: { bidders: ['ocm', 'bidderA', 'bidderB'], filter: 'include' }
+        }
+    }
+});
+```
 
 ## Notes
 
@@ -279,5 +312,6 @@ Without iframe syncing enabled for `ocm`, `getUserSyncs` returns no syncs (it is
 - The adapter supports all three media types: Banner, Video, and Native
 - Video ads support both instream and outstream contexts; outstream bids are rendered client-side by the OCM Video Player (see *Outstream Video Rendering* above)
 - Native ads should use the ORTB format (ortb.assets)
+- The request `tmax` is the Prebid auction timeout minus a buffer (200ms, capped at a quarter of the timeout) so a Prebid Server response that leaves the server on time still arrives before Prebid's auction timer fires. The un-buffered auction timeout is sent as `ext.tmaxmax`. Setting `ortb2.tmax` overrides the computed value
 - The bid's billing URL (`burl`) is registered as an ORTB impression event tracker (via the shared PBS extensions), so Prebid core fires it once at billing time — the adapter does not fire it on win. The win-notice URL (`nurl`) is handled by Prebid's ORTB conversion per media type and is not fired separately
 - When the Prebid Server account has event tracking enabled, PBS returns event URLs on each bid at `bid.ext.prebid.events` (`win` and `imp`). The adapter registers these as ORTB event trackers on the bid response, so Prebid core fires them at the standard times: the `win` URL when the bid wins and the `imp` URL when the bid is billed (on render, or on `pbjs.triggerBilling()` for ad units that defer billing). For video, PBS injects the impression tracker into the VAST server-side, so `imp` is normally absent on video bids

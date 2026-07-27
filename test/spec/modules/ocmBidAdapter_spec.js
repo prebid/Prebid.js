@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ocmBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { Renderer } from 'src/Renderer.js';
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 // Side-effect import: registers the price-floors ORTB processors the adapter relies on through
@@ -9,6 +10,7 @@ import 'modules/priceFloors.js';
 
 const AUCTION_ENDPOINT = 'https://pbam.orangeclickmedia.com/openrtb2/auction';
 const USER_SYNC_LOADER = 'https://pbam.orangeclickmedia.com/static/cookie_sync.html';
+const USER_SYNC_REDIRECT = 'https://pbam.orangeclickmedia.com/cookie_sync/redirect';
 
 describe('ocmBidAdapter', function () {
   const baseParams = { publisherId: 'pub-123', placementId: 'plc-456' };
@@ -278,6 +280,41 @@ describe('ocmBidAdapter', function () {
       const request = spec.buildRequests([bannerBid], bannerBidderRequest);
       expect(request.data.site.publisher.id).to.equal('pub-123');
     });
+
+    describe('tmax', function () {
+      // PBS must answer early enough for the response to travel back and be parsed before Prebid's
+      // auction timer fires, so the tmax it is given is the auction timeout minus a buffer, while the
+      // un-buffered timeout is advertised as ext.tmaxmax.
+      it('reserves a buffer out of the auction timeout and sends the full timeout as ext.tmaxmax', function () {
+        const request = spec.buildRequests([bannerBid], { ...bannerBidderRequest, timeout: 1000 });
+        expect(request.data.tmax).to.equal(800);
+        expect(request.data.ext.tmaxmax).to.equal(1000);
+      });
+
+      // The buffer is capped proportionally, so a deliberately short timeout is not cut to nothing.
+      it('caps the buffer at a quarter of a short auction timeout', function () {
+        const request = spec.buildRequests([bannerBid], { ...bannerBidderRequest, timeout: 200 });
+        expect(request.data.tmax).to.equal(150);
+        expect(request.data.ext.tmaxmax).to.equal(200);
+      });
+
+      it('leaves a publisher-supplied ortb2.tmax untouched', function () {
+        const request = spec.buildRequests([bannerBid], {
+          ...bannerBidderRequest,
+          timeout: 1000,
+          ortb2: { tmax: 400 }
+        });
+        expect(request.data.tmax).to.equal(400);
+        // The real ceiling is still reported, so PBS knows what the client will actually wait for.
+        expect(request.data.ext.tmaxmax).to.equal(1000);
+      });
+
+      it('sends no tmax when the auction timeout is unknown', function () {
+        const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+        expect(request.data.tmax).to.equal(undefined);
+        expect(request.data.ext.tmaxmax).to.equal(undefined);
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -327,6 +364,21 @@ describe('ocmBidAdapter', function () {
       const request = spec.buildRequests([bannerBid], bannerBidderRequest);
       const result = spec.interpretResponse({ body: { id: 'auction-1', cur: 'USD', seatbid: [] } }, request);
       expect(result).to.be.an('array').that.is.empty;
+    });
+
+    // PBS resolves demand from real server-side seats, so seatbid[].seat is usually another bidder's
+    // code. The converter's bidderCode override must re-attribute it to `ocm`, otherwise core drops
+    // the bid as an unregistered alternate bidder code.
+    it('re-attributes a bid returned under a server-side seat to the ocm bidderCode', function () {
+      const request = spec.buildRequests([bannerBid], bannerBidderRequest);
+      const seatResponse = {
+        body: {
+          ...sampleResponse.body,
+          seatbid: [{ ...sampleResponse.body.seatbid[0], seat: 'appnexus' }]
+        }
+      };
+      const bid = spec.interpretResponse(seatResponse, request)[0];
+      expect(bid.bidderCode).to.equal('ocm');
     });
   });
 
@@ -778,9 +830,41 @@ describe('ocmBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     const syncResponses = [{ body: { ext: { responsetimemillis: { appnexus: 80, rubicon: 120 } } } }];
+    // GDPR applies and purpose 1 (device storage/access) is consented — the shape cookie syncing needs.
+    const purpose1Consent = {
+      gdprApplies: true,
+      consentString: 'consent-xyz',
+      vendorData: { purpose: { consents: { 1: true } } }
+    };
 
-    it('returns no syncs when iframe syncing is disabled', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses)).to.deep.equal([]);
+    let filterSettingsBefore;
+
+    // Reads back the filterSettings object the adapter forwards to PBS /cookie_sync.
+    function forwardedFilterSettings(url) {
+      const match = /[?&]filterSettings=([^&]*)/.exec(url);
+      return match ? JSON.parse(decodeURIComponent(match[1])) : undefined;
+    }
+
+    function setFilterSettings(filterSettings) {
+      config.setConfig({ userSync: { filterSettings } });
+    }
+
+    beforeEach(function () {
+      filterSettingsBefore = config.getConfig('userSync.filterSettings');
+    });
+
+    afterEach(function () {
+      config.setConfig({ coppa: false, userSync: { filterSettings: filterSettingsBefore } });
+    });
+
+    it('returns no syncs (and warns) when neither iframe nor image syncing is enabled', function () {
+      const warn = sinon.stub(utils, 'logWarn');
+      try {
+        expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, syncResponses)).to.deep.equal([]);
+        expect(warn.called).to.equal(true);
+      } finally {
+        warn.restore();
+      }
     });
 
     it('returns no syncs when the auction response lists no bidders', function () {
@@ -796,25 +880,133 @@ describe('ocmBidAdapter', function () {
       expect(syncs[0].url).to.contain('limit=10');
     });
 
+    // Core's default filterSettings enable image syncs only, so this is the path most publishers get;
+    // returning [] here (the old behaviour) meant they silently synced nothing at all.
+    it('falls back to an image sync to the redirect endpoint when only image syncing is enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url.indexOf(USER_SYNC_REDIRECT)).to.equal(0);
+      expect(decodeURIComponent(syncs[0].url)).to.contain('bidders=appnexus,rubicon');
+      expect(syncs[0].url).to.contain('limit=10');
+    });
+
+    // The loader can drop both iframe and redirect syncs, so it wins whenever it is allowed.
+    it('prefers the iframe loader when both sync types are enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url.indexOf(USER_SYNC_LOADER)).to.equal(0);
+    });
+
     it('derives bidders from seatbid seats when responsetimemillis is absent', function () {
       const responses = [{ body: { seatbid: [{ seat: 'pubmatic' }, { seat: 'ix' }] } }];
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses);
       expect(decodeURIComponent(syncs[0].url)).to.contain('bidders=pubmatic,ix');
     });
 
-    it('constrains the loader to iframe syncs and disables cooperative syncing by default', function () {
-      // When only iframe syncing is enabled, the loader must be told not to drop image/redirect syncs
-      // and not to co-operatively sync bidders the publisher never requested.
+    it('disables PBS cooperative syncing so only auction participants are synced', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
-      const url = decodeURIComponent(syncs[0].url);
-      expect(url).to.contain('filter=iframe');
-      expect(url).to.not.contain('image');
       expect(syncs[0].url).to.contain('coopSync=0');
     });
 
-    it('allows image syncs in the loader filter when pixel syncing is enabled', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
-      expect(decodeURIComponent(syncs[0].url)).to.contain('filter=iframe,image');
+    describe('filterSettings forwarding', function () {
+      // A sync type Prebid did not authorise for ocm has to be blocked explicitly: PBS treats an
+      // absent per-type filter as "allowed for every bidder".
+      it('blocks the sync type Prebid did not authorise', function () {
+        setFilterSettings({ iframe: { bidders: '*', filter: 'include' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url)).to.deep.equal({
+          iframe: { bidders: '*', filter: 'include' },
+          image: { bidders: '*', filter: 'exclude' }
+        });
+      });
+
+      // The point of the fix: the publisher's own per-bidder object reaches PBS, so the downstream
+      // syncs obey it too — not just a coarse "iframe,image" type list.
+      it('forwards the publisher per-bidder list for the enabled type', function () {
+        setFilterSettings({ iframe: { bidders: ['ocm', 'bidderA', 'bidderB'], filter: 'include' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: ['bidderA', 'bidderB'],
+          filter: 'include'
+        });
+      });
+
+      it('preserves an exclude filter', function () {
+        setFilterSettings({ image: { bidders: ['bidderB'], filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).image).to.deep.equal({
+          bidders: ['bidderB'],
+          filter: 'exclude'
+        });
+      });
+
+      // `bidders: ['ocm']` (the shape the adapter's docs recommend) authorises the OCM sync itself;
+      // it must not be forwarded literally, or PBS would allow no server-side bidder at all.
+      it('authorises every PBS-side bidder when the publisher only named ocm', function () {
+        setFilterSettings({ iframe: { bidders: ['ocm'], filter: 'include' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      it('applies filterSettings.all to both sync types', function () {
+        setFilterSettings({ all: { bidders: ['bidderA'], filter: 'include' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url)).to.deep.equal({
+          iframe: { bidders: ['bidderA'], filter: 'include' },
+          image: { bidders: ['bidderA'], filter: 'include' }
+        });
+      });
+
+      it('allows all bidders for an enabled type the publisher did not configure', function () {
+        setFilterSettings({ image: { bidders: '*', filter: 'include' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+    });
+
+    describe('privacy gates', function () {
+      it('registers no syncs when COPPA is enabled', function () {
+        config.setConfig({ coppa: true });
+        const warn = sinon.stub(utils, 'logWarn');
+        try {
+          expect(spec.getUserSyncs({ iframeEnabled: true }, syncResponses)).to.deep.equal([]);
+          expect(warn.called).to.equal(true);
+        } finally {
+          warn.restore();
+        }
+      });
+
+      it('registers no syncs when GDPR applies without purpose 1 consent', function () {
+        const warn = sinon.stub(utils, 'logWarn');
+        try {
+          const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses, {
+            gdprApplies: true,
+            consentString: 'consent-xyz',
+            vendorData: { purpose: { consents: { 1: false } } }
+          });
+          expect(syncs).to.deep.equal([]);
+          expect(warn.called).to.equal(true);
+        } finally {
+          warn.restore();
+        }
+      });
+
+      it('registers syncs when purpose 1 consent is given', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses, purpose1Consent);
+        expect(syncs).to.have.lengthOf(1);
+      });
+
+      it('registers syncs when GDPR does not apply', function () {
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses, { gdprApplies: false });
+        expect(syncs).to.have.lengthOf(1);
+      });
     });
 
     it('includes the account echoed by PBS in the auction response', function () {
@@ -837,7 +1029,7 @@ describe('ocmBidAdapter', function () {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
         syncResponses,
-        { gdprApplies: true, consentString: 'consent-xyz' },
+        purpose1Consent,
         '1YNN',
         { gppString: 'DBACNYA', applicableSections: [7, 8] }
       );
@@ -847,6 +1039,20 @@ describe('ocmBidAdapter', function () {
       expect(url).to.contain('us_privacy=1YNN');
       expect(url).to.contain('gpp=DBACNYA');
       expect(decodeURIComponent(url)).to.contain('gpp_sid=7,8');
+    });
+
+    // Consent signals must ride along on the image path too, not just the iframe loader.
+    it('forwards consent on the image fallback as well', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: false, pixelEnabled: true },
+        syncResponses,
+        purpose1Consent,
+        '1YNN'
+      );
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.contain('gdpr=1');
+      expect(syncs[0].url).to.contain('gdpr_consent=consent-xyz');
+      expect(syncs[0].url).to.contain('us_privacy=1YNN');
     });
   });
 

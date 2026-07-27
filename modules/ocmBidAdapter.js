@@ -4,7 +4,10 @@ import { Renderer } from '../src/Renderer.js';
 import { toOrtbNativeRequest } from '../src/native.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
-import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, logMessage, logWarn, logError } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { BID_RESPONSE } from '../src/pbjsORTB.js';
+import { deepSetValue, deepAccess, mergeDeep, getUniqueIdentifierStr, isPlainObject, isStr, logMessage, logWarn, logError } from '../src/utils.js';
 import { EVENT_TYPE_IMPRESSION, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 
 const converter = ortbConverter({
@@ -13,11 +16,31 @@ const converter = ortbConverter({
     ttl: 300
   },
   processors: pbsExtensions,
+  overrides: {
+    [BID_RESPONSE]: {
+      // Re-attribute every bid to OCM by overriding the shared pbsExtensions `bidderCode` processor
+      // rather than rewriting bidResponse.bidderCode after the fact in interpretResponse. That
+      // processor sets bidderCode from seatbid.seat, which for OCM is the real server-side seat PBS
+      // resolved from the stored request (e.g. `appnexus`) — a code Prebid does not know as a partner
+      // of `ocm`, so core would drop the bid as an unregistered alternate bidder
+      // (isInvalidAlternateBidder in src/adapters/bidderFactory). Overriding here keeps the whole
+      // response mapping inside the converter and applies to any caller of it, not just the
+      // interpretResponse path. `orig` still runs so the seat-derived fields it computes are set
+      // first; core overwrites adapterCode with the requesting bidder immediately afterwards.
+      bidderCode(orig, bidResponse, bid, context) {
+        orig(bidResponse, bid, context);
+        bidResponse.bidderCode = BIDDER_CODE;
+      }
+    }
+  },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     // Add publisherId to site or app
     addOrtbPublisherData(request, context.bidRequests || []);
+
+    // Reserve client-side headroom in the tmax handed to PBS (see setRequestTimeouts).
+    setRequestTimeouts(request, bidderRequest);
 
     return request;
   },
@@ -78,16 +101,32 @@ const ENDPOINT = 'https://pbam.orangeclickmedia.com/openrtb2/auction';
 
 // getUserSyncs can only emit GET descriptors, but PBS /cookie_sync is POST-only. Syncing is
 // therefore routed through a GET-renderable loader page (hosted on the OCM origin) that POSTs to
-// /cookie_sync and drops the per-bidder sync pixels it returns. See ocmBidAdapter.md and the
-// reference loader in tasks/cookie_sync.html.
+// /cookie_sync and drops the per-bidder sync pixels it returns. See ocmBidAdapter.md.
 const USER_SYNC_LOADER = 'https://pbam.orangeclickmedia.com/static/cookie_sync.html';
+
+// Image-sync counterpart of the loader page. Prebid core's default userSync.filterSettings enables
+// image syncs only (see USERSYNC_DEFAULT_CONFIG in src/userSync), so an iframe-only adapter syncs
+// nothing at all for every publisher who has not explicitly turned iframe syncing on for `ocm`.
+// An <img> cannot POST to /cookie_sync either, so the image path targets a GET endpoint on the OCM
+// origin that performs the POST server-side and 302-chains the redirect-type syncs PBS returns.
+// It takes the same query string as the loader; see ocmBidAdapter.md for both deployment targets.
+const USER_SYNC_REDIRECT = 'https://pbam.orangeclickmedia.com/cookie_sync/redirect';
 
 // Maximum number of bidders forwarded to a single cookie_sync (mirrors the cookie_sync `limit`).
 const MAX_SYNC_COUNT = 10;
 
+// Sync types, as named by Prebid (`image` is what PBS/`syncOptions.pixelEnabled` call a pixel sync).
+const SYNC_TYPE_IFRAME = 'iframe';
+const SYNC_TYPE_IMAGE = 'image';
+
 const BIDDER_CODE = 'ocm';
 
 const GVLID = 1148;
+
+// Headroom subtracted from the auction timeout before it is passed to PBS as `tmax`; see resolveTmax.
+// Capped proportionally so a short auction timeout is not reduced to an unusable tmax.
+const TMAX_BUFFER_MS = 200;
+const TMAX_BUFFER_MAX_RATIO = 0.25;
 
 // Outstream video renderer. OCM outstream bids are rendered client-side by the OCM Video Player;
 // Prebid's Renderer lazily loads this script (via loadExternalScript) the first time such a bid
@@ -294,6 +333,62 @@ function addOrtbPublisherData(data, bidRequests) {
 }
 
 /**
+ * Resolves the `tmax` to send to Prebid Server.
+ *
+ * The converter's default processor sets `tmax` to the full Prebid auction timeout, but Prebid's
+ * client-side auction timer is already running and does not wait for this request: a PBS response
+ * that leaves the server at exactly `tmax` still has to travel back and be parsed, by which point
+ * the auction has timed out and the bids are discarded even though PBS answered in time. So PBS is
+ * given the auction timeout minus a buffer covering the round trip and client-side response
+ * processing. The buffer is capped at a quarter of the timeout so a deliberately short auction
+ * timeout is shortened proportionally instead of being cut to near-zero.
+ *
+ * A publisher-supplied `ortb2.tmax` wins outright — it is an explicit override of exactly this value,
+ * and the default processor would otherwise clobber it with the auction timeout.
+ * @param {Object} bidderRequest - The bidder request (source of `timeout` and `ortb2`)
+ * @returns {number|undefined} The tmax to send, or undefined when no timeout is known
+ */
+function resolveTmax(bidderRequest) {
+  const publisherTmax = Number(bidderRequest?.ortb2?.tmax);
+  if (Number.isFinite(publisherTmax) && publisherTmax > 0) {
+    return Math.floor(publisherTmax);
+  }
+
+  const auctionTimeout = Number(bidderRequest?.timeout);
+  if (!Number.isFinite(auctionTimeout) || auctionTimeout <= 0) {
+    return undefined;
+  }
+
+  const buffer = Math.min(TMAX_BUFFER_MS, Math.floor(auctionTimeout * TMAX_BUFFER_MAX_RATIO));
+  return Math.max(Math.floor(auctionTimeout) - buffer, 1);
+}
+
+/**
+ * Applies the buffered `tmax` to the ORTB request and advertises the un-buffered auction timeout as
+ * `ext.tmaxmax` — the ORTB signal for the maximum tmax the caller will honour — so PBS still knows
+ * the real ceiling it is working against (this mirrors what Prebid's own PBS adapter sends). An
+ * `ext.tmaxmax` already present from first-party data is left alone.
+ * @param {Object} request - The ORTB request, mutated in place
+ * @param {Object} bidderRequest - The bidder request
+ * @returns {void}
+ */
+function setRequestTimeouts(request, bidderRequest) {
+  if (!request) {
+    return;
+  }
+
+  const tmax = resolveTmax(bidderRequest);
+  if (tmax !== undefined) {
+    request.tmax = tmax;
+  }
+
+  const auctionTimeout = Number(bidderRequest?.timeout);
+  if (Number.isFinite(auctionTimeout) && auctionTimeout > 0 && request.ext?.tmaxmax == null) {
+    deepSetValue(request, 'ext.tmaxmax', Math.floor(auctionTimeout));
+  }
+}
+
+/**
  * Constructs server requests from the list of valid bid requests.
  * Builds OpenRTB-formatted requests to send to the OCM bid server.
  * @param {Array<BidRequest>} bidRequests - Array of valid bid requests
@@ -320,46 +415,20 @@ function buildRequests(bidRequests, bidderRequest) {
 function interpretResponse(response, request) {
   // Return the bids array (not the converter's wrapper object): bidderFactory only treats a wrapper
   // as a BidderAuctionResponse when its keys are limited to bids/paapi, so returning the array is
-  // the robust, conventional contract. Every bid is attributed to OCM — PBS resolves demand from
-  // real server-side seats, and Prebid would otherwise drop those bids as alternate bidder codes.
+  // the robust, conventional contract. Attribution to OCM is handled inside the converter by the
+  // `bidderCode` bidResponse override, not here.
   const { bids = [] } = converter.fromORTB({ request: request.data, response: response.body });
-  bids.forEach((bid) => {
-    bid.bidderCode = BIDDER_CODE;
-  });
   return bids;
 }
 
 /**
- * Registers user syncs (cookie syncing) for OCM's Prebid Server.
- *
- * Because `getUserSyncs` can only return GET descriptors while PBS `/cookie_sync` is POST-only, the
- * sync is routed through a GET-renderable loader page (USER_SYNC_LOADER) hosted on the OCM origin.
- * This adapter hands the loader the participating bidder list and consent signals; the loader then
- * POSTs to `/cookie_sync` (with credentials) and drops the per-bidder sync pixels it returns.
- *
- * The bidder list comes from the auction response (`ext.responsetimemillis` keys, plus any seatbid
- * seats) — i.e. the bidders PBS actually invoked for the stored request — because the client has no
- * visibility into the stored request's contents.
- *
- * @param {Object} syncOptions - Allowed sync types. The loader itself is delivered as an iframe, and
- *   the enabled types (iframeEnabled/pixelEnabled) are forwarded to it so it only drops syncs of a type
- *   the publisher permitted.
- * @param {Array} serverResponses - Auction responses; source of the participating bidder list
- * @param {Object} gdprConsent - GDPR consent data (gdprApplies, consentString)
- * @param {string} uspConsent - US privacy (CCPA) consent string
- * @param {Object} gppConsent - GPP consent data (gppString, applicableSections)
- * @returns {Array<{type: string, url: string}>} A single iframe sync to the loader, or empty if disabled / no bidders
+ * Collects the bidders PBS actually invoked for the stored request, which it reports in the auction
+ * response (`ext.responsetimemillis` keys, plus any `seatbid[].seat`). The client has no visibility
+ * into the stored request's contents, so this is the only source for the cookie_sync bidder list.
+ * @param {Array} serverResponses - Auction responses
+ * @returns {Array<string>} The participating bidder names, capped at MAX_SYNC_COUNT
  */
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  // The loader is an HTML page, so it can only be delivered as an iframe sync; if iframe syncing is
-  // disabled there is nothing to return. The sync types the loader is then allowed to actually drop
-  // (iframe vs image/redirect) are constrained by the `filter` it is passed below, derived from
-  // syncOptions, so a disabled sync type never fires from inside the loader iframe.
-  if (!syncOptions.iframeEnabled) {
-    return [];
-  }
-
-  // PBS reports the bidders it invoked for the stored request in the auction response.
+function collectSyncBidders(serverResponses) {
   const bidders = new Set();
   (serverResponses || []).forEach((response) => {
     const body = response?.body;
@@ -368,22 +437,142 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
       if (seatbid?.seat) bidders.add(seatbid.seat);
     });
   });
+  return [...bidders].slice(0, MAX_SYNC_COUNT);
+}
 
-  if (bidders.size === 0) {
+/**
+ * Translates one sync type's entry from the publisher's `userSync.filterSettings` into the
+ * per-type filter PBS `/cookie_sync` accepts (`{bidders: '*' | string[], filter: 'include'|'exclude'}`).
+ *
+ * The publisher's `bidders` list names *client-side* Prebid bidder codes. `ocm` appearing in it is
+ * what authorises this adapter's sync at all, and core has already applied that when it computed
+ * `syncOptions` — so our own code is dropped from the list here; any other name in it is meaningful
+ * to PBS as a server-side bidder name and is forwarded verbatim. If nothing is left, the publisher
+ * only spoke about `ocm` itself (the shape the adapter's own docs recommend), which authorises every
+ * PBS-side bidder for that type rather than none.
+ * @param {Object} [publisherSettings] - The publisher's `userSync.filterSettings` config
+ * @param {string} type - SYNC_TYPE_IFRAME or SYNC_TYPE_IMAGE
+ * @returns {{bidders: string|Array<string>, filter: string}} A PBS cookie_sync per-type filter
+ */
+function toPbsSyncFilter(publisherSettings, type) {
+  const allowAll = { bidders: '*', filter: 'include' };
+
+  // `filterSettings.all` takes precedence over the per-type key, matching core's own resolution
+  // (see shouldBidderBeBlocked in src/userSync).
+  const entry = isPlainObject(publisherSettings)
+    ? (publisherSettings.all || publisherSettings[type])
+    : undefined;
+  if (!isPlainObject(entry)) {
+    return allowAll;
+  }
+
+  const filter = entry.filter === 'exclude' ? 'exclude' : 'include';
+  if (entry.bidders === '*') {
+    return { bidders: '*', filter };
+  }
+  if (!Array.isArray(entry.bidders)) {
+    return allowAll;
+  }
+
+  const bidders = entry.bidders.filter((bidder) => isStr(bidder) && bidder !== BIDDER_CODE);
+  return bidders.length > 0 ? { bidders, filter } : allowAll;
+}
+
+/**
+ * Builds the `filterSettings` object forwarded to PBS `/cookie_sync`, so the syncs dropped downstream
+ * honour the publisher's actual per-bidder rules rather than a coarse "these types are allowed" flag.
+ *
+ * A type Prebid did not authorise for `ocm` is blocked outright with `{bidders: '*', filter: 'exclude'}`
+ * — PBS treats an absent per-type filter as "allowed for everyone", so the block has to be explicit.
+ * @param {Object} syncOptions - Allowed sync types (iframeEnabled/pixelEnabled) for this bidder
+ * @returns {Object} A PBS cookie_sync `filterSettings` object keyed by sync type
+ */
+function buildSyncFilterSettings(syncOptions) {
+  const publisherSettings = config.getConfig('userSync.filterSettings');
+  const enabled = {
+    [SYNC_TYPE_IFRAME]: !!syncOptions?.iframeEnabled,
+    [SYNC_TYPE_IMAGE]: !!syncOptions?.pixelEnabled
+  };
+
+  return [SYNC_TYPE_IFRAME, SYNC_TYPE_IMAGE].reduce((filterSettings, type) => {
+    filterSettings[type] = enabled[type]
+      ? toPbsSyncFilter(publisherSettings, type)
+      : { bidders: '*', filter: 'exclude' };
+    return filterSettings;
+  }, {});
+}
+
+/**
+ * Determines whether the downstream cookie-sync pixels may be dropped at all under the privacy
+ * signals in play. Both checks gate the whole flow rather than individual pixels, because every sync
+ * the loader (or the redirect endpoint) drops exists to read/write a device identifier:
+ *
+ * - COPPA: a child-directed page must not have third-party sync pixels dropped on it.
+ * - TCF purpose 1 ("store and/or access information on a device") is the purpose cookie syncing
+ *   needs; without consent for it there is nothing legitimate for PBS to sync.
+ * @param {Object} [gdprConsent] - GDPR consent data
+ * @returns {boolean} True if syncing may proceed
+ */
+function syncsAllowedByPrivacy(gdprConsent) {
+  if (config.getConfig('coppa') === true) {
+    logWarn(`${BIDDER_CODE}: user syncing skipped because COPPA is enabled`);
+    return false;
+  }
+  if (!hasPurpose1Consent(gdprConsent)) {
+    logWarn(`${BIDDER_CODE}: user syncing skipped, no GDPR purpose 1 consent`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Registers user syncs (cookie syncing) for OCM's Prebid Server.
+ *
+ * Because `getUserSyncs` can only return GET descriptors while PBS `/cookie_sync` is POST-only, the
+ * sync is routed through an OCM-hosted GET endpoint that POSTs to `/cookie_sync` (with credentials)
+ * on the client's behalf. Both endpoints take the same query string:
+ *
+ * - iframe syncing enabled: the loader page (USER_SYNC_LOADER), which drops the per-bidder sync
+ *   pixels PBS returns. Preferred, because it can drop both iframe and redirect syncs.
+ * - iframe disabled but image syncing enabled: the redirect endpoint (USER_SYNC_REDIRECT), which
+ *   302-chains the redirect-type syncs PBS returns. This is the case for every publisher who has not
+ *   explicitly enabled iframe syncing for `ocm`, since core's default filterSettings allow only image
+ *   syncs — without it the adapter would silently sync nothing at all.
+ *
+ * @param {Object} syncOptions - Allowed sync types for this bidder (iframeEnabled/pixelEnabled). They
+ *   select the endpoint above, and are folded into the `filterSettings` forwarded to PBS so a type the
+ *   publisher did not authorise is never dropped downstream either.
+ * @param {Array} serverResponses - Auction responses; source of the participating bidder list
+ * @param {Object} gdprConsent - GDPR consent data (gdprApplies, consentString)
+ * @param {string} uspConsent - US privacy (CCPA) consent string
+ * @param {Object} gppConsent - GPP consent data (gppString, applicableSections)
+ * @returns {Array<{type: string, url: string}>} A single sync, or empty if syncing is disabled,
+ *   disallowed by COPPA/GDPR, or the auction response named no bidders
+ */
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  const iframeEnabled = !!syncOptions?.iframeEnabled;
+  const pixelEnabled = !!syncOptions?.pixelEnabled;
+
+  if (!iframeEnabled && !pixelEnabled) {
+    logWarn(`${BIDDER_CODE}: no user syncs registered, neither iframe nor image syncing is enabled for "${BIDDER_CODE}" (see userSync.filterSettings)`);
     return [];
   }
 
-  // Forward the sync policy Prebid authorised so the loader can constrain its PBS /cookie_sync POST
-  // (filterSettings + coopSync) instead of dropping whatever PBS returns into the hidden iframe.
-  // Without this, image/redirect syncs (when only iframe is enabled) or cooperatively-synced bidders
-  // the publisher never authorised would still fire from inside the loader iframe. iframe is always
-  // allowed at this point (we returned early otherwise); image is allowed only when pixelEnabled.
-  const filter = syncOptions.pixelEnabled ? 'iframe,image' : 'iframe';
+  if (!syncsAllowedByPrivacy(gdprConsent)) {
+    return [];
+  }
+
+  const bidders = collectSyncBidders(serverResponses);
+  if (bidders.length === 0) {
+    return [];
+  }
 
   const params = [
-    `bidders=${encodeURIComponent([...bidders].slice(0, MAX_SYNC_COUNT).join(','))}`,
+    `bidders=${encodeURIComponent(bidders.join(','))}`,
     `limit=${MAX_SYNC_COUNT}`,
-    `filter=${encodeURIComponent(filter)}`,
+    // Forward the publisher's own per-bidder sync policy so PBS applies it to the syncs it hands back,
+    // instead of the endpoint dropping whatever PBS chose to return.
+    `filterSettings=${encodeURIComponent(JSON.stringify(buildSyncFilterSettings(syncOptions)))}`,
     // Prebid only authorised syncing the bidders that participated in this auction, so disable PBS
     // cooperative syncing (which would sync additional, unrequested bidders).
     'coopSync=0'
@@ -423,7 +612,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     }
   }
 
-  return [{ type: 'iframe', url: `${USER_SYNC_LOADER}?${params.join('&')}` }];
+  // Prefer the iframe loader when it is available: it can drop both iframe and redirect syncs, while
+  // the image path is limited to the redirect chain the browser will follow for a single pixel.
+  return iframeEnabled
+    ? [{ type: SYNC_TYPE_IFRAME, url: `${USER_SYNC_LOADER}?${params.join('&')}` }]
+    : [{ type: SYNC_TYPE_IMAGE, url: `${USER_SYNC_REDIRECT}?${params.join('&')}` }];
 }
 
 /**
