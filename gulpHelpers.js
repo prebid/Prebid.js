@@ -5,7 +5,7 @@ const MANIFEST = 'package.json';
 const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
-const execaCmd = require('execa');
+const { spawn } = require('node:child_process');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const PRECOMPILED_PATH = './dist/src'
@@ -21,6 +21,30 @@ const SOURCE_FOLDERS = [
   'test',
   'public'
 ]
+
+function execaCmd(cmd, args, opts = {}) {
+  // on Windows, .bin/ entries are .cmd shims; spawn() without shell:true needs the real extension.
+  const resolveCmd = (cmd) => {
+    if (process.platform === 'win32') {
+      const candidate = `${cmd}.cmd`;
+      if (fs.existsSync(candidate)) return candidate;
+    }
+    return cmd;
+  }
+  // wrap spawn in a promise
+  return new Promise((resolve, reject) => {
+    const resolved = opts.shell ? cmd : resolveCmd(cmd);
+    const child = spawn(resolved, args, opts);
+    child.on('close', (code, signal) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command failed: ${cmd} (exit ${code ?? `signal ${signal}`})`));
+      }
+    });
+    child.on('error', reject);
+  });
+}
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -228,7 +252,14 @@ module.exports = {
     // test with all features disabled with exceptions for logging, as tests often assert logs
     return require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR')
   },
-  execaTask(cmd) {
-    return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  execaTask(cmd, { quiet } = {}) {
+    return () => execaCmd(cmd, [], {
+      shell: true,
+      // spawn only has the single stdio option.
+      // To control streams individually you use the array form: [stdin, stdout, stderr].
+      // There's no dedicated stderr key.
+      stdio: quiet ? ['ignore', 'ignore', 'inherit'] : 'inherit',
+    });
+  },
+  execaCmd,
 };
