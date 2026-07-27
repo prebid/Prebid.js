@@ -161,14 +161,6 @@ describe('Axonix Bid Adapter', function () {
       expect(requests[0].url).to.equal(BIDDER_URL);
     });
 
-    it('should use custom endpoint when provided', function () {
-      const customEndpoint = 'https://custom.example.com/bid';
-      const bid = buildBidRequest({ params: { supplyId: SUPPLY_ID, endpoint: customEndpoint } });
-      const requests = spec.buildRequests([bid], buildBidderRequest());
-
-      expect(requests[0].url).to.equal(customEndpoint);
-    });
-
     it('should include site page from refererInfo', function () {
       const requests = spec.buildRequests([buildBidRequest()], buildBidderRequest());
       const payload = requests[0].data;

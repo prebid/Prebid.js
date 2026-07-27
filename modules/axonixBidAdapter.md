@@ -23,7 +23,6 @@ Integration requires a valid Axonix `supplyId`. Contact Axonix for account setup
 | ---- | ----- | ---- | ----------- | ------- |
 | `supplyId` | required | String | Axonix supply identifier | `"your-supply-id"` |
 | `region` | optional | String | Axonix regional endpoint prefix. Defaults to `us-east-1` | `"us-east-1"` |
-| `endpoint` | optional | String | Override the default bid URL | `"https://custom.example.com/bid"` |
 | `referrer` | optional | String | Page URL override for the bid request | `"https://example.com/page"` |
 
 **Default bid endpoint:**
@@ -36,22 +35,27 @@ If `region` is omitted, `us-east-1` is used.
 
 # Banner Test Parameters
 
+The following parameters will make an ad call to our test campaign. Note that these may or may not return
+a response as they are subject to the same pacing and targeting rules as a 'real' campaign. Refresh
+your test page if you do not receive a response for one or both placements on the first try.
+
 ```javascript
-var adUnits = [{
-  code: 'banner-ad-unit',
-  mediaTypes: {
-    banner: {
-      sizes: [[300, 250], [728, 90]]
-    }
-  },
-  bids: [{
-    bidder: 'axonix',
-    params: {
-      supplyId: 'your-supply-id',   // required
-      region: 'us-east-1'           // optional
-    }
-  }]
-}];
+const AD_UNITS = [
+  {
+    code: 'target-div',
+    mediaTypes: {
+      banner: {
+        sizes: [[320, 50]],
+      }
+    },
+    bids: [{
+      bidder: 'axonix',
+      params: {
+        supplyId: '837b4df0-1c5b-4080-88af-03d4090651cf'
+      },
+    }],
+  }
+];
 ```
 
 # Video Test Parameters
@@ -59,51 +63,64 @@ var adUnits = [{
 Video ad units must include a non-empty `mimes` array.
 
 ```javascript
-var adUnits = [{
-  code: 'video-ad-unit',
-  mediaTypes: {
-    video: {
-      context: 'instream',                    // recommended
-      playerSize: [640, 480],                 // recommended
-      mimes: ['video/mp4', 'video/webm'],     // required
-      protocols: [2, 3, 5, 6],                // optional
-      playbackmethod: [1, 2],                 // optional
-      placement: 1,                           // optional
-      minduration: 5,                         // optional
-      maxduration: 30                         // optional
-    }
-  },
-  bids: [{
-    bidder: 'axonix',
-    params: {
-      supplyId: 'your-supply-id'              // required
-    }
-  }]
-}];
+const AD_UNITS = [
+  {
+    code: 'target-div',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [[1280, 720]],
+        mimes: ['video/mp4', 'application/javascript', 'video/mpeg', 'video/mpg'],
+        protocols: [2, 3, 5, 6],
+        playbackmethod: [2],
+        minduration: 5,
+        maxduration: 31,
+        startdelay: 0,
+        placement: 1,
+        skip: 1,
+      },
+    },
+    bids: [{
+      bidder: 'axonix',
+      params: {
+        supplyId: '837b4df0-1c5b-4080-88af-03d4090651cf'
+      },
+    }],
+  }
+];
 ```
 
 # Multi-format Test Parameters
 
 ```javascript
-var adUnits = [{
-  code: 'multi-format-ad-unit',
-  mediaTypes: {
-    banner: {
-      sizes: [[300, 250]]
+const AD_UNITS = [
+  {
+    code: 'target-div',
+    mediaTypes: {
+      banner: {
+        sizes: [[320, 50]],
+      },
+      video: {
+        context: 'instream',
+        playerSize: [[1280, 720]],
+        mimes: ['video/mp4', 'application/javascript', 'video/mpeg', 'video/mpg'],
+        protocols: [2, 3, 5, 6],
+        playbackmethod: [2],
+        minduration: 5,
+        maxduration: 31,
+        startdelay: 0,
+        placement: 1,
+        skip: 1,
+      }
     },
-    video: {
-      context: 'outstream',
-      playerSize: [640, 480],
-      mimes: ['video/mp4']                    // required when video is present
-    }
-  },
-  bids: [{
-    bidder: 'axonix',
-    params: {
-      supplyId: 'your-supply-id'
-    }
-  }]
-}];
+    bids: [{
+      bidder: 'axonix',
+      params: {
+        supplyId: '837b4df0-1c5b-4080-88af-03d4090651cf'
+      },
+    }],
+  }
+];
 ```
 
 # Floor Pricing
@@ -119,9 +136,9 @@ pbjs.setConfig({
         fields: ['mediaType', 'size']
       },
       values: {
-        'banner|300x250': 1.50,
-        'video|640x480': 3.50,
-        '*|*': 1.00
+        'banner|320x50': 0.01,
+        'video|1280x720': 0.01,
+        '*|*': 0.01
       }
     }
   }

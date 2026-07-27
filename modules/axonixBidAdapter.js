@@ -46,12 +46,10 @@ function isConnectedTV() {
 }
 
 function getBidderURL(params) {
-  const { supplyId, region, endpoint } = params;
+  const { supplyId, region } = params;
   let url;
 
-  if (endpoint) {
-    url = endpoint;
-  } else if (region) {
+  if (region) {
     url = `https://openrtb-${region}.axonix.com/supply/prebid-js/v2/${supplyId}`;
   } else {
     url = `https://openrtb-${DEFAULT_REGION}.axonix.com/supply/prebid-js/v2/${supplyId}`;

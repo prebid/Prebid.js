@@ -8,10 +8,6 @@ export interface AxonixBidderParams {
    */
   region?: string;
   /**
-   * Overrides the default endpoint URL
-   */
-  endpoint?: string;
-  /**
    * Referrer URL to be sent with the bid request
    */
   referrer?: string;
