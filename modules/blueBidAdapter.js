@@ -19,7 +19,6 @@ import {
 } from '../src/utils.js';
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
-const GVLID = 620;
 const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -28,7 +27,6 @@ const converter = createOrtbConverter(ortbConverter, BANNER, DEFAULT_CURRENCY, o
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   // Validate bid request
@@ -39,7 +37,7 @@ export const spec = {
     const context = {
       publisherId: getPublisherIdFromBids(validBidRequests),
     };
-    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
+    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, null, converter);
 
     const blueDataProcessor = (data) => data;
     const blueOptions = { contentType: 'application/json' };
