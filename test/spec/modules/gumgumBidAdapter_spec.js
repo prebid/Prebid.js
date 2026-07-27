@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
@@ -1321,6 +1322,26 @@ describe('gumgumAdapter', function () {
       // params are stripped from pu property
       expect(bidRequest.data.pu.includes('ggad')).to.be.false;
       expect(bidRequest.data.pu.includes('ggdeal')).to.be.false;
+    });
+
+    it('should still set pu when getWindowTop throws', function () {
+      const getWindowTopStub = sinon.stub(utils, 'getWindowTop').throws(new Error('cross-origin'));
+      const pageUrl = 'https://www.prebid.org/article?param1=foo';
+      const topmostLocation = 'https://www.prebid.org/top';
+
+      try {
+        const bidRequest = spec.buildRequests(bidRequests, {
+          refererInfo: {
+            page: pageUrl,
+            topmostLocation
+          }
+        })[0];
+
+        expect(bidRequest.data.pu).to.equal(pageUrl);
+        expect(bidRequest.data.tpl).to.equal(topmostLocation);
+      } finally {
+        getWindowTopStub.restore();
+      }
     });
 
     it('should handle ORTB2 device data', function () {
