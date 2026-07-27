@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { expect } from 'chai';
@@ -74,9 +75,11 @@ describe('checkFiles', () => {
 
   it('reports an augmentation whose target nothing imports, with its position', () => {
     const problems = check('broken.ts');
+    const augmentedAt = fs.readFileSync(path.join(FIXTURES, 'broken.ts'), 'utf8')
+      .split('\n').findIndex(line => line.startsWith('declare module')) + 1;
     expect(problems.length).to.equal(1);
     expect(problems[0].file).to.equal(path.join(FIXTURES, 'broken.ts'));
-    expect(problems[0].line).to.equal(5);
+    expect(problems[0].line).to.equal(augmentedAt);
     expect(problems[0].message).to.contain('never applies');
   });
 

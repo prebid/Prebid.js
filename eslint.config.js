@@ -70,6 +70,8 @@ module.exports = [
       '*.mjs',
       'metadata/**/*',
       'customize/**/*',
+      // inputs for tests that run linter rules themselves, and not all of them are meant to pass
+      'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
     ],
