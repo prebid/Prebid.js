@@ -6,10 +6,7 @@ import {
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn,
-  onBidBillable,
-  onAdRenderSucceeded,
-  onBidViewable
+  createInterpretResponseFn, onBidBillable
 } from '../libraries/vidazooUtils/bidderUtils.js';
 
 /**
@@ -50,8 +47,6 @@ export const spec = {
   getUserSyncs,
   onBidWon,
   onBidBillable,
-  onAdRenderSucceeded,
-  onBidViewable
 };
 
 registerBidder(spec);
