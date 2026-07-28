@@ -1,4 +1,4 @@
-const {MESSAGES, checkAugmentation} = require('../augmentationReachable.js');
+const {MESSAGES, checkAugmentation, isMarkedOptional} = require('../augmentationReachable.js');
 
 const MODULE_STATEMENTS = new Set([
   'ImportDeclaration',
@@ -35,6 +35,10 @@ module.exports = {
     return {
       'TSModuleDeclaration[id.type="Literal"]': function (node) {
         if (!isModule) return;
+        const jsdoc = sourceCode.getCommentsBefore(node)
+          .filter(comment => comment.type === 'Block' && comment.value.startsWith('*'))
+          .map(comment => comment.value);
+        if (isMarkedOptional(jsdoc)) return;
         const problem = checkAugmentation(node.id.value, filename, options, cwd);
         if (problem != null) {
           context.report({node: node.id, ...problem});

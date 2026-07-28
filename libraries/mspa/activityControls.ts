@@ -20,6 +20,11 @@ export interface MSPAConfig {
   restrictActivities?: string[]
 }
 
+/**
+ * These options live under the GPP consent module's configuration, so they only mean anything to a
+ * publisher who has included that module: the augmentation is meant to apply only then.
+ * @augmentationOptional
+ */
 declare module '../../modules/consentManagementGpp' {
   interface GPPConfig {
     mspa?: MSPAConfig;

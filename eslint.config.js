@@ -157,6 +157,9 @@ module.exports = [
       // also see: reality. These are here to stay.
       // we're working on them though :)
 
+      // @augmentationOptional is read by prebid/augmentation-reachable, and by the same check
+      // after declaration emit
+      'jsdoc/check-tag-names': ['warn', {definedTags: ['augmentationOptional']}],
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',

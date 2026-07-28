@@ -61,6 +61,12 @@ ruleTester.run('augmentation-reachable', rule, {
       options
     },
     {
+      // declared conditional on purpose, with the tag declaration emit keeps
+      code: read('optional.ts'),
+      filename: fixture('optional.ts'),
+      options
+    },
+    {
       // an augmentation under an ignored directory is nobody's business either
       code: read('ignored/broken.ts'),
       filename: fixture('ignored/broken.ts'),
@@ -71,6 +77,13 @@ ruleTester.run('augmentation-reachable', rule, {
     {
       code: read('broken.ts'),
       filename: fixture('broken.ts'),
+      options,
+      errors: [{ messageId: 'unreachable' }]
+    },
+    {
+      // the tag in a line comment does not survive declaration emit, so it must not suppress here
+      code: read('optionalLineComment.ts'),
+      filename: fixture('optionalLineComment.ts'),
       options,
       errors: [{ messageId: 'unreachable' }]
     },
@@ -108,12 +121,22 @@ describe('checkFiles', () => {
     expect(problems[0].message).to.contain('never applies');
   });
 
+  it('accepts an augmentation marked @augmentationOptional', () => {
+    expect(check('optional.ts')).to.eql([]);
+    // the tag is the only difference between this fixture and broken.ts
+    expect(check('broken.ts').length).to.equal(1);
+  });
+
+  it('honours the tag only in JSDoc, which is what declaration emit keeps', () => {
+    expect(check('optionalLineComment.ts').length).to.equal(1);
+  });
+
   it('ignores eslint disable directives, which do not apply to generated files', () => {
     expect(check('directiveDisabled.ts').length).to.equal(1);
   });
 
   it('checks every file it is given', () => {
-    expect(check('augmentsCore.ts', 'broken.ts', 'orphan.ts', 'directiveDisabled.ts').length).to.equal(2);
+    expect(check('augmentsCore.ts', 'broken.ts', 'orphan.ts', 'directiveDisabled.ts', 'optional.ts').length).to.equal(2);
   });
 
   it('does not check files under an ignored directory', () => {

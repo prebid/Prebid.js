@@ -59,6 +59,18 @@ function compilerOptionsFrom(project, cwd) {
   return {...options, noEmit: true};
 }
 
+/**
+ * Marks an augmentation that is meant to apply only when its target is independently imported -
+ * for example, config options a control module adds under another module's configuration. Written
+ * Only honoured in JSDoc: those are the comments that survive declaration emit, so the mark means
+ * the same thing before and after it.
+ */
+const OPTIONAL_TAG = 'augmentationOptional';
+
+function isMarkedOptional(jsdocComments) {
+  return jsdocComments.some(comment => new RegExp(`@${OPTIONAL_TAG}\\b`).test(comment));
+}
+
 const MESSAGES = {
   unresolved: 'cannot resolve augmented module "{{specifier}}"',
   unreachable: 'augmenting "{{specifier}}", but neither core nor this file imports {{target}}, so ' +
@@ -71,6 +83,18 @@ function formatMessage(messageId, data) {
     (message, [key, value]) => message.replaceAll(`{{${key}}}`, value),
     MESSAGES[messageId]
   );
+}
+
+/**
+ * The comments directly above a node. Read from the text rather than through `getJSDocTags`, which
+ * needs a source file parsed with parent pointers.
+ */
+function leadingJSDoc(source, node) {
+  return (ts.getLeadingCommentRanges(source.text, node.pos) ?? [])
+    .map(range => source.text.slice(range.pos, range.end))
+    // only JSDoc, so that the mark means the same thing before and after declaration emit, which
+    // keeps JSDoc and drops every other kind of comment
+    .filter(comment => comment.startsWith('/**'));
 }
 
 function listFiles(root, extensions = TYPED_EXTENSIONS, ignore = []) {
@@ -247,7 +271,8 @@ function checkFiles(files, options, cwd = process.cwd()) {
     if (!ts.isExternalModule(source)) return [];
     const problems = [];
     (function visit(node) {
-      if (ts.isModuleDeclaration(node) && node.name && ts.isStringLiteral(node.name)) {
+      if (ts.isModuleDeclaration(node) && node.name && ts.isStringLiteral(node.name) &&
+          !isMarkedOptional(leadingJSDoc(source, node))) {
         const problem = checkAugmentation(node.name.text, file, options, cwd);
         if (problem != null) {
           const {line, character} = source.getLineAndCharacterOfPosition(node.name.getStart(source));
@@ -267,6 +292,8 @@ function checkFiles(files, options, cwd = process.cwd()) {
 
 module.exports = {
   MESSAGES,
+  OPTIONAL_TAG,
+  isMarkedOptional,
   TYPED_EXTENSIONS,
   checkAugmentation,
   checkFiles,
