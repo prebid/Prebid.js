@@ -8,6 +8,7 @@ import {
 } from '../../src/activities/activities.js';
 import { gppDataHandler } from '../../src/adapterManager.js';
 import { logInfo } from '../../src/utils.js';
+import type { GPPConsentData } from '../../src/types/consent/gpp.d.ts';
 
 export interface MSPAConfig {
   /**
@@ -156,7 +157,7 @@ export function getRules(restrictActivities) {
   return Object.assign(Object.fromEntries((restrictActivities ?? []).map(activity => [activity, isConsentDenied])), CONSENT_RULES);
 }
 
-export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = (c) => c, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
+export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = (c) => c, registerRule = registerActivityControl, getConsentData: () => GPPConsentData = () => gppDataHandler.getConsentData()) {
   const unreg = [];
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
   logInfo(`Enabling activity controls for ${ruleName}`);
