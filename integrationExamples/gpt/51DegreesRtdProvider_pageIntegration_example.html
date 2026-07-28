@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        var RESOURCE_KEY = new URLSearchParams(location.search).get('resourceKey') || '';
+        // The 51Degrees script is included synchronously, before Prebid.
+        if (RESOURCE_KEY) {
+            document.write('<script src="https://cloud.51degrees.com/api/v4/' + RESOURCE_KEY + '.js?id.usage=personalized"><\/script>');
+        }
+    </script>
+    <meta http-equiv="Delegate-CH" content="sec-ch-ua-full-version-list https://cloud.51degrees.com; sec-ch-ua-model https://cloud.51degrees.com; sec-ch-ua-platform https://cloud.51degrees.com; sec-ch-ua-platform-version https://cloud.51degrees.com">
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="utf-8">
+    <style>
+        body {
+            color: #555;
+            font-family: sans-serif;
+        }
+    </style>
+    <script>
+        var PREBID_TIMEOUT = 1000;
+        var FAILSAFE_TIMEOUT = 3000;
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+
+            googletag.cmd.push(function () {
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function () {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                } else {
+                    googletag.pubads().refresh();
+                }
+            });
+
+            pbjs.initAdserverSet = true;
+        }
+
+        pbjs.que.push(function () {
+            var adUnits = [{
+                code: 'div-banner-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [300, 250]
+                        ]
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232392,
+                    }
+                }]
+            }];
+
+            pbjs.setConfig({
+                debug: true, // verbose logging
+                debugging: {
+                    enabled: true, // activates the debugging-module bid interceptor
+                    intercept: [{
+                        when: { bidder: 'appnexus' },
+                        then: {
+                            cpm: 1.50,
+                            currency: 'USD',
+                            ttl: 300,
+                            creativeId: 'mock-creative',
+                            netRevenue: true,
+                            mediaType: 'banner',
+                            width: 300,
+                            height: 250,
+                            ad: '<div style="background:#fc0;width:300px;height:250px;text-align:center;line-height:250px;font-family:sans-serif;">Mock bid $1.50</div>'
+                        }
+                    }]
+                },
+                realTimeData: {
+                    auctionDelay: 1000, // should be set lower in production use
+                    dataProviders: [
+                        {
+                            name: '51Degrees',
+                            waitForIt: true,
+                            params: {
+                                // No resourceKey: the module detects the
+                                // on-page integration automatically.
+                                // tdlUrl populates user.eids[].ext.tdl per data labels spec.
+                                // Replace with your real TDL endpoint.
+                                tdlUrl: 'https://tdl.example/replace-me',
+                            }
+                        }
+                    ]
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.onEvent('bidRequested', function (data) {
+                try {
+                    fod.complete(() => {
+                        document.getElementById('enriched-51').style.display = 'block';
+                        document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
+                        document.getElementById('enriched-51-eids').textContent = JSON.stringify(data.ortb2.user?.eids || [], null, 2);
+                    });
+                } catch (e) {
+                    console.error('Error while trying to display enriched data', e);
+                }
+            });
+
+            pbjs.requestBids({
+                timeout: PREBID_TIMEOUT,
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver();
+                }
+            });
+        });
+        setTimeout(initAdserver, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot(
+                    '/19968336/prebid_multiformat_test', [
+                        [300, 250],
+                        [360, 360]
+                    ],
+                    'div-banner-1'
+                )
+                .addService(googletag.pubads());
+
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <title>51Degrees RTD submodule on-page integration example - Prebid.js</title>
+</head>
+<body>
+    <h2>51Degrees RTD submodule - on-page integration example</h2>
+
+    <form id="rk-form" style="margin-bottom: 1em; padding: 0.5em; background: #f5f5f5; border: 1px solid #ddd;">
+        <label><strong>resourceKey:</strong>
+            <input type="text" id="rk-input" size="40" placeholder="paste your 51Degrees resource key">
+        </label>
+        <button type="submit">Apply &amp; reload</button>
+        <button type="button" onclick="sessionStorage.removeItem('__51d_rtd_cache'); location.reload();">Clear RTD cache &amp; reload</button>
+        <small> &mdash; or pass <code>?resourceKey=...</code> in the URL.</small>
+    </form>
+    <script>
+        (function () {
+            var input = document.getElementById('rk-input');
+            var current = new URLSearchParams(location.search).get('resourceKey');
+            if (current) input.value = current;
+            document.getElementById('rk-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var k = input.value.trim();
+                var url = new URL(location.href);
+                if (k) url.searchParams.set('resourceKey', k);
+                else url.searchParams.delete('resourceKey');
+                location.href = url.toString();
+            });
+        })();
+    </script>
+
+    <h3>div-banner-1</h3>
+    <div id='div-banner-1'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner-1');
+            });
+        </script>
+    </div>
+
+    <div id="debug">
+        <h3>Testing/Debugging Guidance</h3>
+        <ol>
+            <li>Pass your resource key with <code>?resourceKey=...</code>; the page then includes the 51Degrees script itself, before Prebid</li>
+            <li>The RTD module has no <code>resourceKey</code>: it detects the on-page integration automatically and consumes it instead of loading a second script</li>
+            <li>Open DevTools Network and confirm the 51Degrees script is requested exactly once</li>
+            <li>Observe the enriched ORTB shown below: <code>device</code> and <code>user.eids</code></li>
+            <li>Reload the page: the first auction is now enriched instantly from <code>sessionStorage['__51d_rtd_cache']</code></li>
+        </ol>
+    </div>
+    <div id="enriched-51" style="display: none">
+        <h3>Enriched ORTB2 device data</h3>
+        <pre id="enriched-51-data"></pre>
+        <h3>user.eids</h3>
+        <pre id="enriched-51-eids"></pre>
+    </div>
+</body>
+</html>

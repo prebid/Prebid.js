@@ -505,6 +505,56 @@ export const resolveIdUsage = (moduleConfig) => {
   return undefined;
 };
 
+// Session cache of the last response for later auctions.
+const RTD_CACHE_KEY = '__51d_rtd_cache';
+const RTD_CACHE_VERSION = 1;
+
+/**
+ * Reads the cached response for the given inputs.
+ *
+ * @param {Object} inputs Current idUsage, tc and gpp values
+ * @returns {Object|null}
+ */
+export const readRtdCache = (inputs) => {
+  try {
+    const stored = storageManager.getDataFromSessionStorage(RTD_CACHE_KEY);
+    if (!stored) {
+      return null;
+    }
+    const parsed = JSON.parse(stored);
+    if (!parsed || parsed.v !== RTD_CACHE_VERSION || !parsed.inputs || !parsed.data) {
+      return null;
+    }
+    if (parsed.inputs.idUsage !== inputs.idUsage ||
+        parsed.inputs.tc !== inputs.tc ||
+        parsed.inputs.gpp !== inputs.gpp) {
+      return null;
+    }
+    return parsed.data;
+  } catch (_) {
+    return null;
+  }
+};
+
+/**
+ * Stores a response for reuse by later auctions in this session.
+ *
+ * @param {Object} data Raw 51Degrees response payload
+ * @param {Object} inputs idUsage, tc and gpp values the data was produced with
+ */
+export const writeRtdCache = (data, inputs) => {
+  if (!data || !(data.device || data.ip || data.fodid)) {
+    return;
+  }
+  try {
+    storageManager.setDataInSessionStorage(
+      RTD_CACHE_KEY,
+      JSON.stringify({ v: RTD_CACHE_VERSION, inputs, data }));
+  } catch (_) {
+    // Storage unavailable; skip caching.
+  }
+};
+
 /**
  * Reads the raw TCF consent string from Prebid user consent.
  *
@@ -528,25 +578,90 @@ export const resolveGpp = (userConsent) => {
 };
 
 /**
+ * Returns the on-page 51Degrees integration object, if present.
+ *
+ * @param {Window} [win] Window object (mainly for testing)
+ * @returns {Object|null}
+ */
+export const getPageFod = (win) => {
+  const fod = (win || window).fod;
+  return (fod && typeof fod.complete === 'function') ? fod : null;
+};
+
+/**
+ * Converts 51Degrees data and merges it into the ORTB2 fragments.
+ *
+ * @param {Object} data Raw 51Degrees response payload
+ * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {string} [tdlUrl] TDL URL passed from module config
+ * @param {Function} callback Called on completion
+ */
+const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
+  logMessage('51Degrees raw data: ', data);
+  const global = reqBidsConfigObj.ortb2Fragments.global;
+  const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
+  // Don't clobber a publisher-observed device.ip / device.ipv6 with
+  // our IP-derived value. Publisher signal wins.
+  if (enrichment.device) {
+    if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
+    if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+  }
+  mergeDeep(global, enrichment);
+  logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
+  callback();
+};
+
+/**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} callback Called on completion
  * @param {Object} moduleConfig Configuration for 1plusX RTD module
  * @param {Object} userConsent
  */
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
+  let callbackCalled = false;
+  const callbackOnce = () => {
+    if (!callbackCalled) {
+      callbackCalled = true;
+      callback();
+    }
+  };
   try {
-    // Get the required config
+    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
+    const idUsage = resolveIdUsage(moduleConfig);
+    const tcString = resolveTcString(userConsent);
+    const gpp = resolveGpp(userConsent);
+    logMessage('Resolved id.usage: ', idUsage);
+    logMessage('TCF consent string present: ', !!tcString);
+    logMessage('GPP string present: ', !!gpp);
+
+    const cacheInputs = {
+      idUsage: idUsage || null,
+      tc: tcString || null,
+      gpp: gpp || null,
+    };
+    const cached = readRtdCache(cacheInputs);
+    if (cached) {
+      logMessage('Enriching from cached 51Degrees data');
+      enrichFromData(cached, reqBidsConfigObj, tdlUrl, callbackOnce);
+    }
+
+    const onData = (data) => {
+      writeRtdCache(data, cacheInputs);
+      if (!callbackCalled) {
+        enrichFromData(data, reqBidsConfigObj, tdlUrl, callbackOnce);
+      }
+    };
+
+    const pageFod = getPageFod();
+    if (pageFod) {
+      logMessage('Using on-page 51Degrees integration (window.fod)');
+      pageFod.complete(onData);
+      return;
+    }
+
     const { resourceKey, onPremiseJSUrl } = extractConfig(moduleConfig, reqBidsConfigObj);
     logMessage('Resource key: ', resourceKey);
     logMessage('On-premise JS URL: ', onPremiseJSUrl);
-
-    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
-    const idUsage = resolveIdUsage(moduleConfig);
-    logMessage('Resolved id.usage: ', idUsage);
-    const tcString = resolveTcString(userConsent);
-    const gpp = resolveGpp(userConsent);
-    logMessage('TCF consent string present: ', !!tcString);
-    logMessage('GPP string present: ', !!gpp);
 
     // Check if 51Degrees meta is present (cloud only)
     if (resourceKey) {
@@ -566,26 +681,13 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
         logMessage('Successfully injected 51Degrees script');
         const fod = /** @type {Object} */ (window.fod);
         // Convert and merge device data in the callback
-        fod.complete((data) => {
-          logMessage('51Degrees raw data: ', data);
-          const global = reqBidsConfigObj.ortb2Fragments.global;
-          const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
-          // Don't clobber a publisher-observed device.ip / device.ipv6 with
-          // our IP-derived value. Publisher signal wins.
-          if (enrichment.device) {
-            if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
-            if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
-          }
-          mergeDeep(global, enrichment);
-          logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
-          callback();
-        });
+        fod.complete(onData);
       }, document, { crossOrigin: 'anonymous' });
     });
   } catch (error) {
     // In case of an error, log it and continue
     logError(error);
-    callback();
+    callbackOnce();
   }
 };
 

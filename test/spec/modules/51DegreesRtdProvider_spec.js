@@ -10,6 +10,8 @@ import {
   resolveIdUsage,
   resolveTcString,
   resolveGpp,
+  readRtdCache,
+  writeRtdCache,
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
@@ -900,6 +902,58 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
+  describe('rtd cache', function() {
+    const RTD_CACHE_KEY = '__51d_rtd_cache';
+    const inputs = { idUsage: 'standard', tc: null, gpp: null };
+
+    afterEach(function() {
+      sessionStorage.removeItem(RTD_CACHE_KEY);
+    });
+
+    it('returns cached data when inputs match', function() {
+      writeRtdCache({ device: { ismobile: 'True' } }, inputs);
+      expect(readRtdCache(inputs)).to.deep.equal({ device: { ismobile: 'True' } });
+    });
+
+    it('returns null when inputs differ', function() {
+      writeRtdCache({ device: { ismobile: 'True' } }, inputs);
+      expect(readRtdCache({ idUsage: 'personalized', tc: null, gpp: null })).to.be.null;
+    });
+
+    it('returns null when consent inputs differ', function() {
+      writeRtdCache({ device: { ismobile: 'True' } }, inputs);
+      expect(readRtdCache({ idUsage: 'standard', tc: 'TCSTRING', gpp: null })).to.be.null;
+    });
+
+    it('returns null when storage is empty', function() {
+      expect(readRtdCache(inputs)).to.be.null;
+    });
+
+    it('returns null on malformed JSON', function() {
+      sessionStorage.setItem(RTD_CACHE_KEY, 'not-json{');
+      expect(readRtdCache(inputs)).to.be.null;
+    });
+
+    it('returns null on unknown cache version', function() {
+      sessionStorage.setItem(RTD_CACHE_KEY, JSON.stringify({ v: 99, inputs, data: { device: {} } }));
+      expect(readRtdCache(inputs)).to.be.null;
+    });
+
+    it('does not store payloads without data groups', function() {
+      writeRtdCache({ errors: ['boom'] }, inputs);
+      expect(sessionStorage.getItem(RTD_CACHE_KEY)).to.be.null;
+    });
+
+    it('works without cache when storage access throws', function() {
+      const stub = sinon.stub(Storage.prototype, 'getItem').throws(new Error('denied'));
+      try {
+        expect(readRtdCache(inputs)).to.be.null;
+      } finally {
+        stub.restore();
+      }
+    });
+  });
+
   describe('getBidRequestData', function() {
     let initialHeadInnerHTML;
     let reqBidsConfigObj = {};
@@ -925,6 +979,7 @@ describe('51DegreesRtdProvider', function() {
 
     beforeEach(function() {
       resetReqBidsConfigObj();
+      sessionStorage.removeItem('__51d_rtd_cache');
     });
 
     after(function() {
@@ -932,35 +987,59 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('calls the callback even if submodule fails (wrong config)', function() {
+      const originalFod = window.fod;
+      delete window.fod;
       const callback = sinon.spy();
       const moduleConfig = { params: {} };
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-      expect(callback.calledOnce).to.be.true;
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+        expect(callback.calledOnce).to.be.true;
+      } finally {
+        window.fod = originalFod;
+      }
     });
 
     it('calls the callback even if submodule fails (on-premise, non-working URL)', async function() {
+      const originalFod = window.fod;
+      delete window.fod;
       const callback = sinon.spy();
       const moduleConfig = { params: { onPremiseJSUrl: 'http://localhost:12345/test/51Degrees.core.js' } };
 
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      } finally {
+        window.fod = originalFod;
+      }
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
     });
 
     it('calls the callback even if submodule fails (invalid resource key)', async function() {
+      const originalFod = window.fod;
+      delete window.fod;
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
 
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      } finally {
+        window.fod = originalFod;
+      }
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
     });
 
     it('works with Delegate-CH meta tag', async function() {
+      const originalFod = window.fod;
+      delete window.fod;
       inject51DegreesMeta();
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      } finally {
+        window.fod = originalFod;
+      }
       await new Promise(resolve => setTimeout(resolve, 100));
       expect(callback.calledOnce).to.be.true;
     });
@@ -1030,6 +1109,9 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('forwards tcstring and gppstring from userConsent to the script URL', async function() {
+      const originalFod = window.fod;
+      delete window.fod;
+      loadExternalScriptStub.resetHistory();
       const callback = sinon.spy();
       const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
       const userConsent = {
@@ -1037,13 +1119,94 @@ describe('51DegreesRtdProvider', function() {
         gpp: { gppString: 'GPPSTRINGVAL' },
       };
 
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
+      } finally {
+        window.fod = originalFod;
+      }
       await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(loadExternalScriptStub.called).to.be.true;
       const scriptUrl = loadExternalScriptStub.getCall(0).args[0];
       expect(scriptUrl).to.include('tcstring=TCSTRINGVAL');
       expect(scriptUrl).to.include('gppstring=GPPSTRINGVAL');
+    });
+
+    it('consumes an on-page integration automatically', async function() {
+      const originalFod = window.fod;
+      const data51 = {
+        device: fiftyOneDegreesDevice,
+        fodid: { idproblic: 'lic-uid', idhemlic: 'hem-lic-uid', idhemglobal: 'hem-global-uid' },
+      };
+      window.fod = { complete: (cb) => cb(data51) };
+      loadExternalScriptStub.resetHistory();
+      sessionStorage.removeItem('__51d_rtd_cache');
+
+      const callback = sinon.spy();
+      const moduleConfig = { params: { tdlUrl: 'https://tdl.example/x' } };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        expect(callback.calledOnce).to.be.true;
+        expect(loadExternalScriptStub.called).to.be.false;
+        const eids = reqBidsConfigObj.ortb2Fragments.global.user.eids;
+        expect(eids).to.have.lengthOf(2);
+        expect(eids[1].mm).to.equal(3);
+        expect(sessionStorage.getItem('__51d_rtd_cache')).to.not.be.null;
+      } finally {
+        window.fod = originalFod;
+        sessionStorage.removeItem('__51d_rtd_cache');
+      }
+    });
+
+    it('loads its own script when no integration is on the page', async function() {
+      const originalFod = window.fod;
+      delete window.fod;
+      loadExternalScriptStub.resetHistory();
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      } finally {
+        window.fod = originalFod;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(loadExternalScriptStub.called).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('enriches synchronously from the cache and refreshes it from a late source', async function() {
+      const originalFod = window.fod;
+      let storedCb = null;
+      window.fod = { complete: (cb) => { storedCb = cb; } };
+      loadExternalScriptStub.resetHistory();
+      const cachedData = { device: fiftyOneDegreesDevice };
+      writeRtdCache(cachedData, { idUsage: null, tc: null, gpp: null });
+
+      const callback = sinon.spy();
+      const moduleConfig = { params: {} };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+        expect(callback.calledOnce).to.be.true;
+        expect(reqBidsConfigObj.ortb2Fragments.global.device.make).to.equal('Apple');
+        expect(loadExternalScriptStub.called).to.be.false;
+
+        storedCb({ device: fiftyOneDegreesDevice, fodid: { idproblic: 'late-uid' } });
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(callback.calledOnce).to.be.true;
+        const stored = JSON.parse(sessionStorage.getItem('__51d_rtd_cache'));
+        expect(stored.data.fodid.idproblic).to.equal('late-uid');
+      } finally {
+        window.fod = originalFod;
+        sessionStorage.removeItem('__51d_rtd_cache');
+      }
     });
   });
 
