@@ -410,8 +410,12 @@ export function newTargeting(auctionManager) {
     targeting.presetGPTTargeting(adUnitCodes);
   });
 
-  events.on(EVENTS.BID_WON, ({ adUnitCode }) => {
-    targeting.presetGPTTargeting([adUnitCode]);
+  events.on(EVENTS.BID_WON, ({ adUnitCode, auctionId }) => {
+    // Ignore late wins from older auctions that would clear targeting already
+    // installed by a newer auction for the same ad unit.
+    if (latestAuctionForAdUnit[adUnitCode] === auctionId) {
+      targeting.presetGPTTargeting([adUnitCode]);
+    }
   });
 
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {

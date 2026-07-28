@@ -1703,10 +1703,19 @@ describe('targeting tests', function () {
         sinon.assert.calledWithExactly(presetGPTTargetingStub, adUnitCodes);
       });
 
-      it('calls presetGPTTargeting with single adUnitCode on BID_WON', () => {
+      it('calls presetGPTTargeting with single adUnitCode on BID_WON from the latest auction', () => {
         const adUnitCode = 'div-1';
-        events.emit(EVENTS.BID_WON, { adUnitCode });
+        const auctionId = 'auction-b';
+        targetingInstance.setLatestAuctionForAdUnit(adUnitCode, auctionId);
+        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId });
         sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
+      });
+
+      it('ignores BID_WON from an older auction', () => {
+        const adUnitCode = 'div-1';
+        targetingInstance.setLatestAuctionForAdUnit(adUnitCode, 'auction-b');
+        events.emit(EVENTS.BID_WON, { adUnitCode, auctionId: 'auction-a' });
+        sinon.assert.notCalled(presetGPTTargetingStub);
       });
     });
   });
