@@ -1179,6 +1179,31 @@ describe('51DegreesRtdProvider', function() {
       expect(callback.calledOnce).to.be.true;
     });
 
+    it('reloads its own script when consent changes instead of consuming its own fod', async function() {
+      loadExternalScriptStub.resetHistory();
+      const originalFod = window.fod;
+      delete window.fod;
+      const callback = sinon.spy();
+      const moduleConfig = { params: { resourceKey: 'INVALID_RESOURCE_KEY' } };
+
+      try {
+        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      } finally {
+        window.fod = originalFod;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+      expect(loadExternalScriptStub.calledOnce).to.be.true;
+
+      resetReqBidsConfigObj();
+      sessionStorage.removeItem('__51d_rtd_cache');
+      const callback2 = sinon.spy();
+      getBidRequestData(reqBidsConfigObj, callback2, moduleConfig, { gdpr: { consentString: 'NEWTC' } });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(loadExternalScriptStub.calledTwice).to.be.true;
+      expect(callback2.calledOnce).to.be.true;
+    });
+
     it('enriches synchronously from the cache and refreshes it from a late source', async function() {
       const originalFod = window.fod;
       let storedCb = null;
@@ -1201,6 +1226,7 @@ describe('51DegreesRtdProvider', function() {
         await new Promise(resolve => setTimeout(resolve, 50));
 
         expect(callback.calledOnce).to.be.true;
+        expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
         const stored = JSON.parse(sessionStorage.getItem('__51d_rtd_cache'));
         expect(stored.data.fodid.idproblic).to.equal('late-uid');
       } finally {

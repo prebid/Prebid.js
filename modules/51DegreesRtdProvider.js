@@ -509,6 +509,14 @@ export const resolveIdUsage = (moduleConfig) => {
 const RTD_CACHE_KEY = '__51d_rtd_cache';
 const RTD_CACHE_VERSION = 1;
 
+const clearRtdCache = () => {
+  try {
+    storageManager.removeDataFromSessionStorage(RTD_CACHE_KEY);
+  } catch (_) {
+    // Storage unavailable; nothing to clear.
+  }
+};
+
 /**
  * Reads the cached response for the given inputs.
  *
@@ -528,6 +536,7 @@ export const readRtdCache = (inputs) => {
     if (parsed.inputs.idUsage !== inputs.idUsage ||
         parsed.inputs.tc !== inputs.tc ||
         parsed.inputs.gpp !== inputs.gpp) {
+      clearRtdCache();
       return null;
     }
     return parsed.data;
@@ -588,6 +597,9 @@ export const getPageFod = (win) => {
   return (fod && typeof fod.complete === 'function') ? fod : null;
 };
 
+// The fod object created by this module's own script load.
+let ownFod = null;
+
 /**
  * Converts 51Degrees data and merges it into the ORTB2 fragments.
  *
@@ -595,20 +607,28 @@ export const getPageFod = (win) => {
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {string} [tdlUrl] TDL URL passed from module config
  * @param {Function} callback Called on completion
+ * @returns {boolean} False when the payload could not be converted
  */
 const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
-  logMessage('51Degrees raw data: ', data);
-  const global = reqBidsConfigObj.ortb2Fragments.global;
-  const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
-  // Don't clobber a publisher-observed device.ip / device.ipv6 with
-  // our IP-derived value. Publisher signal wins.
-  if (enrichment.device) {
-    if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
-    if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+  let enriched = true;
+  try {
+    logMessage('51Degrees raw data: ', data);
+    const global = reqBidsConfigObj.ortb2Fragments.global;
+    const enrichment = convert51DegreesDataToOrtb2(data, { tdlUrl });
+    // Don't clobber a publisher-observed device.ip / device.ipv6 with
+    // our IP-derived value. Publisher signal wins.
+    if (enrichment.device) {
+      if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
+      if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+    }
+    mergeDeep(global, enrichment);
+    logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
+  } catch (e) {
+    enriched = false;
+    logError(e);
   }
-  mergeDeep(global, enrichment);
-  logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
   callback();
+  return enriched;
 };
 
 /**
@@ -642,7 +662,9 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     const cached = readRtdCache(cacheInputs);
     if (cached) {
       logMessage('Enriching from cached 51Degrees data');
-      enrichFromData(cached, reqBidsConfigObj, tdlUrl, callbackOnce);
+      if (!enrichFromData(cached, reqBidsConfigObj, tdlUrl, callbackOnce)) {
+        clearRtdCache();
+      }
     }
 
     const onData = (data) => {
@@ -653,7 +675,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     };
 
     const pageFod = getPageFod();
-    if (pageFod) {
+    if (pageFod && pageFod !== ownFod) {
       logMessage('Using on-page 51Degrees integration (window.fod)');
       pageFod.complete(onData);
       return;
@@ -680,6 +702,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, () => {
         logMessage('Successfully injected 51Degrees script');
         const fod = /** @type {Object} */ (window.fod);
+        ownFod = fod;
         // Convert and merge device data in the callback
         fod.complete(onData);
       }, document, { crossOrigin: 'anonymous' });
