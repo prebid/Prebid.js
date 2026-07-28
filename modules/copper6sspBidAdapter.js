@@ -2,7 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  isBidRequestValid,
+  extractCID,
+  extractPID,
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
@@ -64,6 +65,13 @@ const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.copper6.com/api/sync/iframe',
   imageSyncUrl: 'https://sync.copper6.com/api/sync/image'
 });
+
+function isBidRequestValid(bid) {
+  const p = bid.params || {};
+  const hasNew = extractCID(p) && extractPID(p);
+  const hasLegacy = p.placementId && p.endpointId;
+  return !!(hasNew || hasLegacy);
+}
 
 export const spec = {
   code: BIDDER_CODE,

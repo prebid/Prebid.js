@@ -3,7 +3,11 @@ import {
   spec as adapter,
   createDomain,
   storage,
-} from 'modules/copper6sspBidAdapter';
+} from '../../../modules/copper6sspBidAdapter.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import * as ajax from '../../../src/ajax.js';
+import * as activityRules from 'src/activities/rules.js';
+import { hook } from '../../../src/hook.js';
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
@@ -269,6 +273,34 @@ describe('copper6sspBidAdapter', function () {
         }
       });
       expect(isValid).to.be.true;
+    });
+
+    it('should validate legacy placementId and endpointId params', function () {
+      const isValid = adapter.isBidRequestValid({
+        params: {
+          placementId: 'legacy-cid',
+          endpointId: 'legacy-pid'
+        }
+      });
+      expect(isValid).to.be.true;
+    });
+
+    it('should reject legacy params when only placementId is provided', function () {
+      const isValid = adapter.isBidRequestValid({
+        params: {
+          placementId: 'legacy-cid'
+        }
+      });
+      expect(isValid).to.be.false;
+    });
+
+    it('should reject legacy params when only endpointId is provided', function () {
+      const isValid = adapter.isBidRequestValid({
+        params: {
+          endpointId: 'legacy-pid'
+        }
+      });
+      expect(isValid).to.be.false;
     });
   });
 
@@ -1088,5 +1120,109 @@ describe('build requests for legacy adapter calls', function () {
   after(function () {
     getGlobal().bidderSettings = {};
     sandbox.restore();
+  });
+});
+
+describe('auction path', function () {
+  let sandbox;
+  let ajaxStub;
+  let addBidResponse;
+  let done;
+  let onTimelyResponse;
+  let bidder;
+
+  before(function () {
+    hook.ready();
+  });
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
+    ajaxStub = sandbox.stub(ajax, 'ajax').callsFake((url, callbacks) => {
+      callbacks.success(JSON.stringify({ results: [] }), { getResponseHeader: sandbox.stub() });
+    });
+    addBidResponse = sandbox.stub();
+    addBidResponse.reject = sandbox.stub();
+    done = sandbox.stub();
+    onTimelyResponse = sandbox.stub();
+    bidder = newBidder(adapter);
+    getGlobal().bidderSettings = {
+      copper6ssp: {
+        storageAllowed: true
+      }
+    };
+    config.setConfig({ bidderTimeout: 3000 });
+    sandbox.stub(Date, 'now').returns(1000);
+  });
+
+  afterEach(function () {
+    getGlobal().bidderSettings = {};
+    config.resetConfig();
+    sandbox.restore();
+  });
+
+  function callBidsWith(bids) {
+    const bidderRequest = {
+      ...BIDDER_REQUEST,
+      bids,
+      bidderRequestId: 'auction-req-1',
+    };
+    bidder.callBids(
+      bidderRequest,
+      addBidResponse,
+      done,
+      ajaxStub,
+      onTimelyResponse,
+      config.callbackWithBidder(adapter.code)
+    );
+  }
+
+  it('should send request for legacy placementId/endpointId params after validation', function () {
+    callBidsWith([LEGACY_BID]);
+
+    expect(ajaxStub.calledOnce).to.be.true;
+    expect(ajaxStub.firstCall.args[0]).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+
+    const postData = JSON.parse(ajaxStub.firstCall.args[2]);
+    expect(postData.publisherId).to.equal('59ac17c192832d0011283fe3');
+  });
+
+  it('should send request for modern cId/pId params after validation', function () {
+    callBidsWith([BID]);
+
+    expect(ajaxStub.calledOnce).to.be.true;
+    expect(ajaxStub.firstCall.args[0]).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+  });
+
+  it('should not send request when legacy params are incomplete', function () {
+    callBidsWith([{
+      ...LEGACY_BID,
+      params: { placementId: '59db6b3b4ffaa70004f45cdc' }
+    }]);
+
+    expect(ajaxStub.called).to.be.false;
+  });
+
+  it('should not send request when modern params are incomplete', function () {
+    callBidsWith([{
+      ...BID,
+      params: { cId: '59db6b3b4ffaa70004f45cdc' }
+    }]);
+
+    expect(ajaxStub.called).to.be.false;
+  });
+
+  it('should filter invalid bids before buildRequests and only send valid legacy bids', function () {
+    callBidsWith([
+      LEGACY_BID,
+      {
+        ...LEGACY_BID,
+        bidId: 'invalid-legacy-bid',
+        params: { placementId: '59db6b3b4ffaa70004f45cdc' }
+      }
+    ]);
+
+    expect(ajaxStub.calledOnce).to.be.true;
+    expect(ajaxStub.firstCall.args[0]).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
   });
 });
