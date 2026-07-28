@@ -841,6 +841,31 @@ describe('Utils', function () {
           expect(encodeMacroURI(input)).to.eql(expected);
         });
       });
+
+      // Characters that can terminate a double-quoted HTML attribute value, or begin a new
+      // attribute or tag. Encoded tracker URLs are emitted into `<img src="...">` by
+      // createTrackPixelHtml, so none of these may survive unescaped anywhere in the URL.
+      const HTML_UNSAFE = [
+        ['a double quote', '"'],
+        ['a less-than sign', '<'],
+        ['a greater-than sign', '>'],
+        ['a space', ' '],
+        ['a tab', '\t'],
+        ['a line feed', '\n'],
+        ['a carriage return', '\r'],
+        ['a form feed', '\f'],
+        ['a backtick', '`']
+      ];
+
+      HTML_UNSAFE.forEach(([label, char]) => {
+        it(`escapes ${label} inside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=\${A${char}B}`)).to.not.contain(char);
+        });
+
+        it(`escapes ${label} outside a macro`, () => {
+          expect(encodeMacroURI(`https://www.example.com/?p=A${char}B`)).to.not.contain(char);
+        });
+      });
     });
 
     describe('createTrackPixelHtml', () => {
@@ -877,6 +902,37 @@ describe('Utils', function () {
           const container = document.createElement('div');
           container.innerHTML = utils.createTrackPixelHtml(`https://www.example.com/?x=${entity}`);
           expect(container.querySelector('img').getAttribute('src')).to.equal(`https://www.example.com/?x=${expected}`);
+        });
+      });
+
+      // encodeMacroURI is the encoder used for ORTB banner responses, where the pixel markup
+      // is prepended to the creative (libraries/ortbConverter/processors/banner.js).
+      describe('when called with encodeMacroURI', () => {
+        function render(url) {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(url, encodeMacroURI);
+          return container;
+        }
+
+        it('emits only the wrapper and the pixel when a macro contains a tag', () => {
+          const container = render('https://www.example.com/px?p=${x"><script>0<!--}');
+          expect(Array.from(container.querySelectorAll('*')).map((el) => el.tagName)).to.eql(['DIV', 'IMG']);
+        });
+
+        it('does not let a macro add attributes to the pixel', () => {
+          const container = render('https://www.example.com/px?p=${x" hidden}');
+          expect(container.querySelector('img').getAttributeNames()).to.eql(['src']);
+        });
+
+        it('keeps the entire url inside the src attribute', () => {
+          const url = 'https://www.example.com/px?p=${x"><b>}';
+          const src = render(url).querySelector('img').getAttribute('src');
+          expect(decodeURIComponent(src)).to.equal(url);
+        });
+
+        it('leaves a standard macro substitutable in the emitted markup', () => {
+          const markup = utils.createTrackPixelHtml('https://www.example.com/px?p=${AUCTION_PRICE}', encodeMacroURI);
+          expect(markup).to.contain('src="https://www.example.com/px?p=${AUCTION_PRICE}"');
         });
       });
     });

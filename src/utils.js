@@ -469,16 +469,40 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
   return img;
 };
 
+// The encodeMacroURI implementation below was written by a bot (Claude Code).
+
+// Characters that encodeURI leaves alone but that can terminate a double-quoted HTML attribute
+// value, or begin a new attribute or tag, when an encoded URL is embedded in markup - see
+// createTrackPixelHtml. They are percent-encoded even inside a macro name.
+const HTML_UNSAFE_CHARS = /["<>`\s]/g;
+
+// Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
+// them is not recognised as a macro, so its braces stay percent-encoded like the rest of the URL.
+const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
+
+function percentEncode(char) {
+  return '%' + char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0');
+}
+
 /**
  * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ *
+ * A macro's braces are emitted literally so that downstream substitution can find them. The macro
+ * name is otherwise passed through unchanged, except for characters that are unsafe in HTML markup.
  * @param url
  * @return {string}
  */
 export function encodeMacroURI(url) {
-  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
-  return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro);
-  }, encodeURI(url));
+  const macro = new RegExp(MACRO);
+  let encoded = '';
+  let from = 0;
+  let match;
+  while ((match = macro.exec(url)) !== null) {
+    encoded += encodeURI(url.slice(from, match.index)) +
+      '${' + match[1].replace(HTML_UNSAFE_CHARS, percentEncode) + '}';
+    from = match.index + match[0].length;
+  }
+  return encoded + encodeURI(url.slice(from));
 }
 
 export function uniques(value, index, arry) {
