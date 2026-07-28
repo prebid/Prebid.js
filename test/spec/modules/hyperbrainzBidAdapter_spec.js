@@ -328,7 +328,7 @@ describe('HyperBrainz Bid Adapter', function () {
       ]);
     });
 
-    it('parses a video bid into vastXml/vastUrl', function () {
+    it('parses a video bid into vastXml', function () {
       const bids = [videoBid()];
       const response = {
         body: {
@@ -350,7 +350,7 @@ describe('HyperBrainz Bid Adapter', function () {
       expect(result).to.have.lengthOf(1);
       expect(result[0].mediaType).to.equal('video');
       expect(result[0].vastXml).to.equal('<VAST></VAST>');
-      expect(result[0].vastUrl).to.equal('https://hb.hyperbrainz.com/win');
+      expect(result[0].vastUrl).to.be.undefined;
     });
 
     it('parses a native bid into the ORTB native shape', function () {
