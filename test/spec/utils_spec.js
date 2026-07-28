@@ -842,6 +842,44 @@ describe('Utils', function () {
         });
       });
     });
+
+    describe('createTrackPixelHtml', () => {
+      it('keeps an encoded quote inside the src attribute', () => {
+        const url = 'https://www.example.com/?x=&quot;onerror=alert(1)//';
+        const container = document.createElement('div');
+
+        // This browser-level assertion, added by a bot, documents that character references do not create attributes.
+        container.innerHTML = utils.createTrackPixelHtml(url);
+        const pixel = container.querySelector('img');
+        expect(pixel.getAttribute('src')).to.equal('https://www.example.com/?x="onerror=alert(1)//');
+        expect(pixel.hasAttribute('onerror')).to.be.false;
+      });
+
+      it('escapes encoded quotes in the url', () => {
+        const url = 'https://www.example.com/?x="test"';
+
+        expect(utils.createTrackPixelHtml(url)).to.contain('src="https://www.example.com/?x=%22test%22"');
+      });
+
+      it('lets the browser decode character references in tracker URLs', () => {
+        const cases = [
+          ['&', '&'],
+          ['&amp;', '&'],
+          ['&#38;', '&'],
+          ['&#038;', '&'],
+          ['&#x26;', '&'],
+          ['&#x026;', '&'],
+          ['&quot;', '"'],
+          ['&#34;', '"']
+        ];
+
+        cases.forEach(([entity, expected]) => {
+          const container = document.createElement('div');
+          container.innerHTML = utils.createTrackPixelHtml(`https://www.example.com/?x=${entity}`);
+          expect(container.querySelector('img').getAttribute('src')).to.equal(`https://www.example.com/?x=${expected}`);
+        });
+      });
+    });
   });
 
   describe('insertElement', function () {
