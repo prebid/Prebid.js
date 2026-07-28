@@ -179,15 +179,19 @@ const publicModules = gulp.parallel(Object.entries({
 function checkDeclarations(done) {
   const {checkFiles, listFiles} = require('./plugins/augmentationReachable.js');
   const root = helpers.getPrecompiledPath();
-  // compiled test code is not part of the types consumers see, and an import that only happens
-  // in a test does not make a type reachable for them
+  // compiled test code is not part of the types consumers see, and includes fixtures that
+  // deliberately violate this policy
   const ignore = [helpers.getPrecompiledPath('test')];
   const declarations = listFiles(root, ['.d.ts'], ignore);
   if (declarations.length === 0) {
     done(new Error(`no declaration files under '${root}', run 'gulp build' first`));
     return;
   }
-  const problems = checkFiles(declarations, {roots: [root], ignore});
+  const problems = checkFiles(declarations, {
+    coreEntry: helpers.getPrecompiledPath('src/prebid.public.d.ts'),
+    ignore,
+    project: 'tsconfig-strict.json'
+  });
   if (problems.length > 0) {
     done(new Error(['', ...problems.map(
       ({file, line, column, message}) => `${path.relative(__dirname, file)}(${line},${column}): ${message}`

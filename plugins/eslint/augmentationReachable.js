@@ -16,9 +16,9 @@ module.exports = {
     schema: [{
       type: 'object',
       properties: {
-        roots: {type: 'array', items: {type: 'string'}},
-        entryDirs: {type: 'array', items: {type: 'string'}},
-        ignore: {type: 'array', items: {type: 'string'}}
+        coreEntry: {type: 'string'},
+        ignore: {type: 'array', items: {type: 'string'}},
+        project: {type: 'string'}
       },
       additionalProperties: false
     }]

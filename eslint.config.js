@@ -204,10 +204,11 @@ module.exports = [
     },
     rules: {
       'prebid/augmentation-reachable': ['error', {
-        roots: getSourceFolders(),
-        entryDirs: ['modules'],
-        // an import that only happens in a test does not make a type reachable for consumers
-        ignore: ['test']
+        // core's entry point as it is before precompilation, when this runs
+        coreEntry: 'src/prebid.public.ts',
+        // an augmentation in test code reaches no consumer either way
+        ignore: ['test'],
+        project: 'tsconfig.json'
       }]
     }
   },
