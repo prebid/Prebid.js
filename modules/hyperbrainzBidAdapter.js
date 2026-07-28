@@ -239,7 +239,6 @@ function buildBid(bid, response, request) {
 
   if (mediaType === VIDEO) {
     if (bid.adm) prebidBid.vastXml = bid.adm;
-    if (bid.nurl) prebidBid.vastUrl = bid.nurl;
   } else if (mediaType === NATIVE) {
     const ortbNative = parseNative(bid.adm);
     if (!ortbNative) return null;
