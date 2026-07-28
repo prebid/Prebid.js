@@ -1,5 +1,5 @@
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { _each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import { _each, deepAccess, getWinDimensions, getWindowTop, logError, logWarn, parseSizesInput } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 import { config } from '../src/config.js';
@@ -26,7 +26,7 @@ const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
-const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com'];
+const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com', 'growthcode.io'];
 
 const invalidRequestIds = {};
 let pageViewId = null;
@@ -35,7 +35,7 @@ let pageViewId = null;
 function _getBrowserParams(topWindowUrl, mosttopLocation) {
   const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i');
 
-  let browserParams = {};
+  let browserParams;
   let topWindow;
   let topScreen;
   let topUrl;
@@ -74,14 +74,17 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
     }, url);
   }
 
+  // Always keep referer-based params even if top window/screen is inaccessible
+  topUrl = topWindowUrl || '';
+  mosttopURL = mosttopLocation || '';
+
   try {
-    topWindow = global.top;
+    topWindow = getWindowTop();
     topScreen = topWindow.screen;
-    topUrl = topWindowUrl || '';
-    mosttopURL = mosttopLocation || '';
   } catch (error) {
     logError(error);
-    return browserParams;
+    topWindow = window;
+    topScreen = window.screen || {};
   }
 
   browserParams = {
