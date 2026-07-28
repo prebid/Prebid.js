@@ -9,8 +9,9 @@ import {
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
-import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
+import { DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
 import { auctionManager } from 'src/auctionManager.js';
+import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
 import { createBid } from '../../../../src/bidfactory.js';
@@ -1687,6 +1688,25 @@ describe('targeting tests', function () {
         });
         targetingInstance.presetGPTTargeting();
         sinon.assert.notCalled(window.googletag.pubads);
+      });
+    });
+    describe('event hooks', () => {
+      let presetGPTTargetingStub;
+
+      beforeEach(() => {
+        presetGPTTargetingStub = sandbox.stub(targetingInstance, 'presetGPTTargeting');
+      });
+
+      it('calls presetGPTTargeting with adUnitCodes on AUCTION_INIT', () => {
+        const adUnitCodes = ['div-1', 'div-2'];
+        events.emit(EVENTS.AUCTION_INIT, { adUnitCodes });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, adUnitCodes);
+      });
+
+      it('calls presetGPTTargeting with single adUnitCode on BID_WON', () => {
+        const adUnitCode = 'div-1';
+        events.emit(EVENTS.BID_WON, { adUnitCode });
+        sinon.assert.calledWithExactly(presetGPTTargetingStub, [adUnitCode]);
       });
     });
   });

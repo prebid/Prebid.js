@@ -410,6 +410,10 @@ export function newTargeting(auctionManager) {
     targeting.presetGPTTargeting(adUnitCodes);
   });
 
+  events.on(EVENTS.BID_WON, ({ adUnitCode }) => {
+    targeting.presetGPTTargeting([adUnitCode]);
+  });
+
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {
     const standardKeys = TARGETING_KEYS_ARR.slice();
     const allowSendAllBidsTargetingKeys = config.getConfig('targetingControls.allowSendAllBidsTargetingKeys');
