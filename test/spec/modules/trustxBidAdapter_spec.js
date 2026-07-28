@@ -557,6 +557,35 @@ describe('trustxBidAdapter', function() {
           expect(data.ext.adapterver).to.equal(spec.VERSION);
         });
 
+        it('should include bidder-specific video params in request data', function () {
+          const bidderRequest = getVideoRequest();
+          const videoBid = bidderRequest.bids[0];
+          videoBid.params.uid = 'trustx-placement-1';
+
+          expect(spec.isBidRequestValid(videoBid)).to.be.true;
+
+          const request = spec.buildRequests([videoBid], { ...bidderRequest, bids: [videoBid] });
+          expect(request.data.imp[0].video).to.deep.include({
+            mimes: videoBid.params.video.mimes,
+            protocols: videoBid.params.video.protocols,
+            api: videoBid.params.video.api,
+            delivery: videoBid.params.video.delivery,
+            placement: videoBid.params.video.placement,
+            plcmt: videoBid.params.video.plcmt
+          });
+        });
+
+        it('should source video pos from mediaTypes when bidder-specific params also set pos', function () {
+          const bidderRequest = getVideoRequest();
+          const videoBid = bidderRequest.bids[0];
+          videoBid.params.uid = 'trustx-placement-1';
+          videoBid.mediaTypes.video.pos = 1;
+          videoBid.params.video.pos = 3;
+
+          const request = spec.buildRequests([videoBid], { ...bidderRequest, bids: [videoBid] });
+          expect(request.data.imp[0].video.pos).to.equal(videoBid.mediaTypes.video.pos);
+        });
+
         it('should attach End 2 End test data', function () {
           bidRequestsWithMediaTypes[1].params.test = true;
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);

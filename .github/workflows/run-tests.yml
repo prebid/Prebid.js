@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs:
       browser:
-        description: values to set as the BROWSER env variable
+        description: value to set as the BROWSER env variable
         required: false
         type: string
       chunks:
@@ -103,6 +103,7 @@ jobs:
       TEST_CHUNK: ${{ matrix.chunk-no }}
       BROWSER: ${{ inputs.browser }}
       BROWSERS_JSON: ${{ inputs.browsers-json }}
+      BROWSER_VERSION: ${{ inputs.browser-version }}
     outputs:
       coverage: ${{ steps.coverage.outputs.coverage }}
     concurrency:
