@@ -4,7 +4,6 @@ import { spec, storage } from 'modules/blueBidAdapter.js';
 
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
-const GVLID = 620;
 const CURRENCY = 'USD';
 
 describe('blueBidAdapter:', function () {
@@ -71,7 +70,7 @@ describe('blueBidAdapter:', function () {
       expect(request.options.contentType).to.equal('application/json');
 
       const ortbRequest = request.data;
-      expect(ortbRequest.ext.gvlid).to.equal(GVLID);
+      expect(ortbRequest.ext).not.to.have.property('gvlid');
       expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
       expect(ortbRequest.imp[0].bidfloorcur).to.equal(CURRENCY);
     });
