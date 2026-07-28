@@ -441,11 +441,10 @@ export function insertUserSyncIframe(url, done, timeout) {
   const iframe = createIframe(document, {
     sandbox: 'allow-scripts allow-same-origin',
     src: url,
-    style: {
-      width: '0px',
-      height: '0px',
-      display: 'none'
-    }
+  }, {
+    width: '0px',
+    height: '0px',
+    display: 'none'
   });
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);

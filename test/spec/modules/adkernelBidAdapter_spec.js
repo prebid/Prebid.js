@@ -690,8 +690,8 @@ describe('Adkernel adapter', function () {
     it('should add nurl as pixel for banner response', function () {
       const [pbRequests] = buildRequest([bid1_zone1]);
       const resp = spec.interpretResponse({ body: bannerBidResponse }, pbRequests[0])[0];
-      const expectedNurl = bannerBidResponse.seatbid[0].bid[0].nurl + '&px=1';
-      expect(resp.ad).to.have.string(expectedNurl);
+      const expectedPixel = utils.createTrackPixelHtml(`${bannerBidResponse.seatbid[0].bid[0].nurl}&px=1`);
+      expect(resp.ad).to.have.string(expectedPixel);
     });
 
     it('should handle bidresponse with user-sync only', function () {
