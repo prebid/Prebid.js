@@ -304,6 +304,84 @@ describe('copper6sspBidAdapter', function () {
     });
   });
 
+  describe('param shapes', function () {
+    const commonParams = {
+      bidFloor: 0.1,
+      subDomain: SUB_DOMAIN,
+      ext: {
+        param1: 'loremipsum',
+        param2: 'dolorsitamet'
+      }
+    };
+
+    describe('modern params (cId/pId)', function () {
+      it('should validate with only cId and pId', function () {
+        expect(adapter.isBidRequestValid({
+          params: {
+            cId: '59db6b3b4ffaa70004f45cdc',
+            pId: '59ac17c192832d0011283fe3',
+          }
+        })).to.be.true;
+      });
+
+      it('should validate with optional bidFloor, ext, and subDomain', function () {
+        expect(adapter.isBidRequestValid({
+          params: {
+            cId: '59db6b3b4ffaa70004f45cdc',
+            pId: '59ac17c192832d0011283fe3',
+            ...commonParams,
+          }
+        })).to.be.true;
+      });
+
+      it('should not require bidFloor', function () {
+        expect(adapter.isBidRequestValid({
+          params: {
+            cId: '59db6b3b4ffaa70004f45cdc',
+            pId: '59ac17c192832d0011283fe3',
+          }
+        })).to.be.true;
+      });
+    });
+
+    describe('legacy params (placementId/endpointId)', function () {
+      it('should validate string placementId and endpointId without cId/pId', function () {
+        expect(adapter.isBidRequestValid({
+          params: {
+            placementId: '59db6b3b4ffaa70004f45cdc',
+            endpointId: '59ac17c192832d0011283fe3',
+          }
+        })).to.be.true;
+      });
+
+      it('should validate with optional bidFloor, ext, and subDomain', function () {
+        expect(adapter.isBidRequestValid({
+          params: {
+            placementId: '59db6b3b4ffaa70004f45cdc',
+            endpointId: '59ac17c192832d0011283fe3',
+            ...commonParams,
+          }
+        })).to.be.true;
+      });
+
+      it('should build requests from legacy string ids', function () {
+        const requests = adapter.buildRequests([{
+          ...LEGACY_BID,
+          params: {
+            placementId: '59db6b3b4ffaa70004f45cdc',
+            endpointId: '59ac17c192832d0011283fe3',
+            ...commonParams,
+          }
+        }], BIDDER_REQUEST);
+
+        expect(requests).to.have.length(1);
+        expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+        expect(requests[0].data.publisherId).to.equal('59ac17c192832d0011283fe3');
+        expect(requests[0].data.bidFloor).to.equal(0.1);
+      });
+    });
+  });
+
   describe('build requests', function () {
     let sandbox;
     before(function () {
