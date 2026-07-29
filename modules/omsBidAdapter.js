@@ -61,12 +61,25 @@ function buildRequests(bidReqs, bidderRequest) {
       };
 
       if (bid?.mediaTypes?.banner) {
+        const banner = bid.mediaTypes.banner;
+        const ortb2ImpBanner = bid.ortb2Imp?.banner;
         imp.banner = {
           format: processedSizes,
           ext: {
             viewability: viewabilityAmountRounded,
-          }
+          },
+          pos: ortb2ImpBanner?.pos ?? banner.pos,
         };
+
+        const api = ortb2ImpBanner?.api ?? banner.api;
+        if (api) {
+          imp.banner.api = api;
+        }
+
+        const battr = ortb2ImpBanner?.battr ?? banner.battr;
+        if (battr) {
+          imp.banner.battr = battr;
+        }
       }
 
       if (bid?.mediaTypes?.video) {
@@ -104,10 +117,23 @@ function buildRequests(bidReqs, bidderRequest) {
       device: {
         devicetype: _getDeviceType(navigator.userAgent, bidderRequest?.ortb2?.device?.sua),
         w: screen.width,
-        h: screen.height
+        h: screen.height,
+        language: bidderRequest?.ortb2?.device?.language ?? navigator.language?.split('-')[0]
       },
       tmax: bidderRequest?.timeout
     };
+
+    if (bidderRequest?.ortb2?.badv) {
+      deepSetValue(payload, 'badv', bidderRequest.ortb2.badv);
+    }
+
+    if (bidderRequest?.ortb2?.bcat) {
+      deepSetValue(payload, 'bcat', bidderRequest.ortb2.bcat);
+    }
+
+    if (deepAccess(bidderRequest, 'ortb2.device.dnt')) {
+      deepSetValue(payload, 'device.dnt', bidderRequest.ortb2.device.dnt);
+    }
 
     if (bidderRequest?.gdprConsent) {
       deepSetValue(payload, 'regs.gdpr', +bidderRequest.gdprConsent.gdprApplies);
@@ -142,6 +168,14 @@ function buildRequests(bidReqs, bidderRequest) {
 
     if (bidderRequest?.ortb2?.site?.content) {
       deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content);
+    }
+
+    if (bidderRequest?.ortb2?.site?.cat) {
+      deepSetValue(payload, 'site.cat', bidderRequest.ortb2.site.cat);
+    }
+
+    if (bidderRequest?.ortb2?.site?.pagecat) {
+      deepSetValue(payload, 'site.pagecat', bidderRequest.ortb2.site.pagecat);
     }
 
     return {
