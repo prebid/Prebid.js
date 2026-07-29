@@ -281,6 +281,22 @@ describe('ocmBidAdapter', function () {
       expect(request.data.site.publisher.id).to.equal('pub-123');
     });
 
+    // In-app traffic carries an ORTB `app` object rather than `site`; the publisher id has to follow it
+    // there, or PBS resolves the request against no account at all.
+    it('attaches publisherId to the app publisher object for in-app traffic', function () {
+      const request = spec.buildRequests([bannerBid], {
+        ...bannerBidderRequest,
+        ortb2: { app: { bundle: 'com.orangeclickmedia.demo' } }
+      });
+      expect(request.data.app.publisher.id).to.equal('pub-123');
+    });
+
+    it('sends no publisher id when the bid carries no params', function () {
+      const paramlessBid = { ...bannerBid, params: undefined };
+      const request = spec.buildRequests([paramlessBid], { bidderCode: 'ocm', bids: [paramlessBid] });
+      expect(request.data.site?.publisher?.id).to.equal(undefined);
+    });
+
     describe('tmax', function () {
       // PBS must answer early enough for the response to travel back and be parsed before Prebid's
       // auction timer fires, so the tmax it is given is the auction timeout minus a buffer, while the
@@ -633,6 +649,26 @@ describe('ocmBidAdapter', function () {
       if (node) node.remove();
     });
 
+    // Renders an interpreted outstream bid through a stubbed window.OcmPlayer and returns the player
+    // config it was handed. `overrides` are applied to the bid the renderer receives, which is how
+    // core-populated fields (player dimensions) and their absence are simulated.
+    function capturePlayerConfig(bid, overrides = {}) {
+      bid.adUnitCode = outstreamVideoBid.adUnitCode;
+      const slot = document.createElement('div');
+      slot.id = outstreamVideoBid.adUnitCode;
+      document.body.appendChild(slot);
+      window.OcmPlayer = sinon.spy();
+
+      bid.renderer.loaded = true;
+      bid.renderer._render({ ...bid, ...overrides });
+      return window.OcmPlayer.firstCall.args[1];
+    }
+
+    function interpretOutstream(response) {
+      const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
+      return spec.interpretResponse(response || videoResponse('bid-video-outstream-1'), request)[0];
+    }
+
     it('attaches the OCM renderer to outstream video bids', function () {
       const request = spec.buildRequests([outstreamVideoBid], outstreamBidderRequest);
       const bid = spec.interpretResponse(videoResponse('bid-video-outstream-1'), request)[0];
@@ -826,6 +862,39 @@ describe('ocmBidAdapter', function () {
       expect(logErr.called).to.equal(true);
       logErr.restore();
     });
+
+    // The hosted VAST URL is preferred, but PBS may return only an inline VAST document; the player
+    // still has to be handed a source rather than `undefined`.
+    it('falls back to the inline VAST document when no hosted VAST URL is present', function () {
+      const response = videoResponse('bid-video-outstream-1');
+      delete response.body.seatbid[0].bid[0].nurl;
+      const playerConfig = capturePlayerConfig(interpretOutstream(response));
+      if (FEATURES.VIDEO) {
+        expect(playerConfig.ads.preroll[0].waterfall[0].vast.url).to.equal('<VAST version="4.0"></VAST>');
+      }
+    });
+
+    it('prefers explicit player dimensions over the creative size', function () {
+      const playerConfig = capturePlayerConfig(interpretOutstream(), { playerWidth: 800, playerHeight: 600 });
+      expect(playerConfig.player.width).to.equal('800px');
+      expect(playerConfig.player.height).to.equal('600px');
+    });
+
+    // Dimensions are only suffixed with px when numeric, so a CSS string the publisher supplied
+    // reaches the player intact instead of becoming '100%px'.
+    it('passes through non-numeric player dimensions unchanged', function () {
+      const playerConfig = capturePlayerConfig(interpretOutstream(), { playerWidth: '100%', playerHeight: '15rem' });
+      expect(playerConfig.player.width).to.equal('100%');
+      expect(playerConfig.player.height).to.equal('15rem');
+    });
+
+    it('omits player dimensions when the bid carries none', function () {
+      const playerConfig = capturePlayerConfig(interpretOutstream(), {
+        playerWidth: undefined, playerHeight: undefined, width: undefined, height: undefined
+      });
+      expect(playerConfig.player.width).to.equal(undefined);
+      expect(playerConfig.player.height).to.equal(undefined);
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -869,6 +938,12 @@ describe('ocmBidAdapter', function () {
 
     it('returns no syncs when the auction response lists no bidders', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [{ body: {} }])).to.deep.equal([]);
+    });
+
+    // Core calls getUserSyncs even when the auction produced no server responses at all (e.g. every
+    // request errored), so the bidder list has to degrade to empty rather than throw.
+    it('returns no syncs when there are no auction responses at all', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true })).to.deep.equal([]);
     });
 
     it('returns an iframe sync to the loader page with the bidders from the response', function () {
@@ -964,6 +1039,26 @@ describe('ocmBidAdapter', function () {
       it('allows all bidders for an enabled type the publisher did not configure', function () {
         setFilterSettings({ image: { bidders: '*', filter: 'include' } });
         const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      // An entry that omits `bidders` names nobody, which says nothing about who may sync — so every
+      // PBS-side bidder stays authorised rather than the type being silently narrowed to none.
+      it('allows all bidders when the publisher entry has no bidders list', function () {
+        setFilterSettings({ iframe: { filter: 'exclude' } });
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
+        expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
+          bidders: '*',
+          filter: 'include'
+        });
+      });
+
+      it('ignores a filterSettings value that is not an object', function () {
+        setFilterSettings([]);
+        const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponses);
         expect(forwardedFilterSettings(syncs[0].url).iframe).to.deep.equal({
           bidders: '*',
           filter: 'include'
