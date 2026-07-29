@@ -5,6 +5,7 @@ import deepAccess from 'dlv/index.js';
 import { isArray, isFn, isStr, isPlainObject } from './utils/objects.js';
 import * as logging from './utils/logging.js';
 import * as debug from './utils/debug.js';
+import { getGlobalVarName } from './buildOptions.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
@@ -432,7 +433,9 @@ export function insertHtmlIntoIframe(htmlCode) {
 
 /**
  * Attribute set on every user sync iframe inserted by Prebid, so that they can be told apart from
- * other iframes on the page and removed later on.
+ * other iframes on the page and removed later on. Its value is the name of this instance's global
+ * variable (e.g. `pbjs`), so that a page running several Prebid instances can remove the iframes of
+ * one instance without touching the others'.
  */
 export const USERSYNC_ATTR = 'data-pb-usersync';
 
@@ -452,7 +455,7 @@ export function insertUserSyncIframe(url, done, timeout) {
     height: '0px',
     display: 'none'
   });
-  iframe.setAttribute(USERSYNC_ATTR, '');
+  iframe.setAttribute(USERSYNC_ATTR, getGlobalVarName());
   if (done && internal.isFn(done)) {
     waitForElementToLoad(iframe, timeout).then(done);
   }
@@ -460,11 +463,15 @@ export function insertUserSyncIframe(url, done, timeout) {
 }
 
 /**
- * Removes every user sync iframe currently in the document.
+ * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
+ * other instances running on the same page are left alone.
  * @return {Number} the number of iframes that were removed
  */
 export function removeUserSyncIframes() {
-  const iframes = document.querySelectorAll(`iframe[${USERSYNC_ATTR}]`);
+  // the attribute value is not necessarily a valid CSS identifier, so it's matched here instead of
+  // in the selector
+  const iframes = Array.from(document.querySelectorAll(`iframe[${USERSYNC_ATTR}]`))
+    .filter(iframe => iframe.getAttribute(USERSYNC_ATTR) === getGlobalVarName());
   iframes.forEach(iframe => iframe.parentNode?.removeChild(iframe));
   return iframes.length;
 }
