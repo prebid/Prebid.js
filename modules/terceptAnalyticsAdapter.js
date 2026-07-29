@@ -1,4 +1,4 @@
-import { parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
+import { parseSizesInput, getWindowLocation, buildUrl, parseUrl } from '../src/utils.js';
 import { ajax, sendBeacon } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -23,17 +23,24 @@ const pendingAuctions = new Map();
 let adUnitMap = new Map();
 
 let lastPageUrl = null;
+let lastPageSeq = -1;
+let auctionSeq = 0;
 
 function flush(auctionId, useBeacon = false) {
   const auction = pendingAuctions.get(auctionId);
   if (!auction) return;
   clearTimeout(auction.timer);
-  const isFirst = auction.pageUrl !== lastPageUrl;
-  if (auction.bids.length) lastPageUrl = auction.pageUrl;
+  // flush order can lag start order; ignore auctions older than the page state already applied
+  const isCurrent = auction.seq >= lastPageSeq;
+  const isFirst = isCurrent && auction.pageUrl !== lastPageUrl;
+  if (isCurrent && auction.bids.length) {
+    lastPageUrl = auction.pageUrl;
+    lastPageSeq = auction.seq;
+  }
   auction.bids.forEach((bid, i) => {
     bid.is_pl = isFirst && i === 0;
   });
-  send({ auctionInit: auction.auctionInit, bids: auction.bids }, useBeacon);
+  send({ auctionInit: auction.auctionInit, bids: auction.bids }, useBeacon, auction.pageUrl);
   pendingAuctions.delete(auctionId);
 }
 
@@ -65,7 +72,8 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
           auctionInit,
           bids: [],
           timer: null,
-          pageUrl: getWindowLocation().href
+          pageUrl: getWindowLocation().href,
+          seq: auctionSeq++
         });
       } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(bid => {
@@ -265,13 +273,14 @@ function mapBidResponse(bidResponse, status) {
   };
 }
 
-function send(data, useBeacon = false) {
-  const location = getWindowLocation();
+function send(data, useBeacon = false, pageUrl) {
   if (data.auctionInit) {
+    // use the URL captured at auction start, not the live window location
+    const { hostname, pathname, search } = parseUrl(pageUrl, { decodeSearchAsString: true });
     Object.assign(data.auctionInit, {
-      host: location.hostname,
-      path: location.pathname,
-      search: location.search
+      host: hostname,
+      path: pathname,
+      search
     });
   }
   data.initOptions = initOptions;
@@ -306,6 +315,8 @@ terceptAnalyticsAdapter.disableAnalytics = function () {
   pendingAuctions.clear();
   adUnitMap.clear();
   lastPageUrl = null;
+  lastPageSeq = -1;
+  auctionSeq = 0;
   terceptAnalyticsAdapter.originDisableAnalytics();
 };
 

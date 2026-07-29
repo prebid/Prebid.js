@@ -277,6 +277,35 @@ describe('tercept analytics adapter', function () {
       expect(ai).to.have.property('search');
     });
 
+    it('attaches the URL captured at auction start, not the live URL at flush time', function () {
+      terceptAnalyticsAdapter.disableAnalytics();
+      adapterManager.enableAnalytics({ provider: 'tercept', options: { ...initOptions, analyticsBatchTimeout: 2000 } });
+
+      let href = 'https://example.com/article-1';
+      const stub = sinon.stub(utils, 'getWindowLocation').callsFake(() => ({
+        href,
+        hostname: 'example.com',
+        pathname: '/article-1',
+        search: ''
+      }));
+
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-1' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested, auctionId: 'auction-1', bids: [{ ...bidRequested.bids[0], auctionId: 'auction-1' }]
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-1' });
+
+      // in-page navigation while auction-1's batch delay is still pending
+      href = 'https://example.com/article-2';
+
+      clock.tick(2000);
+
+      const { auctionInit: ai } = JSON.parse(server.requests[0].requestBody);
+      expect(ai.path).to.equal('/article-1');
+
+      stub.restore();
+    });
+
     it('includes initOptions in the payload', function () {
       emitFullAuction();
       clock.tick(0);
@@ -688,6 +717,63 @@ describe('tercept analytics adapter', function () {
       clock.tick(0);
       const p2 = JSON.parse(server.requests[1].requestBody);
       expect(p2.bids[0].is_pl).to.equal(true);
+    });
+
+    it('does not let a stale auction rewind the tracked page after a newer auction already flushed', function () {
+      let href = 'https://example.com/article-a';
+      const stub = sinon.stub(utils, 'getWindowLocation').callsFake(() => ({
+        href,
+        hostname: 'example.com',
+        pathname: '/article-a',
+        search: ''
+      }));
+
+      // auction-1: first auction on page A, flushes immediately
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-1' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested, auctionId: 'auction-1', bids: [{ ...bidRequested.bids[0], auctionId: 'auction-1' }]
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-1' });
+      clock.tick(0);
+
+      // auction-2: a second, slower auction started on the same page A — its
+      // AUCTION_END is deliberately withheld so it flushes after auction-3
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-2' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested, auctionId: 'auction-2', bids: [{ ...bidRequested.bids[0], auctionId: 'auction-2' }]
+      });
+
+      // visitor navigates to page B
+      href = 'https://example.com/article-b';
+
+      // auction-3: starts and flushes on page B before auction-2 does
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-3' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested, auctionId: 'auction-3', bids: [{ ...bidRequested.bids[0], auctionId: 'auction-3' }]
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-3' });
+      clock.tick(0);
+
+      // auction-2 (page A) finally flushes, after page B was already counted
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-2' });
+      clock.tick(0);
+
+      const p3 = JSON.parse(server.requests[1].requestBody); // auction-3, page B
+      const p2 = JSON.parse(server.requests[2].requestBody); // auction-2, page A, flushed last
+      expect(p3.bids[0].is_pl).to.equal(true);
+      expect(p2.bids[0].is_pl).to.equal(false);
+
+      // page B must still be the tracked page: another page B auction is not re-counted
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, auctionId: 'auction-4' });
+      events.emit(EVENTS.BID_REQUESTED, {
+        ...bidRequested, auctionId: 'auction-4', bids: [{ ...bidRequested.bids[0], auctionId: 'auction-4' }]
+      });
+      events.emit(EVENTS.AUCTION_END, { auctionId: 'auction-4' });
+      clock.tick(0);
+      const p4 = JSON.parse(server.requests[3].requestBody);
+      expect(p4.bids[0].is_pl).to.equal(false);
+
+      stub.restore();
     });
   });
 
