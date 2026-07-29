@@ -5,28 +5,20 @@ import {
   isArray,
   isNumber,
   isEmpty,
-  logError,
-  generateUUID,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';
 const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid';
 const TIME_TO_LIVE = 300;
-const UNOMI_URL = 'https://revamp-unomi.techgadgetforus.com/context.json';
-const BIMAX_URL = 'https://bimax.telkomsel.com/oc/';
-const TMA_SCOPE = 'Digiads';
 const LOCAL_STORAGE_KEY = 'u_profile_id';
-const SESSION_STORAGE_KEY = 'u_session_id';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-let _tmaLock = false;
 let _tmaPrimed = false;
 let _cachedUserId;
 
 export function __forTestingResetState() {
-  _tmaLock = false;
   _tmaPrimed = false;
   _cachedUserId = undefined;
 }
@@ -54,139 +46,6 @@ function lsGet(key) {
     return undefined;
   }
 }
-function lsSet(key, val) {
-  try {
-    if (!storageReady()) return;
-    storage.setDataInLocalStorage(key, val);
-  } catch {
-    /* empty */
-  }
-}
-function ssGet(key) {
-  try {
-    if (!storage.hasSessionStorage || !storage.hasSessionStorage()) { return undefined; }
-    return storage.getDataFromSessionStorage(key) || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function ssSet(key, val) {
-  try {
-    if (!storage.hasSessionStorage || !storage.hasSessionStorage()) return;
-    storage.setDataInSessionStorage(key, val);
-  } catch {
-    /* empty */
-  }
-}
-
-// ---------------------------------------------------------------------------
-// TMA helpers
-// ---------------------------------------------------------------------------
-function tmaDetectPublisherDomain() {
-  try {
-    const host = window.location?.hostname || '';
-    const valid =
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      /^[a-zA-Z0-9][a-zA-Z0-9-]*(\.[a-zA-Z0-9][a-zA-Z0-9-]*)+$/.test(host);
-    return valid ? host : 'unknown';
-  } catch {
-    logError('[pstudio] Error when detect publisher domain');
-    return 'unknown';
-  }
-}
-
-async function tmaSyncIdentity({
-  timeoutMs = 10000,
-  gdprConsent,
-  uspConsent,
-} = {}) {
-  const gdprApplies =
-    typeof gdprConsent?.gdprApplies === 'boolean'
-      ? gdprConsent.gdprApplies
-      : undefined;
-  const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
-  const ccpaOptOut =
-    typeof uspConsent === 'string' &&
-    uspConsent.length > 2 &&
-    uspConsent[2].toUpperCase() === 'Y';
-
-  // Bail cleanly on consent/storage gates
-  if (!storageReady() || (gdprApplies && !hasGdprConsent) || ccpaOptOut) {
-    return null;
-  }
-  if (_tmaLock) return null;
-  _tmaLock = true;
-
-  let got = null;
-  try {
-    // session id
-    let sid = ssGet(SESSION_STORAGE_KEY);
-    if (!sid) {
-      sid = generateUUID();
-      ssSet(SESSION_STORAGE_KEY, sid);
-    }
-
-    const current = lsGet(LOCAL_STORAGE_KEY);
-    const domain = tmaDetectPublisherDomain();
-    const payload = {
-      profileId: current || null,
-      events: [
-        {
-          eventType: 'view',
-          scope: TMA_SCOPE,
-          attributes: { publisherDomain: domain },
-        },
-      ],
-      source: { itemId: domain, itemType: 'publisher-site', scope: TMA_SCOPE },
-    };
-
-    const ctrl =
-      typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const t = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
-    const url = `${UNOMI_URL}?sessionId=${encodeURIComponent(sid)}`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: ctrl ? ctrl.signal : undefined,
-    });
-
-    if (t) clearTimeout(t);
-    if (!res.ok) throw new Error(`Unomi Context Error: ${res.status}`);
-
-    const json = await res.json();
-    const pid =
-      json && typeof json.profileId === 'string' ? json.profileId : null;
-    if (!pid) throw new Error('Invalid profile ID from Unomi');
-
-    lsSet(LOCAL_STORAGE_KEY, pid);
-    _cachedUserId = pid;
-    got = pid;
-
-    // Fire-and-forget Bimax beacon
-    try {
-      const u = new URL(BIMAX_URL);
-      u.searchParams.append('source_name', 'tma_ads_tech');
-      u.searchParams.append('cookies_id', pid);
-      fetch(u.toString(), {
-        method: 'GET',
-        mode: 'no-cors',
-        keepalive: true,
-      }).catch(() => {});
-    } catch {
-      /* empty */
-    }
-  } catch (err) {
-    // No longer silent — surface to Prebid's logger only (won't spam console.error in prod)
-    logError('[pstudio] tmaSyncIdentity failed:', err);
-  } finally {
-    _tmaLock = false;
-  }
-  return got;
-}
 
 function tmaGetIdCached() {
   const v = lsGet(LOCAL_STORAGE_KEY);
@@ -200,7 +59,7 @@ function tmaGetIdCached() {
 
 // Primes _cachedUserId from LS and triggers a background sync, but ONLY when
 // invoked from a Prebid lifecycle method (i.e. after fun-hooks is ready).
-function tmaPrime(bidderRequest) {
+function tmaPrime() {
   if (_tmaPrimed) return;
   _tmaPrimed = true;
 
@@ -208,19 +67,12 @@ function tmaPrime(bidderRequest) {
     const v = lsGet(LOCAL_STORAGE_KEY);
     if (v) _cachedUserId = v;
   }
-
-  tmaSyncIdentity({
-    timeoutMs: 800,
-    gdprConsent: bidderRequest?.gdprConsent,
-    uspConsent: bidderRequest?.uspConsent,
-  }).catch((e) => logError('[pstudio] sync identity error:', e));
 }
 
 // ---------------------------------------------------------------------------
 // User syncs config
 // ---------------------------------------------------------------------------
 const USER_SYNCS = [
-  // PARTNER_UID is a partner user id
   {
     type: 'img',
     url: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=%PARTNER_UID%&dsp=ttd',
@@ -265,7 +117,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    tmaPrime(bidderRequest);
+    tmaPrime();
 
     return validBidRequests.map((bid) => ({
       method: 'POST',
@@ -305,33 +157,16 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs(syncOptions, _serverResponse, gdprConsent, uspConsent) {
+  getUserSyncs(syncOptions, _serverResponse, _gdprConsent, _uspConsent) {
     const syncs = [];
     if (!syncOptions) return syncs;
 
-    const gdprApplies =
-      typeof gdprConsent?.gdprApplies === 'boolean'
-        ? gdprConsent.gdprApplies
-        : undefined;
-    const hasGdprConsent = !gdprApplies || !!gdprConsent?.consentString;
-    const ccpaOptOut =
-      typeof uspConsent === 'string' &&
-      uspConsent.length > 2 &&
-      uspConsent[2].toUpperCase() === 'Y';
-
-    if ((gdprApplies && !hasGdprConsent) || ccpaOptOut) return syncs;
-
     const userId = tmaGetIdCached();
-    USER_SYNCS.forEach((us) => {
-      if (us.type === 'img' && syncOptions.pixelEnabled) {
+    USER_SYNCS.forEach((userSync) => {
+      if (userSync.type === 'img') {
         syncs.push({
           type: 'image',
-          url: us.url.replace(us.macro, encodeURIComponent(userId || '')),
-        });
-      } else if (us.type === 'iframe' && syncOptions.iframeEnabled) {
-        syncs.push({
-          type: 'iframe',
-          url: us.url.replace(us.macro, encodeURIComponent(userId || '')),
+          url: userSync.url.replace(userSync.macro, userId),
         });
       }
     });
