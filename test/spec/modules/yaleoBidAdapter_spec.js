@@ -1,4 +1,5 @@
 import { cloneDeep } from "lodash";
+import { config } from "src/config.js";
 import { spec } from "../../../modules/yaleoBidAdapter.ts";
 
 const bannerBidRequestBase = {
@@ -120,6 +121,10 @@ describe('Yaleo bid adapter', () => {
   });
 
   describe('buildRequests', () => {
+    afterEach(() => {
+      config.resetConfig();
+    });
+
     it('creates a valid banner bid request', () => {
       const bidderRequest = {
         bids: [bannerBidRequest],
@@ -139,6 +144,70 @@ describe('Yaleo bid adapter', () => {
       expect(request.data.imp.length).to.equal(1);
       expect(request.data.imp[0]).to.have.property('banner');
       expect(request.data.site.page).to.be.equal('http://example.com');
+    });
+
+    it('uses the production endpoint by default', () => {
+      const bidderRequest = {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+      };
+
+      const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+      expect(request.url).to.equal('https://bidder.yaleo.com/prebid');
+    });
+
+    it('overrides the endpoint via yaleo.endpoint config for an approved Yaleo host', () => {
+      config.setConfig({ yaleo: { endpoint: 'https://dev-bidder.yaleo.com/prebid' } });
+      const bidderRequest = {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+      };
+
+      const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+      expect(request.url).to.equal('https://dev-bidder.yaleo.com/prebid');
+    });
+
+    it('ignores an endpoint override that is not a Yaleo host', () => {
+      config.setConfig({ yaleo: { endpoint: 'https://bidder.example.com/prebid' } });
+      const bidderRequest = {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+      };
+
+      const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+      expect(request.url).to.equal('https://bidder.yaleo.com/prebid');
+    });
+
+    it('ignores a non-HTTPS endpoint override', () => {
+      config.setConfig({ yaleo: { endpoint: 'http://bidder.yaleo.com/prebid' } });
+      const bidderRequest = {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+      };
+
+      const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+      expect(request.url).to.equal('https://bidder.yaleo.com/prebid');
+    });
+
+    it('ignores an unapproved Yaleo subdomain override', () => {
+      config.setConfig({ yaleo: { endpoint: 'https://anything.yaleo.com/prebid' } });
+      const bidderRequest = {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+      };
+
+      const request = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+      expect(request.url).to.equal('https://bidder.yaleo.com/prebid');
     });
 
     it('checks that all params are passed to the request', () => {
