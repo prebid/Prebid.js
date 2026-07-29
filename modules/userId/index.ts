@@ -593,7 +593,7 @@ function getPPID(eids = getUserIdsAsEids() || []) {
   const matchingUserId = ppidSource && eids.find(userID => userID.source === ppidSource);
   if (matchingUserId && typeof matchingUserId?.uids?.[0]?.id === 'string') {
     const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
-    // Regex copied from https://support.google.com/admanager/answer/2880055?hl=en#requirements, 
+    // Regex copied from https://support.google.com/admanager/answer/2880055?hl=en#requirements,
     // and removed the uncessary escape character inside the character class
     const regex = /^[0-9a-zA-Z+.=/_\-$,{}]{22,150}$/;
     if (regex.test(ppidValue)) {
