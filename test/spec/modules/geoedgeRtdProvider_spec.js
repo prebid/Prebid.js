@@ -278,6 +278,12 @@ describe('Geoedge RTD module', function () {
           gate(bid, false);
           expect(isWrapped(bid, originalRender)).to.equal(false);
         });
+        it('should not wrap a bid from a bidder params.bidders excludes', function () {
+          const bid = mockVideoBid({ bidderCode: 'bidderB' });
+          originalRender = bid.renderer.render;
+          gate(bid);
+          expect(isWrapped(bid, originalRender)).to.equal(false);
+        });
         it('should not wrap a bid carrying a safeRenderer — prebid never calls bid.renderer for those', function () {
           const bid = mockVideoBid({ safeRenderer: true });
           originalRender = bid.renderer.render;

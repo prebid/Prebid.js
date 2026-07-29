@@ -315,8 +315,9 @@ function hasVastXmlInBidAd(bid) {
  */
 function shouldGateOutstreamRender(bid, params) {
   const { renderer } = bid;
+  const supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
 
-  if (!params.outstream || !isVastBid(bid) || bid.safeRenderer || !clientFrame) {
+  if (!params.outstream || !supportedBidder || !isVastBid(bid) || bid.safeRenderer || !clientFrame) {
     return false;
   }
 
