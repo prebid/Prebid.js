@@ -10,8 +10,6 @@ import {
   resolveIdUsage,
   resolveTcString,
   resolveGpp,
-  readRtdCache,
-  writeRtdCache,
   getBidRequestData,
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
