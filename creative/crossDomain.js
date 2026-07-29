@@ -40,7 +40,7 @@ export function renderer(win) {
   } catch (e) {
   }
 
-  return function ({ adId, pubUrl, clickUrl }) {
+  return function ({ adId, pubUrl, ...rest }) {
     const pubDomain = new URL(pubUrl, window.location).origin;
 
     function sendMessage(type, payload, responseListener) {
@@ -101,7 +101,7 @@ export function renderer(win) {
     }
 
     sendMessage(MESSAGE_REQUEST, {
-      options: { clickUrl }
+      options: rest
     }, onMessage);
   };
 }
