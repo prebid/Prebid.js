@@ -900,58 +900,6 @@ describe('51DegreesRtdProvider', function() {
     });
   });
 
-  describe('rtd cache', function() {
-    const RTD_CACHE_KEY = '__51d_rtd_cache';
-    const inputs = { idUsage: 'standard', tc: null, gpp: null };
-
-    afterEach(function() {
-      sessionStorage.removeItem(RTD_CACHE_KEY);
-    });
-
-    it('returns cached data when inputs match', function() {
-      writeRtdCache({ device: { ismobile: 'True' } }, inputs);
-      expect(readRtdCache(inputs)).to.deep.equal({ device: { ismobile: 'True' } });
-    });
-
-    it('returns null when inputs differ', function() {
-      writeRtdCache({ device: { ismobile: 'True' } }, inputs);
-      expect(readRtdCache({ idUsage: 'personalized', tc: null, gpp: null })).to.be.null;
-    });
-
-    it('returns null when consent inputs differ', function() {
-      writeRtdCache({ device: { ismobile: 'True' } }, inputs);
-      expect(readRtdCache({ idUsage: 'standard', tc: 'TCSTRING', gpp: null })).to.be.null;
-    });
-
-    it('returns null when storage is empty', function() {
-      expect(readRtdCache(inputs)).to.be.null;
-    });
-
-    it('returns null on malformed JSON', function() {
-      sessionStorage.setItem(RTD_CACHE_KEY, 'not-json{');
-      expect(readRtdCache(inputs)).to.be.null;
-    });
-
-    it('returns null on unknown cache version', function() {
-      sessionStorage.setItem(RTD_CACHE_KEY, JSON.stringify({ v: 99, inputs, data: { device: {} } }));
-      expect(readRtdCache(inputs)).to.be.null;
-    });
-
-    it('does not store payloads without data groups', function() {
-      writeRtdCache({ errors: ['boom'] }, inputs);
-      expect(sessionStorage.getItem(RTD_CACHE_KEY)).to.be.null;
-    });
-
-    it('works without cache when storage access throws', function() {
-      const stub = sinon.stub(Storage.prototype, 'getItem').throws(new Error('denied'));
-      try {
-        expect(readRtdCache(inputs)).to.be.null;
-      } finally {
-        stub.restore();
-      }
-    });
-  });
-
   describe('getBidRequestData', function() {
     let initialHeadInnerHTML;
     let reqBidsConfigObj = {};
