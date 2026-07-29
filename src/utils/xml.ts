@@ -1,3 +1,6 @@
+// This module, and the calls to it in videoCache and vastXmlBuilder, were written by a bot
+// (Claude Code).
+
 /**
  * Helpers for placing untrusted text into XML that is built by string concatenation.
  *
