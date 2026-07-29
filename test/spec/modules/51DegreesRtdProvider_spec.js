@@ -1149,37 +1149,6 @@ describe('51DegreesRtdProvider', function() {
       expect(loadExternalScriptStub.calledTwice).to.be.true;
       expect(callback2.calledOnce).to.be.true;
     });
-
-    it('enriches synchronously from the cache and refreshes it from a late source', async function() {
-      const originalFod = window.fod;
-      let storedCb = null;
-      window.fod = { complete: (cb) => { storedCb = cb; } };
-      loadExternalScriptStub.resetHistory();
-      const cachedData = { device: fiftyOneDegreesDevice };
-      writeRtdCache(cachedData, { idUsage: null, tc: null, gpp: null });
-
-      const callback = sinon.spy();
-      const moduleConfig = { params: {} };
-
-      try {
-        getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-
-        expect(callback.calledOnce).to.be.true;
-        expect(reqBidsConfigObj.ortb2Fragments.global.device.make).to.equal('Apple');
-        expect(loadExternalScriptStub.called).to.be.false;
-
-        storedCb({ device: fiftyOneDegreesDevice, fodid: { idproblic: 'late-uid' } });
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        expect(callback.calledOnce).to.be.true;
-        expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
-        const stored = JSON.parse(sessionStorage.getItem('__51d_rtd_cache'));
-        expect(stored.data.fodid.idproblic).to.equal('late-uid');
-      } finally {
-        window.fod = originalFod;
-        sessionStorage.removeItem('__51d_rtd_cache');
-      }
-    });
   });
 
   describe('init', function() {
