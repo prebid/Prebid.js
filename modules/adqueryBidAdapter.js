@@ -42,14 +42,11 @@ export const spec = {
    */
   isBidRequestValid: (bid) => {
     const video = bid.mediaTypes && bid.mediaTypes.video;
-    if (video) {
-      if (['instream', 'outstream'].includes(video.context)) {
-        return !!(video.playerSize);
-      }
-      return false;
+    if (video && ['instream', 'outstream'].includes(video.context)) {
+      return !!(video.playerSize);
     }
 
-    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes);
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes);
   },
 
   /**

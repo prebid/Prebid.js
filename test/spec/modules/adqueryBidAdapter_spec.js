@@ -262,7 +262,7 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(false);
     });
-    it('should return false when sizes for video are specified', () => {
+    it('should return true when sizes for video are specified', () => {
       expect(spec.isBidRequestValid(
         {
           "bidder": "adquery",
@@ -317,7 +317,7 @@ describe('adqueryBidAdapter', function () {
         }
       )).to.equal(true);
     });
-    it('should return false when context for video is correct', () => {
+    it('should return true when context for video is correct', () => {
       expect(spec.isBidRequestValid(
         {
           "bidder": "adquery",
@@ -447,6 +447,30 @@ describe('adqueryBidAdapter', function () {
           "src": "client",
         }
       )).to.equal(true);
+    });
+
+    it('should return true for a banner bid when video mediaType has no instream/outstream context', () => {
+      const bid = utils.deepClone(bidRequest);
+      bid.mediaTypes.video = {
+        playerSize: [[640, 360]],
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false (not throw) for a video-only bid with no instream/outstream context and no banner', () => {
+      const bid = {
+        bidder: 'adquery',
+        params: {
+          placementId: '6d93f2a0e5f0fe2cc3a6e9e3ade964b43b07f897',
+        },
+        mediaTypes: {
+          video: {
+            playerSize: [[640, 360]],
+          },
+        },
+      };
+      expect(() => spec.isBidRequestValid(bid)).to.not.throw();
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
