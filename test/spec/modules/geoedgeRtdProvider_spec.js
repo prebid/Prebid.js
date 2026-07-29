@@ -4,6 +4,7 @@ import * as geoedgeRtdModule from '../../../modules/geoedgeRtdProvider.js';
 import { server } from '../../../test/mocks/xhr.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const {
   geoedgeSubmodule,
@@ -13,10 +14,17 @@ const {
   setWrapper,
   getMacros,
   WRAPPER_URL,
-  preloadClient
+  preloadClient,
+  isVastBid,
+  onClientLoad,
+  resetOutstreamGateStateForTesting,
+  OUTSTREAM_GATE_TIMEOUT
 } = geoedgeRtdModule;
 
 const key = '123123123';
+// The client publishes its gate on the preloaded frame's window under this name.
+const OUTSTREAM_API = 'grumiOutstreamApi';
+
 function makeConfig(gpt) {
   return {
     name: 'geoedge',
@@ -127,6 +135,17 @@ describe('Geoedge RTD module', function () {
         const isClientUrl = arg => arg === getClientUrl(key);
         expect(loadExternalScriptCall.calledWithMatch(isClientUrl)).to.equal(true);
       });
+      it('should carry the publisher outstream opt-in into the frame', function () {
+        preloadClient(key, true);
+        // insertElement prepends into <head>, so the newest frame is the FIRST match, not the last
+        const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
+        expect(grumi.outstream).to.equal(true);
+      });
+      it('should hand the frame a reference to this prebid instance', function () {
+        preloadClient(key);
+        const grumi = document.querySelector('#grumiFrame').contentWindow.grumi;
+        expect(grumi.pbjs).to.equal(getGlobal());
+      });
     });
     describe('setWrapper', function () {
       it('should set the wrapper', function () {
@@ -167,6 +186,265 @@ describe('Geoedge RTD module', function () {
         delete copy.ad;
         const equalsOriginal = Object.keys(copy).every(key => copy[key] === bidFromA[key]);
         expect(equalsOriginal).to.equal(true);
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // Outstream video gate
+    // -----------------------------------------------------------------------
+
+    describe('isVastBid', function () {
+      it('should accept a bid labeled as video', function () {
+        expect(isVastBid({ mediaType: 'video' })).to.equal(true);
+      });
+      it('should accept a bid carrying vastXml', function () {
+        expect(isVastBid({ vastXml: '<VAST version="4.0"></VAST>' })).to.equal(true);
+      });
+      it('should accept a mislabeled bid whose ad starts with a VAST tag, case-insensitively', function () {
+        expect(isVastBid({ ad: '<vast version="3.0"></vast>' })).to.equal(true);
+        expect(isVastBid({ ad: '<?xml version="1.0"?><VAST></VAST>' })).to.equal(true);
+      });
+      it('should reject a vastUrl-only bid — a correctly labeled video bid always arrives with vastXml backfilled', function () {
+        expect(isVastBid({ vastUrl: 'https://example.com/vast.xml' })).to.equal(false);
+      });
+      it('should not scan past the head of bid.ad for a VAST marker', function () {
+        const buried = `${'x'.repeat(400)}<VAST></VAST>`;
+        expect(isVastBid({ ad: buried })).to.equal(false);
+      });
+      it('should reject a display bid', function () {
+        expect(isVastBid(mockBid('bidderA'))).to.equal(false);
+      });
+      it('should reject a bid with no ad and no video fields', function () {
+        expect(isVastBid({})).to.equal(false);
+      });
+    });
+
+    describe('outstream gate', function () {
+      let frame;
+      let originalRender;
+
+      function makeOutstreamConfig(outstream) {
+        return {
+          name: 'geoedge',
+          params: { key, outstream, bidders: { bidderA: true } }
+        };
+      }
+
+      // isRendererRequired() needs url (or renderNow); the gate additionally needs render itself.
+      function mockRenderer() {
+        return { url: 'https://example.com/outstream.js', render: sinon.spy() };
+      }
+
+      function mockVideoBid(extra) {
+        return Object.assign(mockBid('bidderA'), {
+          mediaType: 'video',
+          vastXml: '<VAST version="4.0"></VAST>',
+          renderer: mockRenderer()
+        }, extra);
+      }
+
+      function gate(bid, outstream = true) {
+        geoedgeSubmodule.onBidResponseEvent(bid, makeOutstreamConfig(outstream));
+        return bid;
+      }
+
+      function isWrapped(bid, original) {
+        return bid.renderer.render !== original;
+      }
+
+      function publishGate(shouldRender) {
+        frame.contentWindow[OUTSTREAM_API] = { shouldRender: sinon.stub().returns(shouldRender) };
+      }
+
+      beforeEach(function () {
+        document.querySelectorAll('#grumiFrame').forEach(el => el.remove());
+        // establishes clientFrame; the adloader stub fires the load callback synchronously
+        preloadClient(key, true);
+        frame = document.querySelector('#grumiFrame');
+        delete frame.contentWindow[OUTSTREAM_API];
+        resetOutstreamGateStateForTesting();
+      });
+
+      describe('deciding what to wrap', function () {
+        it('should wrap the renderer of an outstream video bid', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          expect(isWrapped(bid, originalRender)).to.equal(true);
+        });
+        it('should not wrap when the publisher did not opt in to outstream', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid, false);
+          expect(isWrapped(bid, originalRender)).to.equal(false);
+        });
+        it('should not wrap a bid carrying a safeRenderer — prebid never calls bid.renderer for those', function () {
+          const bid = mockVideoBid({ safeRenderer: true });
+          originalRender = bid.renderer.render;
+          gate(bid);
+          expect(isWrapped(bid, originalRender)).to.equal(false);
+        });
+        it('should not wrap when the renderer is not required by prebid', function () {
+          const bid = mockVideoBid({ renderer: { render: sinon.spy() } }); // no url / renderNow
+          originalRender = bid.renderer.render;
+          gate(bid);
+          expect(isWrapped(bid, originalRender)).to.equal(false);
+        });
+        it('should not wrap when the renderer has no render method', function () {
+          const bid = mockVideoBid({ renderer: { url: 'https://example.com/outstream.js' } });
+          gate(bid);
+          expect(bid.renderer.render).to.equal(undefined);
+        });
+        it('should wrap a renderer only once across repeated bidResponse events', function () {
+          const bid = mockVideoBid();
+          gate(bid);
+          const wrappedOnce = bid.renderer.render;
+          gate(bid);
+          expect(bid.renderer.render).to.equal(wrappedOnce);
+        });
+        it('should fall through to html wrapping for a display bid when outstream is on', function () {
+          const bid = mockBid('bidderA');
+          gate(bid);
+          expect(bid.ad.indexOf('<wrapper>')).to.equal(0);
+        });
+        it('should not wrap the html of a gated video bid', function () {
+          const bid = mockVideoBid({ ad: '<VAST></VAST>' });
+          gate(bid);
+          expect(bid.ad.indexOf('<wrapper>')).to.equal(-1);
+        });
+      });
+
+      describe('enforcing at render time', function () {
+        it('should render when the client allows the bid', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          onClientLoad();
+          publishGate(true);
+          bid.renderer.render();
+          expect(originalRender.calledOnce).to.equal(true);
+        });
+        it('should not render when the client blocks the bid', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          onClientLoad();
+          publishGate(false);
+          bid.renderer.render();
+          expect(originalRender.called).to.equal(false);
+        });
+        it('should render unprotected when the client published no gate', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          onClientLoad();
+          bid.renderer.render();
+          expect(originalRender.calledOnce).to.equal(true);
+        });
+        it('should preserve the renderer receiver and arguments', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          onClientLoad();
+          publishGate(true);
+          bid.renderer.render('a', 'b');
+          expect(originalRender.calledOn(bid.renderer)).to.equal(true);
+          expect(originalRender.calledWithExactly('a', 'b')).to.equal(true);
+        });
+      });
+
+      describe('parking a render until the client loads', function () {
+        it('should not render while the client has neither loaded nor timed out', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          bid.renderer.render();
+          expect(originalRender.called).to.equal(false);
+        });
+        it('should release a parked render once the client loads and allows it', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          bid.renderer.render();
+          publishGate(true);
+          onClientLoad();
+          expect(originalRender.calledOnce).to.equal(true);
+        });
+        it('should drop a parked render when the loaded client blocks it', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          bid.renderer.render();
+          publishGate(false);
+          onClientLoad();
+          expect(originalRender.called).to.equal(false);
+        });
+        it('should release each parked render exactly once', function () {
+          const first = mockVideoBid();
+          const second = mockVideoBid();
+          const firstRender = first.renderer.render;
+          const secondRender = second.renderer.render;
+          gate(first);
+          gate(second);
+          first.renderer.render();
+          second.renderer.render();
+          publishGate(true);
+          onClientLoad();
+          onClientLoad();
+          expect(firstRender.calledOnce).to.equal(true);
+          expect(secondRender.calledOnce).to.equal(true);
+        });
+      });
+
+      describe('failing open on the client load deadline', function () {
+        let clock;
+
+        beforeEach(function () {
+          clock = sinon.useFakeTimers();
+          // re-arm the deadline against the fake clock
+          preloadClient(key, true);
+          frame = document.querySelector('#grumiFrame');
+          delete frame.contentWindow[OUTSTREAM_API];
+          resetOutstreamGateStateForTesting();
+        });
+        afterEach(function () {
+          clock.restore();
+        });
+
+        it('should release a parked render when the deadline passes', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          bid.renderer.render();
+          expect(originalRender.called).to.equal(false);
+          clock.tick(OUTSTREAM_GATE_TIMEOUT);
+          expect(originalRender.calledOnce).to.equal(true);
+        });
+        it('should release a parked render even when a gate would have blocked it', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          bid.renderer.render();
+          publishGate(false);
+          clock.tick(OUTSTREAM_GATE_TIMEOUT);
+          expect(originalRender.calledOnce).to.equal(true);
+        });
+        it('should render immediately once the deadline has already passed', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          clock.tick(OUTSTREAM_GATE_TIMEOUT);
+          bid.renderer.render();
+          expect(originalRender.calledOnce).to.equal(true);
+        });
+        it('should not release a parked render before the deadline', function () {
+          const bid = mockVideoBid();
+          originalRender = bid.renderer.render;
+          gate(bid);
+          bid.renderer.render();
+          clock.tick(OUTSTREAM_GATE_TIMEOUT - 1);
+          expect(originalRender.called).to.equal(false);
+        });
       });
     });
   });
