@@ -97,6 +97,10 @@ module.exports = [
       'import/resolver': {
         [path.resolve('./plugins/eslint/resolver')]: true,
         node: true,
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       }
     },
     languageOptions: {

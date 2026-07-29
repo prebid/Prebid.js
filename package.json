@@ -72,6 +72,7 @@
     "chai": "^4.2.0",
     "deep-equal": "^2.0.3",
     "eslint": "^9.31.0",
+    "eslint-import-resolver-typescript": "^3.10.1",
     "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsdoc": "^50.6.6",
