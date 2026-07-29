@@ -50,8 +50,6 @@ Publisher requirements:
 - Keep the default object name (`fod`); a renamed object is not detected.
 - Identifiers that require additional evidence are configured on the 51Degrees integration itself; see the [51Degrees documentation](https://51degrees.com/documentation/index.html).
 
-To keep fast auctions enriched, the module stores the latest response in `sessionStorage` (key `__51d_rtd_cache`) and reuses it for auctions that start before fresh data arrives. The cache lives only for the browser session and is ignored when the marketing usage preference or consent strings change.
-
 The module supports on-premise and cloud device detection services, with free options for both.
 
 A free resource key for use with 51Degrees cloud service can be obtained from [51Degrees cloud configuration](https://configure.51degrees.com/Q5cD1H9W). This is the simplest approach to trial the module.
