@@ -595,21 +595,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     logMessage('TCF consent string present: ', !!tcString);
     logMessage('GPP string present: ', !!gpp);
 
-    const cacheInputs = {
-      idUsage: idUsage || null,
-      tc: tcString || null,
-      gpp: gpp || null,
-    };
-    const cached = readRtdCache(cacheInputs);
-    if (cached) {
-      logMessage('Enriching from cached 51Degrees data');
-      if (!enrichFromData(cached, reqBidsConfigObj, tdlUrl, callbackOnce)) {
-        clearRtdCache();
-      }
-    }
-
     const onData = (data) => {
-      writeRtdCache(data, cacheInputs);
       if (!callbackCalled) {
         enrichFromData(data, reqBidsConfigObj, tdlUrl, callbackOnce);
       }
