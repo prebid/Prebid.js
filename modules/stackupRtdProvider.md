@@ -190,7 +190,7 @@ After a successful enrichment the following fields are merged into the global `o
 }
 ```
 
-`site.content.data` carries content segments (`segtax 502` and `segtax 7` IAB Content Taxonomy 3.0) and publisher first-party signals (`segtax 600`); `user.data` carries audience segments (`segtax 4` IAB Audience and `segtax 501` legacy Stack Up). Blocks with an unrecognised `segtax` are filtered out rather than rejecting the whole response. `site.content.ext.brand_safety` and `site.content.ext.emotion` are optional fields populated when the API returns them. Existing publisher values in `ext` are preserved — the module only fills fields that are absent.
+`site.content.data` carries content segments (`segtax 502` and `segtax 7` IAB Content Taxonomy 3.0) and publisher first-party signals (`segtax 600`); `user.data` carries audience segments (`segtax 4` IAB Audience and `segtax 501` legacy Stack Up). A block with any other, vendor-defined `segtax` is still merged as long as it is shape-valid — only a malformed block (not an unrecognised taxonomy) causes the whole response to be rejected. `site.content.ext.brand_safety` and `site.content.ext.emotion` are optional fields populated when the API returns them. Existing publisher values in `ext` are preserved — the module only fills fields that are absent.
 
 When a `segtax 7` block is present, its ids are also copied into `site.content.cat`/`site.content.cattax` and `site.pagecat`/`site.cattax`. This mirror only fills those fields if the publisher hasn't already set them (or set `params.overwritePublisherCategories: true`) — it never invents or maps ids itself, only relays what the enrichment API already classified.
 

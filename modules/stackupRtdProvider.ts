@@ -646,7 +646,7 @@ function mergeIntoOrtb2(
 
   mergeSiteContent(global, enrichment.site.content, allowCategoryOverwrite);
   mergeUserData(global, enrichment.user.data);
-  mergeSitePagecat(global, allowCategoryOverwrite);
+  mergeSitePagecat(global, enrichment.site.content, allowCategoryOverwrite);
 }
 
 function mergeSiteContent(
@@ -688,13 +688,16 @@ function mergeSiteContent(
 
   // Mirror IAB Content Taxonomy 3.0 (segtax 7) segment ids into the standard
   // content.cat[]/content.cattax field so buyers reading either content.data[]
-  // or content.cat[] see the same signal. Never invents or maps ids — only
-  // copies what the API already returned. By default (allowCategoryOverwrite
-  // false) this is skipped entirely if the publisher already declared
-  // content.cat, or declared a cattax that isn't CT3.0, so it never conflates
-  // taxonomies or clobbers publisher-set FPD unless explicitly opted in via
-  // params.overwritePublisherCategories.
-  const ct3Ids = collectSegtaxIds(target.data, CT3_SEGTAX);
+  // or content.cat[] see the same signal. Collected from `ours.data` (the
+  // enrichment's own blocks) rather than the merged `target.data` — the
+  // latter may also contain an unrelated provider's segtax:7 block already
+  // set by the publisher, which must never be blended into StackUp's mirror.
+  // Never invents or maps ids — only copies what the API already returned.
+  // By default (allowCategoryOverwrite false) this is skipped entirely if the
+  // publisher already declared content.cat, or declared a cattax that isn't
+  // CT3.0, so it never conflates taxonomies or clobbers publisher-set FPD
+  // unless explicitly opted in via params.overwritePublisherCategories.
+  const ct3Ids = collectSegtaxIds(ours.data, CT3_SEGTAX);
   const catIsFree = allowCategoryOverwrite || !(isArray(target.cat) && target.cat.length);
   const cattaxIsFree =
     allowCategoryOverwrite || !target.cattax || target.cattax === CT3_SEGTAX;
@@ -704,11 +707,17 @@ function mergeSiteContent(
   }
 }
 
-// Mirrors IAB Content Taxonomy 3.0 (segtax 7) segment ids already merged into
-// site.content.data into the standard site.pagecat[]/site.cattax field, with
-// the same publisher-wins guards as the content.cat mirror above.
-function mergeSitePagecat(global: any, allowCategoryOverwrite: boolean): void {
-  const ct3Ids = collectSegtaxIds(global.site?.content?.data, CT3_SEGTAX);
+// Mirrors IAB Content Taxonomy 3.0 (segtax 7) segment ids from the
+// enrichment's own content blocks into the standard site.pagecat[]/site.cattax
+// field, with the same publisher-wins guards as the content.cat mirror above.
+// Sourced from `ours` (StackUP's own blocks), not the merged site.content.data,
+// so an unrelated provider's pre-existing segtax:7 block is never mixed in.
+function mergeSitePagecat(
+  global: any,
+  ours: any,
+  allowCategoryOverwrite: boolean
+): void {
+  const ct3Ids = collectSegtaxIds(ours.data, CT3_SEGTAX);
   if (!ct3Ids.length) return;
   global.site = global.site ?? {};
   if (

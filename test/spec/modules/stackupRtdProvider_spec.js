@@ -940,6 +940,68 @@ describe("StackUp RTD Provider", function () {
       expect(site.pagecat).to.have.members(["483", "533"]);
     });
 
+    it("should exclude a publisher's own pre-existing segtax:7 block from the content.cat/site.pagecat mirror", function () {
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              content: {
+                data: [
+                  {
+                    name: "other-ct-vendor.com",
+                    ext: { segtax: 7 },
+                    segment: [{ id: "999", name: "OtherVendorCategory" }],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+      subModuleObj.getBidRequestData(req, sinon.spy(), VALID_CONFIG);
+      const content = req.ortb2Fragments.global.site.content;
+      const site = req.ortb2Fragments.global.site;
+      expect(content.cat).to.have.members(["483", "533"]);
+      expect(content.cat).to.not.include("999");
+      expect(site.pagecat).to.have.members(["483", "533"]);
+      expect(site.pagecat).to.not.include("999");
+      // the other vendor's block itself is preserved, just not mirrored
+      expect(content.data.map((b) => b.name)).to.include("other-ct-vendor.com");
+    });
+
+    it("should give StackUp's ids exclusive priority (not a union) when overwritePublisherCategories is true", function () {
+      const req = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              content: {
+                data: [
+                  {
+                    name: "other-ct-vendor.com",
+                    ext: { segtax: 7 },
+                    segment: [{ id: "999", name: "OtherVendorCategory" }],
+                  },
+                ],
+                cat: ["999"],
+                cattax: 7,
+              },
+              pagecat: ["999"],
+              cattax: 7,
+            },
+          },
+        },
+      };
+      subModuleObj.getBidRequestData(
+        req,
+        sinon.spy(),
+        OVERWRITE_CATEGORIES_CONFIG
+      );
+      const content = req.ortb2Fragments.global.site.content;
+      const site = req.ortb2Fragments.global.site;
+      expect(content.cat).to.deep.equal(["483", "533"]);
+      expect(site.pagecat).to.deep.equal(["483", "533"]);
+    });
+
     it("should not mirror a segtax:502 block into content.cat or site.pagecat", async function () {
       _resetStateForTesting();
       subModuleObj.init(VALID_CONFIG, {});
