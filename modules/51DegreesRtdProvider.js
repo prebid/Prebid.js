@@ -505,65 +505,6 @@ export const resolveIdUsage = (moduleConfig) => {
   return undefined;
 };
 
-// Session cache of the last response for later auctions.
-const RTD_CACHE_KEY = '__51d_rtd_cache';
-const RTD_CACHE_VERSION = 1;
-
-const clearRtdCache = () => {
-  try {
-    storageManager.removeDataFromSessionStorage(RTD_CACHE_KEY);
-  } catch (_) {
-    // Storage unavailable; nothing to clear.
-  }
-};
-
-/**
- * Reads the cached response for the given inputs.
- *
- * @param {Object} inputs Current idUsage, tc and gpp values
- * @returns {Object|null}
- */
-export const readRtdCache = (inputs) => {
-  try {
-    const stored = storageManager.getDataFromSessionStorage(RTD_CACHE_KEY);
-    if (!stored) {
-      return null;
-    }
-    const parsed = JSON.parse(stored);
-    if (!parsed || parsed.v !== RTD_CACHE_VERSION || !parsed.inputs || !parsed.data) {
-      return null;
-    }
-    if (parsed.inputs.idUsage !== inputs.idUsage ||
-        parsed.inputs.tc !== inputs.tc ||
-        parsed.inputs.gpp !== inputs.gpp) {
-      clearRtdCache();
-      return null;
-    }
-    return parsed.data;
-  } catch (_) {
-    return null;
-  }
-};
-
-/**
- * Stores a response for reuse by later auctions in this session.
- *
- * @param {Object} data Raw 51Degrees response payload
- * @param {Object} inputs idUsage, tc and gpp values the data was produced with
- */
-export const writeRtdCache = (data, inputs) => {
-  if (!data || !(data.device || data.ip || data.fodid)) {
-    return;
-  }
-  try {
-    storageManager.setDataInSessionStorage(
-      RTD_CACHE_KEY,
-      JSON.stringify({ v: RTD_CACHE_VERSION, inputs, data }));
-  } catch (_) {
-    // Storage unavailable; skip caching.
-  }
-};
-
 /**
  * Reads the raw TCF consent string from Prebid user consent.
  *
