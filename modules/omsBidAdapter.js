@@ -131,7 +131,7 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'bcat', bidderRequest.ortb2.bcat);
     }
 
-    if (deepAccess(bidderRequest, 'ortb2.device.dnt')) {
+    if (deepAccess(bidderRequest, 'ortb2.device.dnt', null) !== null) {
       deepSetValue(payload, 'device.dnt', bidderRequest.ortb2.device.dnt);
     }
 
