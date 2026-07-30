@@ -217,6 +217,38 @@ declare module './config' {
 
 export function newTargeting(auctionManager) {
   const latestAuctionForAdUnit = {};
+  const lockedGptSlotsByAuction = new Map<Identifier, Set<string>>();
+
+  function lockGptSlotsForAuction(auctionId: Identifier, adUnitCodes: AdUnitCode[] = []) {
+    if (auctionId == null || !isGptPubadsDefined()) return;
+    const slotIds = new Set<string>();
+    Object.values(getGPTSlotsForAdUnits(adUnitCodes))
+      .flat()
+      .forEach(slot => {
+        const slotId = slot.getSlotElementId?.();
+        if (slotId != null) {
+          slotIds.add(slotId);
+        }
+      });
+    lockedGptSlotsByAuction.set(auctionId, slotIds);
+  }
+
+  function unlockGptSlotsForAuction(auctionId: Identifier) {
+    lockedGptSlotsByAuction.delete(auctionId);
+  }
+
+  function isAnyGptSlotLocked(adUnitCode: AdUnitCode) {
+    if (!isGptPubadsDefined()) return false;
+    const slotIds = new Set(getGPTSlotsForAdUnits([adUnitCode])[adUnitCode]
+      .map(slot => slot.getSlotElementId?.())
+      .filter(slotId => slotId != null));
+    for (const lockedSlots of lockedGptSlotsByAuction.values()) {
+      for (const slotId of slotIds) {
+        if (lockedSlots.has(slotId)) return true;
+      }
+    }
+    return false;
+  }
 
   const targeting = {
     setLatestAuctionForAdUnit(adUnitCode: AdUnitCode, auctionId: Identifier) {
@@ -406,16 +438,18 @@ export function newTargeting(auctionManager) {
     },
   };
 
-  events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes }) => {
+  events.on(EVENTS.AUCTION_INIT, ({ adUnitCodes, auctionId }) => {
+    lockGptSlotsForAuction(auctionId, adUnitCodes);
     targeting.presetGPTTargeting(adUnitCodes);
   });
 
-  events.on(EVENTS.BID_WON, ({ adUnitCode, auctionId }) => {
-    // Ignore late wins from older auctions that would clear targeting already
-    // installed by a newer auction for the same ad unit.
-    if (latestAuctionForAdUnit[adUnitCode] === auctionId) {
-      targeting.presetGPTTargeting([adUnitCode]);
-    }
+  events.on(EVENTS.BID_WON, ({ adUnitCode }) => {
+    if (isAnyGptSlotLocked(adUnitCode)) return;
+    targeting.presetGPTTargeting([adUnitCode]);
+  });
+
+  events.on(EVENTS.AUCTION_END, ({ auctionId }) => {
+    unlockGptSlotsForAuction(auctionId);
   });
 
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {
