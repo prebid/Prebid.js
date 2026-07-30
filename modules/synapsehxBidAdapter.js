@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { logError, isFn, isPlainObject, formatQS } from '../src/utils.js';
+import { logError, formatQS, triggerPixel } from '../src/utils.js';
+import { getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { toOrtb26 } from '../libraries/ortb2.5Translator/translator.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
@@ -10,11 +11,8 @@ const METHOD = 'POST';
 const ENDPOINT_URL = `https://rtb.hx.compasonline.com/pbjs`;
 
 function getMediaType(bid) {
-  if (bid.mtype) {
-    const mtypeToMediaType = { 1: BANNER, 2: VIDEO };
-    return mtypeToMediaType[bid.mtype];
-  }
-  return bid?.ext?.prebid?.type;
+  const mtypeToMediaType = { 1: BANNER, 2: VIDEO };
+  return mtypeToMediaType[bid.mtype];
 }
 
 const converter = ortbConverter({
@@ -25,7 +23,7 @@ const converter = ortbConverter({
       imp.tagid = bidRequest.params.adUnitId;
     }
 
-    const floor = getBidFloor(bidRequest);
+    const floor = getBidFloor(bidRequest, 'USD');
     if (floor) {
       imp.bidfloor = floor;
       imp.bidfloorcur = 'USD';
@@ -51,22 +49,9 @@ const converter = ortbConverter({
   }
 });
 
-function getBidFloor(bid) {
-  if (isFn(bid.getFloor)) {
-    const floor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*'
-    });
-    if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-      return floor.floor;
-    }
-  }
-  return bid.params?.floor;
-}
-
 function isValidBidFloorCurrency(bid) {
-  return !bid.ortb2Imp?.bidfloorcur || bid.ortb2Imp.bidfloorcur === 'USD';
+  const currency = bid.ortb2Imp?.bidfloorcur;
+  return currency == null || currency === 'USD';
 }
 
 function isValidParams(bid) {
@@ -117,9 +102,7 @@ export const spec = {
     if (bid.nurl) {
       const url = new URL(bid.nurl);
       url.searchParams.set('cpm', bid.cpm);
-      fetch(url.toString(), { method: 'GET', keepalive: true }).catch(err =>
-        logError('Error triggering win notification', err)
-      );
+      triggerPixel(url.toString());
     }
   },
 

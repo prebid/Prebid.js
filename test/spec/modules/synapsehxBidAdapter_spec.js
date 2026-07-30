@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { spec } from 'modules/synapseHxBidAdapter.js';
+import { spec } from 'modules/synapsehxBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
 const VALID_PARAMS = {
   tenantId: 'tenant_id',
@@ -252,7 +253,7 @@ describe('Prebid Adapter: Synapse HX', function () {
       expect(request.imp[0].bidfloorcur).to.not.exist;
 
       // with param and no getFloor bidfloor uses value from param
-      bidRequest.params.floor = 1.3;
+      bidRequest.params.reserve = 1.3;
       request = spec.buildRequests([bidRequest], DEFAULT_BIDDER_REQUEST)[0].data;
       expect(request.imp[0].bidfloor).to.equal(1.3);
       expect(request.imp[0].bidfloorcur).to.equal('USD');
@@ -343,15 +344,31 @@ describe('Prebid Adapter: Synapse HX', function () {
     it('should use USD if cur not specified', () => {
       const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
       const { data } = requests[0];
-      const bidRespomseNoCur = { ...SERVER_RESPONSE_BANNER };
-      delete bidRespomseNoCur.cur;
-      const bids = spec.interpretResponse({ body: bidRespomseNoCur }, { data });
+      const bidResponseNoCur = { ...SERVER_RESPONSE_BANNER };
+      delete bidResponseNoCur.cur;
+      const bids = spec.interpretResponse({ body: bidResponseNoCur }, { data });
 
       expect(bids).to.be.a('array').that.has.lengthOf(1);
       bids.forEach(value => {
         expect(value.currency).to.exist;
         expect(value.currency).to.equal('USD');
       });
+    });
+
+    it('should not convert bid if media type does not match', () => {
+      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
+      const { data } = requests[0];
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_VIDEO }, { data });
+
+      expect(bids).to.deep.equal([]);
+    });
+
+    it('should return empty array if no bids', () => {
+      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
+      const { data } = requests[0];
+      const bids = spec.interpretResponse({ body: null }, { data });
+
+      expect(bids).to.deep.equal([]);
     });
 
     it('should set meta.adomain from the bid response adomain field', () => {
@@ -494,6 +511,26 @@ describe('Prebid Adapter: Synapse HX', function () {
           });
         });
       });
+    });
+  });
+
+  describe('onBidWon', function() {
+    let triggerPixelStub;
+
+    beforeEach(function() {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel').resolves({ ok: true });
+    });
+    afterEach(function() {
+      sinon.restore();
+    });
+
+    it('Should trigger pixel', function() {
+      spec.onBidWon({ nurl: 'http://example.com/win', 'cpm': 2.13 });
+
+      expect(triggerPixelStub.callCount).to.equal(1);
+
+      const [url] = triggerPixelStub.firstCall.args;
+      expect(url).to.equal('http://example.com/win?cpm=2.13');
     });
   });
 });
