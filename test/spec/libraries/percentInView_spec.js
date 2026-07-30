@@ -258,22 +258,23 @@ describe('percentInView', () => {
       sandbox.stub(bbox, 'getBoundingClientRect');
     });
 
-    it('does not use intersection if w/h are relevant', () => {
-      bbox.getBoundingClientRect.returns({
-        width: 0,
-        height: 0,
-        left: -50,
-        top: -100,
-      });
+    it('does not use intersection ratio if w/h are relevant', () => {
+      const element = {};
       intersection = {
         boundingClientRect: {
           width: 0,
           height: 0,
+          left: -50,
+          top: -100,
         },
         isIntersecting: true,
         intersectionRatio: 1
       };
-      expect(percentInView({}, { w: 100, h: 200 })).to.not.eql(100);
+      // a quarter of the overridden 100x200 size lies within the viewport
+      expect(percentInView(element, { w: 100, h: 200 })).to.eql(25);
+      // the observer already reported where the element is; measuring it again would
+      // force a layout
+      sinon.assert.neverCalledWith(bbox.getBoundingClientRect, element);
     });
 
     it('uses the intersection ratio when the element has an area', () => {

@@ -71,14 +71,17 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-const percentInViewStatic = (element, { w, h } = {}) => {
-  const elementBoundingBox = getBoundingBox(element, { w, h });
-
+/**
+ * Percentage of the given bounding box that lies within the top window's viewport.
+ *
+ * `elementBoundingBox` is taken relative to `win`'s viewport, and is modified in place.
+ */
+function percentInViewOfBox(elementBoundingBox, win) {
   // when in an iframe, the bounding box is relative to the iframe's viewport
   // since we are intersecting it with the top window's viewport, attempt to
   // compensate for the offset between them
 
-  const offset = getViewportOffset(element?.ownerDocument?.defaultView);
+  const offset = getViewportOffset(win);
   elementBoundingBox.left += offset.x;
   elementBoundingBox.right += offset.x;
   elementBoundingBox.top += offset.y;
@@ -107,7 +110,12 @@ const percentInViewStatic = (element, { w, h } = {}) => {
   // No overlap between element and the viewport; therefore, the element
   // lies completely out of view
   return 0;
-};
+}
+
+const percentInViewStatic = (element, { w, h } = {}) => percentInViewOfBox(
+  getBoundingBox(element, { w, h }),
+  element?.ownerDocument?.defaultView
+);
 
 export const dep = {
   // for stubbing in tests, see test/mocks/percentInView.js
@@ -215,8 +223,10 @@ export function percentInView(element, { w, h } = {}) {
     const bbox = intersection.boundingClientRect;
     const adjusted = applySize(bbox, { w, h });
     if (adjusted.width !== bbox.width || adjusted.height !== bbox.height) {
-      // use w/h override
-      return percentInViewStatic(element, { w, h });
+      // the element has collapsed, so the observer's ratio describes a rect of no area;
+      // recompute from the w/h override, reusing the position the observer already
+      // reported to avoid forcing a layout for a rect we have on hand
+      return percentInViewOfBox(adjusted, element?.ownerDocument?.defaultView);
     }
     if (bbox.width === 0 || bbox.height === 0) {
       // an element with no area renders nothing, but intersection observers report a ratio
