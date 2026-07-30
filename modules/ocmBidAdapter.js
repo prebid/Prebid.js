@@ -333,27 +333,14 @@ function addOrtbPublisherData(data, bidRequests) {
 }
 
 /**
- * Resolves the `tmax` to send to Prebid Server.
- *
- * The converter's default processor sets `tmax` to the full Prebid auction timeout, but Prebid's
- * client-side auction timer is already running and does not wait for this request: a PBS response
- * that leaves the server at exactly `tmax` still has to travel back and be parsed, by which point
- * the auction has timed out and the bids are discarded even though PBS answered in time. So PBS is
- * given the auction timeout minus a buffer covering the round trip and client-side response
- * processing. The buffer is capped at a quarter of the timeout so a deliberately short auction
- * timeout is shortened proportionally instead of being cut to near-zero.
- *
- * A publisher-supplied `ortb2.tmax` wins outright — it is an explicit override of exactly this value,
- * and the default processor would otherwise clobber it with the auction timeout.
- * @param {Object} bidderRequest - The bidder request (source of `timeout` and `ortb2`)
- * @returns {number|undefined} The tmax to send, or undefined when no timeout is known
+ * The latest `tmax` that still leaves room for a PBS response to travel back and be parsed before
+ * Prebid's client-side auction timer fires: the auction timeout minus a buffer covering the round
+ * trip and client-side response processing. The buffer is capped at a quarter of the timeout so a
+ * deliberately short auction timeout is shortened proportionally instead of being cut to near-zero.
+ * @param {Object} bidderRequest - The bidder request (source of `timeout`)
+ * @returns {number|undefined} The buffered deadline, or undefined when no timeout is known
  */
-function resolveTmax(bidderRequest) {
-  const publisherTmax = Number(bidderRequest?.ortb2?.tmax);
-  if (Number.isFinite(publisherTmax) && publisherTmax > 0) {
-    return Math.floor(publisherTmax);
-  }
-
+function bufferedDeadline(bidderRequest) {
   const auctionTimeout = Number(bidderRequest?.timeout);
   if (!Number.isFinite(auctionTimeout) || auctionTimeout <= 0) {
     return undefined;
@@ -361,6 +348,36 @@ function resolveTmax(bidderRequest) {
 
   const buffer = Math.min(TMAX_BUFFER_MS, Math.floor(auctionTimeout * TMAX_BUFFER_MAX_RATIO));
   return Math.max(Math.floor(auctionTimeout) - buffer, 1);
+}
+
+/**
+ * Resolves the `tmax` to send to Prebid Server.
+ *
+ * The converter's default processor sets `tmax` to the full Prebid auction timeout, but Prebid's
+ * client-side auction timer is already running and does not wait for this request: a PBS response
+ * that leaves the server at exactly `tmax` still has to travel back and be parsed, by which point
+ * the auction has timed out and the bids are discarded even though PBS answered in time. So PBS is
+ * given the buffered deadline instead.
+ *
+ * A publisher-supplied `ortb2.tmax` is honoured — the default processor would otherwise clobber it
+ * with the auction timeout — but only down to that same deadline. Raising `tmax` past it cannot buy
+ * the publisher anything: the auction timer is not extended by the value we send, so the extra time
+ * is spent producing a response that arrives too late to be used. A publisher tightening the
+ * server's budget is respected; one loosening it beyond the client deadline is capped, which also
+ * keeps `tmax` consistent with the `ext.tmaxmax` ceiling advertised alongside it.
+ * @param {Object} bidderRequest - The bidder request (source of `timeout` and `ortb2`)
+ * @returns {number|undefined} The tmax to send, or undefined when no timeout is known
+ */
+function resolveTmax(bidderRequest) {
+  const deadline = bufferedDeadline(bidderRequest);
+
+  const publisherTmax = Number(bidderRequest?.ortb2?.tmax);
+  if (Number.isFinite(publisherTmax) && publisherTmax > 0) {
+    const requested = Math.max(Math.floor(publisherTmax), 1);
+    return deadline === undefined ? requested : Math.min(requested, deadline);
+  }
+
+  return deadline;
 }
 
 /**

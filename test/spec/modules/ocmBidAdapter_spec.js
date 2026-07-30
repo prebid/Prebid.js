@@ -314,7 +314,7 @@ describe('ocmBidAdapter', function () {
         expect(request.data.ext.tmaxmax).to.equal(200);
       });
 
-      it('leaves a publisher-supplied ortb2.tmax untouched', function () {
+      it('honours a publisher-supplied ortb2.tmax that tightens the server budget', function () {
         const request = spec.buildRequests([bannerBid], {
           ...bannerBidderRequest,
           timeout: 1000,
@@ -323,6 +323,42 @@ describe('ocmBidAdapter', function () {
         expect(request.data.tmax).to.equal(400);
         // The real ceiling is still reported, so PBS knows what the client will actually wait for.
         expect(request.data.ext.tmaxmax).to.equal(1000);
+      });
+
+      // Honouring an ortb2.tmax that reaches the full auction timeout would hand back the very
+      // failure this buffer exists to prevent: PBS answers on time, but not early enough for the
+      // response to be parsed before the auction timer fires, so the bids are discarded.
+      it('clamps a publisher-supplied ortb2.tmax at the buffered deadline', function () {
+        const request = spec.buildRequests([bannerBid], {
+          ...bannerBidderRequest,
+          timeout: 1000,
+          ortb2: { tmax: 1000 }
+        });
+        expect(request.data.tmax).to.equal(800);
+        expect(request.data.ext.tmaxmax).to.equal(1000);
+      });
+
+      // Raising tmax past the client deadline must never produce a request that asks PBS for longer
+      // than the ceiling advertised in the same payload.
+      it('never sends a tmax above the advertised ext.tmaxmax ceiling', function () {
+        const request = spec.buildRequests([bannerBid], {
+          ...bannerBidderRequest,
+          timeout: 1000,
+          ortb2: { tmax: 1500 }
+        });
+        expect(request.data.tmax).to.equal(800);
+        expect(request.data.tmax).to.be.at.most(request.data.ext.tmaxmax);
+      });
+
+      // With no auction timeout there is no deadline to clamp against, so the publisher's explicit
+      // value is the only signal available and is sent as-is.
+      it('sends a publisher-supplied ortb2.tmax as-is when the auction timeout is unknown', function () {
+        const request = spec.buildRequests([bannerBid], {
+          ...bannerBidderRequest,
+          ortb2: { tmax: 500 }
+        });
+        expect(request.data.tmax).to.equal(500);
+        expect(request.data.ext?.tmaxmax).to.equal(undefined);
       });
 
       it('sends no tmax when the auction timeout is unknown', function () {
