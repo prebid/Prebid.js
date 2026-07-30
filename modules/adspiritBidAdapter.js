@@ -163,16 +163,8 @@ export const spec = {
         seat.bid.forEach(bid => {
           let adm = bid.adm;
           if (typeof adm === 'string' && adm.trim().startsWith('{')) {
-            adm = JSON.parse(adm || '{}');
-            if (typeof adm !== 'object') adm = null;
+            adm = JSON.parse(adm);
           }
-
-          const getAssetValue = (id, type) => {
-            if (!adm?.native?.assets) return '';
-            const assetList = adm.native.assets.filter(a => a.id === id);
-            if (assetList.length === 0) return '';
-            return assetList[0][type]?.text || assetList[0][type]?.value || assetList[0][type]?.url || '';
-          };
 
           const bidResponse = {
             requestId: bidObj.bidId,
@@ -197,47 +189,59 @@ export const spec = {
             }
 
             bidResponse.native = {
-              title: getAssetValue(1, 'title'),
-              body: getAssetValue(4, 'data'),
-              cta: getAssetValue(3, 'data'),
-              image: { url: getAssetValue(2, 'img') || '' },
-              icon: { url: getAssetValue(5, 'img') || '' },
-              sponsoredBy: getAssetValue(6, 'data'),
               clickUrl: adm.native.link?.url || '',
               impressionTrackers: Array.isArray(adm.native.imptrackers) ? adm.native.imptrackers : [],
               ortb: adm.native
             };
 
             const duplicateTracker = {};
-
-            const predefinedAssetIds = Object.entries(bidResponse.native)
-              .filter(([key, value]) => key !== 'clickUrl' && key !== 'impressionTrackers' && key !== 'ortb')
-              .map(([key, value]) => adm.native.assets.find(asset =>
-                typeof value === 'object' ? value.url === asset?.img?.url : value === asset?.data?.value
-              )?.id)
-              .filter(id => id !== undefined);
+            const assignedLegacyFields = {};
+            const requestedAssets = nativeRequest.assets || [];
 
             adm.native.assets.forEach(asset => {
-              const type = Object.keys(asset).find(k => k !== 'id');
+              duplicateTracker[asset.id] = (duplicateTracker[asset.id] || 0) + 1;
 
-              if (!duplicateTracker[asset.id]) {
-                duplicateTracker[asset.id] = 1;
-              } else {
-                duplicateTracker[asset.id]++;
+              const requestedAsset = requestedAssets.find(requestAsset => requestAsset.id === asset.id);
+              let legacyField;
+
+              if (asset.title && requestedAsset?.title) {
+                legacyField = 'title';
+              } else if (asset.img && requestedAsset?.img) {
+                legacyField = requestedAsset.img.type === 1 ? 'icon' : 'image';
+              } else if (asset.data && requestedAsset?.data) {
+                if (requestedAsset.data.type === 1) legacyField = 'sponsoredBy';
+                if (requestedAsset.data.type === 2) legacyField = 'body';
+                if (requestedAsset.data.type === 12) legacyField = 'cta';
               }
 
-              if (predefinedAssetIds.includes(asset.id) && duplicateTracker[asset.id] === 1) return;
-
-              if (type && asset[type]) {
-                const value = asset[type].text || asset[type].value || asset[type].url || '';
-
-                if (type === 'img') {
-                  bidResponse.native[`image_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = {
-                    url: value, width: asset.img.w || null, height: asset.img.h || null
+              if (legacyField && !assignedLegacyFields[legacyField]) {
+                if (asset.img) {
+                  bidResponse.native[legacyField] = {
+                    url: asset.img.url || '',
+                    width: asset.img.w || null,
+                    height: asset.img.h || null
                   };
-                } else {
-                  bidResponse.native[`data_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = value;
+                } else if (asset.title) {
+                  bidResponse.native[legacyField] = asset.title.text || '';
+                } else if (asset.data) {
+                  bidResponse.native[legacyField] = asset.data.value || '';
                 }
+
+                assignedLegacyFields[legacyField] = true;
+                return;
+              }
+
+              const extraIndex = duplicateTracker[asset.id] - 1;
+              if (asset.img) {
+                bidResponse.native[`image_${asset.id}_extra${extraIndex}`] = {
+                  url: asset.img.url || '',
+                  width: asset.img.w || null,
+                  height: asset.img.h || null
+                };
+              } else if (asset.title) {
+                bidResponse.native[`data_${asset.id}_extra${extraIndex}`] = asset.title.text || '';
+              } else if (asset.data) {
+                bidResponse.native[`data_${asset.id}_extra${extraIndex}`] = asset.data.value || '';
               }
             });
 
