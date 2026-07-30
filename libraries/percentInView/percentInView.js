@@ -283,9 +283,16 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
       // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
       // However, browsers appear to run it even when the element is outside the DOM
       // just to be sure, cap the amount of time we wait for intersections.
-      // this needs high priority scheduling to be an upper bound: intersections are delivered as
-      // part of the rendering lifecycle, and an ordinary timer queues behind the same ready work,
-      // so on a busy page both sides of this race are held up together
+      //
+      // the cap only holds as an upper bound with high priority scheduling: an ordinary timer is
+      // queued behind all other ready work, so on a busy page it comes due well past its deadline -
+      // which is when bounding the wait matters most.
+      //
+      // the first observation for an element arrives as a queued task, rather than with the
+      // rendering lifecycle that carries later updates, so it needs well under a millisecond of free
+      // main thread; 20ms leaves margin for a moderately busy one. Much less would be
+      // counterproductive: a user-blocking task outruns the observer, so the wait would end before
+      // any entry had arrived.
       urgentDelay(20)
     ]).then(() => next.call(this, request));
   };
