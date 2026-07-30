@@ -264,8 +264,8 @@ function onBidderError(errorData) {
   _trackEvent('error', {
     bidderRequest: errorData.bidderRequest,
     error: {
-        status: errorData.error?.status,
-        timedOut: errorData.error?.timedOut,
+      status: errorData.error?.status,
+      timedOut: errorData.error?.timedOut,
     },
   });
 }
