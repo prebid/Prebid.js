@@ -1475,7 +1475,7 @@
       "componentType": "bidder",
       "componentName": "axonix",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 141,
       "disclosureURL": null
     },
     {
@@ -1636,7 +1636,7 @@
       "componentType": "bidder",
       "componentName": "blue",
       "aliasOf": null,
-      "gvlid": 620,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -2250,9 +2250,9 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "eightPod",
+      "componentName": "eightpod",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1497,
       "disclosureURL": null
     },
     {
@@ -4714,6 +4714,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "smb",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "smilewanted",
       "aliasOf": null,
       "gvlid": 639,
@@ -6444,7 +6451,7 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "eightPod",
+      "componentName": "eightpod",
       "gvlid": null
     },
     {

@@ -5,7 +5,7 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "eightPod",
+      "componentName": "smb",
       "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
