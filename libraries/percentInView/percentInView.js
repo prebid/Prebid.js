@@ -4,14 +4,19 @@ import { PbPromise, urgentDelay } from '../../src/utils/promise.js';
 import { requestBids, startAuction } from '../../src/prebid.js';
 import { getAdUnitElement } from '../../src/utils/adUnits.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
+import { config } from '../../src/config.js';
 
 /**
  * Whether viewability may be measured with an intersection observer. Doing so means waiting for the
- * observer to deliver, and so yielding the main thread; where that is not allowed, measurements are
- * taken from the element's bounding rect instead.
+ * observer to deliver, and so yielding the main thread; otherwise measurements are taken from the
+ * element's bounding rect instead.
+ *
+ * Follows `auctionOptions.viewabilityMeasurement` where it is set, and whether the main thread may be
+ * yielded at all otherwise.
  */
 function observerAllowed() {
-  return getGlobal().yield ?? true;
+  const measurement = config.getConfig('auctionOptions')?.viewabilityMeasurement;
+  return measurement == null ? (getGlobal().yield ?? true) : measurement === 'observer';
 }
 
 /**

@@ -11,6 +11,7 @@ import { enable, disable, enableFrameRect, disableFrameRect } from 'test/mocks/p
 
 import { defer } from 'src/utils/promise.js';
 import { getGlobal } from 'src/prebidGlobal.js';
+import { config } from 'src/config.js';
 
 describe('percentInView', () => {
   before(() => {
@@ -304,6 +305,47 @@ describe('percentInView', () => {
         };
         expect(percentInView({})).to.eql(0);
       });
+    });
+  });
+
+  describe('viewabilityMeasurement', () => {
+    afterEach(() => {
+      config.resetConfig();
+      delete getGlobal().yield;
+    });
+
+    function usesObserver() {
+      const getIntersection = sandbox.stub(viewportIntersections, 'getIntersection');
+      sandbox.stub(viewportIntersections, 'observe');
+      sandbox.stub(bbox, 'getBoundingClientRect').returns({ width: 1, height: 1, left: 0, top: 0, right: 1, bottom: 1 });
+      percentInView(document.createElement('div'));
+      return getIntersection.called;
+    }
+
+    it('uses the observer when neither it nor pbjs.yield is set', () => {
+      expect(usesObserver()).to.be.true;
+    });
+
+    it('is taken from pbjs.yield when unset', () => {
+      getGlobal().yield = false;
+      expect(usesObserver()).to.be.false;
+    });
+
+    it('uses the observer when pbjs.yield is explicitly true', () => {
+      getGlobal().yield = true;
+      expect(usesObserver()).to.be.true;
+    });
+
+    it('overrides pbjs.yield when set to observer', () => {
+      getGlobal().yield = false;
+      config.setConfig({ auctionOptions: { viewabilityMeasurement: 'observer' } });
+      expect(usesObserver()).to.be.true;
+    });
+
+    it('overrides pbjs.yield when set to boundingBox', () => {
+      getGlobal().yield = true;
+      config.setConfig({ auctionOptions: { viewabilityMeasurement: 'boundingBox' } });
+      expect(usesObserver()).to.be.false;
     });
   });
 
