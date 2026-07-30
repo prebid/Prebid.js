@@ -124,6 +124,24 @@ describe('BidFabrik bid adapter', function () {
       expect(reqs[0].url).to.equal('https://us.bidfabrik.com/bid?feed=pub%20a%2Fb');
     });
 
+    it('sanitizes a host given with a scheme and/or path', function () {
+      const reqs = spec.buildRequests(
+        [bannerBid({ feed: 'pub-1', host: 'https://us.bidfabrik.com/ignored?x=1#y' })],
+        bidderRequest
+      );
+      expect(reqs[0].url).to.equal('https://us.bidfabrik.com/bid?feed=pub-1');
+    });
+
+    it('falls back to the default host when the override is blank or has whitespace', function () {
+      const reqs = spec.buildRequests([
+        bannerBid({ feed: 'pub-1', host: '   ' }, { bidId: 'b1' }),
+        bannerBid({ feed: 'pub-1', host: 'bad host.com' }, { bidId: 'b2' }),
+      ], bidderRequest);
+      reqs.forEach((req) => {
+        expect(req.url).to.equal('https://bid.bidfabrik.com/bid?feed=pub-1');
+      });
+    });
+
     it('mirrors the feed into the ORTB body ext', function () {
       const reqs = spec.buildRequests([bannerBid()], bidderRequest);
       expect(reqs[0].data.ext.bidfabrik.feed).to.equal('pub-4417');

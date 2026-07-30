@@ -37,8 +37,13 @@ const converter = ortbConverter({
 });
 
 function resolveHost(params) {
-  const host = params && isStr(params.host) ? params.host.trim() : '';
-  return host || DEFAULT_HOST;
+  // Publishers may paste a host with a scheme, path, query, or fragment
+  // (e.g. "https://us.bidfabrik.com/foo"); keep only the authority so the
+  // request URL can't end up double-schemed or pointing at an unexpected
+  // path. Fall back to the default if what's left is empty or has whitespace.
+  const raw = params && isStr(params.host) ? params.host.trim() : '';
+  const host = raw.replace(/^https?:\/\//i, '').split('/')[0].split('?')[0].split('#')[0];
+  return host && !/\s/.test(host) ? host : DEFAULT_HOST;
 }
 
 function appendConsentParams(url, gdprConsent, uspConsent, gppConsent) {
@@ -134,7 +139,6 @@ export const spec = {
           // browser. Keep this false unless the LB starts echoing Origin.
           withCredentials: false,
         },
-        bids: g.bids,
       };
     });
   },
